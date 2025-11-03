@@ -36,6 +36,10 @@ type WorkerPool struct {
 
 	connectors connectors.Manager
 	options    worker.Options
+
+	// skipScheduleCreation if true, skips creating the outbox publisher schedule
+	// Useful for tests that don't have a Temporal server available
+	skipScheduleCreation bool
 }
 
 type Worker struct {
@@ -114,9 +118,11 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 		}
 	}
 
-	// Create the outbox publisher schedule
-	if err := w.createOutboxPublisherSchedule(ctx); err != nil {
-		return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+	// Create the outbox publisher schedule (unless explicitly skipped)
+	if !w.skipScheduleCreation {
+		if err := w.createOutboxPublisherSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+		}
 	}
 
 	return nil
@@ -316,4 +322,10 @@ func (w *WorkerPool) createOutboxPublisherSchedule(ctx context.Context) error {
 	taskQueue := GetDefaultTaskQueue(w.stack)
 
 	return activities.CreateOutboxPublisherSchedule(ctx, scheduleID, taskQueue, w.stack)
+}
+
+// SetSkipScheduleCreation sets whether to skip creating the outbox publisher schedule.
+// Useful for tests that don't have a Temporal server available.
+func (w *WorkerPool) SetSkipScheduleCreation(skip bool) {
+	w.skipScheduleCreation = skip
 }

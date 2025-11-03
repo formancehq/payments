@@ -37,8 +37,11 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithoutInstance_Success() {
 		s.Equal(s.paymentPayoutID, payments[0].ID)
 		return nil
 	})
-	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req UpdatePaymentInitiationFromPayment) error {
+		s.Equal(s.paymentPayoutID, req.Payment.ID)
+		return nil
+	})
+	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
@@ -202,8 +205,11 @@ func (s *UnitTestSuite) Test_FetchNextPayments_Success() {
 		s.Equal(s.paymentPayoutID, payments[0].ID)
 		return nil
 	})
-	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req UpdatePaymentInitiationFromPayment) error {
+		s.Equal(s.paymentPayoutID, req.Payment.ID)
+		return nil
+	})
+	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)
@@ -314,8 +320,11 @@ func (s *UnitTestSuite) Test_FetchNextPayments_HasMoreLoop_Success() {
 		s.Equal(s.paymentPayoutID, payments[0].ID)
 		return nil
 	})
-	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req UpdatePaymentInitiationFromPayment) error {
+		s.Equal(s.paymentPayoutID, req.Payment.ID)
+		return nil
+	})
+	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.OnActivity(activities.PluginFetchNextPaymentsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextPaymentsRequest) (*models.FetchNextPaymentsResponse, error) {
@@ -527,7 +536,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StoragePaymentInitiationUpdateFro
 	s.ErrorContains(err, expectedErr.Error())
 }
 
-func (s *UnitTestSuite) Test_FetchNextPayments_RunSendEvents_Error() {
+func (s *UnitTestSuite) Test_FetchNextPayments_Run_Error() {
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
 		&models.State{
@@ -548,9 +557,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_RunSendEvents_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
@@ -566,7 +575,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_RunSendEvents_Error() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{})
+	}, []models.ConnectorTaskTree{{
+		Name: "test",
+	}})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -595,8 +606,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesStore_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
@@ -643,8 +654,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesUpdate_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
@@ -753,7 +764,6 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Payment_Success() {
 		s.Equal(s.paymentPayoutID, payments[0].ID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
 		ConnectorID: s.connectorID,
@@ -782,20 +792,3 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Payment_StoragePaymentsStor
 	s.ErrorContains(err, expectedErr.Error())
 }
 
-func (s *UnitTestSuite) Test_StoreWebhookTranslation_RunSendEvents_Error() {
-	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("error-test")
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
-	)
-
-	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
-		ConnectorID: s.connectorID,
-		Payment:     &s.pspPayment,
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, expectedErr.Error())
-}

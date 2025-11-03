@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"testing"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -17,11 +16,6 @@ import (
 	. "github.com/onsi/gomega"
 	gomock "go.uber.org/mock/gomock"
 )
-
-func TestOutboxPublisher(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Outbox Publisher Activities Suite")
-}
 
 var _ = Describe("OutboxPublishPendingEvents", func() {
 	var (

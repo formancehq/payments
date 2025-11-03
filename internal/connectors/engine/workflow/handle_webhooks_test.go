@@ -744,13 +744,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Balance_Success() {
 	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
 	)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Balance)
-		s.Equal(req.Balance.Balance, big.NewInt(100))
-		s.Equal(req.Balance.Asset, "EUR/2")
-		s.Equal(req.Balance.CreatedAt.Compare(createdAt), 0)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
 		ConnectorID: s.connectorID,

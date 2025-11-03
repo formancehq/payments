@@ -45,10 +45,19 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 	return nil
 }
 
+// todo use consts
 func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxEvent) error {
 	switch event.EventType {
 	case "account.saved":
 		return a.publishAccountEvent(ctx, event)
+	case "balance.saved":
+		return a.publishBalanceEvent(ctx, event)
+	case "payment.saved":
+		return a.publishPaymentEvent(ctx, event)
+	case "payment.deleted":
+		return a.publishPaymentDeletedEvent(ctx, event)
+	case "bank_account.saved":
+		return a.publishBankAccountEvent(ctx, event)
 	default:
 		return fmt.Errorf("unknown event type: %s", event.EventType)
 	}
@@ -63,7 +72,7 @@ func (a Activities) publishAccountEvent(ctx context.Context, event models.Outbox
 
 	// Create the event message (same format as EventsSendAccount)
 	eventMessage := publish.EventMessage{
-		IdempotencyKey: event.IdempotencyKey,
+		IdempotencyKey: a.generateIdempotencyKey(event), // TODO when don't we have an indepeotency key?
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
@@ -75,11 +84,104 @@ func (a Activities) publishAccountEvent(ctx context.Context, event models.Outbox
 	return a.events.Publish(ctx, eventMessage)
 }
 
+func (a Activities) publishBalanceEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal balance event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendBalance)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedBalances,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPaymentEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal payment event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPayment)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedPayments,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPaymentDeletedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal payment deleted event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPaymentDeleted)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeDeletedPayments,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishBankAccountEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal bank account event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendBankAccount)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedBankAccount,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) generateIdempotencyKey(event models.OutboxEvent) string {
+	if event.IdempotencyKey != "" {
+		return event.IdempotencyKey
+	}
+	// Fallback: generate idempotency key based on event type and entity ID
+	return fmt.Sprintf("%s:%s", event.EventType, event.EntityID)
+}
+
 func (a Activities) deleteOutboxAndRecordSent(ctx context.Context, event models.OutboxEvent) error {
 	// Record in events_sent table and delete from outbox in same transaction
+	idempotencyKey := a.generateIdempotencyKey(event) // todo when don't we have an idempotencyKey?
 	eventSent := models.EventSent{
 		ID: models.EventID{
-			EventIdempotencyKey: event.IdempotencyKey,
+			EventIdempotencyKey: idempotencyKey,
 			ConnectorID:         event.ConnectorID,
 		},
 		ConnectorID: event.ConnectorID,

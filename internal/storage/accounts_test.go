@@ -288,30 +288,62 @@ func TestAccountsUpsert(t *testing.T) {
 			},
 		}
 
+		// Create a set of expected idempotency keys
+		expectedKeys := make(map[string]bool)
+		for _, account := range newAccounts {
+			expectedKeys[account.IdempotencyKey()] = true
+		}
+
 		// Insert accounts
 		require.NoError(t, store.AccountsUpsert(ctx, newAccounts))
 
 		// Verify outbox events were created
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
 		require.NoError(t, err)
-		require.Len(t, pendingEvents, 2)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == "account.saved" && expectedKeys[event.IdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 2, "expected 2 outbox events for 2 new accounts")
+
+		// Create a map of expected accounts by idempotency key for easier lookup
+		expectedAccountsByKey := make(map[string]models.Account)
+		for _, account := range newAccounts {
+			expectedAccountsByKey[account.IdempotencyKey()] = account
+		}
 
 		// Check event details
-		for _, event := range pendingEvents {
+		for _, event := range ourEvents {
 			assert.Equal(t, "account.saved", event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.Equal(t, 0, event.RetryCount)
 			assert.Nil(t, event.Error)
+			assert.NotEqual(t, uuid.Nil, event.ID)
+			assert.NotEmpty(t, event.IdempotencyKey)
+
+			// Find the matching account by idempotency key
+			expectedAccount, found := expectedAccountsByKey[event.IdempotencyKey]
+			require.True(t, found, "event idempotency key should match one of the accounts")
 
 			// Verify payload contains account data
 			var payload map[string]interface{}
 			err := json.Unmarshal(event.Payload, &payload)
 			require.NoError(t, err)
-			assert.Contains(t, payload, "id")
+			assert.Equal(t, expectedAccount.ID.String(), payload["id"])
 			assert.Contains(t, payload, "name")
 			assert.Contains(t, payload, "type")
-			assert.Contains(t, payload, "connectorID")
+			assert.Equal(t, expectedAccount.ConnectorID.String(), payload["connectorID"])
+
+			// Verify EntityID matches account ID
+			assert.Equal(t, expectedAccount.ID.String(), event.EntityID)
+
+			// Verify idempotency key matches account
+			assert.Equal(t, expectedAccount.IdempotencyKey(), event.IdempotencyKey)
 		}
 	})
 
