@@ -110,7 +110,7 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 		cid := account.ConnectorID
 		outboxEvent := models.OutboxEvent{
-			EventType:      "account.saved",
+			EventType:      models.OUTBOX_EVENT_ACCOUNT_SAVED,
 			EntityID:       account.ID.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      time.Now().UTC().Time,

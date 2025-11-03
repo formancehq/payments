@@ -14,6 +14,15 @@ const (
 	OUTBOX_STATUS_FAILED  OutboxEventStatus = "failed"
 )
 
+// Outbox event type constants
+const (
+	OUTBOX_EVENT_ACCOUNT_SAVED     = "account.saved"
+	OUTBOX_EVENT_BALANCE_SAVED     = "balance.saved"
+	OUTBOX_EVENT_PAYMENT_SAVED     = "payment.saved"
+	OUTBOX_EVENT_PAYMENT_DELETED   = "payment.deleted"
+	OUTBOX_EVENT_BANK_ACCOUNT_SAVED = "bank_account.saved"
+)
+
 const MaxOutboxRetries = 5
 
 type OutboxEvent struct {

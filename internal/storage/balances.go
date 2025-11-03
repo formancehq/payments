@@ -81,7 +81,7 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 			}
 
 			outboxEvent := models.OutboxEvent{
-				EventType:      "balance.saved",
+				EventType:      models.OUTBOX_EVENT_BALANCE_SAVED,
 				EntityID:       balance.AccountID.String(),
 				Payload:        payloadBytes,
 				CreatedAt:      time.Now().UTC(),
