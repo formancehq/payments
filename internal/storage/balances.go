@@ -52,7 +52,7 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 	var insertedBalances []models.Balance
 
 	for i, balance := range toInsert {
-		if err := s.insertBalances(ctx, tx, &balance); err != nil {
+		if err = s.insertBalances(ctx, tx, &balance); err != nil {
 			return err
 		}
 		// Convert back to model to check if we should create an outbox event
@@ -74,7 +74,8 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 				"balance":       balance.Balance.String(),
 			}
 
-			payloadBytes, err := json.Marshal(payload)
+			var payloadBytes []byte
+			payloadBytes, err = json.Marshal(payload)
 			if err != nil {
 				return fmt.Errorf("failed to marshal balance event payload: %w", err)
 			}
@@ -93,7 +94,7 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 		}
 
 		// Insert outbox events in the same transaction
-		if err := s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
 			return err
 		}
 	}

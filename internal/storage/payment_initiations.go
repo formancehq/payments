@@ -72,7 +72,9 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	if err != nil {
 		return e("upsert payment initiations", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := fromPaymentInitiationModels(pi)
 	adjustmentsToInsert := make([]paymentInitiationAdjustment, 0, len(adjustments))
@@ -97,7 +99,11 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error {
@@ -105,7 +111,9 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 	if err != nil {
 		return e("update payment metadata", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var pi paymentInitiation
 	err = tx.NewSelect().
@@ -134,7 +142,11 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 		return e("update payment initiation metadata", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error) {
@@ -381,7 +393,9 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	if err != nil {
 		return false, e("upsert payment initiations", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var previousAdj paymentInitiationAdjustment
 	err = tx.NewSelect().
@@ -396,6 +410,10 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	}
 
 	if !predicate(toPaymentInitiationAdjustmentModels(previousAdj)) {
+		// Explicitly rollback to release the FOR UPDATE lock
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return false, e("failed to rollback transaction", rollbackErr)
+		}
 		return false, nil
 	}
 
@@ -408,7 +426,11 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		return false, e("failed to insert payment initiation adjustments", err)
 	}
 
-	return true, e("failed to commit transaction", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return false, e("failed to commit transaction", err)
+	}
+	return true, nil
 }
 
 func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {

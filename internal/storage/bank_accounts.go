@@ -138,7 +138,8 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			payload["relatedAccounts"] = relatedAccounts
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			errTx = err
 			return fmt.Errorf("failed to marshal bank account event payload: %w", err)
@@ -154,7 +155,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			IdempotencyKey: bankAccountModel.IdempotencyKey(),
 		}
 
-		if err := s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
 			errTx = err
 			return err
 		}

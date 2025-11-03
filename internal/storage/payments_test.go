@@ -809,6 +809,68 @@ func TestPaymentsUpsert(t *testing.T) {
 			assert.Equal(t, multiAdjustmentPayment.ID.String(), event.EntityID)
 		}
 	})
+
+	t.Run("rollback on foreign key violation", func(t *testing.T) {
+		defer cleanupOutbox()
+
+		upsertConnector(t, ctx, store, defaultConnector)
+		upsertAccounts(t, ctx, store, defaultAccounts())
+
+		// Create a payment with an invalid connector ID that doesn't exist
+		invalidConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "non-existent-provider"}
+		invalidPayment := models.Payment{
+			ID: models.PaymentID{
+				PaymentReference: models.PaymentReference{
+					Reference: "invalid-payment",
+					Type:      models.PAYMENT_TYPE_PAYIN,
+				},
+				ConnectorID: invalidConnectorID,
+			},
+			ConnectorID: invalidConnectorID,
+			Reference:   "invalid-payment",
+			CreatedAt:   time.Now().UTC(),
+			Type:        models.PAYMENT_TYPE_PAYIN,
+			Amount:      big.NewInt(100),
+			Asset:       "USD",
+			Scheme:      models.PAYMENT_SCHEME_A2A,
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "invalid-payment",
+								Type:      models.PAYMENT_TYPE_PAYIN,
+							},
+							ConnectorID: invalidConnectorID,
+						},
+						Reference: "adj1",
+						CreatedAt: time.Now().UTC(),
+						Status:    models.PAYMENT_STATUS_PENDING,
+					},
+					Reference: "adj1",
+					CreatedAt: time.Now().UTC(),
+					Status:    models.PAYMENT_STATUS_PENDING,
+					Amount:    big.NewInt(100),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		// Attempt to upsert - should fail due to foreign key violation
+		err := store.PaymentsUpsert(ctx, []models.Payment{invalidPayment})
+		require.Error(t, err)
+
+		// Verify no payment was inserted by checking that we can't find it
+		_, err = store.PaymentsGet(ctx, invalidPayment.ID)
+		require.Error(t, err, "payment should not be inserted on error")
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			assert.NotEqual(t, invalidPayment.ID.String(), event.EntityID, "no outbox event should be created for failed insert")
+		}
+	})
 }
 
 func TestPaymentsUpsertRefunded(t *testing.T) {

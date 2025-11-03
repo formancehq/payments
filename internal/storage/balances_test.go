@@ -92,7 +92,7 @@ func TestBalancesUpsert(t *testing.T) {
 			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
 		}
 	}
-	defer cleanupOutbox()
+	t.Cleanup(cleanupOutbox)
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
@@ -863,5 +863,45 @@ func TestBalancesGetLatest(t *testing.T) {
 		require.Len(t, balances, 2)
 		assert.Equal(t, balances[1].Asset, "USD/2")
 		assert.Equal(t, balances[1].Balance, b.Balance)
+	})
+
+	t.Run("rollback on foreign key violation", func(t *testing.T) {
+		// Create a valid balance first
+		upsertConnector(t, ctx, store, defaultConnector)
+		createPSU(t, ctx, store, defaultPSU2)
+		createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
+		upsertAccounts(t, ctx, store, defaultAccounts())
+		accounts := defaultAccounts()
+
+		// Count existing balances
+		balancesBefore, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		require.NoError(t, err)
+		countBefore := len(balancesBefore)
+
+		// Create a balance with an invalid account ID that doesn't exist
+		invalidConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "invalid-provider"}
+		invalidBalance := models.Balance{
+			AccountID:     models.AccountID{Reference: "invalid-account", ConnectorID: invalidConnectorID},
+			CreatedAt:     time.Now().UTC(),
+			LastUpdatedAt: time.Now().UTC(),
+			Asset:         "USD",
+			Balance:       big.NewInt(100),
+		}
+
+		// Attempt to upsert - should fail due to foreign key violation
+		err = store.BalancesUpsert(ctx, []models.Balance{invalidBalance})
+		require.Error(t, err)
+
+		// Verify no balance was inserted
+		balancesAfter, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		require.NoError(t, err)
+		assert.Equal(t, countBefore, len(balancesAfter), "no balances should be inserted on error")
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			assert.NotEqual(t, invalidBalance.AccountID.String(), event.EntityID, "no outbox event should be created for failed insert")
+		}
 	})
 }

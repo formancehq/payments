@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -37,12 +38,15 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	poolToInsert, accountsToInsert := fromPoolModel(pool)
 
 	for i := range accountsToInsert {
-		exists, err := tx.NewSelect().
+		var exists bool
+		exists, err = tx.NewSelect().
 			Model((*account)(nil)).
 			Where("id = ?", accountsToInsert[i].AccountID).
 			Limit(1).
@@ -72,7 +76,11 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		return e("insert pool accounts: %w", err)
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error) {
@@ -94,9 +102,12 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	if err != nil {
 		return false, e("begin transaction: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
-	res, err := tx.NewDelete().
+	var res sql.Result
+	res, err = tx.NewDelete().
 		Model((*pool)(nil)).
 		Where("id = ?", id).
 		Exec(ctx)
@@ -117,7 +128,11 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		return false, e("get rows affected: %w", err)
 	}
 
-	return rowsAffected > 0, e("commit transaction: %w", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return false, e("commit transaction: %w", err)
+	}
+	return rowsAffected > 0, nil
 }
 
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
@@ -125,9 +140,12 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
-	exists, err := tx.NewSelect().
+	var exists bool
+	exists, err = tx.NewSelect().
 		Model((*account)(nil)).
 		Where("id = ?", accountID).
 		Limit(1).
@@ -152,7 +170,11 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		return e("insert pool account: %w", err)
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {

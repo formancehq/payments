@@ -102,7 +102,8 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 			payload["name"] = *account.Name
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("failed to marshal account event payload: %w", err)
 		}
@@ -123,7 +124,7 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 	// Insert outbox events in the same transaction
 	if len(outboxEvents) > 0 {
-		if err := s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
 			return err
 		}
 	}

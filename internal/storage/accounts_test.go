@@ -358,6 +358,43 @@ func TestAccountsUpsert(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, pendingEvents, 0)
 	})
+
+	t.Run("rollback on foreign key violation", func(t *testing.T) {
+		defer cleanupOutbox()
+
+		upsertConnector(t, ctx, store, defaultConnector)
+
+		// Count existing accounts
+		accountsBefore, err := store.AccountsList(ctx, NewListAccountsQuery(bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
+		require.NoError(t, err)
+		countBefore := len(accountsBefore.Data)
+
+		// Create an account with an invalid connector ID that doesn't exist
+		invalidConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "non-existent-provider"}
+		invalidAccount := models.Account{
+			ID:          models.AccountID{Reference: "invalid-ref", ConnectorID: invalidConnectorID},
+			ConnectorID: invalidConnectorID,
+			CreatedAt:   time.Now().UTC().Time,
+			Reference:   "invalid-ref",
+			Type:        models.ACCOUNT_TYPE_EXTERNAL,
+		}
+
+		// Attempt to upsert - should fail due to foreign key violation
+		err = store.AccountsUpsert(ctx, []models.Account{invalidAccount})
+		require.Error(t, err)
+
+		// Verify no account was inserted
+		accountsAfter, err := store.AccountsList(ctx, NewListAccountsQuery(bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
+		require.NoError(t, err)
+		assert.Equal(t, countBefore, len(accountsAfter.Data), "no accounts should be inserted on error")
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			assert.NotEqual(t, invalidAccount.ID.String(), event.EntityID, "no outbox event should be created for failed insert")
+		}
+	})
 }
 
 func TestAccountsGet(t *testing.T) {
