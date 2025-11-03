@@ -222,7 +222,8 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			}
 			payload["destinationAccountID"] = destinationAccountID
 
-			payloadBytes, err := json.Marshal(payload)
+			var payloadBytes []byte
+			payloadBytes, err = json.Marshal(payload)
 			if err != nil {
 				return fmt.Errorf("failed to marshal payment event payload: %w", err)
 			}
@@ -244,7 +245,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 
 		// Insert outbox events in the same transaction
 		if len(outboxEvents) > 0 {
-			if err := s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
 				return err
 			}
 		}
@@ -429,7 +430,8 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 		"id": paymentID.String(),
 	}
 
-	payloadBytes, err := json.Marshal(payload)
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payment deleted event payload: %w", err)
 	}
@@ -444,7 +446,7 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 		IdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()), // TODO this looks made up?
 	}
 
-	if err := s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
 		return err
 	}
 
