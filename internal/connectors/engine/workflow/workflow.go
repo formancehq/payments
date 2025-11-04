@@ -137,10 +137,6 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runStoreWebhookTranslation,
 		}).
 		Append(temporalworker.Definition{
-			Name: RunSendEvents,
-			Func: w.runSendEvents,
-		}).
-		Append(temporalworker.Definition{
 			Name: RunDeletePSU,
 			Func: w.runDeletePSU,
 		}).

@@ -52,6 +52,28 @@ func (s *store) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []mode
 	return e("failed to insert outbox events", err)
 }
 
+// OutboxEventsInsertWithTx is meant to be used only when we don't have a related entity;
+// outbox event should always be inserted at the same time as the entity they're linked to.
+func (s *store) OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	if err := s.OutboxEventsInsert(ctx, tx, events); err != nil {
+		return err
+	}
+
+	return e("failed to commit transaction", tx.Commit())
+}
+
 func (s *store) OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error) {
 	var events []outboxEvent
 

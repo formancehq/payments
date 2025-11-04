@@ -43,7 +43,7 @@ type Storage interface {
 
 	// Connectors
 	ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error
-	ConnectorsInstall(ctx context.Context, c models.Connector) error
+	ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
 	ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
@@ -175,6 +175,7 @@ type Storage interface {
 
 	// Outbox Events
 	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error
+	OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error
 	OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error)
 	OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, errorMsg string) error
 	OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error
