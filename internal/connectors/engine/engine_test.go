@@ -134,7 +134,7 @@ var _ = Describe("Engine Tests", func() {
 			config json.RawMessage
 		)
 		BeforeEach(func() {
-			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
+			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30m"}`)
 		})
 
 		It("should return validation error when config is not a valid json", func(ctx SpecContext) {
@@ -399,7 +399,7 @@ var _ = Describe("Engine Tests", func() {
 			connectorID models.ConnectorID
 		)
 		BeforeEach(func() {
-			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
+			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30m"}`)
 			connectorID = models.ConnectorID{Provider: "dummypay", Reference: uuid.New()}
 		})
 
@@ -464,7 +464,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should store the updated config", func(ctx SpecContext) {
 			newName := "new-name"
-			inputJson := json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"2m","pageSize":25}`, newName))
+			inputJson := json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"20m","pageSize":25}`, newName))
 			connector := &models.Connector{
 				ConnectorBase: models.ConnectorBase{
 					ID:        connectorID,

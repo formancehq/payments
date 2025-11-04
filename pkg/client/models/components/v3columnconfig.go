@@ -11,7 +11,7 @@ type V3ColumnConfig struct {
 	Endpoint      string  `json:"endpoint"`
 	Name          string  `json:"name"`
 	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
+	PollingPeriod *string `json:"pollingPeriod,omitempty"`
 	Provider      *string `default:"Column" json:"provider"`
 }
 

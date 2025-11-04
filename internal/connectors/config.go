@@ -31,9 +31,13 @@ func combineConfigs(baseConfig models.Config, pluginConfig models.PluginInternal
 		pluginMap = make(map[string]interface{}, len(baseMap))
 	}
 
-	// Merge maps (fields from baseConfig take precedence)
+	//Merge maps giving precedence to pluginConfig values
 	for key, value := range baseMap {
-		pluginMap[key] = value
+		_, exists := pluginMap[key]
+		if !exists {
+			pluginMap[key] = value
+			continue
+		}
 	}
 
 	return json.Marshal(pluginMap)

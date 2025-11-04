@@ -6879,7 +6879,7 @@ xor
   "baseUrl": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Atlar",
   "secret": "string"
 }
@@ -6912,7 +6912,7 @@ xor
   "name": "string",
   "pageSize": 25,
   "password": "string",
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Bankingcircle",
   "userCertificate": "string",
   "userCertificateKey": "string",
@@ -6949,7 +6949,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Column"
 }
 
@@ -7043,7 +7043,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Generic"
 }
 
@@ -7073,7 +7073,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Increase",
   "webhookSharedSecret": "string"
 }
@@ -7106,7 +7106,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Mangopay"
 }
 
@@ -7138,7 +7138,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Modulr"
 }
 
@@ -7170,7 +7170,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Moneycorp"
 }
 
@@ -7272,7 +7272,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Qonto",
   "stagingToken": "string"
 }
@@ -7304,7 +7304,7 @@ xor
   "apiKey": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Stripe"
 }
 
@@ -7364,7 +7364,7 @@ xor
   "apiKey": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Wise",
   "webhookPublicKey": "string"
 }

@@ -16,7 +16,7 @@ func TestValidate(t *testing.T) {
 
 	t.Run("missing name", func(t *testing.T) {
 		config := models.Config{
-			PollingPeriod: 40 * time.Second,
+			PollingPeriod: 40 * time.Minute,
 			PageSize:      30,
 		}
 		err := config.Validate()
@@ -76,7 +76,7 @@ func TestValidate(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				config := models.Config{
 					Name:          "test",
-					PollingPeriod: time.Minute,
+					PollingPeriod: 20 * time.Minute,
 					PageSize:      c.val,
 				}
 				err := config.Validate()
@@ -93,7 +93,7 @@ func TestValidate(t *testing.T) {
 	t.Run("valid config", func(t *testing.T) {
 		config := models.Config{
 			Name:          "test",
-			PollingPeriod: 30 * time.Second,
+			PollingPeriod: 30 * time.Minute,
 		}
 		err := config.Validate()
 		// Then
@@ -164,7 +164,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
-		assert.Equal(t, 2*time.Minute, config.PollingPeriod) // Default value
+		assert.Equal(t, 30*time.Minute, config.PollingPeriod) // Default value
 		assert.Equal(t, 50, config.PageSize)
 	})
 
@@ -227,7 +227,7 @@ func TestDefaultConfig(t *testing.T) {
 
 	config := models.DefaultConfig()
 
-	assert.Equal(t, 2*time.Minute, config.PollingPeriod)
+	assert.Equal(t, 30*time.Minute, config.PollingPeriod)
 	assert.Equal(t, 25, config.PageSize)
 	assert.Empty(t, config.Name)
 }

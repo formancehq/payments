@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultPollingPeriod = 2 * time.Minute
+	defaultPollingPeriod = 30 * time.Minute
 	defaultPageSize      = 25
 )
 
@@ -17,9 +17,10 @@ const (
 type PluginInternalConfig interface{}
 
 // Config is the generic configuration that all connectors share
+// Note that the PollingPeriod defined here is often overwritten by the connector-specific configuration
 type Config struct {
 	Name          string        `json:"name" validate:"required,gte=3,lte=500"`
-	PollingPeriod time.Duration `json:"pollingPeriod" validate:"required,gte=30000000000,lte=86400000000000"` // gte=30s lte=1d in ns
+	PollingPeriod time.Duration `json:"pollingPeriod" validate:"required,gte=1200000000000,lte=86400000000000"` // gte=20mn lte=1d in ns
 	PageSize      int           `json:"pageSize" validate:"lte=150"`
 }
 
