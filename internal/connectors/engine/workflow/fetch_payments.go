@@ -143,42 +143,44 @@ func (w Workflow) fetchNextPayments(
 			})
 		}
 
-		for _, payment := range paymentsResponse.Payments {
-			p := payment
+		if len(nextTasks) > 0 {
+			for _, payment := range paymentsResponse.Payments {
+				p := payment
 
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+				wg.Add(1)
+				workflow.Go(ctx, func(ctx workflow.Context) {
+					defer wg.Done()
 
-				payload, err := json.Marshal(p)
-				if err != nil {
-					errChan <- errors.Wrap(err, "marshalling payment")
-				}
+					payload, err := json.Marshal(p)
+					if err != nil {
+						errChan <- errors.Wrap(err, "marshalling payment")
+					}
 
-				// Run next tasks
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
+					// Run next tasks
+					if err := workflow.ExecuteChildWorkflow(
+						workflow.WithChildOptions(
+							ctx,
+							workflow.ChildWorkflowOptions{
+								TaskQueue:         w.getDefaultTaskQueue(),
+								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+								SearchAttributes: map[string]interface{}{
+									SearchAttributeStack: w.stack,
+								},
 							},
+						),
+						Run,
+						fetchNextPayments.Config,
+						fetchNextPayments.ConnectorID,
+						&FromPayload{
+							ID:      p.Reference,
+							Payload: payload,
 						},
-					),
-					Run,
-					fetchNextPayments.Config,
-					fetchNextPayments.ConnectorID,
-					&FromPayload{
-						ID:      p.Reference,
-						Payload: payload,
-					},
-					nextTasks,
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "running next workflow")
-				}
-			})
+						nextTasks,
+					).Get(ctx, nil); err != nil {
+						errChan <- errors.Wrap(err, "running next workflow")
+					}
+				})
+			}
 		}
 
 		for _, payment := range paymentsResponse.PaymentsToDelete {
