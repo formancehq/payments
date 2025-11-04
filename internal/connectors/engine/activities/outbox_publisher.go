@@ -57,6 +57,32 @@ func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxE
 		return a.publishPaymentDeletedEvent(ctx, event)
 	case models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED:
 		return a.publishBankAccountEvent(ctx, event)
+	case models.OUTBOX_EVENT_TASK_UPDATED:
+		return a.publishTaskEvent(ctx, event)
+	case models.OUTBOX_EVENT_CONNECTOR_RESET:
+		return a.publishConnectorResetEvent(ctx, event)
+	case models.OUTBOX_EVENT_POOL_SAVED:
+		return a.publishPoolSavedEvent(ctx, event)
+	case models.OUTBOX_EVENT_POOL_DELETED:
+		return a.publishPoolDeletedEvent(ctx, event)
+	case models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED:
+		return a.publishPaymentInitiationEvent(ctx, event)
+	case models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED:
+		return a.publishPaymentInitiationAdjustmentEvent(ctx, event)
+	case models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED:
+		return a.publishPaymentInitiationRelatedPaymentEvent(ctx, event)
+	case models.OUTBOX_EVENT_USER_LINK_STATUS:
+		return a.publishUserLinkStatusEvent(ctx, event)
+	case models.OUTBOX_EVENT_USER_CONNECTION_DATA_SYNCED:
+		return a.publishUserConnectionDataSyncedEvent(ctx, event)
+	case models.OUTBOX_EVENT_USER_CONNECTION_PENDING_DISCONNECT:
+		return a.publishUserConnectionPendingDisconnectEvent(ctx, event)
+	case models.OUTBOX_EVENT_USER_CONNECTION_DISCONNECTED:
+		return a.publishUserConnectionDisconnectedEvent(ctx, event)
+	case models.OUTBOX_EVENT_USER_CONNECTION_RECONNECTED:
+		return a.publishUserConnectionReconnectedEvent(ctx, event)
+	case models.OUTBOX_EVENT_USER_DISCONNECTED:
+		return a.publishUserDisconnectedEvent(ctx, event)
 	default:
 		return fmt.Errorf("unknown event type: %s", event.EventType)
 	}
@@ -160,6 +186,279 @@ func (a Activities) publishBankAccountEvent(ctx context.Context, event models.Ou
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           events.EventTypeSavedBankAccount,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishTaskEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal task event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendTaskUpdated)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeUpdatedTask,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishConnectorResetEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal connector reset event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendConnectorReset)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeConnectorReset,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPoolSavedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal pool saved event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPoolCreation)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedPool,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPoolDeletedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal pool deleted event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPoolDeletion)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeDeletePool,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPaymentInitiationEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal payment initiation event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPaymentInitiation)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedPaymentInitiation,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPaymentInitiationAdjustmentEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal payment initiation adjustment event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPaymentInitiationAdjustment)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedPaymentInitiationAdjustment,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishPaymentInitiationRelatedPaymentEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal payment initiation related payment event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendPaymentInitiationRelatedPayment)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeSavedPaymentInitiationRelatedPayment,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishUserLinkStatusEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal user link status event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendUserLinkStatus)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeOpenBankingUserLinkStatus,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishUserConnectionDataSyncedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal user connection data synced event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendUserConnectionDataSynced)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeOpenBankingUserConnectionDataSynced,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishUserConnectionPendingDisconnectEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal user connection pending disconnect event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendUserPendingDisconnect)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeOpenBankingUserConnectionPendingDisconnect,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishUserConnectionDisconnectedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal user connection disconnected event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendUserConnectionDisconnected)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeOpenBankingUserConnectionDisconnected,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishUserConnectionReconnectedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal user connection reconnected event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendUserConnectionReconnected)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeOpenBankingUserConnectionReconnected,
+		Payload:        payload,
+	}
+
+	// Publish the event
+	return a.events.Publish(ctx, eventMessage)
+}
+
+func (a Activities) publishUserDisconnectedEvent(ctx context.Context, event models.OutboxEvent) error {
+	// Parse the payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal user disconnected event payload: %w", err)
+	}
+
+	// Create the event message (same format as EventsSendUserDisconnected)
+	eventMessage := publish.EventMessage{
+		IdempotencyKey: a.generateIdempotencyKey(event),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeOpenBankingUserDisconnected,
 		Payload:        payload,
 	}
 

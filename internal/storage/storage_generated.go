@@ -391,17 +391,17 @@ func (mr *MockStorageMockRecorder) ConnectorsGet(ctx, id any) *gomock.Call {
 }
 
 // ConnectorsInstall mocks base method.
-func (m *MockStorage) ConnectorsInstall(ctx context.Context, c models.Connector) error {
+func (m *MockStorage) ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConnectorsInstall", ctx, c)
+	ret := m.ctrl.Call(m, "ConnectorsInstall", ctx, c, oldConnectorID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ConnectorsInstall indicates an expected call of ConnectorsInstall.
-func (mr *MockStorageMockRecorder) ConnectorsInstall(ctx, c any) *gomock.Call {
+func (mr *MockStorageMockRecorder) ConnectorsInstall(ctx, c, oldConnectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsInstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsInstall), ctx, c)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsInstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsInstall), ctx, c, oldConnectorID)
 }
 
 // ConnectorsList mocks base method.

@@ -3,12 +3,13 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -33,7 +34,7 @@ type poolAccounts struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 }
 
-func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
+func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return e("begin transaction: %w", err)
@@ -42,7 +43,7 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		rollbackOnTxError(ctx, &tx, err)
 	}()
 
-	poolToInsert, accountsToInsert := fromPoolModel(pool)
+	poolToInsert, accountsToInsert := fromPoolModel(p)
 
 	for i := range accountsToInsert {
 		var exists bool
@@ -60,12 +61,27 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		}
 	}
 
-	_, err = tx.NewInsert().
+	var poolExists bool
+	poolExists, err = tx.NewSelect().
+		Model((*pool)(nil)).
+		Where("id = ?", poolToInsert.ID).
+		Exists(ctx)
+	if err != nil {
+		return e("check pool exists: %w", err)
+	}
+
+	var poolInsertRes sql.Result
+	poolInsertRes, err = tx.NewInsert().
 		Model(&poolToInsert).
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
 		return e("insert pool: %w", err)
+	}
+
+	poolRowsAffected, err := poolInsertRes.RowsAffected()
+	if err != nil {
+		return e("get pool insert rows affected: %w", err)
 	}
 
 	_, err = tx.NewInsert().
@@ -74,6 +90,41 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		Exec(ctx)
 	if err != nil {
 		return e("insert pool accounts: %w", err)
+	}
+
+	// Create outbox event only if pool was newly created (not updated)
+	if !poolExists && poolRowsAffected > 0 {
+		// Build account IDs array
+		accountIDs := make([]string, len(p.PoolAccounts))
+		for i := range p.PoolAccounts {
+			accountIDs[i] = p.PoolAccounts[i].String()
+		}
+
+		payload := map[string]interface{}{
+			"id":         p.ID.String(),
+			"name":       p.Name,
+			"createdAt":  p.CreatedAt,
+			"accountIDs": accountIDs,
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal pool event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_POOL_SAVED,
+			EntityID:       p.ID.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    nil, // Pools don't have connector ID
+			IdempotencyKey: p.IdempotencyKey(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
 	}
 
 	err = tx.Commit()
@@ -126,6 +177,33 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return false, e("get rows affected: %w", err)
+	}
+
+	// Create outbox event for pool deletion if pool was actually deleted
+	if rowsAffected > 0 {
+		payload := map[string]interface{}{
+			"createdAt": time.Now().UTC(),
+			"id":        id.String(),
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return false, e("failed to marshal pool deleted event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_POOL_DELETED,
+			EntityID:       id.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    nil, // Pools don't have connector ID
+			IdempotencyKey: id.String(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return false, err
+		}
 	}
 
 	err = tx.Commit()
@@ -292,7 +370,7 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 	p := pool{
 		ID:        from.ID,
 		Name:      from.Name,
-		CreatedAt: time.New(from.CreatedAt),
+		CreatedAt: from.CreatedAt,
 	}
 
 	var accounts []poolAccounts
@@ -316,7 +394,7 @@ func toPoolModel(from pool) models.Pool {
 	return models.Pool{
 		ID:           from.ID,
 		Name:         from.Name,
-		CreatedAt:    from.CreatedAt.Time,
+		CreatedAt:    from.CreatedAt,
 		PoolAccounts: accounts,
 	}
 }

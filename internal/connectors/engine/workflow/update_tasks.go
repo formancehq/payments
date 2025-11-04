@@ -1,8 +1,6 @@
 package workflow
 
 import (
-	"fmt"
-
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
@@ -52,11 +50,6 @@ func (w Workflow) updateTask(ctx workflow.Context, task models.Task) error {
 		return err
 	}
 
-	if err := w.runSendEvents(ctx, SendEvents{
-		Task: &task,
-	}); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
-
+	// Task events are now sent via outbox pattern in TasksUpsert
 	return nil
 }

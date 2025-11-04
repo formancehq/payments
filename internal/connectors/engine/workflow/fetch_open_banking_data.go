@@ -69,19 +69,7 @@ func (w Workflow) runFetchOpenBankingData(
 		return fmt.Errorf("updating open banking connection last updated at: %w", err)
 	}
 
-	sendEvent := SendEvents{
-		UserConnectionDataSynced: &models.UserConnectionDataSynced{
-			PsuID:        fetchOpenBankingData.PsuID,
-			ConnectorID:  fetchOpenBankingData.ConnectorID,
-			ConnectionID: fetchOpenBankingData.ConnectionID,
-			At:           now,
-		},
-	}
-
-	if err := w.runSendEvents(ctx, sendEvent); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
-
+	// Outbox event is now created automatically in OpenBankingConnectionsUpdateLastDataUpdate
 	return nil
 }
 

@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -136,6 +138,67 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 		actual, err := store.PaymentInitiationsGet(ctx, piID1)
 		require.NoError(t, err)
 		comparePaymentInitiations(t, defaultPaymentInitiations()[0], *actual)
+	})
+
+	t.Run("outbox event created for payment initiation", func(t *testing.T) {
+		// Create a new payment initiation for this test
+		defaultAccounts := defaultAccounts()
+		newPI := models.PaymentInitiation{
+			ID: models.PaymentInitiationID{
+				Reference:   "outbox-test-pi",
+				ConnectorID: defaultConnector.ID,
+			},
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "outbox-test-pi",
+			CreatedAt:            now.Add(-10 * time.Minute).UTC().Time,
+			ScheduledAt:          now.Add(-5 * time.Minute).UTC().Time,
+			Description:          "Test Payment Initiation",
+			Type:                 models.PAYMENT_INITIATION_TYPE_PAYOUT,
+			DestinationAccountID: &defaultAccounts[0].ID,
+			Amount:               big.NewInt(1000),
+			Asset:                "USD/2",
+			Metadata: map[string]string{
+				"test": "outbox",
+			},
+		}
+
+		expectedKey := newPI.IdempotencyKey()
+
+		require.NoError(t, store.PaymentInitiationsInsert(ctx, newPI))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED &&
+				pendingEvents[i].EntityID == newPI.ID.String() &&
+				pendingEvents[i].IdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for payment initiation saved")
+
+		// Verify event details
+		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, newPI.ID.String(), ourEvent.EntityID)
+		assert.Equal(t, newPI.ConnectorID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newPI.ID.String(), payload["id"])
+		assert.Equal(t, newPI.ConnectorID.String(), payload["connectorID"])
+		assert.Equal(t, newPI.Reference, payload["reference"])
+		assert.Equal(t, newPI.Amount.String(), payload["amount"])
+		assert.Equal(t, newPI.Asset, payload["asset"])
 	})
 }
 
@@ -763,6 +826,101 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 		comparePayments(t, payments[0], cursor.Data[2])
 	})
 
+	t.Run("outbox event created for new related payment", func(t *testing.T) {
+		// Clean up outbox events before test
+		cleanupOutbox := func() {
+			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+			for _, event := range pendingEvents {
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+			}
+		}
+		defer cleanupOutbox()
+
+		// Create a new related payment for this test
+		payments := defaultPayments()
+		newPI := models.PaymentInitiation{
+			ID: models.PaymentInitiationID{
+				Reference:   "outbox-test-pi-related",
+				ConnectorID: defaultConnector.ID,
+			},
+			ConnectorID: defaultConnector.ID,
+			Reference:   "outbox-test-pi-related",
+			CreatedAt:   now.Add(-10 * time.Minute).UTC().Time,
+			ScheduledAt: now.Add(-5 * time.Minute).UTC().Time,
+			Type:        models.PAYMENT_INITIATION_TYPE_PAYOUT,
+			Amount:      big.NewInt(2000),
+			Asset:       "EUR/2",
+		}
+		require.NoError(t, store.PaymentInitiationsInsert(ctx, newPI))
+
+		relatedPayment := models.PaymentInitiationRelatedPayments{
+			PaymentInitiationID: newPI.ID,
+			PaymentID:           payments[0].ID,
+		}
+		expectedKey := relatedPayment.IdempotencyKey()
+
+		require.NoError(t, store.PaymentInitiationRelatedPaymentsUpsert(ctx, newPI.ID, payments[0].ID, now.Add(-1*time.Minute).UTC().Time))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED &&
+				pendingEvents[i].EntityID == fmt.Sprintf("%s:%s", newPI.ID.String(), payments[0].ID.String()) &&
+				pendingEvents[i].IdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for payment initiation related payment saved")
+
+		// Verify event details
+		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, fmt.Sprintf("%s:%s", newPI.ID.String(), payments[0].ID.String()), ourEvent.EntityID)
+		assert.Equal(t, newPI.ConnectorID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newPI.ID.String(), payload["paymentInitiationID"])
+		assert.Equal(t, payments[0].ID.String(), payload["paymentID"])
+	})
+
+	t.Run("no outbox event for existing related payment", func(t *testing.T) {
+		// Clean up outbox events before test
+		cleanupOutbox := func() {
+			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+			for _, event := range pendingEvents {
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+			}
+		}
+		defer cleanupOutbox()
+
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Insert existing related payment (should not create event)
+		payments := defaultPayments()
+		require.NoError(t, store.PaymentInitiationRelatedPaymentsUpsert(ctx, piID1, payments[0].ID, now.Add(-10*time.Minute).UTC().Time))
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new related payment saved event)
+		assert.Equal(t, countBefore, countAfter, "updating existing related payment should not create saved event")
+	})
+
 	t.Run("unknown payment initiation", func(t *testing.T) {
 		payments := defaultPayments()
 		require.Error(t, store.PaymentInitiationRelatedPaymentsUpsert(
@@ -989,6 +1147,104 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 			comparePaymentInitiationAdjustments(t, pa, *actual)
 		}
 	})
+
+	t.Run("outbox event created for new adjustment", func(t *testing.T) {
+		// Clean up outbox events before test
+		cleanupOutbox := func() {
+			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+			for _, event := range pendingEvents {
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+			}
+		}
+		defer cleanupOutbox()
+
+		// Create a new adjustment for this test
+		newAdj := models.PaymentInitiationAdjustment{
+			ID: models.PaymentInitiationAdjustmentID{
+				PaymentInitiationID: defaultPaymentInitiations()[0].ID,
+				CreatedAt:           now.Add(-2 * time.Minute).UTC().Time,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			},
+			CreatedAt: now.Add(-2 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			Amount:    big.NewInt(500),
+			Asset:     pointer.For("GBP/2"),
+			Metadata: map[string]string{
+				"test": "outbox",
+			},
+		}
+
+		expectedKey := newAdj.IdempotencyKey()
+
+		require.NoError(t, store.PaymentInitiationAdjustmentsUpsert(ctx, newAdj))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED &&
+				pendingEvents[i].EntityID == newAdj.ID.String() &&
+				pendingEvents[i].IdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for payment initiation adjustment saved")
+
+		// Verify event details
+		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, newAdj.ID.String(), ourEvent.EntityID)
+		assert.Equal(t, newAdj.ID.PaymentInitiationID.ConnectorID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newAdj.ID.String(), payload["id"])
+		assert.Equal(t, newAdj.ID.PaymentInitiationID.String(), payload["paymentInitiationID"])
+		assert.Equal(t, newAdj.Status.String(), payload["status"])
+		assert.Equal(t, newAdj.Amount.String(), payload["amount"])
+		assert.Equal(t, *newAdj.Asset, payload["asset"])
+		// Metadata is unmarshaled as map[string]interface{}, so we need to compare values
+		payloadMetadata, ok := payload["metadata"].(map[string]interface{})
+		require.True(t, ok, "metadata should be a map")
+		assert.Equal(t, newAdj.Metadata["test"], payloadMetadata["test"])
+	})
+
+	t.Run("no outbox event for existing adjustment update", func(t *testing.T) {
+		// Clean up outbox events before test
+		cleanupOutbox := func() {
+			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+			for _, event := range pendingEvents {
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+			}
+		}
+		defer cleanupOutbox()
+
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Update existing adjustment (should not create event)
+		existingAdj := defaultPaymentInitiationAdjustments()[0]
+		existingAdj.Metadata = map[string]string{"updated": "true"}
+		require.NoError(t, store.PaymentInitiationAdjustmentsUpsert(ctx, existingAdj))
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new adjustment saved event)
+		assert.Equal(t, countBefore, countAfter, "updating existing adjustment should not create saved event")
+	})
 }
 
 func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
@@ -1026,9 +1282,94 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 		require.False(t, inserted)
 	})
 	t.Run("upsert with status equal", func(t *testing.T) {
+		// Clean up outbox events before test
+		cleanupOutbox := func() {
+			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+			for _, event := range pendingEvents {
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+			}
+		}
+		defer cleanupOutbox()
+
 		p := models.PaymentInitiationAdjustment{
 			ID: models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: defaultPaymentInitiations()[0].ID,
+				CreatedAt:           now.UTC().Time,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			},
+			CreatedAt: now.UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			Amount:    big.NewInt(1000),
+			Asset:     pointer.For("USD/2"),
+			Metadata: map[string]string{
+				"foo": "bar",
+			},
+		}
+		expectedKey := p.IdempotencyKey()
+
+		inserted, err := store.PaymentInitiationAdjustmentsUpsertIfPredicate(
+			ctx,
+			p,
+			func(previous models.PaymentInitiationAdjustment) bool {
+				return previous.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+			},
+		)
+		require.NoError(t, err)
+		require.True(t, inserted)
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED &&
+				pendingEvents[i].EntityID == p.ID.String() &&
+				pendingEvents[i].IdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for payment initiation adjustment saved")
+
+		// Verify event details
+		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, p.ID.String(), ourEvent.EntityID)
+		assert.Equal(t, p.ID.PaymentInitiationID.ConnectorID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, p.ID.String(), payload["id"])
+		assert.Equal(t, p.ID.PaymentInitiationID.String(), payload["paymentInitiationID"])
+		assert.Equal(t, p.Status.String(), payload["status"])
+		assert.Equal(t, p.Amount.String(), payload["amount"])
+		assert.Equal(t, *p.Asset, payload["asset"])
+	})
+
+	t.Run("no outbox event when predicate fails", func(t *testing.T) {
+		// Clean up outbox events before test
+		cleanupOutbox := func() {
+			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+			for _, event := range pendingEvents {
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+			}
+		}
+		defer cleanupOutbox()
+
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		p := models.PaymentInitiationAdjustment{
+			ID: models.PaymentInitiationAdjustmentID{
+				PaymentInitiationID: defaultPaymentInitiations()[1].ID,
 				CreatedAt:           now.UTC().Time,
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			},
@@ -1042,11 +1383,19 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 			ctx,
 			p,
 			func(previous models.PaymentInitiationAdjustment) bool {
-				return previous.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+				return previous.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION
 			},
 		)
 		require.NoError(t, err)
-		require.True(t, inserted)
+		require.False(t, inserted)
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new adjustment saved event)
+		assert.Equal(t, countBefore, countAfter, "predicate failure should not create saved event")
 	})
 }
 

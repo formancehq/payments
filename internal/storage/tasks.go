@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
@@ -26,9 +27,17 @@ type task struct {
 }
 
 func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	t := fromTaskModel(task)
 
-	query := s.db.NewInsert().
+	query := tx.NewInsert().
 		Model(&t).
 		On("CONFLICT (id) DO UPDATE").
 		Set("status = EXCLUDED.status").
@@ -44,10 +53,48 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 		query.Set("error = NULL")
 	}
 
-	_, err := query.
-		Exec(ctx)
+	_, err = query.Exec(ctx)
+	if err != nil {
+		return e("failed to insert task", err)
+	}
 
-	return e("failed to insert task", err)
+	// Create outbox event for task update
+	payload := map[string]interface{}{
+		"id":        task.ID.String(),
+		"status":    string(task.Status),
+		"createdAt": task.CreatedAt,
+		"updatedAt": task.UpdatedAt,
+	}
+	if task.ConnectorID != nil {
+		payload["connectorID"] = task.ConnectorID.String()
+	}
+	if task.CreatedObjectID != nil {
+		payload["createdObjectID"] = *task.CreatedObjectID
+	}
+	if task.Error != nil {
+		payload["error"] = task.Error.Error()
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal task event payload", err)
+	}
+
+	outboxEvent := models.OutboxEvent{
+		EventType:      models.OUTBOX_EVENT_TASK_UPDATED,
+		EntityID:       task.ID.String(),
+		Payload:        payloadBytes,
+		CreatedAt:      time.Now().UTC().Time,
+		Status:         models.OUTBOX_STATUS_PENDING,
+		ConnectorID:    task.ConnectorID,
+		IdempotencyKey: task.IdempotencyKey(),
+	}
+
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	return e("failed to commit transaction", tx.Commit())
 }
 
 func (s *store) TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error) {

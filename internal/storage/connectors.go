@@ -92,7 +92,7 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 	return nil
 }
 
-func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error {
+func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("cannot begin transaction: %w", err)
@@ -125,6 +125,35 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 		Exec(ctx)
 	if err != nil {
 		return e("failed to encrypt config", err)
+	}
+
+	// Create outbox event for connector reset if oldConnectorID is provided
+	if oldConnectorID != nil {
+		now := toInsert.CreatedAt.UTC()
+		payload := map[string]interface{}{
+			"createdAt":   now.Time,
+			"connectorID": oldConnectorID.String(),
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal connector reset event payload", err)
+		}
+
+		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Time.Format(time.RFC3339Nano))
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_CONNECTOR_RESET,
+			EntityID:       oldConnectorID.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      now.Time,
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    oldConnectorID,
+			IdempotencyKey: idempotencyKey,
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
 	}
 
 	return e("failed to commit transaction", tx.Commit())

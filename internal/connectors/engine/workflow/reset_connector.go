@@ -109,6 +109,7 @@ func (w Workflow) resetConnector(
 	if err := activities.StorageConnectorsStore(
 		infiniteRetryContext(ctx),
 		newConnector,
+		&resetConnector.ConnectorID,
 	); err != nil {
 		return nil, err
 	}
@@ -133,12 +134,6 @@ func (w Workflow) resetConnector(
 		},
 	).Get(ctx, nil); err != nil {
 		return nil, fmt.Errorf("install connector: %w", err)
-	}
-
-	if err := w.runSendEvents(ctx, SendEvents{
-		ConnectorReset: &resetConnector.ConnectorID,
-	}); err != nil {
-		return nil, fmt.Errorf("sending events: %w", err)
 	}
 
 	return &newConnector.ID, nil
