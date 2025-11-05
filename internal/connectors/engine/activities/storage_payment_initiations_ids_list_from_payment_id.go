@@ -2,25 +2,41 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePaymentInitiationIDsListFromPaymentID(ctx context.Context, paymentID models.PaymentID) ([]models.PaymentInitiationID, error) {
-	cursor, err := a.storage.PaymentInitiationIDsListFromPaymentID(ctx, paymentID)
+func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Context, status models.PaymentStatus, createdAt time.Time, paymentID models.PaymentID) error {
+	piIDs, err := a.storage.PaymentInitiationIDsListFromPaymentID(ctx, paymentID)
 	if err != nil {
-		return nil, temporalStorageError(err)
+		return temporalStorageError(err)
 	}
-	return cursor, nil
+
+	for _, piID := range piIDs {
+		adjustment := models.FromPaymentDataToPaymentInitiationAdjustment(
+			status,
+			createdAt,
+			piID,
+		)
+
+		if adjustment == nil {
+			continue
+		}
+
+		if err := a.storage.PaymentInitiationAdjustmentsUpsert(ctx, *adjustment); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-var StoragePaymentInitiationIDsListFromPaymentIDActivity = Activities{}.StoragePaymentInitiationIDsListFromPaymentID
+var StoragePaymentInitiationUpdateFromPaymentActivity = Activities{}.StoragePaymentInitiationUpdateFromPayment
 
-func StoragePaymentInitiationIDsListFromPaymentID(ctx workflow.Context, paymentID models.PaymentID) ([]models.PaymentInitiationID, error) {
-	ret := []models.PaymentInitiationID{}
-	if err := executeActivity(ctx, StoragePaymentInitiationIDsListFromPaymentIDActivity, &ret, paymentID); err != nil {
-		return nil, err
+func StoragePaymentInitiationUpdateFromPayment(ctx workflow.Context, status models.PaymentStatus, createdAt time.Time, paymentID models.PaymentID) error {
+	if err := executeActivity(ctx, StoragePaymentInitiationUpdateFromPayment, nil, status, createdAt, paymentID); err != nil {
+		return err
 	}
-	return ret, nil
+	return nil
 }

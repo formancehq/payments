@@ -95,25 +95,13 @@ func (w Workflow) fetchNextPayments(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
-				// We want to update the payment initiation from the payment
-				// if it exists
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunUpdatePaymentInitiationFromPayment,
-					UpdatePaymentInitiationFromPayment{
-						Payment: &p,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
+				if err := activities.StoragePaymentInitiationUpdateFromPayment(
+					infiniteRetryContext(ctx),
+					p.Status,
+					p.CreatedAt,
+					p.ID,
+				); err != nil {
+					errChan <- errors.Wrap(err, "updating payment initiation from payment")
 				}
 			})
 

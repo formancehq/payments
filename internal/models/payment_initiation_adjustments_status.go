@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type PaymentInitiationAdjustmentStatus int
@@ -165,6 +166,51 @@ func FromPaymentToPaymentInitiationAdjustment(from *Payment, piID PaymentInitiat
 		},
 		CreatedAt: from.CreatedAt,
 		Status:    status,
+		Error:     err,
+	}
+}
+
+func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdAt time.Time, piID PaymentInitiationID) *PaymentInitiationAdjustment {
+	var piStatus PaymentInitiationAdjustmentStatus
+	var err error
+
+	switch status {
+	case PAYMENT_STATUS_AMOUNT_ADJUSTMENT, PAYMENT_STATUS_UNKNOWN:
+		// No need to add an adjustment for this payment initiation
+		return nil
+	case PAYMENT_STATUS_PENDING, PAYMENT_STATUS_AUTHORISATION:
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING
+	case PAYMENT_STATUS_SUCCEEDED,
+		PAYMENT_STATUS_CAPTURE,
+		PAYMENT_STATUS_REFUND_REVERSED,
+		PAYMENT_STATUS_DISPUTE_WON:
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED
+	case PAYMENT_STATUS_CANCELLED,
+		PAYMENT_STATUS_CAPTURE_FAILED,
+		PAYMENT_STATUS_EXPIRED,
+		PAYMENT_STATUS_FAILED,
+		PAYMENT_STATUS_DISPUTE_LOST:
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+		err = errors.New("payment failed")
+	case PAYMENT_STATUS_DISPUTE:
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
+	case PAYMENT_STATUS_REFUNDED:
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED
+	case PAYMENT_STATUS_REFUNDED_FAILURE:
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
+		err = errors.New("payment refund failed")
+	default:
+		return nil
+	}
+
+	return &PaymentInitiationAdjustment{
+		ID: PaymentInitiationAdjustmentID{
+			PaymentInitiationID: piID,
+			CreatedAt:           createdAt,
+			Status:              piStatus,
+		},
+		CreatedAt: createdAt,
+		Status:    piStatus,
 		Error:     err,
 	}
 }
