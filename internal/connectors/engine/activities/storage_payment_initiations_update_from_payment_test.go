@@ -66,7 +66,7 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 			createdAt = time.Now()
 		})
 
-		It("sucess", func(ctx SpecContext) {
+		It("success", func(ctx SpecContext) {
 			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
 			s.EXPECT().PaymentInitiationAdjustmentsUpsert(ctx, models.PaymentInitiationAdjustment{
 				ID: models.PaymentInitiationAdjustmentID{
