@@ -27,22 +27,16 @@ func (s *UnitTestSuite) Test_ResetConnector_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
-		s.Nil(sendEvents.Balance)
-		s.Nil(sendEvents.Account)
-		s.NotNil(sendEvents.ConnectorReset)
-		s.Equal(s.connectorID, *sendEvents.ConnectorReset)
-		s.Nil(sendEvents.Payment)
-		s.Nil(sendEvents.PoolsCreation)
-		s.Nil(sendEvents.PoolsDeletion)
-		s.Nil(sendEvents.BankAccount)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
+		s.NotNil(req.ConnectorReset)
+		s.Equal(s.connectorID, *req.ConnectorReset)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.Task)
 		return nil
 	})
@@ -70,10 +64,7 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageConnectorsGet_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -102,10 +93,7 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageConnectorsScheduleForDeletion
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -135,10 +123,7 @@ func (s *UnitTestSuite) Test_ResetConnector_RunUninstallConnector_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -169,10 +154,7 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageConnectorsStore_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -204,10 +186,7 @@ func (s *UnitTestSuite) Test_ResetConnector_RunInstallConnector_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -233,17 +212,14 @@ func (s *UnitTestSuite) Test_ResetConnector_RunSendEvents_Error() {
 	s.env.OnWorkflow(RunUninstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -269,7 +245,7 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageTasksStoreActivity_Error() {
 	s.env.OnWorkflow(RunUninstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)

@@ -37,7 +37,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_WithoutInstance_Success() {
 		s.Equal(s.accountID, accounts[0].ID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
@@ -90,7 +90,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_Success() {
 		s.Equal(s.accountID, accounts[0].ID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
@@ -148,7 +148,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_WithoutNextTasks_Success() {
 		s.Equal(s.accountID, accounts[0].ID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)
@@ -203,7 +203,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_HasMoreLoop_Success() {
 		s.Equal(s.accountID, accounts[0].ID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
@@ -401,7 +401,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_RunSendEvents_Error() {
 	}, nil)
 	expectedErr := temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", errors.New("error-test"))
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(expectedErr)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(expectedErr)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
 		s.NotNil(instance.Error)
@@ -449,7 +449,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_Run_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", errors.New("error-test"))
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(expectedErr)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
@@ -499,7 +499,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageStatesStore_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test"))
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(expectedErr)
@@ -550,7 +550,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageInstancesUpdate_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test"))
