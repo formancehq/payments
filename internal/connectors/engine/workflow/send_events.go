@@ -119,7 +119,6 @@ func (w Workflow) runSendEvents(
 		err := activities.SendEvents(
 			infiniteRetryContext(ctx),
 			activities.SendEventsRequest{
-				ConnectorID:    sendEvents.ConnectorReset,
 				IdempotencyKey: fmt.Sprintf("%s-%s", sendEvents.ConnectorReset.String(), workflow.Now(ctx).UTC().Format(time.RFC3339Nano)),
 				At:             workflow.Now(ctx).UTC(),
 				ConnectorReset: sendEvents.ConnectorReset,
