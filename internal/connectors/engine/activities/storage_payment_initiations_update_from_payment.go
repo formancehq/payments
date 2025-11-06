@@ -35,7 +35,7 @@ func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Contex
 var StoragePaymentInitiationUpdateFromPaymentActivity = Activities{}.StoragePaymentInitiationUpdateFromPayment
 
 func StoragePaymentInitiationUpdateFromPayment(ctx workflow.Context, status models.PaymentStatus, createdAt time.Time, paymentID models.PaymentID) error {
-	if err := executeActivity(ctx, StoragePaymentInitiationUpdateFromPayment, nil, status, createdAt, paymentID); err != nil {
+	if err := executeActivity(ctx, StoragePaymentInitiationUpdateFromPaymentActivity, nil, status, createdAt, paymentID); err != nil {
 		return err
 	}
 	return nil
