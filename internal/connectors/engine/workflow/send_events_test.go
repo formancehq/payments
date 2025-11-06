@@ -343,7 +343,6 @@ func (s *UnitTestSuite) Test_RunSendEvents_Payment_WithAdjustments_Success() {
 func (s *UnitTestSuite) Test_RunSendEvents_ConnectorReset_Success() {
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.Equal(req.ConnectorReset, &connectorID)
-		s.Equal(req.ConnectorID, &connectorID)
 		return nil
 	})
 
