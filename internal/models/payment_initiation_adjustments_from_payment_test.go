@@ -135,7 +135,7 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 				CreatedAt: now,
 			}
 
-			result := models.FromPaymentToPaymentInitiationAdjustment(payment, piID)
+			result := models.FromPaymentDataToPaymentInitiationAdjustment(payment.Status, payment.CreatedAt, piID)
 
 			if tc.expectNil {
 
