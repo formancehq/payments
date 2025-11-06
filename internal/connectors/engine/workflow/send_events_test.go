@@ -170,7 +170,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_EmptyInput_Success() {
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Any_SendEvents_Error() {
-	account.CreatedAt = s.env.Now()
+	account.CreatedAt = s.env.Now().UTC()
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")))
 
 	// the send events function is called for all data
@@ -184,7 +184,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Any_SendEvents_Error() {
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Account_Success() {
-	account.CreatedAt = s.env.Now()
+	account.CreatedAt = s.env.Now().UTC()
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.Equal(req.Account, &account)
 		s.Equal(req.ConnectorID, &connectorID)
@@ -284,7 +284,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Payment_NoAdjustments_Success() {
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Payment_WithAdjustments_Success() {
-	payment.CreatedAt = s.env.Now()
+	payment.CreatedAt = s.env.Now().UTC()
 	payment.Adjustments = []models.PaymentAdjustment{
 		{
 			ID: models.PaymentAdjustmentID{
@@ -357,7 +357,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_ConnectorReset_Success() {
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PoolCreation_Success() {
-	pool.CreatedAt = s.env.Now()
+	pool.CreatedAt = s.env.Now().UTC()
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.Equal(req.PoolsCreation, &pool)
 		s.Nil(req.ConnectorID)
@@ -392,8 +392,8 @@ func (s *UnitTestSuite) Test_RunSendEvents_PoolDeletion_Success() {
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Success() {
-	paymentInitiation.CreatedAt = s.env.Now()
-	paymentInitiation.ScheduledAt = s.env.Now()
+	paymentInitiation.CreatedAt = s.env.Now().UTC()
+	paymentInitiation.ScheduledAt = s.env.Now().UTC()
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.Equal(req.PaymentInitiation, &paymentInitiation)
 		s.Equal(req.ConnectorID, &connectorID)
@@ -411,7 +411,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Success() {
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Success() {
-	paymentInitiationAdjustment.CreatedAt = s.env.Now()
+	paymentInitiationAdjustment.CreatedAt = s.env.Now().UTC()
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.Equal(req.PaymentInitiationAdjustment, &paymentInitiationAdjustment)
 		s.Equal(req.ConnectorID, &connectorID)
@@ -429,7 +429,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Success()
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationRelatedPayment_Success() {
-	paymentInitiationAdjustment.CreatedAt = s.env.Now()
+	paymentInitiationAdjustment.CreatedAt = s.env.Now().UTC()
 	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.Equal(req.PaymentInitiationRelatedPayment, &paymentInitiationRelatedPayment)
 		s.Equal(req.ConnectorID, &connectorID)
