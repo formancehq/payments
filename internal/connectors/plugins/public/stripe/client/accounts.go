@@ -15,8 +15,8 @@ func (c *client) GetAccounts(
 	results = make([]*stripe.Account, 0, int(pageSize))
 
 	if !timeline.IsCaughtUp() {
-		var oldest interface{}
-		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
+		var backlog []interface{}
+		backlog, timeline, hasMore, err = fetchBacklog(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
 			params.Context = metrics.OperationContext(ctx, "list_accounts_scan")
 			itr := c.accountClient.List(&stripe.AccountListParams{ListParams: params})
 			return itr.AccountList(), wrapSDKErr(itr.Err())
@@ -28,7 +28,11 @@ func (c *client) GetAccounts(
 		if !timeline.IsCaughtUp() {
 			return results, timeline, hasMore, nil
 		}
-		results = append(results, oldest.(*stripe.Account))
+		for _, a := range backlog {
+			results = append(results, a.(*stripe.Account))
+		}
+
+		return results, timeline, hasMore, err
 	}
 
 	filters := stripe.ListParams{
