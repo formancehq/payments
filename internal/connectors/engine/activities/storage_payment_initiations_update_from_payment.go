@@ -26,7 +26,7 @@ func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Contex
 		}
 
 		if err := a.storage.PaymentInitiationAdjustmentsUpsert(ctx, *adjustment); err != nil {
-			return err
+			return temporalStorageError(err)
 		}
 	}
 	return nil
