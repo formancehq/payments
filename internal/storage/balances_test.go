@@ -74,25 +74,28 @@ func TestBalancesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
 
 	// Helper to clean up outbox events created during tests
 	cleanupOutbox := func() {
 		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			eventSent := models.EventSent{
-				ID: models.EventID{
-					EventIdempotencyKey: event.IdempotencyKey,
-					ConnectorID:         event.ConnectorID,
-				},
-				ConnectorID: event.ConnectorID,
-				SentAt:      time.Now().UTC(),
+		if err == nil {
+			for _, event := range pendingEvents {
+				eventSent := models.EventSent{
+					ID: models.EventID{
+						EventIdempotencyKey: event.IdempotencyKey,
+						ConnectorID:         event.ConnectorID,
+					},
+					ConnectorID: event.ConnectorID,
+					SentAt:      time.Now().UTC(),
+				}
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
 			}
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
 		}
 	}
-	t.Cleanup(cleanupOutbox)
+	t.Cleanup(func() {
+		cleanupOutbox()
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)

@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (s *UnitTestSuite) Test_CreateBankAccount_Success() {
@@ -33,14 +32,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_Success() {
 
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
-		return nil
-	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
-		s.NotNil(sendEvents.Task)
-		s.Nil(sendEvents.BankAccount)
-		s.Nil(sendEvents.Account)
-		s.Nil(sendEvents.Balance)
-		s.Nil(sendEvents.Payment)
 		return nil
 	})
 
@@ -67,7 +58,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_PluginCreateBankAccount_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -95,7 +85,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageAccountsStore_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -124,7 +113,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageBankAccountsAddRelatedAcco
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -147,7 +135,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageTasksStore_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(nil)
-	// When StorageTasksStore fails in updateTask, it returns early and doesn't call RunSendEvents
+	// When StorageTasksStore fails in updateTask, it returns early
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		return temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test"))
 	})

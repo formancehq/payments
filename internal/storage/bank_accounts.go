@@ -173,7 +173,12 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		}
 	}
 
-	return e("commit transaction", tx.Commit())
+	if err := tx.Commit(); err != nil {
+		errTx = err
+		return e("commit transaction", err)
+	}
+
+	return nil
 }
 
 func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error {
