@@ -50,20 +50,22 @@ func (a Activities) SendEvents(ctx context.Context, req SendEventsRequest) error
 		return temporalStorageError(err)
 	}
 
-	if !isExisting {
-		// event was not sent yet
+	if isExisting {
+		// event was already sent; nothing to do
+		return nil
+	}
+	
+	// event was not sent yet
+	if err := a.sendEvents(ctx, req); err != nil {
+		return err
+	}
 
-		if err := a.sendEvents(ctx, req); err != nil {
-			return err
-		}
-
-		if err := a.storage.EventsSentUpsert(ctx, models.EventSent{
-			ID:          eventID,
-			ConnectorID: req.ConnectorID,
-			SentAt:      req.At,
-		}); err != nil {
-			return temporalStorageError(err)
-		}
+	if err := a.storage.EventsSentUpsert(ctx, models.EventSent{
+		ID:          eventID,
+		ConnectorID: req.ConnectorID,
+		SentAt:      req.At,
+	}); err != nil {
+		return temporalStorageError(err)
 	}
 
 	return nil
