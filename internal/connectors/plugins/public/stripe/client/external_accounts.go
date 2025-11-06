@@ -21,8 +21,8 @@ func (c *client) GetExternalAccounts(
 	}
 
 	if !timeline.IsCaughtUp() {
-		var oldest interface{}
-		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
+		var backlog []interface{}
+		backlog, timeline, hasMore, err = fetchBacklog(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
 			params.Context = metrics.OperationContext(ctx, "list_bank_accounts_scan")
 			itr := c.bankAccountClient.List(&stripe.BankAccountListParams{
 				Account:    &accountID,
@@ -33,11 +33,11 @@ func (c *client) GetExternalAccounts(
 		if err != nil {
 			return results, timeline, false, err
 		}
-		// either there are no records or we haven't found the start yet
-		if !timeline.IsCaughtUp() {
-			return results, timeline, hasMore, nil
+		for _, a := range backlog {
+			results = append(results, a.(*stripe.BankAccount))
 		}
-		results = append(results, oldest.(*stripe.BankAccount))
+
+		return results, timeline, hasMore, err
 	}
 
 	itr := c.bankAccountClient.List(&stripe.BankAccountListParams{

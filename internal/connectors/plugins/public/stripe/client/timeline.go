@@ -18,7 +18,7 @@ func (t Timeline) IsCaughtUp() bool {
 	return t.LatestID != ""
 }
 
-// used to fetch transactions which must be fetched in chronological order
+// used to find oldest transaction since we can only import them in chronological order
 func scanForOldest(
 	timeline Timeline,
 	pageSize int64,
@@ -42,14 +42,6 @@ func scanForOldest(
 	hasMore := list.GetListMeta().HasMore
 
 	switch v := list.(type) {
-	case *stripe.BankAccountList:
-		if len(v.Data) == 0 {
-			return oldest, timeline, hasMore, nil
-		}
-		account := v.Data[len(v.Data)-1]
-		oldest = account
-		oldestID = account.ID
-
 	case *stripe.BalanceTransactionList:
 		if len(v.Data) == 0 {
 			return oldest, timeline, hasMore, nil
