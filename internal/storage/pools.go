@@ -57,7 +57,8 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		}
 
 		if !exists {
-			return e("account does not exist: %w", ErrNotFound)
+			err = ErrNotFound // We need to define err here so that the rollback happens!
+			return e("account does not exist: %w", err)
 		}
 	}
 
@@ -123,6 +124,7 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			//if err = s.OutboxEventsInsertWithTx(ctx, []models.OutboxEvent{outboxEvent}); err != nil {
 			return err
 		}
 	}
@@ -233,7 +235,8 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 	}
 
 	if !exists {
-		return e("account does not exist: %w", ErrNotFound)
+		err = ErrNotFound // We need to define err here so that the rollback happens!
+		return e("account does not exist: %w", err)
 	}
 
 	_, err = tx.NewInsert().

@@ -838,6 +838,20 @@ func (mr *MockStorageMockRecorder) OutboxEventsInsert(ctx, tx, events any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsInsert", reflect.TypeOf((*MockStorage)(nil).OutboxEventsInsert), ctx, tx, events)
 }
 
+// OutboxEventsInsertWithTx mocks base method.
+func (m *MockStorage) OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsInsertWithTx", ctx, events)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsInsertWithTx indicates an expected call of OutboxEventsInsertWithTx.
+func (mr *MockStorageMockRecorder) OutboxEventsInsertWithTx(ctx, events any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsInsertWithTx", reflect.TypeOf((*MockStorage)(nil).OutboxEventsInsertWithTx), ctx, events)
+}
+
 // OutboxEventsMarkFailed mocks base method.
 func (m *MockStorage) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, errorMsg string) error {
 	m.ctrl.T.Helper()

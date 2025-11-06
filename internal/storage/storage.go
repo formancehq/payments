@@ -204,14 +204,18 @@ func (s *store) Close() error {
 	s.rwMutex.Lock()
 	defer s.rwMutex.Unlock()
 
-	if err := s.db.Close(); err != nil {
-		return err
-	}
-
+	// Close any dedicated connections first to ensure the database can be dropped
 	for _, conn := range s.conns {
 		if err := conn.Close(); err != nil {
 			return err
 		}
+	}
+	// Clear the slice to avoid double-close in case Close is called twice
+	s.conns = nil
+
+	// Close the main bun DB (which closes the underlying sql.DB pool)
+	if err := s.db.Close(); err != nil {
+		return err
 	}
 
 	return nil

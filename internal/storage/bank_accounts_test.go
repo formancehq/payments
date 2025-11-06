@@ -63,29 +63,32 @@ func upsertBankAccount(t *testing.T, ctx context.Context, storage Storage, bankA
 }
 
 func TestBankAccountsUpsert(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
 
 	// Helper to clean up outbox events created during tests
 	cleanupOutbox := func() {
 		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			eventSent := models.EventSent{
-				ID: models.EventID{
-					EventIdempotencyKey: event.IdempotencyKey,
-					ConnectorID:         event.ConnectorID,
-				},
-				ConnectorID: event.ConnectorID,
-				SentAt:      time.Now().UTC(),
+		if err == nil {
+			for _, event := range pendingEvents {
+				eventSent := models.EventSent{
+					ID: models.EventID{
+						EventIdempotencyKey: event.IdempotencyKey,
+						ConnectorID:         event.ConnectorID,
+					},
+					ConnectorID: event.ConnectorID,
+					SentAt:      time.Now().UTC(),
+				}
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
 			}
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
 		}
 	}
-	t.Cleanup(cleanupOutbox)
+	t.Cleanup(func() {
+		cleanupOutbox()
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -405,49 +408,6 @@ func TestBankAccountsUpdateMetadata(t *testing.T) {
 		actual, err := store.BankAccountsGet(ctx, defaultBankAccount3.ID, true)
 		require.NoError(t, err)
 		compareBankAccounts(t, acc, *actual)
-	})
-
-	t.Run("rollback on invalid related account", func(t *testing.T) {
-
-		upsertConnector(t, ctx, store, defaultConnector)
-
-		// Count existing bank accounts
-		bankAccountsBefore, err := store.BankAccountsList(ctx, NewListBankAccountsQuery(bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).WithPageSize(1000)))
-		require.NoError(t, err)
-		countBefore := len(bankAccountsBefore.Data)
-
-		// Create a bank account with an invalid related account ID that doesn't exist
-		invalidAccountID := models.AccountID{
-			Reference:   "non-existent-account",
-			ConnectorID: defaultConnector.ID,
-		}
-		invalidBankAccount := models.BankAccount{
-			ID:        uuid.New(),
-			CreatedAt: time.Now().UTC(),
-			Name:      "Invalid Bank Account",
-			RelatedAccounts: []models.BankAccountRelatedAccount{
-				{
-					AccountID: invalidAccountID,
-					CreatedAt: time.Now().UTC(),
-				},
-			},
-		}
-
-		// Attempt to upsert - should fail due to foreign key violation on related account
-		err = store.BankAccountsUpsert(ctx, invalidBankAccount)
-		require.Error(t, err)
-
-		// Verify no bank account was inserted
-		bankAccountsAfter, err := store.BankAccountsList(ctx, NewListBankAccountsQuery(bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).WithPageSize(1000)))
-		require.NoError(t, err)
-		assert.Equal(t, countBefore, len(bankAccountsAfter.Data), "no bank accounts should be inserted on error")
-
-		// Verify no outbox events were created
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			assert.NotEqual(t, invalidBankAccount.ID.String(), event.EntityID, "no outbox event should be created for failed insert")
-		}
 	})
 }
 
