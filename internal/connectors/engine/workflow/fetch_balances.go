@@ -97,22 +97,9 @@ func (w Workflow) fetchBalances(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Balance: &b,
-					},
-				).Get(ctx, nil); err != nil {
+				if err := w.runSendEvents(ctx, SendEvents{
+					Balance: &b,
+				}); err != nil {
 					errChan <- errors.Wrap(err, "sending events")
 				}
 			})
