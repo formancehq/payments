@@ -1,3 +1,5 @@
+//go:build it
+
 package test_suite
 
 import (
@@ -8,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
@@ -95,7 +98,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
+			Eventually(e, activities.OUTBOX_POLLING_PERIOD*2, activities.OUTBOX_POLLING_PERIOD).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, createResponse.GetV3CreatePaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
@@ -147,7 +150,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(createResponse.GetPaymentResponse().Data.ID).NotTo(Equal(""))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
+			Eventually(e, activities.OUTBOX_POLLING_PERIOD*2, activities.OUTBOX_POLLING_PERIOD).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPayment(ctx, createResponse.GetPaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
@@ -176,7 +179,7 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	Eventually(e, activities.OUTBOX_POLLING_PERIOD*2, activities.OUTBOX_POLLING_PERIOD).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 	debtorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "debtor",
@@ -190,7 +193,7 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	Eventually(e, activities.OUTBOX_POLLING_PERIOD*2, activities.OUTBOX_POLLING_PERIOD).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 	return debtorID, creditorID
 }
@@ -214,7 +217,7 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	Eventually(e, activities.OUTBOX_POLLING_PERIOD*2, activities.OUTBOX_POLLING_PERIOD).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 	debtorID, err := createV2Account(ctx, app, components.AccountRequest{
 		Reference:    "debtor",
@@ -228,7 +231,7 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	Eventually(e, activities.OUTBOX_POLLING_PERIOD*2, activities.OUTBOX_POLLING_PERIOD).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 	return debtorID, creditorID
 }

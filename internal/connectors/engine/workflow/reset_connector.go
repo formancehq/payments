@@ -109,7 +109,7 @@ func (w Workflow) resetConnector(
 	if err := activities.StorageConnectorsStore(
 		infiniteRetryContext(ctx),
 		newConnector,
-		&resetConnector.ConnectorID,
+		nil,
 	); err != nil {
 		return nil, err
 	}

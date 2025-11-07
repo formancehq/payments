@@ -5,20 +5,20 @@ package test_suite
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/events"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/client/models/operations"
-	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
-	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
-
 	. "github.com/formancehq/payments/pkg/testserver"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -50,7 +50,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 	When("creating a new account", func() {
 		var (
-			e             chan *nats.Msg
 			connectorUUID uuid.UUID
 			connectorID   string
 			err           error
@@ -67,7 +66,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		})
 
 		It("should be successful with v2", func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateAccount(ctx, components.AccountRequest{
 				Reference:    "ref",
 				ConnectorID:  connectorID,
@@ -85,11 +83,10 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetAccountResponse().Data).To(Equal(createResponse.GetAccountResponse().Data))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			Eventually(app.GetValue()).Should(OutboxEvent(models.OUTBOX_EVENT_ACCOUNT_SAVED))
 		})
 
 		It("should be successful with v3", func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
 				Reference:    "ref",
 				ConnectorID:  connectorID,
@@ -112,26 +109,65 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(createResponse.GetV3CreateAccountResponse().Data.Connector.Name).NotTo(BeNil())
 			Expect(*createResponse.GetV3CreateAccountResponse().Data.Connector.Name).To(ContainSubstring(connectorUUID.String()))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			Eventually(app.GetValue()).Should(OutboxEvent(models.OUTBOX_EVENT_ACCOUNT_SAVED))
+		})
+
+		It("temporarily verifies an outbox_event is created on account creation", func() {
+			// Create an account and then check the outbox_events table for the corresponding event
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
+				Reference:    "ref-outbox",
+				ConnectorID:  connectorID,
+				CreatedAt:    createdAt,
+				AccountName:  "foo-outbox",
+				Type:         "INTERNAL",
+				DefaultAsset: pointer.For("USD/2"),
+				Metadata:     map[string]string{},
+			})
+			Expect(err).To(BeNil())
+			accountID := createResponse.GetV3CreateAccountResponse().Data.ID
+
+			// Access the database and assert an outbox event exists for this account
+			Eventually(func(g Gomega) {
+				db, err := app.GetValue().Database()
+				g.Expect(err).To(BeNil())
+				defer db.Close()
+
+				count, err := db.NewSelect().
+					TableExpr("outbox_events").
+					Where("event_type = ? AND entity_id = ?", models.OUTBOX_EVENT_ACCOUNT_SAVED, accountID).
+					Count(ctx)
+				g.Expect(err).To(BeNil())
+				g.Expect(count).To(BeNumerically(">", 0))
+			}).WithTimeout(10 * time.Second).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				db, err := app.GetValue().Database()
+				defer db.Close()
+				count, err := db.NewSelect().
+					TableExpr("outbox_events").
+					Where("event_type = ? AND entity_id = ?", models.OUTBOX_EVENT_ACCOUNT_SAVED, accountID).
+					Count(ctx)
+				g.Expect(err).To(BeNil())
+				g.Expect(count).To(BeNumerically("==", 0))
+			}).WithTimeout(10 * time.Second).Should(Succeed())
+
 		})
 	})
 
 	When("fetching account balances", func() {
 		var (
-			e           chan *nats.Msg
 			connectorID string
 			err         error
 		)
 
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			id := uuid.New()
 			connectorConf := newV3ConnectorConfigFn()(id)
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
 			Expect(err).To(BeNil())
 			_, err = GeneratePSPData(connectorConf.Directory)
 			Expect(err).To(BeNil())
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			Eventually(app.GetValue()).Should(OutboxEvent(models.OUTBOX_EVENT_ACCOUNT_SAVED))
 		})
 
 		AfterEach(func() {
@@ -140,13 +176,37 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 		It("should be successful with v2", func() {
 			var msg events.BalanceMessagePayload
-			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
-				msg,
-				func(b []byte) error {
-					return json.Unmarshal(b, &msg)
-				},
-			))))
+			Eventually(app.GetValue()).
+				Should(OutboxEvent(models.OUTBOX_EVENT_BALANCE_SAVED, WithRawCallback(func(b []byte) error {
+					// Outbox payload uses balance as a string; adapt to BalanceMessagePayload
+					type outboxBalance struct {
+						AccountID     string    `json:"accountID"`
+						ConnectorID   string    `json:"connectorID"`
+						Provider      string    `json:"provider"`
+						CreatedAt     time.Time `json:"createdAt"`
+						LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+						Asset         string    `json:"asset"`
+						Balance       string    `json:"balance"`
+					}
+					var tmp outboxBalance
+					if err := json.Unmarshal(b, &tmp); err != nil {
+						return err
+					}
+					bi, ok := new(big.Int).SetString(tmp.Balance, 10)
+					if !ok {
+						return fmt.Errorf("invalid balance string: %s", tmp.Balance)
+					}
+					msg = events.BalanceMessagePayload{
+						AccountID:     tmp.AccountID,
+						ConnectorID:   tmp.ConnectorID,
+						Provider:      tmp.Provider,
+						CreatedAt:     tmp.CreatedAt,
+						LastUpdatedAt: tmp.LastUpdatedAt,
+						Asset:         tmp.Asset,
+						Balance:       bi,
+					}
+					return nil
+				})))
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
@@ -164,13 +224,14 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 		It("should be successful with v3", func() {
 			var msg events.BalanceMessagePayload
-			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
-				msg,
-				func(b []byte) error {
-					return json.Unmarshal(b, &msg)
-				},
-			))))
+			Eventually(app.GetValue()).
+				Should(OutboxEvent(models.OUTBOX_EVENT_BALANCE_SAVED, WithRawCallback(func(b []byte) error {
+					var tmp events.BalanceMessagePayload
+					if err := json.Unmarshal(b, &tmp); err != nil {
+						return err
+					}
+					return nil
+				})))
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V3.GetAccountBalances(ctx, operations.V3GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
@@ -187,6 +248,31 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		})
 	})
 })
+
+// put near the test for debugging
+//func dumpEvents(ch <-chan *nats.Msg, dur time.Duration) {
+//	deadline := time.After(dur)
+//	for {
+//		select {
+//		case <-deadline:
+//			return
+//		case m := <-ch:
+//			if m == nil {
+//				continue
+//			}
+//			type envelope struct {
+//				Type    string          `json:"type"`
+//				Payload json.RawMessage `json:"payload"`
+//			}
+//			var ev envelope
+//			if err := json.Unmarshal(m.Data, &ev); err != nil {
+//				GinkgoWriter.Printf("recv raw msg (unmarshal err: %v): %s\n", err, string(m.Data))
+//				continue
+//			}
+//			GinkgoWriter.Printf("recv event: type=%s payload=%s\n", ev.Type, string(ev.Payload))
+//		}
+//	}
+//}
 
 func createV3Account(
 	ctx context.Context,
