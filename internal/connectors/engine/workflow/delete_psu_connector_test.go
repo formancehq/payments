@@ -66,7 +66,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_Success() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -93,7 +93,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePaymentServiceUsersGet_Er
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -130,7 +130,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StorageOpenBankingForwardedUserG
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -180,7 +180,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_PluginDeleteUser_Error() {
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -233,7 +233,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_ChildWorkflow_Error() {
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -289,7 +289,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StorageOpenBankingForwardedUserD
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -423,7 +423,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_WithMinimalPSU() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,
@@ -459,7 +459,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_WithPSUWithoutOpenBankingForward
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSUConnector, DeletePSUConnector{
 		TaskID:      taskID,

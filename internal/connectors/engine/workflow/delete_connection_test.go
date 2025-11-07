@@ -72,7 +72,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_Success() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
@@ -101,7 +101,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_StoragePaymentServiceUsersGet_Erro
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
@@ -139,7 +139,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_StorageOpenBankingConnectionsGetFr
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
@@ -199,7 +199,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_StorageOpenBankingForwardedUserGet
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
@@ -272,7 +272,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_PluginDeleteUserConnection_Error()
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
@@ -348,7 +348,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_ChildWorkflow_Error() {
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
@@ -427,7 +427,7 @@ func (s *UnitTestSuite) Test_DeleteConnection_StorageOpenBankingConnectionDelete
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,

@@ -110,22 +110,9 @@ func (w Workflow) fetchNextPayments(
 				defer wg.Done()
 
 				// Send the payment event
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Payment: &p,
-					},
-				).Get(ctx, nil); err != nil {
+				if err := w.runSendEvents(ctx, SendEvents{
+					Payment: &p,
+				}); err != nil {
 					errChan <- errors.Wrap(err, "sending events")
 				}
 			})

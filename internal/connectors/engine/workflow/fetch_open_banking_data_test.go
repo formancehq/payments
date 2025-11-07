@@ -31,7 +31,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_Success() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -72,7 +72,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_WithFromPayload_Success() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -111,7 +111,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextAccounts_Error() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Never().Return(nil)
 
 	// Mock send events workflow should not be called
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Never().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Never().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -151,7 +151,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextPayments_Error() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Never().Return(nil)
 
 	// Mock send events workflow should not be called
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Never().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Never().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -226,7 +226,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunSendEvents_Error() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow with error
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
@@ -270,7 +270,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_BothChildWorkflows_Error() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Never().Return(nil)
 
 	// Mock send events workflow should not be called
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Never().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Never().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -333,7 +333,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Success() 
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -370,7 +370,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Error() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Never().Return(nil)
 
 	// Mock send events workflow should not be called
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Never().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Never().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -406,7 +406,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_PaymentsOnly_Success() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
@@ -443,7 +443,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_PaymentsOnly_Error() {
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Never().Return(nil)
 
 	// Mock send events workflow should not be called
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Never().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Never().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,

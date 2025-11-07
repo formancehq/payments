@@ -527,7 +527,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserLinkSessionFinished_Success() {
 		}, nil
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsUpdateStatusActivity, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserLinkStatus)
 		s.Equal(attemptID, req.UserLinkStatus.AttemptID)
 		s.Equal(status, req.UserLinkStatus.Status)
@@ -639,7 +639,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionPendingDisconnect_Succ
 			PSUID: psuID,
 		}, nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserPendingDisconnect)
 		s.Equal(psuID, req.UserPendingDisconnect.PsuID)
 		s.Equal(s.connectorID, req.UserPendingDisconnect.ConnectorID)
@@ -744,7 +744,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Balance_Success() {
 	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
 	)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.Balance)
 		s.Equal(req.Balance.Balance, big.NewInt(100))
 		s.Equal(req.Balance.Asset, "EUR/2")
@@ -954,7 +954,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success()
 		}, nil
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserConnectionDisconnected)
 		s.Equal(psuID, req.UserConnectionDisconnected.PsuID)
 		s.Equal(s.connectorID, req.UserConnectionDisconnected.ConnectorID)
@@ -1027,7 +1027,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success_W
 		s.Equal(from.Error, pointer.For("test reason"))
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserConnectionDisconnected)
 		s.Equal(psuID, req.UserConnectionDisconnected.PsuID)
 		s.Equal(s.connectorID, req.UserConnectionDisconnected.ConnectorID)
@@ -1202,7 +1202,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_Success() 
 		}, nil
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserConnectionReconnected)
 		s.Equal(psuID, req.UserConnectionReconnected.PsuID)
 		s.Equal(s.connectorID, req.UserConnectionReconnected.ConnectorID)
@@ -1271,7 +1271,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_Success_Wi
 		s.Equal(from.Status, models.ConnectionStatusActive)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserConnectionReconnected)
 		s.Equal(psuID, req.UserConnectionReconnected.PsuID)
 		s.Equal(s.connectorID, req.UserConnectionReconnected.ConnectorID)
@@ -1476,7 +1476,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_MultipleResponses_Success() {
 		}, nil
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsUpdateStatusActivity, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.UserLinkStatus)
 		s.Equal(attemptID, req.UserLinkStatus.AttemptID)
 		return nil

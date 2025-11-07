@@ -135,23 +135,10 @@ func (w Workflow) resetConnector(
 		return nil, fmt.Errorf("install connector: %w", err)
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         resetConnector.DefaultWorkerName,
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		SendEvents{
-			ConnectorReset: &resetConnector.ConnectorID,
-		},
-	).Get(ctx, nil); err != nil {
-		return nil, err
+	if err := w.runSendEvents(ctx, SendEvents{
+		ConnectorReset: &resetConnector.ConnectorID,
+	}); err != nil {
+		return nil, fmt.Errorf("sending events: %w", err)
 	}
 
 	return &newConnector.ID, nil

@@ -387,20 +387,7 @@ func (w Workflow) handleUserLinkSessionFinishedWebhook(
 		},
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		sendEvent,
-	).Get(ctx, nil); err != nil {
+	if err := w.runSendEvents(ctx, sendEvent); err != nil {
 		return fmt.Errorf("sending events: %w", err)
 	}
 
@@ -431,20 +418,7 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 		},
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		sendEvent,
-	).Get(ctx, nil); err != nil {
+	if err := w.runSendEvents(ctx, sendEvent); err != nil {
 		return fmt.Errorf("sending events: %w", err)
 	}
 
@@ -473,20 +447,7 @@ func (w Workflow) handleUserDisconnectedWebhook(
 		},
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		sendEvent,
-	).Get(ctx, nil); err != nil {
+	if err := w.runSendEvents(ctx, sendEvent); err != nil {
 		return fmt.Errorf("sending events: %w", err)
 	}
 
@@ -551,20 +512,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 		},
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		sendEvent,
-	).Get(ctx, nil); err != nil {
+	if err := w.runSendEvents(ctx, sendEvent); err != nil {
 		return fmt.Errorf("sending events: %w", err)
 	}
 
@@ -627,20 +575,7 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 		},
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		sendEvent,
-	).Get(ctx, nil); err != nil {
+	if err := w.runSendEvents(ctx, sendEvent); err != nil {
 		return fmt.Errorf("sending events: %w", err)
 	}
 
@@ -846,20 +781,7 @@ func (w Workflow) runStoreWebhookTranslation(
 	}
 
 	if sendEvent != nil {
-		if err := workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(
-				ctx,
-				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
-				},
-			),
-			RunSendEvents,
-			*sendEvent,
-		).Get(ctx, nil); err != nil {
+		if err := w.runSendEvents(ctx, *sendEvent); err != nil {
 			return fmt.Errorf("sending events: %w", err)
 		}
 	}

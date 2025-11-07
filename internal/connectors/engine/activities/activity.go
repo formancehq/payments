@@ -416,76 +416,8 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageOpenBankingConnectionsGetFromConnectionID,
 		}).
 		Append(temporalworker.Definition{
-			Name: "EventsSendAccount",
-			Func: a.EventsSendAccount,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendBalance",
-			Func: a.EventsSendBalance,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendBankAccount",
-			Func: a.EventsSendBankAccount,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendConnectorReset",
-			Func: a.EventsSendConnectorReset,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPayment",
-			Func: a.EventsSendPayment,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentDeleted",
-			Func: a.EventsSendPaymentDeleted,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPoolCreation",
-			Func: a.EventsSendPoolCreation,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPoolDeletion",
-			Func: a.EventsSendPoolDeletion,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentInitiation",
-			Func: a.EventsSendPaymentInitiation,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentInitiationAdjustment",
-			Func: a.EventsSendPaymentInitiationAdjustment,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentInitiationRelatedPayment",
-			Func: a.EventsSendPaymentInitiationRelatedPayment,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserPendingDisconnect",
-			Func: a.EventsSendUserPendingDisconnect,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserConnectionDisconnected",
-			Func: a.EventsSendUserConnectionDisconnected,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserConnectionReconnected",
-			Func: a.EventsSendUserConnectionReconnected,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserDisconnected",
-			Func: a.EventsSendUserDisconnected,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserLinkStatus",
-			Func: a.EventsSendUserLinkStatus,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserConnectionDataSynced",
-			Func: a.EventsSendUserConnectionDataSynced,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendTaskUpdated",
-			Func: a.EventsSendTaskUpdated,
+			Name: "SendEvents",
+			Func: a.SendEvents,
 		}).
 		Append(temporalworker.Definition{
 			Name: "TemporalScheduleCreate",

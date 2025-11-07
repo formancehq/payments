@@ -82,7 +82,7 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -108,7 +108,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersGet_Error() {
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -144,7 +144,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StorageOpenBankingForwardedUserList_Error
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -198,7 +198,7 @@ func (s *UnitTestSuite) Test_DeletePSU_PluginDeleteUser_Error() {
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -255,7 +255,7 @@ func (s *UnitTestSuite) Test_DeletePSU_ChildWorkflow_Error() {
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -315,7 +315,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersDelete_Error() 
 
 	// Mock task error update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -479,7 +479,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMultipleObForwardedUsers() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -524,7 +524,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithNoObForwardedUsers() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,
@@ -578,7 +578,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeletePSU, DeletePSU{
 		TaskID: taskID,

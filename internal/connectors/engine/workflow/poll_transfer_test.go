@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
@@ -30,15 +29,12 @@ func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
 		s.Equal(s.paymentPayoutID, relatedPayment.PID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
-		s.Nil(sendEvents.Balance)
-		s.Nil(sendEvents.Account)
-		s.Nil(sendEvents.ConnectorReset)
-		s.NotNil(sendEvents.Payment)
-		s.NotNil(sendEvents.PaymentInitiationRelatedPayment)
-		s.Nil(sendEvents.PoolsCreation)
-		s.Nil(sendEvents.PoolsDeletion)
-		s.Nil(sendEvents.BankAccount)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
+		s.NotNil(req.Payment)
+		return nil
+	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
+		s.NotNil(req.PaymentInitiationRelatedPayment)
 		return nil
 	})
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
@@ -46,7 +42,7 @@ func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
 		s.Equal(s.paymentInitiationID, adj.ID.PaymentInitiationID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
@@ -56,15 +52,7 @@ func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.Nil(req.Payment)
-		s.Nil(req.PaymentInitiationRelatedPayment)
-		s.Nil(req.Account)
-		s.Nil(req.Balance)
-		s.Nil(req.BankAccount)
-		s.Nil(req.ConnectorReset)
-		s.Nil(req.PoolsCreation)
-		s.Nil(req.PoolsDeletion)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
 		s.NotNil(req.Task)
 		return nil
 	})
@@ -125,17 +113,7 @@ func (s *UnitTestSuite) Test_PollTransfer_WithError_Success() {
 		s.ErrorContains(task.Error, "error-test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.Nil(req.PaymentInitiationRelatedPayment)
-		s.Nil(req.Account)
-		s.Nil(req.Balance)
-		s.Nil(req.BankAccount)
-		s.Nil(req.ConnectorReset)
-		s.Nil(req.PoolsCreation)
-		s.Nil(req.PoolsDeletion)
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -164,10 +142,7 @@ func (s *UnitTestSuite) Test_PollTransfer_PluginPollTransferStatus_Error() {
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -200,10 +175,7 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentsStore_Error() {
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -234,7 +206,7 @@ func (s *UnitTestSuite) Test_PollTransfer_RunSendEvents_Error() {
 		s.Equal(s.paymentPayoutID, relatedPayment.PID)
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", fmt.Errorf("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -242,10 +214,7 @@ func (s *UnitTestSuite) Test_PollTransfer_RunSendEvents_Error() {
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -279,10 +248,7 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentInitiationsRelatedPaymen
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -309,7 +275,8 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentInitiationsAdjustmentsSt
 	)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
@@ -318,10 +285,7 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentInitiationsAdjustmentsSt
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -347,10 +311,11 @@ func (s *UnitTestSuite) Test_PollTransfer_TemporalDeleteSchedule_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test-schedule").Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "TEMPORAL", fmt.Errorf("test")),
 	)
@@ -359,10 +324,7 @@ func (s *UnitTestSuite) Test_PollTransfer_TemporalDeleteSchedule_Error() {
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -388,10 +350,11 @@ func (s *UnitTestSuite) Test_PollTransfer_StorageSchedulesDelete_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test-schedule").Once().Return(nil)
 	s.env.OnActivity(activities.StorageSchedulesDeleteActivity, mock.Anything, "test-schedule").Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "TEMPORAL", fmt.Errorf("test")),
@@ -401,10 +364,7 @@ func (s *UnitTestSuite) Test_PollTransfer_StorageSchedulesDelete_Error() {
 		s.ErrorContains(task.Error, "test")
 		return nil
 	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Task)
-		return nil
-	})
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
 		TaskID: models.TaskID{
@@ -431,9 +391,10 @@ func (s *UnitTestSuite) Test_PollTransfer_StorageTasksStore_Error() {
 	)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test-schedule").Once().Return(nil)
 	s.env.OnActivity(activities.StorageSchedulesDeleteActivity, mock.Anything, "test-schedule").Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "TEMPORAL", fmt.Errorf("test")),
