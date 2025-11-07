@@ -53,7 +53,7 @@ func (w Workflow) fetchNextPayments(
 	hasMore := true
 	for hasMore {
 		paymentsResponse, err := activities.PluginFetchNextPayments(
-			infiniteRetryContextWithTimeout(ctx, 80*time.Second),
+			infiniteRetryContextWithTimeout(ctx, 10*time.Minute),
 			fetchNextPayments.ConnectorID,
 			fetchNextPayments.FromPayload.GetPayload(),
 			state.State,
