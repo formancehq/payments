@@ -18,3 +18,15 @@ func infiniteRetryContext(ctx workflow.Context) workflow.Context {
 		},
 	})
 }
+
+func infiniteRetryContextWithTimeout(ctx workflow.Context, timeout time.Duration) workflow.Context {
+	return workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+		StartToCloseTimeout: timeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			InitialInterval:        time.Second,
+			BackoffCoefficient:     2,
+			MaximumInterval:        100 * time.Second,
+			NonRetryableErrorTypes: []string{},
+		},
+	})
+}

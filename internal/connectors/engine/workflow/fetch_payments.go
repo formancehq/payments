@@ -3,6 +3,7 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -52,7 +53,7 @@ func (w Workflow) fetchNextPayments(
 	hasMore := true
 	for hasMore {
 		paymentsResponse, err := activities.PluginFetchNextPayments(
-			infiniteRetryContext(ctx),
+			infiniteRetryContextWithTimeout(ctx, 80*time.Second),
 			fetchNextPayments.ConnectorID,
 			fetchNextPayments.FromPayload.GetPayload(),
 			state.State,
