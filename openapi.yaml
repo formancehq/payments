@@ -2786,6 +2786,7 @@ components:
         - ATLAR
         - ADYEN
         - GENERIC
+        - BITSTAMP
     TransferInitiationStatus:
       type: string
       enum:
@@ -2816,6 +2817,7 @@ components:
           Atlar: '#/components/schemas/AtlarConfig'
           Adyen: '#/components/schemas/AdyenConfig'
           Generic: '#/components/schemas/GenericConfig'
+          Bitstamp: '#/components/schemas/BitstampConfig'
       oneOf:
         - $ref: '#/components/schemas/StripeConfig'
         - $ref: '#/components/schemas/DummyPayConfig'
@@ -2828,6 +2830,7 @@ components:
         - $ref: '#/components/schemas/AtlarConfig'
         - $ref: '#/components/schemas/AdyenConfig'
         - $ref: '#/components/schemas/GenericConfig'
+        - $ref: '#/components/schemas/BitstampConfig'
     StripeConfig:
       type: object
       required:
@@ -3166,6 +3169,35 @@ components:
             Number of items to fetch when querying paginated APIs.
           default: 25
           example: 50
+    BitstampConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - apiSecret
+        - customerID
+      properties:
+        name:
+          type: string
+          example: My Bitstamp Account
+        provider:
+          type: string
+          default: Bitstamp
+        apiKey:
+          type: string
+          example: XXX
+        apiSecret:
+          type: string
+          example: XXX
+        customerID:
+          type: string
+          example: XXX
+        pollingPeriod:
+          type: string
+          example: 60s
+          description: |
+            The frequency at which the connector will try to fetch new transactions from Bitstamp API.
+          default: 120s
     TransferInitiation:
       type: object
       required:
@@ -5642,6 +5674,7 @@ components:
           Adyen: '#/components/schemas/V3AdyenConfig'
           Atlar: '#/components/schemas/V3AtlarConfig'
           Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+          Bitstamp: '#/components/schemas/V3BitstampConfig'
           Column: '#/components/schemas/V3ColumnConfig'
           Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
           Dummypay: '#/components/schemas/V3DummypayConfig'
@@ -5660,6 +5693,7 @@ components:
         - $ref: '#/components/schemas/V3AdyenConfig'
         - $ref: '#/components/schemas/V3AtlarConfig'
         - $ref: '#/components/schemas/V3BankingcircleConfig'
+        - $ref: '#/components/schemas/V3BitstampConfig'
         - $ref: '#/components/schemas/V3ColumnConfig'
         - $ref: '#/components/schemas/V3CurrencycloudConfig'
         - $ref: '#/components/schemas/V3DummypayConfig'
@@ -5761,6 +5795,31 @@ components:
           type: string
         username:
           type: string
+    V3BitstampConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - apiSecret
+        - customerID
+      properties:
+        apiKey:
+          type: string
+        apiSecret:
+          type: string
+        customerID:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: 25
+        pollingPeriod:
+          type: string
+          default: 2m
+        provider:
+          type: string
+          default: Bitstamp
     V3ColumnConfig:
       type: object
       required:
