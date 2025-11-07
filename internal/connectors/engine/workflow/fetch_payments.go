@@ -7,7 +7,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -119,42 +118,39 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		if len(nextTasks) > 0 {
-			for _, payment := range paymentsResponse.Payments {
-				p := payment
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextPayments.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
+			}
 
-				wg.Add(1)
-				workflow.Go(ctx, func(ctx workflow.Context) {
-					defer wg.Done()
+			if !connector.ScheduledForDeletion {
+				for _, payment := range paymentsResponse.Payments {
+					p := payment
 
-					payload, err := json.Marshal(p)
-					if err != nil {
-						errChan <- errors.Wrap(err, "marshalling payment")
-					}
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
 
-					// Run next tasks
-					if err := workflow.ExecuteChildWorkflow(
-						workflow.WithChildOptions(
+						payload, err := json.Marshal(p)
+						if err != nil {
+							errChan <- errors.Wrap(err, "marshalling payment")
+							return
+						}
+
+						if err := w.runNextTasks(
 							ctx,
-							workflow.ChildWorkflowOptions{
-								TaskQueue:         w.getDefaultTaskQueue(),
-								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-								SearchAttributes: map[string]interface{}{
-									SearchAttributeStack: w.stack,
-								},
+							fetchNextPayments.Config,
+							connector,
+							&FromPayload{
+								ID:      p.Reference,
+								Payload: payload,
 							},
-						),
-						Run,
-						fetchNextPayments.Config,
-						fetchNextPayments.ConnectorID,
-						&FromPayload{
-							ID:      p.Reference,
-							Payload: payload,
-						},
-						nextTasks,
-					).Get(ctx, nil); err != nil {
-						errChan <- errors.Wrap(err, "running next workflow")
-					}
-				})
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
+				}
 			}
 		}
 

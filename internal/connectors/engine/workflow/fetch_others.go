@@ -6,7 +6,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -65,45 +64,44 @@ func (w Workflow) fetchNextOthers(
 		}
 
 		if len(nextTasks) > 0 {
-			wg := workflow.NewWaitGroup(ctx)
-			errChan := make(chan error, len(othersResponse.Others))
-			for _, other := range othersResponse.Others {
-				o := other
-
-				wg.Add(1)
-				workflow.Go(ctx, func(ctx workflow.Context) {
-					defer wg.Done()
-
-					if err := workflow.ExecuteChildWorkflow(
-						workflow.WithChildOptions(
-							ctx,
-							workflow.ChildWorkflowOptions{
-								TaskQueue:         w.getDefaultTaskQueue(),
-								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-								SearchAttributes: map[string]interface{}{
-									SearchAttributeStack: w.stack,
-								},
-							},
-						),
-						Run,
-						fetchNextOthers.Config,
-						fetchNextOthers.ConnectorID,
-						&FromPayload{
-							ID:      o.ID,
-							Payload: o.Other,
-						},
-						nextTasks,
-					).Get(ctx, nil); err != nil {
-						errChan <- errors.Wrap(err, "running next workflow")
-					}
-				})
+			// First, we need to get the connector to check if it is scheduled for deletion
+			// because if it is, we don't need to run the next tasks
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextOthers.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			wg.Wait(ctx)
-			close(errChan)
-			for err := range errChan {
-				if err != nil {
-					return err
+			if !connector.ScheduledForDeletion {
+				wg := workflow.NewWaitGroup(ctx)
+				errChan := make(chan error, len(othersResponse.Others))
+				for _, other := range othersResponse.Others {
+					o := other
+
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
+
+						if err := w.runNextTasks(
+							ctx,
+							fetchNextOthers.Config,
+							connector,
+							&FromPayload{
+								ID:      o.ID,
+								Payload: o.Other,
+							},
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
+				}
+
+				wg.Wait(ctx)
+				close(errChan)
+				for err := range errChan {
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}

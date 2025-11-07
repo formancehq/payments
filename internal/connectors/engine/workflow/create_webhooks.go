@@ -6,7 +6,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/models"
-	"go.temporal.io/api/enums/v1"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -66,28 +66,45 @@ func (w Workflow) createWebhooks(
 		}
 	}
 
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
+	if err != nil {
+		return fmt.Errorf("getting connector: %w", err)
+	}
+
+	if connector.ScheduledForDeletion {
+		// avoid scheduling next tasks if connector is scheduled for deletion
+		return nil
+	}
+
+	wg := workflow.NewWaitGroup(ctx)
+	errChan := make(chan error, len(resp.Others)*2)
 	for _, other := range resp.Others {
-		if err := workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(
+		o := other
+
+		wg.Add(1)
+		workflow.Go(ctx, func(ctx workflow.Context) {
+			defer wg.Done()
+
+			if err := w.runNextTasks(
 				ctx,
-				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
+				createWebhooks.Config,
+				connector,
+				&FromPayload{
+					ID:      o.ID,
+					Payload: o.Other,
 				},
-			),
-			Run,
-			createWebhooks.Config,
-			createWebhooks.ConnectorID,
-			&FromPayload{
-				ID:      other.ID,
-				Payload: other.Other,
-			},
-			nextTasks,
-		).Get(ctx, nil); err != nil {
-			return fmt.Errorf("running next workflow: %w", err)
+				nextTasks,
+			); err != nil {
+				errChan <- errors.Wrap(err, "running next tasks")
+			}
+		})
+	}
+
+	wg.Wait(ctx)
+	close(errChan)
+	for err := range errChan {
+		if err != nil {
+			return err
 		}
 	}
 
