@@ -1,3 +1,5 @@
+//go:build it
+
 package test_suite
 
 import (
@@ -6,6 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
@@ -18,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payment API Payment Service Users", Serial, func() {
+var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
@@ -39,6 +42,32 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
 			TemporalAddress:       temporalServer.GetValue().Address(),
 			Output:                GinkgoWriter,
+		}
+	})
+
+	// Install a default connector once for this context so that the worker pool
+	// creates the default Temporal worker. This is necessary because the
+	// OutboxPublisher schedule is created at startup but its executions will only
+	// be processed when a worker is listening on the default task queue. The
+	// worker is started only if at least one connector exists (see
+	// internal/connectors/engine/workers.go: OnStart/AddDefaultWorker). Having a
+	// connector ensures default-task-queue workflows like OutboxPublisher can run
+	// during these PSU tests even if individual specs don't install a connector.
+	var (
+		defaultConnectorID        string
+		defaultConnectorInstalled bool
+	)
+	BeforeEach(func() {
+		if !defaultConnectorInstalled {
+			var err error
+			defaultConnectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
+			Expect(err).To(BeNil())
+			defaultConnectorInstalled = true
+		}
+	})
+	AfterAll(func() {
+		if defaultConnectorID != "" {
+			uninstallConnector(ctx, app.GetValue(), defaultConnectorID)
 		}
 	})
 
@@ -226,34 +255,35 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 				ConnectorID: connectorID,
 			}
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount, WithPayload(
-				events.BankAccountMessagePayload{
-					ID:            baID1.String(),
-					Country:       "DE",
-					Name:          getResponse.GetV3GetBankAccountResponse().Data.Name,
-					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
-					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
-					CreatedAt:     getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
-					Metadata: map[string]string{
-						"com.formance.spec/owner/addressLine1": "1 test",
-						"com.formance.spec/owner/city":         "test",
-						"com.formance.spec/owner/email":        "dev@formance.com",
-						"com.formance.spec/owner/phoneNumber":  "+33612131415",
-						"com.formance.spec/owner/postalCode":   "test",
-						"com.formance.spec/owner/region":       "test",
-						"com.formance.spec/owner/streetName":   "test",
-						"com.formance.spec/owner/streetNumber": "1",
-					},
-					RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
-						{
-							AccountID:   accountID.String(),
-							CreatedAt:   getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
-							ConnectorID: connectorID.String(),
-							Provider:    "dummypay",
+			Eventually(e, activities.OUTBOX_POLLING_PERIOD*5, activities.OUTBOX_POLLING_PERIOD).
+				Should(Receive(Event(evts.EventTypeSavedBankAccount, WithPayload(
+					events.BankAccountMessagePayload{
+						ID:            baID1.String(),
+						Country:       "DE",
+						Name:          getResponse.GetV3GetBankAccountResponse().Data.Name,
+						AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
+						IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
+						CreatedAt:     getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
+						Metadata: map[string]string{
+							"com.formance.spec/owner/addressLine1": "1 test",
+							"com.formance.spec/owner/city":         "test",
+							"com.formance.spec/owner/email":        "dev@formance.com",
+							"com.formance.spec/owner/phoneNumber":  "+33612131415",
+							"com.formance.spec/owner/postalCode":   "test",
+							"com.formance.spec/owner/region":       "test",
+							"com.formance.spec/owner/streetName":   "test",
+							"com.formance.spec/owner/streetNumber": "1",
+						},
+						RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
+							{
+								AccountID:   accountID.String(),
+								CreatedAt:   getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
+								ConnectorID: connectorID.String(),
+								Provider:    "dummypay",
+							},
 						},
 					},
-				},
-			))))
+				))))
 		})
 	})
 
