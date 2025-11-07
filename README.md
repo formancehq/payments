@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://formance01.b-cdn.net/Github-Attachements/banners/connectivity-readme-banner.webp" alt="connectivity" width="100%" />
+</p>
+
 # Formance Payments [![test](https://github.com/formancehq/payments/actions/workflows/main.yml/badge.svg)](https://github.com/formancehq/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/formancehq/payments)](https://goreportcard.com/report/github.com/formancehq/payments) [![codecov](https://codecov.io/github/formancehq/payments/graph/badge.svg?token=SrhCCbrtnV)](https://codecov.io/github/formancehq/payments)
 
 # Getting started
@@ -19,7 +23,7 @@ $ STACK_PUBLIC_URL=http://localhost && docker compose up
 ```
 
 ## Debugging
-You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and 
+You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and
 live reloading.
 
 ## Use console as a frontend
