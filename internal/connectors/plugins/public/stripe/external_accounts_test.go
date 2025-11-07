@@ -3,6 +3,7 @@ package stripe
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
@@ -43,6 +44,9 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 			created = 1483565364
 			sampleExternalAccounts = make([]*stripesdk.BankAccount, 0)
 			for i := 0; i < pageSize; i++ {
+				if i%2 == 0 {
+					created = 0
+				}
 				sampleExternalAccounts = append(sampleExternalAccounts, &stripesdk.BankAccount{
 					ID:      fmt.Sprintf("some-reference-%d", i),
 					Account: &stripesdk.Account{Created: created},
@@ -66,6 +70,11 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 			Expect(err).To(BeNil())
 			Expect(res.HasMore).To(BeTrue())
 			Expect(res.ExternalAccounts).To(HaveLen(pageSize))
+
+			for _, acc := range res.ExternalAccounts {
+				Expect(acc.CreatedAt.IsZero()).To(BeFalse())
+				Expect(acc.CreatedAt).NotTo(Equal(time.Unix(0, 0).UTC()))
+			}
 
 			var state accountsState
 

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/stripe/stripe-go/v79"
@@ -26,7 +27,18 @@ func (c *client) GetPayments(
 ) (results []*stripe.BalanceTransaction, _ Timeline, hasMore bool, err error) {
 	results = make([]*stripe.BalanceTransaction, 0, int(pageSize))
 
-	if !timeline.IsCaughtUp() {
+	for {
+		select {
+		case <-ctx.Done():
+			// if the app is shutting down
+			return results, timeline, false, fmt.Errorf("context closed before first payment found")
+		default: //fallthrough
+		}
+
+		if timeline.IsCaughtUp() {
+			break
+		}
+
 		var oldest interface{}
 		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
 			if accountID != "" {
@@ -41,9 +53,13 @@ func (c *client) GetPayments(
 		if err != nil {
 			return results, timeline, false, err
 		}
-		// either there are no records or we haven't found the start yet
-		if !timeline.IsCaughtUp() {
-			return results, timeline, hasMore, nil
+
+		if hasMore {
+			continue
+		}
+
+		if oldest == nil {
+			return results, timeline, false, err
 		}
 		results = append(results, oldest.(*stripe.BalanceTransaction))
 	}
