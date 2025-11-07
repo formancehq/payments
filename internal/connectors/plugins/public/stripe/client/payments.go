@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/stripe/stripe-go/v79"
@@ -27,11 +28,17 @@ func (c *client) GetPayments(
 ) (results []*stripe.BalanceTransaction, _ Timeline, hasMore bool, err error) {
 	results = make([]*stripe.BalanceTransaction, 0, int(pageSize))
 
+	timer := time.NewTimer(4 * time.Minute)
+	defer timer.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			// if the app is shutting down
 			return results, timeline, false, fmt.Errorf("context closed before first payment found")
+		case <-timer.C:
+			// after the timer expires let's save the state to prevent workflow timeout
+			return results, timeline, true, nil
 		default: //fallthrough
 		}
 
