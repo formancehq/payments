@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	pluginsdkhttp "github.com/formancehq/payments/pkg/pluginsdk/http"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
+	errorsutils "github.com/formancehq/payments/pkg/pluginsdk/errors"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/account"
 	"github.com/stripe/stripe-go/v79/balance"
@@ -46,7 +46,7 @@ type client struct {
 
 func New(name string, logger logging.Logger, backend stripe.Backend, apiKey string) Client {
 	if backend == nil {
-		backends := stripe.NewBackends(metrics.NewHTTPClient(name, StripeDefaultTimeout))
+		backends := stripe.NewBackends(pluginsdkmetrics.NewHTTPClient(name, StripeDefaultTimeout))
 		backend = backends.API
 	}
 
@@ -81,7 +81,7 @@ func wrapSDKErr(err error) error {
 	if stripeErr.Code == stripe.ErrorCodeRateLimit {
 		return errorsutils.NewWrappedError(
 			err,
-			httpwrapper.ErrStatusCodeTooManyRequests,
+			pluginsdkhttp.ErrStatusCodeTooManyRequests,
 		)
 	}
 
@@ -89,7 +89,7 @@ func wrapSDKErr(err error) error {
 	case stripe.ErrorTypeInvalidRequest, stripe.ErrorTypeIdempotency:
 		return errorsutils.NewWrappedError(
 			err,
-			httpwrapper.ErrStatusCodeClientError,
+			pluginsdkhttp.ErrStatusCodeClientError,
 		)
 	}
 	return err
