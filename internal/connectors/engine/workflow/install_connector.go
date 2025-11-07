@@ -58,6 +58,15 @@ func (w Workflow) installConnector(
 		return errors.Wrap(err, "failed to store tasks tree")
 	}
 
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), installConnector.ConnectorID)
+	if err != nil {
+		return fmt.Errorf("getting connector: %w", err)
+	}
+
+	if connector.ScheduledForDeletion {
+		return nil
+	}
+
 	// Fifth step: launch the workflow tree, do not wait for the result
 	// by using the GetChildWorkflowExecution function that returns a future
 	// which will be ready when the child workflow has successfully started.
@@ -76,7 +85,7 @@ func (w Workflow) installConnector(
 		),
 		Run,
 		installConnector.Config,
-		installConnector.ConnectorID,
+		connector,
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {

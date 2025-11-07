@@ -7,7 +7,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -105,41 +104,40 @@ func (w Workflow) fetchAccounts(
 		}
 
 		if len(nextTasks) > 0 {
-			for _, account := range accountsResponse.Accounts {
-				acc := account
+			// First, we need to get the connector to check if it is scheduled for deletion
+			// because if it is, we don't need to run the next tasks
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextAccount.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
+			}
 
-				wg.Add(1)
-				workflow.Go(ctx, func(ctx workflow.Context) {
-					defer wg.Done()
+			if !connector.ScheduledForDeletion {
+				for _, account := range accountsResponse.Accounts {
+					acc := account
 
-					payload, err := json.Marshal(acc)
-					if err != nil {
-						errChan <- errors.Wrap(err, "marshalling account")
-					}
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
 
-					if err := workflow.ExecuteChildWorkflow(
-						workflow.WithChildOptions(
+						payload, err := json.Marshal(acc)
+						if err != nil {
+							errChan <- errors.Wrap(err, "marshalling account")
+						}
+
+						if err := w.runNextTasks(
 							ctx,
-							workflow.ChildWorkflowOptions{
-								TaskQueue:         w.getDefaultTaskQueue(),
-								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-								SearchAttributes: map[string]interface{}{
-									SearchAttributeStack: w.stack,
-								},
+							fetchNextAccount.Config,
+							connector,
+							&FromPayload{
+								ID:      acc.Reference,
+								Payload: payload,
 							},
-						),
-						Run,
-						fetchNextAccount.Config,
-						fetchNextAccount.ConnectorID,
-						&FromPayload{
-							ID:      acc.Reference,
-							Payload: payload,
-						},
-						nextTasks,
-					).Get(ctx, nil); err != nil {
-						errChan <- errors.Wrap(err, "running next workflow")
-					}
-				})
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
+				}
 			}
 		}
 

@@ -32,7 +32,6 @@ func (s *UnitTestSuite) Test_FetchNextOthers_WithoutInstance_Success() {
 			HasMore:  false,
 		}, nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
@@ -43,9 +42,107 @@ func (s *UnitTestSuite) Test_FetchNextOthers_WithoutInstance_Success() {
 			Payload: []byte(`{}`),
 		},
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_FetchNextOthers_WithNextTasks_Success() {
+	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.State{
+			ID: models.StateID{
+				Reference:   fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_OTHERS.String(), "1"),
+				ConnectorID: s.connectorID,
+			},
+			ConnectorID: s.connectorID,
+			State:       []byte(`{}`),
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.PluginFetchNextOthersActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextOthersRequest) (*models.FetchNextOthersResponse, error) {
+		return &models.FetchNextOthersResponse{
+			Others: []models.PSPOther{
+				s.pspOther,
+			},
+			NewState: []byte(`{}`),
+			HasMore:  false,
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
+		&s.connector,
+		nil,
+	)
+	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
+		Config:      models.DefaultConfig(),
+		ConnectorID: s.connectorID,
+		FromPayload: &FromPayload{
+			ID:      "1",
+			Payload: []byte(`{}`),
+		},
+		Periodically: false,
+	}, []models.ConnectorTaskTree{
+		{
+			TaskType:     models.TASK_FETCH_OTHERS,
+			Name:         "test",
+			Periodically: true,
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_FetchNextOthers_WithNextTasks_ConnectorScheduledForDeletion_Success() {
+	connector := s.connector
+	connector.ScheduledForDeletion = true
+	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.State{
+			ID: models.StateID{
+				Reference:   fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_OTHERS.String(), "1"),
+				ConnectorID: s.connectorID,
+			},
+			ConnectorID: s.connectorID,
+			State:       []byte(`{}`),
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.PluginFetchNextOthersActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextOthersRequest) (*models.FetchNextOthersResponse, error) {
+		return &models.FetchNextOthersResponse{
+			Others: []models.PSPOther{
+				s.pspOther,
+			},
+			NewState: []byte(`{}`),
+			HasMore:  false,
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
+		&connector,
+		nil,
+	)
+	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
+		Config:      models.DefaultConfig(),
+		ConnectorID: s.connectorID,
+		FromPayload: &FromPayload{
+			ID:      "1",
+			Payload: []byte(`{}`),
+		},
+		Periodically: false,
+	}, []models.ConnectorTaskTree{
+		{
+			TaskType:     models.TASK_FETCH_OTHERS,
+			Name:         "test",
+			Periodically: true,
+		},
+	})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
@@ -79,7 +176,6 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Success() {
 			HasMore:  false,
 		}, nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)
@@ -95,9 +191,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Success() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -180,7 +274,6 @@ func (s *UnitTestSuite) Test_FetchNextOthers_HasMoreLoop_Success() {
 			HasMore:  true,
 		}, nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.OnActivity(activities.PluginFetchNextOthersActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextOthersRequest) (*models.FetchNextOthersResponse, error) {
@@ -206,9 +299,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_HasMoreLoop_Success() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -228,9 +319,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesStore_Error() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -258,9 +347,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesGet_Error() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -299,56 +386,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_PluginFetchNextOthers_Error() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err = s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, expectedErr.Error())
-}
-
-func (s *UnitTestSuite) Test_FetchNextOthers_Run_Error() {
-	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
-		&models.State{
-			ID: models.StateID{
-				Reference:   models.CAPABILITY_FETCH_OTHERS.String(),
-				ConnectorID: s.connectorID,
-			},
-			ConnectorID: s.connectorID,
-			State:       []byte(`{}`),
-		},
-		nil,
-	)
-	s.env.OnActivity(activities.PluginFetchNextOthersActivity, mock.Anything, mock.Anything).Once().Return(&models.FetchNextOthersResponse{
-		Others: []models.PSPOther{
-			s.pspOther,
-		},
-		NewState: []byte(`{}`),
-		HasMore:  false,
-	}, nil)
-	expectedErr := errors.New("error-test")
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
-	)
-	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
-		s.True(instance.Terminated)
-		s.NotNil(instance.Error)
-		return nil
-	})
-
-	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
-	s.NoError(err)
-	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
-		ConnectorID:  s.connectorID,
-		FromPayload:  nil,
-		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -376,7 +414,6 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesStore_Error() {
 		NewState: []byte(`{}`),
 		HasMore:  false,
 	}, nil)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
@@ -394,9 +431,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesStore_Error() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
@@ -424,7 +459,6 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesUpdate_Error() {
 		NewState: []byte(`{}`),
 		HasMore:  false,
 	}, nil)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
@@ -440,9 +474,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesUpdate_Error() {
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
+	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()

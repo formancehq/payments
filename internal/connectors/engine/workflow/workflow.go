@@ -122,7 +122,7 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		}).
 		Append(temporalworker.Definition{
 			Name: Run,
-			Func: w.run,
+			Func: w.runNextTasks,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunCreateWebhooks,
