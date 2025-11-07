@@ -50,7 +50,7 @@ func scanForOldest(
 		oldest = trx
 		oldestID = trx.ID
 	default:
-		return nil, timeline, hasMore, fmt.Errorf("failed to fetch backlog for type %T", list)
+		return nil, timeline, hasMore, fmt.Errorf("failed to scan for oldest for type %T", list)
 	}
 
 	// we haven't found the oldest yet
@@ -107,6 +107,8 @@ func fetchBacklog(
 		for _, acc := range v.Data {
 			results = append(results, acc)
 		}
+	default:
+		return results, timeline, hasMore, fmt.Errorf("failed to fetch backlog for type %T", list)
 	}
 
 	// on the very first run we keep track of where we started
