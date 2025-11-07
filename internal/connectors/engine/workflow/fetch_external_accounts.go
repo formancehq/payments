@@ -121,6 +121,7 @@ func (w Workflow) fetchExternalAccounts(
 						payload, err := json.Marshal(acc)
 						if err != nil {
 							errChan <- errors.Wrap(err, "marshalling external account")
+							return
 						}
 
 						if err := w.runNextTasks(

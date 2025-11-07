@@ -134,6 +134,7 @@ func (w Workflow) fetchNextPayments(
 						payload, err := json.Marshal(p)
 						if err != nil {
 							errChan <- errors.Wrap(err, "marshalling payment")
+							return
 						}
 
 						if err := w.runNextTasks(

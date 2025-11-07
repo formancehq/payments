@@ -122,6 +122,8 @@ func (w Workflow) fetchAccounts(
 						payload, err := json.Marshal(acc)
 						if err != nil {
 							errChan <- errors.Wrap(err, "marshalling account")
+							// don't continue if we can't marshal the account
+							return
 						}
 
 						if err := w.runNextTasks(

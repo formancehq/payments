@@ -123,6 +123,7 @@ func (w Workflow) fetchBalances(
 						payload, err := json.Marshal(b)
 						if err != nil {
 							errChan <- errors.Wrap(err, "marshalling account")
+							return
 						}
 
 						if err := w.runNextTasks(
