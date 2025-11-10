@@ -3,18 +3,14 @@ package workflow
 import (
 	"time"
 
+	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
-const (
-	StartToCloseTimeoutMinutesDefault = 1
-	StartToCloseTimeoutMinutesLong    = 5
-)
-
 func infiniteRetryContext(ctx workflow.Context) workflow.Context {
 	return workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		StartToCloseTimeout: StartToCloseTimeoutMinutesDefault * time.Minute,
+		StartToCloseTimeout: models.ActivityStartToCloseTimeoutMinutesDefault * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:        time.Second,
 			BackoffCoefficient:     2,
@@ -26,7 +22,7 @@ func infiniteRetryContext(ctx workflow.Context) workflow.Context {
 
 func fetchNextActivityRetryContext(ctx workflow.Context) workflow.Context {
 	return workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		StartToCloseTimeout: StartToCloseTimeoutMinutesLong * time.Minute,
+		StartToCloseTimeout: models.ActivityStartToCloseTimeoutMinutesLong * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:        time.Second,
 			BackoffCoefficient:     2,

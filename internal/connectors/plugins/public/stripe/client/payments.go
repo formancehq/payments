@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -29,7 +29,7 @@ func (c *client) GetPayments(
 ) (results []*stripe.BalanceTransaction, _ Timeline, hasMore bool, err error) {
 	results = make([]*stripe.BalanceTransaction, 0, int(pageSize))
 
-	timer := time.NewTimer((workflow.StartToCloseTimeoutMinutesLong - 1) * time.Minute)
+	timer := time.NewTimer((models.ActivityStartToCloseTimeoutMinutesLong - 1) * time.Minute)
 	defer timer.Stop()
 
 	for {
