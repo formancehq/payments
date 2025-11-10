@@ -354,12 +354,14 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 		migrations.Migration{
 			Name: "optimize query performance indexes",
 			Up: func(ctx context.Context, db bun.IDB) error {
-				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					logger.Info("running optimize query performance indexes migration...")
-					_, err := tx.ExecContext(ctx, optimizeQueryPerformanceIndexes)
-					logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
-					return err
-				})
+				logger.Info("running optimize query performance indexes migration...")
+				// Guard: IDB must be *bun.DB, not *bun.Tx (CREATE INDEX CONCURRENTLY cannot run in a transaction).
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration 24 must not run inside a transaction; pass a *bun.DB")
+				}
+				_, err := db.ExecContext(ctx, optimizeQueryPerformanceIndexes)
+				logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
+				return err
 			},
 		},
 	)
