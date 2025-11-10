@@ -20,10 +20,7 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 		name  string
 		query string
 	}{
-		// ============================================
-		// PRIORITY 0: JSONB GIN Indexes
-		// ============================================
-		// These dramatically improve metadata filtering performance (100x+ faster)
+		// JSONB GIN Indexes - dramatically improve metadata filtering performance
 		{
 			name: "payments_metadata_gin",
 			query: `CREATE INDEX CONCURRENTLY IF NOT EXISTS payments_metadata_gin
@@ -60,20 +57,13 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				ON bank_accounts USING gin (metadata)`,
 		},
 
-		// ============================================
-		// PRIORITY 0: Payment Adjustment Optimizations
-		// ============================================
 		// Composite index for LATERAL JOIN in PaymentsList (payments.go:432-439)
-		// This covers: WHERE payment_id = X ORDER BY created_at DESC, sort_id DESC LIMIT 1
 		{
 			name: "payment_adjustments_payment_created_sort",
 			query: `CREATE INDEX CONCURRENTLY IF NOT EXISTS payment_adjustments_payment_created_sort
 				ON payment_adjustments (payment_id, created_at DESC, sort_id DESC)`,
 		},
 
-		// ============================================
-		// PRIORITY 1: Reference Lookup Optimizations
-		// ============================================
 		// Composite index for PaymentsGetByReference (payments.go:254-264)
 		{
 			name: "payments_connector_reference",
@@ -81,9 +71,6 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				ON payments (connector_id, reference)`,
 		},
 
-		// ============================================
-		// PRIORITY 1: Balance Query Optimizations
-		// ============================================
 		// Composite index for balance time-range queries (balances.go:173-191)
 		{
 			name: "balances_account_asset_time_range",
@@ -91,11 +78,7 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				ON balances (account_id, asset, last_updated_at, created_at)`,
 		},
 
-		// ============================================
-		// PRIORITY 1: Connector Deletion Optimizations
-		// ============================================
-		// These composite indexes dramatically improve CASCADE DELETE performance
-		// when deleting connectors (connectors.go:169-175)
+		// Composite indexes for CASCADE DELETE performance when deleting connectors
 		{
 			name: "payments_connector_created_sort",
 			query: `CREATE INDEX CONCURRENTLY IF NOT EXISTS payments_connector_created_sort
@@ -122,11 +105,7 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				ON payment_initiation_adjustments (payment_initiation_id, created_at DESC, sort_id DESC)`,
 		},
 
-		// ============================================
-		// PRIORITY 2: Partial Indexes for Filtered Queries
-		// ============================================
-		// Partial index for active (non-deleted) connectors
-		// Improves connector listing queries that filter out scheduled_for_deletion = true
+		// Partial index for active connectors
 		{
 			name: "connectors_active_id_name",
 			query: `CREATE INDEX CONCURRENTLY IF NOT EXISTS connectors_active_id_name
@@ -134,9 +113,6 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				WHERE scheduled_for_deletion = false`,
 		},
 
-		// ============================================
-		// PRIORITY 2: Payment Initiation Related Optimizations
-		// ============================================
 		// Covering index for payment initiation related payments lookup
 		{
 			name: "payment_initiation_related_payments_both_ids",
@@ -144,9 +120,6 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				ON payment_initiation_related_payments (payment_initiation_id, payment_id, created_at DESC)`,
 		},
 
-		// ============================================
-		// PRIORITY 3: Additional Composite Indexes for Common Patterns
-		// ============================================
 		// Composite index for pool account lookups
 		{
 			name: "pool_accounts_pool_account_connector",
@@ -169,9 +142,6 @@ func OptimizeQueryPerformanceIndexes(ctx context.Context, db bun.IDB) error {
 				WHERE connector_id IS NOT NULL`,
 		},
 
-		// ============================================
-		// PRIORITY 3: PSU and Open Banking Indexes
-		// ============================================
 		// Composite indexes for PSU and open banking connection queries
 		{
 			name: "payments_psu_connector_obc",
