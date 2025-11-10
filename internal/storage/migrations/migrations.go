@@ -49,8 +49,6 @@ var psuBankBridgeConnectionUpdatedAt string
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
 
-//go:embed 24-optimize-query-performance-indexes.sql
-var optimizeQueryPerformanceIndexes string
 
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
@@ -355,11 +353,7 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 			Name: "optimize query performance indexes",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				logger.Info("running optimize query performance indexes migration...")
-				// Guard: IDB must be *bun.DB, not *bun.Tx (CREATE INDEX CONCURRENTLY cannot run in a transaction).
-				if _, ok := db.(*bun.Tx); ok {
-					return fmt.Errorf("migration 24 must not run inside a transaction; pass a *bun.DB")
-				}
-				_, err := db.ExecContext(ctx, optimizeQueryPerformanceIndexes)
+				err := AddOptimizeQueryPerformanceIndexes(ctx, db)
 				logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
 				return err
 			},
