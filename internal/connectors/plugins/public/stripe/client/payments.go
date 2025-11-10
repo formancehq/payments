@@ -29,7 +29,7 @@ func (c *client) GetPayments(
 ) (results []*stripe.BalanceTransaction, _ Timeline, hasMore bool, err error) {
 	results = make([]*stripe.BalanceTransaction, 0, int(pageSize))
 
-	timer := time.NewTimer((workflow.StartToCloseTimeoutMinutes - 1) * time.Minute)
+	timer := time.NewTimer((workflow.StartToCloseTimeoutMinutesLong - 1) * time.Minute)
 	defer timer.Stop()
 
 	for {
