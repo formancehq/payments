@@ -7,9 +7,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+const StartToCloseTimeoutMinutes = 5
+
 func infiniteRetryContext(ctx workflow.Context) workflow.Context {
 	return workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		StartToCloseTimeout: 5 * time.Minute,
+		StartToCloseTimeout: StartToCloseTimeoutMinutes * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:        time.Second,
 			BackoffCoefficient:     2,
