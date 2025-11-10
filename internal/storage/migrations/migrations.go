@@ -49,6 +49,9 @@ var psuBankBridgeConnectionUpdatedAt string
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
 
+//go:embed 24-optimize-query-performance-indexes.sql
+var optimizeQueryPerformanceIndexes string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -351,10 +354,12 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 		migrations.Migration{
 			Name: "optimize query performance indexes",
 			Up: func(ctx context.Context, db bun.IDB) error {
-				logger.Info("running optimize query performance indexes migration...")
-				err := OptimizeQueryPerformanceIndexes(ctx, db)
-				logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
-				return err
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running optimize query performance indexes migration...")
+					_, err := tx.ExecContext(ctx, optimizeQueryPerformanceIndexes)
+					logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
+					return err
+				})
 			},
 		},
 	)
