@@ -348,6 +348,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				return err
 			},
 		},
+		migrations.Migration{
+			Name: "optimize query performance indexes",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running optimize query performance indexes migration...")
+				err := OptimizeQueryPerformanceIndexes(ctx, db)
+				logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
+				return err
+			},
+		},
 	)
 }
 
