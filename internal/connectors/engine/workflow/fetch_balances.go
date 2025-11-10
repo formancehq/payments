@@ -52,7 +52,7 @@ func (w Workflow) fetchBalances(
 	hasMore := true
 	for hasMore {
 		balancesResponse, err := activities.PluginFetchNextBalances(
-			infiniteRetryContext(ctx),
+			fetchNextActivityRetryContext(ctx),
 			fetchNextBalances.ConnectorID,
 			fetchNextBalances.FromPayload.GetPayload(),
 			state.State,
