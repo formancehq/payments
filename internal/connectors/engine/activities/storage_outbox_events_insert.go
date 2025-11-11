@@ -18,3 +18,4 @@ var StorageOutboxEventsInsertActivity = Activities{}.StorageOutboxEventsInsert
 func StorageOutboxEventsInsert(ctx workflow.Context, events []models.OutboxEvent) error {
 	return executeActivity(ctx, StorageOutboxEventsInsertActivity, nil, events)
 }
+

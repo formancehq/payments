@@ -3,7 +3,10 @@
 package test_suite
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -11,16 +14,14 @@ import (
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
-	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payments API Bank Accounts", Serial, func() {
+var _ = Context("Payments API Bank Accounts", Ordered, Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
@@ -104,13 +105,10 @@ var _ = Context("Payments API Bank Accounts", Serial, func() {
 	When("forwarding a bank account to a connector with v3", func() {
 		var (
 			connectorID string
-			e           chan *nats.Msg
 			id          uuid.UUID
 		)
 
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
-
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateBankAccount(ctx, v3CreateRequest)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createResponse.GetV3CreateBankAccountResponse().Data)
@@ -131,6 +129,7 @@ var _ = Context("Payments API Bank Accounts", Serial, func() {
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
+
 		It("should be ok when connector is installed", func() {
 			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardBankAccount(ctx, id.String(), &components.V3ForwardBankAccountRequest{
 				ConnectorID: connectorID,
@@ -142,52 +141,20 @@ var _ = Context("Payments API Bank Accounts", Serial, func() {
 			cID := models.MustConnectorIDFromString(connectorID)
 			Expect(taskID.Reference).To(ContainSubstring(cID.Reference.String()))
 
-			connectorID, err := models.ConnectorIDFromString(connectorID)
-			Expect(err).To(BeNil())
-
+			p := waitSavedBankAccountPayloadForConnector(ctx, app.GetValue(), id.String(), connectorID)
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetBankAccount(ctx, id.String())
 			Expect(err).To(BeNil())
-
-			Expect(getResponse.GetV3GetBankAccountResponse().Data.AccountNumber).ToNot(BeNil())
-			accountNumber := *getResponse.GetV3GetBankAccountResponse().Data.AccountNumber
-			Expect(getResponse.GetV3GetBankAccountResponse().Data.Iban).ToNot(BeNil())
-			iban := *getResponse.GetV3GetBankAccountResponse().Data.Iban
-
-			accountID := models.AccountID{
-				Reference:   fmt.Sprintf("dummypay-%s", id.String()),
-				ConnectorID: connectorID,
-			}
-
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount, WithPayload(
-				events.BankAccountMessagePayload{
-					ID:            id.String(),
-					Country:       "DE",
-					Name:          v3CreateRequest.Name,
-					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
-					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
-					CreatedAt:     getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
-					RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
-						{
-							AccountID:   accountID.String(),
-							CreatedAt:   getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
-							ConnectorID: connectorID.String(),
-							Provider:    "dummypay",
-						},
-					},
-				},
-			))))
+			ba := getResponse.GetV3GetBankAccountResponse().Data
+			assertSavedPayloadMatchesBankAccount(p, &ba, v3CreateRequest.Name, connectorID)
 		})
 	})
 
 	When("forwarding a bank account to a connector with v2", func() {
 		var (
 			connectorID string
-			e           chan *nats.Msg
 			id          uuid.UUID
 		)
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
-
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateBankAccount(ctx, v2CreateRequest)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createResponse.GetBankAccountResponse().Data.ID)
@@ -208,14 +175,16 @@ var _ = Context("Payments API Bank Accounts", Serial, func() {
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok", func() {
-			forwardResponse, err := app.GetValue().SDK().Payments.V1.ForwardBankAccount(ctx, id.String(), components.ForwardBankAccountRequest{
+			_, err := app.GetValue().SDK().Payments.V1.ForwardBankAccount(ctx, id.String(), components.ForwardBankAccountRequest{
 				ConnectorID: connectorID,
 			})
 			Expect(err).To(BeNil())
-			Expect(forwardResponse.GetBankAccountResponse().Data.RelatedAccounts).To(HaveLen(1))
-			Expect(forwardResponse.GetBankAccountResponse().Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorID))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount)))
+			p := waitSavedBankAccountPayloadForConnector(ctx, app.GetValue(), id.String(), connectorID)
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetBankAccount(ctx, id.String())
+			Expect(err).To(BeNil())
+			ba := getResponse.GetBankAccountResponse().Data
+			assertSavedPayloadMatchesBankAccount(p, &ba, v2CreateRequest.Name, connectorID)
 		})
 	})
 
@@ -279,3 +248,71 @@ var _ = Context("Payments API Bank Accounts", Serial, func() {
 		})
 	})
 })
+
+// test helpers shared across v2/v3 forwarding scenarios
+func waitSavedBankAccountPayloadForConnector(ctx context.Context, s *Server, bankAccountID, connectorID string) events.BankAccountMessagePayload {
+	var ret events.BankAccountMessagePayload
+	Eventually(func(g Gomega) bool {
+		payloads, err := LoadOutboxPayloadsByType(ctx, s, models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED)
+		g.Expect(err).To(BeNil())
+		for _, raw := range payloads {
+			var tmp events.BankAccountMessagePayload
+			if json.Unmarshal(raw, &tmp) == nil && tmp.ID == bankAccountID {
+				for _, x := range tmp.RelatedAccounts {
+					if x.ConnectorID == connectorID {
+						ret = tmp
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}).Should(BeTrue())
+	return ret
+}
+
+// bankAccountLike abstracts both V1 and V3 bank account SDK models we need for assertions
+// so we can share the same validation logic.
+type bankAccountLike interface {
+	GetID() string
+	GetCreatedAt() time.Time
+	GetAccountNumber() *string
+	GetIban() *string
+}
+
+func assertSavedPayloadMatchesBankAccount(
+	p events.BankAccountMessagePayload,
+	ba bankAccountLike,
+	expectedName, connectorID string,
+) {
+	Expect(p.ID).To(Equal(ba.GetID()))
+	Expect(p.Country).To(Equal("DE"))
+	Expect(p.Name).To(Equal(expectedName))
+	Expect(p.CreatedAt.Equal(ba.GetCreatedAt())).To(BeTrue())
+
+	Expect(ba.GetAccountNumber()).ToNot(BeNil())
+	an := *ba.GetAccountNumber()
+	Expect(p.AccountNumber).To(Equal(fmt.Sprintf("%s****%s", an[0:2], an[len(an)-3:])))
+
+	Expect(ba.GetIban()).ToNot(BeNil())
+	ib := *ba.GetIban()
+	Expect(p.IBAN).To(Equal(fmt.Sprintf("%s**************%s", ib[0:4], ib[len(ib)-4:])))
+
+	var ra events.BankAccountRelatedAccountsPayload
+	raFound := false
+	for _, x := range p.RelatedAccounts {
+		if x.ConnectorID == connectorID {
+			ra = x
+			raFound = true
+			break
+		}
+	}
+	Expect(raFound).To(BeTrue(), "expected related account for connector %s", connectorID)
+	Expect(ra.Provider).To(Equal("dummypay"))
+	Expect(ra.ConnectorID).To(Equal(connectorID))
+	accID, err := models.AccountIDFromString(ra.AccountID)
+	Expect(err).To(BeNil())
+	Expect(accID.Reference).To(Equal(fmt.Sprintf("dummypay-%s", ba.GetID())))
+	Expect(accID.ConnectorID.String()).To(Equal(connectorID))
+	Expect(ra.CreatedAt.Equal(ba.GetCreatedAt())).To(BeTrue())
+}
