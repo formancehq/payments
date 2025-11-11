@@ -1,7 +1,6 @@
 package testserver
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -49,22 +48,6 @@ func WithCallback(expected any, callback func(b []byte) error) CallbackMatcher {
 		expected: expected,
 		callback: callback,
 	}
-}
-
-type RawCallbackMatcher struct {
-	callback func(b []byte) error
-}
-
-func (m RawCallbackMatcher) Match(payload interface{}) error {
-	marshaledPayload, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %s", err)
-	}
-	return m.callback(marshaledPayload)
-}
-
-func WithRawCallback(callback func(b []byte) error) RawCallbackMatcher {
-	return RawCallbackMatcher{callback: callback}
 }
 
 var _ PayloadMatcher = (*CallbackMatcher)(nil)
@@ -161,98 +144,6 @@ func Event(eventName string, matchers ...PayloadMatcher) types.GomegaMatcher {
 	return &EventMatcher{
 		matchers:  matchers,
 		eventName: eventName,
-	}
-}
-
-// OutboxDBEventMatcher checks the outbox_events table for an event of a given type
-// and applies the provided payload matchers to its payload JSON.
-// It expects the actual value to be a *Server (testserver).
-// It re-queries the DB on each Match call, making it suitable for Eventually.
-
-type OutboxDBEventMatcher struct {
-	eventType string
-	matchers  []PayloadMatcher
-	err       error
-}
-
-func (m *OutboxDBEventMatcher) Match(actual any) (bool, error) {
-	srv, ok := actual.(*Server)
-	if !ok {
-		return false, fmt.Errorf("expected actual to be *Server, got %T", actual)
-	}
-
-	db, err := srv.Database()
-	if err != nil {
-		m.err = err
-		return false, nil
-	}
-	defer db.Close()
-
-	// Fetch pending outbox events of the requested type
-	type row struct {
-		EventType string          `bun:"event_type"`
-		Payload   json.RawMessage `bun:"payload"`
-	}
-	var rows []row
-	ctx := context.Background()
-	err = db.NewSelect().
-		TableExpr("outbox_events").
-		Column("event_type", "payload").
-		Where("event_type = ?", m.eventType).
-		Order("created_at ASC").
-		Scan(ctx, &rows)
-	if err != nil {
-		m.err = err
-		return false, nil
-	}
-
-	if len(rows) == 0 {
-		m.err = fmt.Errorf("no outbox events with type %s yet", m.eventType)
-		return false, nil
-	}
-
-	// Try to match at least one row
-	for _, r := range rows {
-		m.err = nil
-		var payload any
-		if err := json.Unmarshal(r.Payload, &payload); err != nil {
-			m.err = fmt.Errorf("failed to decode outbox payload: %w", err)
-			continue
-		}
-		matchedAll := true
-		for _, matcher := range m.matchers {
-			if err := matcher.Match(payload); err != nil {
-				matchedAll = false
-				m.err = err
-				break
-			}
-		}
-		if matchedAll {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (m *OutboxDBEventMatcher) FailureMessage(_ any) string {
-	if m.err != nil {
-		return fmt.Sprintf("outbox event does not match expectations: %s", m.err)
-	}
-	return "outbox event not found"
-}
-
-func (m *OutboxDBEventMatcher) NegatedFailureMessage(_ any) string {
-	return "outbox event should not match"
-}
-
-var _ types.GomegaMatcher = (*OutboxDBEventMatcher)(nil)
-
-// OutboxEvent creates a matcher that will check outbox_events for the given type.
-func OutboxEvent(eventType string, matchers ...PayloadMatcher) types.GomegaMatcher {
-	return &OutboxDBEventMatcher{
-		eventType: eventType,
-		matchers:  matchers,
 	}
 }
 

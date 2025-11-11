@@ -5,8 +5,6 @@ package test_suite
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -27,7 +25,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
-
 		app *deferred.Deferred[*Server]
 	)
 
@@ -40,10 +37,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			TemporalAddress:       temporalServer.GetValue().Address(),
 			Output:                GinkgoWriter,
 		}
-	})
-
-	AfterEach(func() {
-		flushRemainingWorkflows(ctx)
 	})
 
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
@@ -83,7 +76,9 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetAccountResponse().Data).To(Equal(createResponse.GetAccountResponse().Data))
 
-			Eventually(app.GetValue()).Should(OutboxEvent(models.OUTBOX_EVENT_ACCOUNT_SAVED))
+			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+			Expect(err).To(BeNil())
+			Expect(n).To(BeNumerically(">=", 1))
 		})
 
 		It("should be successful with v3", func() {
@@ -109,48 +104,9 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(createResponse.GetV3CreateAccountResponse().Data.Connector.Name).NotTo(BeNil())
 			Expect(*createResponse.GetV3CreateAccountResponse().Data.Connector.Name).To(ContainSubstring(connectorUUID.String()))
 
-			Eventually(app.GetValue()).Should(OutboxEvent(models.OUTBOX_EVENT_ACCOUNT_SAVED))
-		})
-
-		It("temporarily verifies an outbox_event is created on account creation", func() {
-			// Create an account and then check the outbox_events table for the corresponding event
-			createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
-				Reference:    "ref-outbox",
-				ConnectorID:  connectorID,
-				CreatedAt:    createdAt,
-				AccountName:  "foo-outbox",
-				Type:         "INTERNAL",
-				DefaultAsset: pointer.For("USD/2"),
-				Metadata:     map[string]string{},
-			})
+			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
 			Expect(err).To(BeNil())
-			accountID := createResponse.GetV3CreateAccountResponse().Data.ID
-
-			// Access the database and assert an outbox event exists for this account
-			Eventually(func(g Gomega) {
-				db, err := app.GetValue().Database()
-				g.Expect(err).To(BeNil())
-				defer db.Close()
-
-				count, err := db.NewSelect().
-					TableExpr("outbox_events").
-					Where("event_type = ? AND entity_id = ?", models.OUTBOX_EVENT_ACCOUNT_SAVED, accountID).
-					Count(ctx)
-				g.Expect(err).To(BeNil())
-				g.Expect(count).To(BeNumerically(">", 0))
-			}).WithTimeout(10 * time.Second).Should(Succeed())
-
-			Eventually(func(g Gomega) {
-				db, err := app.GetValue().Database()
-				defer db.Close()
-				count, err := db.NewSelect().
-					TableExpr("outbox_events").
-					Where("event_type = ? AND entity_id = ?", models.OUTBOX_EVENT_ACCOUNT_SAVED, accountID).
-					Count(ctx)
-				g.Expect(err).To(BeNil())
-				g.Expect(count).To(BeNumerically("==", 0))
-			}).WithTimeout(10 * time.Second).Should(Succeed())
-
+			Expect(n).To(BeNumerically(">=", 1))
 		})
 	})
 
@@ -167,7 +123,10 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(err).To(BeNil())
 			_, err = GeneratePSPData(connectorConf.Directory)
 			Expect(err).To(BeNil())
-			Eventually(app.GetValue()).Should(OutboxEvent(models.OUTBOX_EVENT_ACCOUNT_SAVED))
+			Eventually(func() int {
+				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+				return n
+			}).WithTimeout(2 * time.Second).Should(BeNumerically(">=", 1))
 		})
 
 		AfterEach(func() {
@@ -176,37 +135,20 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 		It("should be successful with v2", func() {
 			var msg events.BalanceMessagePayload
-			Eventually(app.GetValue()).
-				Should(OutboxEvent(models.OUTBOX_EVENT_BALANCE_SAVED, WithRawCallback(func(b []byte) error {
-					// Outbox payload uses balance as a string; adapt to BalanceMessagePayload
-					type outboxBalance struct {
-						AccountID     string    `json:"accountID"`
-						ConnectorID   string    `json:"connectorID"`
-						Provider      string    `json:"provider"`
-						CreatedAt     time.Time `json:"createdAt"`
-						LastUpdatedAt time.Time `json:"lastUpdatedAt"`
-						Asset         string    `json:"asset"`
-						Balance       string    `json:"balance"`
+			Eventually(func() bool {
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				if err != nil {
+					return false
+				}
+				for _, p := range payloads {
+					var tmp events.BalanceMessagePayload
+					if json.Unmarshal(p, &tmp) == nil {
+						msg = tmp
+						return true
 					}
-					var tmp outboxBalance
-					if err := json.Unmarshal(b, &tmp); err != nil {
-						return err
-					}
-					bi, ok := new(big.Int).SetString(tmp.Balance, 10)
-					if !ok {
-						return fmt.Errorf("invalid balance string: %s", tmp.Balance)
-					}
-					msg = events.BalanceMessagePayload{
-						AccountID:     tmp.AccountID,
-						ConnectorID:   tmp.ConnectorID,
-						Provider:      tmp.Provider,
-						CreatedAt:     tmp.CreatedAt,
-						LastUpdatedAt: tmp.LastUpdatedAt,
-						Asset:         tmp.Asset,
-						Balance:       bi,
-					}
-					return nil
-				})))
+				}
+				return false
+			}).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
@@ -224,14 +166,20 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 		It("should be successful with v3", func() {
 			var msg events.BalanceMessagePayload
-			Eventually(app.GetValue()).
-				Should(OutboxEvent(models.OUTBOX_EVENT_BALANCE_SAVED, WithRawCallback(func(b []byte) error {
+			Eventually(func() bool {
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				if err != nil {
+					return false
+				}
+				for _, p := range payloads {
 					var tmp events.BalanceMessagePayload
-					if err := json.Unmarshal(b, &tmp); err != nil {
-						return err
+					if json.Unmarshal(p, &tmp) == nil {
+						msg = tmp
+						return true
 					}
-					return nil
-				})))
+				}
+				return false
+			}).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V3.GetAccountBalances(ctx, operations.V3GetAccountBalancesRequest{
 				AccountID: msg.AccountID,

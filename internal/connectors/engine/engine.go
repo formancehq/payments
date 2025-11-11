@@ -1399,6 +1399,11 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
+	_, err := e.storage.PoolsDelete(ctx, poolID)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
 
 	// Pool deletion events are now sent via outbox pattern in PoolsDelete
 	return nil
