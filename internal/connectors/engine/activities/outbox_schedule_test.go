@@ -170,6 +170,7 @@ func TestCreateOutboxPublisherSchedule_ScheduleOptions(t *testing.T) {
 	// Verify schedule options
 	assert.Equal(t, "test-stack-outbox-publisher", capturedOptions.ID)
 	assert.NotNil(t, capturedOptions.Action)
+	//nolint:staticcheck
 	assert.Equal(t, "test-stack", capturedOptions.SearchAttributes["Stack"])
 	act, ok := capturedOptions.Action.(*client.ScheduleWorkflowAction)
 	require.True(t, ok, "expected ScheduleWorkflowAction")
