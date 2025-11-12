@@ -29,5 +29,11 @@ func workflow() models.ConnectorTasksTree {
 				},
 			},
 		},
+		{
+			TaskType:     models.TASK_CREATE_WEBHOOKS,
+			Name:         "create_webhooks",
+			Periodically: false,
+			NextTasks:    []models.ConnectorTaskTree{},
+		},
 	}
 }
