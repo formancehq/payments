@@ -3,6 +3,7 @@ package stripe
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -61,6 +62,14 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	if p.client == nil {
+		return models.UninstallResponse{}, nil
+	}
+
+	err := p.client.DeleteWebhookEndpoints(ctx)
+	if err != nil {
+		return models.UninstallResponse{}, fmt.Errorf("failed to delete stripe webhooks on uninstall: %w", err)
+	}
 	return models.UninstallResponse{}, nil
 }
 
