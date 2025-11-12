@@ -161,7 +161,7 @@ func TestConnectorsInstall(t *testing.T) {
 		assert.Equal(t, models.OUTBOX_EVENT_CONNECTOR_RESET, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, oldConnector.ID.String(), ourEvent.EntityID)
-		assert.Equal(t, oldConnector.ID, *ourEvent.ConnectorID)
+		assert.Equal(t, newConnector.ID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
 
 		// Verify payload
