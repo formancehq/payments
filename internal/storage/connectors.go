@@ -147,7 +147,7 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 			Payload:        payloadBytes,
 			CreatedAt:      now.Time,
 			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    oldConnectorID,
+			ConnectorID:    &toInsert.ID,
 			IdempotencyKey: idempotencyKey,
 		}
 

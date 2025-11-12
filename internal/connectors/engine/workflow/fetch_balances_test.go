@@ -37,7 +37,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithoutInstance_Success() {
 		s.Equal(s.accountID, balances[0].AccountID)
 		return nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
@@ -81,7 +80,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithNextTasks_Success() {
 		s.Equal(s.accountID, balances[0].AccountID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
 		&s.connector,
 		nil,
@@ -139,7 +137,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithNextTasks_ConnectorScheduledF
 		s.Equal(s.accountID, balances[0].AccountID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
 		&connector,
 		nil,
@@ -199,7 +196,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_Success() {
 		s.Equal(s.accountID, balances[0].AccountID)
 		return nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)
@@ -254,7 +250,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithoutNextTasks_Success() {
 		s.Equal(s.accountID, balances[0].AccountID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)
@@ -309,7 +304,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_HasMoreLoop_Success() {
 		s.Equal(s.accountID, balances[0].AccountID)
 		return nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.OnActivity(activities.PluginFetchNextBalancesActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextBalancesRequest) (*models.FetchNextBalancesResponse, error) {
@@ -475,54 +469,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageBalancesStore_Error() {
 	s.ErrorContains(err, expectedErr.Error())
 }
 
-func (s *UnitTestSuite) Test_FetchNextBalances_Run_Error() {
-	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
-		&models.State{
-			ID: models.StateID{
-				Reference:   models.CAPABILITY_FETCH_BALANCES.String(),
-				ConnectorID: s.connectorID,
-			},
-			ConnectorID: s.connectorID,
-			State:       []byte(`{}`),
-		},
-		nil,
-	)
-	s.env.OnActivity(activities.PluginFetchNextBalancesActivity, mock.Anything, mock.Anything).Once().Return(&models.FetchNextBalancesResponse{
-		Balances: []models.PSPBalance{
-			s.pspBalance,
-		},
-		NewState: []byte(`{}`),
-		HasMore:  false,
-	}, nil)
-	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("error-test")
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
-	)
-	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
-		s.True(instance.Terminated)
-		s.NotNil(instance.Error)
-		return nil
-	})
-
-	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
-	s.NoError(err)
-	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.DefaultConfig(),
-		ConnectorID:  s.connectorID,
-		FromPayload:  nil,
-		Periodically: false,
-	}, []models.ConnectorTaskTree{{
-		Name: "test",
-	}})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err = s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, expectedErr.Error())
-}
-
 func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesStore_Error() {
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
@@ -544,7 +490,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesStore_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
@@ -591,7 +536,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesUpdate_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {

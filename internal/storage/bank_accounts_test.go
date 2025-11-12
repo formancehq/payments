@@ -202,7 +202,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, newBankAccount.ID.String(), payload["id"])
 		assert.Equal(t, newBankAccount.Name, payload["name"])
-		assert.Equal(t, *newBankAccount.AccountNumber, payload["accountNumber"])
+		compareObfuscatedString(t, *newBankAccount.AccountNumber, payload["accountNumber"].(string))
 		assert.Equal(t, *newBankAccount.Country, payload["country"])
 		assert.Contains(t, payload, "metadata")
 		assert.Contains(t, payload, "createdAt")
@@ -290,8 +290,8 @@ func TestBankAccountsUpsert(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, fullBankAccount.ID.String(), payload["id"])
 		assert.Equal(t, fullBankAccount.Name, payload["name"])
-		assert.Equal(t, *fullBankAccount.AccountNumber, payload["accountNumber"])
-		assert.Equal(t, *fullBankAccount.IBAN, payload["iban"])
+		compareObfuscatedString(t, *fullBankAccount.AccountNumber, payload["accountNumber"].(string))
+		compareObfuscatedString(t, *fullBankAccount.IBAN, payload["iban"].(string))
 		assert.Equal(t, *fullBankAccount.SwiftBicCode, payload["swiftBicCode"])
 		assert.Equal(t, *fullBankAccount.Country, payload["country"])
 
@@ -966,4 +966,19 @@ func compareBankAccounts(t *testing.T, expected, actual models.BankAccount) {
 	for i := range expected.RelatedAccounts {
 		require.Equal(t, expected.RelatedAccounts[i], actual.RelatedAccounts[i])
 	}
+}
+
+func compareObfuscatedString(t *testing.T, expected, actual string) {
+	if expected == "" {
+		assert.Empty(t, actual)
+		return
+	}
+	assert.True(t, len(expected) > 2)
+	assert.True(t, len(actual) > 2)
+
+	assert.True(t, len(actual) == len(expected))
+	assert.NotEqual(t, expected, actual)
+
+	assert.Equal(t, expected[0:2], actual[0:2])
+	assert.Equal(t, expected[len(expected)-2:], actual[len(actual)-2:])
 }
