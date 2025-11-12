@@ -172,6 +172,18 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}, nil
 }
 
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	idempotencyKey, err := p.verifyWebhook(ctx, req)
+	if err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+	return models.VerifyWebhookResponse{WebhookIdempotencyKey: idempotencyKey}, nil
+}
+
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled

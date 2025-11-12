@@ -12,7 +12,10 @@ import (
 func (c *client) CreateWebhookEndpoint(ctx context.Context, webhookBaseURL string) (*stripe.WebhookEndpoint, error) {
 	// TODO: let's allow the update of enabled events if the code changes
 
-	u := url.JoinPath(webhookBaseURL, strings.ReplaceAll(string(stripe.EventTypeBalanceAvailable), ".", "_"))
+	u, err := url.JoinPath(webhookBaseURL, strings.ReplaceAll(string(stripe.EventTypeBalanceAvailable), ".", "_"))
+	if err != nil {
+		return nil, err
+	}
 	c.logger.Infof("webhook url: %s", u)
 	params := &stripe.WebhookEndpointParams{
 		EnabledEvents: []*string{
