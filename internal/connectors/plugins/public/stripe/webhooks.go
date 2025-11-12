@@ -19,10 +19,12 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	if err != nil {
 		return nil, err
 	}
+
+	urlPath := strings.TrimPrefix(result.URL, req.WebhookBaseUrl)
 	configs := []models.PSPWebhookConfig{
 		{
 			Name:    result.ID,
-			URLPath: result.URL,
+			URLPath: urlPath,
 			Metadata: map[string]string{
 				"secret":         result.Secret,
 				"enabled_events": strings.Join(result.EnabledEvents, ","),
@@ -32,28 +34,43 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return configs, nil
 }
 
-func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	config := req.Config
+func (p *Plugin) extractWebhookEvent(config *models.WebhookConfig, wh models.PSPWebhook) (evt stripe.Event, err error) {
 	if config == nil || config.Metadata == nil {
-		return []models.WebhookResponse{}, fmt.Errorf("config metadata missing for this webhook: %w", models.ErrWebhookVerification)
+		return evt, fmt.Errorf("config metadata missing for this webhook: %w", models.ErrWebhookVerification)
 	}
 
 	secret, ok := config.Metadata["secret"]
 	if !ok {
-		return []models.WebhookResponse{}, fmt.Errorf("secret missing from config: %w", models.ErrWebhookVerification)
+		return evt, fmt.Errorf("secret missing from config: %w", models.ErrWebhookVerification)
 	}
 
-	payload := req.Webhook.Body
-	headers, ok := req.Webhook.Headers["Stripe-Signature"]
+	payload := wh.Body
+	headers, ok := wh.Headers["Stripe-Signature"]
 	if !ok || len(headers) != 1 {
-		return []models.WebhookResponse{}, fmt.Errorf("stripe signature header not found: %w", models.ErrWebhookVerification)
+		return evt, fmt.Errorf("stripe signature header not found: %w", models.ErrWebhookVerification)
 	}
 
 	// Pass the request body and Stripe-Signature header to ConstructEvent, along
 	// with the webhook signing key.
 	event, err := webhook.ConstructEvent(payload, headers[0], secret)
 	if err != nil {
-		return []models.WebhookResponse{}, fmt.Errorf("Error verifying webhook signature: %w", err)
+		return evt, fmt.Errorf("error verifying webhook signature: %w", err)
+	}
+	return event, nil
+}
+
+func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (*string, error) {
+	event, err := p.extractWebhookEvent(req.Config, req.Webhook)
+	if err != nil {
+		return nil, fmt.Errorf("error verifying webhook: %w", err)
+	}
+	return &event.ID, nil
+}
+
+func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	event, err := p.extractWebhookEvent(req.Config, req.Webhook)
+	if err != nil {
+		return []models.WebhookResponse{}, fmt.Errorf("error translating webhook: %w", err)
 	}
 
 	var webhookResponses []models.WebhookResponse
