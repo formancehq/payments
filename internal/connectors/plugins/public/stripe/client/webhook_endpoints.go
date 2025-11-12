@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 )
 
 func (c *client) CreateWebhookEndpoint(ctx context.Context, webhookBaseURL string) (*stripe.WebhookEndpoint, error) {
@@ -16,12 +16,12 @@ func (c *client) CreateWebhookEndpoint(ctx context.Context, webhookBaseURL strin
 	if err != nil {
 		return nil, err
 	}
-	c.logger.Infof("webhook url: %s", u)
 	params := &stripe.WebhookEndpointParams{
 		EnabledEvents: []*string{
 			stripe.String(string(stripe.EventTypeBalanceAvailable)),
 		},
-		URL: stripe.String(u),
+		URL:        stripe.String(u),
+		APIVersion: stripe.String(stripe.APIVersion),
 	}
 	result, err := c.webhookEndpointClient.New(params)
 	if err != nil {

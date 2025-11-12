@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	stripe "github.com/stripe/stripe-go/v79"
+	stripe "github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 

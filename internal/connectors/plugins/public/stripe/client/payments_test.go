@@ -8,7 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 
