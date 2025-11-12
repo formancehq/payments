@@ -78,7 +78,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
 			Expect(err).To(BeNil())
-			Expect(n).To(BeNumerically(">=", 1))
+			Expect(n).To(BeNumerically(">=", 1)) // todo should be 1, needs cleanup possibly
 		})
 
 		It("should be successful with v3", func() {
@@ -106,7 +106,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
 			Expect(err).To(BeNil())
-			Expect(n).To(BeNumerically(">=", 1))
+			Expect(n).To(BeNumerically(">=", 1)) // todo should be 1, needs cleanup possibly
 		})
 	})
 
@@ -196,31 +196,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		})
 	})
 })
-
-// put near the test for debugging
-//func dumpEvents(ch <-chan *nats.Msg, dur time.Duration) {
-//	deadline := time.After(dur)
-//	for {
-//		select {
-//		case <-deadline:
-//			return
-//		case m := <-ch:
-//			if m == nil {
-//				continue
-//			}
-//			type envelope struct {
-//				Type    string          `json:"type"`
-//				Payload json.RawMessage `json:"payload"`
-//			}
-//			var ev envelope
-//			if err := json.Unmarshal(m.Data, &ev); err != nil {
-//				GinkgoWriter.Printf("recv raw msg (unmarshal err: %v): %s\n", err, string(m.Data))
-//				continue
-//			}
-//			GinkgoWriter.Printf("recv event: type=%s payload=%s\n", ev.Type, string(ev.Payload))
-//		}
-//	}
-//}
 
 func createV3Account(
 	ctx context.Context,
