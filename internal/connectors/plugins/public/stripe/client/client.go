@@ -32,6 +32,7 @@ type Client interface {
 	CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error)
 	ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error)
 	CreateWebhookEndpoint(ctx context.Context, webhookBaseURL string) (*stripe.WebhookEndpoint, error)
+	DeleteWebhookEndpoints(ctx context.Context) error
 }
 
 type client struct {

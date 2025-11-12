@@ -86,6 +86,20 @@ func (mr *MockClientMockRecorder) CreateWebhookEndpoint(ctx, webhookBaseURL any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhookEndpoint", reflect.TypeOf((*MockClient)(nil).CreateWebhookEndpoint), ctx, webhookBaseURL)
 }
 
+// DeleteWebhookEndpoints mocks base method.
+func (m *MockClient) DeleteWebhookEndpoints(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWebhookEndpoints", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWebhookEndpoints indicates an expected call of DeleteWebhookEndpoints.
+func (mr *MockClientMockRecorder) DeleteWebhookEndpoints(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).DeleteWebhookEndpoints), ctx)
+}
+
 // GetAccountBalances mocks base method.
 func (m *MockClient) GetAccountBalances(ctx context.Context, accountID string) (*stripe.Balance, error) {
 	m.ctrl.T.Helper()
