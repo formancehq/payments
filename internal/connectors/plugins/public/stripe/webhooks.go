@@ -10,8 +10,8 @@ import (
 
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/stripe/stripe-go/v79"
-	"github.com/stripe/stripe-go/v79/webhook"
+	"github.com/stripe/stripe-go/v80"
+	"github.com/stripe/stripe-go/v80/webhook"
 )
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
