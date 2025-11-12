@@ -137,4 +137,45 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 	}, nil
 }
 
+func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	if p.client == nil {
+		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+	}
+	configs, err := p.createWebhooks(ctx, req)
+	if err != nil {
+		return models.CreateWebhooksResponse{}, err
+	}
+
+	others := make([]models.PSPOther, 0, len(configs))
+	for _, config := range configs {
+		raw, err := json.Marshal(&config)
+		if err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
+		others = append(others, models.PSPOther{
+			ID:    config.Name,
+			Other: raw,
+		})
+	}
+	return models.CreateWebhooksResponse{
+		Others:  others,
+		Configs: configs,
+	}, nil
+}
+
+func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+	if p.client == nil {
+		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	responses, err := p.translateWebhook(ctx, req)
+	if err != nil {
+		return models.TranslateWebhookResponse{}, err
+	}
+
+	return models.TranslateWebhookResponse{
+		Responses: responses,
+	}, nil
+}
+
 var _ models.Plugin = &Plugin{}
