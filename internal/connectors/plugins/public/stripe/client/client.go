@@ -16,6 +16,7 @@ import (
 	"github.com/stripe/stripe-go/v79/payout"
 	"github.com/stripe/stripe-go/v79/transfer"
 	"github.com/stripe/stripe-go/v79/transferreversal"
+	"github.com/stripe/stripe-go/v79/webhookendpoint"
 )
 
 // https://github.com/stripe/stripe-go/blob/master/stripe.go#L1478
@@ -30,6 +31,7 @@ type Client interface {
 	CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error)
 	CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error)
 	ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error)
+	CreateWebhookEndpoint(ctx context.Context, webhookBaseURL string) (*stripe.WebhookEndpoint, error)
 }
 
 type client struct {
@@ -42,9 +44,15 @@ type client struct {
 	payoutClient             payout.Client
 	bankAccountClient        bankaccount.Client
 	balanceTransactionClient balancetransaction.Client
+	webhookEndpointClient    webhookendpoint.Client
 }
 
-func New(name string, logger logging.Logger, backend stripe.Backend, apiKey string) Client {
+func New(
+	name string,
+	logger logging.Logger,
+	backend stripe.Backend,
+	apiKey string,
+) Client {
 	if backend == nil {
 		backends := stripe.NewBackends(metrics.NewHTTPClient(name, StripeDefaultTimeout))
 		backend = backends.API
@@ -58,6 +66,7 @@ func New(name string, logger logging.Logger, backend stripe.Backend, apiKey stri
 		payoutClient:             payout.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},
+		webhookEndpointClient:    webhookendpoint.Client{B: backend, Key: apiKey},
 	}
 }
 
