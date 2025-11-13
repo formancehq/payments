@@ -134,6 +134,87 @@ func IsPaymentInitiationType(fl validator.FieldLevel) bool {
 	return true
 }
 
+func IsTradeStatus(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	status := models.TradeStatus(str)
+	return status.IsValid()
+}
+
+func IsTradeSide(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	side := models.TradeSide(str)
+	return side.IsValid()
+}
+
+func IsTradeInstrumentType(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	instrumentType := models.TradeInstrumentType(str)
+	return instrumentType.IsValid()
+}
+
+func IsTradeExecutionModel(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	model := models.TradeExecutionModel(str)
+	return model.IsValid()
+}
+
+func IsTradeOrderType(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	orderType := models.TradeOrderType(str)
+	return orderType.IsValid()
+}
+
+func IsTradeTimeInForce(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	tif := models.TradeTimeInForce(str)
+	return tif.IsValid()
+}
+
+func IsTradeLiquidity(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	liquidity := models.TradeLiquidity(str)
+	return liquidity.IsValid()
+}
+
+func IsTradeFeeKind(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	kind := models.TradeFeeKind(str)
+	return kind.IsValid()
+}
+
+func IsTradeFeeAppliedOn(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	appliedOn := models.TradeFeeAppliedOn(str)
+	return appliedOn.IsValid()
+}
+
 func IsAsset(fl validator.FieldLevel) bool {
 	str, err := fieldLevelToString(fl)
 	if err != nil {

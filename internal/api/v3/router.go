@@ -104,6 +104,17 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 				})
 			})
 
+			// Trades
+			r.Route("/trades", func(r chi.Router) {
+				r.Post("/", tradesCreate(backend, validator))
+				r.Get("/", tradesList(backend))
+
+				r.Route("/{tradeID}", func(r chi.Router) {
+					r.Get("/", tradesGet(backend))
+					r.Patch("/metadata", tradesUpdateMetadata(backend))
+				})
+			})
+
 			// Payment Initiations
 			r.Route("/payment-initiations", func(r chi.Router) {
 				r.Post("/", paymentInitiationsCreate(backend, validator))
@@ -187,6 +198,10 @@ func poolID(r *http.Request) string {
 
 func bankAccountID(r *http.Request) string {
 	return chi.URLParam(r, "bankAccountID")
+}
+
+func tradeID(r *http.Request) string {
+	return chi.URLParam(r, "tradeID")
 }
 
 func paymentServiceUserID(r *http.Request) string {

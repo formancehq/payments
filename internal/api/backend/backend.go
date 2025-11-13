@@ -99,6 +99,12 @@ type Backend interface {
 	// Tasks
 	TaskGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 
+	// Trades
+	TradesCreate(ctx context.Context, trade models.Trade) error
+	TradesUpdateMetadata(ctx context.Context, id models.TradeID, metadata map[string]string) error
+	TradesList(ctx context.Context, query storage.ListTradesQuery) (*bunpaginate.Cursor[models.Trade], error)
+	TradesGet(ctx context.Context, id models.TradeID) (*models.Trade, error)
+
 	// Webhooks
 	ConnectorsHandleWebhooks(ctx context.Context, url string, urlPath string, webhook models.Webhook) error
 

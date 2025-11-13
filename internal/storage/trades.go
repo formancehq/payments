@@ -1,0 +1,269 @@
+package storage
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/payments/internal/models"
+	"github.com/uptrace/bun"
+)
+
+type trade struct {
+	bun.BaseModel `bun:"table:trades"`
+
+	// Auto-increment
+	SortID int64 `bun:"sort_id,autoincrement"`
+
+	// Mandatory fields
+	ID                 models.TradeID              `bun:"id,pk,type:character varying,notnull"`
+	ConnectorID        models.ConnectorID          `bun:"connector_id,type:character varying,notnull"`
+	Reference          string                      `bun:"reference,type:text,notnull"`
+	CreatedAt          time.Time                   `bun:"created_at,type:timestamp without time zone,notnull"`
+	UpdatedAt          time.Time                   `bun:"updated_at,type:timestamp without time zone,notnull"`
+	InstrumentType     models.TradeInstrumentType  `bun:"instrument_type,type:text,notnull"`
+	ExecutionModel     models.TradeExecutionModel  `bun:"execution_model,type:text,notnull"`
+	MarketSymbol       string                      `bun:"market_symbol,type:text,notnull"`
+	MarketBaseAsset    string                      `bun:"market_base_asset,type:text,notnull"`
+	MarketQuoteAsset   string                      `bun:"market_quote_asset,type:text,notnull"`
+	Side               models.TradeSide            `bun:"side,type:text,notnull"`
+	Status             models.TradeStatus          `bun:"status,type:text,notnull"`
+	Requested          json.RawMessage             `bun:"requested,type:jsonb,notnull"`
+	Executed           json.RawMessage             `bun:"executed,type:jsonb,notnull"`
+	Fills              json.RawMessage             `bun:"fills,type:jsonb,notnull"`
+	Legs               json.RawMessage             `bun:"legs,type:jsonb,notnull"`
+	Raw                json.RawMessage             `bun:"raw,type:json,notnull"`
+
+	// Optional fields
+	PortfolioAccountID *models.AccountID          `bun:"portfolio_account_id,type:character varying,nullzero"`
+	OrderType          *models.TradeOrderType     `bun:"order_type,type:text,nullzero"`
+	TimeInForce        *models.TradeTimeInForce   `bun:"time_in_force,type:text,nullzero"`
+
+	// Optional with defaults
+	Fees     json.RawMessage       `bun:"fees,type:jsonb,nullzero,notnull,default:'[]'"`
+	Metadata map[string]string     `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+}
+
+func fromTradeModels(t models.Trade) (*trade, error) {
+	requestedJSON, err := json.Marshal(t.Requested)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal requested: %w", err)
+	}
+
+	executedJSON, err := json.Marshal(t.Executed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal executed: %w", err)
+	}
+
+	feesJSON, err := json.Marshal(t.Fees)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal fees: %w", err)
+	}
+
+	fillsJSON, err := json.Marshal(t.Fills)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal fills: %w", err)
+	}
+
+	legsJSON, err := json.Marshal(t.Legs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal legs: %w", err)
+	}
+
+	return &trade{
+		ID:                 t.ID,
+		ConnectorID:        t.ConnectorID,
+		Reference:          t.Reference,
+		CreatedAt:          time.New(t.CreatedAt),
+		UpdatedAt:          time.New(t.UpdatedAt),
+		PortfolioAccountID: t.PortfolioAccountID,
+		InstrumentType:     t.InstrumentType,
+		ExecutionModel:     t.ExecutionModel,
+		MarketSymbol:       t.Market.Symbol,
+		MarketBaseAsset:    t.Market.BaseAsset,
+		MarketQuoteAsset:   t.Market.QuoteAsset,
+		Side:               t.Side,
+		OrderType:          t.OrderType,
+		TimeInForce:        t.TimeInForce,
+		Status:             t.Status,
+		Requested:          requestedJSON,
+		Executed:           executedJSON,
+		Fees:               feesJSON,
+		Fills:              fillsJSON,
+		Legs:               legsJSON,
+		Metadata:           t.Metadata,
+		Raw:                t.Raw,
+	}, nil
+}
+
+func (t *trade) toTradeModels() (*models.Trade, error) {
+	var requested models.TradeRequested
+	if err := json.Unmarshal(t.Requested, &requested); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal requested: %w", err)
+	}
+
+	var executed models.TradeExecuted
+	if err := json.Unmarshal(t.Executed, &executed); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal executed: %w", err)
+	}
+
+	var fees []models.TradeFee
+	if err := json.Unmarshal(t.Fees, &fees); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal fees: %w", err)
+	}
+
+	var fills []models.TradeFill
+	if err := json.Unmarshal(t.Fills, &fills); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal fills: %w", err)
+	}
+
+	var legs []models.TradeLeg
+	if err := json.Unmarshal(t.Legs, &legs); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal legs: %w", err)
+	}
+
+	return &models.Trade{
+		ID:          t.ID,
+		ConnectorID: t.ConnectorID,
+		Reference:   t.Reference,
+		CreatedAt:   t.CreatedAt.Time,
+		UpdatedAt:   t.UpdatedAt.Time,
+		PortfolioAccountID: t.PortfolioAccountID,
+		InstrumentType:     t.InstrumentType,
+		ExecutionModel:     t.ExecutionModel,
+		Market: models.TradeMarket{
+			Symbol:     t.MarketSymbol,
+			BaseAsset:  t.MarketBaseAsset,
+			QuoteAsset: t.MarketQuoteAsset,
+		},
+		Side:        t.Side,
+		OrderType:   t.OrderType,
+		TimeInForce: t.TimeInForce,
+		Status:      t.Status,
+		Requested:   requested,
+		Executed:    executed,
+		Fees:        fees,
+		Fills:       fills,
+		Legs:        legs,
+		Metadata:    t.Metadata,
+		Raw:         t.Raw,
+	}, nil
+}
+
+func (s *store) TradesUpsert(ctx context.Context, trades []models.Trade) error {
+	if len(trades) == 0 {
+		return nil
+	}
+
+	toInsert := make([]*trade, 0, len(trades))
+	for _, t := range trades {
+		trade, err := fromTradeModels(t)
+		if err != nil {
+			return err
+		}
+		toInsert = append(toInsert, trade)
+	}
+
+	_, err := s.db.NewInsert().
+		Model(&toInsert).
+		On("CONFLICT (id) DO UPDATE").
+		Set("updated_at = EXCLUDED.updated_at").
+		Set("status = EXCLUDED.status").
+		Set("executed = EXCLUDED.executed").
+		Set("fills = EXCLUDED.fills").
+		Set("fees = EXCLUDED.fees").
+		Set("legs = EXCLUDED.legs").
+		Set("metadata = EXCLUDED.metadata").
+		Set("raw = EXCLUDED.raw").
+		Exec(ctx)
+
+	return e("failed to upsert trades", err)
+}
+
+func (s *store) TradesUpdateMetadata(ctx context.Context, id models.TradeID, metadata map[string]string) error {
+	_, err := s.db.NewUpdate().
+		Model((*trade)(nil)).
+		Set("metadata = ?", metadata).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to update trade metadata", err)
+}
+
+func (s *store) TradesGet(ctx context.Context, id models.TradeID) (*models.Trade, error) {
+	var t trade
+
+	err := s.db.NewSelect().
+		Model(&t).
+		Where("id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get trade", err)
+	}
+
+	return t.toTradeModels()
+}
+
+type TradeQuery struct{}
+
+type ListTradesQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[TradeQuery]]
+
+func NewListTradesQuery(opts bunpaginate.PaginatedQueryOptions[TradeQuery]) ListTradesQuery {
+	return ListTradesQuery{
+		PageSize: opts.PageSize,
+		Order:    bunpaginate.OrderAsc,
+		Options:  opts,
+	}
+}
+
+func (s *store) TradesList(ctx context.Context, q ListTradesQuery) (*bunpaginate.Cursor[models.Trade], error) {
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[TradeQuery], trade](s, ctx,
+		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[TradeQuery]])(&q),
+		func(query *bun.SelectQuery) *bun.SelectQuery {
+			query = query.Order("created_at DESC", "sort_id DESC")
+			return query
+		},
+	)
+	if err != nil {
+		return nil, e("failed to list trades", err)
+	}
+
+	modelTrades := make([]models.Trade, 0, len(cursor.Data))
+	for _, t := range cursor.Data {
+		mt, err := t.toTradeModels()
+		if err != nil {
+			return nil, err
+		}
+		modelTrades = append(modelTrades, *mt)
+	}
+
+	return &bunpaginate.Cursor[models.Trade]{
+		PageSize: cursor.PageSize,
+		HasMore:  cursor.HasMore,
+		Previous: cursor.Previous,
+		Next:     cursor.Next,
+		Data:     modelTrades,
+	}, nil
+}
+
+func (s *store) TradesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	_, err := s.db.NewDelete().
+		Model((*trade)(nil)).
+		Where("connector_id = ?", connectorID).
+		Exec(ctx)
+
+	return e("failed to delete trades from connector", err)
+}
+
+func (s *store) TradesDelete(ctx context.Context, id models.TradeID) error {
+	_, err := s.db.NewDelete().
+		Model((*trade)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to delete trade", err)
+}
+
+
