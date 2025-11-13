@@ -11,11 +11,11 @@ type StripeConfig struct {
 	Provider *string `default:"Stripe" json:"provider"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	APIKey        string  `json:"apiKey"`
 	// Number of BalanceTransaction to fetch at each polling interval.
 	//
-	PageSize *int64 `default:"10" json:"pageSize"`
+	PageSize *int64 `default:"100" json:"pageSize"`
 }
 
 func (s StripeConfig) MarshalJSON() ([]byte, error) {

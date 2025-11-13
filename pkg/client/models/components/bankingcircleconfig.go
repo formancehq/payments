@@ -17,7 +17,7 @@ type BankingCircleConfig struct {
 	UserCertificateKey    string  `json:"userCertificateKey"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Banking Circle API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 }
 
 func (b BankingCircleConfig) MarshalJSON() ([]byte, error) {

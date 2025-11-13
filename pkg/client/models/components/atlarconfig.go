@@ -14,9 +14,11 @@ type AtlarConfig struct {
 	BaseURL *string `default:"https://api.atlar.com" json:"baseUrl"`
 	// The frequency at which the connector tries to fetch new Transaction objects from the Atlar API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	// The frequency at which the connector tries to fetch the status of payment initiations from the Atlar API.
 	//
+	//
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
 	TransferInitiationStatusPollingPeriod *string `default:"120s" json:"transferInitiationStatusPollingPeriod"`
 	// The access key used by the connector for authorizing requests to the Atlar API.
 	// You can obtain it along with the associated secret from the Atlar dashboard.

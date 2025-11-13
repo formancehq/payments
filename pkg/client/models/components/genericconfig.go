@@ -13,7 +13,7 @@ type GenericConfig struct {
 	Endpoint string  `json:"endpoint"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from the API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 }
 
 func (g GenericConfig) MarshalJSON() ([]byte, error) {

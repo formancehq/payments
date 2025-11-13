@@ -14,7 +14,7 @@ type ModulrConfig struct {
 	Endpoint  *string `json:"endpoint,omitempty"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Modulr API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 }
 
 func (m ModulrConfig) MarshalJSON() ([]byte, error) {

@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 71facf2180596f678f821f4bef836873
+  docChecksum: ce0cbb890b12d2d53f65fa801c907f47
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -1099,7 +1099,7 @@ examples:
         path:
           connector: "ATLAR"
       requestBody:
-        application/json: {"name": "My Wise Account", "provider": "Wise", "apiKey": "XXX", "pollingPeriod": "60s"}
+        application/json: {"name": "My Wise Account", "provider": "Wise", "apiKey": "XXX", "pollingPeriod": "120m"}
       responses:
         "201":
           application/json: {"data": {"connectorID": "<id>"}}
@@ -1129,7 +1129,7 @@ examples:
           connector: "GENERIC"
       responses:
         "200":
-          application/json: {"data": {"name": "My Atlar Account", "provider": "Atlar", "baseUrl": "https://api.example.com", "pollingPeriod": "60s", "transferInitiationStatusPollingPeriod": "60s", "accessKey": "XXX", "secret": "XXX", "pageSize": 50}}
+          application/json: {"data": {"name": "My Atlar Account", "provider": "Atlar", "baseUrl": "https://api.example.com", "pollingPeriod": "120m", "transferInitiationStatusPollingPeriod": "60s", "accessKey": "XXX", "secret": "XXX", "pageSize": 50}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   updateConnectorConfigV1:

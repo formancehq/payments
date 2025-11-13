@@ -12,7 +12,7 @@ type WiseConfig struct {
 	APIKey   string  `json:"apiKey"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Wise API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 }
 
 func (w WiseConfig) MarshalJSON() ([]byte, error) {
