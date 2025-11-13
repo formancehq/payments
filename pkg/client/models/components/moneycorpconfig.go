@@ -14,7 +14,7 @@ type MoneycorpConfig struct {
 	Endpoint string  `json:"endpoint"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from MoneyCorp API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 }
 
 func (m MoneycorpConfig) MarshalJSON() ([]byte, error) {
