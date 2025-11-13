@@ -53,13 +53,17 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			name = &acc.Name
 		}
 
-		accounts = append(accounts, models.PSPAccount{
+		pspAccount := models.PSPAccount{
 			Reference: acc.ID,
 			CreatedAt: time.Now(),
 			Name:      name,
 			Raw:       raw,
-		})
+		}
+		p.logger.Infof("Creating PSPAccount with reference: %s (name: %s)", pspAccount.Reference, acc.Name)
+		accounts = append(accounts, pspAccount)
 	}
+	
+	p.logger.Infof("Returning %d accounts for storage", len(accounts))
 
 	payload, err := json.Marshal(newState)
 	if err != nil {

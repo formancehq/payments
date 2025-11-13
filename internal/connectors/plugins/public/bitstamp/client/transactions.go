@@ -22,9 +22,56 @@ type Transaction struct {
 	Fee      NumString `json:"fee"`      // "0.00000"
 	EUR      NumString `json:"eur"`      // "-5.00"
 	USDC     NumString `json:"usdc"`     // "5.81077"
-	USDCEUR  NumString `json:"usdc_eur"` // may be number or string → captured as "0.86047000"
 	USD      NumString `json:"usd"`      // "0.0"
 	BTC      NumString `json:"btc"`      // "0.0"
+	DOGE     NumString `json:"doge"`     // "0.0"
+
+	// Rates captures all exchange rate fields dynamically (btc_eur, usdc_eur, etc.)
+	Rates map[string]NumString `json:"-"`
+}
+
+// UnmarshalJSON custom unmarshaler to capture exchange rate fields dynamically.
+func (t *Transaction) UnmarshalJSON(data []byte) error {
+	type Alias Transaction
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(t),
+	}
+
+	// First unmarshal into a map to get all fields
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// Then unmarshal known fields into the struct
+	if err := json.Unmarshal(data, &aux.Alias); err != nil {
+		return err
+	}
+
+	// Capture exchange rate fields (those with underscores)
+	t.Rates = make(map[string]NumString)
+	for key, val := range raw {
+		if strings.Contains(key, "_") {
+			var ns NumString
+			if err := json.Unmarshal(val, &ns); err == nil {
+				t.Rates[key] = ns
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetExchangeRate returns the non-zero exchange rate for this transaction, if any.
+func (t *Transaction) GetExchangeRate() (pair string, rate NumString) {
+	for pair, rate := range t.Rates {
+		if rate != "0" && rate != "0.0" && rate != "0.00" && rate != "" {
+			return pair, rate
+		}
+	}
+	return "", ""
 }
 
 // GetTransactions fetches transactions using the "main" account credentials.

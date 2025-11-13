@@ -100,7 +100,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 				p.logger.Debugf("Skipping duplicate transaction ID: %s", txID)
 			}
 		}
-		
+
 		if len(rows) >= limit {
 			hasMore = true
 		}
@@ -162,23 +162,24 @@ func fillPaymentsBitstamp(
 	out []models.PSPPayment,
 ) ([]models.PSPPayment, error) {
 	for _, tx := range rows {
-		pmt, err := transactionToPayment(tx)
+		pmts, err := transactionToPayments(tx)
 		if err != nil {
 			return nil, err
 		}
-		if pmt != nil {
-			out = append(out, *pmt)
-		}
+		out = append(out, pmts...)
 	}
 	return out, nil
 }
 
-// transactionToPayment converts a single Bitstamp transaction to PSPPayment.
-// Payment type inference logic:
-// - Multiple non-zero currency legs → TRANSFER (e.g., trading BTC/EUR)
+// transactionToPayments converts a single Bitstamp transaction to one or more PSPPayments.
+// Payment creation logic:
+// - If transaction has an exchange rate (currency swap): create TWO payments
+//   - One PAYOUT for the asset going out (negative leg)
+//   - One PAYIN for the new asset coming in (positive leg)
+//
 // - Single positive leg → PAYIN (deposit)
 // - Single negative leg → PAYOUT (withdrawal)
-func transactionToPayment(tx bsclient.Transaction) (*models.PSPPayment, error) {
+func transactionToPayments(tx bsclient.Transaction) ([]models.PSPPayment, error) {
 	// Raw
 	raw, err := json.Marshal(&tx)
 	if err != nil {
@@ -197,6 +198,7 @@ func transactionToPayment(tx bsclient.Transaction) (*models.PSPPayment, error) {
 		"USD":  string(tx.USD),
 		"USDC": string(tx.USDC),
 		"BTC":  string(tx.BTC),
+		"DOGE": string(tx.DOGE),
 	}
 
 	type leg struct {
@@ -222,31 +224,61 @@ func transactionToPayment(tx bsclient.Transaction) (*models.PSPPayment, error) {
 		return nil, nil
 	}
 
-	// Default heuristic:
-	// - trade (two legs): TRANSFER, prefer negative leg as primary
-	// - single leg: PAYIN if positive, PAYOUT if negative
-	var pType models.PaymentType = models.PAYMENT_TYPE_OTHER
-	primary := nonZero[0]
+	// Check if this is an exchange transaction (has exchange rate)
+	_, exchangeRate := tx.GetExchangeRate()
+	hasExchangeRate := exchangeRate != ""
 
-	if len(nonZero) > 1 {
-		// For transfers, prefer the negative leg as primary (money leaving)
-		// If no negative leg, use the first leg
+	// If exchange transaction with multiple legs, create two payments
+	if hasExchangeRate && len(nonZero) > 1 {
+		payments := make([]models.PSPPayment, 0, 2)
+
 		for _, l := range nonZero {
-			if l.Neg {
-				primary = l
-				break
+			decimals, ok := supportedCurrenciesWithDecimal[l.Code]
+			if !ok {
+				return nil, fmt.Errorf("unsupported currency %s", l.Code)
 			}
+
+			amt, err := decimalToMinor(strings.TrimPrefix(strings.TrimSpace(l.Val), "+"), int(decimals))
+			if err != nil {
+				return nil, fmt.Errorf("parse amount %s %s: %w", l.Code, l.Val, err)
+			}
+
+			// Determine payment type based on sign
+			var pType models.PaymentType
+			var suffix string
+			if l.Neg {
+				pType = models.PAYMENT_TYPE_PAYOUT
+				suffix = "-out"
+			} else {
+				pType = models.PAYMENT_TYPE_PAYIN
+				suffix = "-in"
+			}
+
+			payment := models.PSPPayment{
+				Reference: string(tx.ID) + suffix,
+				CreatedAt: createdAt,
+				Type:      pType,
+				Amount:    amt,
+				Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, l.Code),
+				Scheme:    models.PAYMENT_SCHEME_OTHER,
+				Status:    models.PAYMENT_STATUS_SUCCEEDED,
+				Raw:       raw,
+			}
+			payments = append(payments, payment)
 		}
-		pType = models.PAYMENT_TYPE_TRANSFER
-	} else {
-		if primary.Neg {
-			pType = models.PAYMENT_TYPE_PAYOUT
-		} else {
-			pType = models.PAYMENT_TYPE_PAYIN
-		}
+
+		return payments, nil
 	}
 
-	// Amount in minor units from primary leg (keep sign)
+	// Single leg transaction - create one payment
+	primary := nonZero[0]
+	var pType models.PaymentType
+	if primary.Neg {
+		pType = models.PAYMENT_TYPE_PAYOUT
+	} else {
+		pType = models.PAYMENT_TYPE_PAYIN
+	}
+
 	decimals, ok := supportedCurrenciesWithDecimal[primary.Code]
 	if !ok {
 		return nil, fmt.Errorf("unsupported currency %s", primary.Code)
@@ -263,11 +295,11 @@ func transactionToPayment(tx bsclient.Transaction) (*models.PSPPayment, error) {
 		Amount:    amt,
 		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, primary.Code),
 		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED, // user_transactions are settled history
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       raw,
 	}
 
-	return &payment, nil
+	return []models.PSPPayment{payment}, nil
 }
 
 // ---- Helpers ----------------------------------------------------------------

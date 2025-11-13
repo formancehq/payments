@@ -161,9 +161,8 @@ func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		_ = req.Body.Close()
 	}
 	req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	if bodyBytes != nil {
-		req.ContentLength = int64(len(bodyBytes))
-	}
+	// Always set ContentLength explicitly (even for nil/empty body)
+	req.ContentLength = int64(len(bodyBytes))
 
 	// Content-Type used in the signature. If request body is empty, don't add Content-Type.
 	var contentType string

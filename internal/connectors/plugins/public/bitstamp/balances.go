@@ -26,6 +26,8 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
+	
+	p.logger.Infof("fetchNextBalances called with account reference: %s", from.Reference)
 
 	// Find the account by reference
 	var targetAccount *client.Account
@@ -40,10 +42,13 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}
 
 	// Fetch balances for this specific account
+	p.logger.Infof("Fetching balances for account reference: %s (ID: %s, Name: %s)", from.Reference, targetAccount.ID, targetAccount.Name)
 	balances, err := p.client.GetAccountBalances(ctx, targetAccount)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
+
+	p.logger.Infof("Retrieved %d balances from Bitstamp for account %s", len(balances), from.Reference)
 
 	accountBalances := make([]models.PSPBalance, 0, len(balances))
 	for _, balance := range balances {
@@ -62,13 +67,17 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			asset = fmt.Sprintf("%s/%d", symbol, precision)
 		}
 
-		accountBalances = append(accountBalances, models.PSPBalance{
+		pspBalance := models.PSPBalance{
 			AccountReference: from.Reference,
 			CreatedAt:        time.Now().UTC(),
 			Amount:           amount,
 			Asset:            asset,
-		})
+		}
+		p.logger.Infof("Created PSPBalance: account=%s, asset=%s, amount=%s", pspBalance.AccountReference, pspBalance.Asset, amount.String())
+		accountBalances = append(accountBalances, pspBalance)
 	}
+
+	p.logger.Infof("Returning %d PSPBalances for storage", len(accountBalances))
 
 	return models.FetchNextBalancesResponse{
 		Balances: accountBalances,
