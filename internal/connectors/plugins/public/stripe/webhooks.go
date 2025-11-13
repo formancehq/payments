@@ -73,7 +73,12 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return []models.WebhookResponse{}, fmt.Errorf("error translating webhook: %w", err)
 	}
 
-	var webhookResponses []models.WebhookResponse
+	// an account reference is only present if it's a StripeConnect account
+	accountReference := event.Account
+	if accountReference == "" {
+		accountReference = rootAccountReference
+	}
+
 	switch event.Type {
 	case stripe.EventTypeBalanceAvailable:
 		var balance stripe.Balance
@@ -81,21 +86,25 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		if err != nil {
 			return []models.WebhookResponse{}, fmt.Errorf("failed to parse %q webhook JSON: %w", event.Type, err)
 		}
-
-		timestamp := time.Now().UTC()
-		for _, a := range balance.Available {
-			webhookResponses = append(webhookResponses, models.WebhookResponse{
-				Balance: &models.PSPBalance{
-					AccountReference: event.Account,
-					Amount:           big.NewInt(a.Amount),
-					Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(a.Currency)),
-					CreatedAt:        timestamp,
-				},
-			})
-		}
-	default:
-		return []models.WebhookResponse{}, fmt.Errorf("unhandled event type: %q", event.Type)
+		return p.translateBalanceWebhook(ctx, accountReference, balance)
 	}
 
-	return webhookResponses, nil
+	return []models.WebhookResponse{}, fmt.Errorf("unhandled event type: %q", event.Type)
+}
+
+func (p *Plugin) translateBalanceWebhook(ctx context.Context, accountRef string, balance stripe.Balance) ([]models.WebhookResponse, error) {
+	responses := make([]models.WebhookResponse, 0, len(balance.Available))
+
+	timestamp := time.Now().UTC()
+	for _, a := range balance.Available {
+		responses = append(responses, models.WebhookResponse{
+			Balance: &models.PSPBalance{
+				AccountReference: accountRef,
+				Amount:           big.NewInt(a.Amount),
+				Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(a.Currency)),
+				CreatedAt:        timestamp,
+			},
+		})
+	}
+	return responses, nil
 }
