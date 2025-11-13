@@ -1469,11 +1469,11 @@ components:
           default: Stripe
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Stripe API.
-          default: 120s
+          default: 30m
         apiKey:
           type: string
           example: XXX
@@ -1483,7 +1483,7 @@ components:
           minimum: 0
           description: |
             Number of BalanceTransaction to fetch at each polling interval.
-          default: 10
+          default: 100
           example: 50
     DummyPayConfig:
       type: object
@@ -1503,7 +1503,7 @@ components:
           description: >-
             The frequency at which the connector will try to fetch new payment
             objects from the directory
-          default: 10s
+          default: 30s
         directory:
           type: string
           example: /tmp/dummypay
@@ -1532,11 +1532,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Wise API.
-          default: 120s
+          default: 30m
     ModulrConfig:
       type: object
       required:
@@ -1561,11 +1561,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Modulr API.
-          default: 120s
+          default: 30m
     BankingCircleConfig:
       type: object
       required:
@@ -1603,11 +1603,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Banking Circle API.
-          default: 120s
+          default: 30m
     GenericConfig:
       type: object
       required:
@@ -1629,11 +1629,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from the API.
-          default: 120s
+          default: 30m
     MangoPayConfig:
       type: object
       required:
@@ -1650,11 +1650,11 @@ components:
           default: Mangopay
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from MangoPay API.
-          default: 120s
+          default: 30m
         clientID:
           type: string
           example: XXX
@@ -1689,11 +1689,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from MoneyCorp API.
-          default: 120s
+          default: 30m
     CurrencyCloudConfig:
       type: object
       required:
@@ -1776,12 +1776,13 @@ components:
             API.
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector tries to fetch new Transaction
             objects from the Atlar API.
-          default: 120s
+          default: 30m
         transferInitiationStatusPollingPeriod:
+          deprecated: true
           type: string
           example: 60s
           description: >
@@ -1809,7 +1810,7 @@ components:
         pageSize:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 10
           description: |
             Number of items to fetch when querying paginated APIs.
           default: 25
