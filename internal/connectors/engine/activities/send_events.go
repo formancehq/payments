@@ -20,6 +20,7 @@ type SendEventsRequest struct {
 	IdempotencyKey string
 	At             time.Time
 
+	Trade                           *models.Trade
 	Account                         *models.Account
 	Balance                         *models.Balance
 	BankAccount                     *models.BankAccount
@@ -54,7 +55,7 @@ func (a Activities) SendEvents(ctx context.Context, req SendEventsRequest) error
 		// event was already sent; nothing to do
 		return nil
 	}
-	
+
 	// event was not sent yet
 	if err := a.sendEvents(ctx, req); err != nil {
 		return err
@@ -72,6 +73,10 @@ func (a Activities) SendEvents(ctx context.Context, req SendEventsRequest) error
 }
 
 func (a Activities) sendEvents(ctx context.Context, req SendEventsRequest) error {
+	if req.Trade != nil {
+		return a.events.Publish(ctx, a.events.NewEventSavedTrades(*req.Trade))
+	}
+
 	if req.Account != nil {
 		return a.events.Publish(ctx, a.events.NewEventSavedAccounts(*req.Account))
 	}

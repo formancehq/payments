@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func tradesList(backend backend.Backend) http.HandlerFunc {
@@ -15,8 +16,16 @@ func tradesList(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_tradesList")
 		defer span.End()
 
+		pageSize, err := bunpaginate.GetPageSize(r)
+		if err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrValidation, err)
+			return
+		}
+		span.SetAttributes(attribute.Int64("page_size", int64(pageSize)))
+
 		query := storage.NewListTradesQuery(bunpaginate.PaginatedQueryOptions[storage.TradeQuery]{
-			PageSize: getPageSize(r),
+			PageSize: pageSize,
 		})
 
 		cursor, err := backend.TradesList(ctx, query)
@@ -29,4 +38,3 @@ func tradesList(backend backend.Backend) http.HandlerFunc {
 		api.RenderCursor(w, *cursor)
 	}
 }
-
