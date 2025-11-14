@@ -2,14 +2,16 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -250,9 +252,28 @@ func TestPaymentsUpsert(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
 
+	// Helper to clean up outbox events created during tests
+	cleanupOutbox := func() {
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			eventSent := models.EventSent{
+				ID: models.EventID{
+					EventIdempotencyKey: event.IdempotencyKey,
+					ConnectorID:         event.ConnectorID,
+				},
+				ConnectorID: event.ConnectorID,
+				SentAt:      time.Now().UTC(),
+			}
+			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+		}
+	}
+	defer cleanupOutbox()
+
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
+	cleanupOutbox() // Clean up outbox events from default data
 
 	t.Run("upsert with unknown connector", func(t *testing.T) {
 		connector := models.ConnectorID{
@@ -575,6 +596,281 @@ func TestPaymentsUpsert(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, big.NewInt(150), actual.Amount)
 	})
+
+	t.Run("outbox events created for new payment adjustments", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Create new payment with adjustment
+		newPayment := models.Payment{
+			ID: models.PaymentID{
+				PaymentReference: models.PaymentReference{
+					Reference: "outbox-test-1",
+					Type:      models.PAYMENT_TYPE_TRANSFER,
+				},
+				ConnectorID: defaultConnector.ID,
+			},
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "outbox-test-1",
+			CreatedAt:            now.Add(-5 * time.Minute).UTC().Time,
+			Type:                 models.PAYMENT_TYPE_TRANSFER,
+			InitialAmount:        big.NewInt(500),
+			Amount:               big.NewInt(500),
+			Asset:                "USD/2",
+			Scheme:               models.PAYMENT_SCHEME_OTHER,
+			SourceAccountID:      &accounts[0].ID,
+			DestinationAccountID: &accounts[1].ID,
+			Metadata: map[string]string{
+				"test": "outbox",
+			},
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "outbox-test-1",
+								Type:      models.PAYMENT_TYPE_TRANSFER,
+							},
+							ConnectorID: defaultConnector.ID,
+						},
+						Reference: "adj1",
+						CreatedAt: now.Add(-5 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					},
+					Reference: "adj1",
+					CreatedAt: now.Add(-5 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					Amount:    big.NewInt(500),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{"test": "data"}`),
+				},
+			},
+		}
+
+		// Create a set of expected idempotency keys
+		expectedKeys := make(map[string]bool)
+		for _, adj := range newPayment.Adjustments {
+			expectedKeys[adj.IdempotencyKey()] = true
+		}
+
+		// Insert payment
+		require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{newPayment}))
+
+		// Verify outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == "payment.saved" && expectedKeys[event.IdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 1, "expected 1 outbox event for 1 new payment adjustment")
+
+		// Check event details
+		event := ourEvents[0]
+		assert.Equal(t, "payment.saved", event.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+		assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
+		assert.Equal(t, 0, event.RetryCount)
+		assert.Nil(t, event.Error)
+		assert.NotEqual(t, uuid.Nil, event.ID)
+		assert.NotEmpty(t, event.IdempotencyKey)
+
+		// Find the matching adjustment by idempotency key
+		var expectedAdj models.PaymentAdjustment
+		for _, adj := range newPayment.Adjustments {
+			if adj.IdempotencyKey() == event.IdempotencyKey {
+				expectedAdj = adj
+				break
+			}
+		}
+
+		// Verify payload contains payment data
+		var payload map[string]interface{}
+		err = json.Unmarshal(event.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newPayment.ID.String(), payload["id"])
+		assert.Equal(t, newPayment.Type.String(), payload["type"])
+		assert.Equal(t, expectedAdj.Status.String(), payload["status"])
+		assert.Equal(t, newPayment.InitialAmount.String(), payload["initialAmount"])
+		assert.Equal(t, newPayment.Amount.String(), payload["amount"])
+		assert.Equal(t, newPayment.Scheme.String(), payload["scheme"])
+		assert.Equal(t, newPayment.Asset, payload["asset"])
+		assert.Equal(t, newPayment.ConnectorID.String(), payload["connectorID"])
+		assert.Contains(t, payload, "provider")
+		assert.Contains(t, payload, "createdAt")
+		assert.Equal(t, accounts[0].ID.String(), payload["sourceAccountID"])
+		assert.Equal(t, accounts[1].ID.String(), payload["destinationAccountID"])
+
+		// Verify EntityID matches payment ID
+		assert.Equal(t, newPayment.ID.String(), event.EntityID)
+
+		// Verify idempotency key matches adjustment
+		assert.Equal(t, expectedAdj.IdempotencyKey(), event.IdempotencyKey)
+	})
+
+	t.Run("outbox events created for multiple adjustments", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Create payment with multiple adjustments
+		multiAdjustmentPayment := models.Payment{
+			ID: models.PaymentID{
+				PaymentReference: models.PaymentReference{
+					Reference: "outbox-test-2",
+					Type:      models.PAYMENT_TYPE_PAYIN,
+				},
+				ConnectorID: defaultConnector.ID,
+			},
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "outbox-test-2",
+			CreatedAt:            now.Add(-4 * time.Minute).UTC().Time,
+			Type:                 models.PAYMENT_TYPE_PAYIN,
+			InitialAmount:        big.NewInt(1000),
+			Amount:               big.NewInt(1000),
+			Asset:                "EUR/2",
+			Scheme:               models.PAYMENT_SCHEME_A2A,
+			DestinationAccountID: &accounts[0].ID,
+			Metadata: map[string]string{
+				"test": "multi",
+			},
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "outbox-test-2",
+								Type:      models.PAYMENT_TYPE_PAYIN,
+							},
+							ConnectorID: defaultConnector.ID,
+						},
+						Reference: "adj1",
+						CreatedAt: now.Add(-4 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_PENDING,
+					},
+					Reference: "adj1",
+					CreatedAt: now.Add(-4 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_PENDING,
+					Amount:    big.NewInt(1000),
+					Asset:     pointer.For("EUR/2"),
+					Raw:       []byte(`{}`),
+				},
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "outbox-test-2",
+								Type:      models.PAYMENT_TYPE_PAYIN,
+							},
+							ConnectorID: defaultConnector.ID,
+						},
+						Reference: "adj2",
+						CreatedAt: now.Add(-3 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					},
+					Reference: "adj2",
+					CreatedAt: now.Add(-3 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					Amount:    big.NewInt(1000),
+					Asset:     pointer.For("EUR/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		// Create a set of expected idempotency keys
+		expectedKeys := make(map[string]bool)
+		for _, adj := range multiAdjustmentPayment.Adjustments {
+			expectedKeys[adj.IdempotencyKey()] = true
+		}
+
+		// Insert payment
+		require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{multiAdjustmentPayment}))
+
+		// Verify outbox events were created for all adjustments
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == "payment.saved" && expectedKeys[event.IdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 2, "expected 2 outbox events for 2 adjustments")
+
+		// Verify all events have correct structure
+		for _, event := range ourEvents {
+			assert.Equal(t, "payment.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
+			assert.NotEqual(t, uuid.Nil, event.ID)
+			assert.NotEmpty(t, event.IdempotencyKey)
+			assert.Equal(t, multiAdjustmentPayment.ID.String(), event.EntityID)
+		}
+	})
+
+	t.Run("rollback on foreign key violation", func(t *testing.T) {
+		defer cleanupOutbox()
+
+		upsertConnector(t, ctx, store, defaultConnector)
+		upsertAccounts(t, ctx, store, defaultAccounts())
+
+		// Create a payment with an invalid connector ID that doesn't exist
+		invalidConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "non-existent-provider"}
+		invalidPayment := models.Payment{
+			ID: models.PaymentID{
+				PaymentReference: models.PaymentReference{
+					Reference: "invalid-payment",
+					Type:      models.PAYMENT_TYPE_PAYIN,
+				},
+				ConnectorID: invalidConnectorID,
+			},
+			ConnectorID: invalidConnectorID,
+			Reference:   "invalid-payment",
+			CreatedAt:   time.Now().UTC(),
+			Type:        models.PAYMENT_TYPE_PAYIN,
+			Amount:      big.NewInt(100),
+			Asset:       "USD",
+			Scheme:      models.PAYMENT_SCHEME_A2A,
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "invalid-payment",
+								Type:      models.PAYMENT_TYPE_PAYIN,
+							},
+							ConnectorID: invalidConnectorID,
+						},
+						Reference: "adj1",
+						CreatedAt: time.Now().UTC(),
+						Status:    models.PAYMENT_STATUS_PENDING,
+					},
+					Reference: "adj1",
+					CreatedAt: time.Now().UTC(),
+					Status:    models.PAYMENT_STATUS_PENDING,
+					Amount:    big.NewInt(100),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		// Attempt to upsert - should fail due to foreign key violation
+		err := store.PaymentsUpsert(ctx, []models.Payment{invalidPayment})
+		require.Error(t, err)
+
+		// Verify no payment was inserted by checking that we can't find it
+		_, err = store.PaymentsGet(ctx, invalidPayment.ID)
+		require.Error(t, err, "payment should not be inserted on error")
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			assert.NotEqual(t, invalidPayment.ID.String(), event.EntityID, "no outbox event should be created for failed insert")
+		}
+	})
 }
 
 func TestPaymentsUpsertRefunded(t *testing.T) {
@@ -583,6 +879,24 @@ func TestPaymentsUpsertRefunded(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
+
+	// Helper to clean up outbox events created during tests
+	cleanupOutbox := func() {
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			eventSent := models.EventSent{
+				ID: models.EventID{
+					EventIdempotencyKey: event.IdempotencyKey,
+					ConnectorID:         event.ConnectorID,
+				},
+				ConnectorID: event.ConnectorID,
+				SentAt:      time.Now().UTC(),
+			}
+			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+		}
+	}
+	defer cleanupOutbox()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1436,9 +1750,28 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
 
+	// Helper to clean up outbox events created during tests
+	cleanupOutbox := func() {
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			eventSent := models.EventSent{
+				ID: models.EventID{
+					EventIdempotencyKey: event.IdempotencyKey,
+					ConnectorID:         event.ConnectorID,
+				},
+				ConnectorID: event.ConnectorID,
+				SentAt:      time.Now().UTC(),
+			}
+			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+		}
+	}
+	defer cleanupOutbox()
+
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
+	cleanupOutbox() // Clean up outbox events from account creation
 
 	t.Run("delete payment by existing reference and connector", func(t *testing.T) {
 		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "test1", defaultConnector.ID))
@@ -1477,6 +1810,118 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, payment)
 		require.Equal(t, pid2, payment.ID)
+	})
+
+	t.Run("outbox events created for deleted payments", func(t *testing.T) {
+		// Create a new payment to delete
+		accounts := defaultAccounts()
+		deletePaymentID := models.PaymentID{
+			PaymentReference: models.PaymentReference{
+				Reference: "delete-test-1",
+				Type:      models.PAYMENT_TYPE_PAYOUT,
+			},
+			ConnectorID: defaultConnector.ID,
+		}
+
+		deletePayment := models.Payment{
+			ID:              deletePaymentID,
+			ConnectorID:     defaultConnector.ID,
+			Reference:       "delete-test-1",
+			CreatedAt:       now.Add(-2 * time.Minute).UTC().Time,
+			Type:            models.PAYMENT_TYPE_PAYOUT,
+			InitialAmount:   big.NewInt(250),
+			Amount:          big.NewInt(250),
+			Asset:           "GBP/2",
+			Scheme:          models.PAYMENT_SCHEME_OTHER,
+			SourceAccountID: &accounts[0].ID,
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: deletePaymentID,
+						Reference: "del-adj1",
+						CreatedAt: now.Add(-2 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					},
+					Reference: "del-adj1",
+					CreatedAt: now.Add(-2 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					Amount:    big.NewInt(250),
+					Asset:     pointer.For("GBP/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		// Insert payment first
+		require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{deletePayment}))
+
+		// Clean up payment.saved events from insertion
+		cleanupOutbox()
+
+		expectedKey := fmt.Sprintf("delete:%s", deletePaymentID.String())
+
+		// Delete the payment
+		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "delete-test-1", defaultConnector.ID))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only the one we just created
+		var ourEvent *models.OutboxEvent
+		for _, event := range pendingEvents {
+			if event.EventType == "payment.deleted" && event.IdempotencyKey == expectedKey {
+				ourEvent = &event
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected 1 outbox event for deleted payment")
+
+		// Check event details
+		assert.Equal(t, "payment.deleted", ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Nil(t, ourEvent.Error)
+		assert.NotEqual(t, uuid.Nil, ourEvent.ID)
+		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+
+		// Verify payload contains payment ID
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, deletePaymentID.String(), payload["id"])
+
+		// Verify EntityID matches payment ID
+		assert.Equal(t, deletePaymentID.String(), ourEvent.EntityID)
+	})
+
+	t.Run("no outbox events when deleting non-existent payment", func(t *testing.T) {
+		// Get count of payment.deleted events before deletion
+		allEventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		deletedEventsBefore := 0
+		for _, event := range allEventsBefore {
+			if event.EventType == "payment.deleted" {
+				deletedEventsBefore++
+			}
+		}
+
+		// Try to delete non-existent payment
+		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "non-existent", defaultConnector.ID))
+
+		// Get count of payment.deleted events after deletion
+		allEventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		deletedEventsAfter := 0
+		for _, event := range allEventsAfter {
+			if event.EventType == "payment.deleted" {
+				deletedEventsAfter++
+			}
+		}
+
+		// Verify no new deleted events were created
+		assert.Equal(t, deletedEventsBefore, deletedEventsAfter, "deleting non-existent payment should not create outbox event")
 	})
 }
 

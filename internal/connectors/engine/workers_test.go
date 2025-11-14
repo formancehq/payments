@@ -31,11 +31,14 @@ var _ = Describe("Worker Tests", func() {
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
+			// Use NewLazyClient as worker.New() requires a properly created client
 			cl, err := client.NewLazyClient(client.Options{})
 			Expect(err).To(BeNil())
 			store = storage.NewMockStorage(ctrl)
 			manager = connectors.NewMockManager(ctrl)
 			pool = engine.NewWorkerPool(logger, "stackname", cl, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, manager, worker.Options{})
+			// Skip schedule creation in tests since we don't have a Temporal server
+			pool.SetSkipScheduleCreation(true)
 
 			connID1 := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
 			connID2 := models.ConnectorID{Reference: uuid.New(), Provider: "provider2"}

@@ -87,21 +87,7 @@ func (w Workflow) fetchAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(accountsResponse.Accounts)*2)
-		for _, account := range accounts {
-			acc := account
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := w.runSendEvents(ctx, SendEvents{
-					Account: &acc,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-		}
+		errChan := make(chan error, len(accountsResponse.Accounts))
 
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
