@@ -32,7 +32,7 @@ var _ = Describe("Stripe Client WebhookEndpoints", func() {
 			expectedErr := errors.New("some err")
 
 			b.EXPECT().Call("POST", "/v1/webhook_endpoints", token, gomock.Any(), gomock.Any()).Return(expectedErr)
-			_, err := cl.CreateWebhookEndpoint(ctx, "http://example.com")
+			_, err := cl.CreateWebhookEndpoints(ctx, "http://example.com")
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
 		})
@@ -40,15 +40,15 @@ var _ = Describe("Stripe Client WebhookEndpoints", func() {
 		It("returns the webhook endpoint", func(ctx SpecContext) {
 			someID := "theID"
 			expected := &stripe.WebhookEndpoint{}
-			b.EXPECT().Call("POST", "/v1/webhook_endpoints", token, gomock.Any(), expected).
+			b.EXPECT().Call("POST", "/v1/webhook_endpoints", token, gomock.Any(), expected).Times(2).
 				DoAndReturn(func(_, _, _ string, _ any, exp *stripe.WebhookEndpoint) error {
 					exp.ID = someID
 					return nil
 				})
-			result, err := cl.CreateWebhookEndpoint(ctx, "http://example.com")
+			results, err := cl.CreateWebhookEndpoints(ctx, "http://example.com")
 			Expect(err).To(BeNil())
-			Expect(result).NotTo(BeNil())
-			Expect(result.ID).To(Equal(someID))
+			Expect(results).To(HaveLen(2))
+			Expect(results[0].ID).To(Equal(someID))
 		})
 	})
 })

@@ -15,21 +15,23 @@ import (
 )
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
-	result, err := p.client.CreateWebhookEndpoint(ctx, req.WebhookBaseUrl)
+	results, err := p.client.CreateWebhookEndpoints(ctx, req.WebhookBaseUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	urlPath := strings.TrimPrefix(result.URL, req.WebhookBaseUrl)
-	configs := []models.PSPWebhookConfig{
-		{
+	configs := make([]models.PSPWebhookConfig, 0, len(results))
+
+	for _, result := range results {
+		urlPath := strings.TrimPrefix(result.URL, req.WebhookBaseUrl)
+		configs = append(configs, models.PSPWebhookConfig{
 			Name:    result.ID,
 			URLPath: urlPath,
 			Metadata: map[string]string{
 				"secret":         result.Secret,
 				"enabled_events": strings.Join(result.EnabledEvents, ","),
 			},
-		},
+		})
 	}
 	return configs, nil
 }
