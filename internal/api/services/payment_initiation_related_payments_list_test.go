@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/stretchr/testify/require"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {

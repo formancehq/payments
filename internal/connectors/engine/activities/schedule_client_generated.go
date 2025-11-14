@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	client "go.temporal.io/sdk/client"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockScheduleClient is a mock of ScheduleClient interface.

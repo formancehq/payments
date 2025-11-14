@@ -16,7 +16,7 @@ import (
 	management "github.com/adyen/adyen-go-api-library/v7/src/management"
 	webhook "github.com/adyen/adyen-go-api-library/v7/src/webhook"
 	models "github.com/formancehq/payments/internal/models"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

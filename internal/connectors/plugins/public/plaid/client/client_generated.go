@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	plaid "github.com/plaid/plaid-go/v34/plaid"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

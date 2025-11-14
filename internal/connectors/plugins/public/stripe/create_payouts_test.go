@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v79"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 var _ = Describe("Stripe Plugin Payouts Creation", func() {

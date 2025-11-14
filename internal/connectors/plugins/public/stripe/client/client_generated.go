@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	stripe "github.com/stripe/stripe-go/v79"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

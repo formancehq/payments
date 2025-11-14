@@ -18,7 +18,7 @@ import (
 	workflowservice "go.temporal.io/api/workflowservice/v1"
 	client "go.temporal.io/sdk/client"
 	converter "go.temporal.io/sdk/converter"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

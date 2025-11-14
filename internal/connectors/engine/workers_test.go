@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 var _ = Describe("Worker Tests", func() {

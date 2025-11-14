@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	"go.temporal.io/sdk/client"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockWorkflowRun is a mock of WorkflowRun interface.

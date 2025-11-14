@@ -11,7 +11,7 @@ import (
 
 	bunpaginate "github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	models "github.com/formancehq/payments/internal/models"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
 )
 

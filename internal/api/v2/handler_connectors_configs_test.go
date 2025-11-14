@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	. "github.com/onsi/ginkgo/v2"
-	"go.uber.org/mock/gomock"
+	"github.com/golang/mock/gomock"
 )
 
 var _ = Describe("API v2 Connectors Configs", func() {

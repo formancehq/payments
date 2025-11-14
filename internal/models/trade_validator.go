@@ -366,6 +366,10 @@ func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment
 	}
 
 	// Create adjustments for each fill
+	// Initialize adjustment slices to ensure they're not nil
+	basePayment.Adjustments = make([]PaymentAdjustment, 0, len(trade.Fills))
+	quotePayment.Adjustments = make([]PaymentAdjustment, 0, len(trade.Fills))
+
 	for _, fill := range trade.Fills {
 		fillQty, _ := decimal.NewFromString(fill.Quantity)
 		fillQuoteAmt, _ := decimal.NewFromString(fill.QuoteAmount)
@@ -412,6 +416,12 @@ func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment
 
 		basePayment.Adjustments = append(basePayment.Adjustments, baseAdj)
 		quotePayment.Adjustments = append(quotePayment.Adjustments, quoteAdj)
+	}
+
+	// Ensure we have at least one adjustment per payment
+	// This is required by the v3 API contract and for event emission
+	if len(basePayment.Adjustments) == 0 {
+		return Payment{}, Payment{}, fmt.Errorf("trade must have at least one fill to create payments with adjustments")
 	}
 
 	return basePayment, quotePayment, nil

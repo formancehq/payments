@@ -8,7 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/stretchr/testify/require"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 func TestPaymentInitiationsList(t *testing.T) {

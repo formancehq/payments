@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	models "github.com/formancehq/payments/internal/models"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.

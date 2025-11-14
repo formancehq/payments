@@ -14,7 +14,7 @@ import (
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.uber.org/mock/gomock"
+	"github.com/golang/mock/gomock"
 )
 
 var _ = Describe("Atlar Plugin Accounts", func() {

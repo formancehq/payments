@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 func TestPaymentInitiationAdjustmentsGetLast(t *testing.T) {

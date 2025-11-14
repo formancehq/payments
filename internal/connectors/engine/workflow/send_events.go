@@ -69,7 +69,23 @@ func (w Workflow) runSendEvents(
 	}
 
 	if sendEvents.Payment != nil {
-		for _, adjustment := range sendEvents.Payment.Adjustments {
+		// Log adjustment count for debugging
+		workflow.GetLogger(ctx).Info("Processing payment event",
+			"reference", sendEvents.Payment.Reference,
+			"adjustments_count", len(sendEvents.Payment.Adjustments))
+
+		if len(sendEvents.Payment.Adjustments) == 0 {
+			workflow.GetLogger(ctx).Warn("Payment has no adjustments, no events will be sent",
+				"payment_id", sendEvents.Payment.ID.String(),
+				"payment_reference", sendEvents.Payment.Reference)
+		}
+
+		for i, adjustment := range sendEvents.Payment.Adjustments {
+			workflow.GetLogger(ctx).Info("Calling sendEvent for adjustment",
+				"adjustment_index", i,
+				"adjustment_reference", adjustment.Reference,
+				"adjustment_idempotency", adjustment.IdempotencyKey())
+
 			err := sendEvent(ctx, activities.SendEventsRequest{
 				ConnectorID:    &sendEvents.Payment.ConnectorID,
 				IdempotencyKey: adjustment.IdempotencyKey(),
@@ -79,8 +95,10 @@ func (w Workflow) runSendEvents(
 				},
 			})
 			if err != nil {
+				workflow.GetLogger(ctx).Error("sendEvent failed", "error", err)
 				return err
 			}
+			workflow.GetLogger(ctx).Info("sendEvent completed successfully", "adjustment_index", i)
 		}
 	}
 

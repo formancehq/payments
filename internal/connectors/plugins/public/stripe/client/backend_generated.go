@@ -15,7 +15,7 @@ import (
 
 	stripe "github.com/stripe/stripe-go/v79"
 	form "github.com/stripe/stripe-go/v79/form"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockBackend is a mock of Backend interface.

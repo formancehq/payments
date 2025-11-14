@@ -14,7 +14,7 @@ import (
 	registry "github.com/formancehq/payments/internal/connectors/plugins/registry"
 	models "github.com/formancehq/payments/internal/models"
 	storage "github.com/formancehq/payments/internal/storage"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
 )
 

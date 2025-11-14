@@ -23,6 +23,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
 	"golang.org/x/sync/errgroup"
@@ -458,6 +459,12 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		otel.RecordError(span, err)
 		return err
 	}
+
+	// Log payment details for debugging
+	span.SetAttributes(
+		attribute.Int("payment.adjustments.count", len(payment.Adjustments)),
+		attribute.String("payment.reference", payment.Reference),
+	)
 
 	// Do not wait for sending of events
 	_, err = e.temporalClient.ExecuteWorkflow(
