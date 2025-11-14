@@ -411,7 +411,7 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 		return e("add bank account related account", err)
 	}
 
-	// Load bank account with related accounts to build payload
+	// Load bank account with related accounts to build event payload
 	var ba bankAccount
 	err = tx.NewSelect().
 		Model(&ba).

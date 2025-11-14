@@ -42,13 +42,41 @@ func (s *store) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []mode
 		return nil
 	}
 
+	// Filter out events that already exist in events_sent table
 	toInsert := make([]outboxEvent, 0, len(events))
 	for _, event := range events {
+		// Construct the EventID that would be used in events_sent
+		eventID := models.EventID{
+			EventIdempotencyKey: event.IdempotencyKey,
+			ConnectorID:         event.ConnectorID,
+		}
+
+		// Check if this EventID already exists in events_sent using the transaction
+		exists, err := tx.NewSelect().
+			Model((*eventSent)(nil)).
+			Where("id = ?", eventID).
+			Exists(ctx)
+		if err != nil {
+			return e("failed to check if event already sent", err)
+		}
+
+		// Skip events that already exist in events_sent
+		if exists {
+			continue
+		}
+
 		toInsert = append(toInsert, fromOutboxEventModel(event))
 	}
 
+	// If all events were filtered out, nothing to insert
+	if len(toInsert) == 0 {
+		return nil
+	}
+
+	// Insert with ON CONFLICT DO NOTHING for (idempotency_key, connector_id)
 	_, err := tx.NewInsert().
 		Model(&toInsert).
+		On("CONFLICT (idempotency_key, connector_id) DO NOTHING").
 		Exec(ctx)
 
 	return e("failed to insert outbox events", err)

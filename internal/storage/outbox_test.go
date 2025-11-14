@@ -312,6 +312,241 @@ func TestOutboxEventsEmptyInsert(t *testing.T) {
 	assert.Len(t, pendingEvents, 0)
 }
 
+func TestOutboxEventsInsert_FiltersEventsAlreadySent(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert connectors
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	// Create an event that will be marked as sent
+	eventSent := models.EventSent{
+		ID: models.EventID{
+			EventIdempotencyKey: "already-sent-key",
+			ConnectorID:         &defaultConnector.ID,
+		},
+		ConnectorID: &defaultConnector.ID,
+		SentAt:      time.Now().UTC(),
+	}
+
+	// Record the event as sent
+	err := store.EventsSentUpsert(ctx, eventSent)
+	require.NoError(t, err)
+
+	// Try to insert events, including one with the same idempotency key that was already sent
+	events := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "already-sent-key", // This should be filtered out
+		},
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-2",
+			Payload:        json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "new-key", // This should be inserted
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events)
+
+	// Verify only the new event was inserted
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	assert.Len(t, pendingEvents, 1)
+	assert.Equal(t, "new-key", pendingEvents[0].IdempotencyKey)
+	assert.Equal(t, "account-2", pendingEvents[0].EntityID)
+}
+
+func TestOutboxEventsInsert_UniqueConstraintOnIdempotencyKeyAndConnectorID(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert connectors
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	// Insert an event with a specific idempotency key and connector
+	events1 := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "duplicate-key",
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events1)
+
+	// Try to insert another event with the same idempotency key and connector
+	// This should be handled by ON CONFLICT DO NOTHING
+	events2 := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-2", // Different entity
+			Payload:        json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID, // Same connector
+			RetryCount:     0,
+			IdempotencyKey: "duplicate-key", // Same idempotency key
+		},
+	}
+
+	// This should not error due to ON CONFLICT DO NOTHING
+	insertOutboxEventsWithTx(t, store, ctx, events2)
+
+	// Verify only one event exists (the first one)
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	assert.Len(t, pendingEvents, 1)
+	assert.Equal(t, "account-1", pendingEvents[0].EntityID)
+	assert.Equal(t, "duplicate-key", pendingEvents[0].IdempotencyKey)
+}
+
+func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert connectors
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertConnector(t, ctx, store, defaultConnector2)
+
+	// Insert an event with a specific idempotency key and connector
+	events1 := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "shared-key",
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events1)
+
+	// Insert another event with the same idempotency key but different connector
+	// This should succeed because the unique constraint is on (idempotency_key, connector_id)
+	events2 := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-2",
+			Payload:        json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector2.ID, // Different connector
+			RetryCount:     0,
+			IdempotencyKey: "shared-key", // Same idempotency key
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events2)
+
+	// Verify both events exist
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	assert.Len(t, pendingEvents, 2)
+
+	// Verify both have the same idempotency key but different connectors
+	foundConnector1 := false
+	foundConnector2 := false
+	for _, event := range pendingEvents {
+		assert.Equal(t, "shared-key", event.IdempotencyKey)
+		if event.ConnectorID != nil {
+			if *event.ConnectorID == defaultConnector.ID {
+				foundConnector1 = true
+			} else if *event.ConnectorID == defaultConnector2.ID {
+				foundConnector2 = true
+			}
+		}
+	}
+	assert.True(t, foundConnector1, "Should have event with defaultConnector")
+	assert.True(t, foundConnector2, "Should have event with defaultConnector2")
+}
+
+func TestOutboxEventsInsert_SameIdempotencyKeyWithNilConnectorID(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert a connector
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	// Insert an event with a specific idempotency key and connector
+	events1 := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "nil-connector-test",
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events1)
+
+	// Insert another event with the same idempotency key but nil connector_id
+	// In PostgreSQL, NULL values are considered distinct in unique constraints,
+	// so this should succeed
+	events2 := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-2",
+			Payload:        json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    nil, // Nil connector
+			RetryCount:     0,
+			IdempotencyKey: "nil-connector-test", // Same idempotency key
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events2)
+
+	// Verify both events exist (NULL and non-NULL connector_id are distinct)
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	assert.Len(t, pendingEvents, 2)
+
+	// Verify one has connector_id and one doesn't
+	hasConnector := false
+	hasNilConnector := false
+	for _, event := range pendingEvents {
+		if event.ConnectorID != nil {
+			hasConnector = true
+		} else {
+			hasNilConnector = true
+		}
+	}
+	assert.True(t, hasConnector)
+	assert.True(t, hasNilConnector)
+}
+
 // testNonRetryableError is a test helper that implements NonRetryableError interface
 type testNonRetryableError struct {
 	message string

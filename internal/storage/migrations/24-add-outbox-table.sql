@@ -23,6 +23,7 @@ create table if not exists outbox_events (
 );
 
 create unique index outbox_events_unique_sort_id on outbox_events (sort_id);
+create unique index outbox_events_unique_idempotency_key_connector_id on outbox_events (idempotency_key, connector_id);
 create index outbox_events_status_created_at on outbox_events (status, created_at);
 create index outbox_events_connector_id on outbox_events (connector_id);
 
