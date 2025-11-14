@@ -66,6 +66,10 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 		return models.UninstallResponse{}, nil
 	}
 
+	if len(req.WebhookConfigs) == 0 {
+		return models.UninstallResponse{}, nil
+	}
+
 	err := p.client.DeleteWebhookEndpoints(ctx)
 	if err != nil {
 		return models.UninstallResponse{}, fmt.Errorf("failed to delete stripe webhooks on uninstall: %w", err)
