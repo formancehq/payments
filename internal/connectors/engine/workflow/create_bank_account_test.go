@@ -35,7 +35,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_Success() {
 		return nil
 	})
 
-	//TODO runSendEvent was taking a bankAccount in addition to Accounts, we need to dive deeper see what's still required.
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
 			Reference:   "test",

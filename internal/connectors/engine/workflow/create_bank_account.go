@@ -91,9 +91,6 @@ func (w Workflow) createBankAccount(
 		return "", err
 	}
 
-	bankAccount.RelatedAccounts = append(bankAccount.RelatedAccounts, relatedAccount)
-
-	// event for bank account creation is sent via bankAccountUpsert
 	return account.ID.String(), nil
 }
 

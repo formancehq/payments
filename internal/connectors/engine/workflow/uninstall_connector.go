@@ -30,7 +30,7 @@ func (w Workflow) runUninstallConnector(
 			if errUpdateTask := w.updateTasksError(
 				ctx,
 				*uninstallConnector.TaskID,
-				nil, // TODO that might be wrong... was done for I think
+				&uninstallConnector.ConnectorID,
 				err,
 			); errUpdateTask != nil {
 				return errUpdateTask
