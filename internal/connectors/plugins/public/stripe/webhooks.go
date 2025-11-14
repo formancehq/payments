@@ -81,6 +81,7 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		accountReference = rootAccountReference
 	}
 
+	eventCreatedAt := time.Unix(event.Created, 0)
 	switch event.Type {
 	case stripe.EventTypeBalanceAvailable:
 		var balance stripe.Balance
@@ -88,23 +89,27 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		if err != nil {
 			return []models.WebhookResponse{}, fmt.Errorf("failed to parse %q webhook JSON: %w", event.Type, err)
 		}
-		return p.translateBalanceWebhook(ctx, accountReference, balance)
+		return p.translateBalanceWebhook(ctx, accountReference, eventCreatedAt, balance)
 	}
 
 	return []models.WebhookResponse{}, fmt.Errorf("unhandled event type: %q", event.Type)
 }
 
-func (p *Plugin) translateBalanceWebhook(ctx context.Context, accountRef string, balance stripe.Balance) ([]models.WebhookResponse, error) {
+func (p *Plugin) translateBalanceWebhook(
+	ctx context.Context,
+	accountRef string,
+	createdAt time.Time,
+	balance stripe.Balance,
+) ([]models.WebhookResponse, error) {
 	responses := make([]models.WebhookResponse, 0, len(balance.Available))
 
-	timestamp := time.Now().UTC()
 	for _, a := range balance.Available {
 		responses = append(responses, models.WebhookResponse{
 			Balance: &models.PSPBalance{
 				AccountReference: accountRef,
 				Amount:           big.NewInt(a.Amount),
 				Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(a.Currency)),
-				CreatedAt:        timestamp,
+				CreatedAt:        createdAt,
 			},
 		})
 	}
