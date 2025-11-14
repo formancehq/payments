@@ -9,25 +9,53 @@ import (
 	"github.com/stripe/stripe-go/v80"
 )
 
-func (c *client) CreateWebhookEndpoint(ctx context.Context, webhookBaseURL string) (*stripe.WebhookEndpoint, error) {
-	// TODO: let's allow the update of enabled events if the code changes
+const stripeConnectUrlPrefix = "connect_"
 
-	u, err := url.JoinPath(webhookBaseURL, strings.ReplaceAll(string(stripe.EventTypeBalanceAvailable), ".", "_"))
-	if err != nil {
-		return nil, err
+type endpointConfig struct {
+	eventType string
+	isConnect bool
+}
+
+var endpoints = []endpointConfig{
+	{
+		eventType: string(stripe.EventTypeBalanceAvailable),
+		isConnect: false,
+	},
+	{
+		eventType: string(stripe.EventTypeBalanceAvailable),
+		isConnect: true,
+	},
+}
+
+func (c *client) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL string) ([]*stripe.WebhookEndpoint, error) {
+	results := make([]*stripe.WebhookEndpoint, 0, 2)
+
+	for _, conf := range endpoints {
+		path := strings.ReplaceAll(string(stripe.EventTypeBalanceAvailable), ".", "_")
+		if conf.isConnect {
+			path = stripeConnectUrlPrefix + path
+		}
+
+		u, err := url.JoinPath(webhookBaseURL, path)
+		if err != nil {
+			return results, err
+		}
+
+		params := &stripe.WebhookEndpointParams{
+			EnabledEvents: []*string{
+				stripe.String(conf.eventType),
+			},
+			URL:        stripe.String(u),
+			APIVersion: stripe.String(stripe.APIVersion),
+			Connect:    stripe.Bool(conf.isConnect),
+		}
+		result, err := c.webhookEndpointClient.New(params)
+		if err != nil {
+			return results, wrapSDKErr(err)
+		}
+		results = append(results, result)
 	}
-	params := &stripe.WebhookEndpointParams{
-		EnabledEvents: []*string{
-			stripe.String(string(stripe.EventTypeBalanceAvailable)),
-		},
-		URL:        stripe.String(u),
-		APIVersion: stripe.String(stripe.APIVersion),
-	}
-	result, err := c.webhookEndpointClient.New(params)
-	if err != nil {
-		return nil, wrapSDKErr(err)
-	}
-	return result, nil
+	return results, nil
 }
 
 func (c *client) DeleteWebhookEndpoints(ctx context.Context) error {

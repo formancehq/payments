@@ -71,19 +71,19 @@ func (mr *MockClientMockRecorder) CreateTransfer(ctx, createTransferRequest any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockClient)(nil).CreateTransfer), ctx, createTransferRequest)
 }
 
-// CreateWebhookEndpoint mocks base method.
-func (m *MockClient) CreateWebhookEndpoint(ctx context.Context, webhookBaseURL string) (*stripe.WebhookEndpoint, error) {
+// CreateWebhookEndpoints mocks base method.
+func (m *MockClient) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL string) ([]*stripe.WebhookEndpoint, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateWebhookEndpoint", ctx, webhookBaseURL)
-	ret0, _ := ret[0].(*stripe.WebhookEndpoint)
+	ret := m.ctrl.Call(m, "CreateWebhookEndpoints", ctx, webhookBaseURL)
+	ret0, _ := ret[0].([]*stripe.WebhookEndpoint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateWebhookEndpoint indicates an expected call of CreateWebhookEndpoint.
-func (mr *MockClientMockRecorder) CreateWebhookEndpoint(ctx, webhookBaseURL any) *gomock.Call {
+// CreateWebhookEndpoints indicates an expected call of CreateWebhookEndpoints.
+func (mr *MockClientMockRecorder) CreateWebhookEndpoints(ctx, webhookBaseURL any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhookEndpoint", reflect.TypeOf((*MockClient)(nil).CreateWebhookEndpoint), ctx, webhookBaseURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).CreateWebhookEndpoints), ctx, webhookBaseURL)
 }
 
 // DeleteWebhookEndpoints mocks base method.
