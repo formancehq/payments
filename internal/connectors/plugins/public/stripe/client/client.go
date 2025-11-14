@@ -8,14 +8,15 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/stripe/stripe-go/v79"
-	"github.com/stripe/stripe-go/v79/account"
-	"github.com/stripe/stripe-go/v79/balance"
-	"github.com/stripe/stripe-go/v79/balancetransaction"
-	"github.com/stripe/stripe-go/v79/bankaccount"
-	"github.com/stripe/stripe-go/v79/payout"
-	"github.com/stripe/stripe-go/v79/transfer"
-	"github.com/stripe/stripe-go/v79/transferreversal"
+	"github.com/stripe/stripe-go/v80"
+	"github.com/stripe/stripe-go/v80/account"
+	"github.com/stripe/stripe-go/v80/balance"
+	"github.com/stripe/stripe-go/v80/balancetransaction"
+	"github.com/stripe/stripe-go/v80/bankaccount"
+	"github.com/stripe/stripe-go/v80/payout"
+	"github.com/stripe/stripe-go/v80/transfer"
+	"github.com/stripe/stripe-go/v80/transferreversal"
+	"github.com/stripe/stripe-go/v80/webhookendpoint"
 )
 
 // https://github.com/stripe/stripe-go/blob/master/stripe.go#L1478
@@ -30,6 +31,8 @@ type Client interface {
 	CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error)
 	CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error)
 	ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error)
+	CreateWebhookEndpoints(ctx context.Context, webhookBaseURL string) ([]*stripe.WebhookEndpoint, error)
+	DeleteWebhookEndpoints(ctx context.Context) error
 }
 
 type client struct {
@@ -42,9 +45,15 @@ type client struct {
 	payoutClient             payout.Client
 	bankAccountClient        bankaccount.Client
 	balanceTransactionClient balancetransaction.Client
+	webhookEndpointClient    webhookendpoint.Client
 }
 
-func New(name string, logger logging.Logger, backend stripe.Backend, apiKey string) Client {
+func New(
+	name string,
+	logger logging.Logger,
+	backend stripe.Backend,
+	apiKey string,
+) Client {
 	if backend == nil {
 		backends := stripe.NewBackends(metrics.NewHTTPClient(name, StripeDefaultTimeout))
 		backend = backends.API
@@ -58,6 +67,7 @@ func New(name string, logger logging.Logger, backend stripe.Backend, apiKey stri
 		payoutClient:             payout.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},
+		webhookEndpointClient:    webhookendpoint.Client{B: backend, Key: apiKey},
 	}
 }
 

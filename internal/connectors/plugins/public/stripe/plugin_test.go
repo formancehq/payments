@@ -37,10 +37,10 @@ var _ = Describe("Stripe Plugin", func() {
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test"}`)
-			_, err := New("stripe", logger, config)
+			plg1, err := New("stripe", logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
-			res, err := plg.Install(ctx, req)
+			res, err := plg1.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
@@ -166,18 +166,22 @@ var _ = Describe("Stripe Plugin", func() {
 	})
 
 	Context("create webhooks", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.CreateWebhooksRequest{}
 			_, err := plg.CreateWebhooks(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+
+		// Other tests will be in webhooks_test.go
 	})
 
 	Context("translate webhook", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{}
 			_, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+
+		// Other tests will be in webhooks_test.go
 	})
 })

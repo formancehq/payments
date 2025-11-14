@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 )
 
 // Timeline allows the client to navigate the backlog and decide whether to fetch

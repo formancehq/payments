@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	stripesdk "github.com/stripe/stripe-go/v79"
+	stripesdk "github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 

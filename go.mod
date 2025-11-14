@@ -39,7 +39,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.11.1
-	github.com/stripe/stripe-go/v79 v79.12.0
+	github.com/stripe/stripe-go/v80 v80.2.1
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/pgdialect v1.2.15
 	github.com/uptrace/bun/extra/bundebug v1.2.15

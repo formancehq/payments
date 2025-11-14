@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	stripe "github.com/stripe/stripe-go/v79"
+	stripe "github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -69,6 +69,35 @@ func (m *MockClient) CreateTransfer(ctx context.Context, createTransferRequest *
 func (mr *MockClientMockRecorder) CreateTransfer(ctx, createTransferRequest any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockClient)(nil).CreateTransfer), ctx, createTransferRequest)
+}
+
+// CreateWebhookEndpoints mocks base method.
+func (m *MockClient) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL string) ([]*stripe.WebhookEndpoint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWebhookEndpoints", ctx, webhookBaseURL)
+	ret0, _ := ret[0].([]*stripe.WebhookEndpoint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWebhookEndpoints indicates an expected call of CreateWebhookEndpoints.
+func (mr *MockClientMockRecorder) CreateWebhookEndpoints(ctx, webhookBaseURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).CreateWebhookEndpoints), ctx, webhookBaseURL)
+}
+
+// DeleteWebhookEndpoints mocks base method.
+func (m *MockClient) DeleteWebhookEndpoints(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWebhookEndpoints", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWebhookEndpoints indicates an expected call of DeleteWebhookEndpoints.
+func (mr *MockClientMockRecorder) DeleteWebhookEndpoints(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).DeleteWebhookEndpoints), ctx)
 }
 
 // GetAccountBalances mocks base method.
