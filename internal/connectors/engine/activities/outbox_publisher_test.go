@@ -43,14 +43,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:          uuid.New(),
-					EventType:   "account.saved",
-					EntityID:    "acc_123",
-					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:   time.Now().UTC(),
-					Status:      models.OUTBOX_STATUS_PENDING,
-					ConnectorID: connectorID,
-					RetryCount:  0,
+					ID:             uuid.New(),
+					EventType:      "account.saved",
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_123",
 				},
 			}
 
@@ -105,14 +106,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:          uuid.New(),
-					EventType:   "account.saved",
-					EntityID:    "acc_123",
-					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:   time.Now().UTC(),
-					Status:      models.OUTBOX_STATUS_PENDING,
-					ConnectorID: connectorID,
-					RetryCount:  models.MaxOutboxRetries, // Already at max retries
+					ID:             uuid.New(),
+					EventType:      "account.saved",
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     models.MaxOutboxRetries, // Already at max retries
+					IdempotencyKey: "account.saved:acc_123",
 				},
 			}
 
@@ -129,7 +131,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			// Mark as failed (exceeds max retries)
 			s.EXPECT().
-				OutboxEventsMarkFailed(ctx, testEvents[0].ID, models.MaxOutboxRetries+1, publishErr.Error()).
+				OutboxEventsMarkFailed(ctx, testEvents[0].ID, models.MaxOutboxRetries+1, publishErr).
 				Return(nil)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)
@@ -144,14 +146,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:          uuid.New(),
-					EventType:   "account.saved",
-					EntityID:    "acc_123",
-					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:   time.Now().UTC(),
-					Status:      models.OUTBOX_STATUS_PENDING,
-					ConnectorID: connectorID,
-					RetryCount:  2, // Below max retries
+					ID:             uuid.New(),
+					EventType:      "account.saved",
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     2, // Below max retries
+					IdempotencyKey: "account.saved:acc_123",
 				},
 			}
 
@@ -168,7 +171,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			// Mark as pending for retry
 			s.EXPECT().
-				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 3, publishErr.Error()).
+				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 3, publishErr).
 				Return(nil)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)
@@ -183,14 +186,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:          uuid.New(),
-					EventType:   "unknown.event",
-					EntityID:    "some_id",
-					Payload:     json.RawMessage(`{}`),
-					CreatedAt:   time.Now().UTC(),
-					Status:      models.OUTBOX_STATUS_PENDING,
-					ConnectorID: connectorID,
-					RetryCount:  0,
+					ID:             uuid.New(),
+					EventType:      "unknown.event",
+					EntityID:       "some_id",
+					Payload:        json.RawMessage(`{}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "unknown.event:some_id",
 				},
 			}
 
@@ -201,7 +205,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			// Mark as failed
 			s.EXPECT().
-				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 1, "unknown event type: unknown.event").
+				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 1, gomock.Any()).
 				Return(nil)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)
@@ -216,14 +220,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:          uuid.New(),
-					EventType:   "account.saved",
-					EntityID:    "acc_123",
-					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:   time.Now().UTC(),
-					Status:      models.OUTBOX_STATUS_PENDING,
-					ConnectorID: connectorID,
-					RetryCount:  0,
+					ID:             uuid.New(),
+					EventType:      "account.saved",
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_123",
 				},
 			}
 
@@ -241,7 +246,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			// Mark as failed also fails
 			markErr := errors.New("mark failed error")
 			s.EXPECT().
-				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 1, publishErr.Error()).
+				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 1, publishErr).
 				Return(markErr)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)
@@ -257,14 +262,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:          uuid.New(),
-					EventType:   "account.saved",
-					EntityID:    "acc_123",
-					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:   time.Now().UTC(),
-					Status:      models.OUTBOX_STATUS_PENDING,
-					ConnectorID: connectorID,
-					RetryCount:  0,
+					ID:             uuid.New(),
+					EventType:      "account.saved",
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_123",
 				},
 			}
 
