@@ -5,10 +5,10 @@ import (
 
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 func tradesList(backend backend.Backend) http.HandlerFunc {
@@ -16,19 +16,20 @@ func tradesList(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_tradesList")
 		defer span.End()
 
-		pageSize, err := bunpaginate.GetPageSize(r)
+		query, err := bunpaginate.Extract[storage.ListTradesQuery](r, func() (*storage.ListTradesQuery, error) {
+			options, err := getPagination(span, r, storage.TradeQuery{})
+			if err != nil {
+				return nil, err
+			}
+			return pointer.For(storage.NewListTradesQuery(*options)), nil
+		})
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
-		span.SetAttributes(attribute.Int64("page_size", int64(pageSize)))
 
-		query := storage.NewListTradesQuery(bunpaginate.PaginatedQueryOptions[storage.TradeQuery]{
-			PageSize: pageSize,
-		})
-
-		cursor, err := backend.TradesList(ctx, query)
+		cursor, err := backend.TradesList(ctx, *query)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

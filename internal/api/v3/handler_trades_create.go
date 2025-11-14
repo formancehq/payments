@@ -56,24 +56,25 @@ type CreateTradeFillRequest struct {
 }
 
 type CreateTradeRequest struct {
-	Reference          string                       `json:"reference" validate:"required,gte=3,lte=1000"`
-	ConnectorID        string                       `json:"connectorID" validate:"required,connectorID"`
-	CreatedAt          time.Time                    `json:"createdAt" validate:"required,lte=now"`
-	UpdatedAt          *time.Time                   `json:"updatedAt" validate:"omitempty,lte=now"`
-	PortfolioAccountID *string                      `json:"portfolioAccountID" validate:"omitempty,accountID"`
-	InstrumentType     string                       `json:"instrumentType" validate:"required,tradeInstrumentType"`
-	ExecutionModel     string                       `json:"executionModel" validate:"required,tradeExecutionModel"`
-	Market             CreateTradeMarketRequest     `json:"market" validate:"required"`
-	Side               string                       `json:"side" validate:"required,tradeSide"`
-	OrderType          *string                      `json:"orderType" validate:"omitempty,tradeOrderType"`
-	TimeInForce        *string                      `json:"timeInForce" validate:"omitempty,tradeTimeInForce"`
-	Status             string                       `json:"status" validate:"required,tradeStatus"`
-	Requested          CreateTradeRequestedRequest  `json:"requested"`
-	Executed           CreateTradeExecutedRequest   `json:"executed" validate:"required"`
-	Fees               []CreateTradeFeeRequest      `json:"fees"`
-	Fills              []CreateTradeFillRequest     `json:"fills" validate:"min=1,dive"`
-	Metadata           map[string]string            `json:"metadata"`
-	Raw                json.RawMessage              `json:"raw"`
+	Reference          string                      `json:"reference" validate:"required,gte=3,lte=1000"`
+	ConnectorID        string                      `json:"connectorID" validate:"required,connectorID"`
+	CreatedAt          time.Time                   `json:"createdAt" validate:"required,lte=now"`
+	UpdatedAt          *time.Time                  `json:"updatedAt" validate:"omitempty,lte=now"`
+	PortfolioAccountID *string                     `json:"portfolioAccountID" validate:"omitempty,accountID"`
+	InstrumentType     string                      `json:"instrumentType" validate:"required,tradeInstrumentType"`
+	ExecutionModel     string                      `json:"executionModel" validate:"required,tradeExecutionModel"`
+	Market             CreateTradeMarketRequest    `json:"market" validate:"required"`
+	Side               string                      `json:"side" validate:"required,tradeSide"`
+	OrderType          *string                     `json:"orderType" validate:"omitempty,tradeOrderType"`
+	TimeInForce        *string                     `json:"timeInForce" validate:"omitempty,tradeTimeInForce"`
+	Status             string                      `json:"status" validate:"required,tradeStatus"`
+	Requested          CreateTradeRequestedRequest `json:"requested"`
+	Executed           CreateTradeExecutedRequest  `json:"executed" validate:"required"`
+	Fees               []CreateTradeFeeRequest     `json:"fees"`
+	Fills              []CreateTradeFillRequest    `json:"fills" validate:"min=1,dive"`
+	Metadata           map[string]string           `json:"metadata"`
+	Raw                json.RawMessage             `json:"raw"`
+	CreatePayments     *bool                       `json:"createPayments"`
 }
 
 func tradesCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
@@ -177,6 +178,12 @@ func tradesCreate(backend backend.Backend, validator *validation.Validator) http
 			updatedAt = *req.UpdatedAt
 		}
 
+		createPayments := false
+		if req.CreatePayments != nil {
+			createPayments = *req.CreatePayments
+		}
+		span.SetAttributes(attribute.Bool("createPayments", createPayments))
+
 		trade := models.Trade{
 			ID:          tradeID,
 			ConnectorID: connectorID,
@@ -216,10 +223,10 @@ func tradesCreate(backend backend.Backend, validator *validation.Validator) http
 			Executed:  executed,
 			Fees:      fees,
 			Fills:     fills,
-			Legs:      []models.TradeLeg{}, // Will be populated after payments are created
 			Metadata:  req.Metadata,
 			Raw:       req.Raw,
 		}
+		trade.Legs = []models.TradeLeg{}
 
 		// Validate trade math
 		check := models.ValidateTradeMath(trade)
@@ -229,6 +236,43 @@ func tradesCreate(backend backend.Backend, validator *validation.Validator) http
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
+		}
+
+		if createPayments {
+			if trade.PortfolioAccountID == nil {
+				err := fmt.Errorf("portfolioAccountID is required when createPayments is true")
+				otel.RecordError(span, err)
+				api.BadRequest(w, ErrValidation, err)
+				return
+			}
+
+			basePayment, quotePayment, err := models.CreatePaymentsFromTrade(trade, *trade.PortfolioAccountID)
+			if err != nil {
+				otel.RecordError(span, err)
+				api.InternalServerError(w, r, err)
+				return
+			}
+
+			paymentCheck := models.ValidatePaymentsAgainstTrade(trade, basePayment, quotePayment)
+			if !paymentCheck.OK {
+				err := fmt.Errorf("payment validation failed: %v", paymentCheck.Errors)
+				otel.RecordError(span, err)
+				api.BadRequest(w, ErrValidation, err)
+				return
+			}
+
+			if err := backend.PaymentsCreate(ctx, basePayment); err != nil {
+				otel.RecordError(span, err)
+				handleServiceErrors(w, r, err)
+				return
+			}
+			if err := backend.PaymentsCreate(ctx, quotePayment); err != nil {
+				otel.RecordError(span, err)
+				handleServiceErrors(w, r, err)
+				return
+			}
+
+			trade.Legs = buildTradeLegs(trade, basePayment, quotePayment)
 		}
 
 		err = backend.TradesCreate(ctx, trade)
@@ -258,3 +302,32 @@ func populateSpanFromTradeCreateRequest(span trace.Span, req CreateTradeRequest)
 	span.SetAttributes(attribute.Int("feesCount", len(req.Fees)))
 }
 
+func buildTradeLegs(trade models.Trade, basePayment models.Payment, quotePayment models.Payment) []models.TradeLeg {
+	baseAmount, quoteAmount := models.ExpectedLegAmounts(trade)
+
+	baseDirection := models.TRADE_LEG_DIRECTION_CREDIT
+	quoteDirection := models.TRADE_LEG_DIRECTION_DEBIT
+	if trade.Side == models.TRADE_SIDE_SELL {
+		baseDirection = models.TRADE_LEG_DIRECTION_DEBIT
+		quoteDirection = models.TRADE_LEG_DIRECTION_CREDIT
+	}
+
+	return []models.TradeLeg{
+		{
+			Role:      models.TRADE_LEG_ROLE_BASE,
+			Direction: baseDirection,
+			Asset:     trade.Market.BaseAsset,
+			NetAmount: baseAmount.String(),
+			PaymentID: pointer.For(basePayment.ID),
+			Status:    pointer.For(basePayment.Status),
+		},
+		{
+			Role:      models.TRADE_LEG_ROLE_QUOTE,
+			Direction: quoteDirection,
+			Asset:     trade.Market.QuoteAsset,
+			NetAmount: quoteAmount.String(),
+			PaymentID: pointer.For(quotePayment.ID),
+			Status:    pointer.For(quotePayment.Status),
+		},
+	}
+}

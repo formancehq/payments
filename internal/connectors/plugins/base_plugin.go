@@ -48,6 +48,10 @@ func (dp *basePlugin) FetchNextOthers(ctx context.Context, req models.FetchNextO
 	return models.FetchNextOthersResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) FetchNextTrades(ctx context.Context, req models.FetchNextTradesRequest) (models.FetchNextTradesResponse, error) {
+	return models.FetchNextTradesResponse{}, ErrNotImplemented
+}
+
 func (dp *basePlugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	return models.CreateBankAccountResponse{}, ErrNotImplemented
 }

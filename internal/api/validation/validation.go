@@ -50,6 +50,8 @@ func NewValidator() *Validator {
 	registerCustomChecker("tradeLiquidity", IsTradeLiquidity, "", validate, translator)
 	registerCustomChecker("tradeFeeKind", IsTradeFeeKind, "", validate, translator)
 	registerCustomChecker("tradeFeeAppliedOn", IsTradeFeeAppliedOn, "", validate, translator)
+	registerCustomChecker("tradeLegRole", IsTradeLegRole, "", validate, translator)
+	registerCustomChecker("tradeLegDirection", IsTradeLegDirection, "", validate, translator)
 	registerCustomChecker("asset", IsAsset, "", validate, translator)
 	registerCustomChecker("phoneNumber", IsPhoneNumber, "", validate, translator)
 	registerCustomChecker("email", IsEmail, "", validate, translator)

@@ -324,7 +324,7 @@ func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment
 		InitialAmount:        baseAmount,
 		Amount:               baseAmount,
 		Asset:                trade.Market.BaseAsset,
-		Scheme:               PAYMENT_SCHEME_OTHER, // Could use "exchange" if we add that
+		Scheme:               PAYMENT_SCHEME_EXCHANGE,
 		Status:               PAYMENT_STATUS_SUCCEEDED,
 		SourceAccountID:      baseSource,
 		DestinationAccountID: baseDest,
@@ -353,7 +353,7 @@ func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment
 		InitialAmount:        quoteAmount,
 		Amount:               quoteAmount,
 		Asset:                trade.Market.QuoteAsset,
-		Scheme:               PAYMENT_SCHEME_OTHER,
+		Scheme:               PAYMENT_SCHEME_EXCHANGE,
 		Status:               PAYMENT_STATUS_SUCCEEDED,
 		SourceAccountID:      quoteSource,
 		DestinationAccountID: quoteDest,
@@ -416,4 +416,3 @@ func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment
 
 	return basePayment, quotePayment, nil
 }
-

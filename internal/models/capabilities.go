@@ -36,6 +36,7 @@ const (
 	// still want us to record the accounts and payments.
 	CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION
 	CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION
+	CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION
 )
 
 func (t Capability) String() string {
@@ -67,6 +68,8 @@ func (t Capability) String() string {
 		return "ALLOW_FORMANCE_ACCOUNT_CREATION"
 	case CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION:
 		return "ALLOW_FORMANCE_PAYMENT_CREATION"
+	case CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION:
+		return "ALLOW_FORMANCE_TRADE_CREATION"
 
 	default:
 		return "UNKNOWN"
@@ -124,6 +127,8 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION
 	case "ALLOW_FORMANCE_PAYMENT_CREATION":
 		*t = CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION
+	case "ALLOW_FORMANCE_TRADE_CREATION":
+		*t = CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION
 
 	default:
 		return fmt.Errorf("unknown capability")

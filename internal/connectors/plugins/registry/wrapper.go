@@ -157,6 +157,24 @@ func (i *impl) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRe
 	return resp, nil
 }
 
+func (i *impl) FetchNextTrades(ctx context.Context, req models.FetchNextTradesRequest) (models.FetchNextTradesResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextTrades", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetching next trades...")
+
+	resp, err := i.plugin.FetchNextTrades(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next trades failed:", err)
+		otel.RecordError(span, err)
+		return models.FetchNextTradesResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetched next trades succeeded!")
+
+	return resp, nil
+}
+
 func (i *impl) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.CreateBankAccount", attribute.String("psp", i.connectorID.Provider), attribute.String("bankAccount.id", req.BankAccount.ID.String()))
 	defer span.End()

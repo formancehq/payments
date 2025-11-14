@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
@@ -18,32 +19,32 @@ type trade struct {
 	SortID int64 `bun:"sort_id,autoincrement"`
 
 	// Mandatory fields
-	ID                 models.TradeID              `bun:"id,pk,type:character varying,notnull"`
-	ConnectorID        models.ConnectorID          `bun:"connector_id,type:character varying,notnull"`
-	Reference          string                      `bun:"reference,type:text,notnull"`
-	CreatedAt          time.Time                   `bun:"created_at,type:timestamp without time zone,notnull"`
-	UpdatedAt          time.Time                   `bun:"updated_at,type:timestamp without time zone,notnull"`
-	InstrumentType     models.TradeInstrumentType  `bun:"instrument_type,type:text,notnull"`
-	ExecutionModel     models.TradeExecutionModel  `bun:"execution_model,type:text,notnull"`
-	MarketSymbol       string                      `bun:"market_symbol,type:text,notnull"`
-	MarketBaseAsset    string                      `bun:"market_base_asset,type:text,notnull"`
-	MarketQuoteAsset   string                      `bun:"market_quote_asset,type:text,notnull"`
-	Side               models.TradeSide            `bun:"side,type:text,notnull"`
-	Status             models.TradeStatus          `bun:"status,type:text,notnull"`
-	Requested          json.RawMessage             `bun:"requested,type:jsonb,notnull"`
-	Executed           json.RawMessage             `bun:"executed,type:jsonb,notnull"`
-	Fills              json.RawMessage             `bun:"fills,type:jsonb,notnull"`
-	Legs               json.RawMessage             `bun:"legs,type:jsonb,notnull"`
-	Raw                json.RawMessage             `bun:"raw,type:json,notnull"`
+	ID               models.TradeID             `bun:"id,pk,type:character varying,notnull"`
+	ConnectorID      models.ConnectorID         `bun:"connector_id,type:character varying,notnull"`
+	Reference        string                     `bun:"reference,type:text,notnull"`
+	CreatedAt        time.Time                  `bun:"created_at,type:timestamp without time zone,notnull"`
+	UpdatedAt        time.Time                  `bun:"updated_at,type:timestamp without time zone,notnull"`
+	InstrumentType   models.TradeInstrumentType `bun:"instrument_type,type:text,notnull"`
+	ExecutionModel   models.TradeExecutionModel `bun:"execution_model,type:text,notnull"`
+	MarketSymbol     string                     `bun:"market_symbol,type:text,notnull"`
+	MarketBaseAsset  string                     `bun:"market_base_asset,type:text,notnull"`
+	MarketQuoteAsset string                     `bun:"market_quote_asset,type:text,notnull"`
+	Side             models.TradeSide           `bun:"side,type:text,notnull"`
+	Status           models.TradeStatus         `bun:"status,type:text,notnull"`
+	Requested        json.RawMessage            `bun:"requested,type:jsonb,notnull"`
+	Executed         json.RawMessage            `bun:"executed,type:jsonb,notnull"`
+	Fills            json.RawMessage            `bun:"fills,type:jsonb,notnull"`
+	Legs             json.RawMessage            `bun:"legs,type:jsonb,notnull"`
+	Raw              json.RawMessage            `bun:"raw,type:json,notnull"`
 
 	// Optional fields
-	PortfolioAccountID *models.AccountID          `bun:"portfolio_account_id,type:character varying,nullzero"`
-	OrderType          *models.TradeOrderType     `bun:"order_type,type:text,nullzero"`
-	TimeInForce        *models.TradeTimeInForce   `bun:"time_in_force,type:text,nullzero"`
+	PortfolioAccountID *models.AccountID        `bun:"portfolio_account_id,type:character varying,nullzero"`
+	OrderType          *models.TradeOrderType   `bun:"order_type,type:text,nullzero"`
+	TimeInForce        *models.TradeTimeInForce `bun:"time_in_force,type:text,nullzero"`
 
 	// Optional with defaults
-	Fees     json.RawMessage       `bun:"fees,type:jsonb,nullzero,notnull,default:'[]'"`
-	Metadata map[string]string     `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+	Fees     json.RawMessage   `bun:"fees,type:jsonb,nullzero,notnull,default:'[]'"`
+	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 }
 
 func fromTradeModels(t models.Trade) (*trade, error) {
@@ -125,11 +126,11 @@ func (t *trade) toTradeModels() (*models.Trade, error) {
 	}
 
 	return &models.Trade{
-		ID:          t.ID,
-		ConnectorID: t.ConnectorID,
-		Reference:   t.Reference,
-		CreatedAt:   t.CreatedAt.Time,
-		UpdatedAt:   t.UpdatedAt.Time,
+		ID:                 t.ID,
+		ConnectorID:        t.ConnectorID,
+		Reference:          t.Reference,
+		CreatedAt:          t.CreatedAt.Time,
+		UpdatedAt:          t.UpdatedAt.Time,
 		PortfolioAccountID: t.PortfolioAccountID,
 		InstrumentType:     t.InstrumentType,
 		ExecutionModel:     t.ExecutionModel,
@@ -218,10 +219,56 @@ func NewListTradesQuery(opts bunpaginate.PaginatedQueryOptions[TradeQuery]) List
 	}
 }
 
+func (s *store) tradesQueryContext(qb query.Builder) (string, []any, error) {
+	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
+		switch key {
+		case "id",
+			"reference",
+			"connector_id",
+			"status",
+			"side",
+			"instrument_type",
+			"execution_model",
+			"order_type",
+			"time_in_force",
+			"market_symbol",
+			"market_base_asset",
+			"market_quote_asset":
+			if operator != "$match" {
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+			}
+			return fmt.Sprintf("%s = ?", key), []any{value}, nil
+		case "created_at", "updated_at":
+			mapped, ok := query.DefaultComparisonOperatorsMapping[operator]
+			if !ok {
+				return "", nil, fmt.Errorf("unsupported operator '%s' for column '%s': %w", operator, key, ErrValidation)
+			}
+			return fmt.Sprintf("%s %s ?", key, mapped), []any{value}, nil
+		default:
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+		}
+	}))
+}
+
 func (s *store) TradesList(ctx context.Context, q ListTradesQuery) (*bunpaginate.Cursor[models.Trade], error) {
+	var (
+		where string
+		args  []any
+		err   error
+	)
+	if q.Options.QueryBuilder != nil {
+		where, args, err = s.tradesQueryContext(q.Options.QueryBuilder)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[TradeQuery], trade](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[TradeQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
+			if where != "" {
+				query = query.Where(where, args...)
+			}
 			query = query.Order("created_at DESC", "sort_id DESC")
 			return query
 		},
@@ -265,5 +312,3 @@ func (s *store) TradesDelete(ctx context.Context, id models.TradeID) error {
 
 	return e("failed to delete trade", err)
 }
-
-

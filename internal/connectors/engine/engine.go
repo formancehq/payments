@@ -488,13 +488,34 @@ func (e *engine) CreateFormanceTrade(ctx context.Context, trade models.Trade) er
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceTrade")
 	defer span.End()
 
+	provider := models.ToV3Provider(trade.ConnectorID.Provider)
+	capabilities, err := registry.GetCapabilities(provider)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	found := false
+	for _, c := range capabilities {
+		if c == models.CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		err := &ErrConnectorCapabilityNotSupported{Capability: "CreateFormanceTrade", Provider: provider}
+		otel.RecordError(span, err)
+		return err
+	}
+
 	if err := e.storage.TradesUpsert(ctx, []models.Trade{trade}); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
 	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
+	_, err = e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-trade-send-events-%s-%s-%s", e.stack, trade.ConnectorID.String(), trade.Reference),

@@ -215,6 +215,24 @@ func IsTradeFeeAppliedOn(fl validator.FieldLevel) bool {
 	return appliedOn.IsValid()
 }
 
+func IsTradeLegRole(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	role := models.TradeLegRole(str)
+	return role.IsValid()
+}
+
+func IsTradeLegDirection(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	dir := models.TradeLegDirection(str)
+	return dir.IsValid()
+}
+
 func IsAsset(fl validator.FieldLevel) bool {
 	str, err := fieldLevelToString(fl)
 	if err != nil {
