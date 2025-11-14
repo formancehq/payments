@@ -3,29 +3,15 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
+	internalErrors "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// Helper function to insert outbox events within a transaction
-func insertOutboxEventsWithTx(t *testing.T, s Storage, ctx context.Context, events []models.OutboxEvent) {
-	// Type assert to *store to access db field
-	store := s.(*store)
-
-	tx, err := store.db.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	defer func() { _ = tx.Rollback() }()
-
-	err = s.OutboxEventsInsert(ctx, tx, events)
-	require.NoError(t, err)
-
-	err = tx.Commit()
-	require.NoError(t, err)
-}
 
 func TestOutboxEventsInsert(t *testing.T) {
 	store := newStore(t)
@@ -232,8 +218,8 @@ func TestOutboxEventsMarkFailed(t *testing.T) {
 
 	// Mark as failed with retry count less than max (should remain PENDING for retry)
 	retryCount := 1
-	errorMsg := "test error"
-	err = store.OutboxEventsMarkFailed(ctx, eventID, retryCount, errorMsg)
+	testErr := errors.New("test error")
+	err = store.OutboxEventsMarkFailed(ctx, eventID, retryCount, testErr)
 	require.NoError(t, err)
 
 	// Verify event is still pending (not yet at max retries)
@@ -243,16 +229,72 @@ func TestOutboxEventsMarkFailed(t *testing.T) {
 	assert.Equal(t, retryCount, pendingEventsAfter[0].RetryCount)
 	assert.Equal(t, models.OUTBOX_STATUS_PENDING, pendingEventsAfter[0].Status)
 	assert.NotNil(t, pendingEventsAfter[0].Error)
-	assert.Equal(t, errorMsg, *pendingEventsAfter[0].Error)
+	assert.Equal(t, testErr.Error(), *pendingEventsAfter[0].Error)
 
 	// Now test with max retries exceeded (should move to FAILED)
-	err = store.OutboxEventsMarkFailed(ctx, eventID, models.MaxOutboxRetries, errorMsg)
+	err = store.OutboxEventsMarkFailed(ctx, eventID, models.MaxOutboxRetries, testErr)
 	require.NoError(t, err)
 
 	// Verify event is no longer pending (marked as FAILED)
 	pendingEventsAfterFailed, err := store.OutboxEventsPollPending(ctx, 10)
 	require.NoError(t, err)
 	assert.Len(t, pendingEventsAfterFailed, 0, "Event should be marked as FAILED")
+}
+
+func TestOutboxEventsMarkFailed_NonRetryableError(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert a connector first
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	// Insert test event
+	events := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-for-non-retryable",
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events)
+
+	// Get the event ID
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 1)
+	require.NoError(t, err)
+	require.Len(t, pendingEvents, 1)
+	eventID := pendingEvents[0].ID
+
+	// Mark as failed with a non-retryable error and low retry count
+	// Should immediately move to FAILED status regardless of retry count
+	retryCount := 1
+	nonRetryableErr := &testNonRetryableError{message: "non-retryable validation error"}
+
+	// Verify the error implements the interface
+	var _ internalErrors.NonRetryableError = nonRetryableErr
+
+	err = store.OutboxEventsMarkFailed(ctx, eventID, retryCount, nonRetryableErr)
+	require.NoError(t, err)
+
+	// Verify event is immediately marked as FAILED (not pending for retry)
+	pendingEventsAfter, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	assert.Len(t, pendingEventsAfter, 0, "Event should be immediately marked as FAILED for non-retryable error")
+
+	// Verify the event status is FAILED by querying directly
+	// We need to check the status in the database since it's no longer pending
+	dbEvent := getOutboxEventByID(t, store, ctx, eventID)
+	assert.Equal(t, models.OUTBOX_STATUS_FAILED, dbEvent.Status)
+	assert.Equal(t, retryCount, dbEvent.RetryCount)
+	assert.NotNil(t, dbEvent.Error)
+	assert.Equal(t, nonRetryableErr.Error(), *dbEvent.Error)
 }
 
 func TestOutboxEventsEmptyInsert(t *testing.T) {
@@ -268,4 +310,43 @@ func TestOutboxEventsEmptyInsert(t *testing.T) {
 	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
 	require.NoError(t, err)
 	assert.Len(t, pendingEvents, 0)
+}
+
+// testNonRetryableError is a test helper that implements NonRetryableError interface
+type testNonRetryableError struct {
+	message string
+}
+
+func (e *testNonRetryableError) Error() string {
+	return e.message
+}
+
+func (e *testNonRetryableError) NonRetryable() {}
+
+// Helper function to insert outbox events within a transaction
+func insertOutboxEventsWithTx(t *testing.T, s Storage, ctx context.Context, events []models.OutboxEvent) {
+	// Type assert to *store to access db field
+	store := s.(*store)
+
+	tx, err := store.db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer func() { _ = tx.Rollback() }()
+
+	err = s.OutboxEventsInsert(ctx, tx, events)
+	require.NoError(t, err)
+
+	err = tx.Commit()
+	require.NoError(t, err)
+}
+
+// Helper function to get outbox event by ID for testing
+func getOutboxEventByID(t *testing.T, s Storage, ctx context.Context, eventID interface{}) outboxEvent {
+	storeImpl := s.(*store)
+	var dbEvent outboxEvent
+	err := storeImpl.db.NewSelect().
+		TableExpr("outbox_events").
+		Where("id = ?", eventID).
+		Scan(ctx, &dbEvent)
+	require.NoError(t, err)
+	return dbEvent
 }

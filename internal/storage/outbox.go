@@ -3,12 +3,14 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	internalErrors "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -96,26 +98,27 @@ func (s *store) OutboxEventsPollPending(ctx context.Context, limit int) ([]model
 	return result, nil
 }
 
-func (s *store) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, errorMsg string) error {
+func (s *store) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, err error) error {
 	now := internalTime.Now().UTC()
 	maxRetries := models.MaxOutboxRetries
 
-	// Determine status based on retry count
+	// Determine status based on retry count or error type
 	status := models.OUTBOX_STATUS_PENDING
-	if retryCount >= maxRetries {
+	var nonRetriable internalErrors.NonRetryableError
+	if retryCount >= maxRetries || errors.As(err, &nonRetriable) {
 		status = models.OUTBOX_STATUS_FAILED
 	}
 
-	_, err := s.db.NewUpdate().
+	_, updateErr := s.db.NewUpdate().
 		TableExpr("outbox_events").
 		Set("status = ?", status).
 		Set("retry_count = ?", retryCount).
 		Set("last_retry_at = ?", now).
-		Set("error = ?", errorMsg).
+		Set("error = ?", err.Error()).
 		Where("id = ?", id).
 		Exec(ctx)
 
-	return e("failed to mark outbox event", err)
+	return e("failed to mark outbox event", updateErr)
 }
 
 func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error {
