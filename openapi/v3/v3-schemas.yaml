@@ -831,6 +831,371 @@ components:
         - CAPTURE_FAILED
         - OTHER
 
+    # TRADES
+    V3CreateTradeRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - createdAt
+        - instrumentType
+        - executionModel
+        - market
+        - side
+        - status
+        - executed
+        - fills
+      properties:
+        reference:
+          type: string
+          minLength: 3
+          maxLength: 1000
+        connectorID:
+          type: string
+          format: byte
+        createdAt:
+          type: string
+          format: date-time
+        portfolioAccountID:
+          type: string
+          format: byte
+          nullable: true
+        instrumentType:
+          $ref: '#/components/schemas/V3TradeInstrumentTypeEnum'
+        executionModel:
+          $ref: '#/components/schemas/V3TradeExecutionModelEnum'
+        market:
+          $ref: '#/components/schemas/V3TradeMarket'
+        side:
+          $ref: '#/components/schemas/V3TradeSideEnum'
+        orderType:
+          $ref: '#/components/schemas/V3TradeOrderTypeEnum'
+        timeInForce:
+          $ref: '#/components/schemas/V3TradeTimeInForceEnum'
+        status:
+          $ref: '#/components/schemas/V3TradeStatusEnum'
+        requested:
+          type: object
+          nullable: true
+        executed:
+          $ref: '#/components/schemas/V3TradeExecuted'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3TradeFee'
+        fills:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/V3TradeFill'
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        createPayments:
+          type: boolean
+
+    V3CreateTradeResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Trade'
+
+    V3GetTradeResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Trade'
+
+    V3TradesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+            previous:
+              type: string
+            next:
+              type: string
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Trade'
+
+    V3UpdateTradeMetadataRequest:
+      type: object
+      additionalProperties:
+        type: string
+
+    V3Trade:
+      type: object
+      required:
+        - id
+        - reference
+        - connectorID
+        - provider
+        - createdAt
+        - updatedAt
+        - instrumentType
+        - executionModel
+        - market
+        - side
+        - status
+        - executed
+        - fills
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        connectorID:
+          type: string
+          format: byte
+        provider:
+          type: string
+        portfolioAccountID:
+          type: string
+          format: byte
+          nullable: true
+        instrumentType:
+          $ref: '#/components/schemas/V3TradeInstrumentTypeEnum'
+        executionModel:
+          $ref: '#/components/schemas/V3TradeExecutionModelEnum'
+        market:
+          $ref: '#/components/schemas/V3TradeMarket'
+        side:
+          $ref: '#/components/schemas/V3TradeSideEnum'
+        orderType:
+          $ref: '#/components/schemas/V3TradeOrderTypeEnum'
+        timeInForce:
+          $ref: '#/components/schemas/V3TradeTimeInForceEnum'
+        status:
+          $ref: '#/components/schemas/V3TradeStatusEnum'
+        requested:
+          type: object
+          nullable: true
+        executed:
+          $ref: '#/components/schemas/V3TradeExecuted'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3TradeFee'
+        fills:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/V3TradeFill'
+        legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3TradeLeg'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        raw:
+          type: object
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3TradeExecuted:
+      type: object
+      required:
+        - quantity
+        - quoteAmount
+        - averagePrice
+      properties:
+        quantity:
+          type: string
+        quoteAmount:
+          type: string
+        averagePrice:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+
+    V3TradeMarket:
+      type: object
+      required:
+        - symbol
+        - baseAsset
+        - quoteAsset
+      properties:
+        symbol:
+          type: string
+          example: USDC-EUR
+        baseAsset:
+          type: string
+          example: USDC/6
+        quoteAsset:
+          type: string
+          example: EUR/2
+
+    V3TradeFill:
+      type: object
+      required:
+        - tradeReference
+        - timestamp
+        - price
+        - quantity
+        - quoteAmount
+      properties:
+        tradeReference:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        price:
+          type: string
+        quantity:
+          type: string
+        quoteAmount:
+          type: string
+        liquidity:
+          $ref: '#/components/schemas/V3TradeLiquidityEnum'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3TradeFee'
+        raw:
+          type: object
+
+    V3TradeFee:
+      type: object
+      required:
+        - asset
+        - amount
+      properties:
+        asset:
+          type: string
+        amount:
+          type: string
+        kind:
+          $ref: '#/components/schemas/V3TradeFeeKindEnum'
+        appliedOn:
+          $ref: '#/components/schemas/V3TradeFeeAppliedOnEnum'
+        rate:
+          type: string
+
+    V3TradeLeg:
+      type: object
+      required:
+        - role
+        - direction
+        - asset
+        - netAmount
+      properties:
+        role:
+          $ref: '#/components/schemas/V3TradeLegRoleEnum'
+        direction:
+          $ref: '#/components/schemas/V3TradeLegDirectionEnum'
+        asset:
+          type: string
+        netAmount:
+          type: string
+        paymentID:
+          type: string
+          format: byte
+          nullable: true
+        status:
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
+
+    V3TradeStatusEnum:
+      type: string
+      enum:
+        - OPEN
+        - PARTIALLY_FILLED
+        - FILLED
+        - CANCELED
+        - REJECTED
+        - EXPIRED
+
+    V3TradeSideEnum:
+      type: string
+      enum:
+        - BUY
+        - SELL
+
+    V3TradeInstrumentTypeEnum:
+      type: string
+      enum:
+        - SPOT
+        - FX
+
+    V3TradeExecutionModelEnum:
+      type: string
+      enum:
+        - ORDER_BOOK
+        - RFQ
+
+    V3TradeOrderTypeEnum:
+      type: string
+      enum:
+        - MARKET
+        - LIMIT
+        - STOP_LIMIT
+        - STOP_MARKET
+        - RFQ
+
+    V3TradeTimeInForceEnum:
+      type: string
+      enum:
+        - GTC
+        - IOC
+        - FOK
+        - DAY
+
+    V3TradeLiquidityEnum:
+      type: string
+      enum:
+        - MAKER
+        - TAKER
+        - UNKNOWN
+
+    V3TradeFeeKindEnum:
+      type: string
+      enum:
+        - MAKER
+        - TAKER
+        - OTHER
+
+    V3TradeFeeAppliedOnEnum:
+      type: string
+      enum:
+        - QUOTE
+        - BASE
+        - OTHER
+
+    V3TradeLegRoleEnum:
+      type: string
+      enum:
+        - BASE
+        - QUOTE
+
+    V3TradeLegDirectionEnum:
+      type: string
+      enum:
+        - CREDIT
+        - DEBIT
+
     # PAYMENT INITIATIONS
     V3InitiatePaymentRequest:
       type: object
