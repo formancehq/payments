@@ -386,7 +386,8 @@ func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
 	return e("failed to delete payment", err)
 }
 
-// PaymentsDeleteFromReference TODO this deletion method is the only one emiting outbox events. Others did not either before using outbox events.
+// PaymentsDeleteFromReference TODO this deletion method is the only one emitting outbox events.
+// Using the outbox pattern makes this obvious, but others flows did not either before that pattern was set up.
 func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
