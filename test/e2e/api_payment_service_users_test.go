@@ -234,7 +234,7 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 					found = true
 				}
 			}
-			Expect(found).To(BeTrue(), "expected a BANK_ACCOUNT_SAVED payload for bank account %s", baID1.String())
+			Expect(found).To(BeTrue(), "expected a BANK_ACCOUNT_SAVED event payload for bank account %s", baID1.String())
 
 			// Basic field expectations
 			Expect(p.ID).To(Equal(baID1.String()))

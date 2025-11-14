@@ -73,10 +73,12 @@ func (b *Balance) IdempotencyKey() string {
 		AccountID     string
 		CreatedAt     int64
 		LastUpdatedAt int64
+		Asset         string
 	}{
 		AccountID:     b.AccountID.String(),
 		CreatedAt:     b.CreatedAt.UnixNano(),
 		LastUpdatedAt: b.LastUpdatedAt.UnixNano(),
+		Asset:         b.Asset,
 	}
 	return IdempotencyKey(ik)
 }
