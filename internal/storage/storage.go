@@ -43,7 +43,7 @@ type Storage interface {
 
 	// Connectors
 	ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error
-	ConnectorsInstall(ctx context.Context, c models.Connector) error
+	ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
 	ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)

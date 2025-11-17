@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -178,7 +177,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	if err := e.storage.ConnectorsInstall(detachedCtx, connector); err != nil {
+	if err := e.storage.ConnectorsInstall(detachedCtx, connector, nil); err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
@@ -419,29 +418,8 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		return err
 	}
 
+	// AccountsUpsert now handles outbox events transactionally
 	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s-%s", e.stack, account.ConnectorID.String(), account.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			Account: &account,
-		},
-	)
-	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
@@ -479,28 +457,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s-%s", e.stack, payment.ConnectorID.String(), payment.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			Payment: &payment,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Payment events are now sent via outbox pattern in PaymentsUpsert
 	return nil
 }
 
@@ -513,29 +470,7 @@ func (e *engine) CreateFormancePaymentInitiation(ctx context.Context, pi models.
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-payment-initiation-send-events-%s-%s-%s", e.stack, pi.ConnectorID.String(), pi.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PaymentInitiation:           &pi,
-			PaymentInitiationAdjustment: &adj,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Payment initiation events are now sent via outbox pattern in PaymentInitiationsInsert
 	return nil
 }
 
@@ -1442,28 +1377,7 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.ID.String()),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsCreation: &pool,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Pool events are now sent via outbox pattern in PoolsUpsert
 	return nil
 }
 
@@ -1499,36 +1413,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		return err
 	}
 
-	detachedCtx := context.WithoutCancel(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
-
-	pool.PoolAccounts = append(pool.PoolAccounts, accountID)
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-add-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsCreation: pool,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Pool events are now sent via outbox pattern in PoolsUpsert
 	return nil
 }
 
@@ -1551,75 +1436,20 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		return err
 	}
 
-	detachedCtx := context.WithoutCancel(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
-
-	pool.PoolAccounts = slices.DeleteFunc(pool.PoolAccounts, func(acc models.AccountID) bool {
-		return acc.String() == accountID.String()
-	})
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsCreation: pool,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Pool events are now sent via outbox pattern in PoolsUpsert
 	return nil
 }
 
 func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
-
-	deleted, err := e.storage.PoolsDelete(ctx, poolID)
+	_, err := e.storage.PoolsDelete(ctx, poolID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	if deleted {
-		// Do not wait for sending of events
-		_, err := e.temporalClient.ExecuteWorkflow(
-			ctx,
-			client.StartWorkflowOptions{
-				ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
-				TaskQueue:                                GetDefaultTaskQueue(e.stack),
-				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-				WorkflowExecutionErrorWhenAlreadyStarted: false,
-				SearchAttributes: map[string]interface{}{
-					workflow.SearchAttributeStack: e.stack,
-				},
-			},
-			workflow.RunSendEvents,
-			workflow.SendEvents{
-				PoolsDeletion: &poolID,
-			},
-		)
-		if err != nil {
-			otel.RecordError(span, err)
-			return err
-		}
-	}
-
+	// Pool deletion events are now sent via outbox pattern in PoolsDelete
 	return nil
 }
 
