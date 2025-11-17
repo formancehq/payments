@@ -62,7 +62,7 @@ var _ = Describe("Stripe Plugin Webhooks", func() {
 				},
 			}
 			req := models.CreateWebhooksRequest{WebhookBaseUrl: "http://example.com"}
-			m.EXPECT().GetRootAccountID().MaxTimes(1).Return(rootAccountID)
+			m.EXPECT().GetRootAccountID().Times(1).Return(rootAccountID)
 			m.EXPECT().CreateWebhookEndpoints(gomock.Any(), req.WebhookBaseUrl).Return(endpoints, nil)
 			result, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())

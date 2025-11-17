@@ -31,7 +31,7 @@ func (c *client) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL stri
 	results := make([]*stripe.WebhookEndpoint, 0, 2)
 
 	for _, conf := range endpoints {
-		path := strings.ReplaceAll(string(stripe.EventTypeBalanceAvailable), ".", "_")
+		path := strings.ReplaceAll(string(conf.eventType), ".", "_")
 		if conf.isConnect {
 			path = StripeConnectUrlPrefix + path
 		}

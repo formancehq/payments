@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
+	"github.com/stripe/stripe-go/v80"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
@@ -28,16 +29,20 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	var accountBalances []models.PSPBalance
 	for _, available := range balance.Available {
 		timestamp := time.Now()
-		accountBalances = append(accountBalances, models.PSPBalance{
-			AccountReference: from.Reference,
-			Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(available.Currency)),
-			Amount:           big.NewInt(available.Amount),
-			CreatedAt:        timestamp,
-		})
+		accountBalances = append(accountBalances, toPSPBalance(from.Reference, timestamp, available))
 	}
 
 	return models.FetchNextBalancesResponse{
 		Balances: accountBalances,
 		HasMore:  false,
 	}, nil
+}
+
+func toPSPBalance(accountRef string, createdAt time.Time, a *stripe.Amount) models.PSPBalance {
+	return models.PSPBalance{
+		AccountReference: accountRef,
+		Amount:           big.NewInt(a.Amount),
+		Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(a.Currency)),
+		CreatedAt:        createdAt,
+	}
 }

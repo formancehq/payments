@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stripe/stripe-go/v80"
@@ -117,14 +115,10 @@ func (p *Plugin) translateBalanceWebhook(
 ) ([]models.WebhookResponse, error) {
 	responses := make([]models.WebhookResponse, 0, len(balance.Available))
 
-	for _, a := range balance.Available {
+	for _, available := range balance.Available {
+		pspBalance := toPSPBalance(accountRef, createdAt, available)
 		responses = append(responses, models.WebhookResponse{
-			Balance: &models.PSPBalance{
-				AccountReference: accountRef,
-				Amount:           big.NewInt(a.Amount),
-				Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(a.Currency)),
-				CreatedAt:        createdAt,
-			},
+			Balance: &pspBalance,
 		})
 	}
 	return responses, nil
