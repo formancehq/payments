@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	stdtime "time"
@@ -72,7 +74,9 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	if err != nil {
 		return e("upsert payment initiations", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := fromPaymentInitiationModels(pi)
 	adjustmentsToInsert := make([]paymentInitiationAdjustment, 0, len(adjustments))
@@ -87,17 +91,104 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		return e("failed to insert payment initiations", err)
 	}
 
+	// Create outbox event for payment initiation
+	outboxEvents := make([]models.OutboxEvent, 0, 1+len(adjustments))
+
+	payload := map[string]interface{}{
+		"id":          pi.ID.String(),
+		"connectorID": pi.ConnectorID.String(),
+		"provider":    pi.ConnectorID.Provider,
+		"reference":   pi.Reference,
+		"createdAt":   pi.CreatedAt,
+		"scheduledAt": pi.ScheduledAt,
+		"description": pi.Description,
+		"type":        pi.Type.String(),
+		"amount":      pi.Amount.String(),
+		"asset":       pi.Asset,
+		"metadata":    pi.Metadata,
+	}
+	if pi.SourceAccountID != nil {
+		payload["sourceAccountID"] = pi.SourceAccountID.String()
+	}
+	if pi.DestinationAccountID != nil {
+		payload["destinationAccountID"] = pi.DestinationAccountID.String()
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal payment initiation event payload: %w", err)
+	}
+
+	outboxEvents = append(outboxEvents, models.OutboxEvent{
+		EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED,
+		EntityID:       pi.ID.String(),
+		Payload:        payloadBytes,
+		CreatedAt:      stdtime.Now().UTC(),
+		Status:         models.OUTBOX_STATUS_PENDING,
+		ConnectorID:    &pi.ConnectorID,
+		IdempotencyKey: pi.IdempotencyKey(),
+	})
+
 	if len(adjustmentsToInsert) > 0 {
-		_, err = tx.NewInsert().
+		err = tx.NewInsert().
 			Model(&adjustmentsToInsert).
 			On("CONFLICT (id) DO NOTHING").
-			Exec(ctx)
+			Returning("*").
+			Scan(ctx, &adjustmentsToInsert)
 		if err != nil {
 			return e("failed to insert payment initiation adjustments", err)
 		}
+
+		// Create outbox events for each inserted adjustment
+		for _, adj := range adjustmentsToInsert {
+			adjModel := toPaymentInitiationAdjustmentModels(adj)
+			adjPayload := map[string]interface{}{
+				"id":                  adjModel.ID.String(),
+				"paymentInitiationID": adjModel.ID.PaymentInitiationID.String(),
+				"status":              adjModel.Status.String(),
+			}
+			if adjModel.Amount != nil {
+				adjPayload["amount"] = adjModel.Amount.String()
+			}
+			if adjModel.Asset != nil {
+				adjPayload["asset"] = *adjModel.Asset
+			}
+			if adjModel.Error != nil {
+				adjPayload["error"] = adjModel.Error.Error()
+			}
+			if adjModel.Metadata != nil {
+				adjPayload["metadata"] = adjModel.Metadata
+			}
+
+			adjPayloadBytes, err := json.Marshal(adjPayload)
+			if err != nil {
+				return e("failed to marshal payment initiation adjustment event payload: %w", err)
+			}
+
+			outboxEvents = append(outboxEvents, models.OutboxEvent{
+				EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED,
+				EntityID:       adjModel.ID.String(),
+				Payload:        adjPayloadBytes,
+				CreatedAt:      stdtime.Now().UTC(),
+				Status:         models.OUTBOX_STATUS_PENDING,
+				ConnectorID:    &adjModel.ID.PaymentInitiationID.ConnectorID,
+				IdempotencyKey: adjModel.IdempotencyKey(),
+			})
+		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	// Insert outbox events
+	if len(outboxEvents) > 0 {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error {
@@ -105,7 +196,9 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 	if err != nil {
 		return e("update payment metadata", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var pi paymentInitiation
 	err = tx.NewSelect().
@@ -134,7 +227,11 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 		return e("update payment initiation metadata", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error) {
@@ -276,13 +373,22 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 }
 
 func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID models.PaymentInitiationID, pID models.PaymentID, createdAt stdtime.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	toInsert := paymentInitiationRelatedPayment{
 		PaymentInitiationID: piID,
 		PaymentID:           pID,
 		CreatedAt:           time.New(createdAt),
 	}
 
-	_, err := s.db.NewInsert().
+	var res sql.Result
+	res, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (payment_initiation_id, payment_id) DO NOTHING").
 		Exec(ctx)
@@ -290,7 +396,44 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		return e("failed to insert payment initiation related payments", err)
 	}
 
-	return nil
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return e("failed to get rows affected", err)
+	}
+
+	// Create outbox event only if related payment was actually inserted
+	if rowsAffected > 0 {
+		relatedPayment := models.PaymentInitiationRelatedPayments{
+			PaymentInitiationID: piID,
+			PaymentID:           pID,
+		}
+
+		payload := map[string]interface{}{
+			"paymentInitiationID": piID.String(),
+			"paymentID":           pID.String(),
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal payment initiation related payment event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED,
+			EntityID:       fmt.Sprintf("%s:%s", piID.String(), pID.String()),
+			Payload:        payloadBytes,
+			CreatedAt:      stdtime.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &piID.ConnectorID,
+			IdempotencyKey: relatedPayment.IdempotencyKey(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
+	}
+
+	return e("failed to commit transaction", tx.Commit())
 }
 
 func (s *store) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiationID, error) {
@@ -359,9 +502,18 @@ func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID m
 }
 
 func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	toInsert := fromPaymentInitiationAdjustmentModels(adj)
 
-	_, err := s.db.NewInsert().
+	var res sql.Result
+	res, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
@@ -369,7 +521,52 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 		return e("failed to insert payment initiation adjustments", err)
 	}
 
-	return nil
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return e("failed to get rows affected", err)
+	}
+
+	// Create outbox event only if adjustment was actually inserted
+	if rowsAffected > 0 {
+		adjPayload := map[string]interface{}{
+			"id":                  adj.ID.String(),
+			"paymentInitiationID": adj.ID.PaymentInitiationID.String(),
+			"status":              adj.Status.String(),
+		}
+		if adj.Amount != nil {
+			adjPayload["amount"] = adj.Amount.String()
+		}
+		if adj.Asset != nil {
+			adjPayload["asset"] = *adj.Asset
+		}
+		if adj.Error != nil {
+			adjPayload["error"] = adj.Error.Error()
+		}
+		if adj.Metadata != nil {
+			adjPayload["metadata"] = adj.Metadata
+		}
+
+		adjPayloadBytes, err := json.Marshal(adjPayload)
+		if err != nil {
+			return e("failed to marshal payment initiation adjustment event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED,
+			EntityID:       adj.ID.String(),
+			Payload:        adjPayloadBytes,
+			CreatedAt:      stdtime.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &adj.ID.PaymentInitiationID.ConnectorID,
+			IdempotencyKey: adj.IdempotencyKey(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
+	}
+
+	return e("failed to commit transaction", tx.Commit())
 }
 
 func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
@@ -381,7 +578,9 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	if err != nil {
 		return false, e("upsert payment initiations", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var previousAdj paymentInitiationAdjustment
 	err = tx.NewSelect().
@@ -396,11 +595,16 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	}
 
 	if !predicate(toPaymentInitiationAdjustmentModels(previousAdj)) {
+		// Explicitly rollback to release the FOR UPDATE lock
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return false, e("failed to rollback transaction", rollbackErr)
+		}
 		return false, nil
 	}
 
 	toInsert := fromPaymentInitiationAdjustmentModels(adj)
-	_, err = tx.NewInsert().
+	var res sql.Result
+	res, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
@@ -408,7 +612,56 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		return false, e("failed to insert payment initiation adjustments", err)
 	}
 
-	return true, e("failed to commit transaction", tx.Commit())
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, e("failed to get rows affected", err)
+	}
+
+	// Create outbox event only if adjustment was actually inserted
+	if rowsAffected > 0 {
+		adjPayload := map[string]interface{}{
+			"id":                  adj.ID.String(),
+			"paymentInitiationID": adj.ID.PaymentInitiationID.String(),
+			"status":              adj.Status.String(),
+		}
+		if adj.Amount != nil {
+			adjPayload["amount"] = adj.Amount.String()
+		}
+		if adj.Asset != nil {
+			adjPayload["asset"] = *adj.Asset
+		}
+		if adj.Error != nil {
+			adjPayload["error"] = adj.Error.Error()
+		}
+		if adj.Metadata != nil {
+			adjPayload["metadata"] = adj.Metadata
+		}
+
+		adjPayloadBytes, err := json.Marshal(adjPayload)
+		if err != nil {
+			return false, e("failed to marshal payment initiation adjustment event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED,
+			EntityID:       adj.ID.String(),
+			Payload:        adjPayloadBytes,
+			CreatedAt:      stdtime.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &adj.ID.PaymentInitiationID.ConnectorID,
+			IdempotencyKey: adj.IdempotencyKey(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return false, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, e("failed to commit transaction", err)
+	}
+	return rowsAffected > 0, nil
 }
 
 func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {
