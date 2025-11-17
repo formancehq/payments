@@ -65,7 +65,7 @@ func (p *Plugin) extractWebhookEvent(config *models.WebhookConfig, wh models.PSP
 	// with the webhook signing key.
 	event, err := webhook.ConstructEvent(payload, headers[0], secret)
 	if err != nil {
-		return evt, fmt.Errorf("error verifying webhook signature: %w", err)
+		return evt, fmt.Errorf("error verifying webhook signature: %w: %w", err, models.ErrWebhookVerification)
 	}
 	return event, nil
 }
@@ -87,10 +87,10 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 	// an account reference is only present if it's a StripeConnect account
 	accountReference := event.Account
 	if accountReference == "" {
-		p.logger.WithField("url", req.Config.URLPath).Infof("RELATED account reference is blank")
+		p.logger.WithField("url", req.Config.URLPath).Debugf("RELATED account reference is blank")
 		accountID, ok := req.Config.Metadata[webhookRelatedAccountIDKey]
 		if !ok {
-			return []models.WebhookResponse{}, fmt.Errorf("failed to find root account: %+v", event)
+			return []models.WebhookResponse{}, fmt.Errorf("webhook config did not contain root account ID: %+v", event)
 		}
 		accountReference = accountID
 	}
