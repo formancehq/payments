@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"os"
 	"path"
 	"time"
+
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 
 	dummy "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
 	"github.com/formancehq/payments/internal/models"
@@ -42,8 +43,8 @@ func TaskPoller(ctx context.Context, t T, testServer *Server) func(id string) fu
 	return testServer.Client().PollTask(ctx, t)
 }
 
-func GeneratePSPData(dir string) ([]dummy.Account, error) {
-	num := 5
+func GeneratePSPData(dir string, accountToCreate int) ([]dummy.Account, error) {
+	num := accountToCreate
 	_, err := os.Stat(dir)
 	if err != nil {
 		return []dummy.Account{}, fmt.Errorf("path %q does not exist: %w", dir, err)
