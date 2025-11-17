@@ -80,12 +80,7 @@ func (w Workflow) validateOnlyReverse(
 		return temporal.NewNonRetryableApplicationError(err.Error(), "ANOTHER_REVERSE_IN_PROGRESS", err)
 	}
 
-	if err := w.runSendEvents(ctx, SendEvents{
-		PaymentInitiationAdjustment: &adj,
-	}); err != nil {
-		return err
-	}
-
+	// Payment initiation adjustment events are now sent via outbox pattern in PaymentInitiationAdjustmentsUpsertIfPredicate
 	return nil
 }
 
