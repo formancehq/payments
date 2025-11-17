@@ -19,7 +19,7 @@ you could simply set it as localhost (or anything, really).
 $ git clone git@github.com:formancehq/payments.git
 $ cd payments
 $ just compile-plugins
-$ STACK_PUBLIC_URL=http://localhost && docker compose up
+$ STACK_PUBLIC_URL=http://localhost docker compose up
 ```
 
 ## Debugging
