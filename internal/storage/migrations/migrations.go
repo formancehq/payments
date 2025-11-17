@@ -52,6 +52,9 @@ var renameBankBridgesOpenBanking string
 //go:embed 24-dynamic-pools.sql
 var dynamicPools string
 
+//go:embed 25-add-outbox-table.sql
+var addOutboxTable string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -358,6 +361,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running add dynamic pools migration...")
 					_, err := tx.ExecContext(ctx, dynamicPools)
 					logger.WithField("error", err).Info("finished running add dynamic pools migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "add outbox for events",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running add outbox for events migration...")
+					_, err := tx.ExecContext(ctx, addOutboxTable)
+					logger.WithField("error", err).Info("finished running add outbox for events migration")
 					return err
 				})
 			},
