@@ -13,7 +13,15 @@ import (
 	"github.com/stripe/stripe-go/v80/webhook"
 )
 
-var webhookRelatedAccountIDKey = "webhook_related_account_id"
+type TranslateWebhookFunc func(context.Context, string, *stripe.Event) ([]models.WebhookResponse, error)
+
+var (
+	webhookRelatedAccountIDKey = "webhook_related_account_id"
+
+	supportedWebhooks = map[stripe.EventType]TranslateWebhookFunc{
+		stripe.EventTypeBalanceAvailable: translateBalanceWebhook,
+	}
+)
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
 	results, err := p.client.CreateWebhookEndpoints(ctx, req.WebhookBaseUrl)
@@ -93,30 +101,28 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		accountReference = accountID
 	}
 
-	eventCreatedAt := time.Unix(event.Created, 0)
-	switch event.Type {
-	case stripe.EventTypeBalanceAvailable:
-		var balance stripe.Balance
-		err := json.Unmarshal(event.Data.Raw, &balance)
-		if err != nil {
-			return []models.WebhookResponse{}, fmt.Errorf("failed to parse %q webhook JSON: %w", event.Type, err)
-		}
-		return p.translateBalanceWebhook(ctx, accountReference, eventCreatedAt, balance)
+	fn, ok := supportedWebhooks[event.Type]
+	if !ok {
+		return []models.WebhookResponse{}, fmt.Errorf("unhandled event type: %q", event.Type)
 	}
-
-	return []models.WebhookResponse{}, fmt.Errorf("unhandled event type: %q", event.Type)
+	return fn(ctx, accountReference, &event)
 }
 
-func (p *Plugin) translateBalanceWebhook(
+func translateBalanceWebhook(
 	ctx context.Context,
 	accountRef string,
-	createdAt time.Time,
-	balance stripe.Balance,
+	evt *stripe.Event,
 ) ([]models.WebhookResponse, error) {
+	var balance stripe.Balance
+	err := json.Unmarshal(evt.Data.Raw, &balance)
+	if err != nil {
+		return []models.WebhookResponse{}, fmt.Errorf("failed to parse %q webhook JSON: %w", evt.Type, err)
+	}
 	responses := make([]models.WebhookResponse, 0, len(balance.Available))
 
+	eventCreatedAt := time.Unix(evt.Created, 0)
 	for _, available := range balance.Available {
-		pspBalance := toPSPBalance(accountRef, createdAt, available)
+		pspBalance := toPSPBalance(accountRef, eventCreatedAt, available)
 		responses = append(responses, models.WebhookResponse{
 			Balance: &pspBalance,
 		})
