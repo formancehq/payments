@@ -52,13 +52,6 @@ type GenericEventPayload struct {
 	ID string `json:"id"`
 }
 
-type ConnectorConf struct {
-	Name          string `json:"name"`
-	PollingPeriod string `json:"pollingPeriod"`
-	PageSize      int    `json:"pageSize"`
-	Directory     string `json:"directory"`
-}
-
 type ParallelExecutionContext struct {
 	PostgresServer *pgtesting.PostgresServer
 	NatsServer     *natstesting.NatsServer
@@ -133,44 +126,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	temporalServer.SetValue(pec.TemporalServer)
 })
 
-//func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
-//	currentDBDeferred = pgtesting.UsePostgresDatabase(pgServer, pgtesting.CreateWithTemplate(DBTemplate))
-//	return currentDBDeferred
-//}
-
 func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
 	return pgtesting.UsePostgresDatabase(pgServer, pgtesting.CreateWithTemplate(DBTemplate))
 }
-
-//// Register per-spec database creation at top-level so Ginkgo nodes are added during spec tree construction.
-//var _ = UseTemplatedDatabase()
-
-//// CurrentDBConnOpts exposes the per-spec database connection options without exposing bun/pgtesting to specs.
-//func CurrentDBConnOpts() bunconnect.ConnectionOptions {
-//	Expect(currentDBDeferred).NotTo(BeNil(), "database not initialized; ensure suite BeforeEach ran")
-//	opts := currentDBDeferred.GetValue().ConnectionOptions()
-//	if opts.DatabaseSourceName == "" {
-//		opts.DatabaseSourceName = currentDBDeferred.GetValue().ConnString()
-//	}
-//	return opts
-//}
-
-//// Some assertions may rely on DB, let's make it available in the test.
-//// Note that this is not a recommended pattern; I currently need to use it for verifying events are added to the outbox
-//// table.
-//var _ = BeforeEach(func() {
-//	// Open a bun connection to the per-spec database provisioned via UseTemplatedDatabase (registered at top-level)
-//	var err error
-//	Expect(currentDBDeferred).NotTo(BeNil(), "database not initialized; ensure UseTemplatedDatabase is registered at top-level")
-//	bunDB, err = bunconnect.OpenSQLDB(context.Background(), currentDBDeferred.GetValue().ConnectionOptions())
-//	Expect(err).To(BeNil())
-//})
-//var _ = AfterEach(func() {
-//	if bunDB != nil {
-//		_ = bunDB.Close()
-//		bunDB = nil
-//	}
-//})
 
 func flushRemainingWorkflows(ctx context.Context) {
 	cl := temporalServer.GetValue().DefaultClient()
