@@ -2,12 +2,14 @@ package storage
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -34,17 +36,20 @@ type poolAccounts struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 }
 
-func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
+func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
-	poolToInsert, accountsToInsert := fromPoolModel(pool)
+	poolToInsert, accountsToInsert := fromPoolModel(p)
 
 	for i := range accountsToInsert {
-		exists, err := tx.NewSelect().
+		var exists bool
+		exists, err = tx.NewSelect().
 			Model((*account)(nil)).
 			Where("id = ?", accountsToInsert[i].AccountID).
 			Limit(1).
@@ -54,16 +59,32 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		}
 
 		if !exists {
-			return e("account does not exist: %w", ErrNotFound)
+			err = ErrNotFound // We need to define err here so that the rollback happens!
+			return e("account does not exist: %w", err)
 		}
 	}
 
-	_, err = tx.NewInsert().
+	var poolExists bool
+	poolExists, err = tx.NewSelect().
+		Model((*pool)(nil)).
+		Where("id = ?", poolToInsert.ID).
+		Exists(ctx)
+	if err != nil {
+		return e("check pool exists: %w", err)
+	}
+
+	var poolInsertRes sql.Result
+	poolInsertRes, err = tx.NewInsert().
 		Model(&poolToInsert).
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
 		return e("insert pool: %w", err)
+	}
+
+	poolRowsAffected, err := poolInsertRes.RowsAffected()
+	if err != nil {
+		return e("get pool insert rows affected: %w", err)
 	}
 
 	if len(accountsToInsert) > 0 {
@@ -76,7 +97,47 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		}
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	// Create outbox event only if pool was newly created (not updated)
+	if !poolExists && poolRowsAffected > 0 {
+		// Build account IDs array
+		accountIDs := make([]string, len(p.PoolAccounts))
+		for i := range p.PoolAccounts {
+			accountIDs[i] = p.PoolAccounts[i].String()
+		}
+
+		payload := map[string]interface{}{
+			"id":         p.ID.String(),
+			"name":       p.Name,
+			"createdAt":  p.CreatedAt,
+			"accountIDs": accountIDs,
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal pool event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_POOL_SAVED,
+			EntityID:       p.ID.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    nil, // Pools don't have connector ID
+			IdempotencyKey: p.IdempotencyKey(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			//if err = s.OutboxEventsInsertWithTx(ctx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return e("commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error) {
@@ -98,9 +159,12 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	if err != nil {
 		return false, e("begin transaction: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
-	res, err := tx.NewDelete().
+	var res sql.Result
+	res, err = tx.NewDelete().
 		Model((*pool)(nil)).
 		Where("id = ?", id).
 		Exec(ctx)
@@ -121,7 +185,38 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		return false, e("get rows affected: %w", err)
 	}
 
-	return rowsAffected > 0, e("commit transaction: %w", tx.Commit())
+	// Create outbox event for pool deletion if pool was actually deleted
+	if rowsAffected > 0 {
+		payload := map[string]interface{}{
+			"createdAt": time.Now().UTC(),
+			"id":        id.String(),
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return false, e("failed to marshal pool deleted event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_POOL_DELETED,
+			EntityID:       id.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    nil, // Pools don't have connector ID
+			IdempotencyKey: id.String(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return false, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, e("commit transaction: %w", err)
+	}
+	return rowsAffected > 0, nil
 }
 
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
@@ -129,9 +224,12 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
-	exists, err := tx.NewSelect().
+	var exists bool
+	exists, err = tx.NewSelect().
 		Model((*account)(nil)).
 		Where("id = ?", accountID).
 		Limit(1).
@@ -141,7 +239,8 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 	}
 
 	if !exists {
-		return e("account does not exist: %w", ErrNotFound)
+		err = ErrNotFound // We need to define err here so that the rollback happens!
+		return e("account does not exist: %w", err)
 	}
 
 	_, err = tx.NewInsert().
@@ -156,7 +255,11 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		return e("insert pool account: %w", err)
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
@@ -274,7 +377,7 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 	p := pool{
 		ID:        from.ID,
 		Name:      from.Name,
-		CreatedAt: time.New(from.CreatedAt),
+		CreatedAt: from.CreatedAt,
 		Type:      from.Type,
 		Query:     from.Query,
 	}
@@ -300,7 +403,7 @@ func toPoolModel(from pool) models.Pool {
 	return models.Pool{
 		ID:           from.ID,
 		Name:         from.Name,
-		CreatedAt:    from.CreatedAt.Time,
+		CreatedAt:    from.CreatedAt,
 		Type:         from.Type,
 		Query:        from.Query,
 		PoolAccounts: accounts,
