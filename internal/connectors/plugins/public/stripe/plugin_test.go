@@ -6,9 +6,12 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 func TestPlugin(t *testing.T) {
@@ -19,6 +22,7 @@ func TestPlugin(t *testing.T) {
 var _ = Describe("Stripe Plugin", func() {
 	var (
 		plg    *Plugin
+		ctrl   *gomock.Controller
 		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
@@ -26,18 +30,25 @@ var _ = Describe("Stripe Plugin", func() {
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 		}
+		ctrl = gomock.NewController(GinkgoT())
 	})
 
 	Context("install", func() {
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			_, err := New("stripe", logger, config)
+			_, err := New("stripe", logger, config, nil)
 			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test"}`)
-			plg1, err := New("stripe", logger, config)
+			stripeMock := client.NewMockBackend(ctrl)
+			stripeMock.EXPECT().Call(gomock.Any(), gomock.Any(), gomock.Any(), nil, &stripe.Account{}).DoAndReturn(
+				func(_, _, _ string, _ any, account *stripe.Account) error {
+					account.ID = "rootID"
+					return nil
+				})
+			plg1, err := New("stripe", logger, config, stripeMock)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg1.Install(ctx, req)

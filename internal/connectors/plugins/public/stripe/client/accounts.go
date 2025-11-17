@@ -7,6 +7,11 @@ import (
 	"github.com/stripe/stripe-go/v80"
 )
 
+func (c *client) GetRootAccount() (result *stripe.Account, err error) {
+	result, err = c.accountClient.Get()
+	return result, wrapSDKErr(err)
+}
+
 func (c *client) GetAccounts(
 	ctx context.Context,
 	timeline Timeline,

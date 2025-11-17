@@ -10,13 +10,14 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/stripe/stripe-go/v80"
 )
 
 const ProviderName = "stripe"
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, rm)
+		return New(name, logger, rm, nil)
 	}, capabilities, Config{})
 }
 
@@ -29,13 +30,21 @@ type Plugin struct {
 	config Config
 }
 
-func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+func New(
+	name string,
+	logger logging.Logger,
+	rawConfig json.RawMessage,
+	backend stripe.Backend,
+) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	client := client.New(ProviderName, logger, nil, config.APIKey)
+	client, err := client.New(ProviderName, logger, backend, config.APIKey)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),

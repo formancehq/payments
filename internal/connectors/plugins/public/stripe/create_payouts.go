@@ -29,7 +29,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 	}
 
 	var source *string = nil
-	if pi.SourceAccount != nil && pi.SourceAccount.Reference != rootAccountReference {
+	if pi.SourceAccount != nil && pi.SourceAccount.Reference != p.client.GetRootAccountID() {
 		source = &pi.SourceAccount.Reference
 	}
 

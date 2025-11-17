@@ -9,7 +9,7 @@ import (
 	"github.com/stripe/stripe-go/v80"
 )
 
-const stripeConnectUrlPrefix = "connect_"
+const StripeConnectUrlPrefix = "connect_"
 
 type endpointConfig struct {
 	eventType string
@@ -33,7 +33,7 @@ func (c *client) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL stri
 	for _, conf := range endpoints {
 		path := strings.ReplaceAll(string(stripe.EventTypeBalanceAvailable), ".", "_")
 		if conf.isConnect {
-			path = stripeConnectUrlPrefix + path
+			path = StripeConnectUrlPrefix + path
 		}
 
 		u, err := url.JoinPath(webhookBaseURL, path)

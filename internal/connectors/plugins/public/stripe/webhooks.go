@@ -9,10 +9,13 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/webhook"
 )
+
+var webhookRelatedAccountIDKey = "webhook_related_account_id"
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
 	results, err := p.client.CreateWebhookEndpoints(ctx, req.WebhookBaseUrl)
@@ -21,16 +24,22 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}
 
 	configs := make([]models.PSPWebhookConfig, 0, len(results))
-
 	for _, result := range results {
 		urlPath := strings.TrimPrefix(result.URL, req.WebhookBaseUrl)
+
+		metadata := map[string]string{
+			"secret":         result.Secret,
+			"enabled_events": strings.Join(result.EnabledEvents, ","),
+		}
+
+		// if it's not a StripeConnect enabled webhook let's embed the root account ID so we can associate events with it
+		if !strings.Contains(urlPath, client.StripeConnectUrlPrefix) {
+			metadata[webhookRelatedAccountIDKey] = p.client.GetRootAccountID()
+		}
 		configs = append(configs, models.PSPWebhookConfig{
-			Name:    result.ID,
-			URLPath: urlPath,
-			Metadata: map[string]string{
-				"secret":         result.Secret,
-				"enabled_events": strings.Join(result.EnabledEvents, ","),
-			},
+			Name:     result.ID,
+			URLPath:  urlPath,
+			Metadata: metadata,
 		})
 	}
 	return configs, nil
@@ -78,7 +87,12 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 	// an account reference is only present if it's a StripeConnect account
 	accountReference := event.Account
 	if accountReference == "" {
-		accountReference = rootAccountReference
+		p.logger.WithField("url", req.Config.URLPath).Infof("RELATED account reference is blank")
+		accountID, ok := req.Config.Metadata[webhookRelatedAccountIDKey]
+		if !ok {
+			return []models.WebhookResponse{}, fmt.Errorf("failed to find root account: %+v", event)
+		}
+		accountReference = accountID
 	}
 
 	eventCreatedAt := time.Unix(event.Created, 0)

@@ -2,11 +2,13 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/account"
@@ -24,6 +26,8 @@ const StripeDefaultTimeout = 80 * time.Second
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
+	GetRootAccountID() string
+	GetRootAccount() (*stripe.Account, error)
 	GetAccounts(ctx context.Context, timeline Timeline, pageSize int64) ([]*stripe.Account, Timeline, bool, error)
 	GetAccountBalances(ctx context.Context, accountID string) (*stripe.Balance, error)
 	GetExternalAccounts(ctx context.Context, accountID string, timeline Timeline, pageSize int64) ([]*stripe.BankAccount, Timeline, bool, error)
@@ -37,6 +41,8 @@ type Client interface {
 
 type client struct {
 	logger logging.Logger
+
+	rootAccountID string
 
 	accountClient            account.Client
 	balanceClient            balance.Client
@@ -53,22 +59,33 @@ func New(
 	logger logging.Logger,
 	backend stripe.Backend,
 	apiKey string,
-) Client {
+) (Client, error) {
 	if backend == nil {
 		backends := stripe.NewBackends(metrics.NewHTTPClient(name, StripeDefaultTimeout))
 		backend = backends.API
 	}
+	accountClient := account.Client{B: backend, Key: apiKey}
+	result, err := accountClient.Get()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", plugins.ErrInvalidClientRequest, err)
+	}
 
 	return &client{
-		logger:                   logger,
-		accountClient:            account.Client{B: backend, Key: apiKey},
+		logger:        logger,
+		rootAccountID: result.ID,
+
+		accountClient:            accountClient,
 		balanceClient:            balance.Client{B: backend, Key: apiKey},
 		transferClient:           transfer.Client{B: backend, Key: apiKey},
 		payoutClient:             payout.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},
 		webhookEndpointClient:    webhookendpoint.Client{B: backend, Key: apiKey},
-	}
+	}, nil
+}
+
+func (c *client) GetRootAccountID() string {
+	return c.rootAccountID
 }
 
 func limit(wanted int64, have int) *int64 {

@@ -100,6 +100,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().CreatePayout(gomock.Any(), &client.CreatePayoutRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
@@ -133,6 +134,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 				Status:      stripe.PayoutStatusInTransit,
 				Metadata:    samplePSPPaymentInitiation.Metadata,
 			}
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().CreatePayout(gomock.Any(), &client.CreatePayoutRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,

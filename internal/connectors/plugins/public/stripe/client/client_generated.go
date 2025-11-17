@@ -166,6 +166,35 @@ func (mr *MockClientMockRecorder) GetPayments(ctx, accountID, timeline, pageSize
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPayments", reflect.TypeOf((*MockClient)(nil).GetPayments), ctx, accountID, timeline, pageSize)
 }
 
+// GetRootAccount mocks base method.
+func (m *MockClient) GetRootAccount() (*stripe.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRootAccount")
+	ret0, _ := ret[0].(*stripe.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRootAccount indicates an expected call of GetRootAccount.
+func (mr *MockClientMockRecorder) GetRootAccount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRootAccount", reflect.TypeOf((*MockClient)(nil).GetRootAccount))
+}
+
+// GetRootAccountID mocks base method.
+func (m *MockClient) GetRootAccountID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRootAccountID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetRootAccountID indicates an expected call of GetRootAccountID.
+func (mr *MockClientMockRecorder) GetRootAccountID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRootAccountID", reflect.TypeOf((*MockClient)(nil).GetRootAccountID))
+}
+
 // ReverseTransfer mocks base method.
 func (m *MockClient) ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error) {
 	m.ctrl.T.Helper()

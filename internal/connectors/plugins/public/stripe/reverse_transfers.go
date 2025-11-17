@@ -34,7 +34,7 @@ func (p *Plugin) reverseTransfer(ctx context.Context, pir models.PSPPaymentIniti
 		return models.PSPPayment{}, err
 	}
 	var account *string = nil
-	if pir.RelatedPaymentInitiation.SourceAccount != nil && pir.RelatedPaymentInitiation.SourceAccount.Reference != rootAccountReference {
+	if pir.RelatedPaymentInitiation.SourceAccount != nil && pir.RelatedPaymentInitiation.SourceAccount.Reference != p.client.GetRootAccountID() {
 		account = &pir.RelatedPaymentInitiation.SourceAccount.Reference
 	}
 	resp, err := p.client.ReverseTransfer(

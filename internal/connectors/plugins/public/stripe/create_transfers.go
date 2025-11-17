@@ -29,7 +29,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 	}
 
 	var source *string = nil
-	if pi.SourceAccount != nil && pi.SourceAccount.Reference != rootAccountReference {
+	if pi.SourceAccount != nil && pi.SourceAccount.Reference != p.client.GetRootAccountID() {
 		source = &pi.SourceAccount.Reference
 	}
 
