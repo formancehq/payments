@@ -31,7 +31,6 @@
 	# those directives are evaluated matters. So the jwtauth directive must be
 	# ordered.
 	# c.f. https://caddyserver.com/docs/caddyfile/directives#directive-order
-	order auth before basicauth
 	order versions after metrics
 	order audit after encode
 
