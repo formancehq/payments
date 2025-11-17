@@ -24,10 +24,13 @@ func (w Workflow) runUninstallConnector(
 	err := w.uninstallConnector(ctx, uninstallConnector)
 	if err != nil {
 		if uninstallConnector.TaskID != nil {
+			// Do not associate the task to the connector on error, as the connector
+			// might already be deleted at this point, which would cause a foreign key
+			// violation when persisting the task update.
 			if errUpdateTask := w.updateTasksError(
 				ctx,
 				*uninstallConnector.TaskID,
-				nil,
+				&uninstallConnector.ConnectorID,
 				err,
 			); errUpdateTask != nil {
 				return errUpdateTask
@@ -41,6 +44,10 @@ func (w Workflow) runUninstallConnector(
 		return nil
 	}
 
+	// After successful uninstallation, the connector is deleted from storage.
+	// To avoid foreign key violations when persisting the task update, do not
+	// associate the task with the (now deleted) connector. We still record the
+	// connector identifier in CreatedObjectID for traceability.
 	return w.updateTaskSuccess(
 		ctx,
 		*uninstallConnector.TaskID,
