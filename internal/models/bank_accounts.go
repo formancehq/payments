@@ -50,6 +50,7 @@ type BankAccount struct {
 type bankAccountIK struct {
 	ID            uuid.UUID  `json:"id"`
 	LastAccountID *AccountID `json:"lastAccountID,omitempty"`
+	MetadataHash  string     `json:"metadataHash,omitempty"`
 }
 
 func (b *BankAccount) IdempotencyKey() string {
@@ -59,6 +60,11 @@ func (b *BankAccount) IdempotencyKey() string {
 
 	if len(b.RelatedAccounts) > 0 {
 		ik.LastAccountID = &b.RelatedAccounts[len(b.RelatedAccounts)-1].AccountID
+	}
+
+	if len(b.Metadata) > 0 {
+		//hash the metadata in ik.MetadataHash
+		ik.MetadataHash = IdempotencyKey(b.Metadata)
 	}
 
 	return IdempotencyKey(ik)
