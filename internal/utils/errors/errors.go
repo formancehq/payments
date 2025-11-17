@@ -47,3 +47,13 @@ func Cause(err error) error {
 		}
 	}
 }
+
+type RetryableError interface {
+	error
+	Retryable()
+}
+
+type NonRetryableError interface {
+	error
+	NonRetryable()
+}
