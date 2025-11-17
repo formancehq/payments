@@ -22,7 +22,6 @@
 		reverse_proxy {args.1}
 
 		import cors
-
 	}
 }
 
@@ -50,7 +49,9 @@
 			region "local"
 			env "local"
 			endpoints {
-				payments http://payments:8080/_info http://payments:8080/_healthcheck
+				payments {
+					http://payments:8080/_info http://payments:8080/_healthcheck
+				}
 			}
 		}
 	}
