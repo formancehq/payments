@@ -79,13 +79,13 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 			Expect(*createResponse.GetV3InitiatePaymentResponse().Data.TaskID).To(Equal(""))              // task empty when not sending to PSP
 			Expect(createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID).ToNot(BeNil()) // task nil when not sending to PSP
 			paymentInitiationID = *createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED)
+			MustOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED)
 			var msg = struct {
 				Status string `json:"status"`
 			}{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.String(),
 			}
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(msg))
+			MustOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(msg))
 		})
 
 		AfterEach(func() {

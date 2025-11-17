@@ -331,7 +331,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			id := uuid.New()
 			connectorConf := newV3ConnectorConfigFn()(id)
 
-			_, err = GeneratePSPData(connectorConf.Directory)
+			_, err = GeneratePSPData(connectorConf.Directory, 5)
 			Expect(err).To(BeNil())
 
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())

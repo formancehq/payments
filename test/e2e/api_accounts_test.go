@@ -78,7 +78,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
 			Expect(err).To(BeNil())
-			Expect(n).To(BeNumerically(">=", 1)) // todo should be 1, needs cleanup possibly
+			Expect(n).To(Equal(1))
 		})
 
 		It("should be successful with v3", func() {
@@ -106,7 +106,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
 			Expect(err).To(BeNil())
-			Expect(n).To(BeNumerically(">=", 1)) // todo should be 1, needs cleanup possibly
+			Expect(n).To(Equal(1))
 		})
 	})
 
@@ -121,12 +121,12 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			connectorConf := newV3ConnectorConfigFn()(id)
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
 			Expect(err).To(BeNil())
-			_, err = GeneratePSPData(connectorConf.Directory)
+			_, err = GeneratePSPData(connectorConf.Directory, 5)
 			Expect(err).To(BeNil())
 			Eventually(func() int {
 				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
 				return n
-			}).WithTimeout(2 * time.Second).Should(BeNumerically(">=", 1))
+			}).WithTimeout(2 * time.Second).Should(Equal(5))
 		})
 
 		AfterEach(func() {
