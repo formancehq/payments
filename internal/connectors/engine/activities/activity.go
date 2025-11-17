@@ -442,6 +442,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "TemporalWorkflowExecutionsList",
 			Func: a.TemporalWorkflowExecutionsList,
+		}).
+		Append(temporalworker.Definition{
+			Name: "OutboxPublishPendingEvents",
+			Func: a.OutboxPublishPendingEvents,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageOutboxEventsInsert",
+			Func: a.StorageOutboxEventsInsert,
+		}).
+		Append(temporalworker.Definition{
+			Name: "CreateOutboxPublisherSchedule",
+			Func: a.CreateOutboxPublisherSchedule,
 		})
 }
 
