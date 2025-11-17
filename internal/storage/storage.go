@@ -172,6 +172,13 @@ type Storage interface {
 	InstancesGet(ctx context.Context, id string, scheduleID string, connectorID models.ConnectorID) (*models.Instance, error)
 	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
+	// Outbox Events
+	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error
+	OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error
+	OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error)
+	OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, err error) error
+	OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
@@ -197,14 +204,18 @@ func (s *store) Close() error {
 	s.rwMutex.Lock()
 	defer s.rwMutex.Unlock()
 
-	if err := s.db.Close(); err != nil {
-		return err
-	}
-
+	// Close any dedicated connections first to ensure the database can be dropped
 	for _, conn := range s.conns {
 		if err := conn.Close(); err != nil {
 			return err
 		}
+	}
+	// Clear the slice to avoid double-close in case Close is called twice
+	s.conns = nil
+
+	// Close the main bun DB (which closes the underlying sql.DB pool)
+	if err := s.db.Close(); err != nil {
+		return err
 	}
 
 	return nil

@@ -17,6 +17,7 @@ import (
 	bunpaginate "github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	models "github.com/formancehq/payments/internal/models"
 	uuid "github.com/google/uuid"
+	bun "github.com/uptrace/bun"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -807,6 +808,77 @@ func (m *MockStorage) OpenBankingForwardedUserUpsert(ctx context.Context, psuID 
 func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, from any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingForwardedUserUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingForwardedUserUpsert), ctx, psuID, from)
+}
+
+// OutboxEventsDeleteAndRecordSent mocks base method.
+func (m *MockStorage) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsDeleteAndRecordSent", ctx, eventID, eventSent)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsDeleteAndRecordSent indicates an expected call of OutboxEventsDeleteAndRecordSent.
+func (mr *MockStorageMockRecorder) OutboxEventsDeleteAndRecordSent(ctx, eventID, eventSent any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsDeleteAndRecordSent", reflect.TypeOf((*MockStorage)(nil).OutboxEventsDeleteAndRecordSent), ctx, eventID, eventSent)
+}
+
+// OutboxEventsInsert mocks base method.
+func (m *MockStorage) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsInsert", ctx, tx, events)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsInsert indicates an expected call of OutboxEventsInsert.
+func (mr *MockStorageMockRecorder) OutboxEventsInsert(ctx, tx, events any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsInsert", reflect.TypeOf((*MockStorage)(nil).OutboxEventsInsert), ctx, tx, events)
+}
+
+// OutboxEventsInsertWithTx mocks base method.
+func (m *MockStorage) OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsInsertWithTx", ctx, events)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsInsertWithTx indicates an expected call of OutboxEventsInsertWithTx.
+func (mr *MockStorageMockRecorder) OutboxEventsInsertWithTx(ctx, events any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsInsertWithTx", reflect.TypeOf((*MockStorage)(nil).OutboxEventsInsertWithTx), ctx, events)
+}
+
+// OutboxEventsMarkFailed mocks base method.
+func (m *MockStorage) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, err error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsMarkFailed", ctx, id, retryCount, err)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsMarkFailed indicates an expected call of OutboxEventsMarkFailed.
+func (mr *MockStorageMockRecorder) OutboxEventsMarkFailed(ctx, id, retryCount, err any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkFailed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkFailed), ctx, id, retryCount, err)
+}
+
+// OutboxEventsPollPending mocks base method.
+func (m *MockStorage) OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsPollPending", ctx, limit)
+	ret0, _ := ret[0].([]models.OutboxEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OutboxEventsPollPending indicates an expected call of OutboxEventsPollPending.
+func (mr *MockStorageMockRecorder) OutboxEventsPollPending(ctx, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsPollPending", reflect.TypeOf((*MockStorage)(nil).OutboxEventsPollPending), ctx, limit)
 }
 
 // PaymentInitiationAdjustmentsGet mocks base method.
