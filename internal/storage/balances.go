@@ -3,8 +3,8 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"math/big"
 	"time"
 
@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
@@ -44,12 +45,56 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 		return err
 	}
 	defer func() {
-		// There is an error sent if the transaction is already committed
-		_ = tx.Rollback()
+		rollbackOnTxError(ctx, &tx, err)
 	}()
 
-	for _, balance := range toInsert {
-		if err := s.insertBalances(ctx, tx, &balance); err != nil {
+	// Track newly inserted/updated balances for outbox events
+	var insertedBalances []models.Balance
+
+	for i, balance := range toInsert {
+		if err = s.insertBalances(ctx, tx, &balance); err != nil {
+			return err
+		}
+		// Convert back to model to check if we should create an outbox event
+		insertedBalances = append(insertedBalances, balances[i])
+	}
+
+	// Create outbox events for all balances
+	if len(insertedBalances) > 0 {
+		outboxEvents := make([]models.OutboxEvent, 0, len(insertedBalances))
+		for _, balance := range insertedBalances {
+			// Create the event payload
+			payload := map[string]interface{}{
+				"accountID":     balance.AccountID.String(),
+				"connectorID":   balance.AccountID.ConnectorID.String(),
+				"provider":      models.ToV3Provider(balance.AccountID.ConnectorID.Provider),
+				"createdAt":     balance.CreatedAt,
+				"lastUpdatedAt": balance.LastUpdatedAt,
+				"asset":         balance.Asset,
+				"balance":       balance.Balance.String(),
+			}
+
+			var payloadBytes []byte
+			payloadBytes, err = json.Marshal(payload)
+			if err != nil {
+				return fmt.Errorf("failed to marshal balance event payload: %w", err)
+			}
+
+			outboxEvent := models.OutboxEvent{
+				EventType:      models.OUTBOX_EVENT_BALANCE_SAVED,
+				EntityID:       balance.AccountID.String(),
+				Payload:        payloadBytes,
+				CreatedAt:      time.Now().UTC(),
+				Status:         models.OUTBOX_STATUS_PENDING,
+				ConnectorID:    &balance.AccountID.ConnectorID,
+				IdempotencyKey: balance.IdempotencyKey(),
+			}
+
+			outboxEvents = append(outboxEvents, outboxEvent)
+		}
+
+		// Insert outbox events in the same transaction
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
 			return err
 		}
 	}
