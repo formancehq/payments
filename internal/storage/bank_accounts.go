@@ -2,12 +2,14 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	internalTime "github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -17,9 +19,9 @@ type bankAccount struct {
 	bun.BaseModel `bun:"table:bank_accounts"`
 
 	// Mandatory fields
-	ID        uuid.UUID `bun:"id,pk,type:uuid,notnull"`
-	CreatedAt time.Time `bun:"created_at,type:timestamp without time zone,notnull"`
-	Name      string    `bun:"name,type:text,notnull"`
+	ID        uuid.UUID         `bun:"id,pk,type:uuid,notnull"`
+	CreatedAt internalTime.Time `bun:"created_at,type:timestamp without time zone,notnull"`
+	Name      string            `bun:"name,type:text,notnull"`
 
 	// Field encrypted
 	AccountNumber string `bun:"decrypted_account_number,scanonly"`
@@ -82,21 +84,163 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			errTx = err
 			return e("update bank account", err)
 		}
-	}
 
-	if len(toInsert.RelatedAccounts) > 0 {
-		// Insert or update the related accounts
-		_, err = tx.NewInsert().
-			Model(&toInsert.RelatedAccounts).
-			On("CONFLICT (bank_account_id, account_id) DO NOTHING").
-			Exec(ctx)
+		if len(toInsert.RelatedAccounts) > 0 {
+			// Insert or update the related accounts
+			_, err = tx.NewInsert().
+				Model(&toInsert.RelatedAccounts).
+				On("CONFLICT (bank_account_id, account_id) DO NOTHING").
+				Exec(ctx)
+			if err != nil {
+				errTx = err
+				return e("insert related accounts", err)
+			}
+		}
+
+		// Create outbox event for new bank account
+		// Convert back to model to create payload
+		bankAccountModel := toBankAccountModels(toInsert)
+
+		// Obfuscate sensitive fields before storing in outbox payload since tests read from outbox directly
+		if err := bankAccountModel.Obfuscate(); err != nil {
+			errTx = err
+			return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
+		}
+
+		// Create the event payload
+		payload := map[string]interface{}{
+			"id":        bankAccountModel.ID.String(),
+			"createdAt": bankAccountModel.CreatedAt,
+			"name":      bankAccountModel.Name,
+			"metadata":  bankAccountModel.Metadata,
+		}
+
+		if bankAccountModel.AccountNumber != nil {
+			payload["accountNumber"] = *bankAccountModel.AccountNumber
+		}
+
+		if bankAccountModel.IBAN != nil {
+			payload["iban"] = *bankAccountModel.IBAN
+		}
+
+		if bankAccountModel.SwiftBicCode != nil {
+			payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
+		}
+
+		if bankAccountModel.Country != nil {
+			payload["country"] = *bankAccountModel.Country
+		}
+
+		relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
+		for _, relatedAccount := range bankAccountModel.RelatedAccounts {
+			relatedAccounts = append(relatedAccounts, map[string]interface{}{
+				"createdAt":   relatedAccount.CreatedAt,
+				"accountID":   relatedAccount.AccountID.String(),
+				"connectorID": relatedAccount.AccountID.ConnectorID.String(),
+				"provider":    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
+			})
+		}
+		if len(relatedAccounts) > 0 {
+			payload["relatedAccounts"] = relatedAccounts
+		}
+
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			errTx = err
-			return e("insert related accounts", err)
+			return fmt.Errorf("failed to marshal bank account event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
+			EntityID:       bankAccountModel.ID.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    nil, // Bank accounts don't have connector ID
+			IdempotencyKey: bankAccountModel.IdempotencyKey(),
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			errTx = err
+			return err
+		}
+	} else {
+		if len(toInsert.RelatedAccounts) > 0 {
+			// Insert or update the related accounts even if bank account already existed
+			_, err = tx.NewInsert().
+				Model(&toInsert.RelatedAccounts).
+				On("CONFLICT (bank_account_id, account_id) DO NOTHING").
+				Exec(ctx)
+			if err != nil {
+				errTx = err
+				return e("insert related accounts", err)
+			}
+
+			// Also create an outbox event to notify bank account update (e.g., new related account)
+			bankAccountModel := toBankAccountModels(toInsert)
+			// Obfuscate sensitive fields before storing in outbox payload
+			if err := bankAccountModel.Obfuscate(); err != nil {
+				errTx = err
+				return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
+			}
+			payload := map[string]interface{}{
+				"id":        bankAccountModel.ID.String(),
+				"createdAt": bankAccountModel.CreatedAt,
+				"name":      bankAccountModel.Name,
+				"metadata":  bankAccountModel.Metadata,
+			}
+			if bankAccountModel.AccountNumber != nil {
+				payload["accountNumber"] = *bankAccountModel.AccountNumber
+			}
+			if bankAccountModel.IBAN != nil {
+				payload["iban"] = *bankAccountModel.IBAN
+			}
+			if bankAccountModel.SwiftBicCode != nil {
+				payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
+			}
+			if bankAccountModel.Country != nil {
+				payload["country"] = *bankAccountModel.Country
+			}
+			relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
+			for _, relatedAccount := range bankAccountModel.RelatedAccounts {
+				relatedAccounts = append(relatedAccounts, map[string]interface{}{
+					"createdAt":   relatedAccount.CreatedAt,
+					"accountID":   relatedAccount.AccountID.String(),
+					"connectorID": relatedAccount.AccountID.ConnectorID.String(),
+					"provider":    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
+				})
+			}
+			if len(relatedAccounts) > 0 {
+				payload["relatedAccounts"] = relatedAccounts
+			}
+			payloadBytes, err := json.Marshal(payload)
+			if err != nil {
+				errTx = err
+				return fmt.Errorf("failed to marshal bank account event payload: %w", err)
+			}
+			outboxEvent := models.OutboxEvent{
+				EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
+				EntityID:       bankAccountModel.ID.String(),
+				Payload:        payloadBytes,
+				CreatedAt:      time.Now().UTC(),
+				Status:         models.OUTBOX_STATUS_PENDING,
+				ConnectorID:    nil,
+				IdempotencyKey: bankAccountModel.IdempotencyKey(),
+			}
+			if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+				errTx = err
+				return err
+			}
 		}
 	}
 
-	return e("commit transaction", tx.Commit())
+	if err := tx.Commit(); err != nil {
+		errTx = err
+		return e("commit transaction", err)
+	}
+
+	return nil
 }
 
 func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error {
@@ -244,13 +388,22 @@ type bankAccountRelatedAccount struct {
 	BankAccountID uuid.UUID          `bun:"bank_account_id,pk,type:uuid,notnull"`
 	AccountID     models.AccountID   `bun:"account_id,pk,type:character varying,notnull"`
 	ConnectorID   models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
-	CreatedAt     time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
+	CreatedAt     internalTime.Time  `bun:"created_at,type:timestamp without time zone,notnull"`
 }
 
 func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID, relatedAccount models.BankAccountRelatedAccount) error {
-	toInsert := fromBankAccountRelatedAccountModels(relatedAccount, bID)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("begin transaction", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
 
-	_, err := s.db.NewInsert().
+	toInsert := fromBankAccountRelatedAccountModels(relatedAccount, bID)
+	_, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (bank_account_id, account_id) DO NOTHING").
 		Exec(ctx)
@@ -258,6 +411,78 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 		return e("add bank account related account", err)
 	}
 
+	// Load bank account with related accounts to build event payload
+	var ba bankAccount
+	err = tx.NewSelect().
+		Model(&ba).
+		Column("id", "created_at", "name", "country", "metadata").
+		ColumnExpr("pgp_sym_decrypt(account_number, ?, ?) AS decrypted_account_number", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(iban, ?, ?) AS decrypted_iban", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(swift_bic_code, ?, ?) AS decrypted_swift_bic_code", s.configEncryptionKey, encryptionOptions).
+		Relation("RelatedAccounts").
+		Where("id = ?", bID).
+		Scan(ctx)
+	if err != nil {
+		return e("load bank account for outbox event", err)
+	}
+
+	bankAccountModel := toBankAccountModels(ba)
+	// Obfuscate before building payload so outbox contains masked values
+	if err := bankAccountModel.Obfuscate(); err != nil {
+		return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
+	}
+
+	payload := map[string]interface{}{
+		"id":        bankAccountModel.ID.String(),
+		"createdAt": bankAccountModel.CreatedAt,
+		"name":      bankAccountModel.Name,
+		"metadata":  bankAccountModel.Metadata,
+	}
+	if bankAccountModel.AccountNumber != nil {
+		payload["accountNumber"] = *bankAccountModel.AccountNumber
+	}
+	if bankAccountModel.IBAN != nil {
+		payload["iban"] = *bankAccountModel.IBAN
+	}
+	if bankAccountModel.SwiftBicCode != nil {
+		payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
+	}
+	if bankAccountModel.Country != nil {
+		payload["country"] = *bankAccountModel.Country
+	}
+	relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
+	for _, ra := range bankAccountModel.RelatedAccounts {
+		relatedAccounts = append(relatedAccounts, map[string]interface{}{
+			"createdAt":   ra.CreatedAt,
+			"accountID":   ra.AccountID.String(),
+			"connectorID": ra.AccountID.ConnectorID.String(),
+			"provider":    models.ToV3Provider(ra.AccountID.ConnectorID.Provider),
+		})
+	}
+	if len(relatedAccounts) > 0 {
+		payload["relatedAccounts"] = relatedAccounts
+	}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal bank account event payload: %w", err)
+	}
+
+	outboxEvent := models.OutboxEvent{
+		EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
+		EntityID:       bankAccountModel.ID.String(),
+		Payload:        payloadBytes,
+		CreatedAt:      time.Now().UTC(),
+		Status:         models.OUTBOX_STATUS_PENDING,
+		ConnectorID:    nil,
+		IdempotencyKey: bankAccountModel.IdempotencyKey(),
+	}
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("commit transaction", err)
+	}
 	return nil
 }
 
@@ -276,7 +501,7 @@ func (s *store) BankAccountsDeleteRelatedAccountFromConnectorID(ctx context.Cont
 func fromBankAccountModels(from models.BankAccount) bankAccount {
 	ba := bankAccount{
 		ID:        from.ID,
-		CreatedAt: time.New(from.CreatedAt),
+		CreatedAt: internalTime.New(from.CreatedAt),
 		Name:      from.Name,
 		Country:   from.Country,
 		Metadata:  from.Metadata,
@@ -339,7 +564,7 @@ func fromBankAccountRelatedAccountModels(from models.BankAccountRelatedAccount, 
 		BankAccountID: bID,
 		AccountID:     from.AccountID,
 		ConnectorID:   from.AccountID.ConnectorID,
-		CreatedAt:     time.New(from.CreatedAt),
+		CreatedAt:     internalTime.New(from.CreatedAt),
 	}
 }
 
