@@ -1,3 +1,5 @@
+//go:build it
+
 package test_suite
 
 import (
@@ -10,9 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
-	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
@@ -46,7 +46,6 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 
 	When("initiating a new transfer with v3", func() {
 		var (
-			e   chan *nats.Msg
 			err error
 
 			debtorID            string
@@ -58,11 +57,10 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 		)
 
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), connectorID, createdAt)
 			payReq = &components.V3InitiatePaymentRequest{
 				Reference:            uuid.New().String(),
 				ConnectorID:          connectorID,
@@ -81,13 +79,13 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 			Expect(*createResponse.GetV3InitiatePaymentResponse().Data.TaskID).To(Equal(""))              // task empty when not sending to PSP
 			Expect(createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID).ToNot(BeNil()) // task nil when not sending to PSP
 			paymentInitiationID = *createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPaymentInitiation)))
+			MustOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED)
 			var msg = struct {
 				Status string `json:"status"`
 			}{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.String(),
 			}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(msg))))
+			MustOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(msg))
 		})
 
 		AfterEach(func() {
@@ -119,13 +117,13 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 			processingPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String(),
 			}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processingPI))))
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(paymentMsg))))
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationRelatedPayment)))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(processingPI))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED, WithPayloadSubset(paymentMsg))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED)
 			processedPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String(),
 			}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(processedPI))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
@@ -171,9 +169,11 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED, WithPayloadSubset(msg))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).
+				WithTimeout(2 * time.Second).
+				Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			reverseResponse, err := app.GetValue().SDK().Payments.V3.ReversePaymentInitiation(ctx, paymentInitiationID, &components.V3ReversePaymentInitiationRequest{
 				Reference:   uuid.New().String(),
@@ -185,7 +185,9 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID).NotTo(BeNil())
 			blockTillWorkflowComplete(ctx, connectorID, "reverse-transfer")
-			Eventually(taskPoller(*reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(*reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID)).
+				WithTimeout(2 * time.Second).
+				Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
@@ -195,7 +197,6 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 
 	When("initiating a new payout with v3", func() {
 		var (
-			e   chan *nats.Msg
 			err error
 
 			debtorID            string
@@ -207,11 +208,10 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 		)
 
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), connectorID, createdAt)
 			payReq = &components.V3InitiatePaymentRequest{
 				Reference:            uuid.New().String(),
 				ConnectorID:          connectorID,
@@ -253,9 +253,10 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED, WithPayloadSubset(msg))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).
+				WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
@@ -298,7 +299,7 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED, WithPayloadSubset(msg))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 

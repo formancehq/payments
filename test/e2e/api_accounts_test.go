@@ -11,14 +11,12 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/events"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/client/models/operations"
-	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
-	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
-
 	. "github.com/formancehq/payments/pkg/testserver"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -27,7 +25,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
-
 		app *deferred.Deferred[*Server]
 	)
 
@@ -42,15 +39,10 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		}
 	})
 
-	AfterEach(func() {
-		flushRemainingWorkflows(ctx)
-	})
-
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
 
 	When("creating a new account", func() {
 		var (
-			e             chan *nats.Msg
 			connectorUUID uuid.UUID
 			connectorID   string
 			err           error
@@ -67,7 +59,6 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		})
 
 		It("should be successful with v2", func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateAccount(ctx, components.AccountRequest{
 				Reference:    "ref",
 				ConnectorID:  connectorID,
@@ -85,11 +76,12 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetAccountResponse().Data).To(Equal(createResponse.GetAccountResponse().Data))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(1))
 		})
 
 		It("should be successful with v3", func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
 				Reference:    "ref",
 				ConnectorID:  connectorID,
@@ -112,26 +104,29 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(createResponse.GetV3CreateAccountResponse().Data.Connector.Name).NotTo(BeNil())
 			Expect(*createResponse.GetV3CreateAccountResponse().Data.Connector.Name).To(ContainSubstring(connectorUUID.String()))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(1))
 		})
 	})
 
 	When("fetching account balances", func() {
 		var (
-			e           chan *nats.Msg
 			connectorID string
 			err         error
 		)
 
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
 			id := uuid.New()
 			connectorConf := newV3ConnectorConfigFn()(id)
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
 			Expect(err).To(BeNil())
-			_, err = GeneratePSPData(connectorConf.Directory)
+			_, err = GeneratePSPData(connectorConf.Directory, 5)
 			Expect(err).To(BeNil())
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			Eventually(func() int {
+				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+				return n
+			}).WithTimeout(2 * time.Second).Should(Equal(5))
 		})
 
 		AfterEach(func() {
@@ -140,13 +135,20 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 		It("should be successful with v2", func() {
 			var msg events.BalanceMessagePayload
-			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
-				msg,
-				func(b []byte) error {
-					return json.Unmarshal(b, &msg)
-				},
-			))))
+			Eventually(func() bool {
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				if err != nil {
+					return false
+				}
+				for _, p := range payloads {
+					var tmp events.BalanceMessagePayload
+					if json.Unmarshal(p, &tmp) == nil {
+						msg = tmp
+						return true
+					}
+				}
+				return false
+			}).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
@@ -164,13 +166,20 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 		It("should be successful with v3", func() {
 			var msg events.BalanceMessagePayload
-			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
-				msg,
-				func(b []byte) error {
-					return json.Unmarshal(b, &msg)
-				},
-			))))
+			Eventually(func() bool {
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				if err != nil {
+					return false
+				}
+				for _, p := range payloads {
+					var tmp events.BalanceMessagePayload
+					if json.Unmarshal(p, &tmp) == nil {
+						msg = tmp
+						return true
+					}
+				}
+				return false
+			}).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V3.GetAccountBalances(ctx, operations.V3GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
