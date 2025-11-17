@@ -298,34 +298,16 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		}
 
 	case stripesdk.BalanceTransactionTypePayout:
-		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Payout.Currency))
-		_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
-		if !ok {
-			return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
-		}
-
 		appendMetadata(metadata, balanceTransaction.Source.Payout.Metadata)
 
-		payment = &models.PSPPayment{
-			Reference: balanceTransaction.ID,
-			Type:      models.PAYMENT_TYPE_PAYOUT,
-			Status:    convertPayoutStatus(balanceTransaction.Source.Payout.Status),
-			Amount:    big.NewInt(balanceTransaction.Source.Payout.Amount),
-			Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, transactionCurrency),
-			Scheme: func() models.PaymentScheme {
-				switch balanceTransaction.Source.Payout.Type {
-				case stripesdk.PayoutTypeBank:
-					return models.PAYMENT_SCHEME_SEPA_CREDIT
-				case stripesdk.PayoutTypeCard:
-					return destinationToPaymentScheme(balanceTransaction.Source.Payout.Destination)
-				}
-				return models.PAYMENT_SCHEME_UNKNOWN
-			}(),
-			CreatedAt:              time.Unix(balanceTransaction.Created, 0),
-			SourceAccountReference: accountRef,
-			Raw:                    rawData,
-			Metadata:               metadata,
-		}
+		payment, err = mapFromPayoutToPSPPayment(
+			balanceTransaction.Source.Payout,
+			balanceTransaction.ID,
+			nil,
+			accountRef,
+			metadata,
+			rawData,
+		)
 
 	case stripesdk.BalanceTransactionTypePayoutFailure, stripesdk.BalanceTransactionTypePayoutCancel:
 		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Payout.Currency))
@@ -334,6 +316,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 			return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
 		}
 
+		// I think it's the same as using convertPayoutStatus(balanceTransaction.Source)?
 		status := models.PAYMENT_STATUS_FAILED
 		if balanceTransaction.Type == stripesdk.BalanceTransactionTypePayoutCancel {
 			status = models.PAYMENT_STATUS_CANCELLED
@@ -564,4 +547,84 @@ func destinationToPaymentScheme(dest *stripesdk.PayoutDestination) models.Paymen
 	default:
 		return models.PAYMENT_SCHEME_UNKNOWN
 	}
+}
+
+// We use balanceTransaction.ID as the reference.
+// Payout.ID is not the same ID
+// But is Payout.BalanceTransaction.ID the same as BalanceTransaction.ID?
+func mapFromPayoutToPSPPayment(
+	from *stripesdk.Payout,
+	balanceTransactionReference string,
+	parentReference *string,
+	accountRef *string,
+	metadata map[string]string,
+	rawData []byte) (*models.PSPPayment, error) {
+	transactionCurrency := strings.ToUpper(string(from.Currency))
+	_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
+	if !ok {
+		return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
+	}
+
+	payment := &models.PSPPayment{
+		Reference: balanceTransactionReference,
+		Type:      models.PAYMENT_TYPE_PAYOUT,
+		Status:    convertPayoutStatus(from.Status),
+		Amount:    big.NewInt(from.Amount),
+		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, transactionCurrency),
+		Scheme: func() models.PaymentScheme {
+			switch from.Type {
+			case stripesdk.PayoutTypeBank:
+				return models.PAYMENT_SCHEME_SEPA_CREDIT
+			case stripesdk.PayoutTypeCard:
+				return destinationToPaymentScheme(from.Destination)
+			}
+			return models.PAYMENT_SCHEME_UNKNOWN
+		}(),
+		CreatedAt:              time.Unix(from.Created, 0),
+		SourceAccountReference: accountRef,
+		Raw:                    rawData,
+		Metadata:               metadata,
+	}
+
+	if parentReference != nil {
+		payment.ParentReference = *parentReference
+	}
+
+	return payment, nil
+}
+
+func mapFromTransferToPSPPayment(
+	from *stripesdk.Transfer,
+	reference string,
+	parentReference *string,
+	accountRef *string,
+	metadata map[string]string,
+	rawData []byte) (*models.PSPPayment, error) {
+
+	transactionCurrency := strings.ToUpper(string(from.Currency))
+	_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
+	if !ok {
+		return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
+	}
+
+	amount := big.NewInt(from.Amount - from.AmountReversed)
+
+	payment := &models.PSPPayment{
+		Reference:              reference,
+		Type:                   models.PAYMENT_TYPE_TRANSFER,
+		Status:                 models.PAYMENT_STATUS_SUCCEEDED,
+		Amount:                 amount,
+		Asset:                  currency.FormatAsset(supportedCurrenciesWithDecimal, transactionCurrency),
+		Scheme:                 models.PAYMENT_SCHEME_OTHER,
+		CreatedAt:              time.Unix(from.Created, 0),
+		SourceAccountReference: accountRef,
+		Raw:                    rawData,
+		Metadata:               metadata,
+	}
+
+	if from.Destination != nil {
+		payment.DestinationAccountReference = &from.Destination.ID
+	}
+
+	return payment, nil
 }

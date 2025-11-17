@@ -3,6 +3,7 @@ package stripe
 import (
 	"context"
 	"encoding/json"
+	"github.com/stripe/stripe-go/v79"
 	"math/big"
 	"time"
 
@@ -25,19 +26,25 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
+	accountBalances := p.fromStripeBalanceToPSPBalances(balance, from.Reference)
+
+	return models.FetchNextBalancesResponse{
+		Balances: accountBalances,
+		HasMore:  false,
+	}, nil
+}
+
+func (p *Plugin) fromStripeBalanceToPSPBalances(from *stripe.Balance, accountReference string) []models.PSPBalance {
 	var accountBalances []models.PSPBalance
-	for _, available := range balance.Available {
+	for _, available := range from.Available {
 		timestamp := time.Now()
 		accountBalances = append(accountBalances, models.PSPBalance{
-			AccountReference: from.Reference,
+			AccountReference: accountReference,
 			Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, string(available.Currency)),
 			Amount:           big.NewInt(available.Amount),
 			CreatedAt:        timestamp,
 		})
 	}
 
-	return models.FetchNextBalancesResponse{
-		Balances: accountBalances,
-		HasMore:  false,
-	}, nil
+	return accountBalances
 }

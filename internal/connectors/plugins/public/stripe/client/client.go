@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"github.com/stripe/stripe-go/v79/webhookendpoint"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -30,6 +31,9 @@ type Client interface {
 	CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error)
 	CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error)
 	ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error)
+
+	CreateWebhook(ctx context.Context, url string, connectorID string, event stripe.EventType) (CreateWebhookResponse, error)
+	DeleteWebhook(ctx context.Context, webhookEndpointID string) error
 }
 
 type client struct {
@@ -42,6 +46,7 @@ type client struct {
 	payoutClient             payout.Client
 	bankAccountClient        bankaccount.Client
 	balanceTransactionClient balancetransaction.Client
+	webhookEndpointClient    webhookendpoint.Client
 }
 
 func New(name string, logger logging.Logger, backend stripe.Backend, apiKey string) Client {
@@ -58,6 +63,7 @@ func New(name string, logger logging.Logger, backend stripe.Backend, apiKey stri
 		payoutClient:             payout.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},
+		webhookEndpointClient:    webhookendpoint.Client{B: backend, Key: apiKey},
 	}
 }
 
