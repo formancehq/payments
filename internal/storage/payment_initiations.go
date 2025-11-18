@@ -434,7 +434,10 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiationID, error) {
@@ -563,7 +566,10 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
