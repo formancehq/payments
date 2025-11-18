@@ -32,12 +32,13 @@ var _ = Context("Payments API Connectors", Serial, func() {
 
 	app := testserver.NewTestServer(func() testserver.Configuration {
 		return testserver.Configuration{
-			Stack:                 stack,
-			PostgresConfiguration: db.GetValue().ConnectionOptions(),
-			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:       temporalServer.GetValue().Address(),
-			Output:                GinkgoWriter,
-			Debug:                 true,
+			Stack:                     stack,
+			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
+			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:           temporalServer.GetValue().Address(),
+			Output:                    GinkgoWriter,
+			Debug:                     true,
+			SkipOutboxScheduleCreation: true,
 		}
 	})
 
