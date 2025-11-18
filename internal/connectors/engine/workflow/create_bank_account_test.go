@@ -134,7 +134,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageTasksStore_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(nil)
-	// When StorageTasksStore fails in updateTask, it returns early
+	// When StorageTasksStore fails in updateTask, it returns an error early
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		return temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test"))
 	})

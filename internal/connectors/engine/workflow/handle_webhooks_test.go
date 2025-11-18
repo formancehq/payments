@@ -547,7 +547,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserLinkSessionFinished_Success() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_HandleWebhooks_UserLinkSessionFinished_StoragePSUOpenBankingConnectionAttemptsGet_Error() {
+func (s *UnitTestSuite) Test_HandleWebhooks_UserLinkSessionFinished_UpdateStatus_Error() {
 	attemptID := uuid.New()
 
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)

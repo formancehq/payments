@@ -54,6 +54,8 @@ func (b *BalanceMessagePayload) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf("invalid balance string: %s", *aux.Balance)
 		}
 		b.Balance = bi
+	} else {
+		b.Balance = nil
 	}
 	return nil
 }

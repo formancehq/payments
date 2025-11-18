@@ -71,18 +71,18 @@ func TestBankAccountsUpsert(t *testing.T) {
 	// Helper to clean up outbox events created during tests
 	cleanupOutbox := func() {
 		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		if err == nil {
-			for _, event := range pendingEvents {
-				eventSent := models.EventSent{
-					ID: models.EventID{
-						EventIdempotencyKey: event.IdempotencyKey,
-						ConnectorID:         event.ConnectorID,
-					},
-					ConnectorID: event.ConnectorID,
-					SentAt:      time.Now().UTC(),
-				}
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			eventSent := models.EventSent{
+				ID: models.EventID{
+					EventIdempotencyKey: event.IdempotencyKey,
+					ConnectorID:         event.ConnectorID,
+				},
+				ConnectorID: event.ConnectorID,
+				SentAt:      time.Now().UTC(),
 			}
+			err = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+			require.NoError(t, err)
 		}
 	}
 	t.Cleanup(func() {

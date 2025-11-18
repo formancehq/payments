@@ -346,7 +346,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == "balance.saved" && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == models.OUTBOX_EVENT_BALANCE_SAVED && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -360,7 +360,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 		// Check event details
 		for _, event := range ourEvents {
-			assert.Equal(t, "balance.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_EVENT_BALANCE_SAVED, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.Equal(t, 0, event.RetryCount)
@@ -412,14 +412,14 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == "balance.saved" && event.IdempotencyKey == expectedKey {
+			if event.EventType == models.OUTBOX_EVENT_BALANCE_SAVED && event.IdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
 		}
 		require.NotNil(t, ourEvent, "expected 1 outbox event for balance update")
 
-		assert.Equal(t, "balance.saved", ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_EVENT_BALANCE_SAVED, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 
 		// Verify payload
@@ -465,7 +465,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == "balance.saved" && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == models.OUTBOX_EVENT_BALANCE_SAVED && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -473,7 +473,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 		// Verify all events have correct structure
 		for _, event := range ourEvents {
-			assert.Equal(t, "balance.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_EVENT_BALANCE_SAVED, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.NotEqual(t, uuid.Nil, event.ID)
 			assert.NotEmpty(t, event.IdempotencyKey)
@@ -504,7 +504,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 		// Check that no event with this idempotency key exists
 		for _, event := range pendingEvents {
-			if event.EventType == "balance.saved" && event.IdempotencyKey == expectedKey {
+			if event.EventType == models.OUTBOX_EVENT_BALANCE_SAVED && event.IdempotencyKey == expectedKey {
 				t.Fatalf("unexpected outbox event created for stale balance (no-op)")
 			}
 		}
@@ -558,7 +558,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == "balance.saved" && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == models.OUTBOX_EVENT_BALANCE_SAVED && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -566,14 +566,14 @@ func TestBalancesUpsert(t *testing.T) {
 
 		// Verify no event was created for the stale balance
 		for _, event := range pendingEvents {
-			if event.EventType == "balance.saved" && event.IdempotencyKey == staleKey {
+			if event.EventType == models.OUTBOX_EVENT_BALANCE_SAVED && event.IdempotencyKey == staleKey {
 				t.Fatalf("unexpected outbox event created for stale balance (no-op)")
 			}
 		}
 
 		// Verify all events have correct structure
 		for _, event := range ourEvents {
-			assert.Equal(t, "balance.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_EVENT_BALANCE_SAVED, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.NotEqual(t, uuid.Nil, event.ID)
 			assert.NotEmpty(t, event.IdempotencyKey)

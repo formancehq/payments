@@ -27,7 +27,8 @@ func (s *UnitTestSuite) Test_RunOutboxPublisher_ActivityError() {
 	err := s.env.GetWorkflowError()
 	s.Error(err)
 	s.ErrorContains(err, "error-test")
-	workflowErr, ok := err.(*temporal.WorkflowExecutionError)
+	var workflowErr *temporal.WorkflowExecutionError
+	ok := errors.As(err, &workflowErr)
 	s.True(ok)
 	s.ErrorContains(workflowErr.Unwrap(), expectedErr.Error())
 }

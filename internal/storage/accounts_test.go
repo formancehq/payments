@@ -147,21 +147,21 @@ func TestAccountsUpsert(t *testing.T) {
 	cleanupOutbox := func() {
 		// Get all pending events for the default connector and delete them
 		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		if err == nil {
-			for _, event := range pendingEvents {
-				if event.ConnectorID != nil && *event.ConnectorID == defaultConnector.ID {
-					// Create a dummy EventSent for deletion
-					eventSent := models.EventSent{
-						ID: models.EventID{
-							EventIdempotencyKey: "cleanup",
-							ConnectorID:         event.ConnectorID,
-						},
-						ConnectorID: event.ConnectorID,
-						SentAt:      now.UTC().Time,
-					}
-					// Delete using the proper method
-					_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			if event.ConnectorID != nil && *event.ConnectorID == defaultConnector.ID {
+				// Create a dummy EventSent for deletion
+				eventSent := models.EventSent{
+					ID: models.EventID{
+						EventIdempotencyKey: "cleanup",
+						ConnectorID:         event.ConnectorID,
+					},
+					ConnectorID: event.ConnectorID,
+					SentAt:      now.UTC().Time,
 				}
+				// Delete using the proper method
+				err = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+				require.NoError(t, err)
 			}
 		}
 	}

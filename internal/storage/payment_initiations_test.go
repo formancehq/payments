@@ -92,6 +92,15 @@ func upsertPaymentInitiations(t *testing.T, ctx context.Context, storage Storage
 	}
 }
 
+func cleanupOutboxHelper(ctx context.Context, store Storage) func() {
+	return func() {
+		pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+		for _, event := range pendingEvents {
+			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
+		}
+	}
+}
+
 func TestPaymentInitiationsInsert(t *testing.T) {
 	t.Parallel()
 
@@ -828,13 +837,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 
 	t.Run("outbox event created for new related payment", func(t *testing.T) {
 		// Clean up outbox events before test
-		cleanupOutbox := func() {
-			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-			for _, event := range pendingEvents {
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-			}
-		}
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Create a new related payment for this test
 		payments := defaultPayments()
@@ -895,13 +898,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 
 	t.Run("no outbox event for existing related payment", func(t *testing.T) {
 		// Clean up outbox events before test
-		cleanupOutbox := func() {
-			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-			for _, event := range pendingEvents {
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-			}
-		}
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Count events before
 		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
@@ -1150,13 +1147,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 
 	t.Run("outbox event created for new adjustment", func(t *testing.T) {
 		// Clean up outbox events before test
-		cleanupOutbox := func() {
-			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-			for _, event := range pendingEvents {
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-			}
-		}
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Create a new adjustment for this test
 		newAdj := models.PaymentInitiationAdjustment{
@@ -1219,13 +1210,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 
 	t.Run("no outbox event for existing adjustment update", func(t *testing.T) {
 		// Clean up outbox events before test
-		cleanupOutbox := func() {
-			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-			for _, event := range pendingEvents {
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-			}
-		}
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Count events before
 		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
@@ -1283,13 +1268,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 	})
 	t.Run("upsert with status equal", func(t *testing.T) {
 		// Clean up outbox events before test
-		cleanupOutbox := func() {
-			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-			for _, event := range pendingEvents {
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-			}
-		}
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		p := models.PaymentInitiationAdjustment{
 			ID: models.PaymentInitiationAdjustmentID{
@@ -1354,13 +1333,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 
 	t.Run("no outbox event when predicate fails", func(t *testing.T) {
 		// Clean up outbox events before test
-		cleanupOutbox := func() {
-			pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-			for _, event := range pendingEvents {
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-			}
-		}
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Count events before
 		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)

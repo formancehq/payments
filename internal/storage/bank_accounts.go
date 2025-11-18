@@ -108,41 +108,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		}
 
 		// Create the event payload
-		payload := map[string]interface{}{
-			"id":        bankAccountModel.ID.String(),
-			"createdAt": bankAccountModel.CreatedAt,
-			"name":      bankAccountModel.Name,
-			"metadata":  bankAccountModel.Metadata,
-		}
-
-		if bankAccountModel.AccountNumber != nil {
-			payload["accountNumber"] = *bankAccountModel.AccountNumber
-		}
-
-		if bankAccountModel.IBAN != nil {
-			payload["iban"] = *bankAccountModel.IBAN
-		}
-
-		if bankAccountModel.SwiftBicCode != nil {
-			payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
-		}
-
-		if bankAccountModel.Country != nil {
-			payload["country"] = *bankAccountModel.Country
-		}
-
-		relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
-		for _, relatedAccount := range bankAccountModel.RelatedAccounts {
-			relatedAccounts = append(relatedAccounts, map[string]interface{}{
-				"createdAt":   relatedAccount.CreatedAt,
-				"accountID":   relatedAccount.AccountID.String(),
-				"connectorID": relatedAccount.AccountID.ConnectorID.String(),
-				"provider":    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
-			})
-		}
-		if len(relatedAccounts) > 0 {
-			payload["relatedAccounts"] = relatedAccounts
-		}
+		payload := prepareBankAccountEventPayload(bankAccountModel)
 
 		var payloadBytes []byte
 		payloadBytes, err = json.Marshal(payload)
@@ -184,36 +150,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 				errTx = err
 				return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
 			}
-			payload := map[string]interface{}{
-				"id":        bankAccountModel.ID.String(),
-				"createdAt": bankAccountModel.CreatedAt,
-				"name":      bankAccountModel.Name,
-				"metadata":  bankAccountModel.Metadata,
-			}
-			if bankAccountModel.AccountNumber != nil {
-				payload["accountNumber"] = *bankAccountModel.AccountNumber
-			}
-			if bankAccountModel.IBAN != nil {
-				payload["iban"] = *bankAccountModel.IBAN
-			}
-			if bankAccountModel.SwiftBicCode != nil {
-				payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
-			}
-			if bankAccountModel.Country != nil {
-				payload["country"] = *bankAccountModel.Country
-			}
-			relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
-			for _, relatedAccount := range bankAccountModel.RelatedAccounts {
-				relatedAccounts = append(relatedAccounts, map[string]interface{}{
-					"createdAt":   relatedAccount.CreatedAt,
-					"accountID":   relatedAccount.AccountID.String(),
-					"connectorID": relatedAccount.AccountID.ConnectorID.String(),
-					"provider":    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
-				})
-			}
-			if len(relatedAccounts) > 0 {
-				payload["relatedAccounts"] = relatedAccounts
-			}
+			payload := prepareBankAccountEventPayload(bankAccountModel)
 			payloadBytes, err := json.Marshal(payload)
 			if err != nil {
 				errTx = err
@@ -432,36 +369,7 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 		return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
 	}
 
-	payload := map[string]interface{}{
-		"id":        bankAccountModel.ID.String(),
-		"createdAt": bankAccountModel.CreatedAt,
-		"name":      bankAccountModel.Name,
-		"metadata":  bankAccountModel.Metadata,
-	}
-	if bankAccountModel.AccountNumber != nil {
-		payload["accountNumber"] = *bankAccountModel.AccountNumber
-	}
-	if bankAccountModel.IBAN != nil {
-		payload["iban"] = *bankAccountModel.IBAN
-	}
-	if bankAccountModel.SwiftBicCode != nil {
-		payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
-	}
-	if bankAccountModel.Country != nil {
-		payload["country"] = *bankAccountModel.Country
-	}
-	relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
-	for _, ra := range bankAccountModel.RelatedAccounts {
-		relatedAccounts = append(relatedAccounts, map[string]interface{}{
-			"createdAt":   ra.CreatedAt,
-			"accountID":   ra.AccountID.String(),
-			"connectorID": ra.AccountID.ConnectorID.String(),
-			"provider":    models.ToV3Provider(ra.AccountID.ConnectorID.Provider),
-		})
-	}
-	if len(relatedAccounts) > 0 {
-		payload["relatedAccounts"] = relatedAccounts
-	}
+	payload := prepareBankAccountEventPayload(bankAccountModel)
 	var payloadBytes []byte
 	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
@@ -574,4 +482,44 @@ func toBankAccountRelatedAccountModels(from bankAccountRelatedAccount) models.Ba
 		AccountID: from.AccountID,
 		CreatedAt: from.CreatedAt.Time,
 	}
+}
+
+func prepareBankAccountEventPayload(bankAccountModel models.BankAccount) map[string]interface{} {
+	payload := map[string]interface{}{
+		"id":        bankAccountModel.ID.String(),
+		"createdAt": bankAccountModel.CreatedAt,
+		"name":      bankAccountModel.Name,
+		"metadata":  bankAccountModel.Metadata,
+	}
+
+	if bankAccountModel.AccountNumber != nil {
+		payload["accountNumber"] = *bankAccountModel.AccountNumber
+	}
+
+	if bankAccountModel.IBAN != nil {
+		payload["iban"] = *bankAccountModel.IBAN
+	}
+
+	if bankAccountModel.SwiftBicCode != nil {
+		payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
+	}
+
+	if bankAccountModel.Country != nil {
+		payload["country"] = *bankAccountModel.Country
+	}
+
+	relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
+	for _, relatedAccount := range bankAccountModel.RelatedAccounts {
+		relatedAccounts = append(relatedAccounts, map[string]interface{}{
+			"createdAt":   relatedAccount.CreatedAt,
+			"accountID":   relatedAccount.AccountID.String(),
+			"connectorID": relatedAccount.AccountID.ConnectorID.String(),
+			"provider":    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
+		})
+	}
+	if len(relatedAccounts) > 0 {
+		payload["relatedAccounts"] = relatedAccounts
+	}
+
+	return payload
 }
