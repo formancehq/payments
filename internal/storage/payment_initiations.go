@@ -114,7 +114,8 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		payload["destinationAccountID"] = pi.DestinationAccountID.String()
 	}
 
-	payloadBytes, err := json.Marshal(payload)
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return e("failed to marshal payment initiation event payload: %w", err)
 	}
@@ -160,7 +161,8 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 				adjPayload["metadata"] = adjModel.Metadata
 			}
 
-			adjPayloadBytes, err := json.Marshal(adjPayload)
+			var adjPayloadBytes []byte
+			adjPayloadBytes, err = json.Marshal(adjPayload)
 			if err != nil {
 				return e("failed to marshal payment initiation adjustment event payload: %w", err)
 			}
@@ -396,7 +398,8 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		return e("failed to insert payment initiation related payments", err)
 	}
 
-	rowsAffected, err := res.RowsAffected()
+	var rowsAffected int64
+	rowsAffected, err = res.RowsAffected()
 	if err != nil {
 		return e("failed to get rows affected", err)
 	}
@@ -413,7 +416,8 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 			"paymentID":           pID.String(),
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return e("failed to marshal payment initiation related payment event payload: %w", err)
 		}
@@ -546,7 +550,8 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 			adjPayload["metadata"] = adj.Metadata
 		}
 
-		adjPayloadBytes, err := json.Marshal(adjPayload)
+		var adjPayloadBytes []byte
+		adjPayloadBytes, err = json.Marshal(adjPayload)
 		if err != nil {
 			return e("failed to marshal payment initiation adjustment event payload: %w", err)
 		}
@@ -612,7 +617,8 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		return false, e("failed to insert payment initiation adjustments", err)
 	}
 
-	rowsAffected, err := res.RowsAffected()
+	var rowsAffected int64
+	rowsAffected, err = res.RowsAffected()
 	if err != nil {
 		return false, e("failed to get rows affected", err)
 	}
@@ -637,7 +643,8 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 			adjPayload["metadata"] = adj.Metadata
 		}
 
-		adjPayloadBytes, err := json.Marshal(adjPayload)
+		var adjPayloadBytes []byte
+		adjPayloadBytes, err = json.Marshal(adjPayload)
 		if err != nil {
 			return false, e("failed to marshal payment initiation adjustment event payload: %w", err)
 		}

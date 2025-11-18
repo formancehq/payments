@@ -75,7 +75,8 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 		payload["error"] = task.Error.Error()
 	}
 
-	payloadBytes, err := json.Marshal(payload)
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return e("failed to marshal task event payload", err)
 	}

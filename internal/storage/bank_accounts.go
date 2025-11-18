@@ -428,7 +428,7 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 
 	bankAccountModel := toBankAccountModels(ba)
 	// Obfuscate before building payload so outbox contains masked values
-	if err := bankAccountModel.Obfuscate(); err != nil {
+	if err = bankAccountModel.Obfuscate(); err != nil {
 		return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
 	}
 
@@ -462,7 +462,8 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 	if len(relatedAccounts) > 0 {
 		payload["relatedAccounts"] = relatedAccounts
 	}
-	payloadBytes, err := json.Marshal(payload)
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal bank account event payload: %w", err)
 	}

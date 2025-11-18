@@ -97,7 +97,7 @@ func (s *store) OutboxEventsInsertWithTx(ctx context.Context, events []models.Ou
 		rollbackOnTxError(ctx, &tx, err)
 	}()
 
-	if err := s.OutboxEventsInsert(ctx, tx, events); err != nil {
+	if err = s.OutboxEventsInsert(ctx, tx, events); err != nil {
 		return err
 	}
 
@@ -179,7 +179,7 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uui
 	}
 
 	// Commit transaction
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
