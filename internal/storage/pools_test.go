@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -135,7 +136,7 @@ func TestPoolsUpsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_POOL_SAVED &&
+			if pendingEvents[i].EventType == events.EventTypeSavedPool &&
 				pendingEvents[i].EntityID == newPool.ID.String() &&
 				pendingEvents[i].IdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
@@ -145,7 +146,7 @@ func TestPoolsUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for pool saved")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_POOL_SAVED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeSavedPool, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, newPool.ID.String(), ourEvent.EntityID)
 		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
@@ -274,7 +275,7 @@ func TestPoolsDelete(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_POOL_DELETED &&
+			if pendingEvents[i].EventType == events.EventTypeDeletePool &&
 				pendingEvents[i].EntityID == deleteTestPool.ID.String() {
 				ourEvent = &pendingEvents[i]
 				break
@@ -283,7 +284,7 @@ func TestPoolsDelete(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for pool deleted")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_POOL_DELETED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeDeletePool, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, deleteTestPool.ID.String(), ourEvent.EntityID)
 		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID

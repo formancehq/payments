@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type paymentMessagePayload struct {
+type PaymentMessagePayload struct {
 	// Mandatory fields
 	ID            string          `json:"id"`
 	ConnectorID   string          `json:"connectorID"`
@@ -34,8 +34,64 @@ type paymentMessagePayload struct {
 	Metadata             map[string]string `json:"metadata,omitempty"`
 }
 
+func (p *PaymentMessagePayload) MarshalJSON() ([]byte, error) {
+	type Alias PaymentMessagePayload
+	var initialAmountStr *string
+	if p.InitialAmount != nil {
+		s := p.InitialAmount.String()
+		initialAmountStr = &s
+	}
+	var amountStr *string
+	if p.Amount != nil {
+		s := p.Amount.String()
+		amountStr = &s
+	}
+	return json.Marshal(&struct {
+		InitialAmount *string `json:"initialAmount"`
+		Amount        *string `json:"amount"`
+		*Alias
+	}{
+		InitialAmount: initialAmountStr,
+		Amount:        amountStr,
+		Alias:        (*Alias)(p),
+	})
+}
+
+func (p *PaymentMessagePayload) UnmarshalJSON(data []byte) error {
+	type Alias PaymentMessagePayload
+	aux := &struct {
+		InitialAmount *string `json:"initialAmount"`
+		Amount        *string `json:"amount"`
+		*Alias
+	}{
+		Alias: (*Alias)(p),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.InitialAmount != nil {
+		bi := new(big.Int)
+		if _, ok := bi.SetString(*aux.InitialAmount, 10); !ok {
+			return fmt.Errorf("invalid initialAmount string: %s", *aux.InitialAmount)
+		}
+		p.InitialAmount = bi
+	} else {
+		p.InitialAmount = nil
+	}
+	if aux.Amount != nil {
+		bi := new(big.Int)
+		if _, ok := bi.SetString(*aux.Amount, 10); !ok {
+			return fmt.Errorf("invalid amount string: %s", *aux.Amount)
+		}
+		p.Amount = bi
+	} else {
+		p.Amount = nil
+	}
+	return nil
+}
+
 func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.PaymentAdjustment) publish.EventMessage {
-	payload := paymentMessagePayload{
+	payload := PaymentMessagePayload{
 		ID:            payment.ID.String(),
 		Reference:     payment.Reference,
 		Type:          payment.Type.String(),
@@ -87,12 +143,12 @@ func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.
 	}
 }
 
-type paymentDeletedMessagePayload struct {
+type PaymentDeletedMessagePayload struct {
 	ID string `json:"id"`
 }
 
 func (e Events) NewEventPaymentDeleted(paymentID models.PaymentID) publish.EventMessage {
-	payload := paymentDeletedMessagePayload{
+	payload := PaymentDeletedMessagePayload{
 		ID: paymentID.String(),
 	}
 

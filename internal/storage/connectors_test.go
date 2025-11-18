@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/gibson042/canonicaljson-go"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -149,7 +150,7 @@ func TestConnectorsInstall(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_CONNECTOR_RESET &&
+			if pendingEvents[i].EventType == events.EventTypeConnectorReset &&
 				pendingEvents[i].EntityID == oldConnector.ID.String() {
 				ourEvent = &pendingEvents[i]
 				break
@@ -158,7 +159,7 @@ func TestConnectorsInstall(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for connector reset")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_CONNECTOR_RESET, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeConnectorReset, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, oldConnector.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, newConnector.ID, *ourEvent.ConnectorID)

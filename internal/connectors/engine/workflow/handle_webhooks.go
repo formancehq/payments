@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
@@ -398,14 +400,12 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 	// Create outbox event for user pending disconnect
 	// Note -- as we are storing the event as an independant entity, we are relying on an
 	// independent activity to emit the event (without transaction)
-	payload := map[string]interface{}{
-		"psuID":        userPendingDisconnect.PsuID.String(),
-		"connectorID":  userPendingDisconnect.ConnectorID.String(),
-		"connectionID": userPendingDisconnect.ConnectionID,
-		"at":           userPendingDisconnect.At,
-	}
-	if userPendingDisconnect.Reason != nil {
-		payload["reason"] = *userPendingDisconnect.Reason
+	payload := internalEvents.OpenBankingUserConnectionPendingDisconnect{
+		PsuID:        userPendingDisconnect.PsuID,
+		ConnectorID:  userPendingDisconnect.ConnectorID.String(),
+		ConnectionID: userPendingDisconnect.ConnectionID,
+		At:           userPendingDisconnect.At,
+		Reason:       userPendingDisconnect.Reason,
 	}
 
 	payloadBytes, err := json.Marshal(payload)
@@ -415,7 +415,7 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 
 	idempotencyKey := models.IdempotencyKey(payload)
 	outboxEvent := models.OutboxEvent{
-		EventType:      models.OUTBOX_EVENT_USER_CONNECTION_PENDING_DISCONNECT,
+		EventType:      events.EventTypeOpenBankingUserConnectionPendingDisconnect,
 		EntityID:       userPendingDisconnect.ConnectionID,
 		Payload:        payloadBytes,
 		CreatedAt:      workflow.Now(ctx).UTC(),
@@ -457,10 +457,11 @@ func (w Workflow) handleUserDisconnectedWebhook(
 	// Create outbox event for user disconnected
 	// Note -- as we are storing the event as an independant entity, we are relying on an
 	// independent activity to emit the event (without transaction)
-	payload := map[string]interface{}{
-		"psuID":       userDisconnected.PsuID.String(),
-		"connectorID": userDisconnected.ConnectorID.String(),
-		"at":          userDisconnected.At,
+	payload := internalEvents.OpenBankingUserDisconnected{
+		PsuID:       userDisconnected.PsuID,
+		ConnectorID: userDisconnected.ConnectorID.String(),
+		At:          userDisconnected.At,
+		Reason:      nil, // UserDisconnected doesn't have a reason field
 	}
 
 	payloadBytes, err := json.Marshal(payload)
@@ -470,7 +471,7 @@ func (w Workflow) handleUserDisconnectedWebhook(
 
 	idempotencyKey := models.IdempotencyKey(payload)
 	outboxEvent := models.OutboxEvent{
-		EventType:      models.OUTBOX_EVENT_USER_DISCONNECTED,
+		EventType:      events.EventTypeOpenBankingUserDisconnected,
 		EntityID:       userDisconnected.PsuID.String(),
 		Payload:        payloadBytes,
 		CreatedAt:      workflow.Now(ctx).UTC(),

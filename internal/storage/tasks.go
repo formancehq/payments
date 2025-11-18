@@ -6,7 +6,9 @@ import (
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
@@ -59,20 +61,20 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 	}
 
 	// Create outbox event for task update
-	payload := map[string]interface{}{
-		"id":        task.ID.String(),
-		"status":    string(task.Status),
-		"createdAt": task.CreatedAt,
-		"updatedAt": task.UpdatedAt,
+	payload := internalEvents.TaskMessagePayload{
+		ID:              task.ID.String(),
+		Status:          string(task.Status),
+		CreatedAt:       task.CreatedAt,
+		UpdatedAt:       task.UpdatedAt,
+		CreatedObjectID: task.CreatedObjectID,
 	}
 	if task.ConnectorID != nil {
-		payload["connectorID"] = task.ConnectorID.String()
-	}
-	if task.CreatedObjectID != nil {
-		payload["createdObjectID"] = *task.CreatedObjectID
+		connectorIDStr := task.ConnectorID.String()
+		payload.ConnectorID = &connectorIDStr
 	}
 	if task.Error != nil {
-		payload["error"] = task.Error.Error()
+		errorStr := task.Error.Error()
+		payload.Error = &errorStr
 	}
 
 	var payloadBytes []byte
@@ -82,7 +84,7 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      models.OUTBOX_EVENT_TASK_UPDATED,
+		EventType:      events.EventTypeUpdatedTask,
 		EntityID:       task.ID.String(),
 		Payload:        payloadBytes,
 		CreatedAt:      time.Now().UTC().Time,

@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -180,7 +181,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == "bank_account.saved" && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeSavedBankAccount && event.IdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
@@ -188,7 +189,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected 1 outbox event for new bank account")
 
 		// Check event details
-		assert.Equal(t, "bank_account.saved", ourEvent.EventType)
+		assert.Equal(t, events.EventTypeSavedBankAccount, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Nil(t, ourEvent.ConnectorID) // Bank accounts don't have connector ID
 		assert.Equal(t, 0, ourEvent.RetryCount)
@@ -277,7 +278,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == "bank_account.saved" && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeSavedBankAccount && event.IdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}

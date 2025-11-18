@@ -12,7 +12,9 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
@@ -94,34 +96,34 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	// Create outbox event for payment initiation
 	outboxEvents := make([]models.OutboxEvent, 0, 1+len(adjustments))
 
-	payload := map[string]interface{}{
-		"id":          pi.ID.String(),
-		"connectorID": pi.ConnectorID.String(),
-		"provider":    models.ToV3Provider(pi.ConnectorID.Provider),
-		"reference":   pi.Reference,
-		"createdAt":   pi.CreatedAt,
-		"scheduledAt": pi.ScheduledAt,
-		"description": pi.Description,
-		"type":        pi.Type.String(),
-		"amount":      pi.Amount.String(),
-		"asset":       pi.Asset,
-		"metadata":    pi.Metadata,
+	payload := internalEvents.PaymentInitiationMessagePayload{
+		ID:          pi.ID.String(),
+		ConnectorID: pi.ConnectorID.String(),
+		Provider:    models.ToV3Provider(pi.ConnectorID.Provider),
+		Reference:   pi.Reference,
+		CreatedAt:   pi.CreatedAt,
+		ScheduledAt: pi.ScheduledAt,
+		Description: pi.Description,
+		Type:        pi.Type.String(),
+		Amount:      pi.Amount,
+		Asset:       pi.Asset,
+		Metadata:    pi.Metadata,
 	}
 	if pi.SourceAccountID != nil {
-		payload["sourceAccountID"] = pi.SourceAccountID.String()
+		payload.SourceAccountID = pi.SourceAccountID.String()
 	}
 	if pi.DestinationAccountID != nil {
-		payload["destinationAccountID"] = pi.DestinationAccountID.String()
+		payload.DestinationAccountID = pi.DestinationAccountID.String()
 	}
 
 	var payloadBytes []byte
-	payloadBytes, err = json.Marshal(payload)
+	payloadBytes, err = json.Marshal(&payload)
 	if err != nil {
 		return e("failed to marshal payment initiation event payload: %w", err)
 	}
 
 	outboxEvents = append(outboxEvents, models.OutboxEvent{
-		EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED,
+		EventType:      events.EventTypeSavedPaymentInitiation,
 		EntityID:       pi.ID.String(),
 		Payload:        payloadBytes,
 		CreatedAt:      stdtime.Now().UTC(),
@@ -143,32 +145,27 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		// Create outbox events for each inserted adjustment
 		for _, adj := range adjustmentsToInsert {
 			adjModel := toPaymentInitiationAdjustmentModels(adj)
-			adjPayload := map[string]interface{}{
-				"id":                  adjModel.ID.String(),
-				"paymentInitiationID": adjModel.ID.PaymentInitiationID.String(),
-				"status":              adjModel.Status.String(),
-			}
-			if adjModel.Amount != nil {
-				adjPayload["amount"] = adjModel.Amount.String()
-			}
-			if adjModel.Asset != nil {
-				adjPayload["asset"] = *adjModel.Asset
+			adjPayload := internalEvents.PaymentInitiationAdjustmentMessagePayload{
+				ID:                  adjModel.ID.String(),
+				PaymentInitiationID: adjModel.ID.PaymentInitiationID.String(),
+				Status:              adjModel.Status.String(),
+				Amount:              adjModel.Amount,
+				Asset:               adjModel.Asset,
+				Metadata:            adjModel.Metadata,
 			}
 			if adjModel.Error != nil {
-				adjPayload["error"] = adjModel.Error.Error()
-			}
-			if adjModel.Metadata != nil {
-				adjPayload["metadata"] = adjModel.Metadata
+				errorStr := adjModel.Error.Error()
+				adjPayload.Error = &errorStr
 			}
 
 			var adjPayloadBytes []byte
-			adjPayloadBytes, err = json.Marshal(adjPayload)
+			adjPayloadBytes, err = json.Marshal(&adjPayload)
 			if err != nil {
 				return e("failed to marshal payment initiation adjustment event payload: %w", err)
 			}
 
 			outboxEvents = append(outboxEvents, models.OutboxEvent{
-				EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED,
+				EventType:      events.EventTypeSavedPaymentInitiationAdjustment,
 				EntityID:       adjModel.ID.String(),
 				Payload:        adjPayloadBytes,
 				CreatedAt:      stdtime.Now().UTC(),
@@ -411,19 +408,19 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 			PaymentID:           pID,
 		}
 
-		payload := map[string]interface{}{
-			"paymentInitiationID": piID.String(),
-			"paymentID":           pID.String(),
+		payload := internalEvents.PaymentInitiationRelatedPaymentMessagePayload{
+			PaymentInitiationID: piID.String(),
+			PaymentID:           pID.String(),
 		}
 
 		var payloadBytes []byte
-		payloadBytes, err = json.Marshal(payload)
+		payloadBytes, err = json.Marshal(&payload)
 		if err != nil {
 			return e("failed to marshal payment initiation related payment event payload: %w", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED,
+			EventType:      events.EventTypeSavedPaymentInitiationRelatedPayment,
 			EntityID:       fmt.Sprintf("%s:%s", piID.String(), pID.String()),
 			Payload:        payloadBytes,
 			CreatedAt:      stdtime.Now().UTC(),
@@ -532,32 +529,27 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 
 	// Create outbox event only if adjustment was actually inserted
 	if rowsAffected > 0 {
-		adjPayload := map[string]interface{}{
-			"id":                  adj.ID.String(),
-			"paymentInitiationID": adj.ID.PaymentInitiationID.String(),
-			"status":              adj.Status.String(),
-		}
-		if adj.Amount != nil {
-			adjPayload["amount"] = adj.Amount.String()
-		}
-		if adj.Asset != nil {
-			adjPayload["asset"] = *adj.Asset
+		adjPayload := internalEvents.PaymentInitiationAdjustmentMessagePayload{
+			ID:                  adj.ID.String(),
+			PaymentInitiationID: adj.ID.PaymentInitiationID.String(),
+			Status:              adj.Status.String(),
+			Amount:              adj.Amount,
+			Asset:               adj.Asset,
+			Metadata:            adj.Metadata,
 		}
 		if adj.Error != nil {
-			adjPayload["error"] = adj.Error.Error()
-		}
-		if adj.Metadata != nil {
-			adjPayload["metadata"] = adj.Metadata
+			errorStr := adj.Error.Error()
+			adjPayload.Error = &errorStr
 		}
 
 		var adjPayloadBytes []byte
-		adjPayloadBytes, err = json.Marshal(adjPayload)
+		adjPayloadBytes, err = json.Marshal(&adjPayload)
 		if err != nil {
 			return e("failed to marshal payment initiation adjustment event payload: %w", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED,
+			EventType:      events.EventTypeSavedPaymentInitiationAdjustment,
 			EntityID:       adj.ID.String(),
 			Payload:        adjPayloadBytes,
 			CreatedAt:      stdtime.Now().UTC(),
@@ -625,32 +617,27 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 
 	// Create outbox event only if adjustment was actually inserted
 	if rowsAffected > 0 {
-		adjPayload := map[string]interface{}{
-			"id":                  adj.ID.String(),
-			"paymentInitiationID": adj.ID.PaymentInitiationID.String(),
-			"status":              adj.Status.String(),
-		}
-		if adj.Amount != nil {
-			adjPayload["amount"] = adj.Amount.String()
-		}
-		if adj.Asset != nil {
-			adjPayload["asset"] = *adj.Asset
+		adjPayload := internalEvents.PaymentInitiationAdjustmentMessagePayload{
+			ID:                  adj.ID.String(),
+			PaymentInitiationID: adj.ID.PaymentInitiationID.String(),
+			Status:              adj.Status.String(),
+			Amount:              adj.Amount,
+			Asset:               adj.Asset,
+			Metadata:            adj.Metadata,
 		}
 		if adj.Error != nil {
-			adjPayload["error"] = adj.Error.Error()
-		}
-		if adj.Metadata != nil {
-			adjPayload["metadata"] = adj.Metadata
+			errorStr := adj.Error.Error()
+			adjPayload.Error = &errorStr
 		}
 
 		var adjPayloadBytes []byte
-		adjPayloadBytes, err = json.Marshal(adjPayload)
+		adjPayloadBytes, err = json.Marshal(&adjPayload)
 		if err != nil {
 			return false, e("failed to marshal payment initiation adjustment event payload: %w", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED,
+			EventType:      events.EventTypeSavedPaymentInitiationAdjustment,
 			EntityID:       adj.ID.String(),
 			Payload:        adjPayloadBytes,
 			CreatedAt:      stdtime.Now().UTC(),

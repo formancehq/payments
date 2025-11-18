@@ -11,7 +11,9 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
@@ -194,36 +196,32 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			}
 
 			// Create the event payload matching EventsSendPayment format
-			payload := map[string]interface{}{
-				"id":            payment.ID.String(),
-				"reference":     payment.Reference,
-				"type":          payment.Type.String(),
-				"status":        adj.Status.String(),
-				"initialAmount": payment.InitialAmount.String(),
-				"amount":        payment.Amount.String(),
-				"scheme":        payment.Scheme.String(),
-				"asset":         payment.Asset,
-				"createdAt":     payment.CreatedAt,
-				"connectorID":   payment.ConnectorID.String(),
-				"provider":      models.ToV3Provider(payment.ConnectorID.Provider),
-				"rawData":       adj.Raw,
-				"metadata":      payment.Metadata,
+			payload := internalEvents.PaymentMessagePayload{
+				ID:            payment.ID.String(),
+				Reference:     payment.Reference,
+				Type:          payment.Type.String(),
+				Status:        adj.Status.String(),
+				InitialAmount: payment.InitialAmount,
+				Amount:        payment.Amount,
+				Scheme:        payment.Scheme.String(),
+				Asset:         payment.Asset,
+				CreatedAt:     payment.CreatedAt,
+				ConnectorID:   payment.ConnectorID.String(),
+				Provider:      models.ToV3Provider(payment.ConnectorID.Provider),
+				RawData:       adj.Raw,
+				Metadata:      payment.Metadata,
 			}
 
-			sourceAccountID := ""
 			if payment.SourceAccountID != nil {
-				sourceAccountID = payment.SourceAccountID.String()
+				payload.SourceAccountID = payment.SourceAccountID.String()
 			}
-			payload["sourceAccountID"] = sourceAccountID
 
-			destinationAccountID := ""
 			if payment.DestinationAccountID != nil {
-				destinationAccountID = payment.DestinationAccountID.String()
+				payload.DestinationAccountID = payment.DestinationAccountID.String()
 			}
-			payload["destinationAccountID"] = destinationAccountID
 
 			var payloadBytes []byte
-			payloadBytes, err = json.Marshal(payload)
+			payloadBytes, err = json.Marshal(&payload)
 			if err != nil {
 				return e("failed to marshal payment event payload", err)
 			}
@@ -231,7 +229,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			// Convert adjustment back to model to get idempotency key
 			adjustmentModel := toPaymentAdjustmentModels(adj)
 			outboxEvent := models.OutboxEvent{
-				EventType:      models.OUTBOX_EVENT_PAYMENT_SAVED,
+				EventType:      events.EventTypeSavedPayments,
 				EntityID:       payment.ID.String(),
 				Payload:        payloadBytes,
 				CreatedAt:      time.Now().UTC(),
@@ -428,8 +426,8 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 
 	// Create outbox event for deleted payment
 	paymentID := p.ID
-	payload := map[string]interface{}{
-		"id": paymentID.String(),
+	payload := internalEvents.PaymentDeletedMessagePayload{
+		ID: paymentID.String(),
 	}
 
 	var payloadBytes []byte
@@ -439,7 +437,7 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      models.OUTBOX_EVENT_PAYMENT_DELETED,
+		EventType:      events.EventTypeDeletedPayments,
 		EntityID:       paymentID.String(),
 		Payload:        payloadBytes,
 		CreatedAt:      time.Now().UTC(),

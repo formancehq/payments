@@ -10,10 +10,10 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/events"
-	"github.com/formancehq/payments/internal/models"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/client/models/operations"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	. "github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
@@ -30,12 +30,12 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                     stack,
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			NatsURL:                   natsServer.GetValue().ClientURL(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
+			Stack:                      stack,
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
 			SkipOutboxScheduleCreation: true,
 		}
 	})
@@ -77,7 +77,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetAccountResponse().Data).To(Equal(createResponse.GetAccountResponse().Data))
 
-			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+			n, err := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedAccounts)
 			Expect(err).To(BeNil())
 			Expect(n).To(Equal(1))
 		})
@@ -105,7 +105,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Expect(createResponse.GetV3CreateAccountResponse().Data.Connector.Name).NotTo(BeNil())
 			Expect(*createResponse.GetV3CreateAccountResponse().Data.Connector.Name).To(ContainSubstring(connectorUUID.String()))
 
-			n, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+			n, err := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedAccounts)
 			Expect(err).To(BeNil())
 			Expect(n).To(Equal(1))
 		})
@@ -125,7 +125,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			_, err = GeneratePSPData(connectorConf.Directory, 5)
 			Expect(err).To(BeNil())
 			Eventually(func() int {
-				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_ACCOUNT_SAVED)
+				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedAccounts)
 				return n
 			}).WithTimeout(2 * time.Second).Should(Equal(5))
 		})
@@ -135,14 +135,14 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		})
 
 		It("should be successful with v2", func() {
-			var msg events.BalanceMessagePayload
+			var msg internalEvents.BalanceMessagePayload
 			Eventually(func() bool {
-				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), events.EventTypeSavedBalances)
 				if err != nil {
 					return false
 				}
 				for _, p := range payloads {
-					var tmp events.BalanceMessagePayload
+					var tmp internalEvents.BalanceMessagePayload
 					if json.Unmarshal(p, &tmp) == nil {
 						msg = tmp
 						return true
@@ -166,14 +166,14 @@ var _ = Context("Payments API Accounts", Serial, func() {
 		})
 
 		It("should be successful with v3", func() {
-			var msg events.BalanceMessagePayload
+			var msg internalEvents.BalanceMessagePayload
 			Eventually(func() bool {
-				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), events.EventTypeSavedBalances)
 				if err != nil {
 					return false
 				}
 				for _, p := range payloads {
-					var tmp events.BalanceMessagePayload
+					var tmp internalEvents.BalanceMessagePayload
 					if json.Unmarshal(p, &tmp) == nil {
 						msg = tmp
 						return true

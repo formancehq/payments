@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 
@@ -95,7 +96,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 			Expect(err).To(BeNil())
 
 			paymentID := createResponse.GetV3CreatePaymentResponse().Data.ID
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED,
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPayments,
 				WithPayloadSubset(struct {
 					ConnectorID string `json:"connectorID"`
 					ID          string `json:"id"`
@@ -153,7 +154,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 			Expect(createResponse.GetPaymentResponse().Data.ID).NotTo(Equal(""))
 
 			paymentID := createResponse.GetPaymentResponse().Data.ID
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED,
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPayments,
 				WithPayloadSubset(struct {
 					ConnectorID string `json:"connectorID"`
 					ID          string `json:"id"`
@@ -188,7 +189,7 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
 		WithPayloadSubset(struct {
 			ConnectorID string `json:"connectorID"`
 			ID          string `json:"id"`
@@ -209,7 +210,7 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
 		WithPayloadSubset(struct {
 			ConnectorID string `json:"connectorID"`
 			ID          string `json:"id"`
@@ -239,7 +240,7 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
 		WithPayloadSubset(struct {
 			ConnectorID string `json:"connectorID"`
 			ID          string `json:"id"`
@@ -260,7 +261,7 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
 		WithPayloadSubset(struct {
 			ConnectorID string `json:"connectorID"`
 			ID          string `json:"id"`

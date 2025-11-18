@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type taskMessagePayload struct {
+type TaskMessagePayload struct {
 	ID              string    `json:"id"`
 	ConnectorID     *string   `json:"connectorID"`
 	Status          string    `json:"status"`
@@ -20,7 +20,7 @@ type taskMessagePayload struct {
 }
 
 func (e Events) NewEventUpdatedTask(task models.Task) publish.EventMessage {
-	payload := taskMessagePayload{
+	payload := TaskMessagePayload{
 		ID: task.ID.String(),
 		ConnectorID: func() *string {
 			if task.ConnectorID == nil {

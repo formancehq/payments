@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type connectorMessagePayload struct {
+type ConnectorMessagePayload struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	ConnectorID string    `json:"connectorID"`
 }
@@ -21,7 +21,7 @@ func (e Events) NewEventResetConnector(connectorID models.ConnectorID, at time.T
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           events.EventTypeConnectorReset,
-		Payload: connectorMessagePayload{
+		Payload: ConnectorMessagePayload{
 			CreatedAt:   at,
 			ConnectorID: connectorID.String(),
 		},

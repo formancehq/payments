@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -304,7 +305,7 @@ func TestAccountsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == "account.saved" && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedAccounts && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -318,7 +319,7 @@ func TestAccountsUpsert(t *testing.T) {
 
 		// Check event details
 		for _, event := range ourEvents {
-			assert.Equal(t, "account.saved", event.EventType)
+			assert.Equal(t, events.EventTypeSavedAccounts, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.Equal(t, 0, event.RetryCount)

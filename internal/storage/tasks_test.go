@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -158,7 +159,7 @@ func TestTasksUpsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_TASK_UPDATED &&
+			if pendingEvents[i].EventType == events.EventTypeUpdatedTask &&
 				pendingEvents[i].EntityID == newTask.ID.String() &&
 				pendingEvents[i].IdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
@@ -168,7 +169,7 @@ func TestTasksUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for task updated")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_TASK_UPDATED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeUpdatedTask, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, newTask.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)

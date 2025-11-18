@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	stdtime "time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -130,9 +133,9 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 	// Create outbox event for connector reset if oldConnectorID is provided
 	if oldConnectorID != nil {
 		now := toInsert.CreatedAt.UTC()
-		payload := map[string]interface{}{
-			"createdAt":   now.Time,
-			"connectorID": oldConnectorID.String(),
+		payload := internalEvents.ConnectorMessagePayload{
+			CreatedAt:   now.Time,
+			ConnectorID: oldConnectorID.String(),
 		}
 
 		var payloadBytes []byte
@@ -141,9 +144,9 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 			return e("failed to marshal connector reset event payload", err)
 		}
 
-		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Time.Format(time.RFC3339Nano))
+		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Time.Format(stdtime.RFC3339Nano))
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_CONNECTOR_RESET,
+			EventType:      events.EventTypeConnectorReset,
 			EntityID:       oldConnectorID.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      now.Time,

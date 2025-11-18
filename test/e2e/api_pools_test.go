@@ -11,11 +11,11 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/events"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/client/models/operations"
-	evts "github.com/formancehq/payments/pkg/events"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 
@@ -34,12 +34,12 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                     stack,
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			NatsURL:                   natsServer.GetValue().ClientURL(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
+			Stack:                      stack,
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
 			SkipOutboxScheduleCreation: true,
 		}
 	})
@@ -73,7 +73,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 			poolID := createResponse.GetV3CreatePoolResponse().Data
 			var msg = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_SAVED, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(msg))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -94,7 +94,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 			poolID := createResponse.GetV3CreatePoolResponse().Data
 			var msg = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(msg))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -125,11 +125,11 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 			poolID := createResponse.GetV3CreatePoolResponse().Data
 			var msg = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_SAVED, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(msg))
 
 			_, err = app.GetValue().SDK().Payments.V3.DeletePool(ctx, poolID)
 			Expect(err).To(BeNil())
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_DELETED, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeDeletePool, WithPayloadSubset(msg))
 		})
 
 		It("should not fail when attempting to delete a pool that doesn't exist", func() {
@@ -164,7 +164,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 			poolID := createResponse.GetPoolResponse().Data.ID
 			var msg = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_SAVED, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(msg))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -185,7 +185,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 			poolID := createResponse.GetPoolResponse().Data.ID
 			var msg = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(msg))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -216,11 +216,11 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 			poolID := createResponse.GetPoolResponse().Data.ID
 			var msg = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_SAVED, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(msg))
 
 			_, err = app.GetValue().SDK().Payments.V1.DeletePool(ctx, poolID)
 			Expect(err).To(BeNil())
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_DELETED, WithPayloadSubset(msg))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeDeletePool, WithPayloadSubset(msg))
 		})
 
 		It("should not fail when attempting to delete a pool that doesn't exist", func() {
@@ -257,8 +257,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(err).To(BeNil())
 			poolID = createResponse.GetV3CreatePoolResponse().Data
 			eventPayloadWithoutQuery = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
-
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 			createResponse2, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
 				Name: "some-pool-with query",
 				Query: map[string]any{
@@ -270,7 +269,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(err).To(BeNil())
 			poolWithQueryID = createResponse2.GetV3CreatePoolResponse().Data
 			eventPayloadWithQuery = GenericEventPayload{ID: poolWithQueryID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))
 		})
 
 		AfterEach(func() {
@@ -280,7 +279,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 		It("should be possible to remove account from static pool", func() {
 			_, err := app.GetValue().SDK().Payments.V3.RemoveAccountFromPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_SAVED, WithPayloadSubset(eventPayloadWithoutQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -306,7 +305,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 		It("should be possible to add account to static pool", func() {
 			_, err := app.GetValue().SDK().Payments.V3.AddAccountToPool(ctx, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_POOL_SAVED, WithPayloadSubset(eventPayloadWithoutQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -355,7 +354,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(err).To(BeNil())
 			poolID = createResponse.GetPoolResponse().Data.ID
 			eventPayloadWithoutQuery = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 
 			createResponse2, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
 				Name: "some-pool-with-query",
@@ -368,7 +367,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(err).To(BeNil())
 			poolWithQueryID = createResponse2.GetPoolResponse().Data.ID
 			eventPayloadWithQuery = GenericEventPayload{ID: poolWithQueryID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))
 		})
 
 		AfterEach(func() {
@@ -378,7 +377,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 		It("should be possible to remove account from static pool", func() {
 			_, err := app.GetValue().SDK().Payments.V1.RemoveAccountFromPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -406,7 +405,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 				AccountID: extraAccountIDs[0],
 			})
 			Expect(err).To(BeNil())
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -455,14 +454,14 @@ var _ = Context("Payments API Pools", Serial, func() {
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
 			Expect(err).To(BeNil())
 
-			var msg events.BalanceMessagePayload
+			var msg internalEvents.BalanceMessagePayload
 			Eventually(func() bool {
-				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BALANCE_SAVED)
+				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), events.EventTypeSavedBalances)
 				if err != nil {
 					return false
 				}
 				for _, p := range payloads {
-					var tmp events.BalanceMessagePayload
+					var tmp internalEvents.BalanceMessagePayload
 					if json.Unmarshal(p, &tmp) == nil && tmp.AccountID != "" {
 						msg = tmp
 						return true
@@ -488,7 +487,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(err).To(BeNil())
 			poolID = createResponse.GetV3CreatePoolResponse().Data
 			eventPayloadWithoutQuery = GenericEventPayload{ID: poolID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))
 
 			createResponse2, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
 				Name: "some-pool-with-query",
@@ -501,7 +500,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(err).To(BeNil())
 			poolWithQueryID = createResponse2.GetV3CreatePoolResponse().Data
 			eventPayloadWithQuery = GenericEventPayload{ID: poolWithQueryID}
-			MustEventuallyOutbox(ctx, app.GetValue(), evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))
 		})
 
 		AfterEach(func() {
@@ -573,7 +572,8 @@ func setupV3PoolAccounts(
 			AccountID:   accountID,
 			Reference:   reference,
 		}
-		MustOutbox(ctx, app, evts.EventTypeSavedAccounts, WithPayloadSubset(msg))
+
+		MustOutbox(ctx, app, events.EventTypeSavedAccounts, WithPayloadSubset(msg))
 		accountIDs = append(accountIDs, accountID)
 	}
 	return accountIDs
@@ -606,7 +606,7 @@ func setupV2PoolAccounts(
 			AccountID:   accountID,
 			Reference:   reference,
 		}
-		MustEventuallyOutbox(ctx, app, evts.EventTypeSavedAccounts, WithPayloadSubset(msg))
+		MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts, WithPayloadSubset(msg))
 		accountIDs = append(accountIDs, accountID)
 	}
 	return accountIDs

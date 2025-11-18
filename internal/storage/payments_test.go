@@ -13,6 +13,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -660,7 +661,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == models.OUTBOX_EVENT_PAYMENT_SAVED && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedPayments && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -668,7 +669,7 @@ func TestPaymentsUpsert(t *testing.T) {
 
 		// Check event details
 		event := ourEvents[0]
-		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_SAVED, event.EventType)
+		assert.Equal(t, events.EventTypeSavedPayments, event.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 		assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 		assert.Equal(t, 0, event.RetryCount)
@@ -792,7 +793,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == models.OUTBOX_EVENT_PAYMENT_SAVED && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedPayments && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -800,7 +801,7 @@ func TestPaymentsUpsert(t *testing.T) {
 
 		// Verify all events have correct structure
 		for _, event := range ourEvents {
-			assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_SAVED, event.EventType)
+			assert.Equal(t, events.EventTypeSavedPayments, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.NotEqual(t, uuid.Nil, event.ID)
@@ -1835,7 +1836,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == models.OUTBOX_EVENT_PAYMENT_DELETED && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeDeletedPayments && event.IdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
@@ -1843,7 +1844,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected 1 outbox event for deleted payment")
 
 		// Check event details
-		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_DELETED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeDeletedPayments, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
@@ -1867,7 +1868,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, err)
 		deletedEventsBefore := 0
 		for _, event := range allEventsBefore {
-			if event.EventType == models.OUTBOX_EVENT_PAYMENT_DELETED {
+			if event.EventType == events.EventTypeDeletedPayments {
 				deletedEventsBefore++
 			}
 		}
@@ -1880,7 +1881,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, err)
 		deletedEventsAfter := 0
 		for _, event := range allEventsAfter {
-			if event.EventType == models.OUTBOX_EVENT_PAYMENT_DELETED {
+			if event.EventType == events.EventTypeDeletedPayments {
 				deletedEventsAfter++
 			}
 		}
