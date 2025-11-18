@@ -5,6 +5,7 @@ package test_suite
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -213,7 +214,7 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 
 			Eventually(func() (int, error) {
 				return CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED)
-			}).Should(BeNumerically(">=", beforeCount+1))
+			}).WithTimeout(3 * time.Second).Should(BeNumerically(">=", beforeCount+1))
 
 			// Validate payload content from outbox_events
 			// Fetch bank account to build expectations

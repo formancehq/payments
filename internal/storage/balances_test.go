@@ -77,7 +77,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 	// Helper to clean up outbox events created during tests
 	cleanupOutbox := func() {
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
 		if err == nil {
 			for _, event := range pendingEvents {
 				eventSent := models.EventSent{
@@ -470,6 +470,106 @@ func TestBalancesUpsert(t *testing.T) {
 			}
 		}
 		require.Len(t, ourEvents, 2, "expected 2 outbox events for 2 balances")
+
+		// Verify all events have correct structure
+		for _, event := range ourEvents {
+			assert.Equal(t, "balance.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+			assert.NotEqual(t, uuid.Nil, event.ID)
+			assert.NotEmpty(t, event.IdempotencyKey)
+		}
+	})
+
+	t.Run("no outbox events for stale balances (no-op)", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Try to insert a balance with a timestamp in the past (older than existing)
+		// This should be a no-op and not create an outbox event
+		staleBalance := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-70 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-70 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(100),
+		}
+
+		expectedKey := staleBalance.IdempotencyKey()
+
+		// Insert stale balance (should be no-op)
+		require.NoError(t, store.BalancesUpsert(ctx, []models.Balance{staleBalance}))
+
+		// Verify no new outbox event was created by polling for recent events only
+		// Use a reasonable limit to avoid holding connections unnecessarily
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Check that no event with this idempotency key exists
+		for _, event := range pendingEvents {
+			if event.EventType == "balance.saved" && event.IdempotencyKey == expectedKey {
+				t.Fatalf("unexpected outbox event created for stale balance (no-op)")
+			}
+		}
+	})
+	t.Run("mixed scenario: some balances create events, some don't", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Create a mix of balances:
+		// 1. Stale balance (no-op, no event)
+		// 2. New balance (insert, event)
+		// 3. Update with same value (update, event)
+		mixedBalances := []models.Balance{
+			// Stale balance - should be no-op
+			{
+				AccountID:     accounts[0].ID,
+				CreatedAt:     now.Add(-65 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-65 * time.Minute).UTC().Time,
+				Asset:         "USD/2",
+				Balance:       big.NewInt(100),
+			},
+			// New balance - should create event
+			{
+				AccountID:     accounts[1].ID,
+				CreatedAt:     now.Add(-3 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-3 * time.Minute).UTC().Time,
+				Asset:         "CAD/2",
+				Balance:       big.NewInt(250),
+			},
+			// Update with same value - should create event
+			{
+				AccountID:     accounts[2].ID,
+				CreatedAt:     now.Add(-8 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-8 * time.Minute).UTC().Time,
+				Asset:         "USD/2",
+				Balance:       big.NewInt(100), // Same value, but newer timestamp
+			},
+		}
+
+		// Create expected keys for balances that should create events
+		expectedKeys := make(map[string]bool)
+		expectedKeys[mixedBalances[1].IdempotencyKey()] = true // New balance
+		expectedKeys[mixedBalances[2].IdempotencyKey()] = true // Update
+		staleKey := mixedBalances[0].IdempotencyKey()          // Should NOT create event
+
+		// Insert mixed balances
+		require.NoError(t, store.BalancesUpsert(ctx, mixedBalances))
+
+		// Verify outbox events were created only for the ones that modified the DB
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == "balance.saved" && expectedKeys[event.IdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 2, "expected 2 outbox events (one for new balance, one for update)")
+
+		// Verify no event was created for the stale balance
+		for _, event := range pendingEvents {
+			if event.EventType == "balance.saved" && event.IdempotencyKey == staleKey {
+				t.Fatalf("unexpected outbox event created for stale balance (no-op)")
+			}
+		}
 
 		// Verify all events have correct structure
 		for _, event := range ourEvents {
