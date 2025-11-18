@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -81,7 +80,7 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 			var payloadBytes []byte
 			payloadBytes, err = json.Marshal(payload)
 			if err != nil {
-				return fmt.Errorf("failed to marshal balance event payload: %w", err)
+				return e("failed to marshal balance event payload", err)
 			}
 
 			outboxEvent := models.OutboxEvent{
@@ -333,7 +332,7 @@ func (s *store) balancesGetLatestByAsset(ctx context.Context, accountID models.A
 func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error) {
 	assets, err := s.balancesListAssets(ctx, accountID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list balance assets: %w", err)
+		return nil, e("failed to list balance assets", err)
 	}
 
 	var balances []*models.Balance
@@ -343,7 +342,7 @@ func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, a
 			if errors.Is(err, ErrNotFound) {
 				continue
 			}
-			return nil, fmt.Errorf("failed to get balance: %w", err)
+			return nil, e("failed to get balance", err)
 		}
 
 		balances = append(balances, balance)
@@ -355,7 +354,7 @@ func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, a
 func (s *store) BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error) {
 	assets, err := s.balancesListAssets(ctx, accountID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list balance assets: %w", err)
+		return nil, e("failed to list balance assets", err)
 	}
 
 	var balances []*models.Balance
@@ -365,7 +364,7 @@ func (s *store) BalancesGetLatest(ctx context.Context, accountID models.AccountI
 			if errors.Is(err, ErrNotFound) {
 				continue
 			}
-			return nil, fmt.Errorf("failed to get latest balance for asset %q: %w", currency, err)
+			return nil, e("failed to get latest balance for asset", err)
 		}
 
 		balances = append(balances, balance)

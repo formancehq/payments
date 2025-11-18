@@ -419,6 +419,8 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Name: "StorageOpenBankingConnectionsGetFromConnectionID",
 			Func: a.StorageOpenBankingConnectionsGetFromConnectionID,
 		}).
+		// TODO sendEvents activity should be removed in the next version (3.2)
+		// We need to keep it a while more until all RunSendEvent workflows are completed.
 		Append(temporalworker.Definition{
 			Name: "SendEvents",
 			Func: a.SendEvents,

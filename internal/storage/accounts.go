@@ -46,7 +46,7 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -105,7 +105,7 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 		var payloadBytes []byte
 		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
-			return fmt.Errorf("failed to marshal account event payload: %w", err)
+			return e("failed to marshal account event payload", err)
 		}
 
 		cid := account.ConnectorID

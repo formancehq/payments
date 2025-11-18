@@ -115,7 +115,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -225,7 +225,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			var payloadBytes []byte
 			payloadBytes, err = json.Marshal(payload)
 			if err != nil {
-				return fmt.Errorf("failed to marshal payment event payload: %w", err)
+				return e("failed to marshal payment event payload", err)
 			}
 
 			// Convert adjustment back to model to get idempotency key
@@ -391,7 +391,7 @@ func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
 func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -409,7 +409,7 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 		if errors.Is(pErr, ErrNotFound) {
 			// Payment doesn't exist, nothing to delete or create event for
 			if commitErr := tx.Commit(); commitErr != nil {
-				return fmt.Errorf("failed to commit transaction: %w", commitErr)
+				return e("failed to commit transaction", commitErr)
 			}
 			return nil
 		}
@@ -435,7 +435,7 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 	var payloadBytes []byte
 	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal payment deleted event payload: %w", err)
+		return e("failed to marshal payment deleted event payload", err)
 	}
 
 	outboxEvent := models.OutboxEvent{
@@ -521,7 +521,7 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 			key == "psu_id",
 			key == "open_banking_connection_id":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 
@@ -530,7 +530,7 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
+				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 

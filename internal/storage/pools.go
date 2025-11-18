@@ -130,7 +130,6 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
-			//if err = s.OutboxEventsInsertWithTx(ctx, []models.OutboxEvent{outboxEvent}); err != nil {
 			return err
 		}
 	}
