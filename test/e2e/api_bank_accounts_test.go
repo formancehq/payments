@@ -294,10 +294,12 @@ func assertSavedPayloadMatchesBankAccount(
 
 	Expect(ba.GetAccountNumber()).ToNot(BeNil())
 	an := *ba.GetAccountNumber()
+	Expect(len(an)).To(BeNumerically(">=", 5), "account number too short for masking")
 	Expect(p.AccountNumber).To(Equal(fmt.Sprintf("%s****%s", an[0:2], an[len(an)-3:])))
 
 	Expect(ba.GetIban()).ToNot(BeNil())
 	ib := *ba.GetIban()
+	Expect(len(ib)).To(BeNumerically(">=", 8), "IBAN too short for masking")
 	Expect(p.IBAN).To(Equal(fmt.Sprintf("%s**************%s", ib[0:4], ib[len(ib)-4:])))
 
 	var ra internalEvents.BankAccountRelatedAccountsPayload
