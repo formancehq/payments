@@ -85,13 +85,14 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 				return e("failed to marshal balance event payload", err)
 			}
 
+			connectorID := balance.AccountID.ConnectorID
 			outboxEvent := models.OutboxEvent{
 				EventType:      events.EventTypeSavedBalances,
 				EntityID:       balance.AccountID.String(),
 				Payload:        payloadBytes,
 				CreatedAt:      time.Now().UTC(),
 				Status:         models.OUTBOX_STATUS_PENDING,
-				ConnectorID:    &balance.AccountID.ConnectorID,
+				ConnectorID:    &connectorID,
 				IdempotencyKey: balance.IdempotencyKey(),
 			}
 
