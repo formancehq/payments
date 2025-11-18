@@ -9,7 +9,9 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -83,23 +85,23 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 			continue
 		}
 		// Create the event payload
-		payload := map[string]interface{}{
-			"id":          account.ID.String(),
-			"connectorID": account.ConnectorID.String(),
-			"provider":    models.ToV3Provider(account.ConnectorID.Provider),
-			"createdAt":   account.CreatedAt,
-			"reference":   account.Reference,
-			"type":        string(account.Type),
-			"metadata":    account.Metadata,
-			"rawData":     account.Raw,
+		payload := internalEvents.AccountMessagePayload{
+			ID:          account.ID.String(),
+			ConnectorID: account.ConnectorID.String(),
+			Provider:    models.ToV3Provider(account.ConnectorID.Provider),
+			CreatedAt:   account.CreatedAt,
+			Reference:   account.Reference,
+			Type:        string(account.Type),
+			Metadata:    account.Metadata,
+			RawData:     account.Raw,
 		}
 
 		if account.DefaultAsset != nil {
-			payload["defaultAsset"] = *account.DefaultAsset
+			payload.DefaultAsset = *account.DefaultAsset
 		}
 
 		if account.Name != nil {
-			payload["name"] = *account.Name
+			payload.Name = *account.Name
 		}
 
 		var payloadBytes []byte
@@ -110,7 +112,7 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 		cid := account.ConnectorID
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_ACCOUNT_SAVED,
+			EventType:      events.EventTypeSavedAccounts,
 			EntityID:       account.ID.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      time.Now().UTC().Time,

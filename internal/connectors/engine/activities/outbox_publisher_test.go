@@ -8,20 +8,21 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/events"
+	internalevents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	gomock "go.uber.org/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 var _ = Describe("OutboxPublishPendingEvents", func() {
 	var (
 		act           activities.Activities
 		s             *storage.MockStorage
-		evts          *events.Events
+		evts          *internalevents.Events
 		mockPublisher *activities.MockPublisher
 		logger        = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
@@ -30,7 +31,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 		ctrl := gomock.NewController(GinkgoT())
 		s = storage.NewMockStorage(ctrl)
 		mockPublisher = activities.NewMockPublisher(ctrl)
-		evts = events.New(mockPublisher, "http://localhost")
+		evts = internalevents.New(mockPublisher, "http://localhost")
 		act = activities.New(logger, nil, s, evts, nil, 0)
 	})
 
@@ -44,7 +45,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			testEvents := []models.OutboxEvent{
 				{
 					ID:             uuid.New(),
-					EventType:      "account.saved",
+					EventType:      events.EventTypeSavedAccounts,
 					EntityID:       "acc_123",
 					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
 					CreatedAt:      time.Now().UTC(),
@@ -178,7 +179,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			Expect(err).To(BeNil()) // Activity doesn't fail, just marks event for retry
 		})
 
-		It("handles unknown event type", func(ctx SpecContext) {
+		It("publishes even unknown event type", func(ctx SpecContext) {
 			connectorID := &models.ConnectorID{
 				Provider:  "stripe",
 				Reference: uuid.New(),
@@ -203,9 +204,17 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				OutboxEventsPollPending(ctx, 100).
 				Return(testEvents, nil)
 
-			// Mark as failed
+			mockPublisher.EXPECT().
+				Publish(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			// Delete from outbox and record sent atomically
 			s.EXPECT().
-				OutboxEventsMarkFailed(ctx, testEvents[0].ID, 1, gomock.Any()).
+				OutboxEventsDeleteAndRecordSent(ctx, testEvents[0].ID, gomock.Any()).
+				Do(func(_ context.Context, eventID uuid.UUID, eventSent models.EventSent) {
+					Expect(eventSent.ConnectorID).To(Equal(connectorID))
+					Expect(eventSent.ID.EventIdempotencyKey).To(Equal("unknown.event:some_id"))
+				}).
 				Return(nil)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)

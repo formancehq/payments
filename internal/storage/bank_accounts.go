@@ -10,7 +10,9 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -111,14 +113,14 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		payload := prepareBankAccountEventPayload(bankAccountModel)
 
 		var payloadBytes []byte
-		payloadBytes, err = json.Marshal(payload)
+		payloadBytes, err = json.Marshal(&payload)
 		if err != nil {
 			errTx = err
 			return e("failed to marshal bank account event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
+			EventType:      events.EventTypeSavedBankAccount,
 			EntityID:       bankAccountModel.ID.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      time.Now().UTC(),
@@ -151,13 +153,14 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 				return e("failed to obfuscate bank account for event payload", err)
 			}
 			payload := prepareBankAccountEventPayload(bankAccountModel)
-			payloadBytes, err := json.Marshal(payload)
+
+			payloadBytes, err := json.Marshal(&payload)
 			if err != nil {
 				errTx = err
 				return e("failed to marshal bank account event payload", err)
 			}
 			outboxEvent := models.OutboxEvent{
-				EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
+				EventType:      events.EventTypeSavedBankAccount,
 				EntityID:       bankAccountModel.ID.String(),
 				Payload:        payloadBytes,
 				CreatedAt:      time.Now().UTC(),
@@ -370,14 +373,15 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 	}
 
 	payload := prepareBankAccountEventPayload(bankAccountModel)
+
 	var payloadBytes []byte
-	payloadBytes, err = json.Marshal(payload)
+	payloadBytes, err = json.Marshal(&payload)
 	if err != nil {
 		return e("failed to marshal bank account event payload", err)
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
+		EventType:      events.EventTypeSavedBankAccount,
 		EntityID:       bankAccountModel.ID.String(),
 		Payload:        payloadBytes,
 		CreatedAt:      time.Now().UTC(),
@@ -484,42 +488,36 @@ func toBankAccountRelatedAccountModels(from bankAccountRelatedAccount) models.Ba
 	}
 }
 
-func prepareBankAccountEventPayload(bankAccountModel models.BankAccount) map[string]interface{} {
-	payload := map[string]interface{}{
-		"id":        bankAccountModel.ID.String(),
-		"createdAt": bankAccountModel.CreatedAt,
-		"name":      bankAccountModel.Name,
-		"metadata":  bankAccountModel.Metadata,
+func prepareBankAccountEventPayload(bankAccountModel models.BankAccount) internalEvents.BankAccountMessagePayload {
+	payload := internalEvents.BankAccountMessagePayload{
+		ID:        bankAccountModel.ID.String(),
+		CreatedAt: bankAccountModel.CreatedAt,
+		Name:      bankAccountModel.Name,
+		Metadata:  bankAccountModel.Metadata,
 	}
 
 	if bankAccountModel.AccountNumber != nil {
-		payload["accountNumber"] = *bankAccountModel.AccountNumber
+		payload.AccountNumber = *bankAccountModel.AccountNumber
 	}
-
 	if bankAccountModel.IBAN != nil {
-		payload["iban"] = *bankAccountModel.IBAN
+		payload.IBAN = *bankAccountModel.IBAN
 	}
-
 	if bankAccountModel.SwiftBicCode != nil {
-		payload["swiftBicCode"] = *bankAccountModel.SwiftBicCode
+		payload.SwiftBicCode = *bankAccountModel.SwiftBicCode
 	}
-
 	if bankAccountModel.Country != nil {
-		payload["country"] = *bankAccountModel.Country
+		payload.Country = *bankAccountModel.Country
 	}
 
-	relatedAccounts := make([]map[string]interface{}, 0, len(bankAccountModel.RelatedAccounts))
 	for _, relatedAccount := range bankAccountModel.RelatedAccounts {
-		relatedAccounts = append(relatedAccounts, map[string]interface{}{
-			"createdAt":   relatedAccount.CreatedAt,
-			"accountID":   relatedAccount.AccountID.String(),
-			"connectorID": relatedAccount.AccountID.ConnectorID.String(),
-			"provider":    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
+		payload.RelatedAccounts = append(payload.RelatedAccounts, internalEvents.BankAccountRelatedAccountsPayload{
+			CreatedAt:   relatedAccount.CreatedAt,
+			AccountID:   relatedAccount.AccountID.String(),
+			ConnectorID: relatedAccount.AccountID.ConnectorID.String(),
+			Provider:    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
 		})
-	}
-	if len(relatedAccounts) > 0 {
-		payload["relatedAccounts"] = relatedAccounts
 	}
 
 	return payload
 }
+

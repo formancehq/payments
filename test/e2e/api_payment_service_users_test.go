@@ -10,9 +10,10 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/events"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -200,7 +201,7 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 		})
 
 		It("should be ok when connector is installed", func() {
-			beforeCount, err := CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED)
+			beforeCount, err := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
 			Expect(err).To(BeNil())
 
 			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserBankAccount(ctx, psuID, baID1.String(), &components.V3ForwardPaymentServiceUserBankAccountRequest{
@@ -214,7 +215,7 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 			Expect(taskID.Reference).To(ContainSubstring(cID.Reference.String()))
 
 			Eventually(func() (int, error) {
-				return CountOutboxEventsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED)
+				return CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
 			}).WithTimeout(3 * time.Second).Should(BeNumerically(">=", beforeCount+1))
 
 			// Validate payload content from outbox_events
@@ -223,13 +224,13 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 			Expect(err).To(BeNil())
 			ba := getResponse.GetV3GetBankAccountResponse().Data
 
-			payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED)
+			payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
 			Expect(err).To(BeNil())
 
-			var p events.BankAccountMessagePayload
+			var p internalEvents.BankAccountMessagePayload
 			found := false
 			for _, raw := range payloads {
-				var tmp events.BankAccountMessagePayload
+				var tmp internalEvents.BankAccountMessagePayload
 				Expect(json.Unmarshal(raw, &tmp)).To(Succeed())
 				if tmp.ID == baID1.String() {
 					p = tmp
@@ -266,7 +267,7 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/streetNumber", "1"))
 
 			// Related account created for the connector
-			var ra events.BankAccountRelatedAccountsPayload
+			var ra internalEvents.BankAccountRelatedAccountsPayload
 			raFound := false
 			for _, x := range p.RelatedAccounts {
 				if x.ConnectorID == connectorID {

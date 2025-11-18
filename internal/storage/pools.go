@@ -10,7 +10,9 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -102,11 +104,11 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 			accountIDs[i] = p.PoolAccounts[i].String()
 		}
 
-		payload := map[string]interface{}{
-			"id":         p.ID.String(),
-			"name":       p.Name,
-			"createdAt":  p.CreatedAt,
-			"accountIDs": accountIDs,
+		payload := internalEvents.PoolMessagePayload{
+			ID:         p.ID.String(),
+			Name:       p.Name,
+			CreatedAt:  p.CreatedAt,
+			AccountIDs: accountIDs,
 		}
 
 		var payloadBytes []byte
@@ -116,7 +118,7 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_POOL_SAVED,
+			EventType:      events.EventTypeSavedPool,
 			EntityID:       p.ID.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      time.Now().UTC(),
@@ -185,9 +187,9 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 
 	// Create outbox event for pool deletion if pool was actually deleted
 	if rowsAffected > 0 {
-		payload := map[string]interface{}{
-			"createdAt": time.Now().UTC(),
-			"id":        id.String(),
+		payload := internalEvents.DeletePoolMessagePayload{
+			CreatedAt: time.Now().UTC(),
+			ID:        id.String(),
 		}
 
 		var payloadBytes []byte
@@ -197,7 +199,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      models.OUTBOX_EVENT_POOL_DELETED,
+			EventType:      events.EventTypeDeletePool,
 			EntityID:       id.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      time.Now().UTC(),

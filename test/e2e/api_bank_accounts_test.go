@@ -11,9 +11,10 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/events"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -36,12 +37,12 @@ var _ = Context("Payments API Bank Accounts", Ordered, Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                     stack,
-			NatsURL:                   natsServer.GetValue().ClientURL(),
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
+			Stack:                      stack,
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
 			SkipOutboxScheduleCreation: true,
 		}
 	})
@@ -251,13 +252,13 @@ var _ = Context("Payments API Bank Accounts", Ordered, Serial, func() {
 })
 
 // test helpers shared across v2/v3 forwarding scenarios
-func waitSavedBankAccountPayloadForConnector(ctx context.Context, s *Server, bankAccountID, connectorID string) events.BankAccountMessagePayload {
-	var ret events.BankAccountMessagePayload
+func waitSavedBankAccountPayloadForConnector(ctx context.Context, s *Server, bankAccountID, connectorID string) internalEvents.BankAccountMessagePayload {
+	var ret internalEvents.BankAccountMessagePayload
 	Eventually(func(g Gomega) bool {
-		payloads, err := LoadOutboxPayloadsByType(ctx, s, models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED)
+		payloads, err := LoadOutboxPayloadsByType(ctx, s, events.EventTypeSavedBankAccount)
 		g.Expect(err).To(BeNil())
 		for _, raw := range payloads {
-			var tmp events.BankAccountMessagePayload
+			var tmp internalEvents.BankAccountMessagePayload
 			if json.Unmarshal(raw, &tmp) == nil && tmp.ID == bankAccountID {
 				for _, x := range tmp.RelatedAccounts {
 					if x.ConnectorID == connectorID {
@@ -282,7 +283,7 @@ type bankAccountLike interface {
 }
 
 func assertSavedPayloadMatchesBankAccount(
-	p events.BankAccountMessagePayload,
+	p internalEvents.BankAccountMessagePayload,
 	ba bankAccountLike,
 	expectedName, connectorID string,
 ) {
@@ -299,7 +300,7 @@ func assertSavedPayloadMatchesBankAccount(
 	ib := *ba.GetIban()
 	Expect(p.IBAN).To(Equal(fmt.Sprintf("%s**************%s", ib[0:4], ib[len(ib)-4:])))
 
-	var ra events.BankAccountRelatedAccountsPayload
+	var ra internalEvents.BankAccountRelatedAccountsPayload
 	raFound := false
 	for _, x := range p.RelatedAccounts {
 		if x.ConnectorID == connectorID {

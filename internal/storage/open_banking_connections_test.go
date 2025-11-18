@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -256,7 +257,7 @@ func TestOpenBankingConnectionAttemptsUpdateStatus(t *testing.T) {
 		// Find our event - look for the most recent one with our attempt's PsuID
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_USER_LINK_STATUS &&
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserLinkStatus &&
 				pendingEvents[i].EntityID == newAttempt.PsuID.String() &&
 				pendingEvents[i].ConnectorID != nil &&
 				*pendingEvents[i].ConnectorID == newAttempt.ConnectorID {
@@ -273,7 +274,7 @@ func TestOpenBankingConnectionAttemptsUpdateStatus(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for user link status")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_USER_LINK_STATUS, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeOpenBankingUserLinkStatus, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, newAttempt.PsuID.String(), ourEvent.EntityID)
 		assert.Equal(t, newAttempt.ConnectorID, *ourEvent.ConnectorID)
@@ -597,7 +598,7 @@ func TestPSUOpenBankingConnectionsUpsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_USER_CONNECTION_DISCONNECTED &&
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserConnectionDisconnected &&
 				pendingEvents[i].EntityID == disconnectedConnection.ConnectionID {
 				ourEvent = &pendingEvents[i]
 				break
@@ -606,7 +607,7 @@ func TestPSUOpenBankingConnectionsUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for user connection disconnected")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_USER_CONNECTION_DISCONNECTED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeOpenBankingUserConnectionDisconnected, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, disconnectedConnection.ConnectionID, ourEvent.EntityID)
 		assert.Equal(t, disconnectedConnection.ConnectorID, *ourEvent.ConnectorID)
@@ -652,7 +653,7 @@ func TestPSUOpenBankingConnectionsUpsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_USER_CONNECTION_RECONNECTED &&
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserConnectionReconnected &&
 				pendingEvents[i].EntityID == reconnectedConnection.ConnectionID {
 				ourEvent = &pendingEvents[i]
 				break
@@ -661,7 +662,7 @@ func TestPSUOpenBankingConnectionsUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for user connection reconnected")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_USER_CONNECTION_RECONNECTED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeOpenBankingUserConnectionReconnected, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, reconnectedConnection.ConnectionID, ourEvent.EntityID)
 		assert.Equal(t, reconnectedConnection.ConnectorID, *ourEvent.ConnectorID)
@@ -719,7 +720,7 @@ func TestOpenBankingConnectionsUpdateLastDataUpdate(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_USER_CONNECTION_DATA_SYNCED &&
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserConnectionDataSynced &&
 				pendingEvents[i].EntityID == newConnection.ConnectionID {
 				ourEvent = &pendingEvents[i]
 				break
@@ -728,7 +729,7 @@ func TestOpenBankingConnectionsUpdateLastDataUpdate(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for user connection data synced")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_USER_CONNECTION_DATA_SYNCED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeOpenBankingUserConnectionDataSynced, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, newConnection.ConnectionID, ourEvent.EntityID)
 		assert.Equal(t, newConnection.ConnectorID, *ourEvent.ConnectorID)

@@ -46,11 +46,6 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 }
 
 func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxEvent) error {
-	eventType, err := mapOutboxEventTypeToEventType(event.EventType)
-	if err != nil {
-		return err
-	}
-
 	// Parse the payload
 	var payload map[string]interface{}
 	if err := json.Unmarshal(event.Payload, &payload); err != nil {
@@ -67,7 +62,7 @@ func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxE
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           eventType,
+		Type:           event.EventType,
 		Payload:        payload,
 	}
 
@@ -100,61 +95,6 @@ var OutboxPublishPendingEventsActivity = Activities{}.OutboxPublishPendingEvents
 func OutboxPublishPendingEvents(ctx workflow.Context, limit int) error {
 	return executeActivity(ctx, OutboxPublishPendingEventsActivity, nil, limit)
 }
-
-func mapOutboxEventTypeToEventType(outboxEventType string) (string, error) {
-	var eventType string
-	switch outboxEventType {
-	case models.OUTBOX_EVENT_ACCOUNT_SAVED:
-		eventType = events.EventTypeSavedAccounts
-	case models.OUTBOX_EVENT_BALANCE_SAVED:
-		eventType = events.EventTypeSavedBalances
-	case models.OUTBOX_EVENT_PAYMENT_SAVED:
-		eventType = events.EventTypeSavedPayments
-	case models.OUTBOX_EVENT_PAYMENT_DELETED:
-		eventType = events.EventTypeDeletedPayments
-	case models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED:
-		eventType = events.EventTypeSavedBankAccount
-	case models.OUTBOX_EVENT_TASK_UPDATED:
-		eventType = events.EventTypeUpdatedTask
-	case models.OUTBOX_EVENT_CONNECTOR_RESET:
-		eventType = events.EventTypeConnectorReset
-	case models.OUTBOX_EVENT_POOL_SAVED:
-		eventType = events.EventTypeSavedPool
-	case models.OUTBOX_EVENT_POOL_DELETED:
-		eventType = events.EventTypeDeletePool
-	case models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED:
-		eventType = events.EventTypeSavedPaymentInitiation
-	case models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED:
-		eventType = events.EventTypeSavedPaymentInitiationAdjustment
-	case models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED:
-		eventType = events.EventTypeSavedPaymentInitiationRelatedPayment
-	case models.OUTBOX_EVENT_USER_LINK_STATUS:
-		eventType = events.EventTypeOpenBankingUserLinkStatus
-	case models.OUTBOX_EVENT_USER_CONNECTION_DATA_SYNCED:
-		eventType = events.EventTypeOpenBankingUserConnectionDataSynced
-	case models.OUTBOX_EVENT_USER_CONNECTION_PENDING_DISCONNECT:
-		eventType = events.EventTypeOpenBankingUserConnectionPendingDisconnect
-	case models.OUTBOX_EVENT_USER_CONNECTION_DISCONNECTED:
-		eventType = events.EventTypeOpenBankingUserConnectionDisconnected
-	case models.OUTBOX_EVENT_USER_CONNECTION_RECONNECTED:
-		eventType = events.EventTypeOpenBankingUserConnectionReconnected
-	case models.OUTBOX_EVENT_USER_DISCONNECTED:
-		eventType = events.EventTypeOpenBankingUserDisconnected
-	default:
-		return "", &OutboxEventUnknownEventTypeError{outboxEventType}
-	}
-	return eventType, nil
-}
-
-type OutboxEventUnknownEventTypeError struct {
-	Type string
-}
-
-func (e *OutboxEventUnknownEventTypeError) Error() string {
-	return "unknown outbox event type, type=" + e.Type
-}
-
-func (e *OutboxEventUnknownEventTypeError) NonRetryable() {}
 
 type OutboxEventInvalidIdempotencyKeyError struct {
 	EventType      string

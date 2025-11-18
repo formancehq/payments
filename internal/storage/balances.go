@@ -10,7 +10,9 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
 	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
@@ -67,24 +69,24 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 		outboxEvents := make([]models.OutboxEvent, 0, len(insertedBalances))
 		for _, balance := range insertedBalances {
 			// Create the event payload
-			payload := map[string]interface{}{
-				"accountID":     balance.AccountID.String(),
-				"connectorID":   balance.AccountID.ConnectorID.String(),
-				"provider":      models.ToV3Provider(balance.AccountID.ConnectorID.Provider),
-				"createdAt":     balance.CreatedAt,
-				"lastUpdatedAt": balance.LastUpdatedAt,
-				"asset":         balance.Asset,
-				"balance":       balance.Balance.String(),
+			payload := internalEvents.BalanceMessagePayload{
+				AccountID:     balance.AccountID.String(),
+				ConnectorID:   balance.AccountID.ConnectorID.String(),
+				Provider:      models.ToV3Provider(balance.AccountID.ConnectorID.Provider),
+				CreatedAt:     balance.CreatedAt,
+				LastUpdatedAt: balance.LastUpdatedAt,
+				Asset:         balance.Asset,
+				Balance:       balance.Balance,
 			}
 
 			var payloadBytes []byte
-			payloadBytes, err = json.Marshal(payload)
+			payloadBytes, err = json.Marshal(&payload)
 			if err != nil {
 				return e("failed to marshal balance event payload", err)
 			}
 
 			outboxEvent := models.OutboxEvent{
-				EventType:      models.OUTBOX_EVENT_BALANCE_SAVED,
+				EventType:      events.EventTypeSavedBalances,
 				EntityID:       balance.AccountID.String(),
 				Payload:        payloadBytes,
 				CreatedAt:      time.Now().UTC(),

@@ -13,6 +13,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -182,7 +183,7 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED &&
+			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiation &&
 				pendingEvents[i].EntityID == newPI.ID.String() &&
 				pendingEvents[i].IdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
@@ -192,7 +193,7 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for payment initiation saved")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeSavedPaymentInitiation, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, newPI.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, newPI.ConnectorID, *ourEvent.ConnectorID)
@@ -871,7 +872,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED &&
+			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiationRelatedPayment &&
 				pendingEvents[i].EntityID == fmt.Sprintf("%s:%s", newPI.ID.String(), payments[0].ID.String()) &&
 				pendingEvents[i].IdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
@@ -881,7 +882,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for payment initiation related payment saved")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeSavedPaymentInitiationRelatedPayment, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, fmt.Sprintf("%s:%s", newPI.ID.String(), payments[0].ID.String()), ourEvent.EntityID)
 		assert.Equal(t, newPI.ConnectorID, *ourEvent.ConnectorID)
@@ -1176,7 +1177,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED &&
+			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiationAdjustment &&
 				pendingEvents[i].EntityID == newAdj.ID.String() &&
 				pendingEvents[i].IdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
@@ -1186,7 +1187,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for payment initiation adjustment saved")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeSavedPaymentInitiationAdjustment, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, newAdj.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, newAdj.ID.PaymentInitiationID.ConnectorID, *ourEvent.ConnectorID)
@@ -1303,7 +1304,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 		// Find our event
 		var ourEvent *models.OutboxEvent
 		for i := range pendingEvents {
-			if pendingEvents[i].EventType == models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED &&
+			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiationAdjustment &&
 				pendingEvents[i].EntityID == p.ID.String() &&
 				pendingEvents[i].IdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
@@ -1313,7 +1314,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected outbox event for payment initiation adjustment saved")
 
 		// Verify event details
-		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, ourEvent.EventType)
+		assert.Equal(t, events.EventTypeSavedPaymentInitiationAdjustment, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, p.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, p.ID.PaymentInitiationID.ConnectorID, *ourEvent.ConnectorID)
