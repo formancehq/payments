@@ -33,7 +33,7 @@ func (w Workflow) runUninstallConnector(
 				nil,
 				err,
 			); errUpdateTask != nil {
-				return errUpdateTask
+				return fmt.Errorf("failed to update task after uninstall error: %w (original error: %v)", errUpdateTask, err)
 			}
 		}
 
