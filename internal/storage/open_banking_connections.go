@@ -241,7 +241,7 @@ func (s *store) OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.U
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -429,7 +429,7 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)

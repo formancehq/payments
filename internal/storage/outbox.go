@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -136,13 +135,18 @@ func (s *store) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryC
 	if retryCount >= maxRetries || errors.As(err, &nonRetriable) {
 		status = models.OUTBOX_STATUS_FAILED
 	}
+	var errMsg *string
+	if err != nil {
+		msg := err.Error()
+		errMsg = &msg
+	}
 
 	_, updateErr := s.db.NewUpdate().
 		TableExpr("outbox_events").
 		Set("status = ?", status).
 		Set("retry_count = ?", retryCount).
 		Set("last_retry_at = ?", now).
-		Set("error = ?", err.Error()).
+		Set("error = ?", errMsg).
 		Where("id = ?", id).
 		Exec(ctx)
 
@@ -153,7 +157,7 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uui
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -180,7 +184,7 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uui
 
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return e("failed to commit transaction", err)
 	}
 
 	return nil

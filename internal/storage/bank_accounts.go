@@ -104,7 +104,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		// Obfuscate sensitive fields before storing in outbox payload since tests read from outbox directly
 		if err := bankAccountModel.Obfuscate(); err != nil {
 			errTx = err
-			return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
+			return e("failed to obfuscate bank account for event payload", err)
 		}
 
 		// Create the event payload
@@ -114,7 +114,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			errTx = err
-			return fmt.Errorf("failed to marshal bank account event payload: %w", err)
+			return e("failed to marshal bank account event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
@@ -148,13 +148,13 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			// Obfuscate sensitive fields before storing in outbox payload
 			if err := bankAccountModel.Obfuscate(); err != nil {
 				errTx = err
-				return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
+				return e("failed to obfuscate bank account for event payload", err)
 			}
 			payload := prepareBankAccountEventPayload(bankAccountModel)
 			payloadBytes, err := json.Marshal(payload)
 			if err != nil {
 				errTx = err
-				return fmt.Errorf("failed to marshal bank account event payload: %w", err)
+				return e("failed to marshal bank account event payload", err)
 			}
 			outboxEvent := models.OutboxEvent{
 				EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
@@ -366,14 +366,14 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 	bankAccountModel := toBankAccountModels(ba)
 	// Obfuscate before building payload so outbox contains masked values
 	if err = bankAccountModel.Obfuscate(); err != nil {
-		return fmt.Errorf("failed to obfuscate bank account for event payload: %w", err)
+		return e("failed to obfuscate bank account for event payload", err)
 	}
 
 	payload := prepareBankAccountEventPayload(bankAccountModel)
 	var payloadBytes []byte
 	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal bank account event payload: %w", err)
+		return e("failed to marshal bank account event payload", err)
 	}
 
 	outboxEvent := models.OutboxEvent{

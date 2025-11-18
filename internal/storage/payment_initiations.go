@@ -290,13 +290,13 @@ func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, string
 			key == "source_account_id",
 			key == "destination_account_id":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 
 		case key == "status":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 
 			// we only care about the latest adjustment, so we need to sort the adjustments
@@ -310,7 +310,7 @@ ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -319,7 +319,7 @@ ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort
 				match[0][1]: value,
 			}}, nil
 		}
-		return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+		return "", nil, e(fmt.Sprintf("unknown key '%s' when building query", key), ErrValidation)
 	}))
 
 	return join, where, args, err
@@ -702,12 +702,12 @@ func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (str
 		switch {
 		case key == "status":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'status' column can only be used with $match: %w", ErrValidation)
+				return "", nil, e("'status' column can only be used with $match", ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
+				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 			key := "metadata"
@@ -715,7 +715,7 @@ func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (str
 				match[0][1]: value,
 			}}, nil
 		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+			return "", nil, e(fmt.Sprintf("unknown key '%s' when building query", key), ErrValidation)
 		}
 	}))
 	return where, args, err
