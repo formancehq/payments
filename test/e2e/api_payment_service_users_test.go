@@ -214,9 +214,16 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 			cID := models.MustConnectorIDFromString(connectorID)
 			Expect(taskID.Reference).To(ContainSubstring(cID.Reference.String()))
 
+			// Wait for the workflow task to complete before checking for the outbox event
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(forwardResponse.GetV3ForwardPaymentServiceUserBankAccountResponse().Data.TaskID)).
+				WithTimeout(10 * time.Second).
+				Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+
+			// Now check for the outbox event - it should exist after the workflow completes
 			Eventually(func() (int, error) {
 				return CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
-			}).WithTimeout(10 * time.Second).Should(BeNumerically(">=", beforeCount+1))
+			}).WithTimeout(5 * time.Second).Should(BeNumerically(">=", beforeCount+1))
 
 			// Validate payload content from outbox_events
 			// Fetch bank account to build expectations
