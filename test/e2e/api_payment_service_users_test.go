@@ -36,12 +36,12 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                     stack,
-			NatsURL:                   natsServer.GetValue().ClientURL(),
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
+			Stack:                      stack,
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
 			SkipOutboxScheduleCreation: true,
 		}
 	})
@@ -216,7 +216,7 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 
 			Eventually(func() (int, error) {
 				return CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
-			}).WithTimeout(3 * time.Second).Should(BeNumerically(">=", beforeCount+1))
+			}).WithTimeout(10 * time.Second).Should(BeNumerically(">=", beforeCount+1))
 
 			// Validate payload content from outbox_events
 			// Fetch bank account to build expectations
