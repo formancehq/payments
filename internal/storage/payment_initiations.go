@@ -119,7 +119,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	var payloadBytes []byte
 	payloadBytes, err = json.Marshal(&payload)
 	if err != nil {
-		return e("failed to marshal payment initiation event payload: %w", err)
+		return e("failed to marshal payment initiation event payload", err)
 	}
 
 	outboxEvents = append(outboxEvents, models.OutboxEvent{
@@ -161,7 +161,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 			var adjPayloadBytes []byte
 			adjPayloadBytes, err = json.Marshal(&adjPayload)
 			if err != nil {
-				return e("failed to marshal payment initiation adjustment event payload: %w", err)
+				return e("failed to marshal payment initiation adjustment event payload", err)
 			}
 
 			outboxEvents = append(outboxEvents, models.OutboxEvent{
@@ -416,7 +416,7 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		var payloadBytes []byte
 		payloadBytes, err = json.Marshal(&payload)
 		if err != nil {
-			return e("failed to marshal payment initiation related payment event payload: %w", err)
+			return e("failed to marshal payment initiation related payment event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
@@ -548,7 +548,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 		var adjPayloadBytes []byte
 		adjPayloadBytes, err = json.Marshal(&adjPayload)
 		if err != nil {
-			return e("failed to marshal payment initiation adjustment event payload: %w", err)
+			return e("failed to marshal payment initiation adjustment event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
@@ -639,7 +639,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		var adjPayloadBytes []byte
 		adjPayloadBytes, err = json.Marshal(&adjPayload)
 		if err != nil {
-			return false, e("failed to marshal payment initiation adjustment event payload: %w", err)
+			return false, e("failed to marshal payment initiation adjustment event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
