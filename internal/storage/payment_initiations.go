@@ -97,7 +97,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	payload := map[string]interface{}{
 		"id":          pi.ID.String(),
 		"connectorID": pi.ConnectorID.String(),
-		"provider":    pi.ConnectorID.Provider,
+		"provider":    models.ToV3Provider(pi.ConnectorID.Provider),
 		"reference":   pi.Reference,
 		"createdAt":   pi.CreatedAt,
 		"scheduledAt": pi.ScheduledAt,
