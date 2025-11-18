@@ -81,9 +81,11 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 			paymentInitiationID = *createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
 			MustOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_SAVED)
 			var msg = struct {
-				Status string `json:"status"`
+				PaymentInitiationID string `json:"paymentInitiationID"`
+				Status              string `json:"status"`
 			}{
-				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.String(),
+				PaymentInitiationID: paymentInitiationID,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.String(),
 			}
 			MustOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(msg))
 		})
@@ -111,17 +113,20 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 			}
 
 			type PIAdjMsg struct {
-				Status string `json:"status"`
+				PaymentInitiationID string `json:"paymentInitiationID"`
+				Status              string `json:"status"`
 			}
 
 			processingPI := PIAdjMsg{
-				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String(),
+				PaymentInitiationID: paymentInitiationID,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String(),
 			}
 			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(processingPI))
 			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED, WithPayloadSubset(paymentMsg))
 			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_RELATED_PAYMENT_SAVED)
 			processedPI := PIAdjMsg{
-				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String(),
+				PaymentInitiationID: paymentInitiationID,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String(),
 			}
 			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_INITIATION_ADJUSTMENT_SAVED, WithPayloadSubset(processedPI))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())

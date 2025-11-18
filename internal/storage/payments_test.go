@@ -245,35 +245,34 @@ func upsertPayments(t *testing.T, ctx context.Context, storage Storage, payments
 	require.NoError(t, storage.PaymentsUpsert(ctx, payments))
 }
 
+func cleanupOutbox(t *testing.T, ctx context.Context, store Storage) {
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+	require.NoError(t, err)
+	for _, event := range pendingEvents {
+		eventSent := models.EventSent{
+			ID: models.EventID{
+				EventIdempotencyKey: event.IdempotencyKey,
+				ConnectorID:         event.ConnectorID,
+			},
+			ConnectorID: event.ConnectorID,
+			SentAt:      time.Now().UTC(),
+		}
+		_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+	}
+}
+
 func TestPaymentsUpsert(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
-
-	// Helper to clean up outbox events created during tests
-	cleanupOutbox := func() {
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			eventSent := models.EventSent{
-				ID: models.EventID{
-					EventIdempotencyKey: event.IdempotencyKey,
-					ConnectorID:         event.ConnectorID,
-				},
-				ConnectorID: event.ConnectorID,
-				SentAt:      time.Now().UTC(),
-			}
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-		}
-	}
-	defer cleanupOutbox()
+	defer cleanupOutbox(t, ctx, store)
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
-	cleanupOutbox() // Clean up outbox events from default data
+	cleanupOutbox(t, ctx, store) // Clean up outbox events from default data
 
 	t.Run("upsert with unknown connector", func(t *testing.T) {
 		connector := models.ConnectorID{
@@ -661,7 +660,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == "payment.saved" && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == models.OUTBOX_EVENT_PAYMENT_SAVED && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -669,7 +668,7 @@ func TestPaymentsUpsert(t *testing.T) {
 
 		// Check event details
 		event := ourEvents[0]
-		assert.Equal(t, "payment.saved", event.EventType)
+		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_SAVED, event.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 		assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 		assert.Equal(t, 0, event.RetryCount)
@@ -793,7 +792,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == "payment.saved" && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == models.OUTBOX_EVENT_PAYMENT_SAVED && expectedKeys[event.IdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -801,7 +800,7 @@ func TestPaymentsUpsert(t *testing.T) {
 
 		// Verify all events have correct structure
 		for _, event := range ourEvents {
-			assert.Equal(t, "payment.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_SAVED, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.NotEqual(t, uuid.Nil, event.ID)
@@ -811,7 +810,7 @@ func TestPaymentsUpsert(t *testing.T) {
 	})
 
 	t.Run("rollback on foreign key violation", func(t *testing.T) {
-		defer cleanupOutbox()
+		defer cleanupOutbox(t, ctx, store)
 
 		upsertConnector(t, ctx, store, defaultConnector)
 		upsertAccounts(t, ctx, store, defaultAccounts())
@@ -879,24 +878,7 @@ func TestPaymentsUpsertRefunded(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
-
-	// Helper to clean up outbox events created during tests
-	cleanupOutbox := func() {
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			eventSent := models.EventSent{
-				ID: models.EventID{
-					EventIdempotencyKey: event.IdempotencyKey,
-					ConnectorID:         event.ConnectorID,
-				},
-				ConnectorID: event.ConnectorID,
-				SentAt:      time.Now().UTC(),
-			}
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-		}
-	}
-	defer cleanupOutbox()
+	defer cleanupOutbox(t, ctx, store)
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1749,29 +1731,12 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
-
-	// Helper to clean up outbox events created during tests
-	cleanupOutbox := func() {
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			eventSent := models.EventSent{
-				ID: models.EventID{
-					EventIdempotencyKey: event.IdempotencyKey,
-					ConnectorID:         event.ConnectorID,
-				},
-				ConnectorID: event.ConnectorID,
-				SentAt:      time.Now().UTC(),
-			}
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-		}
-	}
-	defer cleanupOutbox()
+	defer cleanupOutbox(t, ctx, store)
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
-	cleanupOutbox() // Clean up outbox events from account creation
+	cleanupOutbox(t, ctx, store) // Clean up outbox events from account creation
 
 	t.Run("delete payment by existing reference and connector", func(t *testing.T) {
 		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "test1", defaultConnector.ID))
@@ -1856,7 +1821,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{deletePayment}))
 
 		// Clean up payment.saved events from insertion
-		cleanupOutbox()
+		cleanupOutbox(t, ctx, store)
 
 		expectedKey := fmt.Sprintf("delete:%s", deletePaymentID.String())
 
@@ -1870,7 +1835,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == "payment.deleted" && event.IdempotencyKey == expectedKey {
+			if event.EventType == models.OUTBOX_EVENT_PAYMENT_DELETED && event.IdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
@@ -1878,7 +1843,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NotNil(t, ourEvent, "expected 1 outbox event for deleted payment")
 
 		// Check event details
-		assert.Equal(t, "payment.deleted", ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_EVENT_PAYMENT_DELETED, ourEvent.EventType)
 		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
 		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
@@ -1902,7 +1867,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, err)
 		deletedEventsBefore := 0
 		for _, event := range allEventsBefore {
-			if event.EventType == "payment.deleted" {
+			if event.EventType == models.OUTBOX_EVENT_PAYMENT_DELETED {
 				deletedEventsBefore++
 			}
 		}
@@ -1915,7 +1880,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, err)
 		deletedEventsAfter := 0
 		for _, event := range allEventsAfter {
-			if event.EventType == "payment.deleted" {
+			if event.EventType == models.OUTBOX_EVENT_PAYMENT_DELETED {
 				deletedEventsAfter++
 			}
 		}

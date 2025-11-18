@@ -93,7 +93,15 @@ var _ = Context("Payments API Payments", Serial, func() {
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
 
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED)
+			paymentID := createResponse.GetV3CreatePaymentResponse().Data.ID
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED,
+				WithPayloadSubset(struct {
+					ConnectorID string `json:"connectorID"`
+					ID          string `json:"id"`
+				}{
+					ConnectorID: connectorID,
+					ID:          paymentID,
+				}))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, createResponse.GetV3CreatePaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
@@ -143,7 +151,15 @@ var _ = Context("Payments API Payments", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(createResponse.GetPaymentResponse().Data.ID).NotTo(Equal(""))
 
-			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED)
+			paymentID := createResponse.GetPaymentResponse().Data.ID
+			MustEventuallyOutbox(ctx, app.GetValue(), models.OUTBOX_EVENT_PAYMENT_SAVED,
+				WithPayloadSubset(struct {
+					ConnectorID string `json:"connectorID"`
+					ID          string `json:"id"`
+				}{
+					ConnectorID: connectorID,
+					ID:          paymentID,
+				}))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPayment(ctx, createResponse.GetPaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
@@ -171,7 +187,14 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED)
+	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          creditorID,
+		}))
 
 	debtorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "debtor",
@@ -185,7 +208,14 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED)
+	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          debtorID,
+		}))
 
 	return debtorID, creditorID
 }
@@ -208,7 +238,14 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED)
+	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          creditorID,
+		}))
 
 	debtorID, err := createV2Account(ctx, app, components.AccountRequest{
 		Reference:    "debtor",
@@ -222,7 +259,14 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED)
+	MustEventuallyOutbox(ctx, app, models.OUTBOX_EVENT_ACCOUNT_SAVED,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          debtorID,
+		}))
 
 	return debtorID, creditorID
 }

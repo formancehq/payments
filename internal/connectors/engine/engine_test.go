@@ -185,7 +185,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should fail when storage error happens", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedErr)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(expectedErr)
 			_, err := eng.InstallConnector(ctx, "psp", config)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -194,7 +194,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should fail when workflow start fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow err")
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -206,7 +206,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
