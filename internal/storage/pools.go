@@ -41,7 +41,7 @@ type poolAccounts struct {
 func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return e("begin transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -57,12 +57,12 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 			Limit(1).
 			Exists(ctx)
 		if err != nil {
-			return e("check account exists: %w", err)
+			return e("check account exists", err)
 		}
 
 		if !exists {
 			err = ErrNotFound // We need to define err here so that the rollback happens!
-			return e("account does not exist: %w", err)
+			return e("account does not exist", err)
 		}
 	}
 
@@ -72,7 +72,7 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		Where("id = ?", poolToInsert.ID).
 		Exists(ctx)
 	if err != nil {
-		return e("check pool exists: %w", err)
+		return e("check pool exists", err)
 	}
 
 	var poolInsertRes sql.Result
@@ -81,13 +81,13 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("insert pool: %w", err)
+		return e("insert pool", err)
 	}
 
 	var poolRowsAffected int64
 	poolRowsAffected, err = poolInsertRes.RowsAffected()
 	if err != nil {
-		return e("get pool insert rows affected: %w", err)
+		return e("get pool insert rows affected", err)
 	}
 
 	if len(accountsToInsert) > 0 {
@@ -96,7 +96,7 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 			On("CONFLICT (pool_id, account_id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
-			return e("insert pool accounts: %w", err)
+			return e("insert pool accounts", err)
 		}
 	}
 
@@ -118,7 +118,7 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		var payloadBytes []byte
 		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
-			return e("failed to marshal pool event payload: %w", err)
+			return e("failed to marshal pool event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
@@ -138,7 +138,7 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 
 	err = tx.Commit()
 	if err != nil {
-		return e("commit transaction: %w", err)
+		return e("commit transaction", err)
 	}
 	return nil
 }
@@ -151,7 +151,7 @@ func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("get pool: %w", err)
+		return nil, e("get pool", err)
 	}
 
 	return pointer.For(toPoolModel(pool)), nil
@@ -160,7 +160,7 @@ func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error
 func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return false, e("begin transaction: %w", err)
+		return false, e("begin transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -172,7 +172,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return false, e("delete pool: %w", err)
+		return false, e("delete pool", err)
 	}
 
 	_, err = tx.NewDelete().
@@ -180,13 +180,13 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		Where("pool_id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return false, e("delete pool accounts: %w", err)
+		return false, e("delete pool accounts", err)
 	}
 
 	var rowsAffected int64
 	rowsAffected, err = res.RowsAffected()
 	if err != nil {
-		return false, e("get rows affected: %w", err)
+		return false, e("get rows affected", err)
 	}
 
 	// Create outbox event for pool deletion if pool was actually deleted
@@ -199,7 +199,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		var payloadBytes []byte
 		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
-			return false, e("failed to marshal pool deleted event payload: %w", err)
+			return false, e("failed to marshal pool deleted event payload", err)
 		}
 
 		outboxEvent := models.OutboxEvent{
@@ -219,7 +219,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 
 	err = tx.Commit()
 	if err != nil {
-		return false, e("commit transaction: %w", err)
+		return false, e("commit transaction", err)
 	}
 	return rowsAffected > 0, nil
 }
@@ -227,7 +227,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return e("begin transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -240,12 +240,12 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		Limit(1).
 		Exists(ctx)
 	if err != nil {
-		return e("check account exists: %w", err)
+		return e("check account exists", err)
 	}
 
 	if !exists {
 		err = ErrNotFound // We need to define err here so that the rollback happens!
-		return e("account does not exist: %w", err)
+		return e("account does not exist", err)
 	}
 
 	_, err = tx.NewInsert().
@@ -257,12 +257,12 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		On("CONFLICT (pool_id, account_id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("insert pool account: %w", err)
+		return e("insert pool account", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return e("commit transaction: %w", err)
+		return e("commit transaction", err)
 	}
 	return nil
 }
@@ -273,7 +273,7 @@ func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID 
 		Where("pool_id = ? AND account_id = ?", id, accountID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete pool account: %w", err)
+		return e("delete pool account", err)
 	}
 	return nil
 }
@@ -284,7 +284,7 @@ func (s *store) PoolsRemoveAccountsFromConnectorID(ctx context.Context, connecto
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete pool accounts: %w", err)
+		return e("delete pool accounts", err)
 	}
 	return nil
 }
