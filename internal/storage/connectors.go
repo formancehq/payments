@@ -135,7 +135,8 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 			"connectorID": oldConnectorID.String(),
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return e("failed to marshal connector reset event payload", err)
 		}

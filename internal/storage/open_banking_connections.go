@@ -86,7 +86,8 @@ func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, i
 		return e("failed to get open banking connection attempt", err)
 	}
 
-	attemptModel, err := toOpenBankingConnectionAttemptsModels(attempt)
+	var attemptModel *models.OpenBankingConnectionAttempt
+	attemptModel, err = toOpenBankingConnectionAttemptsModels(attempt)
 	if err != nil {
 		return e("failed to convert open banking connection attempt", err)
 	}
@@ -101,7 +102,8 @@ func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, i
 		payload["error"] = *errMsg
 	}
 
-	payloadBytes, err := json.Marshal(payload)
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return e("failed to marshal user link status event payload", err)
 	}
@@ -491,7 +493,8 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 			payload["reason"] = *from.Error
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return e("failed to marshal user connection disconnected event payload", err)
 		}
@@ -515,7 +518,8 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 			"at":           from.UpdatedAt,
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return e("failed to marshal user connection reconnected event payload", err)
 		}
@@ -569,7 +573,8 @@ func (s *store) OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, 
 		"at":           updatedAt,
 	}
 
-	payloadBytes, err := json.Marshal(payload)
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return e("failed to marshal user connection data synced event payload", err)
 	}

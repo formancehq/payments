@@ -82,7 +82,8 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		return e("insert pool: %w", err)
 	}
 
-	poolRowsAffected, err := poolInsertRes.RowsAffected()
+	var poolRowsAffected int64
+	poolRowsAffected, err = poolInsertRes.RowsAffected()
 	if err != nil {
 		return e("get pool insert rows affected: %w", err)
 	}
@@ -112,7 +113,8 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 			"accountIDs": accountIDs,
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return e("failed to marshal pool event payload: %w", err)
 		}
@@ -180,7 +182,8 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		return false, e("delete pool accounts: %w", err)
 	}
 
-	rowsAffected, err := res.RowsAffected()
+	var rowsAffected int64
+	rowsAffected, err = res.RowsAffected()
 	if err != nil {
 		return false, e("get rows affected: %w", err)
 	}
@@ -192,7 +195,8 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 			"id":        id.String(),
 		}
 
-		payloadBytes, err := json.Marshal(payload)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return false, e("failed to marshal pool deleted event payload: %w", err)
 		}
