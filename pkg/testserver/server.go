@@ -42,16 +42,17 @@ type OTLPConfig struct {
 }
 
 type Configuration struct {
-	Stack                 string
-	PostgresConfiguration bunconnect.ConnectionOptions
-	TemporalNamespace     string
-	TemporalAddress       string
-	NatsURL               string
-	ConfigEncryptionKey   string
-	HttpClientTimeout     time.Duration
-	Output                io.Writer
-	Debug                 bool
-	OTLPConfig            *OTLPConfig
+	Stack                     string
+	PostgresConfiguration     bunconnect.ConnectionOptions
+	TemporalNamespace         string
+	TemporalAddress           string
+	NatsURL                   string
+	ConfigEncryptionKey       string
+	HttpClientTimeout         time.Duration
+	Output                    io.Writer
+	Debug                     bool
+	OTLPConfig                *OTLPConfig
+	SkipOutboxScheduleCreation bool
 }
 
 type Logger interface {

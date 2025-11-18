@@ -29,12 +29,13 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                 stack,
-			PostgresConfiguration: db.GetValue().ConnectionOptions(),
-			NatsURL:               natsServer.GetValue().ClientURL(),
-			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:       temporalServer.GetValue().Address(),
-			Output:                GinkgoWriter,
+			Stack:                     stack,
+			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
+			NatsURL:                   natsServer.GetValue().ClientURL(),
+			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:           temporalServer.GetValue().Address(),
+			Output:                    GinkgoWriter,
+			SkipOutboxScheduleCreation: true,
 		}
 	})
 
