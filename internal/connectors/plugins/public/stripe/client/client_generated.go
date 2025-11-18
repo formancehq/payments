@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	models "github.com/formancehq/payments/internal/models"
 	stripe "github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -87,17 +88,17 @@ func (mr *MockClientMockRecorder) CreateWebhookEndpoints(ctx, webhookBaseURL any
 }
 
 // DeleteWebhookEndpoints mocks base method.
-func (m *MockClient) DeleteWebhookEndpoints(ctx context.Context) error {
+func (m *MockClient) DeleteWebhookEndpoints(arg0 []models.PSPWebhookConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteWebhookEndpoints", ctx)
+	ret := m.ctrl.Call(m, "DeleteWebhookEndpoints", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteWebhookEndpoints indicates an expected call of DeleteWebhookEndpoints.
-func (mr *MockClientMockRecorder) DeleteWebhookEndpoints(ctx any) *gomock.Call {
+func (mr *MockClientMockRecorder) DeleteWebhookEndpoints(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).DeleteWebhookEndpoints), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).DeleteWebhookEndpoints), arg0)
 }
 
 // GetAccountBalances mocks base method.

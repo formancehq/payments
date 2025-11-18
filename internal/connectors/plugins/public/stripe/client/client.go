@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/account"
@@ -36,7 +37,7 @@ type Client interface {
 	CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error)
 	ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error)
 	CreateWebhookEndpoints(ctx context.Context, webhookBaseURL string) ([]*stripe.WebhookEndpoint, error)
-	DeleteWebhookEndpoints(ctx context.Context) error
+	DeleteWebhookEndpoints([]models.PSPWebhookConfig) error
 }
 
 type client struct {
