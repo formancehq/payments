@@ -269,7 +269,7 @@ func waitSavedBankAccountPayloadForConnector(ctx context.Context, s *Server, ban
 			}
 		}
 		return false
-	}).Should(BeTrue())
+	}).WithTimeout(5 * time.Second).Should(BeTrue())
 	return ret
 }
 

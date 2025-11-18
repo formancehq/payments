@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -46,16 +45,6 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 }
 
 func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxEvent) error {
-	// Parse the payload
-	var payload map[string]interface{}
-	if err := json.Unmarshal(event.Payload, &payload); err != nil {
-		return &OutboxInvalidPayloadError{
-			EventType: event.EventType,
-			OutboxID:  event.ID,
-			Err:       err,
-		}
-	}
-
 	// Create the event message
 	eventMessage := publish.EventMessage{
 		IdempotencyKey: event.IdempotencyKey,
@@ -63,7 +52,7 @@ func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxE
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           event.EventType,
-		Payload:        payload,
+		Payload:        event.Payload,
 	}
 
 	// Publish the event
