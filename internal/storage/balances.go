@@ -51,12 +51,16 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 	// Track newly inserted/updated balances for outbox events
 	var insertedBalances []models.Balance
 
+	var changed bool
 	for i, balance := range toInsert {
-		if err = s.insertBalances(ctx, tx, &balance); err != nil {
+		changed, err = s.insertBalances(ctx, tx, &balance)
+		if err != nil {
 			return err
 		}
-		// Convert back to model to check if we should create an outbox event
-		insertedBalances = append(insertedBalances, balances[i])
+		// Only append to insertedBalances if the DB was actually modified
+		if changed {
+			insertedBalances = append(insertedBalances, balances[i])
+		}
 	}
 
 	// Create outbox events for all balances
@@ -102,7 +106,7 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 	return e("failed to commit transaction", tx.Commit())
 }
 
-func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance) error {
+func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance) (bool, error) {
 	var lastBalance models.Balance
 	found := true
 	err := tx.NewSelect().
@@ -114,14 +118,14 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 	if err != nil {
 		pErr := e("failed to get balance", err)
 		if !errors.Is(pErr, ErrNotFound) {
-			return pErr
+			return false, pErr
 		}
 		found = false
 	}
 
 	if found && lastBalance.CreatedAt.After(balance.CreatedAt.Time) {
 		// Do not insert balance if the last balance is newer
-		return nil
+		return false, nil
 	}
 
 	switch {
@@ -133,8 +137,9 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Where("account_id = ? AND created_at = ? AND asset = ?", lastBalance.AccountID, lastBalance.CreatedAt, lastBalance.Asset).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update balance", err)
+			return false, e("failed to update balance", err)
 		}
+		return true, nil
 
 	case found && lastBalance.Balance.Cmp(balance.Balance) != 0:
 		// different balance, insert a new entry
@@ -142,7 +147,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Model(balance).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert balance", err)
+			return false, e("failed to insert balance", err)
 		}
 
 		// and update last row last updated at to this created at
@@ -152,8 +157,9 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Where("account_id = ? AND created_at = ? AND asset = ?", lastBalance.AccountID, lastBalance.CreatedAt, lastBalance.Asset).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update balance", err)
+			return false, e("failed to update balance", err)
 		}
+		return true, nil
 
 	case !found:
 		// no balance found, insert a new entry
@@ -161,11 +167,12 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Model(balance).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert balance", err)
+			return false, e("failed to insert balance", err)
 		}
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 func (s *store) BalancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {

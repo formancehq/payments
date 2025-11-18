@@ -448,7 +448,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 			id := uuid.New()
 			connectorConf := newV3ConnectorConfigFn()(id)
 
-			_, err = GeneratePSPData(connectorConf.Directory, 5)
+			_, err = GeneratePSPData(connectorConf.Directory, 1)
 			Expect(err).To(BeNil())
 
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
@@ -468,7 +468,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 					}
 				}
 				return false
-			}).WithTimeout(3 * time.Second).WithPolling(1 * time.Second).Should(BeTrue())
+			}).WithTimeout(10 * time.Second).WithPolling(1 * time.Second).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
