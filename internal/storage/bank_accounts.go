@@ -219,7 +219,10 @@ func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, me
 		return e("update bank account metadata", err)
 	}
 
-	return e("commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) (*models.BankAccount, error) {

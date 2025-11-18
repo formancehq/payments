@@ -8,7 +8,6 @@ import (
 	"github.com/formancehq/go-libs/v3/publish"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
-	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -84,34 +83,3 @@ var OutboxPublishPendingEventsActivity = Activities{}.OutboxPublishPendingEvents
 func OutboxPublishPendingEvents(ctx workflow.Context, limit int) error {
 	return executeActivity(ctx, OutboxPublishPendingEventsActivity, nil, limit)
 }
-
-type OutboxEventInvalidIdempotencyKeyError struct {
-	EventType      string
-	IdempotencyKey string
-}
-
-func (e *OutboxEventInvalidIdempotencyKeyError) Error() string {
-	return fmt.Sprintf(
-		"invalid idempotency key, key=%s, eventType=%s",
-		e.IdempotencyKey,
-		e.EventType,
-	)
-}
-
-func (e *OutboxEventInvalidIdempotencyKeyError) NonRetryable() {}
-
-type OutboxInvalidPayloadError struct {
-	EventType string
-	OutboxID  uuid.UUID
-	Err       error
-}
-
-func (e *OutboxInvalidPayloadError) Error() string {
-	return fmt.Sprintf(
-		"invalid payload, error=%s, type=%s, id=%s",
-		e.Err.Error(),
-		e.EventType,
-		e.OutboxID,
-	)
-}
-func (e *OutboxInvalidPayloadError) NonRetryable() {}

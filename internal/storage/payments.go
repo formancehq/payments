@@ -249,7 +249,10 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 		}
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error {
@@ -288,7 +291,10 @@ func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID,
 		return e("update payment metadata", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error) {
@@ -407,8 +413,10 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 		if errors.Is(pErr, ErrNotFound) {
 			// Payment doesn't exist, nothing to delete or create event for
 			if commitErr := tx.Commit(); commitErr != nil {
+				err = commitErr
 				return e("failed to commit transaction", commitErr)
 			}
+			err = nil // CLean up the error as we already commited the transaction, no rollback required
 			return nil
 		}
 		return pErr
@@ -450,7 +458,10 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 		return err
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {

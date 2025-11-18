@@ -104,7 +104,10 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance) (bool, error) {

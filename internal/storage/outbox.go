@@ -100,7 +100,10 @@ func (s *store) OutboxEventsInsertWithTx(ctx context.Context, events []models.Ou
 		return err
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error) {

@@ -97,7 +97,10 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 		return err
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error) {

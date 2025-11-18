@@ -160,7 +160,10 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error {
@@ -187,7 +190,10 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 		return e("failed to encrypt config", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error {
