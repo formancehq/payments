@@ -8,7 +8,6 @@ import (
 	"github.com/formancehq/go-libs/v3/publish"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
-	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -24,7 +23,7 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 	}
 
 	// Collect successful events for batch processing
-	var successfulEventIDs []uuid.UUID
+	var successfulEventIDs []models.EventID
 	var successfulEventsSent []models.EventSent
 
 	// Process each event
@@ -41,10 +40,7 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 
 		// Success - collect for batch deletion and recording
 		eventSent := models.EventSent{
-			ID: models.EventID{
-				EventIdempotencyKey: event.IdempotencyKey,
-				ConnectorID:         event.ConnectorID,
-			},
+			ID:          event.ID,
 			ConnectorID: event.ConnectorID,
 			SentAt:      time.Now().UTC(),
 		}
@@ -65,7 +61,7 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxEvent) error {
 	// Create the event message
 	eventMessage := publish.EventMessage{
-		IdempotencyKey: event.IdempotencyKey,
+		IdempotencyKey: event.ID.EventIdempotencyKey,
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
@@ -76,7 +72,6 @@ func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxE
 	// Publish the event
 	return a.events.Publish(ctx, eventMessage)
 }
-
 
 var OutboxPublishPendingEventsActivity = Activities{}.OutboxPublishPendingEvents
 

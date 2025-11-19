@@ -9,7 +9,6 @@ import (
 
 	"github.com/formancehq/payments/internal/models"
 	internalErrors "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,24 +25,30 @@ func TestOutboxEventsInsert(t *testing.T) {
 	// Create test events
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1", "name": "Test Account"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-idempotency-key-1",
+			ID: models.EventID{
+				EventIdempotencyKey: "test-idempotency-key-1",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1", "name": "Test Account"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
 		},
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2",
-			Payload:        json.RawMessage(`{"id": "account-2", "name": "Test Account 2"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-idempotency-key-2",
+			ID: models.EventID{
+				EventIdempotencyKey: "test-idempotency-key-2",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2", "name": "Test Account 2"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
 		},
 	}
 
@@ -74,34 +79,43 @@ func TestOutboxEventsPollPending(t *testing.T) {
 	// Insert test events with different statuses
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC().Add(-2 * time.Minute), // Older event
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-1",
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC().Add(-2 * time.Minute), // Older event
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-1",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2",
-			Payload:        json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:      time.Now().UTC().Add(-1 * time.Minute), // Newer event
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-2",
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   time.Now().UTC().Add(-1 * time.Minute), // Newer event
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-2",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-3",
-			Payload:        json.RawMessage(`{"id": "account-3"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_FAILED, // Failed event should not be polled
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     1,
-			IdempotencyKey: "test-key-3",
+			EventType:   "account.saved",
+			EntityID:    "account-3",
+			Payload:     json.RawMessage(`{"id": "account-3"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_FAILED, // Failed event should not be polled
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  1,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-3",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 	}
 
@@ -139,14 +153,17 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 	// Insert test event
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-for-delete-and-record",
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-for-delete-and-record",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 	}
 
@@ -160,15 +177,12 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 
 	// Delete and record sent in transaction
 	eventSent := models.EventSent{
-		ID: models.EventID{
-			EventIdempotencyKey: event.IdempotencyKey,
-			ConnectorID:         event.ConnectorID,
-		},
+		ID:          event.ID,
 		ConnectorID: event.ConnectorID,
 		SentAt:      time.Now().UTC(),
 	}
 
-	err = store.OutboxEventsDeleteAndRecordSent(ctx, []uuid.UUID{event.ID}, []models.EventSent{eventSent})
+	err = store.OutboxEventsDeleteAndRecordSent(ctx, []models.EventID{event.ID}, []models.EventSent{eventSent})
 	require.NoError(t, err)
 
 	// Verify event is deleted
@@ -177,11 +191,7 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 	assert.Len(t, pendingEventsAfter, 0)
 
 	// Verify event is recorded as sent
-	eventID := models.EventID{
-		EventIdempotencyKey: event.IdempotencyKey,
-		ConnectorID:         event.ConnectorID,
-	}
-	exists, err := store.EventsSentExists(ctx, eventID)
+	exists, err := store.EventsSentExists(ctx, event.ID)
 	require.NoError(t, err)
 	assert.True(t, exists)
 }
@@ -198,34 +208,43 @@ func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
 	// Insert test events
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-for-batch-1",
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-for-batch-1",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2",
-			Payload:        json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-for-batch-2",
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-for-batch-2",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-3",
-			Payload:        json.RawMessage(`{"id": "account-3"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-for-batch-3",
+			EventType:   "account.saved",
+			EntityID:    "account-3",
+			Payload:     json.RawMessage(`{"id": "account-3"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-for-batch-3",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 	}
 
@@ -237,15 +256,12 @@ func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
 	require.Len(t, pendingEvents, 3)
 
 	// Prepare batch delete and record sent
-	eventIDs := make([]uuid.UUID, 0, len(pendingEvents))
+	eventIDs := make([]models.EventID, 0, len(pendingEvents))
 	eventsSent := make([]models.EventSent, 0, len(pendingEvents))
 	for _, event := range pendingEvents {
 		eventIDs = append(eventIDs, event.ID)
 		eventsSent = append(eventsSent, models.EventSent{
-			ID: models.EventID{
-				EventIdempotencyKey: event.IdempotencyKey,
-				ConnectorID:         event.ConnectorID,
-			},
+			ID:          event.ID,
 			ConnectorID: event.ConnectorID,
 			SentAt:      time.Now().UTC(),
 		})
@@ -262,13 +278,9 @@ func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
 
 	// Verify all events are recorded as sent
 	for _, event := range pendingEvents {
-		eventID := models.EventID{
-			EventIdempotencyKey: event.IdempotencyKey,
-			ConnectorID:         event.ConnectorID,
-		}
-		exists, err := store.EventsSentExists(ctx, eventID)
+		exists, err := store.EventsSentExists(ctx, event.ID)
 		require.NoError(t, err)
-		assert.True(t, exists, "Event %s should be recorded as sent", event.IdempotencyKey)
+		assert.True(t, exists, "Event %s should be recorded as sent", event.ID.EventIdempotencyKey)
 	}
 }
 
@@ -284,29 +296,32 @@ func TestOutboxEventsMarkFailed(t *testing.T) {
 	// Insert test event
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-for-mark-failed",
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-for-mark-failed",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 	}
 
 	insertOutboxEventsWithTx(t, store, ctx, events)
 
-	// Get the event ID
+	// Get the event
 	pendingEvents, err := store.OutboxEventsPollPending(ctx, 1)
 	require.NoError(t, err)
 	require.Len(t, pendingEvents, 1)
-	eventID := pendingEvents[0].ID
+	event := pendingEvents[0]
 
 	// Mark as failed with retry count less than max (should remain PENDING for retry)
 	retryCount := 1
 	testErr := errors.New("test error")
-	err = store.OutboxEventsMarkFailed(ctx, eventID, retryCount, testErr)
+	err = store.OutboxEventsMarkFailed(ctx, event.ID, retryCount, testErr)
 	require.NoError(t, err)
 
 	// Verify event is still pending (not yet at max retries)
@@ -319,7 +334,7 @@ func TestOutboxEventsMarkFailed(t *testing.T) {
 	assert.Equal(t, testErr.Error(), *pendingEventsAfter[0].Error)
 
 	// Now test with max retries exceeded (should move to FAILED)
-	err = store.OutboxEventsMarkFailed(ctx, eventID, models.MaxOutboxRetries, testErr)
+	err = store.OutboxEventsMarkFailed(ctx, event.ID, models.MaxOutboxRetries, testErr)
 	require.NoError(t, err)
 
 	// Verify event is no longer pending (marked as FAILED)
@@ -340,24 +355,27 @@ func TestOutboxEventsMarkFailed_NonRetryableError(t *testing.T) {
 	// Insert test event
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "test-key-for-non-retryable",
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "test-key-for-non-retryable",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 	}
 
 	insertOutboxEventsWithTx(t, store, ctx, events)
 
-	// Get the event ID
+	// Get the event
 	pendingEvents, err := store.OutboxEventsPollPending(ctx, 1)
 	require.NoError(t, err)
 	require.Len(t, pendingEvents, 1)
-	eventID := pendingEvents[0].ID
+	event := pendingEvents[0]
 
 	// Mark as failed with a non-retryable error and low retry count
 	// Should immediately move to FAILED status regardless of retry count
@@ -367,7 +385,7 @@ func TestOutboxEventsMarkFailed_NonRetryableError(t *testing.T) {
 	// Verify the error implements the interface
 	var _ internalErrors.NonRetryableError = nonRetryableErr
 
-	err = store.OutboxEventsMarkFailed(ctx, eventID, retryCount, nonRetryableErr)
+	err = store.OutboxEventsMarkFailed(ctx, event.ID, retryCount, nonRetryableErr)
 	require.NoError(t, err)
 
 	// Verify event is immediately marked as FAILED (not pending for retry)
@@ -377,7 +395,7 @@ func TestOutboxEventsMarkFailed_NonRetryableError(t *testing.T) {
 
 	// Verify the event status is FAILED by querying directly
 	// We need to check the status in the database since it's no longer pending
-	dbEvent := getOutboxEventByID(t, store, ctx, eventID)
+	dbEvent := getOutboxEventByID(t, store, ctx, event.ID)
 	assert.Equal(t, models.OUTBOX_STATUS_FAILED, dbEvent.Status)
 	assert.Equal(t, retryCount, dbEvent.RetryCount)
 	assert.NotNil(t, dbEvent.Error)
@@ -425,24 +443,30 @@ func TestOutboxEventsInsert_FiltersEventsAlreadySent(t *testing.T) {
 	// Try to insert events, including one with the same idempotency key that was already sent
 	events := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "already-sent-key", // This should be filtered out
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "already-sent-key",
+				ConnectorID:         &defaultConnector.ID,
+			}, // This should be filtered out
 		},
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2",
-			Payload:        json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "new-key", // This should be inserted
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "new-key",
+				ConnectorID:         &defaultConnector.ID,
+			}, // This should be inserted
 		},
 	}
 
@@ -452,7 +476,7 @@ func TestOutboxEventsInsert_FiltersEventsAlreadySent(t *testing.T) {
 	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
 	require.NoError(t, err)
 	assert.Len(t, pendingEvents, 1)
-	assert.Equal(t, "new-key", pendingEvents[0].IdempotencyKey)
+	assert.Equal(t, "new-key", pendingEvents[0].ID.EventIdempotencyKey)
 	assert.Equal(t, "account-2", pendingEvents[0].EntityID)
 }
 
@@ -468,14 +492,17 @@ func TestOutboxEventsInsert_UniqueConstraintOnIdempotencyKeyAndConnectorID(t *te
 	// Insert an event with a specific idempotency key and connector
 	events1 := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "duplicate-key",
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "duplicate-key",
+				ConnectorID:         &defaultConnector.ID,
+			},
 		},
 	}
 
@@ -485,14 +512,17 @@ func TestOutboxEventsInsert_UniqueConstraintOnIdempotencyKeyAndConnectorID(t *te
 	// This should be handled by ON CONFLICT DO NOTHING
 	events2 := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2", // Different entity
-			Payload:        json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID, // Same connector
-			RetryCount:     0,
-			IdempotencyKey: "duplicate-key", // Same idempotency key
+			EventType:   "account.saved",
+			EntityID:    "account-2", // Different entity
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID, // Same connector
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "duplicate-key",
+				ConnectorID:         &defaultConnector.ID,
+			}, // Same idempotency key
 		},
 	}
 
@@ -504,7 +534,7 @@ func TestOutboxEventsInsert_UniqueConstraintOnIdempotencyKeyAndConnectorID(t *te
 	require.NoError(t, err)
 	assert.Len(t, pendingEvents, 1)
 	assert.Equal(t, "account-1", pendingEvents[0].EntityID)
-	assert.Equal(t, "duplicate-key", pendingEvents[0].IdempotencyKey)
+	assert.Equal(t, "duplicate-key", pendingEvents[0].ID.EventIdempotencyKey)
 }
 
 func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
@@ -520,14 +550,17 @@ func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
 	// Insert an event with a specific idempotency key and connector
 	events1 := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "shared-key",
+			ID: models.EventID{
+				EventIdempotencyKey: "shared-key",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
 		},
 	}
 
@@ -537,14 +570,17 @@ func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
 	// This should succeed because the unique constraint is on (idempotency_key, connector_id)
 	events2 := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2",
-			Payload:        json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector2.ID, // Different connector
-			RetryCount:     0,
-			IdempotencyKey: "shared-key", // Same idempotency key
+			ID: models.EventID{
+				EventIdempotencyKey: "shared-key",
+				ConnectorID:         &defaultConnector2.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector2.ID, // Different connector
+			RetryCount:  0,
 		},
 	}
 
@@ -559,7 +595,7 @@ func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
 	foundConnector1 := false
 	foundConnector2 := false
 	for _, event := range pendingEvents {
-		assert.Equal(t, "shared-key", event.IdempotencyKey)
+		assert.Equal(t, "shared-key", event.ID.EventIdempotencyKey)
 		if event.ConnectorID != nil {
 			if *event.ConnectorID == defaultConnector.ID {
 				foundConnector1 = true
@@ -584,14 +620,17 @@ func TestOutboxEventsInsert_SameIdempotencyKeyWithNilConnectorID(t *testing.T) {
 	// Insert an event with a specific idempotency key and connector
 	events1 := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-1",
-			Payload:        json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &defaultConnector.ID,
-			RetryCount:     0,
-			IdempotencyKey: "nil-connector-test",
+			ID: models.EventID{
+				EventIdempotencyKey: "nil-connector-test",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
 		},
 	}
 
@@ -602,14 +641,17 @@ func TestOutboxEventsInsert_SameIdempotencyKeyWithNilConnectorID(t *testing.T) {
 	// so this should succeed
 	events2 := []models.OutboxEvent{
 		{
-			EventType:      "account.saved",
-			EntityID:       "account-2",
-			Payload:        json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    nil, // Nil connector
-			RetryCount:     0,
-			IdempotencyKey: "nil-connector-test", // Same idempotency key
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: nil, // Nil connector
+			RetryCount:  0,
+			ID: models.EventID{
+				EventIdempotencyKey: "nil-connector-test",
+				ConnectorID:         nil,
+			}, // Same idempotency key
 		},
 	}
 
@@ -662,7 +704,7 @@ func insertOutboxEventsWithTx(t *testing.T, s Storage, ctx context.Context, even
 }
 
 // Helper function to get outbox event by ID for testing
-func getOutboxEventByID(t *testing.T, s Storage, ctx context.Context, eventID interface{}) outboxEvent {
+func getOutboxEventByID(t *testing.T, s Storage, ctx context.Context, eventID models.EventID) outboxEvent {
 	storeImpl := s.(*store)
 	var dbEvent outboxEvent
 	err := storeImpl.db.NewSelect().

@@ -279,7 +279,6 @@ func TestOpenBankingConnectionAttemptsUpdateStatus(t *testing.T) {
 		assert.Equal(t, newAttempt.PsuID.String(), ourEvent.EntityID)
 		assert.Equal(t, newAttempt.ConnectorID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.NotEqual(t, uuid.Nil, ourEvent.ID)
 
 		// Verify payload
 		var payload map[string]interface{}

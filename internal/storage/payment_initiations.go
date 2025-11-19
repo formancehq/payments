@@ -123,13 +123,16 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	}
 
 	outboxEvents = append(outboxEvents, models.OutboxEvent{
-		EventType:      events.EventTypeSavedPaymentInitiation,
-		EntityID:       pi.ID.String(),
-		Payload:        payloadBytes,
-		CreatedAt:      stdtime.Now().UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    &pi.ConnectorID,
-		IdempotencyKey: pi.IdempotencyKey(),
+		ID: models.EventID{
+			EventIdempotencyKey: pi.IdempotencyKey(),
+			ConnectorID:         &pi.ConnectorID,
+		},
+		EventType:   events.EventTypeSavedPaymentInitiation,
+		EntityID:    pi.ID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   stdtime.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &pi.ConnectorID,
 	})
 
 	if len(adjustmentsToInsert) > 0 {
@@ -165,13 +168,16 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 			}
 
 			outboxEvents = append(outboxEvents, models.OutboxEvent{
-				EventType:      events.EventTypeSavedPaymentInitiationAdjustment,
-				EntityID:       adjModel.ID.String(),
-				Payload:        adjPayloadBytes,
-				CreatedAt:      stdtime.Now().UTC(),
-				Status:         models.OUTBOX_STATUS_PENDING,
-				ConnectorID:    &adjModel.ID.PaymentInitiationID.ConnectorID,
-				IdempotencyKey: adjModel.IdempotencyKey(),
+				ID: models.EventID{
+					EventIdempotencyKey: adjModel.IdempotencyKey(),
+					ConnectorID:         &adjModel.ID.PaymentInitiationID.ConnectorID,
+				},
+				EventType:   events.EventTypeSavedPaymentInitiationAdjustment,
+				EntityID:    adjModel.ID.String(),
+				Payload:     adjPayloadBytes,
+				CreatedAt:   stdtime.Now().UTC(),
+				Status:      models.OUTBOX_STATUS_PENDING,
+				ConnectorID: &adjModel.ID.PaymentInitiationID.ConnectorID,
 			})
 		}
 	}
@@ -420,13 +426,16 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeSavedPaymentInitiationRelatedPayment,
-			EntityID:       fmt.Sprintf("%s:%s", piID.String(), pID.String()),
-			Payload:        payloadBytes,
-			CreatedAt:      stdtime.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &piID.ConnectorID,
-			IdempotencyKey: relatedPayment.IdempotencyKey(),
+			ID: models.EventID{
+				EventIdempotencyKey: relatedPayment.IdempotencyKey(),
+				ConnectorID:         &piID.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedPaymentInitiationRelatedPayment,
+			EntityID:    fmt.Sprintf("%s:%s", piID.String(), pID.String()),
+			Payload:     payloadBytes,
+			CreatedAt:   stdtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &piID.ConnectorID,
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
@@ -552,13 +561,16 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeSavedPaymentInitiationAdjustment,
-			EntityID:       adj.ID.String(),
-			Payload:        adjPayloadBytes,
-			CreatedAt:      stdtime.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &adj.ID.PaymentInitiationID.ConnectorID,
-			IdempotencyKey: adj.IdempotencyKey(),
+			ID: models.EventID{
+				EventIdempotencyKey: adj.IdempotencyKey(),
+				ConnectorID:         &adj.ID.PaymentInitiationID.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedPaymentInitiationAdjustment,
+			EntityID:    adj.ID.String(),
+			Payload:     adjPayloadBytes,
+			CreatedAt:   stdtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &adj.ID.PaymentInitiationID.ConnectorID,
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
@@ -643,13 +655,16 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeSavedPaymentInitiationAdjustment,
-			EntityID:       adj.ID.String(),
-			Payload:        adjPayloadBytes,
-			CreatedAt:      stdtime.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &adj.ID.PaymentInitiationID.ConnectorID,
-			IdempotencyKey: adj.IdempotencyKey(),
+			ID: models.EventID{
+				EventIdempotencyKey: adj.IdempotencyKey(),
+				ConnectorID:         &adj.ID.PaymentInitiationID.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedPaymentInitiationAdjustment,
+			EntityID:    adj.ID.String(),
+			Payload:     adjPayloadBytes,
+			CreatedAt:   stdtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &adj.ID.PaymentInitiationID.ConnectorID,
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

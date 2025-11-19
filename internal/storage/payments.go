@@ -229,13 +229,16 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			// Convert adjustment back to model to get idempotency key
 			adjustmentModel := toPaymentAdjustmentModels(adj)
 			outboxEvent := models.OutboxEvent{
-				EventType:      events.EventTypeSavedPayments,
-				EntityID:       payment.ID.String(),
-				Payload:        payloadBytes,
-				CreatedAt:      time.Now().UTC(),
-				Status:         models.OUTBOX_STATUS_PENDING,
-				ConnectorID:    &payment.ConnectorID,
-				IdempotencyKey: adjustmentModel.IdempotencyKey(),
+				ID: models.EventID{
+					EventIdempotencyKey: adjustmentModel.IdempotencyKey(),
+					ConnectorID:         &payment.ConnectorID,
+				},
+				EventType:   events.EventTypeSavedPayments,
+				EntityID:    payment.ID.String(),
+				Payload:     payloadBytes,
+				CreatedAt:   time.Now().UTC(),
+				Status:      models.OUTBOX_STATUS_PENDING,
+				ConnectorID: &payment.ConnectorID,
 			}
 
 			outboxEvents = append(outboxEvents, outboxEvent)
@@ -445,13 +448,16 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeDeletedPayments,
-		EntityID:       paymentID.String(),
-		Payload:        payloadBytes,
-		CreatedAt:      time.Now().UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    &connectorID,
-		IdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
+		ID: models.EventID{
+			EventIdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
+			ConnectorID:         &connectorID,
+		},
+		EventType:   events.EventTypeDeletedPayments,
+		EntityID:    paymentID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   time.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &connectorID,
 	}
 
 	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

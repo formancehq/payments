@@ -120,13 +120,16 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeSavedBankAccount,
-			EntityID:       bankAccountModel.ID.String(),
-			Payload:        payloadBytes,
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    nil, // Bank accounts don't have connector ID
-			IdempotencyKey: bankAccountModel.IdempotencyKey(),
+			ID: models.EventID{
+				EventIdempotencyKey: bankAccountModel.IdempotencyKey(),
+				ConnectorID:         nil,
+			},
+			EventType:   events.EventTypeSavedBankAccount,
+			EntityID:    bankAccountModel.ID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: nil, // Bank accounts don't have connector ID
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
@@ -160,13 +163,16 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 				return e("failed to marshal bank account event payload", err)
 			}
 			outboxEvent := models.OutboxEvent{
-				EventType:      events.EventTypeSavedBankAccount,
-				EntityID:       bankAccountModel.ID.String(),
-				Payload:        payloadBytes,
-				CreatedAt:      time.Now().UTC(),
-				Status:         models.OUTBOX_STATUS_PENDING,
-				ConnectorID:    nil,
-				IdempotencyKey: bankAccountModel.IdempotencyKey(),
+				ID: models.EventID{
+					EventIdempotencyKey: bankAccountModel.IdempotencyKey(),
+					ConnectorID:         nil,
+				},
+				EventType:   events.EventTypeSavedBankAccount,
+				EntityID:    bankAccountModel.ID.String(),
+				Payload:     payloadBytes,
+				CreatedAt:   time.Now().UTC(),
+				Status:      models.OUTBOX_STATUS_PENDING,
+				ConnectorID: nil,
 			}
 			if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
 				errTx = err
@@ -384,13 +390,16 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeSavedBankAccount,
-		EntityID:       bankAccountModel.ID.String(),
-		Payload:        payloadBytes,
-		CreatedAt:      time.Now().UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    nil,
-		IdempotencyKey: bankAccountModel.IdempotencyKey(),
+		ID: models.EventID{
+			EventIdempotencyKey: bankAccountModel.IdempotencyKey(),
+			ConnectorID:         nil,
+		},
+		EventType:   events.EventTypeSavedBankAccount,
+		EntityID:    bankAccountModel.ID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   time.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: nil,
 	}
 	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
 		return err
@@ -523,4 +532,3 @@ func prepareBankAccountEventPayload(bankAccountModel models.BankAccount) interna
 
 	return payload
 }
-

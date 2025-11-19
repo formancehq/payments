@@ -3,8 +3,6 @@ package models
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type OutboxEventStatus string
@@ -17,17 +15,15 @@ const (
 const MaxOutboxRetries = 5
 
 type OutboxEvent struct {
-	// Autoincrement fields
-	SortID int64 `json:"sortId"`
+	// Primary key
+	ID EventID `json:"id"`
 
 	// Mandatory fields
-	ID             uuid.UUID         `json:"id"`
-	EventType      string            `json:"eventType"`
-	EntityID       string            `json:"entityId"`
-	Payload        json.RawMessage   `json:"payload"`
-	CreatedAt      time.Time         `json:"createdAt"`
-	Status         OutboxEventStatus `json:"status"`
-	IdempotencyKey string            `json:"idempotencyKey"`
+	EventType string            `json:"eventType"`
+	EntityID  string            `json:"entityId"`
+	Payload   json.RawMessage   `json:"payload"`
+	CreatedAt time.Time         `json:"createdAt"`
+	Status    OutboxEventStatus `json:"status"`
 
 	// Optional fields
 	ConnectorID *ConnectorID `json:"connectorId,omitempty"`

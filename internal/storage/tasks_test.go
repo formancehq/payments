@@ -161,7 +161,7 @@ func TestTasksUpsert(t *testing.T) {
 		for i := range pendingEvents {
 			if pendingEvents[i].EventType == events.EventTypeUpdatedTask &&
 				pendingEvents[i].EntityID == newTask.ID.String() &&
-				pendingEvents[i].IdempotencyKey == expectedKey {
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
 				break
 			}
@@ -174,7 +174,7 @@ func TestTasksUpsert(t *testing.T) {
 		assert.Equal(t, newTask.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}

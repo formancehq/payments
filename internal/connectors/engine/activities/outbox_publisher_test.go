@@ -44,15 +44,17 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      events.EventTypeSavedAccounts,
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_123",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_123",
+						ConnectorID:         connectorID,
+					},
+					EventType:   events.EventTypeSavedAccounts,
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 			}
 
@@ -69,12 +71,12 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			// Delete from outbox and record sent atomically (batch)
 			s.EXPECT().
 				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
-				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(1))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
 					Expect(eventsSent).To(HaveLen(1))
 					Expect(eventsSent[0].ConnectorID).To(Equal(connectorID))
-					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
+					Expect(eventsSent[0].ID).To(Equal(testEvents[0].ID))
 				}).
 				Return(nil)
 
@@ -110,15 +112,17 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      "account.saved",
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     models.MaxOutboxRetries, // Already at max retries
-					IdempotencyKey: "account.saved:acc_123",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_123",
+						ConnectorID:         connectorID,
+					},
+					EventType:   "account.saved",
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  models.MaxOutboxRetries, // Already at max retries
 				},
 			}
 
@@ -150,15 +154,17 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      "account.saved",
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     2, // Below max retries
-					IdempotencyKey: "account.saved:acc_123",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_123",
+						ConnectorID:         connectorID,
+					},
+					EventType:   "account.saved",
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  2, // Below max retries
 				},
 			}
 
@@ -190,15 +196,17 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      "unknown.event",
-					EntityID:       "some_id",
-					Payload:        json.RawMessage(`{}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "unknown.event:some_id",
+					ID: models.EventID{
+						EventIdempotencyKey: "unknown.event:some_id",
+						ConnectorID:         connectorID,
+					},
+					EventType:   "unknown.event",
+					EntityID:    "some_id",
+					Payload:     json.RawMessage(`{}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 			}
 
@@ -214,12 +222,12 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			// Delete from outbox and record sent atomically (batch)
 			s.EXPECT().
 				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
-				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(1))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
 					Expect(eventsSent).To(HaveLen(1))
 					Expect(eventsSent[0].ConnectorID).To(Equal(connectorID))
-					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("unknown.event:some_id"))
+					Expect(eventsSent[0].ID).To(Equal(testEvents[0].ID))
 				}).
 				Return(nil)
 
@@ -235,15 +243,13 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      "account.saved",
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_123",
+					EventType:   "account.saved",
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 			}
 
@@ -277,15 +283,17 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      "account.saved",
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_123",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_123",
+						ConnectorID:         connectorID,
+					},
+					EventType:   "account.saved",
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 			}
 
@@ -318,37 +326,43 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      events.EventTypeSavedAccounts,
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account 1"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_123",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_123",
+						ConnectorID:         connectorID,
+					},
+					EventType:   events.EventTypeSavedAccounts,
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account 1"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 				{
-					ID:             uuid.New(),
-					EventType:      events.EventTypeSavedAccounts,
-					EntityID:       "acc_456",
-					Payload:        json.RawMessage(`{"id":"acc_456","name":"Test Account 2"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_456",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_456",
+						ConnectorID:         connectorID,
+					},
+					EventType:   events.EventTypeSavedAccounts,
+					EntityID:    "acc_456",
+					Payload:     json.RawMessage(`{"id":"acc_456","name":"Test Account 2"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 				{
-					ID:             uuid.New(),
-					EventType:      events.EventTypeSavedAccounts,
-					EntityID:       "acc_789",
-					Payload:        json.RawMessage(`{"id":"acc_789","name":"Test Account 3"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_789",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_789",
+						ConnectorID:         connectorID,
+					},
+					EventType:   events.EventTypeSavedAccounts,
+					EntityID:    "acc_789",
+					Payload:     json.RawMessage(`{"id":"acc_789","name":"Test Account 3"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 			}
 
@@ -366,15 +380,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			// Batch delete and record sent
 			s.EXPECT().
 				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
-				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(3))
 					Expect(eventsSent).To(HaveLen(3))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
 					Expect(eventIDs[1]).To(Equal(testEvents[1].ID))
 					Expect(eventIDs[2]).To(Equal(testEvents[2].ID))
-					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
-					Expect(eventsSent[1].ID.EventIdempotencyKey).To(Equal("account.saved:acc_456"))
-					Expect(eventsSent[2].ID.EventIdempotencyKey).To(Equal("account.saved:acc_789"))
+					Expect(eventsSent[0].ID).To(Equal(testEvents[0].ID))
+					Expect(eventsSent[1].ID).To(Equal(testEvents[1].ID))
+					Expect(eventsSent[2].ID).To(Equal(testEvents[2].ID))
 				}).
 				Return(nil)
 
@@ -390,26 +404,30 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 
 			testEvents := []models.OutboxEvent{
 				{
-					ID:             uuid.New(),
-					EventType:      events.EventTypeSavedAccounts,
-					EntityID:       "acc_123",
-					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account 1"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_123",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_123",
+						ConnectorID:         connectorID,
+					},
+					EventType:   events.EventTypeSavedAccounts,
+					EntityID:    "acc_123",
+					Payload:     json.RawMessage(`{"id":"acc_123","name":"Test Account 1"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 				{
-					ID:             uuid.New(),
-					EventType:      events.EventTypeSavedAccounts,
-					EntityID:       "acc_456",
-					Payload:        json.RawMessage(`{"id":"acc_456","name":"Test Account 2"}`),
-					CreatedAt:      time.Now().UTC(),
-					Status:         models.OUTBOX_STATUS_PENDING,
-					ConnectorID:    connectorID,
-					RetryCount:     0,
-					IdempotencyKey: "account.saved:acc_456",
+					ID: models.EventID{
+						EventIdempotencyKey: "account.saved:acc_456",
+						ConnectorID:         connectorID,
+					},
+					EventType:   events.EventTypeSavedAccounts,
+					EntityID:    "acc_456",
+					Payload:     json.RawMessage(`{"id":"acc_456","name":"Test Account 2"}`),
+					CreatedAt:   time.Now().UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: connectorID,
+					RetryCount:  0,
 				},
 			}
 
@@ -437,11 +455,11 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			// Only first event should be batched for deletion
 			s.EXPECT().
 				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
-				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(1))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
 					Expect(eventsSent).To(HaveLen(1))
-					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
+					Expect(eventsSent[0].ID).To(Equal(testEvents[0].ID))
 				}).
 				Return(nil)
 
