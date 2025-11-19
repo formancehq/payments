@@ -2125,6 +2125,11 @@ components:
         asset:
           type: string
           example: USD
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
     Account:
       type: object
       required:
