@@ -1670,6 +1670,11 @@ components:
         amount:
           type: integer
           format: bigint
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
 
     # TASKS
     V3GetTaskResponse:

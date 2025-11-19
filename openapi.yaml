@@ -5591,6 +5591,11 @@ components:
         amount:
           type: integer
           format: bigint
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
     V3GetTaskResponse:
       type: object
       required:
