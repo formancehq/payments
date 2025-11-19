@@ -18,7 +18,7 @@ func (s *Service) PoolsBalancesAt(
 	if err != nil {
 		return nil, newStorageError(err, "cannot get pool")
 	}
-	res := make(map[string]*big.Int)
+	res := make(map[string]*aggregatedBalance)
 	for i := range pool.PoolAccounts {
 		balances, err := s.storage.BalancesGetAt(ctx, pool.PoolAccounts[i], at)
 		if err != nil {
@@ -26,21 +26,26 @@ func (s *Service) PoolsBalancesAt(
 		}
 
 		for _, balance := range balances {
-			amount, ok := res[balance.Asset]
+			v, ok := res[balance.Asset]
 			if !ok {
-				amount = big.NewInt(0)
+				v = &aggregatedBalance{
+					amount:          big.NewInt(0),
+					relatedAccounts: []models.AccountID{},
+				}
 			}
 
-			amount.Add(amount, balance.Balance)
-			res[balance.Asset] = amount
+			v.amount = v.amount.Add(v.amount, balance.Balance)
+			v.relatedAccounts = append(v.relatedAccounts, balance.AccountID)
+			res[balance.Asset] = v
 		}
 	}
 
 	balances := make([]models.AggregatedBalance, 0, len(res))
-	for asset, amount := range res {
+	for asset, balance := range res {
 		balances = append(balances, models.AggregatedBalance{
-			Asset:  asset,
-			Amount: amount,
+			Asset:           asset,
+			Amount:          balance.amount,
+			RelatedAccounts: balance.relatedAccounts,
 		})
 	}
 
