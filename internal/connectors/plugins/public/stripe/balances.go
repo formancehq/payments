@@ -28,6 +28,9 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	var accountBalances []models.PSPBalance
 	for _, available := range balance.Available {
+		if available == nil {
+			continue
+		}
 		timestamp := time.Now()
 		accountBalances = append(accountBalances, toPSPBalance(from.Reference, timestamp, available))
 	}

@@ -122,6 +122,9 @@ func translateBalanceWebhook(
 
 	eventCreatedAt := time.Unix(evt.Created, 0)
 	for _, available := range balance.Available {
+		if available == nil {
+			continue
+		}
 		pspBalance := toPSPBalance(accountRef, eventCreatedAt, available)
 		responses = append(responses, models.WebhookResponse{
 			Balance: &pspBalance,
