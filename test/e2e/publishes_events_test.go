@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -33,12 +33,12 @@ var _ = Context("Publishes events", Ordered, Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                     stack,
-			NatsURL:                   natsServer.GetValue().ClientURL(),
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
+			Stack:                      stack,
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
 			SkipOutboxScheduleCreation: false,
 		}
 	})
@@ -84,7 +84,7 @@ var _ = Context("Publishes events", Ordered, Serial, func() {
 			Name:        "foo",
 			Provider:    "dummypay",
 		}
-		Eventually(e, activities.OUTBOX_POLLING_PERIOD*3, activities.OUTBOX_POLLING_PERIOD).
+		Eventually(e, engine.OUTBOX_POLLING_PERIOD*3, engine.OUTBOX_POLLING_PERIOD).
 			Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(expectedEventPayload))))
 	})
 })
