@@ -69,25 +69,8 @@ func TestBankAccountsUpsert(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 
-	// Helper to clean up outbox events created during tests
-	cleanupOutbox := func() {
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			eventSent := models.EventSent{
-				ID: models.EventID{
-					EventIdempotencyKey: event.IdempotencyKey,
-					ConnectorID:         event.ConnectorID,
-				},
-				ConnectorID: event.ConnectorID,
-				SentAt:      time.Now().UTC(),
-			}
-			err = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-			require.NoError(t, err)
-		}
-	}
 	t.Cleanup(func() {
-		cleanupOutbox()
+		cleanupOutboxHelper(ctx, store)()
 		store.Close()
 	})
 
@@ -95,7 +78,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
-	cleanupOutbox() // Clean up outbox events from default data
+	cleanupOutboxHelper(ctx, store)() // Clean up outbox events from default data
 
 	t.Run("upsert with same id", func(t *testing.T) {
 		ba := models.BankAccount{
@@ -148,7 +131,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 	})
 
 	t.Run("outbox events created for new bank accounts", func(t *testing.T) {
-		t.Cleanup(cleanupOutbox)
+		t.Cleanup(cleanupOutboxHelper(ctx, store))
 
 		accounts := defaultAccounts()
 		// Create new bank account
@@ -226,7 +209,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 
 	t.Run("no outbox events for existing bank accounts", func(t *testing.T) {
 
-		t.Cleanup(cleanupOutbox)
+		t.Cleanup(cleanupOutboxHelper(ctx, store))
 
 		// Try to upsert existing bank account (should not create outbox event due to ON CONFLICT DO NOTHING)
 		require.NoError(t, store.BankAccountsUpsert(ctx, defaultBankAccount))

@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v3/publish"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
+	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -22,6 +23,10 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 		return nil // No events to process
 	}
 
+	// Collect successful events for batch processing
+	var successfulEventIDs []uuid.UUID
+	var successfulEventsSent []models.EventSent
+
 	// Process each event
 	for _, event := range outboxEvents {
 		if err := a.processOutboxEvent(ctx, event); err != nil {
@@ -34,9 +39,23 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 			continue
 		}
 
-		// Success - delete from outbox and record in events_sent in same transaction
-		if err := a.deleteOutboxAndRecordSent(ctx, event); err != nil {
-			return err
+		// Success - collect for batch deletion and recording
+		eventSent := models.EventSent{
+			ID: models.EventID{
+				EventIdempotencyKey: event.IdempotencyKey,
+				ConnectorID:         event.ConnectorID,
+			},
+			ConnectorID: event.ConnectorID,
+			SentAt:      time.Now().UTC(),
+		}
+		successfulEventIDs = append(successfulEventIDs, event.ID)
+		successfulEventsSent = append(successfulEventsSent, eventSent)
+	}
+
+	// Batch delete and record successful events
+	if len(successfulEventIDs) > 0 {
+		if err := a.storage.OutboxEventsDeleteAndRecordSent(ctx, successfulEventIDs, successfulEventsSent); err != nil {
+			return fmt.Errorf("failed to delete outbox events and record sent: %w", err)
 		}
 	}
 
@@ -58,25 +77,6 @@ func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxE
 	return a.events.Publish(ctx, eventMessage)
 }
 
-func (a Activities) deleteOutboxAndRecordSent(ctx context.Context, event models.OutboxEvent) error {
-	// Record in events_sent table and delete from outbox in same transaction
-	idempotencyKey := event.IdempotencyKey
-	eventSent := models.EventSent{
-		ID: models.EventID{
-			EventIdempotencyKey: idempotencyKey,
-			ConnectorID:         event.ConnectorID,
-		},
-		ConnectorID: event.ConnectorID,
-		SentAt:      time.Now().UTC(),
-	}
-
-	// Delete from outbox and record in events_sent atomically
-	if err := a.storage.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent); err != nil {
-		return fmt.Errorf("failed to delete outbox event and record sent: %w", err)
-	}
-
-	return nil
-}
 
 var OutboxPublishPendingEventsActivity = Activities{}.OutboxPublishPendingEvents
 

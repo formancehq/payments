@@ -246,21 +246,6 @@ func upsertPayments(t *testing.T, ctx context.Context, storage Storage, payments
 	require.NoError(t, storage.PaymentsUpsert(ctx, payments))
 }
 
-func cleanupOutbox(t *testing.T, ctx context.Context, store Storage) {
-	pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-	require.NoError(t, err)
-	for _, event := range pendingEvents {
-		eventSent := models.EventSent{
-			ID: models.EventID{
-				EventIdempotencyKey: event.IdempotencyKey,
-				ConnectorID:         event.ConnectorID,
-			},
-			ConnectorID: event.ConnectorID,
-			SentAt:      time.Now().UTC(),
-		}
-		_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-	}
-}
 
 func TestPaymentsUpsert(t *testing.T) {
 	t.Parallel()
@@ -268,12 +253,12 @@ func TestPaymentsUpsert(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
-	defer cleanupOutbox(t, ctx, store)
+	defer cleanupOutboxHelper(ctx, store)()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
-	cleanupOutbox(t, ctx, store) // Clean up outbox events from default data
+	cleanupOutboxHelper(ctx, store)() // Clean up outbox events from default data
 
 	t.Run("upsert with unknown connector", func(t *testing.T) {
 		connector := models.ConnectorID{
@@ -811,7 +796,7 @@ func TestPaymentsUpsert(t *testing.T) {
 	})
 
 	t.Run("rollback on foreign key violation", func(t *testing.T) {
-		defer cleanupOutbox(t, ctx, store)
+		defer cleanupOutboxHelper(ctx, store)()
 
 		upsertConnector(t, ctx, store, defaultConnector)
 		upsertAccounts(t, ctx, store, defaultAccounts())
@@ -879,7 +864,7 @@ func TestPaymentsUpsertRefunded(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
-	defer cleanupOutbox(t, ctx, store)
+	defer cleanupOutboxHelper(ctx, store)()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1732,12 +1717,12 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
-	defer cleanupOutbox(t, ctx, store)
+	defer cleanupOutboxHelper(ctx, store)()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
-	cleanupOutbox(t, ctx, store) // Clean up outbox events from account creation
+	cleanupOutboxHelper(ctx, store)() // Clean up outbox events from account creation
 
 	t.Run("delete payment by existing reference and connector", func(t *testing.T) {
 		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "test1", defaultConnector.ID))
@@ -1822,7 +1807,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{deletePayment}))
 
 		// Clean up payment.saved events from insertion
-		cleanupOutbox(t, ctx, store)
+		cleanupOutboxHelper(ctx, store)()
 
 		expectedKey := fmt.Sprintf("delete:%s", deletePaymentID.String())
 

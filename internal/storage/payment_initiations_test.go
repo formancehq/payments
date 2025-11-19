@@ -93,15 +93,6 @@ func upsertPaymentInitiations(t *testing.T, ctx context.Context, storage Storage
 	}
 }
 
-func cleanupOutboxHelper(ctx context.Context, store Storage) func() {
-	return func() {
-		pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
-		for _, event := range pendingEvents {
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, models.EventSent{})
-		}
-	}
-}
-
 func TestPaymentInitiationsInsert(t *testing.T) {
 	t.Parallel()
 

@@ -156,7 +156,15 @@ func (s *store) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryC
 	return e("failed to mark outbox event", updateErr)
 }
 
-func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error {
+func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) error {
+	if len(eventIDs) == 0 {
+		return nil // Nothing to do
+	}
+
+	if len(eventIDs) != len(eventsSent) {
+		return e("eventIDs and eventsSent must have the same length", errors.New("length mismatch"))
+	}
+
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -166,23 +174,29 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uui
 		rollbackOnTxError(ctx, &tx, err)
 	}()
 
-	// Delete from outbox
+	// Delete from outbox (batch delete)
 	_, err = tx.NewDelete().
 		TableExpr("outbox_events").
-		Where("id = ?", eventID).
+		Where("id IN (?)", bun.In(eventIDs)).
 		Exec(ctx)
 	if err != nil {
-		return e("failed to delete published event from outbox", err)
+		return e("failed to delete published events from outbox", err)
 	}
 
-	// Record in events_sent table
-	toInsert := fromEventSentModel(eventSent)
-	_, err = tx.NewInsert().
-		Model(&toInsert).
-		On("CONFLICT (id) DO NOTHING").
-		Exec(ctx)
-	if err != nil {
-		return e("failed to record event as sent", err)
+	// Record in events_sent table (batch insert)
+	toInsert := make([]eventSent, 0, len(eventsSent))
+	for _, eventSent := range eventsSent {
+		toInsert = append(toInsert, fromEventSentModel(eventSent))
+	}
+
+	if len(toInsert) > 0 {
+		_, err = tx.NewInsert().
+			Model(&toInsert).
+			On("CONFLICT (id) DO NOTHING").
+			Exec(ctx)
+		if err != nil {
+			return e("failed to record events as sent", err)
+		}
 	}
 
 	// Commit transaction

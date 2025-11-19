@@ -9,6 +9,7 @@ import (
 
 	"github.com/formancehq/payments/internal/models"
 	internalErrors "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -167,7 +168,7 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 		SentAt:      time.Now().UTC(),
 	}
 
-	err = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+	err = store.OutboxEventsDeleteAndRecordSent(ctx, []uuid.UUID{event.ID}, []models.EventSent{eventSent})
 	require.NoError(t, err)
 
 	// Verify event is deleted
@@ -183,6 +184,92 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 	exists, err := store.EventsSentExists(ctx, eventID)
 	require.NoError(t, err)
 	assert.True(t, exists)
+}
+
+func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert a connector first
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	// Insert test events
+	events := []models.OutboxEvent{
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-for-batch-1",
+		},
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-2",
+			Payload:        json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-for-batch-2",
+		},
+		{
+			EventType:      "account.saved",
+			EntityID:       "account-3",
+			Payload:        json.RawMessage(`{"id": "account-3"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-for-batch-3",
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events)
+
+	// Get the events
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	require.Len(t, pendingEvents, 3)
+
+	// Prepare batch delete and record sent
+	eventIDs := make([]uuid.UUID, 0, len(pendingEvents))
+	eventsSent := make([]models.EventSent, 0, len(pendingEvents))
+	for _, event := range pendingEvents {
+		eventIDs = append(eventIDs, event.ID)
+		eventsSent = append(eventsSent, models.EventSent{
+			ID: models.EventID{
+				EventIdempotencyKey: event.IdempotencyKey,
+				ConnectorID:         event.ConnectorID,
+			},
+			ConnectorID: event.ConnectorID,
+			SentAt:      time.Now().UTC(),
+		})
+	}
+
+	// Batch delete and record sent
+	err = store.OutboxEventsDeleteAndRecordSent(ctx, eventIDs, eventsSent)
+	require.NoError(t, err)
+
+	// Verify all events are deleted
+	pendingEventsAfter, err := store.OutboxEventsPollPending(ctx, 10)
+	require.NoError(t, err)
+	assert.Len(t, pendingEventsAfter, 0)
+
+	// Verify all events are recorded as sent
+	for _, event := range pendingEvents {
+		eventID := models.EventID{
+			EventIdempotencyKey: event.IdempotencyKey,
+			ConnectorID:         event.ConnectorID,
+		}
+		exists, err := store.EventsSentExists(ctx, eventID)
+		require.NoError(t, err)
+		assert.True(t, exists, "Event %s should be recorded as sent", event.IdempotencyKey)
+	}
 }
 
 func TestOutboxEventsMarkFailed(t *testing.T) {

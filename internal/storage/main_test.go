@@ -12,6 +12,8 @@ import (
 	"github.com/formancehq/go-libs/v3/testing/docker"
 	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v3/testing/utils"
+	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
@@ -69,4 +71,19 @@ func newStore(t *testing.T) Storage {
 	})
 
 	return st
+}
+
+func cleanupOutboxHelper(ctx context.Context, store Storage) func() {
+	return func() {
+		pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+		var eventIDs []uuid.UUID
+		var eventsSent []models.EventSent
+		for _, event := range pendingEvents {
+			eventIDs = append(eventIDs, event.ID)
+			eventsSent = append(eventsSent, models.EventSent{})
+		}
+		if len(eventIDs) > 0 {
+			_ = store.OutboxEventsDeleteAndRecordSent(ctx, eventIDs, eventsSent)
+		}
+	}
 }
