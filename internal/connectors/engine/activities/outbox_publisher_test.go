@@ -66,12 +66,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				Publish(gomock.Any(), gomock.Any()).
 				Return(nil)
 
-			// Delete from outbox and record sent atomically
+			// Delete from outbox and record sent atomically (batch)
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, testEvents[0].ID, gomock.Any()).
-				Do(func(_ context.Context, eventID uuid.UUID, eventSent models.EventSent) {
-					Expect(eventSent.ConnectorID).To(Equal(connectorID))
-					Expect(eventSent.ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
+				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+					Expect(eventIDs).To(HaveLen(1))
+					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
+					Expect(eventsSent).To(HaveLen(1))
+					Expect(eventsSent[0].ConnectorID).To(Equal(connectorID))
+					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
 				}).
 				Return(nil)
 
@@ -208,12 +211,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				Publish(gomock.Any(), gomock.Any()).
 				Return(nil)
 
-			// Delete from outbox and record sent atomically
+			// Delete from outbox and record sent atomically (batch)
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, testEvents[0].ID, gomock.Any()).
-				Do(func(_ context.Context, eventID uuid.UUID, eventSent models.EventSent) {
-					Expect(eventSent.ConnectorID).To(Equal(connectorID))
-					Expect(eventSent.ID.EventIdempotencyKey).To(Equal("unknown.event:some_id"))
+				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+					Expect(eventIDs).To(HaveLen(1))
+					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
+					Expect(eventsSent).To(HaveLen(1))
+					Expect(eventsSent[0].ConnectorID).To(Equal(connectorID))
+					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("unknown.event:some_id"))
 				}).
 				Return(nil)
 
@@ -296,12 +302,151 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 			// Delete and record sent fails
 			deleteErr := errors.New("delete error")
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, testEvents[0].ID, gomock.Any()).
+				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
 				Return(deleteErr)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("failed to delete outbox event and record sent"))
+			Expect(err.Error()).To(ContainSubstring("failed to delete outbox events and record sent"))
+		})
+
+		It("processes multiple events in batch", func(ctx SpecContext) {
+			connectorID := &models.ConnectorID{
+				Provider:  "stripe",
+				Reference: uuid.New(),
+			}
+
+			testEvents := []models.OutboxEvent{
+				{
+					ID:             uuid.New(),
+					EventType:      events.EventTypeSavedAccounts,
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account 1"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_123",
+				},
+				{
+					ID:             uuid.New(),
+					EventType:      events.EventTypeSavedAccounts,
+					EntityID:       "acc_456",
+					Payload:        json.RawMessage(`{"id":"acc_456","name":"Test Account 2"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_456",
+				},
+				{
+					ID:             uuid.New(),
+					EventType:      events.EventTypeSavedAccounts,
+					EntityID:       "acc_789",
+					Payload:        json.RawMessage(`{"id":"acc_789","name":"Test Account 3"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_789",
+				},
+			}
+
+			// Poll events
+			s.EXPECT().
+				OutboxEventsPollPending(ctx, 100).
+				Return(testEvents, nil)
+
+			// Publish all events successfully
+			mockPublisher.EXPECT().
+				Publish(gomock.Any(), gomock.Any()).
+				Return(nil).
+				Times(3)
+
+			// Batch delete and record sent
+			s.EXPECT().
+				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+					Expect(eventIDs).To(HaveLen(3))
+					Expect(eventsSent).To(HaveLen(3))
+					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
+					Expect(eventIDs[1]).To(Equal(testEvents[1].ID))
+					Expect(eventIDs[2]).To(Equal(testEvents[2].ID))
+					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
+					Expect(eventsSent[1].ID.EventIdempotencyKey).To(Equal("account.saved:acc_456"))
+					Expect(eventsSent[2].ID.EventIdempotencyKey).To(Equal("account.saved:acc_789"))
+				}).
+				Return(nil)
+
+			err := act.OutboxPublishPendingEvents(ctx, 100)
+			Expect(err).To(BeNil())
+		})
+
+		It("only batches successful events", func(ctx SpecContext) {
+			connectorID := &models.ConnectorID{
+				Provider:  "stripe",
+				Reference: uuid.New(),
+			}
+
+			testEvents := []models.OutboxEvent{
+				{
+					ID:             uuid.New(),
+					EventType:      events.EventTypeSavedAccounts,
+					EntityID:       "acc_123",
+					Payload:        json.RawMessage(`{"id":"acc_123","name":"Test Account 1"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_123",
+				},
+				{
+					ID:             uuid.New(),
+					EventType:      events.EventTypeSavedAccounts,
+					EntityID:       "acc_456",
+					Payload:        json.RawMessage(`{"id":"acc_456","name":"Test Account 2"}`),
+					CreatedAt:      time.Now().UTC(),
+					Status:         models.OUTBOX_STATUS_PENDING,
+					ConnectorID:    connectorID,
+					RetryCount:     0,
+					IdempotencyKey: "account.saved:acc_456",
+				},
+			}
+
+			// Poll events
+			s.EXPECT().
+				OutboxEventsPollPending(ctx, 100).
+				Return(testEvents, nil)
+
+			// First event publishes successfully
+			mockPublisher.EXPECT().
+				Publish(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			// Second event fails to publish
+			publishErr := errors.New("publish error")
+			mockPublisher.EXPECT().
+				Publish(gomock.Any(), gomock.Any()).
+				Return(publishErr)
+
+			// Mark second event as failed
+			s.EXPECT().
+				OutboxEventsMarkFailed(ctx, testEvents[1].ID, 1, publishErr).
+				Return(nil)
+
+			// Only first event should be batched for deletion
+			s.EXPECT().
+				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				Do(func(_ context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) {
+					Expect(eventIDs).To(HaveLen(1))
+					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
+					Expect(eventsSent).To(HaveLen(1))
+					Expect(eventsSent[0].ID.EventIdempotencyKey).To(Equal("account.saved:acc_123"))
+				}).
+				Return(nil)
+
+			err := act.OutboxPublishPendingEvents(ctx, 100)
+			Expect(err).To(BeNil())
 		})
 	})
 })

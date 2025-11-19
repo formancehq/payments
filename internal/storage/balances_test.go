@@ -76,25 +76,8 @@ func TestBalancesUpsert(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 
-	// Helper to clean up outbox events created during tests
-	cleanupOutbox := func() {
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
-		if err == nil {
-			for _, event := range pendingEvents {
-				eventSent := models.EventSent{
-					ID: models.EventID{
-						EventIdempotencyKey: event.IdempotencyKey,
-						ConnectorID:         event.ConnectorID,
-					},
-					ConnectorID: event.ConnectorID,
-					SentAt:      time.Now().UTC(),
-				}
-				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-			}
-		}
-	}
 	t.Cleanup(func() {
-		cleanupOutbox()
+		cleanupOutboxHelper(ctx, store)()
 		store.Close()
 	})
 
@@ -105,7 +88,7 @@ func TestBalancesUpsert(t *testing.T) {
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBalances(t, ctx, store, defaultBalances())
 	upsertBalances(t, ctx, store, defaultBalances2())
-	cleanupOutbox() // Clean up outbox events from default data creation
+	cleanupOutboxHelper(ctx, store)() // Clean up outbox events from default data creation
 
 	t.Run("upsert empty balances", func(t *testing.T) {
 		upsertBalances(t, ctx, store, []models.Balance{})

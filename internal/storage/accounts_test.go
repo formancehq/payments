@@ -140,43 +140,20 @@ func upsertAccounts(t *testing.T, ctx context.Context, storage Storage, accounts
 func TestAccountsUpsert(t *testing.T) {
 	t.Parallel()
 
-	now := time.Now()
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
 
-	cleanupOutbox := func() {
-		// Get all pending events for the default connector and delete them
-		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
-		require.NoError(t, err)
-		for _, event := range pendingEvents {
-			if event.ConnectorID != nil && *event.ConnectorID == defaultConnector.ID {
-				// Create a dummy EventSent for deletion
-				eventSent := models.EventSent{
-					ID: models.EventID{
-						EventIdempotencyKey: "cleanup",
-						ConnectorID:         event.ConnectorID,
-					},
-					ConnectorID: event.ConnectorID,
-					SentAt:      now.UTC().Time,
-				}
-				// Delete using the proper method
-				err = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
-				require.NoError(t, err)
-			}
-		}
-	}
-
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
-	cleanupOutbox() // Remove the outbox events created by updserting accounts
+	cleanupOutboxHelper(ctx, store)() // Remove the outbox events created by updserting accounts
 
 	t.Run("upsert empty list", func(t *testing.T) {
 		require.NoError(t, store.AccountsUpsert(ctx, []models.Account{}))
 	})
 
 	t.Run("same id insert", func(t *testing.T) {
-		defer cleanupOutbox() // Also clean up after test
+		defer cleanupOutboxHelper(ctx, store)() // Also clean up after test
 
 		id := models.AccountID{
 			Reference:   "test1",
@@ -216,7 +193,7 @@ func TestAccountsUpsert(t *testing.T) {
 	})
 
 	t.Run("unknown connector id", func(t *testing.T) {
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		unknownConnectorID := models.ConnectorID{
 			Reference: uuid.New(),
@@ -249,7 +226,7 @@ func TestAccountsUpsert(t *testing.T) {
 	})
 
 	t.Run("outbox events created for new accounts", func(t *testing.T) {
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Create new accounts
 		newAccounts := []models.Account{
@@ -349,7 +326,7 @@ func TestAccountsUpsert(t *testing.T) {
 	})
 
 	t.Run("no outbox events for existing accounts", func(t *testing.T) {
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		// Try to insert existing accounts (should not create outbox events due to ON CONFLICT DO NOTHING)
 		require.NoError(t, store.AccountsUpsert(ctx, defaultAccounts()))
@@ -361,7 +338,7 @@ func TestAccountsUpsert(t *testing.T) {
 	})
 
 	t.Run("rollback on foreign key violation", func(t *testing.T) {
-		defer cleanupOutbox()
+		defer cleanupOutboxHelper(ctx, store)()
 
 		upsertConnector(t, ctx, store, defaultConnector)
 

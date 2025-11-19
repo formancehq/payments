@@ -811,17 +811,17 @@ func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, fr
 }
 
 // OutboxEventsDeleteAndRecordSent mocks base method.
-func (m *MockStorage) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error {
+func (m *MockStorage) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OutboxEventsDeleteAndRecordSent", ctx, eventID, eventSent)
+	ret := m.ctrl.Call(m, "OutboxEventsDeleteAndRecordSent", ctx, eventIDs, eventsSent)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OutboxEventsDeleteAndRecordSent indicates an expected call of OutboxEventsDeleteAndRecordSent.
-func (mr *MockStorageMockRecorder) OutboxEventsDeleteAndRecordSent(ctx, eventID, eventSent any) *gomock.Call {
+func (mr *MockStorageMockRecorder) OutboxEventsDeleteAndRecordSent(ctx, eventIDs, eventsSent any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsDeleteAndRecordSent", reflect.TypeOf((*MockStorage)(nil).OutboxEventsDeleteAndRecordSent), ctx, eventID, eventSent)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsDeleteAndRecordSent", reflect.TypeOf((*MockStorage)(nil).OutboxEventsDeleteAndRecordSent), ctx, eventIDs, eventsSent)
 }
 
 // OutboxEventsInsert mocks base method.
