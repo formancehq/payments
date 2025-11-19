@@ -1,6 +1,7 @@
 package engine_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -10,11 +11,14 @@ import (
 	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	gomock "go.uber.org/mock/gomock"
@@ -78,6 +82,102 @@ var _ = Describe("Worker Tests", func() {
 			manager.EXPECT().Load(conns[1].ID, conns[1].Provider, conns[1].Name, gomock.Any(), conns[1].Config, false).Return(json.RawMessage(`{}`), nil)
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("createOutboxPublisherSchedule", func() {
+		var (
+			pool              *engine.WorkerPool
+			mockClient        *activities.MockClient
+			mockScheduleClient *activities.MockScheduleClient
+			mockHandle        *activities.MockScheduleHandle
+			stackName         string
+		)
+
+		BeforeEach(func() {
+			ctrl := gomock.NewController(GinkgoT())
+			logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
+			stackName = "test-stack"
+			mockClient = activities.NewMockClient(ctrl)
+			mockScheduleClient = activities.NewMockScheduleClient(ctrl)
+			mockHandle = activities.NewMockScheduleHandle(ctrl)
+			store := storage.NewMockStorage(ctrl)
+			manager := connectors.NewMockManager(ctrl)
+			pool = engine.NewWorkerPool(logger, stackName, mockClient, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, manager, worker.Options{})
+			// Don't skip schedule creation for these tests
+			pool.SetSkipScheduleCreation(false)
+		})
+
+		It("should successfully create schedule when it does not exist", func(ctx SpecContext) {
+			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
+			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Do(func(_ context.Context, opts client.ScheduleOptions) {
+				Expect(opts.ID).To(Equal(scheduleID))
+				Expect(opts.TriggerImmediately).To(BeTrue())
+				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
+				Expect(opts.Spec.Intervals).To(HaveLen(1))
+				Expect(opts.Spec.Intervals[0].Every).To(Equal(5 * time.Second))
+				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
+				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
+				Expect(ok).To(BeTrue())
+				Expect(action.Workflow).To(Equal("OutboxPublisher"))
+				Expect(action.TaskQueue).To(Equal(fmt.Sprintf("%s-default", stackName)))
+			}).Return(mockHandle, nil)
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return nil when schedule already exists", func(ctx SpecContext) {
+			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
+			desc := &client.ScheduleDescription{}
+			mockHandle.EXPECT().Describe(ctx).Return(desc, nil)
+			// Create should NOT be called
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return nil when concurrent create returns AlreadyExists error", func(ctx SpecContext) {
+			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
+			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, serviceerror.NewAlreadyExists("already exists"))
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return error when Describe fails with non-NotFound error", func(ctx SpecContext) {
+			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
+			expectedErr := fmt.Errorf("describe error")
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
+			mockHandle.EXPECT().Describe(ctx).Return(nil, expectedErr)
+			// Create should NOT be called
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("describe schedule"))
+			Expect(err.Error()).To(ContainSubstring(scheduleID))
+		})
+
+		It("should return error when Create fails with non-AlreadyExists error", func(ctx SpecContext) {
+			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
+			expectedErr := fmt.Errorf("create error")
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
+			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, expectedErr)
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("failed to create outbox publisher schedule"))
 		})
 	})
 })

@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -45,6 +47,8 @@ type WorkerPool struct {
 type Worker struct {
 	worker worker.Worker
 }
+
+const OUTBOX_POLLING_PERIOD = 5 * time.Second
 
 func NewWorkerPool(
 	logger logging.Logger,
@@ -120,7 +124,7 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 
 	// Create the outbox publisher schedule (unless explicitly skipped)
 	if !w.skipScheduleCreation {
-		if err := w.createOutboxPublisherSchedule(ctx); err != nil {
+		if err := w.CreateOutboxPublisherSchedule(ctx); err != nil {
 			return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
 		}
 	}
@@ -307,21 +311,53 @@ func (w *WorkerPool) RemoveWorker(name string) error {
 	return nil
 }
 
-func (w *WorkerPool) createOutboxPublisherSchedule(ctx context.Context) error {
-	// Create a temporary activity instance to call the schedule creation
-	activities := activities.New(
-		w.logger,
-		w.temporalClient,
-		w.storage,
-		nil, // events - not needed for schedule creation
-		nil, // connectors - not needed for schedule creation
-		0,   // rateLimitingRetryDelay - not needed for schedule creation
-	)
-
+func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
 	scheduleID := fmt.Sprintf("%s-outbox-publisher", w.stack)
 	taskQueue := GetDefaultTaskQueue(w.stack)
 
-	return activities.CreateOutboxPublisherSchedule(ctx, scheduleID, taskQueue, w.stack)
+	_, err := w.temporalClient.ScheduleClient().GetHandle(ctx, scheduleID).Describe(ctx)
+	if err == nil {
+		// Schedule already exists, no need to create it
+		return nil
+	}
+	var notFoundErr *serviceerror.NotFound
+	if !errors.As(err, &notFoundErr) {
+		// Some other error while describing: fail fast
+		return fmt.Errorf("describe schedule %s: %w", scheduleID, err)
+	}
+
+	// Create the schedule
+	_, err = w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+		ID: scheduleID,
+		Spec: client.ScheduleSpec{
+			Intervals: []client.ScheduleIntervalSpec{
+				{
+					Every: OUTBOX_POLLING_PERIOD, // Poll every 5 seconds
+				},
+			},
+		},
+		Action: &client.ScheduleWorkflowAction{
+			ID:        scheduleID,
+			Workflow:  "OutboxPublisher",
+			Args:      []interface{}{}, // No arguments needed
+			TaskQueue: taskQueue,
+		},
+		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+		TriggerImmediately: true,
+		SearchAttributes: map[string]interface{}{
+			"Stack": w.stack,
+		},
+	})
+
+	if err != nil {
+		var already *serviceerror.AlreadyExists
+		if errors.As(err, &already) {
+			// Created by concurrent caller, treat as success
+			return nil
+		}
+		return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+	}
+	return nil
 }
 
 // SetSkipScheduleCreation sets whether to skip creating the outbox publisher schedule.
