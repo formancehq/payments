@@ -93,10 +93,9 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 	// an account reference is only present if it's a StripeConnect account
 	accountReference := event.Account
 	if accountReference == "" {
-		p.logger.WithField("url", req.Config.URLPath).Debugf("RELATED account reference is blank")
 		accountID, ok := req.Config.Metadata[webhookRelatedAccountIDKey]
 		if !ok {
-			return []models.WebhookResponse{}, fmt.Errorf("webhook config did not contain root account ID: %+v", event)
+			return []models.WebhookResponse{}, fmt.Errorf("webhook config %q did not contain root account ID for handling Stripe Connect eventID=%s", req.Config.Name, event.ID)
 		}
 		accountReference = accountID
 	}
