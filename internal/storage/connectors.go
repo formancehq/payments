@@ -146,13 +146,16 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 
 		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Time.Format(stdtime.RFC3339Nano))
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeConnectorReset,
-			EntityID:       oldConnectorID.String(),
-			Payload:        payloadBytes,
-			CreatedAt:      now.Time,
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &toInsert.ID,
-			IdempotencyKey: idempotencyKey,
+			ID: models.EventID{
+				EventIdempotencyKey: idempotencyKey,
+				ConnectorID:         &toInsert.ID,
+			},
+			EventType:   events.EventTypeConnectorReset,
+			EntityID:    oldConnectorID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   now.Time,
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &toInsert.ID,
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

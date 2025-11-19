@@ -282,7 +282,7 @@ func TestAccountsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedAccounts && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedAccounts && expectedKeys[event.ID.EventIdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -301,11 +301,10 @@ func TestAccountsUpsert(t *testing.T) {
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.Equal(t, 0, event.RetryCount)
 			assert.Nil(t, event.Error)
-			assert.NotEqual(t, uuid.Nil, event.ID)
-			assert.NotEmpty(t, event.IdempotencyKey)
+			assert.NotEmpty(t, event.ID.EventIdempotencyKey)
 
 			// Find the matching account by idempotency key
-			expectedAccount, found := expectedAccountsByKey[event.IdempotencyKey]
+			expectedAccount, found := expectedAccountsByKey[event.ID.EventIdempotencyKey]
 			require.True(t, found, "event idempotency key should match one of the accounts")
 
 			// Verify payload contains account data
@@ -321,7 +320,7 @@ func TestAccountsUpsert(t *testing.T) {
 			assert.Equal(t, expectedAccount.ID.String(), event.EntityID)
 
 			// Verify idempotency key matches account
-			assert.Equal(t, expectedAccount.IdempotencyKey(), event.IdempotencyKey)
+			assert.Equal(t, expectedAccount.IdempotencyKey(), event.ID.EventIdempotencyKey)
 		}
 	})
 

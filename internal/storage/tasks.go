@@ -84,13 +84,16 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeUpdatedTask,
-		EntityID:       task.ID.String(),
-		Payload:        payloadBytes,
-		CreatedAt:      time.Now().UTC().Time,
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    task.ConnectorID,
-		IdempotencyKey: task.IdempotencyKey(),
+		ID: models.EventID{
+			EventIdempotencyKey: task.IdempotencyKey(),
+			ConnectorID:         task.ConnectorID,
+		},
+		EventType:   events.EventTypeUpdatedTask,
+		EntityID:    task.ID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   time.Now().UTC().Time,
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: task.ConnectorID,
 	}
 
 	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

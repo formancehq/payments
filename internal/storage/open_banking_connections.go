@@ -110,13 +110,16 @@ func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, i
 
 	idempotencyKey := models.IdempotencyKey(payload)
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeOpenBankingUserLinkStatus,
-		EntityID:       attemptModel.PsuID.String(),
-		Payload:        payloadBytes,
-		CreatedAt:      libtime.Now().UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    &attemptModel.ConnectorID,
-		IdempotencyKey: idempotencyKey,
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &attemptModel.ConnectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserLinkStatus,
+		EntityID:    attemptModel.PsuID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   libtime.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &attemptModel.ConnectorID,
 	}
 
 	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
@@ -506,13 +509,16 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 
 		idempotencyKey := models.IdempotencyKey(payload)
 		outboxEvents = append(outboxEvents, models.OutboxEvent{
-			EventType:      events.EventTypeOpenBankingUserConnectionDisconnected,
-			EntityID:       from.ConnectionID,
-			Payload:        payloadBytes,
-			CreatedAt:      libtime.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &from.ConnectorID,
-			IdempotencyKey: idempotencyKey,
+			ID: models.EventID{
+				EventIdempotencyKey: idempotencyKey,
+				ConnectorID:         &from.ConnectorID,
+			},
+			EventType:   events.EventTypeOpenBankingUserConnectionDisconnected,
+			EntityID:    from.ConnectionID,
+			Payload:     payloadBytes,
+			CreatedAt:   libtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &from.ConnectorID,
 		})
 	} else if from.Status == models.ConnectionStatusActive && connectionExists && existingConnection.Status == models.ConnectionStatusError {
 		// Connection reconnected (was ERROR, now ACTIVE)
@@ -531,13 +537,16 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 
 		idempotencyKey := models.IdempotencyKey(payload)
 		outboxEvents = append(outboxEvents, models.OutboxEvent{
-			EventType:      events.EventTypeOpenBankingUserConnectionReconnected,
-			EntityID:       from.ConnectionID,
-			Payload:        payloadBytes,
-			CreatedAt:      libtime.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    &from.ConnectorID,
-			IdempotencyKey: idempotencyKey,
+			ID: models.EventID{
+				EventIdempotencyKey: idempotencyKey,
+				ConnectorID:         &from.ConnectorID,
+			},
+			EventType:   events.EventTypeOpenBankingUserConnectionReconnected,
+			EntityID:    from.ConnectionID,
+			Payload:     payloadBytes,
+			CreatedAt:   libtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &from.ConnectorID,
 		})
 	}
 
@@ -589,13 +598,16 @@ func (s *store) OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, 
 
 	idempotencyKey := models.IdempotencyKey(payload)
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeOpenBankingUserConnectionDataSynced,
-		EntityID:       connectionID,
-		Payload:        payloadBytes,
-		CreatedAt:      libtime.Now().UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    &connectorID,
-		IdempotencyKey: idempotencyKey,
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &connectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserConnectionDataSynced,
+		EntityID:    connectionID,
+		Payload:     payloadBytes,
+		CreatedAt:   libtime.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &connectorID,
 	}
 
 	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

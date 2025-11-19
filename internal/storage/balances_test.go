@@ -330,7 +330,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBalances && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedBalances && expectedKeys[event.ID.EventIdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -349,11 +349,10 @@ func TestBalancesUpsert(t *testing.T) {
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 			assert.Equal(t, 0, event.RetryCount)
 			assert.Nil(t, event.Error)
-			assert.NotEqual(t, uuid.Nil, event.ID)
-			assert.NotEmpty(t, event.IdempotencyKey)
+			assert.NotEmpty(t, event.ID.EventIdempotencyKey)
 
 			// Find the matching balance by idempotency key
-			expectedBalance, found := expectedBalancesByKey[event.IdempotencyKey]
+			expectedBalance, found := expectedBalancesByKey[event.ID.EventIdempotencyKey]
 			require.True(t, found, "event idempotency key should match one of the balances")
 
 			// Verify payload contains balance data
@@ -396,7 +395,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBalances && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeSavedBalances && event.ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
@@ -449,7 +448,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBalances && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedBalances && expectedKeys[event.ID.EventIdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -459,8 +458,7 @@ func TestBalancesUpsert(t *testing.T) {
 		for _, event := range ourEvents {
 			assert.Equal(t, events.EventTypeSavedBalances, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
-			assert.NotEqual(t, uuid.Nil, event.ID)
-			assert.NotEmpty(t, event.IdempotencyKey)
+			assert.NotEmpty(t, event.ID.EventIdempotencyKey)
 		}
 	})
 
@@ -488,7 +486,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 		// Check that no event with this idempotency key exists
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBalances && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeSavedBalances && event.ID.EventIdempotencyKey == expectedKey {
 				t.Fatalf("unexpected outbox event created for stale balance (no-op)")
 			}
 		}
@@ -542,7 +540,7 @@ func TestBalancesUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBalances && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedBalances && expectedKeys[event.ID.EventIdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -550,7 +548,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 		// Verify no event was created for the stale balance
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBalances && event.IdempotencyKey == staleKey {
+			if event.EventType == events.EventTypeSavedBalances && event.ID.EventIdempotencyKey == staleKey {
 				t.Fatalf("unexpected outbox event created for stale balance (no-op)")
 			}
 		}
@@ -559,8 +557,7 @@ func TestBalancesUpsert(t *testing.T) {
 		for _, event := range ourEvents {
 			assert.Equal(t, events.EventTypeSavedBalances, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
-			assert.NotEqual(t, uuid.Nil, event.ID)
-			assert.NotEmpty(t, event.IdempotencyKey)
+			assert.NotEmpty(t, event.ID.EventIdempotencyKey)
 		}
 	})
 }

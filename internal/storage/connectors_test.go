@@ -174,7 +174,7 @@ func TestConnectorsInstall(t *testing.T) {
 
 		// Verify idempotency key format
 		expectedKeyPrefix := fmt.Sprintf("%s-", oldConnector.ID.String())
-		assert.Contains(t, ourEvent.IdempotencyKey, expectedKeyPrefix)
+		assert.Contains(t, ourEvent.ID.EventIdempotencyKey, expectedKeyPrefix)
 	})
 
 	t.Run("no outbox event for normal install", func(t *testing.T) {

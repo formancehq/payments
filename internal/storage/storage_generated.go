@@ -811,7 +811,7 @@ func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, fr
 }
 
 // OutboxEventsDeleteAndRecordSent mocks base method.
-func (m *MockStorage) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) error {
+func (m *MockStorage) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OutboxEventsDeleteAndRecordSent", ctx, eventIDs, eventsSent)
 	ret0, _ := ret[0].(error)
@@ -853,17 +853,17 @@ func (mr *MockStorageMockRecorder) OutboxEventsInsertWithTx(ctx, events any) *go
 }
 
 // OutboxEventsMarkFailed mocks base method.
-func (m *MockStorage) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, err error) error {
+func (m *MockStorage) OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OutboxEventsMarkFailed", ctx, id, retryCount, err)
+	ret := m.ctrl.Call(m, "OutboxEventsMarkFailed", ctx, eventID, retryCount, err)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OutboxEventsMarkFailed indicates an expected call of OutboxEventsMarkFailed.
-func (mr *MockStorageMockRecorder) OutboxEventsMarkFailed(ctx, id, retryCount, err any) *gomock.Call {
+func (mr *MockStorageMockRecorder) OutboxEventsMarkFailed(ctx, eventID, retryCount, err any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkFailed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkFailed), ctx, id, retryCount, err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkFailed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkFailed), ctx, eventID, retryCount, err)
 }
 
 // OutboxEventsPollPending mocks base method.

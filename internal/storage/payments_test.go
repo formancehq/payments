@@ -246,7 +246,6 @@ func upsertPayments(t *testing.T, ctx context.Context, storage Storage, payments
 	require.NoError(t, storage.PaymentsUpsert(ctx, payments))
 }
 
-
 func TestPaymentsUpsert(t *testing.T) {
 	t.Parallel()
 
@@ -646,7 +645,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedPayments && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedPayments && expectedKeys[event.ID.EventIdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -659,13 +658,12 @@ func TestPaymentsUpsert(t *testing.T) {
 		assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
 		assert.Equal(t, 0, event.RetryCount)
 		assert.Nil(t, event.Error)
-		assert.NotEqual(t, uuid.Nil, event.ID)
-		assert.NotEmpty(t, event.IdempotencyKey)
+		assert.NotEmpty(t, event.ID.EventIdempotencyKey)
 
 		// Find the matching adjustment by idempotency key
 		var expectedAdj models.PaymentAdjustment
 		for _, adj := range newPayment.Adjustments {
-			if adj.IdempotencyKey() == event.IdempotencyKey {
+			if adj.IdempotencyKey() == event.ID.EventIdempotencyKey {
 				expectedAdj = adj
 				break
 			}
@@ -692,7 +690,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		assert.Equal(t, newPayment.ID.String(), event.EntityID)
 
 		// Verify idempotency key matches adjustment
-		assert.Equal(t, expectedAdj.IdempotencyKey(), event.IdempotencyKey)
+		assert.Equal(t, expectedAdj.IdempotencyKey(), event.ID.EventIdempotencyKey)
 	})
 
 	t.Run("outbox events created for multiple adjustments", func(t *testing.T) {
@@ -778,7 +776,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		// Filter events to only those we just created
 		ourEvents := make([]models.OutboxEvent, 0)
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedPayments && expectedKeys[event.IdempotencyKey] {
+			if event.EventType == events.EventTypeSavedPayments && expectedKeys[event.ID.EventIdempotencyKey] {
 				ourEvents = append(ourEvents, event)
 			}
 		}
@@ -789,8 +787,7 @@ func TestPaymentsUpsert(t *testing.T) {
 			assert.Equal(t, events.EventTypeSavedPayments, event.EventType)
 			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
 			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
-			assert.NotEqual(t, uuid.Nil, event.ID)
-			assert.NotEmpty(t, event.IdempotencyKey)
+			assert.NotEmpty(t, event.ID.EventIdempotencyKey)
 			assert.Equal(t, multiAdjustmentPayment.ID.String(), event.EntityID)
 		}
 	})
@@ -1821,7 +1818,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeDeletedPayments && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeDeletedPayments && event.ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
@@ -1834,8 +1831,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
 		assert.Nil(t, ourEvent.Error)
-		assert.NotEqual(t, uuid.Nil, ourEvent.ID)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload contains payment ID
 		var payload map[string]interface{}

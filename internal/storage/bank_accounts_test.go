@@ -164,7 +164,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBankAccount && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeSavedBankAccount && event.ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}
@@ -177,8 +177,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		assert.Nil(t, ourEvent.ConnectorID) // Bank accounts don't have connector ID
 		assert.Equal(t, 0, ourEvent.RetryCount)
 		assert.Nil(t, ourEvent.Error)
-		assert.NotEqual(t, uuid.Nil, ourEvent.ID)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload contains bank account data
 		var payload map[string]interface{}
@@ -261,7 +260,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 		// Filter events to only the one we just created
 		var ourEvent *models.OutboxEvent
 		for _, event := range pendingEvents {
-			if event.EventType == events.EventTypeSavedBankAccount && event.IdempotencyKey == expectedKey {
+			if event.EventType == events.EventTypeSavedBankAccount && event.ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &event
 				break
 			}

@@ -176,7 +176,7 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 		for i := range pendingEvents {
 			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiation &&
 				pendingEvents[i].EntityID == newPI.ID.String() &&
-				pendingEvents[i].IdempotencyKey == expectedKey {
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
 				break
 			}
@@ -189,7 +189,7 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 		assert.Equal(t, newPI.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, newPI.ConnectorID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}
@@ -865,7 +865,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 		for i := range pendingEvents {
 			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiationRelatedPayment &&
 				pendingEvents[i].EntityID == fmt.Sprintf("%s:%s", newPI.ID.String(), payments[0].ID.String()) &&
-				pendingEvents[i].IdempotencyKey == expectedKey {
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
 				break
 			}
@@ -878,7 +878,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("%s:%s", newPI.ID.String(), payments[0].ID.String()), ourEvent.EntityID)
 		assert.Equal(t, newPI.ConnectorID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}
@@ -1170,7 +1170,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 		for i := range pendingEvents {
 			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiationAdjustment &&
 				pendingEvents[i].EntityID == newAdj.ID.String() &&
-				pendingEvents[i].IdempotencyKey == expectedKey {
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
 				break
 			}
@@ -1183,7 +1183,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 		assert.Equal(t, newAdj.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, newAdj.ID.PaymentInitiationID.ConnectorID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}
@@ -1297,7 +1297,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 		for i := range pendingEvents {
 			if pendingEvents[i].EventType == events.EventTypeSavedPaymentInitiationAdjustment &&
 				pendingEvents[i].EntityID == p.ID.String() &&
-				pendingEvents[i].IdempotencyKey == expectedKey {
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
 				break
 			}
@@ -1310,7 +1310,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 		assert.Equal(t, p.ID.String(), ourEvent.EntityID)
 		assert.Equal(t, p.ID.PaymentInitiationID.ConnectorID, *ourEvent.ConnectorID)
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}

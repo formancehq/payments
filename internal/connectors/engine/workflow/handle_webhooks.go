@@ -415,13 +415,16 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 
 	idempotencyKey := models.IdempotencyKey(payload)
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeOpenBankingUserConnectionPendingDisconnect,
-		EntityID:       userPendingDisconnect.ConnectionID,
-		Payload:        payloadBytes,
-		CreatedAt:      workflow.Now(ctx).UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    &userPendingDisconnect.ConnectorID,
-		IdempotencyKey: idempotencyKey,
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &userPendingDisconnect.ConnectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserConnectionPendingDisconnect,
+		EntityID:    userPendingDisconnect.ConnectionID,
+		Payload:     payloadBytes,
+		CreatedAt:   workflow.Now(ctx).UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &userPendingDisconnect.ConnectorID,
 	}
 
 	if err := activities.StorageOutboxEventsInsert(
@@ -471,13 +474,16 @@ func (w Workflow) handleUserDisconnectedWebhook(
 
 	idempotencyKey := models.IdempotencyKey(payload)
 	outboxEvent := models.OutboxEvent{
-		EventType:      events.EventTypeOpenBankingUserDisconnected,
-		EntityID:       userDisconnected.PsuID.String(),
-		Payload:        payloadBytes,
-		CreatedAt:      workflow.Now(ctx).UTC(),
-		Status:         models.OUTBOX_STATUS_PENDING,
-		ConnectorID:    &userDisconnected.ConnectorID,
-		IdempotencyKey: idempotencyKey,
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &userDisconnected.ConnectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserDisconnected,
+		EntityID:    userDisconnected.PsuID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   workflow.Now(ctx).UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &userDisconnected.ConnectorID,
 	}
 
 	if err := activities.StorageOutboxEventsInsert(

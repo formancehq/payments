@@ -122,13 +122,16 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeSavedPool,
-			EntityID:       p.ID.String(),
-			Payload:        payloadBytes,
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    nil, // Pools don't have connector ID
-			IdempotencyKey: p.IdempotencyKey(),
+			ID: models.EventID{
+				EventIdempotencyKey: p.IdempotencyKey(),
+				ConnectorID:         nil,
+			},
+			EventType:   events.EventTypeSavedPool,
+			EntityID:    p.ID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: nil, // Pools don't have connector ID
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
@@ -203,13 +206,16 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      events.EventTypeDeletePool,
-			EntityID:       id.String(),
-			Payload:        payloadBytes,
-			CreatedAt:      time.Now().UTC(),
-			Status:         models.OUTBOX_STATUS_PENDING,
-			ConnectorID:    nil, // Pools don't have connector ID
-			IdempotencyKey: id.String(),
+			ID: models.EventID{
+				EventIdempotencyKey: id.String(),
+				ConnectorID:         nil,
+			},
+			EventType:   events.EventTypeDeletePool,
+			EntityID:    id.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: nil, // Pools don't have connector ID
 		}
 
 		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

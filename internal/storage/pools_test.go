@@ -138,7 +138,7 @@ func TestPoolsUpsert(t *testing.T) {
 		for i := range pendingEvents {
 			if pendingEvents[i].EventType == events.EventTypeSavedPool &&
 				pendingEvents[i].EntityID == newPool.ID.String() &&
-				pendingEvents[i].IdempotencyKey == expectedKey {
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
 				ourEvent = &pendingEvents[i]
 				break
 			}
@@ -151,7 +151,7 @@ func TestPoolsUpsert(t *testing.T) {
 		assert.Equal(t, newPool.ID.String(), ourEvent.EntityID)
 		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}
@@ -289,7 +289,7 @@ func TestPoolsDelete(t *testing.T) {
 		assert.Equal(t, deleteTestPool.ID.String(), ourEvent.EntityID)
 		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
 		assert.Equal(t, 0, ourEvent.RetryCount)
-		assert.Equal(t, deleteTestPool.ID.String(), ourEvent.IdempotencyKey)
+		assert.Equal(t, deleteTestPool.ID.String(), ourEvent.ID.EventIdempotencyKey)
 
 		// Verify payload
 		var payload map[string]interface{}

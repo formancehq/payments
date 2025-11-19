@@ -10,24 +10,21 @@ import (
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	internalErrors "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
 type outboxEvent struct {
 	bun.BaseModel `bun:"table:outbox_events"`
 
-	// Autoincrement fields
-	SortID int64 `bun:"sort_id,autoincrement"`
+	// Primary key
+	ID models.EventID `bun:"id,pk,type:character varying,notnull"`
 
 	// Mandatory fields
-	ID             uuid.UUID                `bun:"id,pk,type:uuid"`
-	EventType      string                   `bun:"event_type,type:text,notnull"`
-	EntityID       string                   `bun:"entity_id,type:character varying,notnull"`
-	Payload        json.RawMessage          `bun:"payload,type:jsonb,notnull"`
-	CreatedAt      internalTime.Time        `bun:"created_at,type:timestamp without time zone,notnull"`
-	Status         models.OutboxEventStatus `bun:"status,type:text,notnull"`
-	IdempotencyKey string                   `bun:"idempotency_key,type:character varying,notnull"`
+	EventType string                   `bun:"event_type,type:text,notnull"`
+	EntityID  string                   `bun:"entity_id,type:character varying,notnull"`
+	Payload   json.RawMessage          `bun:"payload,type:jsonb,notnull"`
+	CreatedAt internalTime.Time        `bun:"created_at,type:timestamp without time zone,notnull"`
+	Status    models.OutboxEventStatus `bun:"status,type:text,notnull"`
 
 	// Optional fields
 	ConnectorID *models.ConnectorID `bun:"connector_id,type:character varying,nullzero"`
@@ -44,16 +41,15 @@ func (s *store) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []mode
 	// Filter out events that already exist in events_sent table
 	toInsert := make([]outboxEvent, 0, len(events))
 	for _, event := range events {
-		// Construct the EventID that would be used in events_sent
-		eventID := models.EventID{
-			EventIdempotencyKey: event.IdempotencyKey,
-			ConnectorID:         event.ConnectorID,
+		// EventID must be set on the event
+		if event.ID.EventIdempotencyKey == "" {
+			return e("event ID must be set with EventIdempotencyKey", errors.New("missing event ID"))
 		}
 
 		// Check if this EventID already exists in events_sent using the transaction
 		exists, err := tx.NewSelect().
 			Model((*eventSent)(nil)).
-			Where("id = ?", eventID).
+			Where("id = ?", event.ID).
 			Exists(ctx)
 		if err != nil {
 			return e("failed to check if event already sent", err)
@@ -72,10 +68,10 @@ func (s *store) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []mode
 		return nil
 	}
 
-	// Insert with ON CONFLICT DO NOTHING for (idempotency_key, connector_id)
+	// Insert with ON CONFLICT DO NOTHING for (id)
 	_, err := tx.NewInsert().
 		Model(&toInsert).
-		On("CONFLICT (idempotency_key, connector_id) DO NOTHING").
+		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 
 	return e("failed to insert outbox events", err)
@@ -128,7 +124,7 @@ func (s *store) OutboxEventsPollPending(ctx context.Context, limit int) ([]model
 	return result, nil
 }
 
-func (s *store) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, err error) error {
+func (s *store) OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error {
 	now := internalTime.Now().UTC()
 	maxRetries := models.MaxOutboxRetries
 
@@ -150,13 +146,13 @@ func (s *store) OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryC
 		Set("retry_count = ?", retryCount).
 		Set("last_retry_at = ?", now).
 		Set("error = ?", errMsg).
-		Where("id = ?", id).
+		Where("id = ?", eventID).
 		Exec(ctx)
 
 	return e("failed to mark outbox event", updateErr)
 }
 
-func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []uuid.UUID, eventsSent []models.EventSent) error {
+func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
 	if len(eventIDs) == 0 {
 		return nil // Nothing to do
 	}
@@ -174,7 +170,7 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []
 		rollbackOnTxError(ctx, &tx, err)
 	}()
 
-	// Delete from outbox (batch delete)
+	// Delete from outbox (batch delete using id)
 	_, err = tx.NewDelete().
 		TableExpr("outbox_events").
 		Where("id IN (?)", bun.In(eventIDs)).
@@ -208,15 +204,15 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []
 }
 
 func fromOutboxEventModel(from models.OutboxEvent) outboxEvent {
-	event := outboxEvent{
-		EventType:      from.EventType,
-		EntityID:       from.EntityID,
-		Payload:        from.Payload,
-		CreatedAt:      internalTime.New(from.CreatedAt),
-		Status:         from.Status,
-		IdempotencyKey: from.IdempotencyKey,
-		ConnectorID:    from.ConnectorID,
-		RetryCount:     from.RetryCount,
+	return outboxEvent{
+		ID:          from.ID,
+		EventType:   from.EventType,
+		EntityID:    from.EntityID,
+		Payload:     from.Payload,
+		CreatedAt:   internalTime.New(from.CreatedAt),
+		Status:      from.Status,
+		ConnectorID: from.ConnectorID,
+		RetryCount:  from.RetryCount,
 		LastRetryAt: func() *internalTime.Time {
 			if from.LastRetryAt == nil {
 				return nil
@@ -225,31 +221,18 @@ func fromOutboxEventModel(from models.OutboxEvent) outboxEvent {
 		}(),
 		Error: from.Error,
 	}
-	// Generate UUID if not provided
-	if from.ID == uuid.Nil {
-		event.ID = uuid.New()
-	} else {
-		event.ID = from.ID
-	}
-	// SortID is auto-increment, don't set it manually unless provided
-	if from.SortID != 0 {
-		event.SortID = from.SortID
-	}
-	return event
 }
 
 func toOutboxEventModel(from outboxEvent) models.OutboxEvent {
 	return models.OutboxEvent{
-		SortID:         from.SortID,
-		ID:             from.ID,
-		EventType:      from.EventType,
-		EntityID:       from.EntityID,
-		Payload:        from.Payload,
-		CreatedAt:      from.CreatedAt.Time,
-		Status:         from.Status,
-		IdempotencyKey: from.IdempotencyKey,
-		ConnectorID:    from.ConnectorID,
-		RetryCount:     from.RetryCount,
+		ID:          from.ID,
+		EventType:   from.EventType,
+		EntityID:    from.EntityID,
+		Payload:     from.Payload,
+		CreatedAt:   from.CreatedAt.Time,
+		Status:      from.Status,
+		ConnectorID: from.ConnectorID,
+		RetryCount:  from.RetryCount,
 		LastRetryAt: func() *time.Time {
 			if from.LastRetryAt == nil {
 				return nil
