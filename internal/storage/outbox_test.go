@@ -139,8 +139,6 @@ func TestOutboxEventsPollPending(t *testing.T) {
 	assert.Equal(t, "account-1", pendingEventsLimited[0].EntityID) // Should get the oldest
 }
 
-// OutboxEventsDelete is no longer needed - marking as processed happens in OutboxEventsMarkProcessedAndRecordSent
-// Keeping this test as a placeholder for future reference
 func TestOutboxEventsMarkProcessedAndRecordSent(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
@@ -684,6 +682,129 @@ func TestOutboxEventsInsert_SameIdempotencyKeyWithNilConnectorID(t *testing.T) {
 	assert.True(t, hasNilConnector)
 }
 
+func TestOutboxEventsDeleteOldProcessed(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Insert a connector first
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	now := time.Now().UTC()
+	cutoffDate := now.AddDate(0, -1, 0) // 1 month ago
+
+	// Create events with different statuses and ages
+	events := []models.OutboxEvent{
+		{
+			ID: models.EventID{
+				EventIdempotencyKey: "old-processed-1",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-1",
+			Payload:     json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:   cutoffDate.Add(-10 * 24 * time.Hour), // 10 days before cutoff (should be deleted)
+			Status:      models.OUTBOX_STATUS_PROCESSED,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+		},
+		{
+			ID: models.EventID{
+				EventIdempotencyKey: "old-processed-2",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-2",
+			Payload:     json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:   cutoffDate.Add(-5 * 24 * time.Hour), // 5 days before cutoff (should be deleted)
+			Status:      models.OUTBOX_STATUS_PROCESSED,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+		},
+		{
+			ID: models.EventID{
+				EventIdempotencyKey: "recent-processed",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-3",
+			Payload:     json.RawMessage(`{"id": "account-3"}`),
+			CreatedAt:   cutoffDate.Add(5 * 24 * time.Hour), // 5 days after cutoff (should NOT be deleted)
+			Status:      models.OUTBOX_STATUS_PROCESSED,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+		},
+		{
+			ID: models.EventID{
+				EventIdempotencyKey: "old-pending",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-4",
+			Payload:     json.RawMessage(`{"id": "account-4"}`),
+			CreatedAt:   cutoffDate.Add(-10 * 24 * time.Hour), // Old but pending (should NOT be deleted)
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+		},
+		{
+			ID: models.EventID{
+				EventIdempotencyKey: "old-failed",
+				ConnectorID:         &defaultConnector.ID,
+			},
+			EventType:   "account.saved",
+			EntityID:    "account-5",
+			Payload:     json.RawMessage(`{"id": "account-5"}`),
+			CreatedAt:   cutoffDate.Add(-10 * 24 * time.Hour), // Old but failed (should NOT be deleted)
+			Status:      models.OUTBOX_STATUS_FAILED,
+			ConnectorID: &defaultConnector.ID,
+			RetryCount:  0,
+		},
+	}
+
+	insertOutboxEventsWithTx(t, store, ctx, events)
+
+	// Delete old processed events
+	err := store.OutboxEventsDeleteOldProcessed(ctx, cutoffDate)
+	require.NoError(t, err)
+
+	// Verify old processed events were deleted by checking they don't exist
+	// Use getOutboxEventByID which will return empty struct if not found
+	oldProcessed1 := getOutboxEventByID(t, store, ctx, events[0].ID)
+	assert.Empty(t, oldProcessed1.ID.EventIdempotencyKey, "Old processed event 1 should be deleted")
+
+	oldProcessed2 := getOutboxEventByID(t, store, ctx, events[1].ID)
+	assert.Empty(t, oldProcessed2.ID.EventIdempotencyKey, "Old processed event 2 should be deleted")
+
+	// Verify recent processed event still exists
+	recentProcessed := getOutboxEventByID(t, store, ctx, events[2].ID)
+	assert.Equal(t, "recent-processed", recentProcessed.ID.EventIdempotencyKey, "Recent processed event should still exist")
+	assert.Equal(t, models.OUTBOX_STATUS_PROCESSED, recentProcessed.Status)
+
+	// Verify old pending event still exists
+	oldPending := getOutboxEventByID(t, store, ctx, events[3].ID)
+	assert.Equal(t, "old-pending", oldPending.ID.EventIdempotencyKey, "Old pending event should still exist")
+	assert.Equal(t, models.OUTBOX_STATUS_PENDING, oldPending.Status)
+
+	// Verify old failed event still exists
+	oldFailed := getOutboxEventByID(t, store, ctx, events[4].ID)
+	assert.Equal(t, "old-failed", oldFailed.ID.EventIdempotencyKey, "Old failed event should still exist")
+	assert.Equal(t, models.OUTBOX_STATUS_FAILED, oldFailed.Status)
+}
+
+func TestOutboxEventsDeleteOldProcessed_EmptyResult(t *testing.T) {
+	store := newStore(t)
+	defer store.Close()
+
+	ctx := context.Background()
+
+	// Delete with no matching events should not error
+	cutoffDate := time.Now().UTC().AddDate(0, -1, 0)
+	err := store.OutboxEventsDeleteOldProcessed(ctx, cutoffDate)
+	require.NoError(t, err)
+}
+
 // testNonRetryableError is a test helper that implements NonRetryableError interface
 type testNonRetryableError struct {
 	message string
@@ -712,6 +833,7 @@ func insertOutboxEventsWithTx(t *testing.T, s Storage, ctx context.Context, even
 }
 
 // Helper function to get outbox event by ID for testing
+// Returns empty outboxEvent if not found
 func getOutboxEventByID(t *testing.T, s Storage, ctx context.Context, eventID models.EventID) outboxEvent {
 	storeImpl := s.(*store)
 	var dbEvent outboxEvent
@@ -719,6 +841,9 @@ func getOutboxEventByID(t *testing.T, s Storage, ctx context.Context, eventID mo
 		TableExpr("outbox_events").
 		Where("id = ?", eventID).
 		Scan(ctx, &dbEvent)
-	require.NoError(t, err)
+	if err != nil {
+		// If not found, return empty struct
+		return outboxEvent{}
+	}
 	return dbEvent
 }

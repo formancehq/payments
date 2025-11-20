@@ -450,6 +450,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.OutboxPublishPendingEvents,
 		}).
 		Append(temporalworker.Definition{
+			Name: "OutboxDeleteOldProcessedEvents",
+			Func: a.OutboxDeleteOldProcessedEvents,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageOutboxEventsInsert",
 			Func: a.StorageOutboxEventsInsert,
 		})

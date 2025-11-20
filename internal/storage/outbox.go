@@ -204,6 +204,16 @@ func (s *store) OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, even
 	return nil
 }
 
+func (s *store) OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error {
+	_, err := s.db.NewDelete().
+		TableExpr("outbox_events").
+		Where("status = ?", models.OUTBOX_STATUS_PROCESSED).
+		Where("created_at < ?", olderThan).
+		Exec(ctx)
+
+	return e("failed to delete old processed outbox events", err)
+}
+
 func fromOutboxEventModel(from models.OutboxEvent) outboxEvent {
 	return outboxEvent{
 		ID:          from.ID,

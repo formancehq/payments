@@ -175,6 +175,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunOutboxPublisher,
 			Func: w.runOutboxPublisher,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunOutboxCleanup,
+			Func: w.runOutboxCleanup,
 		})
 }
 

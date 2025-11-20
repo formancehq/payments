@@ -179,6 +179,7 @@ type Storage interface {
 	OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error)
 	OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error
 	OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error
+	OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
