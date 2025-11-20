@@ -61,7 +61,7 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxEvent) error {
 	// Create the event message
 	eventMessage := publish.EventMessage{
-		IdempotencyKey: event.ID.EventIdempotencyKey,
+		IdempotencyKey: event.ID.String(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,

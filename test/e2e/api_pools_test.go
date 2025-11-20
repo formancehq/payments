@@ -448,12 +448,19 @@ var _ = Context("Payments API Pools", Serial, func() {
 			id := uuid.New()
 			connectorConf := newV3ConnectorConfigFn()(id)
 
-			_, err = GeneratePSPData(connectorConf.Directory, 1)
-			Expect(err).To(BeNil())
-
 			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
 			Expect(err).To(BeNil())
 
+			_, err = GeneratePSPData(connectorConf.Directory, 1)
+			Expect(err).To(BeNil())
+
+			// Wait for at least one account to be created to ensure the connector workflow has started
+			Eventually(func() int {
+				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedAccounts)
+				return n
+			}).WithTimeout(10 * time.Second).WithPolling(100 * time.Millisecond).Should(Equal(1))
+
+			// Wait for balance event to appear in the outbox
 			var msg internalEvents.BalanceMessagePayload
 			Eventually(func() bool {
 				payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), events.EventTypeSavedBalances)
@@ -468,7 +475,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 					}
 				}
 				return false
-			}).WithTimeout(10 * time.Second).WithPolling(1 * time.Second).Should(BeTrue())
+			}).WithTimeout(10 * time.Second).WithPolling(100 * time.Millisecond).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
 				AccountID: msg.AccountID,
