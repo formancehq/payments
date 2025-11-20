@@ -152,7 +152,7 @@ func (s *store) OutboxEventsMarkFailed(ctx context.Context, eventID models.Event
 	return e("failed to mark outbox event", updateErr)
 }
 
-func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
+func (s *store) OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
 	if len(eventIDs) == 0 {
 		return nil // Nothing to do
 	}
@@ -170,13 +170,14 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []
 		rollbackOnTxError(ctx, &tx, err)
 	}()
 
-	// Delete from outbox (batch delete using id)
-	_, err = tx.NewDelete().
+	// Mark events as processed (batch update using id)
+	_, err = tx.NewUpdate().
 		TableExpr("outbox_events").
+		Set("status = ?", models.OUTBOX_STATUS_PROCESSED).
 		Where("id IN (?)", bun.In(eventIDs)).
 		Exec(ctx)
 	if err != nil {
-		return e("failed to delete published events from outbox", err)
+		return e("failed to mark published events as processed", err)
 	}
 
 	// Record in events_sent table (batch insert)

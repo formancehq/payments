@@ -810,20 +810,6 @@ func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, fr
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingForwardedUserUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingForwardedUserUpsert), ctx, psuID, from)
 }
 
-// OutboxEventsDeleteAndRecordSent mocks base method.
-func (m *MockStorage) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OutboxEventsDeleteAndRecordSent", ctx, eventIDs, eventsSent)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// OutboxEventsDeleteAndRecordSent indicates an expected call of OutboxEventsDeleteAndRecordSent.
-func (mr *MockStorageMockRecorder) OutboxEventsDeleteAndRecordSent(ctx, eventIDs, eventsSent any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsDeleteAndRecordSent", reflect.TypeOf((*MockStorage)(nil).OutboxEventsDeleteAndRecordSent), ctx, eventIDs, eventsSent)
-}
-
 // OutboxEventsInsert mocks base method.
 func (m *MockStorage) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error {
 	m.ctrl.T.Helper()
@@ -864,6 +850,20 @@ func (m *MockStorage) OutboxEventsMarkFailed(ctx context.Context, eventID models
 func (mr *MockStorageMockRecorder) OutboxEventsMarkFailed(ctx, eventID, retryCount, err any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkFailed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkFailed), ctx, eventID, retryCount, err)
+}
+
+// OutboxEventsMarkProcessedAndRecordSent mocks base method.
+func (m *MockStorage) OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsMarkProcessedAndRecordSent", ctx, eventIDs, eventsSent)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsMarkProcessedAndRecordSent indicates an expected call of OutboxEventsMarkProcessedAndRecordSent.
+func (mr *MockStorageMockRecorder) OutboxEventsMarkProcessedAndRecordSent(ctx, eventIDs, eventsSent any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkProcessedAndRecordSent", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkProcessedAndRecordSent), ctx, eventIDs, eventsSent)
 }
 
 // OutboxEventsPollPending mocks base method.

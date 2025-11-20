@@ -68,9 +68,9 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				Publish(gomock.Any(), gomock.Any()).
 				Return(nil)
 
-			// Delete from outbox and record sent atomically (batch)
+			// Mark as processed and record sent atomically (batch)
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				OutboxEventsMarkProcessedAndRecordSent(ctx, gomock.Any(), gomock.Any()).
 				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(1))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
@@ -219,9 +219,9 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				Publish(gomock.Any(), gomock.Any()).
 				Return(nil)
 
-			// Delete from outbox and record sent atomically (batch)
+			// Mark as processed and record sent atomically (batch)
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				OutboxEventsMarkProcessedAndRecordSent(ctx, gomock.Any(), gomock.Any()).
 				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(1))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
@@ -307,15 +307,15 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				Publish(gomock.Any(), gomock.Any()).
 				Return(nil)
 
-			// Delete and record sent fails
-			deleteErr := errors.New("delete error")
+			// Mark as processed and record sent fails
+			markErr := errors.New("mark processed error")
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
-				Return(deleteErr)
+				OutboxEventsMarkProcessedAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				Return(markErr)
 
 			err := act.OutboxPublishPendingEvents(ctx, 100)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("failed to delete outbox events and record sent"))
+			Expect(err.Error()).To(ContainSubstring("failed to mark outbox events as processed and record sent"))
 		})
 
 		It("processes multiple events in batch", func(ctx SpecContext) {
@@ -377,9 +377,9 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				Return(nil).
 				Times(3)
 
-			// Batch delete and record sent
+			// Batch mark as processed and record sent
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				OutboxEventsMarkProcessedAndRecordSent(ctx, gomock.Any(), gomock.Any()).
 				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(3))
 					Expect(eventsSent).To(HaveLen(3))
@@ -452,9 +452,9 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 				OutboxEventsMarkFailed(ctx, testEvents[1].ID, 1, publishErr).
 				Return(nil)
 
-			// Only first event should be batched for deletion
+			// Only first event should be batched for marking as processed
 			s.EXPECT().
-				OutboxEventsDeleteAndRecordSent(ctx, gomock.Any(), gomock.Any()).
+				OutboxEventsMarkProcessedAndRecordSent(ctx, gomock.Any(), gomock.Any()).
 				Do(func(_ context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) {
 					Expect(eventIDs).To(HaveLen(1))
 					Expect(eventIDs[0]).To(Equal(testEvents[0].ID))
