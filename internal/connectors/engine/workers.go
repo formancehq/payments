@@ -314,34 +314,23 @@ func (w *WorkerPool) RemoveWorker(name string) error {
 	return nil
 }
 
-func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
-	scheduleID := fmt.Sprintf("%s-outbox-publisher", w.stack)
+func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workflowName string, interval time.Duration, errorMsg string) error {
+	scheduleID := fmt.Sprintf("%s-%s", w.stack, scheduleIDSuffix)
 	taskQueue := GetDefaultTaskQueue(w.stack)
 
-	_, err := w.temporalClient.ScheduleClient().GetHandle(ctx, scheduleID).Describe(ctx)
-	if err == nil {
-		// Schedule already exists, no need to create it
-		return nil
-	}
-	var notFoundErr *serviceerror.NotFound
-	if !errors.As(err, &notFoundErr) {
-		// Some other error while describing: fail fast
-		return fmt.Errorf("describe schedule %s: %w", scheduleID, err)
-	}
-
 	// Create the schedule
-	_, err = w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+	_, err := w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
 		ID: scheduleID,
 		Spec: client.ScheduleSpec{
 			Intervals: []client.ScheduleIntervalSpec{
 				{
-					Every: OUTBOX_POLLING_PERIOD, // Poll every 5 seconds
+					Every: interval,
 				},
 			},
 		},
 		Action: &client.ScheduleWorkflowAction{
 			ID:        scheduleID,
-			Workflow:  "OutboxPublisher",
+			Workflow:  workflowName,
 			Args:      []interface{}{}, // No arguments needed
 			TaskQueue: taskQueue,
 		},
@@ -358,58 +347,29 @@ func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
 			// Created by concurrent caller, treat as success
 			return nil
 		}
-		return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+		return fmt.Errorf("%s: %w", errorMsg, err)
 	}
 	return nil
 }
 
+func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
+	return w.createSchedule(
+		ctx,
+		"outbox-publisher",
+		"OutboxPublisher",
+		OUTBOX_POLLING_PERIOD,
+		"failed to create outbox publisher schedule",
+	)
+}
+
 func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
-	scheduleID := fmt.Sprintf("%s-outbox-cleanup", w.stack)
-	taskQueue := GetDefaultTaskQueue(w.stack)
-
-	_, err := w.temporalClient.ScheduleClient().GetHandle(ctx, scheduleID).Describe(ctx)
-	if err == nil {
-		// Schedule already exists, no need to create it
-		return nil
-	}
-	var notFoundErr *serviceerror.NotFound
-	if !errors.As(err, &notFoundErr) {
-		// Some other error while describing: fail fast
-		return fmt.Errorf("describe schedule %s: %w", scheduleID, err)
-	}
-
-	// Create the schedule
-	_, err = w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
-		ID: scheduleID,
-		Spec: client.ScheduleSpec{
-			Intervals: []client.ScheduleIntervalSpec{
-				{
-					Every: 7 * 24 * time.Hour, // Run weekly
-				},
-			},
-		},
-		Action: &client.ScheduleWorkflowAction{
-			ID:        scheduleID,
-			Workflow:  "OutboxCleanup",
-			Args:      []interface{}{}, // No arguments needed
-			TaskQueue: taskQueue,
-		},
-		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
-		TriggerImmediately: true,
-		SearchAttributes: map[string]interface{}{
-			"Stack": w.stack,
-		},
-	})
-
-	if err != nil {
-		var already *serviceerror.AlreadyExists
-		if errors.As(err, &already) {
-			// Created by concurrent caller, treat as success
-			return nil
-		}
-		return fmt.Errorf("failed to create outbox cleanup schedule: %w", err)
-	}
-	return nil
+	return w.createSchedule(
+		ctx,
+		"outbox-cleanup",
+		"OutboxCleanup",
+		7*24*time.Hour,
+		"failed to create outbox cleanup schedule",
+	)
 }
 
 // SetSkipScheduleCreation sets whether to skip creating the outbox publisher schedule.

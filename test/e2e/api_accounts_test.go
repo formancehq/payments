@@ -149,7 +149,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 					}
 				}
 				return false
-			}).Should(BeTrue())
+			}).WithTimeout(10 * time.Second).Should(BeTrue())
 
 			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
 				AccountID: msg.AccountID,

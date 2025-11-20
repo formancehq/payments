@@ -111,8 +111,6 @@ var _ = Describe("Worker Tests", func() {
 		It("should successfully create schedule when it does not exist", func(ctx SpecContext) {
 			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Do(func(_ context.Context, opts client.ScheduleOptions) {
 				Expect(opts.ID).To(Equal(scheduleID))
 				Expect(opts.TriggerImmediately).To(BeTrue())
@@ -131,49 +129,17 @@ var _ = Describe("Worker Tests", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should return nil when schedule already exists", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
+		It("should return nil when schedule already exists (AlreadyExists error)", func(ctx SpecContext) {
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			desc := &client.ScheduleDescription{}
-			mockHandle.EXPECT().Describe(ctx).Return(desc, nil)
-			// Create should NOT be called
-
-			err := pool.CreateOutboxPublisherSchedule(ctx)
-			Expect(err).To(BeNil())
-		})
-
-		It("should return nil when concurrent create returns AlreadyExists error", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
-			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, serviceerror.NewAlreadyExists("already exists"))
 
 			err := pool.CreateOutboxPublisherSchedule(ctx)
 			Expect(err).To(BeNil())
 		})
 
-		It("should return error when Describe fails with non-NotFound error", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
-			expectedErr := fmt.Errorf("describe error")
-			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, expectedErr)
-			// Create should NOT be called
-
-			err := pool.CreateOutboxPublisherSchedule(ctx)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring("describe schedule"))
-			Expect(err.Error()).To(ContainSubstring(scheduleID))
-		})
-
 		It("should return error when Create fails with non-AlreadyExists error", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-publisher", stackName)
 			expectedErr := fmt.Errorf("create error")
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, expectedErr)
 
 			err := pool.CreateOutboxPublisherSchedule(ctx)
@@ -208,8 +174,6 @@ var _ = Describe("Worker Tests", func() {
 		It("should successfully create schedule when it does not exist", func(ctx SpecContext) {
 			scheduleID := fmt.Sprintf("%s-outbox-cleanup", stackName)
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Do(func(_ context.Context, opts client.ScheduleOptions) {
 				Expect(opts.ID).To(Equal(scheduleID))
 				Expect(opts.TriggerImmediately).To(BeTrue())
@@ -228,49 +192,17 @@ var _ = Describe("Worker Tests", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should return nil when schedule already exists", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-cleanup", stackName)
+		It("should return nil when schedule already exists (AlreadyExists error)", func(ctx SpecContext) {
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			desc := &client.ScheduleDescription{}
-			mockHandle.EXPECT().Describe(ctx).Return(desc, nil)
-			// Create should NOT be called
-
-			err := pool.CreateOutboxCleanupSchedule(ctx)
-			Expect(err).To(BeNil())
-		})
-
-		It("should return nil when concurrent create returns AlreadyExists error", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-cleanup", stackName)
-			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, serviceerror.NewAlreadyExists("already exists"))
 
 			err := pool.CreateOutboxCleanupSchedule(ctx)
 			Expect(err).To(BeNil())
 		})
 
-		It("should return error when Describe fails with non-NotFound error", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-cleanup", stackName)
-			expectedErr := fmt.Errorf("describe error")
-			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, expectedErr)
-			// Create should NOT be called
-
-			err := pool.CreateOutboxCleanupSchedule(ctx)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring("describe schedule"))
-			Expect(err.Error()).To(ContainSubstring(scheduleID))
-		})
-
 		It("should return error when Create fails with non-AlreadyExists error", func(ctx SpecContext) {
-			scheduleID := fmt.Sprintf("%s-outbox-cleanup", stackName)
 			expectedErr := fmt.Errorf("create error")
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-			mockScheduleClient.EXPECT().GetHandle(ctx, scheduleID).Return(mockHandle)
-			mockHandle.EXPECT().Describe(ctx).Return(nil, serviceerror.NewNotFound("not found"))
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, expectedErr)
 
 			err := pool.CreateOutboxCleanupSchedule(ctx)
