@@ -2,10 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 )
 
@@ -18,6 +22,15 @@ func (s *Service) PoolsBalancesAt(
 	if err != nil {
 		return nil, newStorageError(err, "cannot get pool")
 	}
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		// populate the pool accounts from the query
+		pool.PoolAccounts, err = s.populatePoolAccounts(ctx, pool)
+		if err != nil {
+			return nil, newStorageError(err, "cannot populate pool accounts")
+		}
+	}
+
 	res := make(map[string]*aggregatedBalance)
 	for i := range pool.PoolAccounts {
 		balances, err := s.storage.BalancesGetAt(ctx, pool.PoolAccounts[i], at)
@@ -50,4 +63,45 @@ func (s *Service) PoolsBalancesAt(
 	}
 
 	return balances, nil
+}
+
+func (s *Service) populatePoolAccounts(ctx context.Context, pool *models.Pool) ([]models.AccountID, error) {
+	queryJSON, err := json.Marshal(pool.Query)
+	if err != nil {
+		return nil, newStorageError(err, "cannot marshal pool query")
+	}
+
+	qb, err := query.ParseJSON(string(queryJSON))
+	if err != nil {
+		return nil, newStorageError(err, "cannot parse pool query")
+	}
+
+	q := storage.NewListAccountsQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
+			WithPageSize(100).
+			WithQueryBuilder(qb),
+	)
+
+	res := make([]models.AccountID, 0)
+	for {
+		cursor, err := s.storage.AccountsList(ctx, q)
+		if err != nil {
+			return nil, newStorageError(err, "cannot list accounts")
+		}
+
+		for _, account := range cursor.Data {
+			res = append(res, account.ID)
+		}
+
+		if !cursor.HasMore {
+			break
+		}
+
+		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		if err != nil {
+			return nil, newStorageError(err, "cannot unmarshal cursor")
+		}
+	}
+
+	return res, nil
 }

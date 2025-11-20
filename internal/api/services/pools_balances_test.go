@@ -93,6 +93,7 @@ func TestPoolsBalancesLatest(t *testing.T) {
 				ID:           id,
 				Name:         "test",
 				CreatedAt:    time.Now().Add(-time.Hour),
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: poolsAccount,
 			}, test.poolsGetStorageErr)
 			if test.poolsGetStorageErr == nil {

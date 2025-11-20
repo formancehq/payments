@@ -41,8 +41,10 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 		data := make([]*PoolResponse, len(cursor.Data))
 		for i := range cursor.Data {
 			data[i] = &PoolResponse{
-				ID:   cursor.Data[i].ID.String(),
-				Name: cursor.Data[i].Name,
+				ID:    cursor.Data[i].ID.String(),
+				Type:  cursor.Data[i].Type,
+				Query: cursor.Data[i].Query,
+				Name:  cursor.Data[i].Name,
 			}
 
 			accounts := make([]string, len(cursor.Data[i].PoolAccounts))

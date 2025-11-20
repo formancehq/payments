@@ -7,10 +7,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type PoolType string
+
+const (
+	// Pools created with a list of accounts. No dynamic changes, the user can
+	// add/delete accounts from the pool via specific endpoints.
+	POOL_TYPE_STATIC PoolType = "STATIC"
+	// Pools created with an account list query. The user cannot add/delete
+	// accounts from the pool directly from endpoints, but can change the query
+	// to match the right accounts.
+	POOL_TYPE_DYNAMIC PoolType = "DYNAMIC"
+)
+
 type Pool struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"createdAt"`
+	Type      PoolType  `json:"type"`
+
+	Query map[string]any `json:"query"`
 
 	PoolAccounts []AccountID `json:"poolAccounts"`
 }
@@ -20,12 +35,14 @@ func (p Pool) MarshalJSON() ([]byte, error) {
 		ID           string    `json:"id"`
 		Name         string    `json:"name"`
 		CreatedAt    time.Time `json:"createdAt"`
+		Type         PoolType  `json:"type"`
 		PoolAccounts []string  `json:"poolAccounts"`
 	}
 
 	aux.ID = p.ID.String()
 	aux.Name = p.Name
 	aux.CreatedAt = p.CreatedAt
+	aux.Type = p.Type
 
 	aux.PoolAccounts = make([]string, len(p.PoolAccounts))
 	for i := range p.PoolAccounts {
@@ -40,6 +57,7 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 		ID           string    `json:"id"`
 		Name         string    `json:"name"`
 		CreatedAt    time.Time `json:"createdAt"`
+		Type         PoolType  `json:"type"`
 		PoolAccounts []string  `json:"poolAccounts"`
 	}
 
@@ -64,6 +82,7 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 	p.ID = id
 	p.Name = aux.Name
 	p.CreatedAt = aux.CreatedAt
+	p.Type = aux.Type
 	p.PoolAccounts = poolAccounts
 
 	return nil
