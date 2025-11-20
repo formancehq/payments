@@ -1569,10 +1569,12 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -1640,6 +1642,7 @@ components:
         - id
         - name
         - createdAt
+        - type
         - poolAccounts
       properties:
         id:
@@ -1649,6 +1652,11 @@ components:
         createdAt:
           type: string
           format: date-time
+        type:
+          type: string
+        query:
+          type: object
+          additionalProperties: true
         poolAccounts:
           type: array
           items:

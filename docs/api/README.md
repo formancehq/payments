@@ -3130,6 +3130,7 @@ Accept: application/json
 ```json
 {
   "name": "string",
+  "query": {},
   "accountIDs": [
     "string"
   ]
@@ -3214,6 +3215,8 @@ Accept: application/json
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
+        "type": "string",
+        "query": {},
         "poolAccounts": [
           "string"
         ]
@@ -3266,6 +3269,8 @@ Accept: application/json
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
+    "type": "string",
+    "query": {},
     "poolAccounts": [
       "string"
     ]
@@ -6335,6 +6340,7 @@ None ( Scopes: payments:read )
 ```json
 {
   "name": "string",
+  "query": {},
   "accountIDs": [
     "string"
   ]
@@ -6347,7 +6353,8 @@ None ( Scopes: payments:read )
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |name|string|true|none|none|
-|accountIDs|[string]|true|none|none|
+|query|object|false|none|none|
+|accountIDs|[string]|false|none|none|
 
 <h2 id="tocS_V3CreatePoolResponse">V3CreatePoolResponse</h2>
 <!-- backwards compatibility -->
@@ -6388,6 +6395,8 @@ None ( Scopes: payments:read )
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
+        "type": "string",
+        "query": {},
         "poolAccounts": [
           "string"
         ]
@@ -6422,6 +6431,8 @@ None ( Scopes: payments:read )
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
+    "type": "string",
+    "query": {},
     "poolAccounts": [
       "string"
     ]
@@ -6476,6 +6487,8 @@ None ( Scopes: payments:read )
   "id": "string",
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
+  "type": "string",
+  "query": {},
   "poolAccounts": [
     "string"
   ]
@@ -6490,6 +6503,8 @@ None ( Scopes: payments:read )
 |id|string|true|none|none|
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
+|type|string|true|none|none|
+|query|object|false|none|none|
 |poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|none|
 
 <h2 id="tocS_V3PoolBalances">V3PoolBalances</h2>

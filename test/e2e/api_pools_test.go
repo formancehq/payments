@@ -80,6 +80,28 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(len(accountIDs)))
 		})
 
+		It("should be ok with a query", func() {
+			accountIDs := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
+				Name: "some-pool",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": accountIDs[0],
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+
+			poolID := createResponse.GetV3CreatePoolResponse().Data
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(1))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts[0]).To(Equal(accountIDs[0]))
+		})
+
 		It("should fail when underlying accounts don't exist", func() {
 			accountID := models.AccountID{
 				Reference:   "v3blahblahblah",
@@ -151,6 +173,28 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs)))
 		})
 
+		It("should be ok with a query", func() {
+			accountIDs := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
+				Name: "some-pool",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": accountIDs[0],
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+
+			poolID := createResponse.GetPoolResponse().Data.ID
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(1))
+			Expect(getResponse.GetPoolResponse().Data.Accounts[0]).To(Equal(accountIDs[0]))
+		})
+
 		It("should fail when underlying accounts don't exist", func() {
 			accountID := models.AccountID{
 				Reference:   "blahblahblah",
@@ -194,10 +238,12 @@ var _ = Context("Payments API Pools", Serial, func() {
 			accountIDs      []string
 			extraAccountIDs []string
 			poolID          string
+			poolWithQueryID string
 			e               chan *nats.Msg
 			err             error
 
-			eventPayload GenericEventPayload
+			eventPayloadWithoutQuery GenericEventPayload
+			eventPayloadWithQuery    GenericEventPayload
 		)
 
 		BeforeEach(func() {
@@ -214,18 +260,31 @@ var _ = Context("Payments API Pools", Serial, func() {
 			})
 			Expect(err).To(BeNil())
 			poolID = createResponse.GetV3CreatePoolResponse().Data
-			eventPayload = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			eventPayloadWithoutQuery = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
+
+			createResponse2, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
+				Name: "some-pool-with query",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": accountIDs[0],
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			poolWithQueryID = createResponse2.GetV3CreatePoolResponse().Data
+			eventPayloadWithQuery = GenericEventPayload{ID: poolWithQueryID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))))
 		})
 
 		AfterEach(func() {
 			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
-		It("should be possible to remove account from pool", func() {
+		It("should be possible to remove account from static pool", func() {
 			_, err := app.GetValue().SDK().Payments.V3.RemoveAccountFromPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -233,19 +292,38 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts[0]).To(Equal(accountIDs[1]))
 		})
 
+		It("should not be possible to remove account from dynamic pool", func() {
+			_, err := app.GetValue().SDK().Payments.V3.RemoveAccountFromPool(ctx, poolWithQueryID, accountIDs[0])
+			Expect(err).To(Not(BeNil()))
+
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolWithQueryID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(1))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts[0]).To(Equal(accountIDs[0]))
+		})
+
 		It("should not fail even when removing underlying account not attached to pool", func() {
 			_, err := app.GetValue().SDK().Payments.V3.RemoveAccountFromPool(ctx, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
 		})
 
-		It("should be possible to add account to pool", func() {
+		It("should be possible to add account to static pool", func() {
 			_, err := app.GetValue().SDK().Payments.V3.AddAccountToPool(ctx, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(len(accountIDs) + 1))
+		})
+
+		It("should not be possible to add account to dynamic pool", func() {
+			_, err := app.GetValue().SDK().Payments.V3.AddAccountToPool(ctx, poolWithQueryID, extraAccountIDs[0])
+			Expect(err).To(Not(BeNil()))
+
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolWithQueryID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(1))
 		})
 
 		It("should not fail event when adding underlying account already in pool", func() {
@@ -260,10 +338,12 @@ var _ = Context("Payments API Pools", Serial, func() {
 			accountIDs      []string
 			extraAccountIDs []string
 			poolID          string
+			poolWithQueryID string
 			e               chan *nats.Msg
 			err             error
 
-			eventPayload GenericEventPayload
+			eventPayloadWithoutQuery GenericEventPayload
+			eventPayloadWithQuery    GenericEventPayload
 		)
 
 		BeforeEach(func() {
@@ -280,23 +360,46 @@ var _ = Context("Payments API Pools", Serial, func() {
 			})
 			Expect(err).To(BeNil())
 			poolID = createResponse.GetPoolResponse().Data.ID
-			eventPayload = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			eventPayloadWithoutQuery = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
+
+			createResponse2, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
+				Name: "some-pool-with-query",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": accountIDs[0],
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			poolWithQueryID = createResponse2.GetPoolResponse().Data.ID
+			eventPayloadWithQuery = GenericEventPayload{ID: poolWithQueryID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))))
 		})
 
 		AfterEach(func() {
 			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
-		It("should be possible to remove account from pool", func() {
+		It("should be possible to remove account from static pool", func() {
 			_, err := app.GetValue().SDK().Payments.V1.RemoveAccountFromPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).WithTimeout(10 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs) - 1))
 			Expect(getResponse.GetPoolResponse().Data.Accounts[0]).To(Equal(accountIDs[1]))
+		})
+
+		It("should not be possible to remove account from dynamic pool", func() {
+			_, err := app.GetValue().SDK().Payments.V1.RemoveAccountFromPool(ctx, poolWithQueryID, accountIDs[0])
+			Expect(err).To(Not(BeNil()))
+
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolWithQueryID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(1))
+			Expect(getResponse.GetPoolResponse().Data.Accounts[0]).To(Equal(accountIDs[0]))
 		})
 
 		It("should not fail even when removing underlying account not attached to pool", func() {
@@ -309,11 +412,22 @@ var _ = Context("Payments API Pools", Serial, func() {
 				AccountID: extraAccountIDs[0],
 			})
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).WithTimeout(10 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs) + 1))
+		})
+
+		It("should not be possible to add account to pool", func() {
+			_, err := app.GetValue().SDK().Payments.V1.AddAccountToPool(ctx, poolWithQueryID, components.AddAccountToPoolRequest{
+				AccountID: extraAccountIDs[0],
+			})
+			Expect(err).To(Not(BeNil()))
+
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolWithQueryID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(1))
 		})
 
 		It("should not fail event when adding underlying account already in pool", func() {
@@ -326,14 +440,16 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 	When("fetching balances for a pool", func() {
 		var (
-			connectorID string
-			accountIDs  []string
-			balance     components.AccountBalance
-			poolID      string
-			e           chan *nats.Msg
-			err         error
+			connectorID     string
+			accountIDs      []string
+			balance         components.AccountBalance
+			poolID          string
+			poolWithQueryID string
+			e               chan *nats.Msg
+			err             error
 
-			eventPayload GenericEventPayload
+			eventPayloadWithQuery    GenericEventPayload
+			eventPayloadWithoutQuery GenericEventPayload
 		)
 
 		BeforeEach(func() {
@@ -369,15 +485,28 @@ var _ = Context("Payments API Pools", Serial, func() {
 			})
 			Expect(err).To(BeNil())
 			poolID = createResponse.GetV3CreatePoolResponse().Data
-			eventPayload = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			eventPayloadWithoutQuery = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithoutQuery))))
+
+			createResponse2, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
+				Name: "some-pool-with-query",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": balance.AccountID,
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			poolWithQueryID = createResponse2.GetV3CreatePoolResponse().Data
+			eventPayloadWithQuery = GenericEventPayload{ID: poolWithQueryID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayloadWithQuery))))
 		})
 
 		AfterEach(func() {
 			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
-		It("should fetch balances for accounts in pool using v3", func() {
+		It("should fetch balances for accounts in static pool using v3", func() {
 			res, err := app.GetValue().SDK().Payments.V3.GetPoolBalancesLatest(ctx, poolID)
 			Expect(err).To(BeNil())
 			Expect(res.GetV3PoolBalancesResponse().Data).To(HaveLen(1))
@@ -386,8 +515,26 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAmount()).To(Equal(balance.GetBalance()))
 		})
 
-		It("should fetch balances for accounts in pool using v1", func() {
+		It("should fetch balances for accounts in dynamic pool using v3", func() {
+			res, err := app.GetValue().SDK().Payments.V3.GetPoolBalancesLatest(ctx, poolWithQueryID)
+			Expect(err).To(BeNil())
+			Expect(res.GetV3PoolBalancesResponse().Data).To(HaveLen(1))
+			Expect(res.GetV3PoolBalancesResponse().Data[0].GetRelatedAccounts()).To(Equal([]string{balance.GetAccountID()}))
+			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAsset()).To(Equal(balance.GetAsset()))
+			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAmount()).To(Equal(balance.GetBalance()))
+		})
+
+		It("should fetch balances for accounts in static pool using v2", func() {
 			res, err := app.GetValue().SDK().Payments.V1.GetPoolBalancesLatest(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(res.GetPoolBalancesLatestResponse().Data).To(HaveLen(1))
+			Expect(res.GetPoolBalancesLatestResponse().Data[0].GetRelatedAccounts()).To(Equal([]string{balance.GetAccountID()}))
+			Expect(res.GetPoolBalancesLatestResponse().Data[0].GetAsset()).To(Equal(balance.GetAsset()))
+			Expect(res.GetPoolBalancesLatestResponse().Data[0].GetAmount()).To(Equal(balance.GetBalance()))
+		})
+
+		It("should fetch balances for accounts in dynamic pool using v2", func() {
+			res, err := app.GetValue().SDK().Payments.V1.GetPoolBalancesLatest(ctx, poolWithQueryID)
 			Expect(err).To(BeNil())
 			Expect(res.GetPoolBalancesLatestResponse().Data).To(HaveLen(1))
 			Expect(res.GetPoolBalancesLatestResponse().Data[0].GetRelatedAccounts()).To(Equal([]string{balance.GetAccountID()}))

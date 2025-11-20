@@ -597,6 +597,7 @@ var _ = Describe("Engine Tests", func() {
 				ID:   accountID,
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
 			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(fmt.Errorf("failed to add account to pool"))
 			err := eng.AddAccountToPool(ctx, poolID, accountID)
 			Expect(err).ToNot(BeNil())
@@ -608,8 +609,8 @@ var _ = Describe("Engine Tests", func() {
 				ID:   accountID,
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
-			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
 			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
+			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-add-account", defaultTaskQueue),
 				workflow.RunSendEvents,
 				gomock.AssignableToTypeOf(workflow.SendEvents{}),

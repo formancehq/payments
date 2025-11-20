@@ -17,9 +17,11 @@ type pool struct {
 	bun.BaseModel `bun:"table:pools"`
 
 	// Mandatory fields
-	ID        uuid.UUID `bun:"id,pk,type:uuid,notnull"`
-	Name      string    `bun:"name,type:text,notnull"`
-	CreatedAt time.Time `bun:"created_at,type:timestamp without time zone,notnull"`
+	ID        uuid.UUID       `bun:"id,pk,type:uuid,notnull"`
+	Name      string          `bun:"name,type:text,notnull"`
+	CreatedAt time.Time       `bun:"created_at,type:timestamp without time zone,notnull"`
+	Type      models.PoolType `bun:"type,type:text,notnull"`
+	Query     map[string]any  `bun:"query,type:jsonb,nullzero"`
 
 	PoolAccounts []*poolAccounts `bun:"rel:has-many,join:id=pool_id"`
 }
@@ -64,12 +66,14 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		return e("insert pool: %w", err)
 	}
 
-	_, err = tx.NewInsert().
-		Model(&accountsToInsert).
-		On("CONFLICT (pool_id, account_id) DO NOTHING").
-		Exec(ctx)
-	if err != nil {
-		return e("insert pool accounts: %w", err)
+	if len(accountsToInsert) > 0 {
+		_, err = tx.NewInsert().
+			Model(&accountsToInsert).
+			On("CONFLICT (pool_id, account_id) DO NOTHING").
+			Exec(ctx)
+		if err != nil {
+			return e("insert pool accounts: %w", err)
+		}
 	}
 
 	return e("commit transaction: %w", tx.Commit())
@@ -271,6 +275,8 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 		ID:        from.ID,
 		Name:      from.Name,
 		CreatedAt: time.New(from.CreatedAt),
+		Type:      from.Type,
+		Query:     from.Query,
 	}
 
 	var accounts []poolAccounts
@@ -295,6 +301,8 @@ func toPoolModel(from pool) models.Pool {
 		ID:           from.ID,
 		Name:         from.Name,
 		CreatedAt:    from.CreatedAt.Time,
+		Type:         from.Type,
+		Query:        from.Query,
 		PoolAccounts: accounts,
 	}
 }
