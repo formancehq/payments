@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunconnect"
 	"github.com/formancehq/go-libs/v3/logging"
@@ -82,8 +83,9 @@ func cleanupOutboxHelper(ctx context.Context, store Storage) func() {
 			eventsSent = append(eventsSent, models.EventSent{})
 		}
 		if len(eventIDs) > 0 {
-			// TODO this should actually delete them ideally
 			_ = store.OutboxEventsMarkProcessedAndRecordSent(ctx, eventIDs, eventsSent)
+			tomorrow := time.Now().AddDate(0, 0, 1)
+			_ = store.OutboxEventsDeleteOldProcessed(ctx, tomorrow)
 		}
 	}
 }
