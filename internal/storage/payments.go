@@ -228,17 +228,18 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 
 			// Convert adjustment back to model to get idempotency key
 			adjustmentModel := toPaymentAdjustmentModels(adj)
+			connectorID := payment.ConnectorID
 			outboxEvent := models.OutboxEvent{
 				ID: models.EventID{
 					EventIdempotencyKey: adjustmentModel.IdempotencyKey(),
-					ConnectorID:         &payment.ConnectorID,
+					ConnectorID:         &connectorID,
 				},
 				EventType:   events.EventTypeSavedPayments,
 				EntityID:    payment.ID.String(),
 				Payload:     payloadBytes,
 				CreatedAt:   time.Now().UTC(),
 				Status:      models.OUTBOX_STATUS_PENDING,
-				ConnectorID: &payment.ConnectorID,
+				ConnectorID: &connectorID,
 			}
 
 			outboxEvents = append(outboxEvents, outboxEvent)
