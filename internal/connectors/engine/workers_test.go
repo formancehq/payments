@@ -119,6 +119,7 @@ var _ = Describe("Worker Tests", func() {
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
 				Expect(opts.Spec.Intervals).To(HaveLen(1))
 				Expect(opts.Spec.Intervals[0].Every).To(Equal(5 * time.Second))
+				//nolint:staticcheck
 				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
 				Expect(ok).To(BeTrue())
@@ -215,6 +216,7 @@ var _ = Describe("Worker Tests", func() {
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
 				Expect(opts.Spec.Intervals).To(HaveLen(1))
 				Expect(opts.Spec.Intervals[0].Every).To(Equal(7 * 24 * time.Hour))
+				//nolint:staticcheck
 				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
 				Expect(ok).To(BeTrue())
