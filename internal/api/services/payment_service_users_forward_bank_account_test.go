@@ -29,16 +29,15 @@ func TestPaymentServiceUsersForwardBankAccountsToConnector(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                         string
-		bankAccountID                uuid.UUID
-		psuID                        uuid.UUID
-		engineErr                    error
-		bankAccountStorageErr        error
-		psuStorageErr                error
-		expectedEngineError          error
-		expectedStorageError         error
-		expectedMetadataStorageError error
-		typedError                   bool
+		name                  string
+		bankAccountID         uuid.UUID
+		psuID                 uuid.UUID
+		engineErr             error
+		bankAccountStorageErr error
+		psuStorageErr         error
+		expectedEngineError   error
+		expectedStorageError  error
+		typedError            bool
 	}{
 		{
 			name:          "success",
@@ -76,13 +75,6 @@ func TestPaymentServiceUsersForwardBankAccountsToConnector(t *testing.T) {
 			expectedStorageError:  newStorageError(storage.ErrNotFound, "failed to get bank account"),
 		},
 		{
-			name:                         "bank account storage error update metadata",
-			bankAccountID:                uuid.New(),
-			psuID:                        uuid.New(),
-			typedError:                   true,
-			expectedMetadataStorageError: newStorageError(storage.ErrNotFound, "failed to get bank account"),
-		},
-		{
 			name:                  "bank account other error",
 			bankAccountStorageErr: fmt.Errorf("error"),
 			expectedStorageError:  newStorageError(fmt.Errorf("error"), "failed to get bank account"),
@@ -111,10 +103,7 @@ func TestPaymentServiceUsersForwardBankAccountsToConnector(t *testing.T) {
 				store.EXPECT().PaymentServiceUsersGet(gomock.Any(), test.psuID).Return(&models.PaymentServiceUser{}, test.psuStorageErr)
 
 				if test.psuStorageErr == nil {
-					store.EXPECT().BankAccountsUpdateMetadata(gomock.Any(), test.bankAccountID, gomock.Any()).Return(test.expectedMetadataStorageError)
-					if test.expectedMetadataStorageError == nil {
-						eng.EXPECT().ForwardBankAccount(gomock.Any(), expectedBankAccount, connectorID, false).Return(models.Task{}, test.engineErr)
-					}
+					eng.EXPECT().ForwardBankAccount(gomock.Any(), expectedBankAccount, connectorID, false).Return(models.Task{}, test.engineErr)
 				}
 			}
 			_, err := s.PaymentServiceUsersForwardBankAccountToConnector(context.Background(), test.psuID, test.bankAccountID, connectorID)
@@ -130,8 +119,6 @@ func TestPaymentServiceUsersForwardBankAccountsToConnector(t *testing.T) {
 			case test.expectedStorageError != nil && !test.typedError:
 				require.Error(t, err)
 				require.Equal(t, test.expectedStorageError.Error(), err.Error())
-			case test.expectedMetadataStorageError != nil && test.typedError:
-				require.ErrorIs(t, err, test.expectedMetadataStorageError)
 			default:
 				require.NoError(t, err)
 			}
