@@ -80,6 +80,28 @@ var _ = Context("Payments API Pools", Serial, func() {
 			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(len(accountIDs)))
 		})
 
+		It("should be ok with a query", func() {
+			accountIDs := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
+				Name: "some-pool",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": accountIDs[0],
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+
+			poolID := createResponse.GetV3CreatePoolResponse().Data
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(1))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts[0]).To(Equal(accountIDs[0]))
+		})
+
 		It("should fail when underlying accounts don't exist", func() {
 			accountID := models.AccountID{
 				Reference:   "v3blahblahblah",
@@ -149,6 +171,28 @@ var _ = Context("Payments API Pools", Serial, func() {
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs)))
+		})
+
+		It("should be ok when underlying accounts exist with a query", func() {
+			accountIDs := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
+				Name: "some-pool",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"id": accountIDs[0],
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+
+			poolID := createResponse.GetPoolResponse().Data.ID
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(1))
+			Expect(getResponse.GetPoolResponse().Data.Accounts[0]).To(Equal(accountIDs[0]))
 		})
 
 		It("should fail when underlying accounts don't exist", func() {

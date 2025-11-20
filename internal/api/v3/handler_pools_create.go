@@ -17,8 +17,9 @@ import (
 )
 
 type CreatePoolRequest struct {
-	Name       string   `json:"name" validate:"required"`
-	AccountIDs []string `json:"accountIDs" validate:"min=1,dive,accountID"`
+	Name       string         `json:"name" validate:"required"`
+	Query      map[string]any `json:"query" validate:"required_without=AccountIDs"`
+	AccountIDs []string       `json:"accountIDs" validate:"required_without=Query,dive,accountID"`
 }
 
 func poolsCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
@@ -48,18 +49,24 @@ func poolsCreate(backend backend.Backend, validator *validation.Validator) http.
 			CreatedAt: time.Now().UTC(),
 		}
 
-		accounts := make([]models.AccountID, len(CreatePoolRequest.AccountIDs))
-		for i, accountID := range CreatePoolRequest.AccountIDs {
-			aID, err := models.AccountIDFromString(accountID)
-			if err != nil {
-				otel.RecordError(span, err)
-				api.BadRequest(w, ErrValidation, err)
-				return
-			}
+		if len(CreatePoolRequest.Query) > 0 {
+			pool.Type = models.POOL_TYPE_DYNAMIC
+			pool.Query = CreatePoolRequest.Query
+		} else {
+			pool.Type = models.POOL_TYPE_STATIC
+			accounts := make([]models.AccountID, len(CreatePoolRequest.AccountIDs))
+			for i, accountID := range CreatePoolRequest.AccountIDs {
+				aID, err := models.AccountIDFromString(accountID)
+				if err != nil {
+					otel.RecordError(span, err)
+					api.BadRequest(w, ErrValidation, err)
+					return
+				}
 
-			accounts[i] = aID
+				accounts[i] = aID
+			}
+			pool.PoolAccounts = accounts
 		}
-		pool.PoolAccounts = accounts
 
 		err = backend.PoolsCreate(ctx, pool)
 		if err != nil {

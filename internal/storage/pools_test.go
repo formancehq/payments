@@ -28,19 +28,26 @@ func defaultPools() []models.Pool {
 			ID:           poolID1,
 			Name:         "test1",
 			CreatedAt:    now.Add(-60 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
 			PoolAccounts: []models.AccountID{defaultAccounts[0].ID, defaultAccounts[1].ID},
 		},
 		{
 			ID:           poolID2,
 			Name:         "test2",
 			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
 			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
 		},
 		{
-			ID:           poolID3,
-			Name:         "test3",
-			CreatedAt:    now.Add(-55 * time.Minute).UTC().Time,
-			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
+			ID:        poolID3,
+			Name:      "test3",
+			CreatedAt: now.Add(-55 * time.Minute).UTC().Time,
+			Type:      models.POOL_TYPE_DYNAMIC,
+			Query: map[string]any{
+				"$match": map[string]any{
+					"account_id": "test3",
+				},
+			},
 		},
 	}
 }
@@ -66,6 +73,7 @@ func TestPoolsUpsert(t *testing.T) {
 		p := models.Pool{
 			ID:           poolID3,
 			Name:         "test1",
+			Type:         models.POOL_TYPE_STATIC,
 			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
 			PoolAccounts: []models.AccountID{defaultAccounts()[2].ID},
 		}

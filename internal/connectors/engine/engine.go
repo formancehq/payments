@@ -1459,6 +1459,18 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		return fmt.Errorf("account %s is not an internal account: %w", accountID, ErrValidation)
 	}
 
+	// Check next if the pool is dynamic, in that case, we send an error to the
+	// user telling him to use the pool query update endpoint.
+	pool, err := e.storage.PoolsGet(ctx, id)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		return fmt.Errorf("pool %s is a dynamic pool, use the pool query update endpoint to add an account: %w", id, ErrValidation)
+	}
+
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -1469,12 +1481,6 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
-
-	pool, err := e.storage.PoolsGet(detachedCtx, id)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
 
 	// Do not wait for sending of events
 	_, err = e.temporalClient.ExecuteWorkflow(
@@ -1505,6 +1511,16 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	ctx, span := otel.Tracer().Start(ctx, "engine.RemoveAccountFromPool")
 	defer span.End()
 
+	pool, err := e.storage.PoolsGet(ctx, id)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		return fmt.Errorf("pool %s is a dynamic pool, use the pool query update endpoint to remove an account: %w", id, ErrValidation)
+	}
+
 	if err := e.storage.PoolsRemoveAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -1515,12 +1531,6 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
-
-	pool, err := e.storage.PoolsGet(detachedCtx, id)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
 
 	// Do not wait for sending of events
 	_, err = e.temporalClient.ExecuteWorkflow(

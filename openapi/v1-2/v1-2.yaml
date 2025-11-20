@@ -2088,12 +2088,18 @@ components:
       required:
         - id
         - name
+        - type
         - accounts
       properties:
         id:
           type: string
         name:
           type: string
+        type:
+          type: string
+        query:
+          type: object
+          additionalProperties: true
         accounts:
           type: array
           items:
@@ -2431,10 +2437,12 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
