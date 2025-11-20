@@ -29,14 +29,26 @@ func TestPoolsBalancesLatest(t *testing.T) {
 	poolsAccount := []models.AccountID{{}}
 	balancesResponse := []*models.Balance{
 		{
+			AccountID: models.AccountID{
+				Reference:   "test1",
+				ConnectorID: models.ConnectorID{},
+			},
 			Asset:   "EUR/2",
 			Balance: big.NewInt(100),
 		},
 		{
+			AccountID: models.AccountID{
+				Reference:   "test1",
+				ConnectorID: models.ConnectorID{},
+			},
 			Asset:   "USD/2",
 			Balance: big.NewInt(200),
 		},
 		{
+			AccountID: models.AccountID{
+				Reference:   "test2",
+				ConnectorID: models.ConnectorID{},
+			},
 			Asset:   "EUR/2",
 			Balance: big.NewInt(300),
 		},
@@ -97,8 +109,15 @@ func TestPoolsBalancesLatest(t *testing.T) {
 					switch balance.Asset {
 					case "EUR/2":
 						require.Equal(t, big.NewInt(400), balance.Amount)
+						require.Equal(t, []models.AccountID{
+							{Reference: "test1", ConnectorID: models.ConnectorID{}},
+							{Reference: "test2", ConnectorID: models.ConnectorID{}},
+						}, balance.RelatedAccounts)
 						foundEUR = true
 					case "USD/2":
+						require.Equal(t, []models.AccountID{
+							{Reference: "test1", ConnectorID: models.ConnectorID{}},
+						}, balance.RelatedAccounts)
 						require.Equal(t, big.NewInt(200), balance.Amount)
 						foundUSD = true
 					default:

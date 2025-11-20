@@ -8,8 +8,9 @@ import (
 )
 
 type V3PoolBalance struct {
-	Asset  string   `json:"asset"`
-	Amount *big.Int `json:"amount"`
+	Asset           string   `json:"asset"`
+	Amount          *big.Int `json:"amount"`
+	RelatedAccounts []string `json:"relatedAccounts,omitempty"`
 }
 
 func (v V3PoolBalance) MarshalJSON() ([]byte, error) {
@@ -35,4 +36,11 @@ func (o *V3PoolBalance) GetAmount() *big.Int {
 		return big.NewInt(0)
 	}
 	return o.Amount
+}
+
+func (o *V3PoolBalance) GetRelatedAccounts() []string {
+	if o == nil {
+		return nil
+	}
+	return o.RelatedAccounts
 }

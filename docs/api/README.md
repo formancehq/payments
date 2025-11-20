@@ -3361,7 +3361,10 @@ Accept: application/json
   "data": [
     {
       "asset": "string",
-      "amount": 0
+      "amount": 0,
+      "relatedAccounts": [
+        "string"
+      ]
     }
   ]
 }
@@ -3409,7 +3412,10 @@ Accept: application/json
   "data": [
     {
       "asset": "string",
-      "amount": 0
+      "amount": 0,
+      "relatedAccounts": [
+        "string"
+      ]
     }
   ]
 }
@@ -6442,7 +6448,10 @@ None ( Scopes: payments:read )
   "data": [
     {
       "asset": "string",
-      "amount": 0
+      "amount": 0,
+      "relatedAccounts": [
+        "string"
+      ]
     }
   ]
 }
@@ -6494,7 +6503,10 @@ None ( Scopes: payments:read )
 [
   {
     "asset": "string",
-    "amount": 0
+    "amount": 0,
+    "relatedAccounts": [
+      "string"
+    ]
   }
 ]
 
@@ -6516,7 +6528,10 @@ None ( Scopes: payments:read )
 ```json
 {
   "asset": "string",
-  "amount": 0
+  "amount": 0,
+  "relatedAccounts": [
+    "string"
+  ]
 }
 
 ```
@@ -6527,6 +6542,7 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |asset|string|true|none|none|
 |amount|integer(bigint)|true|none|none|
+|relatedAccounts|[string]¦null|false|none|none|
 
 <h2 id="tocS_V3GetTaskResponse">V3GetTaskResponse</h2>
 <!-- backwards compatibility -->
