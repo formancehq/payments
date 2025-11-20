@@ -139,9 +139,9 @@ func TestOutboxEventsPollPending(t *testing.T) {
 	assert.Equal(t, "account-1", pendingEventsLimited[0].EntityID) // Should get the oldest
 }
 
-// OutboxEventsDelete is no longer needed - deletion happens in OutboxEventsDeleteAndRecordSent
+// OutboxEventsDelete is no longer needed - marking as processed happens in OutboxEventsMarkProcessedAndRecordSent
 // Keeping this test as a placeholder for future reference
-func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
+func TestOutboxEventsMarkProcessedAndRecordSent(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
 
@@ -182,13 +182,17 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 		SentAt:      time.Now().UTC(),
 	}
 
-	err = store.OutboxEventsDeleteAndRecordSent(ctx, []models.EventID{event.ID}, []models.EventSent{eventSent})
+	err = store.OutboxEventsMarkProcessedAndRecordSent(ctx, []models.EventID{event.ID}, []models.EventSent{eventSent})
 	require.NoError(t, err)
 
-	// Verify event is deleted
+	// Verify event is marked as processed (no longer pending)
 	pendingEventsAfter, err := store.OutboxEventsPollPending(ctx, 10)
 	require.NoError(t, err)
 	assert.Len(t, pendingEventsAfter, 0)
+
+	// Verify event status is processed
+	dbEvent := getOutboxEventByID(t, store, ctx, event.ID)
+	assert.Equal(t, models.OUTBOX_STATUS_PROCESSED, dbEvent.Status)
 
 	// Verify event is recorded as sent
 	exists, err := store.EventsSentExists(ctx, event.ID)
@@ -196,7 +200,7 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 	assert.True(t, exists)
 }
 
-func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
+func TestOutboxEventsMarkProcessedAndRecordSent_Batch(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
 
@@ -267,11 +271,11 @@ func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
 		})
 	}
 
-	// Batch delete and record sent
-	err = store.OutboxEventsDeleteAndRecordSent(ctx, eventIDs, eventsSent)
+	// Batch mark as processed and record sent
+	err = store.OutboxEventsMarkProcessedAndRecordSent(ctx, eventIDs, eventsSent)
 	require.NoError(t, err)
 
-	// Verify all events are deleted
+	// Verify all events are marked as processed (no longer pending)
 	pendingEventsAfter, err := store.OutboxEventsPollPending(ctx, 10)
 	require.NoError(t, err)
 	assert.Len(t, pendingEventsAfter, 0)
@@ -281,6 +285,10 @@ func TestOutboxEventsDeleteAndRecordSent_Batch(t *testing.T) {
 		exists, err := store.EventsSentExists(ctx, event.ID)
 		require.NoError(t, err)
 		assert.True(t, exists, "Event %s should be recorded as sent", event.ID.EventIdempotencyKey)
+
+		// Verify event status is processed
+		dbEvent := getOutboxEventByID(t, store, ctx, event.ID)
+		assert.Equal(t, models.OUTBOX_STATUS_PROCESSED, dbEvent.Status)
 	}
 }
 

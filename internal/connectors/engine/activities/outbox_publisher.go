@@ -48,10 +48,10 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 		successfulEventsSent = append(successfulEventsSent, eventSent)
 	}
 
-	// Batch delete and record successful events
+	// Batch mark as processed and record successful events
 	if len(successfulEventIDs) > 0 {
-		if err := a.storage.OutboxEventsDeleteAndRecordSent(ctx, successfulEventIDs, successfulEventsSent); err != nil {
-			return fmt.Errorf("failed to delete outbox events and record sent: %w", err)
+		if err := a.storage.OutboxEventsMarkProcessedAndRecordSent(ctx, successfulEventIDs, successfulEventsSent); err != nil {
+			return fmt.Errorf("failed to mark outbox events as processed and record sent: %w", err)
 		}
 	}
 

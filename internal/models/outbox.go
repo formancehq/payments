@@ -8,8 +8,9 @@ import (
 type OutboxEventStatus string
 
 const (
-	OUTBOX_STATUS_PENDING OutboxEventStatus = "pending"
-	OUTBOX_STATUS_FAILED  OutboxEventStatus = "failed"
+	OUTBOX_STATUS_PENDING   OutboxEventStatus = "pending"
+	OUTBOX_STATUS_FAILED    OutboxEventStatus = "failed"
+	OUTBOX_STATUS_PROCESSED OutboxEventStatus = "processed"
 )
 
 const MaxOutboxRetries = 5

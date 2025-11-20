@@ -82,7 +82,8 @@ func cleanupOutboxHelper(ctx context.Context, store Storage) func() {
 			eventsSent = append(eventsSent, models.EventSent{})
 		}
 		if len(eventIDs) > 0 {
-			_ = store.OutboxEventsDeleteAndRecordSent(ctx, eventIDs, eventsSent)
+			// TODO this should actually delete them ideally
+			_ = store.OutboxEventsMarkProcessedAndRecordSent(ctx, eventIDs, eventsSent)
 		}
 	}
 }
