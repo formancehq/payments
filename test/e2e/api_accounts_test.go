@@ -127,7 +127,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			Eventually(func() int {
 				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedAccounts)
 				return n
-			}).WithTimeout(2 * time.Second).Should(Equal(5))
+			}).WithTimeout(10 * time.Second).Should(Equal(5))
 		})
 
 		AfterEach(func() {

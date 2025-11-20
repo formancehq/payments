@@ -26,12 +26,6 @@ func (s *Service) PaymentServiceUsersForwardBankAccountToConnector(ctx context.C
 
 	models.FillBankAccountMetadataWithPaymentServiceUserInfo(ba, psu)
 
-	// Persist enriched metadata so that subsequent outbox payloads include PSU owner information
-	// TODO double check with Paul if that's OK -- up until now they were not saved as part of the bank account (only the account, once forwarded)
-	if err := s.storage.BankAccountsUpdateMetadata(ctx, ba.ID, ba.Metadata); err != nil {
-		return models.Task{}, newStorageError(err, "failed to update bank account metadata")
-	}
-
 	task, err := s.engine.ForwardBankAccount(ctx, *ba, connectorID, false)
 	if err != nil {
 		return models.Task{}, handleEngineErrors(err)

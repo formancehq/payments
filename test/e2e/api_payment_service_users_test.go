@@ -263,16 +263,6 @@ var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 			expectedMaskedIBAN := fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:])
 			Expect(p.IBAN).To(Equal(expectedMaskedIBAN))
 
-			// Metadata propagated from PSU
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/addressLine1", "1 test"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/city", "test"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/email", "dev@formance.com"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/phoneNumber", "+33612131415"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/postalCode", "test"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/region", "test"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/streetName", "test"))
-			Expect(p.Metadata).To(HaveKeyWithValue("com.formance.spec/owner/streetNumber", "1"))
-
 			// Related account created for the connector
 			var ra internalEvents.BankAccountRelatedAccountsPayload
 			raFound := false
