@@ -810,6 +810,20 @@ func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, fr
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingForwardedUserUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingForwardedUserUpsert), ctx, psuID, from)
 }
 
+// OutboxEventsDeleteOldProcessed mocks base method.
+func (m *MockStorage) OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsDeleteOldProcessed", ctx, olderThan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsDeleteOldProcessed indicates an expected call of OutboxEventsDeleteOldProcessed.
+func (mr *MockStorageMockRecorder) OutboxEventsDeleteOldProcessed(ctx, olderThan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsDeleteOldProcessed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsDeleteOldProcessed), ctx, olderThan)
+}
+
 // OutboxEventsInsert mocks base method.
 func (m *MockStorage) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error {
 	m.ctrl.T.Helper()

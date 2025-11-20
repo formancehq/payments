@@ -127,6 +127,9 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 		if err := w.CreateOutboxPublisherSchedule(ctx); err != nil {
 			return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
 		}
+		if err := w.CreateOutboxCleanupSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox cleanup schedule: %w", err)
+		}
 	}
 
 	return nil
@@ -356,6 +359,55 @@ func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
 			return nil
 		}
 		return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+	}
+	return nil
+}
+
+func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
+	scheduleID := fmt.Sprintf("%s-outbox-cleanup", w.stack)
+	taskQueue := GetDefaultTaskQueue(w.stack)
+
+	_, err := w.temporalClient.ScheduleClient().GetHandle(ctx, scheduleID).Describe(ctx)
+	if err == nil {
+		// Schedule already exists, no need to create it
+		return nil
+	}
+	var notFoundErr *serviceerror.NotFound
+	if !errors.As(err, &notFoundErr) {
+		// Some other error while describing: fail fast
+		return fmt.Errorf("describe schedule %s: %w", scheduleID, err)
+	}
+
+	// Create the schedule
+	_, err = w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+		ID: scheduleID,
+		Spec: client.ScheduleSpec{
+			Intervals: []client.ScheduleIntervalSpec{
+				{
+					Every: 7 * 24 * time.Hour, // Run weekly
+				},
+			},
+		},
+		Action: &client.ScheduleWorkflowAction{
+			ID:        scheduleID,
+			Workflow:  "OutboxCleanup",
+			Args:      []interface{}{}, // No arguments needed
+			TaskQueue: taskQueue,
+		},
+		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+		TriggerImmediately: true,
+		SearchAttributes: map[string]interface{}{
+			"Stack": w.stack,
+		},
+	})
+
+	if err != nil {
+		var already *serviceerror.AlreadyExists
+		if errors.As(err, &already) {
+			// Created by concurrent caller, treat as success
+			return nil
+		}
+		return fmt.Errorf("failed to create outbox cleanup schedule: %w", err)
 	}
 	return nil
 }
