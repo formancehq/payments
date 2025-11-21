@@ -24,5 +24,11 @@ func workflow() models.ConnectorTasksTree {
 			Periodically: true,
 			NextTasks:    []models.ConnectorTaskTree{},
 		},
+		{
+			TaskType:     models.TASK_FETCH_TRADES,
+			Name:         "fetch_trades",
+			Periodically: true,
+			NextTasks:    []models.ConnectorTaskTree{},
+		},
 	}
 }

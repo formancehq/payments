@@ -74,6 +74,18 @@ func (w Workflow) runNextTasks(
 			request = req
 			capability = models.CAPABILITY_FETCH_PAYMENTS
 
+		case models.TASK_FETCH_TRADES:
+			req := FetchNextTrades{
+				Config:       config,
+				ConnectorID:  connector.ID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
+			}
+
+			nextWorkflow = RunFetchNextTrades
+			request = req
+			capability = models.CAPABILITY_FETCH_TRADES
+
 		case models.TASK_FETCH_BALANCES:
 			req := FetchNextBalances{
 				Config:       config,

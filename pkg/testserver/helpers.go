@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"os"
 	"path"
 	"time"
+
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 
 	dummy "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
 	"github.com/formancehq/payments/internal/models"
@@ -78,6 +79,19 @@ func GeneratePSPData(dir string) ([]dummy.Account, error) {
 		return accounts, err
 	}
 	return accounts, nil
+}
+
+func WriteFile(filePath string, data []byte) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create %q: %w", filePath, err)
+	}
+	defer file.Close()
+
+	if _, err := file.Write(data); err != nil {
+		return fmt.Errorf("failed to write to %q: %w", filePath, err)
+	}
+	return nil
 }
 
 func persistData(filePath string, data any) error {

@@ -75,6 +75,19 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
+func (p *Plugin) FetchNextTrades(ctx context.Context, req models.FetchNextTradesRequest) (models.FetchNextTradesResponse, error) {
+	trades, err := p.client.FetchTrades(ctx)
+	if err != nil {
+		return models.FetchNextTradesResponse{}, err
+	}
+
+	return models.FetchNextTradesResponse{
+		Trades:   trades,
+		NewState: json.RawMessage(`{}`),
+		HasMore:  false,
+	}, nil
+}
+
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	name := "dummypay-account"
 	bankAccount := models.PSPAccount{

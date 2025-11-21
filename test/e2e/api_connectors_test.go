@@ -345,6 +345,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 				"FetchAccounts":         {},
 				"FetchExternalAccounts": {},
 				"FetchPayments":         {},
+				"FetchTrades":           {},
 				"FetchBalances":         {},
 			}
 		)

@@ -8,6 +8,7 @@ const (
 	TASK_FETCH_BALANCES
 	TASK_FETCH_EXTERNAL_ACCOUNTS
 	TASK_FETCH_PAYMENTS
+	TASK_FETCH_TRADES
 	TASK_CREATE_WEBHOOKS
 )
 
@@ -16,6 +17,7 @@ type TaskTreeFetchAccounts struct{}
 type TaskTreeFetchBalances struct{}
 type TaskTreeFetchExternalAccounts struct{}
 type TaskTreeFetchPayments struct{}
+type TaskTreeFetchTrades struct{}
 type TaskTreeCreateWebhooks struct{}
 
 type ConnectorTaskTree struct {
@@ -29,6 +31,7 @@ type ConnectorTaskTree struct {
 	TaskTreeFetchBalances         *TaskTreeFetchBalances
 	TaskTreeFetchExternalAccounts *TaskTreeFetchExternalAccounts
 	TaskTreeFetchPayments         *TaskTreeFetchPayments
+	TaskTreeFetchTrades           *TaskTreeFetchTrades
 	TaskTreeCreateWebhooks        *TaskTreeCreateWebhooks
 }
 

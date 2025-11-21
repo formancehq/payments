@@ -16,6 +16,7 @@ const (
 	CAPABILITY_FETCH_BALANCES
 	CAPABILITY_FETCH_EXTERNAL_ACCOUNTS
 	CAPABILITY_FETCH_PAYMENTS
+	CAPABILITY_FETCH_TRADES
 	CAPABILITY_FETCH_OTHERS
 
 	// Webhooks capabilities indicates that the connector can create, manage and
@@ -49,6 +50,8 @@ func (t Capability) String() string {
 		return "FETCH_EXTERNAL_ACCOUNTS"
 	case CAPABILITY_FETCH_PAYMENTS:
 		return "FETCH_PAYMENTS"
+	case CAPABILITY_FETCH_TRADES:
+		return "FETCH_TRADES"
 	case CAPABILITY_FETCH_OTHERS:
 		return "FETCH_OTHERS"
 
@@ -108,6 +111,8 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_FETCH_EXTERNAL_ACCOUNTS
 	case "FETCH_PAYMENTS":
 		*t = CAPABILITY_FETCH_PAYMENTS
+	case "FETCH_TRADES":
+		*t = CAPABILITY_FETCH_TRADES
 	case "FETCH_OTHERS":
 		*t = CAPABILITY_FETCH_OTHERS
 

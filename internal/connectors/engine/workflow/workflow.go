@@ -73,6 +73,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runFetchNextPayments,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunFetchNextTrades,
+			Func: w.runFetchNextTrades,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunTerminateSchedules,
 			Func: w.runTerminateSchedules,
 		}).
