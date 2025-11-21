@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -35,6 +36,10 @@ type WorkerPool struct {
 
 	connectors connectors.Manager
 	options    worker.Options
+
+	// skipScheduleCreation if true, skips creating the outbox publisher schedule
+	// Useful for tests that don't have a Temporal server available
+	skipScheduleCreation bool
 }
 
 type Worker struct {
@@ -112,6 +117,14 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
+
+	// Create the outbox publisher schedule (unless explicitly skipped)
+	if !w.skipScheduleCreation {
+		if err := w.createOutboxPublisherSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -292,4 +305,27 @@ func (w *WorkerPool) RemoveWorker(name string) error {
 	w.logger.Infof("worker for connector %s removed", name)
 
 	return nil
+}
+
+func (w *WorkerPool) createOutboxPublisherSchedule(ctx context.Context) error {
+	// Create a temporary activity instance to call the schedule creation
+	activities := activities.New(
+		w.logger,
+		w.temporalClient,
+		w.storage,
+		nil, // events - not needed for schedule creation
+		nil, // connectors - not needed for schedule creation
+		0,   // rateLimitingRetryDelay - not needed for schedule creation
+	)
+
+	scheduleID := fmt.Sprintf("%s-outbox-publisher", w.stack)
+	taskQueue := GetDefaultTaskQueue(w.stack)
+
+	return activities.CreateOutboxPublisherSchedule(ctx, scheduleID, taskQueue, w.stack)
+}
+
+// SetSkipScheduleCreation sets whether to skip creating the outbox publisher schedule.
+// Useful for tests that don't have a Temporal server available.
+func (w *WorkerPool) SetSkipScheduleCreation(skip bool) {
+	w.skipScheduleCreation = skip
 }

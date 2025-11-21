@@ -2,13 +2,14 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -73,7 +74,28 @@ func TestBalancesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+
+	// Helper to clean up outbox events created during tests
+	cleanupOutbox := func() {
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		if err == nil {
+			for _, event := range pendingEvents {
+				eventSent := models.EventSent{
+					ID: models.EventID{
+						EventIdempotencyKey: event.IdempotencyKey,
+						ConnectorID:         event.ConnectorID,
+					},
+					ConnectorID: event.ConnectorID,
+					SentAt:      time.Now().UTC(),
+				}
+				_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+			}
+		}
+	}
+	t.Cleanup(func() {
+		cleanupOutbox()
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
@@ -82,6 +104,7 @@ func TestBalancesUpsert(t *testing.T) {
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBalances(t, ctx, store, defaultBalances())
 	upsertBalances(t, ctx, store, defaultBalances2())
+	cleanupOutbox() // Clean up outbox events from default data creation
 
 	t.Run("upsert empty balances", func(t *testing.T) {
 		upsertBalances(t, ctx, store, []models.Balance{})
@@ -285,6 +308,176 @@ func TestBalancesUpsert(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 0)
 		require.Equal(t, expectedBalances, cursor.Data)
+	})
+
+	t.Run("outbox events created for new balances", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Create new balances
+		newBalances := []models.Balance{
+			{
+				AccountID:     accounts[0].ID,
+				CreatedAt:     now.Add(-5 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-5 * time.Minute).UTC().Time,
+				Asset:         "GBP/2",
+				Balance:       big.NewInt(500),
+			},
+			{
+				AccountID:     accounts[1].ID,
+				CreatedAt:     now.Add(-4 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-4 * time.Minute).UTC().Time,
+				Asset:         "JPY/0",
+				Balance:       big.NewInt(10000),
+			},
+		}
+
+		// Create a set of expected idempotency keys
+		expectedKeys := make(map[string]bool)
+		for _, balance := range newBalances {
+			expectedKeys[balance.IdempotencyKey()] = true
+		}
+
+		// Insert balances
+		require.NoError(t, store.BalancesUpsert(ctx, newBalances))
+
+		// Verify outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == "balance.saved" && expectedKeys[event.IdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 2, "expected 2 outbox events for 2 new balances")
+
+		// Create a map of expected balances by idempotency key for easier lookup
+		expectedBalancesByKey := make(map[string]models.Balance)
+		for _, balance := range newBalances {
+			expectedBalancesByKey[balance.IdempotencyKey()] = balance
+		}
+
+		// Check event details
+		for _, event := range ourEvents {
+			assert.Equal(t, "balance.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
+			assert.Equal(t, 0, event.RetryCount)
+			assert.Nil(t, event.Error)
+			assert.NotEqual(t, uuid.Nil, event.ID)
+			assert.NotEmpty(t, event.IdempotencyKey)
+
+			// Find the matching balance by idempotency key
+			expectedBalance, found := expectedBalancesByKey[event.IdempotencyKey]
+			require.True(t, found, "event idempotency key should match one of the balances")
+
+			// Verify payload contains balance data
+			var payload map[string]interface{}
+			err := json.Unmarshal(event.Payload, &payload)
+			require.NoError(t, err)
+			assert.Equal(t, expectedBalance.AccountID.String(), payload["accountID"])
+			assert.Equal(t, expectedBalance.AccountID.ConnectorID.String(), payload["connectorID"])
+			assert.Equal(t, expectedBalance.Asset, payload["asset"])
+			assert.Equal(t, expectedBalance.Balance.String(), payload["balance"])
+			assert.Contains(t, payload, "provider")
+			assert.Contains(t, payload, "createdAt")
+			assert.Contains(t, payload, "lastUpdatedAt")
+
+			// Verify EntityID matches account ID
+			assert.Equal(t, expectedBalance.AccountID.String(), event.EntityID)
+		}
+	})
+
+	t.Run("outbox events created for balance updates with different values", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Update a balance with a different value (should create a new entry)
+		updatedBalance := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-2 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-2 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(300), // Different from the existing balance
+		}
+
+		expectedKey := updatedBalance.IdempotencyKey()
+
+		// Insert balance update
+		require.NoError(t, store.BalancesUpsert(ctx, []models.Balance{updatedBalance}))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only the one we just created
+		var ourEvent *models.OutboxEvent
+		for _, event := range pendingEvents {
+			if event.EventType == "balance.saved" && event.IdempotencyKey == expectedKey {
+				ourEvent = &event
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected 1 outbox event for balance update")
+
+		assert.Equal(t, "balance.saved", ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, updatedBalance.Balance.String(), payload["balance"])
+	})
+
+	t.Run("outbox events created for multiple balances in single upsert", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Create multiple balances at once
+		multiBalances := []models.Balance{
+			{
+				AccountID:     accounts[2].ID,
+				CreatedAt:     now.Add(-1 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-1 * time.Minute).UTC().Time,
+				Asset:         "CHF/2",
+				Balance:       big.NewInt(150),
+			},
+			{
+				AccountID:     accounts[2].ID,
+				CreatedAt:     now.Add(-1 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-1 * time.Minute).UTC().Time,
+				Asset:         "AUD/2",
+				Balance:       big.NewInt(200),
+			},
+		}
+
+		// Create a set of expected idempotency keys
+		expectedKeys := make(map[string]bool)
+		for _, balance := range multiBalances {
+			expectedKeys[balance.IdempotencyKey()] = true
+		}
+
+		// Insert multiple balances
+		require.NoError(t, store.BalancesUpsert(ctx, multiBalances))
+
+		// Verify outbox events were created for all balances
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == "balance.saved" && expectedKeys[event.IdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 2, "expected 2 outbox events for 2 balances")
+
+		// Verify all events have correct structure
+		for _, event := range ourEvents {
+			assert.Equal(t, "balance.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+			assert.NotEqual(t, uuid.Nil, event.ID)
+			assert.NotEmpty(t, event.IdempotencyKey)
+		}
 	})
 }
 
@@ -673,5 +866,45 @@ func TestBalancesGetLatest(t *testing.T) {
 		require.Len(t, balances, 2)
 		assert.Equal(t, balances[1].Asset, "USD/2")
 		assert.Equal(t, balances[1].Balance, b.Balance)
+	})
+
+	t.Run("rollback on foreign key violation", func(t *testing.T) {
+		// Create a valid balance first
+		upsertConnector(t, ctx, store, defaultConnector)
+		createPSU(t, ctx, store, defaultPSU2)
+		createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
+		upsertAccounts(t, ctx, store, defaultAccounts())
+		accounts := defaultAccounts()
+
+		// Count existing balances
+		balancesBefore, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		require.NoError(t, err)
+		countBefore := len(balancesBefore)
+
+		// Create a balance with an invalid account ID that doesn't exist
+		invalidConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "invalid-provider"}
+		invalidBalance := models.Balance{
+			AccountID:     models.AccountID{Reference: "invalid-account", ConnectorID: invalidConnectorID},
+			CreatedAt:     time.Now().UTC(),
+			LastUpdatedAt: time.Now().UTC(),
+			Asset:         "USD",
+			Balance:       big.NewInt(100),
+		}
+
+		// Attempt to upsert - should fail due to foreign key violation
+		err = store.BalancesUpsert(ctx, []models.Balance{invalidBalance})
+		require.Error(t, err)
+
+		// Verify no balance was inserted
+		balancesAfter, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		require.NoError(t, err)
+		assert.Equal(t, countBefore, len(balancesAfter), "no balances should be inserted on error")
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			assert.NotEqual(t, invalidBalance.AccountID.String(), event.EntityID, "no outbox event should be created for failed insert")
+		}
 	})
 }

@@ -42,19 +42,14 @@ var (
 	logger         = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
 	stack          = "somestackval-abcd"
 	magicCookieVal = "needed-for-plugin-to-work"
+	//bunDB             *bun.DB
+	//currentDBDeferred *deferred.Deferred[*pgtesting.Database]
 
 	DBTemplate = "dbtemplate"
 )
 
 type GenericEventPayload struct {
 	ID string `json:"id"`
-}
-
-type ConnectorConf struct {
-	Name          string `json:"name"`
-	PollingPeriod string `json:"pollingPeriod"`
-	PageSize      int    `json:"pageSize"`
-	Directory     string `json:"directory"`
 }
 
 type ParallelExecutionContext struct {
@@ -81,12 +76,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 		templateDatabase := ret.NewDatabase(GinkgoT(), pgtesting.WithName(DBTemplate))
 
-		bunDB, err := bunconnect.OpenSQLDB(context.Background(), templateDatabase.ConnectionOptions())
+		migrateDB, err := bunconnect.OpenSQLDB(context.Background(), templateDatabase.ConnectionOptions())
 		Expect(err).To(BeNil())
 
-		err = storage.Migrate(context.Background(), logging.Testing(), bunDB, "test")
+		err = storage.Migrate(context.Background(), logging.Testing(), migrateDB, "test")
 		Expect(err).To(BeNil())
-		Expect(bunDB.Close()).To(BeNil())
+		Expect(migrateDB.Close()).To(BeNil())
 
 		return ret, nil
 	})

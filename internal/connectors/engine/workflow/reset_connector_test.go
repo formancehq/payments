@@ -21,23 +21,17 @@ func (s *UnitTestSuite) Test_ResetConnector_Success() {
 		s.Equal(s.connectorID, req.ConnectorID)
 		return nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, connector models.Connector) error {
+	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, connector models.Connector, oldConnectorID *models.ConnectorID) error {
 		s.NotEqual(s.connectorID, connector.ID)
 		s.Equal(s.connector.Name, connector.Name)
+		s.NotNil(oldConnectorID)
+		s.Equal(s.connectorID, *oldConnectorID)
 		return nil
 	})
 	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.ConnectorReset)
-		s.Equal(s.connectorID, *req.ConnectorReset)
-		return nil
-	})
+
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -64,7 +58,6 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageConnectorsGet_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -93,7 +86,6 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageConnectorsScheduleForDeletion
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -123,7 +115,6 @@ func (s *UnitTestSuite) Test_ResetConnector_RunUninstallConnector_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -147,14 +138,13 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageConnectorsStore_Error() {
 	)
 	s.env.OnActivity(activities.StorageConnectorsScheduleForDeletionActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnWorkflow(RunUninstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -178,7 +168,7 @@ func (s *UnitTestSuite) Test_ResetConnector_RunInstallConnector_Error() {
 	)
 	s.env.OnActivity(activities.StorageConnectorsScheduleForDeletionActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnWorkflow(RunUninstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
@@ -186,40 +176,6 @@ func (s *UnitTestSuite) Test_ResetConnector_RunInstallConnector_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
-		TaskID: models.TaskID{
-			Reference:   "test",
-			ConnectorID: s.connectorID,
-		},
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, "error-test")
-}
-
-func (s *UnitTestSuite) Test_ResetConnector_RunSendEvents_Error() {
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
-		nil,
-	)
-	s.env.OnActivity(activities.StorageConnectorsScheduleForDeletionActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnWorkflow(RunUninstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
-	)
-	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
-		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunResetConnector, ResetConnector{
 		ConnectorID:       s.connectorID,
@@ -243,9 +199,8 @@ func (s *UnitTestSuite) Test_ResetConnector_StorageTasksStoreActivity_Error() {
 	)
 	s.env.OnActivity(activities.StorageConnectorsScheduleForDeletionActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnWorkflow(RunUninstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageConnectorsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunInstallConnector, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)

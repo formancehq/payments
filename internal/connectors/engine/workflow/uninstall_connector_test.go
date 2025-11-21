@@ -61,10 +61,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithTaskID_Success() {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -86,10 +82,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_RunTerminateSchedules_Error() {
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -117,10 +109,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_PluginUninstallConnector_Error()
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -146,10 +134,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageEventsSentDelete_Error() 
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -180,10 +164,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageSchedulesDeleteFromConnec
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -211,10 +191,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageInstancesDelete_Error() {
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -247,10 +223,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorTasksTreeDelete_
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -280,10 +252,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksDeleteFromConnectorI
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -318,10 +286,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageBankAccountsDeleteRelated
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -353,10 +317,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -393,10 +353,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -430,10 +386,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -472,10 +424,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Err
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -511,10 +459,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -555,10 +499,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromCo
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -596,10 +536,6 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() 
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
 		return nil
 	})
 
