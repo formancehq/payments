@@ -101,3 +101,33 @@ func (mr *MockClientMockRecorder) ListTransactions(ctx, page, pageSize, updatedA
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransactions", reflect.TypeOf((*MockClient)(nil).ListTransactions), ctx, page, pageSize, updatedAtFrom)
 }
+
+// CreatePayout mocks base method.
+func (m *MockClient) CreatePayout(ctx context.Context, request *PayoutRequest) (*PayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePayout", ctx, request)
+	ret0, _ := ret[0].(*PayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePayout indicates an expected call of CreatePayout.
+func (mr *MockClientMockRecorder) CreatePayout(ctx, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockClient)(nil).CreatePayout), ctx, request)
+}
+
+// GetPayoutStatus mocks base method.
+func (m *MockClient) GetPayoutStatus(ctx context.Context, payoutId string) (*PayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPayoutStatus", ctx, payoutId)
+	ret0, _ := ret[0].(*PayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPayoutStatus indicates an expected call of GetPayoutStatus.
+func (mr *MockClientMockRecorder) GetPayoutStatus(ctx, payoutId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPayoutStatus", reflect.TypeOf((*MockClient)(nil).GetPayoutStatus), ctx, payoutId)
+}
