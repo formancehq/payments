@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -10,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/gibson042/canonicaljson-go"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +61,7 @@ var (
 )
 
 func upsertConnector(t *testing.T, ctx context.Context, storage Storage, connector models.Connector) {
-	require.NoError(t, storage.ConnectorsInstall(ctx, connector))
+	require.NoError(t, storage.ConnectorsInstall(ctx, connector, nil))
 }
 
 func TestConnectorsInstall(t *testing.T) {
@@ -83,7 +85,7 @@ func TestConnectorsInstall(t *testing.T) {
 			Config: []byte(`{}`),
 		}
 
-		require.NoError(t, store.ConnectorsInstall(ctx, c))
+		require.NoError(t, store.ConnectorsInstall(ctx, c, nil))
 
 		connector, err := store.ConnectorsGet(ctx, c.ID)
 		require.NoError(t, err)
@@ -105,7 +107,105 @@ func TestConnectorsInstall(t *testing.T) {
 			Config: []byte(`{}`),
 		}
 
-		require.Error(t, store.ConnectorsInstall(ctx, c))
+		require.Error(t, store.ConnectorsInstall(ctx, c, nil))
+	})
+
+	t.Run("outbox event created for connector reset", func(t *testing.T) {
+		// Create an old connector that will be "reset"
+		oldConnector := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "reset-test",
+				},
+				Name:      "old connector",
+				CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+				Provider:  "reset-test",
+			},
+			Config: []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, oldConnector)
+
+		// Create a new connector (simulating reset)
+		newConnector := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "reset-test",
+				},
+				Name:      "new connector",
+				CreatedAt: now.Add(-1 * time.Minute).UTC().Time,
+				Provider:  "reset-test",
+			},
+			Config: []byte(`{}`),
+		}
+
+		// Install with oldConnectorID (simulating reset)
+		require.NoError(t, store.ConnectorsInstall(ctx, newConnector, &oldConnector.ID))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeConnectorReset &&
+				pendingEvents[i].EntityID == oldConnector.ID.String() {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for connector reset")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeConnectorReset, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, oldConnector.ID.String(), ourEvent.EntityID)
+		assert.Equal(t, newConnector.ID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, oldConnector.ID.String(), payload["connectorID"])
+		assert.NotNil(t, payload["createdAt"])
+
+		// Verify idempotency key format
+		expectedKeyPrefix := fmt.Sprintf("%s-", oldConnector.ID.String())
+		assert.Contains(t, ourEvent.ID.EventIdempotencyKey, expectedKeyPrefix)
+	})
+
+	t.Run("no outbox event for normal install", func(t *testing.T) {
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Create a new connector without oldConnectorID (normal install)
+		normalConnector := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "normal-test",
+				},
+				Name:      "normal connector",
+				CreatedAt: now.Add(-1 * time.Minute).UTC().Time,
+				Provider:  "normal-test",
+			},
+			Config: []byte(`{}`),
+		}
+
+		require.NoError(t, store.ConnectorsInstall(ctx, normalConnector, nil))
+
+		// Verify no outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new reset event)
+		assert.Equal(t, countBefore, countAfter, "normal install should not create reset event")
 	})
 }
 

@@ -24,6 +24,7 @@ const (
 	temporalMaxSlotsPerPollerFlag                = "temporal-max-slots-per-poller"
 	temporalMaxLocalActivitySlotsFlag            = "temporal-max-local-activity-slots"
 	temporalRateLimitingRetryDelay               = "temporal-rate-limiting-retry-delay"
+	SkipOutboxScheduleCreationFlag               = "skip-outbox-schedule-creation"
 )
 
 func NewRootCommand() *cobra.Command {

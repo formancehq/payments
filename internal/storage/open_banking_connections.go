@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	libtime "time"
 
@@ -11,7 +12,9 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -57,7 +60,15 @@ func (s *store) OpenBankingConnectionAttemptsUpsert(ctx context.Context, from mo
 }
 
 func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, errMsg *string) error {
-	_, err := s.db.NewUpdate().
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	_, err = tx.NewUpdate().
 		Model((*openBankingConnectionAttempt)(nil)).
 		Set("status = ?", status).
 		Set("error = ?", errMsg).
@@ -67,6 +78,57 @@ func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, i
 		return e("updating open banking connection attempt status", err)
 	}
 
+	// Fetch the attempt to get psuID and connectorID for the event
+	attempt := openBankingConnectionAttempt{}
+	err = tx.NewSelect().
+		Model(&attempt).
+		Where("id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return e("failed to get open banking connection attempt", err)
+	}
+
+	var attemptModel *models.OpenBankingConnectionAttempt
+	attemptModel, err = toOpenBankingConnectionAttemptsModels(attempt)
+	if err != nil {
+		return e("failed to convert open banking connection attempt", err)
+	}
+
+	// Create outbox event for user link status
+	payload := internalEvents.OpenBankingUserLinkStatus{
+		PsuID:       attemptModel.PsuID,
+		ConnectorID: attemptModel.ConnectorID.String(),
+		Status:      string(status),
+		Error:       errMsg,
+	}
+
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal user link status event payload", err)
+	}
+
+	idempotencyKey := models.IdempotencyKey(payload)
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &attemptModel.ConnectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserLinkStatus,
+		EntityID:    attemptModel.PsuID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   libtime.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &attemptModel.ConnectorID,
+	}
+
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
 	return nil
 }
 
@@ -185,7 +247,7 @@ func (s *store) OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.U
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -214,7 +276,10 @@ func (s *store) OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.U
 		return e("upserting open banking forwarded user", err)
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) OpenBankingForwardedUserGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error) {
@@ -373,11 +438,30 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
 	}()
+
+	// Check if connection already exists and get its previous status to determine if this is a reconnect
+	var existingConnection openBankingConnections
+	var connectionExists bool
+	err = tx.NewSelect().
+		Model(&existingConnection).
+		Where("psu_id = ?", psuID).
+		Where("connector_id = ?", from.ConnectorID).
+		Where("connection_id = ?", from.ConnectionID).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			connectionExists = false
+		} else {
+			return e("failed to check if connection exists", err)
+		}
+	} else {
+		connectionExists = true
+	}
 
 	if token != nil {
 		_, err = tx.NewInsert().
@@ -403,11 +487,91 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 		return e("upserting open banking connection", err)
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	// Create outbox events based on connection status
+	var outboxEvents []models.OutboxEvent
+
+	if from.Status == models.ConnectionStatusError {
+		// Connection disconnected
+		payload := internalEvents.OpenBankingUserConnectionDisconnected{
+			PsuID:        psuID,
+			ConnectorID:  from.ConnectorID.String(),
+			ConnectionID: from.ConnectionID,
+			ErrorType:    string(from.Status),
+			At:           from.UpdatedAt,
+			Reason:       from.Error,
+		}
+
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal user connection disconnected event payload", err)
+		}
+
+		idempotencyKey := models.IdempotencyKey(payload)
+		outboxEvents = append(outboxEvents, models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: idempotencyKey,
+				ConnectorID:         &from.ConnectorID,
+			},
+			EventType:   events.EventTypeOpenBankingUserConnectionDisconnected,
+			EntityID:    from.ConnectionID,
+			Payload:     payloadBytes,
+			CreatedAt:   libtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &from.ConnectorID,
+		})
+	} else if from.Status == models.ConnectionStatusActive && connectionExists && existingConnection.Status == models.ConnectionStatusError {
+		// Connection reconnected (was ERROR, now ACTIVE)
+		payload := internalEvents.OpenBankingUserConnectionReconnected{
+			PsuID:        psuID,
+			ConnectorID:  from.ConnectorID.String(),
+			ConnectionID: from.ConnectionID,
+			At:           from.UpdatedAt,
+		}
+
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal user connection reconnected event payload", err)
+		}
+
+		idempotencyKey := models.IdempotencyKey(payload)
+		outboxEvents = append(outboxEvents, models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: idempotencyKey,
+				ConnectorID:         &from.ConnectorID,
+			},
+			EventType:   events.EventTypeOpenBankingUserConnectionReconnected,
+			EntityID:    from.ConnectionID,
+			Payload:     payloadBytes,
+			CreatedAt:   libtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &from.ConnectorID,
+		})
+	}
+
+	if len(outboxEvents) > 0 {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt libtime.Time) error {
-	_, err := s.db.NewUpdate().
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	_, err = tx.NewUpdate().
 		Model((*openBankingConnections)(nil)).
 		Set("data_updated_at = ?", updatedAt).
 		Where("psu_id = ?", psuID).
@@ -418,6 +582,41 @@ func (s *store) OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, 
 		return e("updating open banking connection last data update", err)
 	}
 
+	// Create outbox event for user connection data synced
+	payload := internalEvents.OpenBankingUserConnectionDataSynced{
+		PsuID:        psuID,
+		ConnectorID:  connectorID.String(),
+		ConnectionID: connectionID,
+		At:           updatedAt,
+	}
+
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal user connection data synced event payload", err)
+	}
+
+	idempotencyKey := models.IdempotencyKey(payload)
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &connectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserConnectionDataSynced,
+		EntityID:    connectionID,
+		Payload:     payloadBytes,
+		CreatedAt:   libtime.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &connectorID,
+	}
+
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
 	return nil
 }
 

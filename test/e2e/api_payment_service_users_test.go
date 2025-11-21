@@ -1,24 +1,27 @@
+//go:build it
+
 package test_suite
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/events"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
-	evts "github.com/formancehq/payments/pkg/events"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payment API Payment Service Users", Serial, func() {
+var _ = Context("Payment API Payment Service Users", Ordered, Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
@@ -33,12 +36,13 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                 stack,
-			NatsURL:               natsServer.GetValue().ClientURL(),
-			PostgresConfiguration: db.GetValue().ConnectionOptions(),
-			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:       temporalServer.GetValue().Address(),
-			Output:                GinkgoWriter,
+			Stack:                      stack,
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
+			SkipOutboxScheduleCreation: true,
 		}
 	})
 
@@ -164,13 +168,10 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 	When("forwarding a psu bank account to a connector", func() {
 		var (
 			connectorID string
-			e           chan *nats.Msg
 			psuID       string
 		)
 
 		BeforeEach(func() {
-			e = Subscribe(GinkgoT(), app.GetValue())
-
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePaymentServiceUser(ctx, v3CreateRequest)
 			Expect(err).To(BeNil())
 			psuID = createResponse.GetV3CreatePaymentServiceUserResponse().Data
@@ -200,6 +201,9 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 		})
 
 		It("should be ok when connector is installed", func() {
+			beforeCount, err := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
+			Expect(err).To(BeNil())
+
 			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserBankAccount(ctx, psuID, baID1.String(), &components.V3ForwardPaymentServiceUserBankAccountRequest{
 				ConnectorID: connectorID,
 			})
@@ -210,50 +214,75 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 			cID := models.MustConnectorIDFromString(connectorID)
 			Expect(taskID.Reference).To(ContainSubstring(cID.Reference.String()))
 
-			connectorID, err := models.ConnectorIDFromString(connectorID)
-			Expect(err).To(BeNil())
+			// Wait for the workflow task to complete before checking for the outbox event
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(forwardResponse.GetV3ForwardPaymentServiceUserBankAccountResponse().Data.TaskID)).
+				WithTimeout(10 * time.Second).
+				Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
+			// Now check for the outbox event - it should exist after the workflow completes
+			Eventually(func() (int, error) {
+				return CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
+			}).WithTimeout(5 * time.Second).Should(BeNumerically(">=", beforeCount+1))
+
+			// Validate payload content from outbox_events
+			// Fetch bank account to build expectations
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetBankAccount(ctx, baID1.String())
 			Expect(err).To(BeNil())
+			ba := getResponse.GetV3GetBankAccountResponse().Data
 
-			Expect(getResponse.GetV3GetBankAccountResponse().Data.AccountNumber).ToNot(BeNil())
-			accountNumber := *getResponse.GetV3GetBankAccountResponse().Data.AccountNumber
-			Expect(getResponse.GetV3GetBankAccountResponse().Data.Iban).ToNot(BeNil())
-			iban := *getResponse.GetV3GetBankAccountResponse().Data.Iban
+			payloads, err := LoadOutboxPayloadsByType(ctx, app.GetValue(), events.EventTypeSavedBankAccount)
+			Expect(err).To(BeNil())
 
-			accountID := models.AccountID{
-				Reference:   fmt.Sprintf("dummypay-%s", baID1.String()),
-				ConnectorID: connectorID,
+			var p internalEvents.BankAccountMessagePayload
+			found := false
+			for _, raw := range payloads {
+				var tmp internalEvents.BankAccountMessagePayload
+				Expect(json.Unmarshal(raw, &tmp)).To(Succeed())
+				if tmp.ID == baID1.String() {
+					p = tmp
+					found = true
+				}
 			}
+			Expect(found).To(BeTrue(), "expected a BANK_ACCOUNT_SAVED event payload for bank account %s", baID1.String())
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount, WithPayload(
-				events.BankAccountMessagePayload{
-					ID:            baID1.String(),
-					Country:       "DE",
-					Name:          getResponse.GetV3GetBankAccountResponse().Data.Name,
-					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
-					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
-					CreatedAt:     getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
-					Metadata: map[string]string{
-						"com.formance.spec/owner/addressLine1": "1 test",
-						"com.formance.spec/owner/city":         "test",
-						"com.formance.spec/owner/email":        "dev@formance.com",
-						"com.formance.spec/owner/phoneNumber":  "+33612131415",
-						"com.formance.spec/owner/postalCode":   "test",
-						"com.formance.spec/owner/region":       "test",
-						"com.formance.spec/owner/streetName":   "test",
-						"com.formance.spec/owner/streetNumber": "1",
-					},
-					RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
-						{
-							AccountID:   accountID.String(),
-							CreatedAt:   getResponse.GetV3GetBankAccountResponse().Data.GetCreatedAt(),
-							ConnectorID: connectorID.String(),
-							Provider:    "dummypay",
-						},
-					},
-				},
-			))))
+			// Basic field expectations
+			Expect(p.ID).To(Equal(baID1.String()))
+			Expect(p.Country).To(Equal("DE"))
+			Expect(p.Name).To(Equal(ba.Name))
+			Expect(p.CreatedAt.Equal(ba.GetCreatedAt())).To(BeTrue())
+
+			// Masking expectations: compute expected masked values from clear values returned by GET
+			Expect(ba.AccountNumber).ToNot(BeNil())
+			accountNumber := *ba.AccountNumber
+			expectedMaskedAN := fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:])
+			Expect(p.AccountNumber).To(Equal(expectedMaskedAN))
+
+			Expect(ba.Iban).ToNot(BeNil())
+			iban := *ba.Iban
+			expectedMaskedIBAN := fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:])
+			Expect(p.IBAN).To(Equal(expectedMaskedIBAN))
+
+			// Related account created for the connector
+			var ra internalEvents.BankAccountRelatedAccountsPayload
+			raFound := false
+			for _, x := range p.RelatedAccounts {
+				if x.ConnectorID == connectorID {
+					ra = x
+					raFound = true
+					break
+				}
+			}
+			Expect(raFound).To(BeTrue(), "expected related account for connector %s", connectorID)
+			Expect(ra.Provider).To(Equal("dummypay"))
+			Expect(ra.ConnectorID).To(Equal(connectorID))
+			// AccountID is encoded; decode and validate fields
+			accID, err := models.AccountIDFromString(ra.AccountID)
+			Expect(err).To(BeNil())
+			// AccountID is an encoded struct; validate its fields
+			Expect(accID.Reference).To(Equal(fmt.Sprintf("dummypay-%s", baID1.String())))
+			Expect(accID.ConnectorID.String()).To(Equal(connectorID))
+			Expect(ra.CreatedAt.Equal(ba.GetCreatedAt())).To(BeTrue())
 		})
 	})
 

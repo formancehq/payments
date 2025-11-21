@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
@@ -359,15 +360,8 @@ func (w Workflow) handleUserLinkSessionFinishedWebhook(
 	ctx workflow.Context,
 	response models.WebhookResponse,
 ) error {
-	attempt, err := activities.StorageOpenBankingConnectionAttemptsGet(
-		infiniteRetryContext(ctx),
-		response.UserLinkSessionFinished.AttemptID,
-	)
-	if err != nil {
-		return fmt.Errorf("getting open banking connection attempt: %w", err)
-	}
 
-	err = activities.StorageOpenBankingConnectionAttemptsUpdateStatus(
+	err := activities.StorageOpenBankingConnectionAttemptsUpdateStatus(
 		infiniteRetryContext(ctx),
 		response.UserLinkSessionFinished.AttemptID,
 		response.UserLinkSessionFinished.Status,
@@ -377,20 +371,7 @@ func (w Workflow) handleUserLinkSessionFinishedWebhook(
 		return fmt.Errorf("updating open banking connection attempt status: %w", err)
 	}
 
-	sendEvent := SendEvents{
-		UserLinkStatus: &models.UserLinkSessionFinished{
-			PsuID:       attempt.PsuID,
-			ConnectorID: attempt.ConnectorID,
-			AttemptID:   attempt.ID,
-			Status:      response.UserLinkSessionFinished.Status,
-			Error:       response.UserLinkSessionFinished.Error,
-		},
-	}
-
-	if err := w.runSendEvents(ctx, sendEvent); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
-
+	// Outbox event is now created automatically in OpenBankingConnectionAttemptsUpdateStatus
 	return nil
 }
 
@@ -408,18 +389,49 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 		return fmt.Errorf("getting open banking connection: %w", err)
 	}
 
-	sendEvent := SendEvents{
-		UserPendingDisconnect: &models.UserConnectionPendingDisconnect{
-			PsuID:        psuID,
-			ConnectorID:  handleWebhooks.ConnectorID,
-			ConnectionID: response.UserConnectionPendingDisconnect.ConnectionID,
-			At:           response.UserConnectionPendingDisconnect.At,
-			Reason:       response.UserConnectionPendingDisconnect.Reason,
-		},
+	userPendingDisconnect := models.UserConnectionPendingDisconnect{
+		PsuID:        psuID,
+		ConnectorID:  handleWebhooks.ConnectorID,
+		ConnectionID: response.UserConnectionPendingDisconnect.ConnectionID,
+		At:           response.UserConnectionPendingDisconnect.At,
+		Reason:       response.UserConnectionPendingDisconnect.Reason,
 	}
 
-	if err := w.runSendEvents(ctx, sendEvent); err != nil {
-		return fmt.Errorf("sending events: %w", err)
+	// Create outbox event for user pending disconnect
+	// Note -- as we are storing the event as an independant entity, we are relying on an
+	// independent activity to emit the event (without transaction)
+	payload := internalEvents.OpenBankingUserConnectionPendingDisconnect{
+		PsuID:        userPendingDisconnect.PsuID,
+		ConnectorID:  userPendingDisconnect.ConnectorID.String(),
+		ConnectionID: userPendingDisconnect.ConnectionID,
+		At:           userPendingDisconnect.At,
+		Reason:       userPendingDisconnect.Reason,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal user pending disconnect event payload: %w", err)
+	}
+
+	idempotencyKey := models.IdempotencyKey(payload)
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &userPendingDisconnect.ConnectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserConnectionPendingDisconnect,
+		EntityID:    userPendingDisconnect.ConnectionID,
+		Payload:     payloadBytes,
+		CreatedAt:   workflow.Now(ctx).UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &userPendingDisconnect.ConnectorID,
+	}
+
+	if err := activities.StorageOutboxEventsInsert(
+		infiniteRetryContext(ctx),
+		[]models.OutboxEvent{outboxEvent},
+	); err != nil {
+		return fmt.Errorf("failed to insert user pending disconnect outbox event: %w", err)
 	}
 
 	return nil
@@ -439,16 +451,46 @@ func (w Workflow) handleUserDisconnectedWebhook(
 		return fmt.Errorf("getting open banking: %w", err)
 	}
 
-	sendEvent := SendEvents{
-		UserDisconnected: &models.UserDisconnected{
-			PsuID:       openBanking.PsuID,
-			ConnectorID: handleWebhooks.ConnectorID,
-			At:          workflow.Now(ctx),
-		},
+	userDisconnected := models.UserDisconnected{
+		PsuID:       openBanking.PsuID,
+		ConnectorID: handleWebhooks.ConnectorID,
+		At:          workflow.Now(ctx),
 	}
 
-	if err := w.runSendEvents(ctx, sendEvent); err != nil {
-		return fmt.Errorf("sending events: %w", err)
+	// Create outbox event for user disconnected
+	// Note -- as we are storing the event as an independant entity, we are relying on an
+	// independent activity to emit the event (without transaction)
+	payload := internalEvents.OpenBankingUserDisconnected{
+		PsuID:       userDisconnected.PsuID,
+		ConnectorID: userDisconnected.ConnectorID.String(),
+		At:          userDisconnected.At,
+		Reason:      nil, // UserDisconnected doesn't have a reason field
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal user disconnected event payload: %w", err)
+	}
+
+	idempotencyKey := models.IdempotencyKey(payload)
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: idempotencyKey,
+			ConnectorID:         &userDisconnected.ConnectorID,
+		},
+		EventType:   events.EventTypeOpenBankingUserDisconnected,
+		EntityID:    userDisconnected.PsuID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   workflow.Now(ctx).UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &userDisconnected.ConnectorID,
+	}
+
+	if err := activities.StorageOutboxEventsInsert(
+		infiniteRetryContext(ctx),
+		[]models.OutboxEvent{outboxEvent},
+	); err != nil {
+		return fmt.Errorf("failed to insert user disconnected outbox event: %w", err)
 	}
 
 	return nil
@@ -501,21 +543,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 		return fmt.Errorf("storing open banking connection: %w", err)
 	}
 
-	sendEvent := SendEvents{
-		UserConnectionDisconnected: &models.UserConnectionDisconnected{
-			PsuID:        psuID,
-			ConnectorID:  handleWebhooks.ConnectorID,
-			ConnectionID: response.UserConnectionDisconnected.ConnectionID,
-			ErrorType:    response.UserConnectionDisconnected.ErrorType,
-			At:           response.UserConnectionDisconnected.At,
-			Reason:       response.UserConnectionDisconnected.Reason,
-		},
-	}
-
-	if err := w.runSendEvents(ctx, sendEvent); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
-
+	// Outbox event is now created automatically in OpenBankingConnectionsUpsert based on connection status
 	return nil
 }
 
@@ -566,19 +594,7 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 		return fmt.Errorf("storing open banking connection: %w", err)
 	}
 
-	sendEvent := SendEvents{
-		UserConnectionReconnected: &models.UserConnectionReconnected{
-			PsuID:        psuID,
-			ConnectorID:  handleWebhooks.ConnectorID,
-			ConnectionID: response.UserConnectionReconnected.ConnectionID,
-			At:           response.UserConnectionReconnected.At,
-		},
-	}
-
-	if err := w.runSendEvents(ctx, sendEvent); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
-
+	// Outbox event is now created automatically in OpenBankingConnectionsUpsert based on connection status
 	return nil
 }
 
@@ -598,7 +614,6 @@ func (w Workflow) runStoreWebhookTranslation(
 	ctx workflow.Context,
 	storeWebhookTranslation StoreWebhookTranslation,
 ) error {
-	var sendEvent *SendEvents
 	if storeWebhookTranslation.Account != nil {
 		accounts, err := models.FromPSPAccounts(
 			[]models.PSPAccount{*storeWebhookTranslation.Account},
@@ -619,10 +634,6 @@ func (w Workflow) runStoreWebhookTranslation(
 		)
 		if err != nil {
 			return fmt.Errorf("storing next accounts: %w", err)
-		}
-
-		sendEvent = &SendEvents{
-			Account: pointer.For(accounts[0]),
 		}
 	}
 
@@ -660,9 +671,6 @@ func (w Workflow) runStoreWebhookTranslation(
 			return fmt.Errorf("storing next balances: %w", err)
 		}
 
-		sendEvent = &SendEvents{
-			Balance: pointer.For(balance),
-		}
 	}
 
 	if storeWebhookTranslation.ExternalAccount != nil {
@@ -686,10 +694,6 @@ func (w Workflow) runStoreWebhookTranslation(
 		if err != nil {
 			return fmt.Errorf("storing next accounts: %w", err)
 		}
-
-		sendEvent = &SendEvents{
-			Account: pointer.For(accounts[0]),
-		}
 	}
 
 	if storeWebhookTranslation.Payment != nil {
@@ -712,33 +716,16 @@ func (w Workflow) runStoreWebhookTranslation(
 		if err != nil {
 			return fmt.Errorf("storing next payments: %w", err)
 		}
-
-		sendEvent = &SendEvents{
-			Payment: pointer.For(payments[0]),
-		}
 	}
 
 	if storeWebhookTranslation.PaymentToDelete != nil {
-		payment, err := activities.StoragePaymentsGetByReference(
-			infiniteRetryContext(ctx),
-			storeWebhookTranslation.PaymentToDelete.Reference,
-			storeWebhookTranslation.ConnectorID,
-		)
-		if err != nil {
-			return fmt.Errorf("getting payment: %w", err)
-		}
-
-		err = activities.StoragePaymentsDeleteFromReference(
+		err := activities.StoragePaymentsDeleteFromReference(
 			infiniteRetryContext(ctx),
 			storeWebhookTranslation.PaymentToDelete.Reference,
 			storeWebhookTranslation.ConnectorID,
 		)
 		if err != nil {
 			return fmt.Errorf("deleting payment: %w", err)
-		}
-
-		sendEvent = &SendEvents{
-			PaymentDeleted: &payment.ID,
 		}
 	}
 
@@ -774,18 +761,10 @@ func (w Workflow) runStoreWebhookTranslation(
 		if err != nil {
 			return fmt.Errorf("storing payment: %w", err)
 		}
-
-		sendEvent = &SendEvents{
-			Payment: payment,
-		}
 	}
 
-	if sendEvent != nil {
-		if err := w.runSendEvents(ctx, *sendEvent); err != nil {
-			return fmt.Errorf("sending events: %w", err)
-		}
-	}
-
+	// All events now use outbox pattern - Account, Balance, Payment, and BankAccount events
+	// are created in storage methods, and other events are handled via outbox in workflows
 	return nil
 }
 

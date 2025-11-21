@@ -37,15 +37,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		return err
 	}
 
-	if err := w.runSendEvents(ctx, SendEvents{
-		Payment: &payment,
-		PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
-			PaymentInitiationID: paymentInitiationID,
-			PaymentID:           payment.ID,
-		},
-	}); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
+	// Payment events are now sent via outbox pattern in PaymentsUpsert
 
 	err = w.addPIAdjustment(
 		ctx,
@@ -90,12 +82,7 @@ func (w Workflow) addPIAdjustment(
 		return err
 	}
 
-	if err := w.runSendEvents(ctx, SendEvents{
-		PaymentInitiationAdjustment: &adj,
-	}); err != nil {
-		return fmt.Errorf("sending events: %w", err)
-	}
-
+	// Payment initiation adjustment events are now sent via outbox pattern in PaymentInitiationAdjustmentsUpsert
 	return nil
 }
 

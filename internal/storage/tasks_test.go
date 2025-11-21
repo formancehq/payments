@@ -2,14 +2,17 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -129,6 +132,61 @@ func TestTasksUpsert(t *testing.T) {
 
 		err := store.TasksUpsert(ctx, t2)
 		require.Error(t, err)
+	})
+
+	t.Run("outbox event created for task update", func(t *testing.T) {
+		// Create a new task for this test
+		newTask := models.Task{
+			ID: models.TaskID{
+				Reference:   "outbox-test-task",
+				ConnectorID: defaultConnector.ID,
+			},
+			ConnectorID:     &defaultConnector.ID,
+			Status:          "PROCESSING",
+			CreatedAt:       now.Add(-10 * time.Minute).UTC().Time,
+			UpdatedAt:       now.Add(-5 * time.Minute).UTC().Time,
+			CreatedObjectID: pointer.For("test-object-id"),
+		}
+
+		expectedKey := newTask.IdempotencyKey()
+
+		require.NoError(t, store.TasksUpsert(ctx, newTask))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeUpdatedTask &&
+				pendingEvents[i].EntityID == newTask.ID.String() &&
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for task updated")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeUpdatedTask, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, newTask.ID.String(), ourEvent.EntityID)
+		assert.Equal(t, defaultConnector.ID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newTask.ID.String(), payload["id"])
+		assert.Equal(t, string(newTask.Status), payload["status"])
+		assert.NotNil(t, payload["createdAt"])
+		assert.NotNil(t, payload["updatedAt"])
+		if newTask.CreatedObjectID != nil {
+			assert.Equal(t, *newTask.CreatedObjectID, payload["createdObjectID"])
+		}
 	})
 }
 
