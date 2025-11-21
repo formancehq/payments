@@ -49,6 +49,7 @@ var psuBankBridgeConnectionUpdatedAt string
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
 
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -345,6 +346,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				logger.Info("running add balances foreign key migration...")
 				err := AddBalancesForeignKey(ctx, db)
 				logger.WithField("error", err).Info("finished running add balances foreign key migration")
+				return err
+			},
+		},
+		migrations.Migration{
+			Name: "optimize query performance indexes",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running optimize query performance indexes migration...")
+				err := AddOptimizeQueryPerformanceIndexes(ctx, db)
+				logger.WithField("error", err).Info("finished running optimize query performance indexes migration")
 				return err
 			},
 		},
