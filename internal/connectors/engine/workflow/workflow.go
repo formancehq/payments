@@ -73,6 +73,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runFetchNextPayments,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunListActiveSchedules,
+			Func: w.runListActiveSchedules,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunTerminateScheduleByID,
+			Func: w.runTerminateScheduleByID,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunTerminateSchedules,
 			Func: w.runTerminateSchedules,
 		}).

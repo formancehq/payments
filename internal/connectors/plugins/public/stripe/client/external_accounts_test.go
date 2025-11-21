@@ -7,32 +7,50 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Client External Accounts", func() {
 	var (
-		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
-		cl     client.Client
-		ctrl   *gomock.Controller
-		b      *client.MockBackend
-		token  string
+		logger   = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
+		cl       client.Client
+		ctrl     *gomock.Controller
+		b        *client.MockBackend
+		timeline client.Timeline
+		token    string
+		err      error
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		b = client.NewMockBackend(ctrl)
 		token = "dummy"
-		cl = client.New("test", logger, b, token)
+		timeline = client.Timeline{}
+		b.EXPECT().Call("GET", "/v1/account", token, nil, &stripe.Account{}).DoAndReturn(
+			func(_, _, _ string, _ any, account *stripe.Account) error {
+				account.ID = "rootID"
+				return nil
+			})
+		cl, err = client.New("test", logger, b, token)
+		Expect(err).To(BeNil())
 	})
 
 	Context("Get External Accounts", func() {
 		var (
 			accountID = "accountID"
-			timeline  = client.Timeline{}
 			pageSize  = 8
 		)
+
+		It("does not make external accounts call when underlying account matches the root account", func(ctx SpecContext) {
+			_, _, _, err := cl.GetExternalAccounts(
+				ctx,
+				"rootID",
+				timeline,
+				int64(pageSize),
+			)
+			Expect(err).To(BeNil())
+		})
 
 		It("fails when underlying calls fail", func(ctx SpecContext) {
 			expectedErr := errors.New("some err")

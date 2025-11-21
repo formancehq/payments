@@ -14,6 +14,7 @@ import (
 type InstallConnector struct {
 	ConnectorID models.ConnectorID
 	Config      models.Config
+	OnStart     bool // if this is being called at application startup
 }
 
 func (w Workflow) runInstallConnector(
@@ -67,6 +68,13 @@ func (w Workflow) installConnector(
 		return nil
 	}
 
+	// if this is being triggered by an app restart allow the install workflow to run again with the same ID
+	// this only applies to workflows that have already terminated and doesn't allow concurrency of the same workflow
+	reusePolicy := enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY
+	if installConnector.OnStart {
+		reusePolicy = enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE
+	}
+
 	// Fifth step: launch the workflow tree, do not wait for the result
 	// by using the GetChildWorkflowExecution function that returns a future
 	// which will be ready when the child workflow has successfully started.
@@ -75,7 +83,7 @@ func (w Workflow) installConnector(
 			ctx,
 			workflow.ChildWorkflowOptions{
 				WorkflowID:            fmt.Sprintf("run-tasks-%s-%s", w.stack, installConnector.ConnectorID.String()),
-				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+				WorkflowIDReusePolicy: reusePolicy,
 				TaskQueue:             w.getDefaultTaskQueue(),
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{

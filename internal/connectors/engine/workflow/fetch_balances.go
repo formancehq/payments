@@ -60,7 +60,7 @@ func (w Workflow) fetchBalances(
 			fetchNextBalances.Periodically,
 		)
 		if err != nil {
-			return errors.Wrap(err, "fetching next accounts")
+			return errors.Wrap(err, "fetching next balances")
 		}
 
 		balances, err := models.FromPSPBalances(
@@ -83,7 +83,7 @@ func (w Workflow) fetchBalances(
 				balances,
 			)
 			if err != nil {
-				return errors.Wrap(err, "storing next accounts")
+				return errors.Wrap(err, "storing next balances")
 			}
 		}
 

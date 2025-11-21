@@ -13,7 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	stripe "github.com/stripe/stripe-go/v79"
+	models "github.com/formancehq/payments/internal/models"
+	stripe "github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -69,6 +70,35 @@ func (m *MockClient) CreateTransfer(ctx context.Context, createTransferRequest *
 func (mr *MockClientMockRecorder) CreateTransfer(ctx, createTransferRequest any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockClient)(nil).CreateTransfer), ctx, createTransferRequest)
+}
+
+// CreateWebhookEndpoints mocks base method.
+func (m *MockClient) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL string) ([]*stripe.WebhookEndpoint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWebhookEndpoints", ctx, webhookBaseURL)
+	ret0, _ := ret[0].([]*stripe.WebhookEndpoint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWebhookEndpoints indicates an expected call of CreateWebhookEndpoints.
+func (mr *MockClientMockRecorder) CreateWebhookEndpoints(ctx, webhookBaseURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).CreateWebhookEndpoints), ctx, webhookBaseURL)
+}
+
+// DeleteWebhookEndpoints mocks base method.
+func (m *MockClient) DeleteWebhookEndpoints(arg0 []models.PSPWebhookConfig) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWebhookEndpoints", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWebhookEndpoints indicates an expected call of DeleteWebhookEndpoints.
+func (mr *MockClientMockRecorder) DeleteWebhookEndpoints(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhookEndpoints", reflect.TypeOf((*MockClient)(nil).DeleteWebhookEndpoints), arg0)
 }
 
 // GetAccountBalances mocks base method.
@@ -135,6 +165,35 @@ func (m *MockClient) GetPayments(ctx context.Context, accountID string, timeline
 func (mr *MockClientMockRecorder) GetPayments(ctx, accountID, timeline, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPayments", reflect.TypeOf((*MockClient)(nil).GetPayments), ctx, accountID, timeline, pageSize)
+}
+
+// GetRootAccount mocks base method.
+func (m *MockClient) GetRootAccount() (*stripe.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRootAccount")
+	ret0, _ := ret[0].(*stripe.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRootAccount indicates an expected call of GetRootAccount.
+func (mr *MockClientMockRecorder) GetRootAccount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRootAccount", reflect.TypeOf((*MockClient)(nil).GetRootAccount))
+}
+
+// GetRootAccountID mocks base method.
+func (m *MockClient) GetRootAccountID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRootAccountID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetRootAccountID indicates an expected call of GetRootAccountID.
+func (mr *MockClientMockRecorder) GetRootAccountID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRootAccountID", reflect.TypeOf((*MockClient)(nil).GetRootAccountID))
 }
 
 // ReverseTransfer mocks base method.
