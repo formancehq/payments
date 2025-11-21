@@ -21,6 +21,15 @@ func (s *Service) PoolsBalances(
 	if err != nil {
 		return nil, newStorageError(err, "cannot get pool")
 	}
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		// populate the pool accounts from the query
+		pool.PoolAccounts, err = s.populatePoolAccounts(ctx, pool)
+		if err != nil {
+			return nil, newStorageError(err, "cannot populate pool accounts")
+		}
+	}
+
 	res := make(map[string]*aggregatedBalance)
 	for i := range pool.PoolAccounts {
 		balances, err := s.storage.BalancesGetLatest(ctx, pool.PoolAccounts[i])

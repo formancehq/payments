@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 7500724fcec6eeb19f88f8804752f23d
+  docChecksum: 9cf724eb1c77c99eb8fe9281b7a5acb2
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -910,7 +910,7 @@ examples:
           sort: ["date:asc", "status:desc"]
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "accounts": ["<value>"]}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "type": "<value>", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "type": "<value>", "accounts": ["<value>"]}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   createPool:
@@ -919,7 +919,7 @@ examples:
         application/json: {"name": "<value>", "accountIDs": ["<value>", "<value>", "<value>"]}
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "accounts": []}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "<value>", "accounts": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   getPool:
@@ -929,7 +929,7 @@ examples:
           poolId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "accounts": []}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "<value>", "accounts": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   deletePool:
@@ -1626,7 +1626,7 @@ examples:
           cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "poolAccounts": ["<value>"]}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "type": "<value>", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "type": "<value>", "poolAccounts": ["<value>"]}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3GetPool:
@@ -1636,7 +1636,7 @@ examples:
           poolID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "poolAccounts": ["<value>"]}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "type": "<value>", "poolAccounts": ["<value>"]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3DeletePool:

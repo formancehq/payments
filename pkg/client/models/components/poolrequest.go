@@ -3,8 +3,9 @@
 package components
 
 type PoolRequest struct {
-	Name       string   `json:"name"`
-	AccountIDs []string `json:"accountIDs"`
+	Name       string         `json:"name"`
+	Query      map[string]any `json:"query,omitempty"`
+	AccountIDs []string       `json:"accountIDs,omitempty"`
 }
 
 func (o *PoolRequest) GetName() string {
@@ -14,9 +15,16 @@ func (o *PoolRequest) GetName() string {
 	return o.Name
 }
 
+func (o *PoolRequest) GetQuery() map[string]any {
+	if o == nil {
+		return nil
+	}
+	return o.Query
+}
+
 func (o *PoolRequest) GetAccountIDs() []string {
 	if o == nil {
-		return []string{}
+		return nil
 	}
 	return o.AccountIDs
 }

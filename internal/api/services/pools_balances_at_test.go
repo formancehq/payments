@@ -93,6 +93,7 @@ func TestPoolsBalancesAt(t *testing.T) {
 			store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{
 				ID:           id,
 				Name:         "test",
+				Type:         models.POOL_TYPE_STATIC,
 				CreatedAt:    at,
 				PoolAccounts: poolsAccount,
 			}, test.poolsGetStorageErr)
