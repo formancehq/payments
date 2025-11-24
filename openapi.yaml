@@ -3448,7 +3448,7 @@ components:
         name:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/PoolTypeEnum'
         query:
           type: object
           additionalProperties: true
@@ -3456,6 +3456,11 @@ components:
           type: array
           items:
             type: string
+    PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     PoolBalances:
       type: object
       required:
@@ -5589,7 +5594,7 @@ components:
           type: string
           format: date-time
         type:
-          type: string
+          $ref: '#/components/schemas/V3PoolTypeEnum'
         query:
           type: object
           additionalProperties: true
@@ -5617,6 +5622,11 @@ components:
           type: array
           items:
             type: string
+    V3PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     V3GetTaskResponse:
       type: object
       required:

@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 9cf724eb1c77c99eb8fe9281b7a5acb2
+  docChecksum: c86a83ec8c81776a4306ea45508a0d47
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -80,6 +80,7 @@ generatedFiles:
   - /models/components/poolrequest.go
   - /models/components/poolresponse.go
   - /models/components/poolscursor.go
+  - /models/components/pooltypeenum.go
   - /models/components/reversetransferinitiationrequest.go
   - /models/components/security.go
   - /models/components/serverinfo.go
@@ -200,6 +201,7 @@ generatedFiles:
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
+  - /models/components/v3pooltypeenum.go
   - /models/components/v3powensconfig.go
   - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
@@ -380,6 +382,7 @@ generatedFiles:
   - docs/models/components/poolresponse.md
   - docs/models/components/poolscursor.md
   - docs/models/components/poolscursorcursor.md
+  - docs/models/components/pooltypeenum.md
   - docs/models/components/reversetransferinitiationrequest.md
   - docs/models/components/security.md
   - docs/models/components/serverinfo.md
@@ -547,6 +550,7 @@ generatedFiles:
   - docs/models/components/v3poolbalancesresponse.md
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3pooltypeenum.md
   - docs/models/components/v3powensconfig.md
   - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
@@ -910,7 +914,7 @@ examples:
           sort: ["date:asc", "status:desc"]
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "type": "<value>", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "type": "<value>", "accounts": ["<value>"]}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "type": "DYNAMIC", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "type": "DYNAMIC", "accounts": ["<value>"]}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   createPool:
@@ -919,7 +923,7 @@ examples:
         application/json: {"name": "<value>", "accountIDs": ["<value>", "<value>", "<value>"]}
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "<value>", "accounts": []}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "DYNAMIC", "accounts": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   getPool:
@@ -929,7 +933,7 @@ examples:
           poolId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "<value>", "accounts": []}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "STATIC", "accounts": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   deletePool:
@@ -1626,7 +1630,7 @@ examples:
           cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "type": "<value>", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "type": "<value>", "poolAccounts": ["<value>"]}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "type": "DYNAMIC", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "type": "DYNAMIC", "poolAccounts": ["<value>"]}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3GetPool:
@@ -1636,7 +1640,7 @@ examples:
           poolID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "type": "<value>", "poolAccounts": ["<value>"]}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "type": "STATIC", "poolAccounts": ["<value>"]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3DeletePool:

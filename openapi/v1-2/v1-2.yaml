@@ -2096,7 +2096,7 @@ components:
         name:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/PoolTypeEnum'
         query:
           type: object
           additionalProperties: true
@@ -2104,6 +2104,11 @@ components:
           type: array
           items:
             type: string
+    PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     PoolBalances:
       type: object
       required:

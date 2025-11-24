@@ -3215,7 +3215,7 @@ Accept: application/json
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
-        "type": "string",
+        "type": "STATIC",
         "query": {},
         "poolAccounts": [
           "string"
@@ -3269,7 +3269,7 @@ Accept: application/json
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
-    "type": "string",
+    "type": "STATIC",
     "query": {},
     "poolAccounts": [
       "string"
@@ -6395,7 +6395,7 @@ None ( Scopes: payments:read )
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
-        "type": "string",
+        "type": "STATIC",
         "query": {},
         "poolAccounts": [
           "string"
@@ -6431,7 +6431,7 @@ None ( Scopes: payments:read )
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
-    "type": "string",
+    "type": "STATIC",
     "query": {},
     "poolAccounts": [
       "string"
@@ -6487,7 +6487,7 @@ None ( Scopes: payments:read )
   "id": "string",
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
-  "type": "string",
+  "type": "STATIC",
   "query": {},
   "poolAccounts": [
     "string"
@@ -6503,7 +6503,7 @@ None ( Scopes: payments:read )
 |id|string|true|none|none|
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
-|type|string|true|none|none|
+|type|[V3PoolTypeEnum](#schemav3pooltypeenum)|true|none|none|
 |query|object|false|none|none|
 |poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|none|
 
@@ -6558,6 +6558,31 @@ None ( Scopes: payments:read )
 |asset|string|true|none|none|
 |amount|integer(bigint)|true|none|none|
 |relatedAccounts|[string]¦null|false|none|none|
+
+<h2 id="tocS_V3PoolTypeEnum">V3PoolTypeEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3pooltypeenum"></a>
+<a id="schema_V3PoolTypeEnum"></a>
+<a id="tocSv3pooltypeenum"></a>
+<a id="tocsv3pooltypeenum"></a>
+
+```json
+"STATIC"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|STATIC|
+|*anonymous*|DYNAMIC|
 
 <h2 id="tocS_V3GetTaskResponse">V3GetTaskResponse</h2>
 <!-- backwards compatibility -->

@@ -11,7 +11,7 @@ type V3Pool struct {
 	ID           string         `json:"id"`
 	Name         string         `json:"name"`
 	CreatedAt    time.Time      `json:"createdAt"`
-	Type         string         `json:"type"`
+	Type         V3PoolTypeEnum `json:"type"`
 	Query        map[string]any `json:"query,omitempty"`
 	PoolAccounts []string       `json:"poolAccounts"`
 }
@@ -48,9 +48,9 @@ func (o *V3Pool) GetCreatedAt() time.Time {
 	return o.CreatedAt
 }
 
-func (o *V3Pool) GetType() string {
+func (o *V3Pool) GetType() V3PoolTypeEnum {
 	if o == nil {
-		return ""
+		return V3PoolTypeEnum("")
 	}
 	return o.Type
 }
