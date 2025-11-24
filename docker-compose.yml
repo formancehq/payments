@@ -138,7 +138,7 @@ services:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
 
   console:
-    image: ghcr.io/formancehq/console-v3:f76467637c7c594a35a39690b5e26f69936b2dcf
+    image: ghcr.io/formancehq/console-v3:v1.17.0
     ports:
       - "3000:3000"
     environment:
