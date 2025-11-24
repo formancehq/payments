@@ -98,7 +98,8 @@ func setupConfig(conf any) Config {
 		case reflect.Bool:
 			dataType = TypeBoolean
 		default:
-			log.Panicf("unhandled type for field %q: %q", val.Type().Field(i).Name, field.Type.Name())
+			// Skip non-primitive types (slices, structs, maps, etc.)
+			continue
 		}
 
 		config[fieldName] = Parameter{

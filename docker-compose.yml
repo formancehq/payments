@@ -42,6 +42,8 @@ services:
     working_dir: /app/components/payments
     environment:
       POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
+      GOCACHE: /tmp/go-build
+      GOMODCACHE: /tmp/go-mod
 
   temporal:
     image: temporalio/auto-setup:1.25.0
@@ -108,6 +110,8 @@ services:
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: true
       STACK_URL: http://gateway:8092
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+      GOCACHE: /tmp/go-build
+      GOMODCACHE: /tmp/go-mod
 
   payments-worker:
     image: golang:1.24.7-alpine
@@ -136,9 +140,11 @@ services:
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: false
       STACK_URL: http://gateway:8092
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+      GOCACHE: /tmp/go-build
+      GOMODCACHE: /tmp/go-mod
 
   console:
-    image: ghcr.io/formancehq/console-v3:f76467637c7c594a35a39690b5e26f69936b2dcf
+    image: ghcr.io/formancehq/console-v3:5d61287cb526ac11d897cfbae3d538be959b5f86
     ports:
       - "3000:3000"
     environment:

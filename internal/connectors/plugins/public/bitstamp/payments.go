@@ -1,0 +1,377 @@
+package bitstamp
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math/big"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/formancehq/go-libs/v3/currency"
+	bsclient "github.com/formancehq/payments/internal/connectors/plugins/public/bitstamp/client"
+	"github.com/formancehq/payments/internal/models"
+)
+
+// paymentsState tracks pagination when fetching transactions.
+// - LastOffset: Offset for next API call (increments when timestamp hasn't changed)
+// - LastCreationDate: Most recent transaction timestamp seen (for deduplication)
+type paymentsState struct {
+	LastOffset       int       `json:"lastOffset"`
+	LastCreationDate time.Time `json:"lastCreationDate"`
+}
+
+// fetchNextPayments retrieves transactions from all configured Bitstamp accounts.
+// The method:
+// 1. Fetches transactions from each account's user_transactions endpoint
+// 2. Deduplicates by transaction ID (same transaction may appear in multiple accounts)
+// 3. Sorts by datetime descending (most recent first)
+// 4. Converts to PSPPayment format, inferring type from currency leg patterns
+func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	// ---- load previous state ----
+	var oldState paymentsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
+	}
+
+	newState := paymentsState{
+		LastOffset:       oldState.LastOffset,
+		LastCreationDate: oldState.LastCreationDate,
+	}
+
+	// Get all configured accounts
+	accounts := p.client.GetAllAccounts()
+	if len(accounts) == 0 {
+		return models.FetchNextPaymentsResponse{}, fmt.Errorf("no accounts configured")
+	}
+
+	p.logger.Infof("Fetching payments for %d accounts", len(accounts))
+
+	var (
+		allTransactions []bsclient.Transaction
+		hasMore         bool
+	)
+
+	offset := oldState.LastOffset
+	limit := req.PageSize
+	if limit < 10 { // Use a reasonable minimum (handles 0, negative, and small values)
+		limit = 100
+	}
+	if limit > 1000 { // API upper bound
+		limit = 1000
+	}
+
+	p.logger.Infof("Using offset=%d, limit=%d", offset, limit)
+
+	// Fetch transactions for each account and deduplicate by ID
+	seenTxIDs := make(map[string]bool)
+	duplicateCount := 0
+	for _, account := range accounts {
+		params := bsclient.TransactionsParams{
+			Offset: offset,
+			Limit:  limit,
+			Sort:   "desc",
+		}
+		// Optional optimization: keep a moving window using the last seen creation time.
+		if !oldState.LastCreationDate.IsZero() {
+			params.SinceTimestamp = oldState.LastCreationDate.Unix()
+			p.logger.Infof("Using since timestamp: %v", oldState.LastCreationDate)
+		}
+
+		p.logger.Infof("Fetching transactions for account: %s (ID: %s)", account.Name, account.ID)
+		rows, err := p.client.GetTransactionsForAccount(ctx, account, params)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to fetch transactions for account %s: %w", account.Name, err)
+		}
+
+		p.logger.Infof("Account %s returned %d transactions", account.Name, len(rows))
+
+		// Only add transactions we haven't seen yet
+		for _, tx := range rows {
+			txID := string(tx.ID)
+			if !seenTxIDs[txID] {
+				seenTxIDs[txID] = true
+				allTransactions = append(allTransactions, tx)
+			} else {
+				duplicateCount++
+				p.logger.Debugf("Skipping duplicate transaction ID: %s", txID)
+			}
+		}
+
+		if len(rows) >= limit {
+			hasMore = true
+		}
+	}
+
+	p.logger.Infof("Total unique transactions: %d, duplicates filtered: %d", len(allTransactions), duplicateCount)
+
+	// Sort all transactions by date (descending)
+	sort.Slice(allTransactions, func(i, j int) bool {
+		timeI, errI := parseBitstampTime(allTransactions[i].Datetime)
+		timeJ, errJ := parseBitstampTime(allTransactions[j].Datetime)
+		if errI != nil || errJ != nil {
+			return false
+		}
+		return timeI.After(timeJ)
+	})
+
+	p.logger.Infof("Sorted %d transactions by date", len(allTransactions))
+
+	// Convert to payments
+	out, err := fillPaymentsBitstamp(allTransactions, nil)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	p.logger.Infof("Converted to %d payments", len(out))
+
+	// Update state from the *last* emitted payment (descending order)
+	if len(out) > 0 {
+		last := out[len(out)-1]
+		// If we saw the same newest timestamp, advance offset; else reset to 0 for next pass.
+		if oldState.LastCreationDate.Equal(last.CreatedAt) {
+			newState.LastOffset = offset + limit
+		} else {
+			newState.LastOffset = 0
+		}
+		newState.LastCreationDate = last.CreatedAt
+	}
+
+	payload, err := json.Marshal(newState)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	p.logger.Infof("Returning %d payments, hasMore=%v", len(out), hasMore)
+
+	return models.FetchNextPaymentsResponse{
+		Payments: out,
+		NewState: payload,
+		HasMore:  hasMore,
+	}, nil
+}
+
+// ---- Transaction → PSPPayment ----------------------------------------------
+
+// fillPaymentsBitstamp converts Bitstamp transactions to PSPPayment format.
+func fillPaymentsBitstamp(
+	rows []bsclient.Transaction,
+	out []models.PSPPayment,
+) ([]models.PSPPayment, error) {
+	for _, tx := range rows {
+		pmts, err := transactionToPayments(tx)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, pmts...)
+	}
+	return out, nil
+}
+
+// transactionToPayments converts a single Bitstamp transaction to one or more PSPPayments.
+// Payment creation logic:
+// - If transaction has an exchange rate (currency swap): create TWO payments
+//   - One PAYOUT for the asset going out (negative leg)
+//   - One PAYIN for the new asset coming in (positive leg)
+//
+// - Single positive leg → PAYIN (deposit)
+// - Single negative leg → PAYOUT (withdrawal)
+func transactionToPayments(tx bsclient.Transaction) ([]models.PSPPayment, error) {
+	// Raw
+	raw, err := json.Marshal(&tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse time (Bitstamp formats with microseconds)
+	createdAt, err := parseBitstampTime(tx.Datetime)
+	if err != nil {
+		return nil, fmt.Errorf("parse datetime: %w", err)
+	}
+
+	// Collect non-zero legs to infer payment type and pick primary leg.
+	legs := map[string]string{
+		"EUR":  string(tx.EUR),
+		"USD":  string(tx.USD),
+		"USDC": string(tx.USDC),
+		"BTC":  string(tx.BTC),
+		"DOGE": string(tx.DOGE),
+	}
+
+	type leg struct {
+		Code string
+		Val  string
+		Neg  bool
+	}
+	nonZero := make([]leg, 0, 2)
+	for code, s := range legs {
+		if isZeroNumStr(s) {
+			continue
+		}
+		ns := strings.TrimSpace(s)
+		nonZero = append(nonZero, leg{
+			Code: code,
+			Val:  ns,
+			Neg:  strings.HasPrefix(ns, "-"),
+		})
+	}
+
+	if len(nonZero) == 0 {
+		// nothing meaningful
+		return nil, nil
+	}
+
+	// Check if this is an exchange transaction (has exchange rate)
+	_, exchangeRate := tx.GetExchangeRate()
+	hasExchangeRate := exchangeRate != ""
+
+	// If exchange transaction with multiple legs, create two payments
+	if hasExchangeRate && len(nonZero) > 1 {
+		payments := make([]models.PSPPayment, 0, 2)
+
+		for _, l := range nonZero {
+			decimals, ok := supportedCurrenciesWithDecimal[l.Code]
+			if !ok {
+				return nil, fmt.Errorf("unsupported currency %s", l.Code)
+			}
+
+			amt, err := decimalToMinor(strings.TrimPrefix(strings.TrimSpace(l.Val), "+"), int(decimals))
+			if err != nil {
+				return nil, fmt.Errorf("parse amount %s %s: %w", l.Code, l.Val, err)
+			}
+
+			// Determine payment type based on sign
+			var pType models.PaymentType
+			var suffix string
+			if l.Neg {
+				pType = models.PAYMENT_TYPE_PAYOUT
+				suffix = "-out"
+			} else {
+				pType = models.PAYMENT_TYPE_PAYIN
+				suffix = "-in"
+			}
+
+			payment := models.PSPPayment{
+				Reference: string(tx.ID) + suffix,
+				CreatedAt: createdAt,
+				Type:      pType,
+				Amount:    amt,
+				Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, l.Code),
+				Scheme:    models.PAYMENT_SCHEME_OTHER,
+				Status:    models.PAYMENT_STATUS_SUCCEEDED,
+				Raw:       raw,
+			}
+			payments = append(payments, payment)
+		}
+
+		return payments, nil
+	}
+
+	// Single leg transaction - create one payment
+	primary := nonZero[0]
+	var pType models.PaymentType
+	if primary.Neg {
+		pType = models.PAYMENT_TYPE_PAYOUT
+	} else {
+		pType = models.PAYMENT_TYPE_PAYIN
+	}
+
+	decimals, ok := supportedCurrenciesWithDecimal[primary.Code]
+	if !ok {
+		return nil, fmt.Errorf("unsupported currency %s", primary.Code)
+	}
+	amt, err := decimalToMinor(strings.TrimPrefix(strings.TrimSpace(primary.Val), "+"), int(decimals))
+	if err != nil {
+		return nil, fmt.Errorf("parse amount %s %s: %w", primary.Code, primary.Val, err)
+	}
+
+	payment := models.PSPPayment{
+		Reference: string(tx.ID),
+		CreatedAt: createdAt,
+		Type:      pType,
+		Amount:    amt,
+		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, primary.Code),
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       raw,
+	}
+
+	return []models.PSPPayment{payment}, nil
+}
+
+// ---- Helpers ----------------------------------------------------------------
+
+// isZeroNumStr checks if a numeric string represents zero.
+func isZeroNumStr(s string) bool {
+	ns := strings.TrimSpace(s)
+	if ns == "" {
+		return true
+	}
+	r := new(big.Rat)
+	if _, ok := r.SetString(ns); !ok {
+		// if unparsable, treat as non-zero to avoid dropping records silently
+		return false
+	}
+	return r.Sign() == 0
+}
+
+// decimalToMinor converts a decimal string like "-5.81077" into minor units big.Int
+// given the number of decimals for the currency (e.g., 2 for EUR, 6 for USDC, 8 for BTC).
+func decimalToMinor(s string, decimals int) (*big.Int, error) {
+	sign := 1
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "-") {
+		sign = -1
+		s = strings.TrimPrefix(s, "-")
+	}
+
+	intPart, fracPart := s, ""
+	if dot := strings.IndexByte(s, '.'); dot >= 0 {
+		intPart, fracPart = s[:dot], s[dot+1:]
+	}
+
+	// normalize fractional part to 'decimals' digits
+	switch {
+	case len(fracPart) > decimals:
+		fracPart = fracPart[:decimals]
+	case len(fracPart) < decimals:
+		fracPart += strings.Repeat("0", decimals-len(fracPart))
+	}
+
+	// strip leading zeros from int part
+	intPart = strings.TrimLeft(intPart, "0")
+	if intPart == "" {
+		intPart = "0"
+	}
+
+	numStr := intPart + fracPart
+	if allZero(numStr) {
+		return big.NewInt(0), nil
+	}
+
+	bi := new(big.Int)
+	if _, ok := bi.SetString(numStr, 10); !ok {
+		return nil, fmt.Errorf("invalid number %q", numStr)
+	}
+	if sign < 0 {
+		bi.Neg(bi)
+	}
+	return bi, nil
+}
+
+func allZero(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] != '0' {
+			return false
+		}
+	}
+	return true
+}
+
+// parseBitstampTime parses Bitstamp datetime format: "2025-09-25 14:42:59.894846"
+func parseBitstampTime(datetime string) (time.Time, error) {
+	return time.Parse("2006-01-02 15:04:05.000000", datetime)
+}
