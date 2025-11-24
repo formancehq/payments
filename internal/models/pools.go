@@ -32,16 +32,18 @@ type Pool struct {
 
 func (p Pool) MarshalJSON() ([]byte, error) {
 	var aux struct {
-		ID           string    `json:"id"`
-		Name         string    `json:"name"`
-		CreatedAt    time.Time `json:"createdAt"`
-		Type         PoolType  `json:"type"`
-		PoolAccounts []string  `json:"poolAccounts"`
+		ID           string         `json:"id"`
+		Name         string         `json:"name"`
+		CreatedAt    time.Time      `json:"createdAt"`
+		Type         PoolType       `json:"type"`
+		Query        map[string]any `json:"query"`
+		PoolAccounts []string       `json:"poolAccounts"`
 	}
 
 	aux.ID = p.ID.String()
 	aux.Name = p.Name
 	aux.CreatedAt = p.CreatedAt
+	aux.Query = p.Query
 	aux.Type = p.Type
 
 	aux.PoolAccounts = make([]string, len(p.PoolAccounts))
@@ -54,11 +56,12 @@ func (p Pool) MarshalJSON() ([]byte, error) {
 
 func (p *Pool) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		ID           string    `json:"id"`
-		Name         string    `json:"name"`
-		CreatedAt    time.Time `json:"createdAt"`
-		Type         PoolType  `json:"type"`
-		PoolAccounts []string  `json:"poolAccounts"`
+		ID           string         `json:"id"`
+		Name         string         `json:"name"`
+		CreatedAt    time.Time      `json:"createdAt"`
+		Type         PoolType       `json:"type"`
+		Query        map[string]any `json:"query"`
+		PoolAccounts []string       `json:"poolAccounts"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -83,6 +86,7 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 	p.Name = aux.Name
 	p.CreatedAt = aux.CreatedAt
 	p.Type = aux.Type
+	p.Query = aux.Query
 	p.PoolAccounts = poolAccounts
 
 	return nil
