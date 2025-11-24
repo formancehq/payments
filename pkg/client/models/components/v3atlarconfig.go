@@ -10,7 +10,6 @@ type V3AtlarConfig struct {
 	AccessKey     string  `json:"accessKey"`
 	BaseURL       string  `json:"baseUrl"`
 	Name          string  `json:"name"`
-	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `json:"pollingPeriod,omitempty"`
 	Provider      *string `default:"Atlar" json:"provider"`
 	Secret        string  `json:"secret"`
@@ -46,13 +45,6 @@ func (o *V3AtlarConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3AtlarConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3AtlarConfig) GetPollingPeriod() *string {

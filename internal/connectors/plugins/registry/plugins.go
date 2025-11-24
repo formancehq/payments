@@ -167,3 +167,12 @@ func GetConfig(provider string) (Config, error) {
 	}
 	return info.config, nil
 }
+
+func GetPageSize(provider string) (uint64, error) {
+	provider = strings.ToLower(provider)
+	info, ok := pluginsRegistry[provider]
+	if !ok {
+		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
+	}
+	return info.pageSize, nil
+}

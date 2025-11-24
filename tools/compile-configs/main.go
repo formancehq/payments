@@ -129,10 +129,6 @@ func readConfig(name string, caserName string) (V3Config, error) {
 			Type:    "string",
 			Default: "2m",
 		},
-		"pageSize": {
-			Type:    "integer",
-			Default: 25,
-		},
 	}
 	for _, decl := range f.Decls {
 		gen, ok := decl.(*ast.GenDecl)

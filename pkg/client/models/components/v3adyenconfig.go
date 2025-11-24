@@ -11,7 +11,6 @@ type V3AdyenConfig struct {
 	CompanyID          string  `json:"companyID"`
 	LiveEndpointPrefix *string `json:"liveEndpointPrefix,omitempty"`
 	Name               string  `json:"name"`
-	PageSize           *int64  `default:"25" json:"pageSize"`
 	PollingPeriod      *string `default:"2m" json:"pollingPeriod"`
 	Provider           *string `default:"Adyen" json:"provider"`
 	WebhookPassword    *string `json:"webhookPassword,omitempty"`
@@ -55,13 +54,6 @@ func (o *V3AdyenConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3AdyenConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3AdyenConfig) GetPollingPeriod() *string {

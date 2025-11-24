@@ -11,7 +11,6 @@ type V3CurrencycloudConfig struct {
 	Endpoint      string  `json:"endpoint"`
 	LoginID       string  `json:"loginID"`
 	Name          string  `json:"name"`
-	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
 	Provider      *string `default:"Currencycloud" json:"provider"`
 }
@@ -53,13 +52,6 @@ func (o *V3CurrencycloudConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3CurrencycloudConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3CurrencycloudConfig) GetPollingPeriod() *string {

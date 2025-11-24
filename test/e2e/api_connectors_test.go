@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -32,12 +31,12 @@ var _ = Context("Payments API Connectors", Serial, func() {
 
 	app := testserver.NewTestServer(func() testserver.Configuration {
 		return testserver.Configuration{
-			Stack:                     stack,
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
-			Debug:                     true,
+			Stack:                      stack,
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
+			Debug:                      true,
 			SkipOutboxScheduleCreation: true,
 		}
 	})
@@ -81,7 +80,6 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(connectorConf.Name))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(connectorConf.Provider))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(connectorConf.Directory))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PageSize).To(Equal(connectorConf.PageSize))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.Type).To(Equal(components.V3ConnectorConfigTypeDummypay))
 
 			getResPollingPeriod, err := time.ParseDuration(
@@ -407,14 +405,6 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			res := resp.V3ConnectorConfigsResponse
 			Expect(len(res.Data)).To(BeNumerically(">", 1))
 			Expect(res.Data["dummypay"]).NotTo(BeNil())
-			Expect(res.Data["dummypay"]["pageSize"]).NotTo(BeNil())
-			Expect(res.Data["dummypay"]["pageSize"].DataType).To(Equal("unsigned integer"))
-			Expect(res.Data["dummypay"]["pageSize"].Required).To(Equal(false))
-			Expect(res.Data["dummypay"]["pageSize"].DefaultValue).NotTo(Equal(""))
-			Expect(res.Data["dummypay"]["pageSize"].DefaultValue).ToNot(BeNil())
-			pageSize, err := strconv.Atoi(*res.Data["dummypay"]["pageSize"].DefaultValue)
-			Expect(err).To(BeNil())
-			Expect(pageSize).To(BeNumerically(">", 0))
 			Expect(res.Data["dummypay"]["pollingPeriod"]).NotTo(BeNil())
 			Expect(res.Data["dummypay"]["pollingPeriod"].DataType).To(Equal("duration ns"))
 			Expect(res.Data["dummypay"]["pollingPeriod"].Required).To(Equal(false))
@@ -441,14 +431,6 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			res := resp.ConnectorsConfigsResponse
 			Expect(len(res.Data)).To(BeNumerically(">", 1))
 			Expect(res.Data["dummypay"]).NotTo(BeNil())
-			Expect(res.Data["dummypay"]["pageSize"]).NotTo(BeNil())
-			Expect(res.Data["dummypay"]["pageSize"].DataType).To(Equal("unsigned integer"))
-			Expect(res.Data["dummypay"]["pageSize"].Required).To(Equal(false))
-			Expect(res.Data["dummypay"]["pageSize"].DefaultValue).NotTo(Equal(""))
-			Expect(res.Data["dummypay"]["pageSize"].DefaultValue).ToNot(BeNil())
-			pageSize, err := strconv.Atoi(*res.Data["dummypay"]["pageSize"].DefaultValue)
-			Expect(err).To(BeNil())
-			Expect(pageSize).To(BeNumerically(">", 0))
 			Expect(res.Data["dummypay"]["pollingPeriod"]).NotTo(BeNil())
 			Expect(res.Data["dummypay"]["pollingPeriod"].DataType).To(Equal("duration ns"))
 			Expect(res.Data["dummypay"]["pollingPeriod"].Required).To(Equal(false))
@@ -581,7 +563,6 @@ func newV3ConnectorConfigFn() func(id uuid.UUID) *components.V3DummypayConfig {
 			Directory:           dir,
 			LinkFlowError:       pointer.For(false),
 			Name:                fmt.Sprintf("connector-%s", id.String()),
-			PageSize:            pointer.For(int64(30)),
 			PollingPeriod:       pointer.For("30m"),
 			Provider:            pointer.For("Dummypay"),
 			UpdateLinkFlowError: pointer.For(false),

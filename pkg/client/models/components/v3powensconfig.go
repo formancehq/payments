@@ -14,7 +14,6 @@ type V3PowensConfig struct {
 	Endpoint              string  `json:"endpoint"`
 	MaxConnectionsPerLink int64   `json:"maxConnectionsPerLink"`
 	Name                  string  `json:"name"`
-	PageSize              *int64  `default:"25" json:"pageSize"`
 	PollingPeriod         *string `default:"2m" json:"pollingPeriod"`
 	Provider              *string `default:"Powens" json:"provider"`
 }
@@ -77,13 +76,6 @@ func (o *V3PowensConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3PowensConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3PowensConfig) GetPollingPeriod() *string {

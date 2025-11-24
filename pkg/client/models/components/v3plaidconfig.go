@@ -11,7 +11,6 @@ type V3PlaidConfig struct {
 	ClientSecret  string  `json:"clientSecret"`
 	IsSandbox     *bool   `json:"isSandbox,omitempty"`
 	Name          string  `json:"name"`
-	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
 	Provider      *string `default:"Plaid" json:"provider"`
 }
@@ -53,13 +52,6 @@ func (o *V3PlaidConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3PlaidConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3PlaidConfig) GetPollingPeriod() *string {

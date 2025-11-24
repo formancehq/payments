@@ -11,7 +11,6 @@ type V3MoneycorpConfig struct {
 	ClientID      string  `json:"clientID"`
 	Endpoint      string  `json:"endpoint"`
 	Name          string  `json:"name"`
-	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `json:"pollingPeriod,omitempty"`
 	Provider      *string `default:"Moneycorp" json:"provider"`
 }
@@ -53,13 +52,6 @@ func (o *V3MoneycorpConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3MoneycorpConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3MoneycorpConfig) GetPollingPeriod() *string {

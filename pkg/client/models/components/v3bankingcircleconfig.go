@@ -10,7 +10,6 @@ type V3BankingcircleConfig struct {
 	AuthorizationEndpoint string  `json:"authorizationEndpoint"`
 	Endpoint              string  `json:"endpoint"`
 	Name                  string  `json:"name"`
-	PageSize              *int64  `default:"25" json:"pageSize"`
 	Password              string  `json:"password"`
 	PollingPeriod         *string `json:"pollingPeriod,omitempty"`
 	Provider              *string `default:"Bankingcircle" json:"provider"`
@@ -49,13 +48,6 @@ func (o *V3BankingcircleConfig) GetName() string {
 		return ""
 	}
 	return o.Name
-}
-
-func (o *V3BankingcircleConfig) GetPageSize() *int64 {
-	if o == nil {
-		return nil
-	}
-	return o.PageSize
 }
 
 func (o *V3BankingcircleConfig) GetPassword() string {
