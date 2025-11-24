@@ -90,7 +90,9 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 		return e("get pool insert rows affected", err)
 	}
 
-	if len(accountsToInsert) > 0 {
+	if len(accountsToInsert) > 0 && p.Type == models.POOL_TYPE_STATIC {
+		// Do not insert accounts if the pool is dynamic, since we're gonna fetch
+		// them later.
 		_, err = tx.NewInsert().
 			Model(&accountsToInsert).
 			On("CONFLICT (pool_id, account_id) DO NOTHING").
@@ -102,40 +104,9 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 
 	// Create outbox event only if pool was newly created (not updated)
 	if !poolExists && poolRowsAffected > 0 {
-		// Build account IDs array
-		accountIDs := make([]string, len(p.PoolAccounts))
-		for i := range p.PoolAccounts {
-			accountIDs[i] = p.PoolAccounts[i].String()
-		}
-
-		payload := internalEvents.PoolMessagePayload{
-			ID:         p.ID.String(),
-			Name:       p.Name,
-			CreatedAt:  p.CreatedAt,
-			AccountIDs: accountIDs,
-		}
-
-		var payloadBytes []byte
-		payloadBytes, err = json.Marshal(payload)
+		err = s.sendPoolEvent(ctx, tx, p)
 		if err != nil {
-			return e("failed to marshal pool event payload", err)
-		}
-
-		outboxEvent := models.OutboxEvent{
-			ID: models.EventID{
-				EventIdempotencyKey: p.IdempotencyKey(),
-				ConnectorID:         nil,
-			},
-			EventType:   events.EventTypeSavedPool,
-			EntityID:    p.ID.String(),
-			Payload:     payloadBytes,
-			CreatedAt:   time.Now().UTC(),
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: nil, // Pools don't have connector ID
-		}
-
-		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
-			return err
+			return e("send pool event", err)
 		}
 	}
 
@@ -143,6 +114,79 @@ func (s *store) PoolsUpsert(ctx context.Context, p models.Pool) error {
 	if err != nil {
 		return e("commit transaction", err)
 	}
+	return nil
+}
+
+func (s *store) sendPoolEvent(ctx context.Context, tx bun.Tx, p models.Pool) error {
+	// Build account IDs array
+	accountIDs := make([]string, len(p.PoolAccounts))
+	for i := range p.PoolAccounts {
+		accountIDs[i] = p.PoolAccounts[i].String()
+	}
+
+	payload := internalEvents.PoolMessagePayload{
+		ID:         p.ID.String(),
+		Name:       p.Name,
+		CreatedAt:  p.CreatedAt,
+		Type:       p.Type,
+		Query:      p.Query,
+		AccountIDs: accountIDs,
+	}
+
+	var payloadBytes []byte
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal pool event payload", err)
+	}
+
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: p.IdempotencyKey(),
+			ConnectorID:         nil,
+		},
+		EventType:   events.EventTypeSavedPool,
+		EntityID:    p.ID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   time.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: nil, // Pools don't have connector ID
+	}
+
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *store) PoolsUpdateQuery(ctx context.Context, p models.Pool, query map[string]any) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	_, err = tx.NewUpdate().
+		Model((*pool)(nil)).
+		Set("query = ?", query).
+		Where("id = ?", p.ID).
+		Exec(ctx)
+	if err != nil {
+		return e("update pool query: %w", err)
+	}
+
+	err = s.sendPoolEvent(ctx, tx, p)
+	if err != nil {
+		return e("send pool event", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return e("commit transaction", err)
+	}
+
 	return nil
 }
 

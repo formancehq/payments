@@ -888,6 +888,20 @@ func (mr *MockBackendMockRecorder) PoolsRemoveAccount(ctx, id, accountID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsRemoveAccount", reflect.TypeOf((*MockBackend)(nil).PoolsRemoveAccount), ctx, id, accountID)
 }
 
+// PoolsUpdateQuery mocks base method.
+func (m *MockBackend) PoolsUpdateQuery(ctx context.Context, id uuid.UUID, query map[string]any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolsUpdateQuery", ctx, id, query)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PoolsUpdateQuery indicates an expected call of PoolsUpdateQuery.
+func (mr *MockBackendMockRecorder) PoolsUpdateQuery(ctx, id, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsUpdateQuery", reflect.TypeOf((*MockBackend)(nil).PoolsUpdateQuery), ctx, id, query)
+}
+
 // SchedulesGet mocks base method.
 func (m *MockBackend) SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error) {
 	m.ctrl.T.Helper()

@@ -261,6 +261,24 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /pools/{poolId}/query:
+    patch:
+      summary: Update the query of a pool
+      tags:
+        - payments.v1
+      operationId: updatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePoolQuery'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /pools/{poolId}/accounts:
     post:
       summary: Add an account to a pool
@@ -1077,6 +1095,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolRequest'
+    UpdatePoolQuery:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePoolQueryRequest'
     AddAccountToPool:
       required: true
       content:
@@ -2431,6 +2455,14 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
+    UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     AddAccountToPoolRequest:
       type: object
       required:

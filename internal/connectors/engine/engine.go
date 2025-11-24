@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
@@ -82,6 +83,8 @@ type Engine interface {
 
 	// Create a Formance pool composed of accounts.
 	CreatePool(ctx context.Context, pool models.Pool) error
+	// Update Pool Query
+	UpdatePoolQuery(ctx context.Context, id uuid.UUID, query map[string]any) error
 	// Add an account to a Formance pool.
 	AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	// Remove an account from a Formance pool.
@@ -1352,24 +1355,35 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
-	eg, groupCtx := errgroup.WithContext(ctx)
-	for _, accountID := range pool.PoolAccounts {
-		aID := accountID
-		eg.Go(func() error {
-			acc, err := e.storage.AccountsGet(groupCtx, aID)
-			if err != nil {
-				return err
-			}
-			if acc.Type != models.ACCOUNT_TYPE_INTERNAL {
-				return fmt.Errorf("account %s is not an internal account: %w", aID, ErrValidation)
-			}
-			return nil
-		})
-	}
+	switch pool.Type {
+	case models.POOL_TYPE_STATIC:
+		eg, groupCtx := errgroup.WithContext(ctx)
+		for _, accountID := range pool.PoolAccounts {
+			aID := accountID
+			eg.Go(func() error {
+				acc, err := e.storage.AccountsGet(groupCtx, aID)
+				if err != nil {
+					return err
+				}
+				if acc.Type != models.ACCOUNT_TYPE_INTERNAL {
+					return fmt.Errorf("account %s is not an internal account: %w", aID, ErrValidation)
+				}
+				return nil
+			})
+		}
 
-	if err := eg.Wait(); err != nil {
-		otel.RecordError(span, err)
-		return err
+		if err := eg.Wait(); err != nil {
+			otel.RecordError(span, err)
+			return err
+		}
+
+	case models.POOL_TYPE_DYNAMIC:
+		accounts, err := e.populatePoolAccounts(ctx, &pool)
+		if err != nil {
+			otel.RecordError(span, err)
+			return err
+		}
+		pool.PoolAccounts = accounts
 	}
 
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
@@ -1381,6 +1395,35 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	return nil
 }
 
+func (e *engine) UpdatePoolQuery(ctx context.Context, id uuid.UUID, query map[string]any) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.UpdatePoolQuery")
+	defer span.End()
+
+	pool, err := e.storage.PoolsGet(ctx, id)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if pool.Type == models.POOL_TYPE_STATIC {
+		return fmt.Errorf("pool %s is a static pool, use the pool creation endpoint to update the query: %w", id, ErrValidation)
+	}
+
+	pool.Query = query
+	// populate the pool accounts before sending the event.
+	pool.PoolAccounts, err = e.populatePoolAccounts(ctx, pool)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if err := e.storage.PoolsUpdateQuery(ctx, *pool, query); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	return nil
+}
 func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
@@ -1451,6 +1494,47 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 
 	// Pool deletion events are now sent via outbox pattern in PoolsDelete
 	return nil
+}
+
+func (e *engine) populatePoolAccounts(ctx context.Context, pool *models.Pool) ([]models.AccountID, error) {
+	queryJSON, err := json.Marshal(pool.Query)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal pool query: %w", err)
+	}
+
+	qb, err := query.ParseJSON(string(queryJSON))
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse pool query: %w", err)
+	}
+
+	q := storage.NewListAccountsQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
+			WithPageSize(100).
+			WithQueryBuilder(qb),
+	)
+
+	res := make([]models.AccountID, 0)
+	for {
+		cursor, err := e.storage.AccountsList(ctx, q)
+		if err != nil {
+			return nil, fmt.Errorf("cannot list accounts: %w", err)
+		}
+
+		for _, account := range cursor.Data {
+			res = append(res, account.ID)
+		}
+
+		if !cursor.HasMore {
+			break
+		}
+
+		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		if err != nil {
+			return nil, fmt.Errorf("cannot unmarshal cursor: %w", err)
+		}
+	}
+
+	return res, nil
 }
 
 func (e *engine) OnStop(ctx context.Context) {

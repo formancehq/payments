@@ -184,6 +184,40 @@ func TestPoolsUpsert(t *testing.T) {
 	})
 }
 
+func TestPoolsUpdateQuery(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
+	upsertPool(t, ctx, store, defaultPools()[2])
+
+	t.Run("update query of existing pool", func(t *testing.T) {
+		err := store.PoolsUpdateQuery(ctx, defaultPools()[2], map[string]any{
+			"$match": map[string]any{
+				"account_id": "newtest",
+			},
+		})
+		require.NoError(t, err)
+
+		updated := defaultPools()[2]
+		updated.Query = map[string]any{
+			"$match": map[string]any{
+				"account_id": "newtest",
+			},
+		}
+
+		actual, err := store.PoolsGet(ctx, defaultPools()[2].ID)
+		require.NoError(t, err)
+		require.Equal(t, updated, *actual)
+	})
+}
+
 func TestPoolsGet(t *testing.T) {
 	t.Parallel()
 

@@ -275,6 +275,24 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /pools/{poolId}/query:
+    patch:
+      summary: Update the query of a pool
+      tags:
+        - payments.v1
+      operationId: updatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePoolQuery'
+      responses:
+        "204":
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /pools/{poolId}/accounts:
     post:
       summary: Add an account to a pool
@@ -2243,6 +2261,32 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /v3/pools/{poolID}/query:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update the query of a pool
+      operationId: v3UpdatePoolQuery
+      x-speakeasy-name-override: UpdatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3UpdatePoolQueryRequest'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /v3/pools/{poolID}/balances:
     get:
       tags:
@@ -3783,6 +3827,14 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
+    UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     AddAccountToPoolRequest:
       type: object
       required:
@@ -5533,6 +5585,14 @@ components:
         data:
           description: The ID of the created pool
           type: string
+    V3UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     V3PoolsCursorResponse:
       type: object
       required:
@@ -6436,6 +6496,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolRequest'
+    UpdatePoolQuery:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePoolQueryRequest'
     AddAccountToPool:
       required: true
       content:

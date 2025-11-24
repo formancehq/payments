@@ -114,6 +114,7 @@ type Storage interface {
 
 	// Pools
 	PoolsUpsert(ctx context.Context, pool models.Pool) error
+	PoolsUpdateQuery(ctx context.Context, p models.Pool, query map[string]any) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)
 	PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error)
 	PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error

@@ -65,6 +65,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 				r.Route("/{poolID}", func(r chi.Router) {
 					r.Get("/", poolsGet(backend))
+					r.Patch("/query", poolsUpdateQuery(backend))
 					r.Delete("/", poolsDelete(backend))
 					r.Get("/balances", poolsBalancesAt(backend))
 					r.Get("/balances/latest", poolsBalancesLatest(backend))

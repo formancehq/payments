@@ -1589,6 +1589,15 @@ components:
           description: The ID of the created pool
           type: string
 
+    V3UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
+
     V3PoolsCursorResponse:
       type: object
       required:
