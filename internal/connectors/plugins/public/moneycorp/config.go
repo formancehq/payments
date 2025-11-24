@@ -16,6 +16,8 @@ type Config struct {
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
+const PAGE_SIZE = 25
+
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {
 		ClientID      string `json:"clientID"`

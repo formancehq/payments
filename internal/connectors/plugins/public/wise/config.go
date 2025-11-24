@@ -22,6 +22,8 @@ type Config struct {
 	webhookPublicKey *rsa.PublicKey `json:"-"`
 }
 
+const PAGE_SIZE = 25
+
 func (c *Config) validate() error {
 	p, _ := pem.Decode([]byte(c.WebhookPublicKey))
 	if p == nil {

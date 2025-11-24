@@ -88,7 +88,7 @@ func (s *UnitTestSuite) addData() {
 
 	registry.RegisterPlugin("test", models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return dummypay.New(name, logger, rm)
-	}, []models.Capability{}, struct{}{})
+	}, []models.Capability{}, struct{}{}, 25)
 	_, err := s.w.connectors.Load(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{"directory":"/tmp"}`), true)
 	s.NoError(err)
 

@@ -14,6 +14,8 @@ const (
 	tinkLinkBaseURL = "https://link.tink.com/1.0/transactions"
 )
 
+const PAGE_SIZE = 25
+
 var (
 	supportedMarkets = map[string]struct{}{
 		"AT": {},

@@ -27,6 +27,7 @@ type PluginInformation struct {
 	capabilities []models.Capability
 	createFunc   PluginCreateFunction
 	config       Config
+	pageSize     uint64
 }
 
 var (
@@ -43,12 +44,14 @@ func RegisterPlugin(
 	createFunc PluginCreateFunction,
 	capabilities []models.Capability,
 	conf any,
+	pageSize uint64,
 ) {
 	pluginsRegistry[provider] = PluginInformation{
 		pluginType:   pluginType,
 		capabilities: capabilities,
 		createFunc:   createFunc,
 		config:       setupConfig(conf),
+		pageSize:     pageSize,
 	}
 }
 

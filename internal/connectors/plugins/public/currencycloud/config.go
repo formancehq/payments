@@ -14,6 +14,8 @@ type Config struct {
 	Endpoint string `json:"endpoint" validate:"required"`
 }
 
+const PAGE_SIZE = 25
+
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var config Config
 	if err := json.Unmarshal(payload, &config); err != nil {

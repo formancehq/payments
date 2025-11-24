@@ -13,6 +13,8 @@ const (
 	LinkTokenMetadataKey = "link_token"
 )
 
+const PAGE_SIZE = 25
+
 var (
 	supportedLanguage = map[string]struct{}{
 		"da": {},

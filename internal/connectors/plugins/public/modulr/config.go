@@ -16,6 +16,8 @@ type Config struct {
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
+const PAGE_SIZE = 25
+
 func unmarshalAndValidateConfig(payload []byte) (Config, error) {
 	var raw struct {
 		APIKey        string `json:"apiKey"`

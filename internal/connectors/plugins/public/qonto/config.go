@@ -17,12 +17,14 @@ type Config struct {
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
+const PAGE_SIZE = 25
+
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {
-		ClientID     string `json:"clientID"`
-		APIKey       string `json:"apiKey"`
-		Endpoint     string `json:"endpoint"`
-		StagingToken string `json:"stagingToken"`
+		ClientID      string `json:"clientID"`
+		APIKey        string `json:"apiKey"`
+		Endpoint      string `json:"endpoint"`
+		StagingToken  string `json:"stagingToken"`
 		PollingPeriod string `json:"pollingPeriod"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {

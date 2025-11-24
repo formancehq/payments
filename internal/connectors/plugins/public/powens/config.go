@@ -15,6 +15,8 @@ const (
 	powensWebviewBaseURL = "https://webview.powens.com"
 )
 
+const PAGE_SIZE = 25
+
 type Config struct {
 	ClientID              string `json:"clientID" validate:"required"`
 	ClientSecret          string `json:"clientSecret" validate:"required"`
