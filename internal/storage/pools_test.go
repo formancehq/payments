@@ -28,19 +28,26 @@ func defaultPools() []models.Pool {
 			ID:           poolID1,
 			Name:         "test1",
 			CreatedAt:    now.Add(-60 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
 			PoolAccounts: []models.AccountID{defaultAccounts[0].ID, defaultAccounts[1].ID},
 		},
 		{
 			ID:           poolID2,
 			Name:         "test2",
 			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
 			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
 		},
 		{
-			ID:           poolID3,
-			Name:         "test3",
-			CreatedAt:    now.Add(-55 * time.Minute).UTC().Time,
-			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
+			ID:        poolID3,
+			Name:      "test3",
+			CreatedAt: now.Add(-55 * time.Minute).UTC().Time,
+			Type:      models.POOL_TYPE_DYNAMIC,
+			Query: map[string]any{
+				"$match": map[string]any{
+					"account_id": "test3",
+				},
+			},
 		},
 	}
 }
@@ -66,6 +73,7 @@ func TestPoolsUpsert(t *testing.T) {
 		p := models.Pool{
 			ID:           poolID3,
 			Name:         "test1",
+			Type:         models.POOL_TYPE_STATIC,
 			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
 			PoolAccounts: []models.AccountID{defaultAccounts()[2].ID},
 		}
@@ -390,11 +398,11 @@ func TestPoolsList(t *testing.T) {
 
 		cursor, err := store.PoolsList(ctx, q)
 		require.NoError(t, err)
-		require.Len(t, cursor.Data, 2)
+		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
-		require.Equal(t, []models.Pool{defaultPools()[1], defaultPools()[2]}, cursor.Data)
+		require.Equal(t, []models.Pool{defaultPools()[1]}, cursor.Data)
 	})
 
 	t.Run("list pools by unknown account id", func(t *testing.T) {

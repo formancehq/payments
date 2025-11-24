@@ -33,8 +33,10 @@ func poolsGet(backend backend.Backend) http.HandlerFunc {
 		}
 
 		data := &PoolResponse{
-			ID:   pool.ID.String(),
-			Name: pool.Name,
+			ID:    pool.ID.String(),
+			Name:  pool.Name,
+			Type:  pool.Type,
+			Query: pool.Query,
 		}
 
 		accounts := make([]string, len(pool.PoolAccounts))
