@@ -428,6 +428,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.TemporalScheduleCreate,
 		}).
 		Append(temporalworker.Definition{
+			Name: "TemporalScheduleUpdatePollingPeriod",
+			Func: a.TemporalScheduleUpdatePollingPeriod,
+		}).
+		Append(temporalworker.Definition{
 			Name: "TemporalDeleteSchedule",
 			Func: a.TemporalScheduleDelete,
 		}).
