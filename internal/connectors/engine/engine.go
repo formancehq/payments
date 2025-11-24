@@ -368,6 +368,28 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		otel.RecordError(span, err)
 		return err
 	}
+
+	_, err = e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("update-schedule-polling-period-%s-%s", e.stack, connector.ID.String()),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: true,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunUpdateSchedulePollingPeriod,
+		workflow.UpdateSchedulePollingPeriod{
+			ConnectorID: connector.ID,
+			Config:      config,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
 	return nil
 }
 

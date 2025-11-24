@@ -77,6 +77,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runListActiveSchedules,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunUpdateSchedulePollingPeriod,
+			Func: w.runUpdateSchedulePollingPeriod,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunTerminateScheduleByID,
 			Func: w.runTerminateScheduleByID,
 		}).
