@@ -17,6 +17,7 @@ import (
 	bunpaginate "github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	models "github.com/formancehq/payments/internal/models"
 	uuid "github.com/google/uuid"
+	bun "github.com/uptrace/bun"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -390,17 +391,17 @@ func (mr *MockStorageMockRecorder) ConnectorsGet(ctx, id any) *gomock.Call {
 }
 
 // ConnectorsInstall mocks base method.
-func (m *MockStorage) ConnectorsInstall(ctx context.Context, c models.Connector) error {
+func (m *MockStorage) ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConnectorsInstall", ctx, c)
+	ret := m.ctrl.Call(m, "ConnectorsInstall", ctx, c, oldConnectorID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ConnectorsInstall indicates an expected call of ConnectorsInstall.
-func (mr *MockStorageMockRecorder) ConnectorsInstall(ctx, c any) *gomock.Call {
+func (mr *MockStorageMockRecorder) ConnectorsInstall(ctx, c, oldConnectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsInstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsInstall), ctx, c)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsInstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsInstall), ctx, c, oldConnectorID)
 }
 
 // ConnectorsList mocks base method.
@@ -807,6 +808,91 @@ func (m *MockStorage) OpenBankingForwardedUserUpsert(ctx context.Context, psuID 
 func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, from any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingForwardedUserUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingForwardedUserUpsert), ctx, psuID, from)
+}
+
+// OutboxEventsDeleteOldProcessed mocks base method.
+func (m *MockStorage) OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsDeleteOldProcessed", ctx, olderThan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsDeleteOldProcessed indicates an expected call of OutboxEventsDeleteOldProcessed.
+func (mr *MockStorageMockRecorder) OutboxEventsDeleteOldProcessed(ctx, olderThan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsDeleteOldProcessed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsDeleteOldProcessed), ctx, olderThan)
+}
+
+// OutboxEventsInsert mocks base method.
+func (m *MockStorage) OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsInsert", ctx, tx, events)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsInsert indicates an expected call of OutboxEventsInsert.
+func (mr *MockStorageMockRecorder) OutboxEventsInsert(ctx, tx, events any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsInsert", reflect.TypeOf((*MockStorage)(nil).OutboxEventsInsert), ctx, tx, events)
+}
+
+// OutboxEventsInsertWithTx mocks base method.
+func (m *MockStorage) OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsInsertWithTx", ctx, events)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsInsertWithTx indicates an expected call of OutboxEventsInsertWithTx.
+func (mr *MockStorageMockRecorder) OutboxEventsInsertWithTx(ctx, events any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsInsertWithTx", reflect.TypeOf((*MockStorage)(nil).OutboxEventsInsertWithTx), ctx, events)
+}
+
+// OutboxEventsMarkFailed mocks base method.
+func (m *MockStorage) OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsMarkFailed", ctx, eventID, retryCount, err)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsMarkFailed indicates an expected call of OutboxEventsMarkFailed.
+func (mr *MockStorageMockRecorder) OutboxEventsMarkFailed(ctx, eventID, retryCount, err any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkFailed", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkFailed), ctx, eventID, retryCount, err)
+}
+
+// OutboxEventsMarkProcessedAndRecordSent mocks base method.
+func (m *MockStorage) OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsMarkProcessedAndRecordSent", ctx, eventIDs, eventsSent)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OutboxEventsMarkProcessedAndRecordSent indicates an expected call of OutboxEventsMarkProcessedAndRecordSent.
+func (mr *MockStorageMockRecorder) OutboxEventsMarkProcessedAndRecordSent(ctx, eventIDs, eventsSent any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsMarkProcessedAndRecordSent", reflect.TypeOf((*MockStorage)(nil).OutboxEventsMarkProcessedAndRecordSent), ctx, eventIDs, eventsSent)
+}
+
+// OutboxEventsPollPending mocks base method.
+func (m *MockStorage) OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OutboxEventsPollPending", ctx, limit)
+	ret0, _ := ret[0].([]models.OutboxEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OutboxEventsPollPending indicates an expected call of OutboxEventsPollPending.
+func (mr *MockStorageMockRecorder) OutboxEventsPollPending(ctx, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutboxEventsPollPending", reflect.TypeOf((*MockStorage)(nil).OutboxEventsPollPending), ctx, limit)
 }
 
 // PaymentInitiationAdjustmentsGet mocks base method.

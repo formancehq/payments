@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type poolMessagePayload struct {
+type PoolMessagePayload struct {
 	ID         string    `json:"id"`
 	Name       string    `json:"name"`
 	CreatedAt  time.Time `json:"createdAt"`
@@ -17,7 +17,7 @@ type poolMessagePayload struct {
 }
 
 func (e Events) NewEventSavedPool(pool models.Pool) publish.EventMessage {
-	payload := poolMessagePayload{
+	payload := PoolMessagePayload{
 		ID:        pool.ID.String(),
 		Name:      pool.Name,
 		CreatedAt: pool.CreatedAt,
@@ -38,7 +38,7 @@ func (e Events) NewEventSavedPool(pool models.Pool) publish.EventMessage {
 	}
 }
 
-type deletePoolMessagePayload struct {
+type DeletePoolMessagePayload struct {
 	CreatedAt time.Time `json:"createdAt"`
 	ID        string    `json:"id"`
 }
@@ -50,7 +50,7 @@ func (e Events) NewEventDeletePool(id uuid.UUID) publish.EventMessage {
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           events.EventTypeDeletePool,
-		Payload: deletePoolMessagePayload{
+		Payload: DeletePoolMessagePayload{
 			CreatedAt: time.Now().UTC(),
 			ID:        id.String(),
 		},

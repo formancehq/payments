@@ -86,7 +86,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*3+len(paymentsResponse.PaymentsToDelete))
+		errChan := make(chan error, len(paymentsResponse.Payments)*2+len(paymentsResponse.PaymentsToDelete))
 		for _, payment := range payments {
 			p := payment
 
@@ -101,18 +101,6 @@ func (w Workflow) fetchNextPayments(
 					p.ID,
 				); err != nil {
 					errChan <- errors.Wrap(err, "updating payment initiation from payment")
-				}
-			})
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				// Send the payment event
-				if err := w.runSendEvents(ctx, SendEvents{
-					Payment: &p,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
 				}
 			})
 		}

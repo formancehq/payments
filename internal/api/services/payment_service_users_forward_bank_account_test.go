@@ -94,16 +94,20 @@ func TestPaymentServiceUsersForwardBankAccountsToConnector(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			store.EXPECT().BankAccountsGet(gomock.Any(), test.bankAccountID, true).Return(&models.BankAccount{}, test.bankAccountStorageErr)
+			expectedBankAccount := models.BankAccount{
+				ID: test.bankAccountID,
+			}
+			store.EXPECT().BankAccountsGet(gomock.Any(), test.bankAccountID, true).Return(&expectedBankAccount, test.bankAccountStorageErr)
 
 			if test.bankAccountStorageErr == nil {
 				store.EXPECT().PaymentServiceUsersGet(gomock.Any(), test.psuID).Return(&models.PaymentServiceUser{}, test.psuStorageErr)
 
 				if test.psuStorageErr == nil {
-					eng.EXPECT().ForwardBankAccount(gomock.Any(), models.BankAccount{}, connectorID, false).Return(models.Task{}, test.engineErr)
+					eng.EXPECT().ForwardBankAccount(gomock.Any(), expectedBankAccount, connectorID, false).Return(models.Task{}, test.engineErr)
 				}
 			}
 			_, err := s.PaymentServiceUsersForwardBankAccountToConnector(context.Background(), test.psuID, test.bankAccountID, connectorID)
+
 			switch {
 			case test.expectedEngineError != nil && test.typedError:
 				require.ErrorIs(t, err, test.expectedEngineError)

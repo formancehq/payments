@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
@@ -13,6 +14,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -35,11 +38,17 @@ type WorkerPool struct {
 
 	connectors connectors.Manager
 	options    worker.Options
+
+	// skipScheduleCreation if true, skips creating the outbox publisher schedule
+	// Useful for tests that don't have a Temporal server available
+	skipScheduleCreation bool
 }
 
 type Worker struct {
 	worker worker.Worker
 }
+
+const OUTBOX_POLLING_PERIOD = 5 * time.Second
 
 func NewWorkerPool(
 	logger logging.Logger,
@@ -112,6 +121,17 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
+
+	// Create the outbox publisher schedule (unless explicitly skipped)
+	if !w.skipScheduleCreation {
+		if err := w.CreateOutboxPublisherSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+		}
+		if err := w.CreateOutboxCleanupSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox cleanup schedule: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -292,4 +312,68 @@ func (w *WorkerPool) RemoveWorker(name string) error {
 	w.logger.Infof("worker for connector %s removed", name)
 
 	return nil
+}
+
+func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workflowName string, interval time.Duration, errorMsg string) error {
+	scheduleID := fmt.Sprintf("%s-%s", w.stack, scheduleIDSuffix)
+	taskQueue := GetDefaultTaskQueue(w.stack)
+
+	// Create the schedule
+	_, err := w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+		ID: scheduleID,
+		Spec: client.ScheduleSpec{
+			Intervals: []client.ScheduleIntervalSpec{
+				{
+					Every: interval,
+				},
+			},
+		},
+		Action: &client.ScheduleWorkflowAction{
+			ID:        scheduleID,
+			Workflow:  workflowName,
+			Args:      []interface{}{}, // No arguments needed
+			TaskQueue: taskQueue,
+		},
+		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+		TriggerImmediately: true,
+		SearchAttributes: map[string]interface{}{
+			"Stack": w.stack,
+		},
+	})
+
+	if err != nil {
+		var already *serviceerror.AlreadyExists
+		if errors.As(err, &already) {
+			// Created by concurrent caller, treat as success
+			return nil
+		}
+		return fmt.Errorf("%s: %w", errorMsg, err)
+	}
+	return nil
+}
+
+func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
+	return w.createSchedule(
+		ctx,
+		"outbox-publisher",
+		"OutboxPublisher",
+		OUTBOX_POLLING_PERIOD,
+		"failed to create outbox publisher schedule",
+	)
+}
+
+func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
+	return w.createSchedule(
+		ctx,
+		"outbox-cleanup",
+		"OutboxCleanup",
+		7*24*time.Hour,
+		"failed to create outbox cleanup schedule",
+	)
+}
+
+// SetSkipScheduleCreation sets whether to skip creating the outbox publisher schedule.
+// Useful for tests that don't have a Temporal server available.
+func (w *WorkerPool) SetSkipScheduleCreation(skip bool) {
+	w.skipScheduleCreation = skip
 }

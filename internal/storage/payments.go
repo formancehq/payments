@@ -6,12 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -22,7 +26,7 @@ type payment struct {
 	ID            models.PaymentID     `bun:"id,pk,type:character varying,notnull"`
 	ConnectorID   models.ConnectorID   `bun:"connector_id,type:character varying,notnull"`
 	Reference     string               `bun:"reference,type:text,notnull"`
-	CreatedAt     time.Time            `bun:"created_at,type:timestamp without time zone,notnull"`
+	CreatedAt     internalTime.Time    `bun:"created_at,type:timestamp without time zone,notnull"`
 	Type          models.PaymentType   `bun:"type,type:text,notnull"`
 	InitialAmount *big.Int             `bun:"initial_amount,type:numeric,notnull"`
 	Amount        *big.Int             `bun:"amount,type:numeric,notnull"`
@@ -51,7 +55,7 @@ type paymentAdjustment struct {
 	ID        models.PaymentAdjustmentID `bun:"id,pk,type:character varying,notnull"`
 	PaymentID models.PaymentID           `bun:"payment_id,type:character varying,notnull"`
 	Reference string                     `bun:"reference,type:text,notnull"`
-	CreatedAt time.Time                  `bun:"created_at,type:timestamp without time zone,notnull"`
+	CreatedAt internalTime.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 	Status    models.PaymentStatus       `bun:"status,type:text,notnull"`
 	Raw       json.RawMessage            `bun:"raw,type:json,notnull"`
 
@@ -113,7 +117,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create transaction: %w", err)
+		return e("failed to create transaction", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -162,17 +166,97 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 		}
 	}
 
+	// Track which adjustments were actually inserted (to create outbox events only for new ones)
+	var insertedAdjustments []paymentAdjustment
 	if len(adjustmentsToInsert) > 0 {
-		_, err = tx.NewInsert().
+		err = tx.NewInsert().
 			Model(&adjustmentsToInsert).
 			On("CONFLICT (id) DO NOTHING").
-			Exec(ctx)
+			Returning("*").
+			Scan(ctx, &insertedAdjustments)
 		if err != nil {
 			return e("failed to insert adjustments", err)
 		}
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	// Create outbox events for each inserted adjustment
+	if len(insertedAdjustments) > 0 {
+		// Build a map of payment ID to payment model for easy lookup
+		paymentMap := make(map[models.PaymentID]models.Payment)
+		for _, p := range payments {
+			paymentMap[p.ID] = p
+		}
+
+		outboxEvents := make([]models.OutboxEvent, 0, len(insertedAdjustments))
+		for _, adj := range insertedAdjustments {
+			payment, ok := paymentMap[adj.PaymentID]
+			if !ok {
+				// This shouldn't happen, but skip if payment not found
+				continue
+			}
+
+			// Create the event payload matching EventsSendPayment format
+			payload := internalEvents.PaymentMessagePayload{
+				ID:            payment.ID.String(),
+				Reference:     payment.Reference,
+				Type:          payment.Type.String(),
+				Status:        adj.Status.String(),
+				InitialAmount: payment.InitialAmount,
+				Amount:        payment.Amount,
+				Scheme:        payment.Scheme.String(),
+				Asset:         payment.Asset,
+				CreatedAt:     payment.CreatedAt,
+				ConnectorID:   payment.ConnectorID.String(),
+				Provider:      models.ToV3Provider(payment.ConnectorID.Provider),
+				RawData:       adj.Raw,
+				Metadata:      payment.Metadata,
+			}
+
+			if payment.SourceAccountID != nil {
+				payload.SourceAccountID = payment.SourceAccountID.String()
+			}
+
+			if payment.DestinationAccountID != nil {
+				payload.DestinationAccountID = payment.DestinationAccountID.String()
+			}
+
+			var payloadBytes []byte
+			payloadBytes, err = json.Marshal(&payload)
+			if err != nil {
+				return e("failed to marshal payment event payload", err)
+			}
+
+			// Convert adjustment back to model to get idempotency key
+			adjustmentModel := toPaymentAdjustmentModels(adj)
+			connectorID := payment.ConnectorID
+			outboxEvent := models.OutboxEvent{
+				ID: models.EventID{
+					EventIdempotencyKey: adjustmentModel.IdempotencyKey(),
+					ConnectorID:         &connectorID,
+				},
+				EventType:   events.EventTypeSavedPayments,
+				EntityID:    payment.ID.String(),
+				Payload:     payloadBytes,
+				CreatedAt:   time.Now().UTC(),
+				Status:      models.OUTBOX_STATUS_PENDING,
+				ConnectorID: &connectorID,
+			}
+
+			outboxEvents = append(outboxEvents, outboxEvent)
+		}
+
+		// Insert outbox events in the same transaction
+		if len(outboxEvents) > 0 {
+			if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error {
@@ -211,7 +295,10 @@ func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID,
 		return e("update payment metadata", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error) {
@@ -307,14 +394,81 @@ func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
 	return e("failed to delete payment", err)
 }
 
+// PaymentsDeleteFromReference TODO this deletion method is the only one emitting outbox events.
+// Using the outbox pattern makes this obvious, but others flows did not either before that pattern was set up.
 func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
-	_, err := s.db.NewDelete().
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return e("failed to create transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	// Get the payment before deleting it (to create outbox event)
+	var p payment
+	err = tx.NewSelect().
+		Model(&p).
+		Where("reference = ?", reference).
+		Where("connector_id = ?", connectorID).
+		Scan(ctx)
+	if err != nil {
+		pErr := e("failed to get payment", err)
+		if errors.Is(pErr, ErrNotFound) {
+			// Payment doesn't exist, nothing to delete or create event for
+			if commitErr := tx.Commit(); commitErr != nil {
+				err = commitErr
+				return e("failed to commit transaction", commitErr)
+			}
+			err = nil // CLean up the error as we already commited the transaction, no rollback required
+			return nil
+		}
+		return pErr
+	}
+
+	// Delete the payment
+	_, err = tx.NewDelete().
 		Model((*payment)(nil)).
 		Where("reference = ?", reference).
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
+	if err != nil {
+		return e("failed to delete payment", err)
+	}
 
-	return e("failed to delete payment", err)
+	// Create outbox event for deleted payment
+	paymentID := p.ID
+	payload := internalEvents.PaymentDeletedMessagePayload{
+		ID: paymentID.String(),
+	}
+
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal payment deleted event payload", err)
+	}
+
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
+			ConnectorID:         &connectorID,
+		},
+		EventType:   events.EventTypeDeletedPayments,
+		EntityID:    paymentID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   time.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &connectorID,
+	}
+
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {
@@ -383,7 +537,7 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 			key == "psu_id",
 			key == "open_banking_connection_id":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 
@@ -392,7 +546,7 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
+				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -467,7 +621,7 @@ func fromPaymentModels(from models.Payment) payment {
 		ID:                      from.ID,
 		ConnectorID:             from.ConnectorID,
 		Reference:               from.Reference,
-		CreatedAt:               time.New(from.CreatedAt),
+		CreatedAt:               internalTime.New(from.CreatedAt),
 		Type:                    from.Type,
 		InitialAmount:           from.InitialAmount,
 		Amount:                  from.Amount,
@@ -506,7 +660,7 @@ func fromPaymentAdjustmentModels(from models.PaymentAdjustment) paymentAdjustmen
 		ID:        from.ID,
 		PaymentID: from.ID.PaymentID,
 		Reference: from.Reference,
-		CreatedAt: time.New(from.CreatedAt),
+		CreatedAt: internalTime.New(from.CreatedAt),
 		Status:    from.Status,
 		Amount:    from.Amount,
 		Asset:     from.Asset,

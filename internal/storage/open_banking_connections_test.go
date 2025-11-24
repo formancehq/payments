@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -10,7 +11,9 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -227,6 +230,64 @@ func TestOpenBankingConnectionAttemptsUpdateStatus(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, models.OpenBankingConnectionAttemptStatusPending, actual.Status)
 		require.Nil(t, actual.Error)
+	})
+
+	t.Run("outbox event created for user link status", func(t *testing.T) {
+		// Create a new attempt for this test (use a unique ID to avoid conflicts)
+		newAttempt := models.OpenBankingConnectionAttempt{
+			ID:          uuid.New(),
+			PsuID:       defaultPSU2.ID,
+			ConnectorID: defaultConnector.ID,
+			CreatedAt:   now.Add(-10 * time.Minute).UTC().Time,
+			Status:      models.OpenBankingConnectionAttemptStatusPending,
+			State: models.CallbackState{
+				Randomized: "random_test_outbox",
+				AttemptID:  uuid.New(),
+			},
+		}
+		createOpenBankingConnectionAttempt(t, ctx, store, newAttempt)
+
+		errMsg := pointer.For("Test error message")
+		require.NoError(t, store.OpenBankingConnectionAttemptsUpdateStatus(ctx, newAttempt.ID, models.OpenBankingConnectionAttemptStatusCompleted, errMsg))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event - look for the most recent one with our attempt's PsuID
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserLinkStatus &&
+				pendingEvents[i].EntityID == newAttempt.PsuID.String() &&
+				pendingEvents[i].ConnectorID != nil &&
+				*pendingEvents[i].ConnectorID == newAttempt.ConnectorID {
+				// Check if payload contains our error message to confirm it's our event
+				var payload map[string]interface{}
+				if err := json.Unmarshal(pendingEvents[i].Payload, &payload); err == nil {
+					if errVal, ok := payload["error"].(string); ok && errVal == *errMsg {
+						ourEvent = &pendingEvents[i]
+						break
+					}
+				}
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for user link status")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeOpenBankingUserLinkStatus, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, newAttempt.PsuID.String(), ourEvent.EntityID)
+		assert.Equal(t, newAttempt.ConnectorID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newAttempt.PsuID.String(), payload["psuID"])
+		assert.Equal(t, newAttempt.ConnectorID.String(), payload["connectorID"])
+		assert.Equal(t, string(models.OpenBankingConnectionAttemptStatusCompleted), payload["status"])
+		assert.Equal(t, *errMsg, payload["error"])
 	})
 }
 
@@ -504,6 +565,116 @@ func TestPSUOpenBankingConnectionsUpsert(t *testing.T) {
 		require.Equal(t, connection.Error, actual.Error)
 		require.Equal(t, connection.Metadata, actual.Metadata)
 	})
+
+	t.Run("outbox event created for disconnected connection", func(t *testing.T) {
+		// Create a connection with ACTIVE status first
+		activeConnection := models.OpenBankingConnection{
+			ConnectorID:   defaultConnector.ID,
+			ConnectionID:  "conn_test_disconnect",
+			CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+			DataUpdatedAt: now.Add(-30 * time.Minute).UTC().Time,
+			Status:        models.ConnectionStatusActive,
+			UpdatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+		}
+		createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, activeConnection)
+
+		// Now update it to ERROR status (disconnected)
+		disconnectedConnection := models.OpenBankingConnection{
+			ConnectorID:   activeConnection.ConnectorID,
+			ConnectionID:  activeConnection.ConnectionID,
+			CreatedAt:     activeConnection.CreatedAt,
+			DataUpdatedAt: activeConnection.DataUpdatedAt,
+			Status:        models.ConnectionStatusError,
+			UpdatedAt:     now.Add(-1 * time.Minute).UTC().Time,
+			Error:         pointer.For("Connection failed"),
+		}
+		require.NoError(t, store.OpenBankingConnectionsUpsert(ctx, defaultPSU2.ID, disconnectedConnection))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserConnectionDisconnected &&
+				pendingEvents[i].EntityID == disconnectedConnection.ConnectionID {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for user connection disconnected")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeOpenBankingUserConnectionDisconnected, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, disconnectedConnection.ConnectionID, ourEvent.EntityID)
+		assert.Equal(t, disconnectedConnection.ConnectorID, *ourEvent.ConnectorID)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, defaultPSU2.ID.String(), payload["psuID"])
+		assert.Equal(t, disconnectedConnection.ConnectorID.String(), payload["connectorID"])
+		assert.Equal(t, disconnectedConnection.ConnectionID, payload["connectionID"])
+		assert.Equal(t, *disconnectedConnection.Error, payload["reason"])
+	})
+
+	t.Run("outbox event created for reconnected connection", func(t *testing.T) {
+		// Create a connection with ERROR status first
+		errorConnection := models.OpenBankingConnection{
+			ConnectorID:   defaultConnector.ID,
+			ConnectionID:  "conn_test_reconnect",
+			CreatedAt:     now.Add(-25 * time.Minute).UTC().Time,
+			DataUpdatedAt: now.Add(-25 * time.Minute).UTC().Time,
+			Status:        models.ConnectionStatusError,
+			UpdatedAt:     now.Add(-25 * time.Minute).UTC().Time,
+			Error:         pointer.For("Previous error"),
+		}
+		createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, errorConnection)
+
+		// Now update it to ACTIVE status (reconnected)
+		reconnectedConnection := models.OpenBankingConnection{
+			ConnectorID:   errorConnection.ConnectorID,
+			ConnectionID:  errorConnection.ConnectionID,
+			CreatedAt:     errorConnection.CreatedAt,
+			DataUpdatedAt: errorConnection.DataUpdatedAt,
+			Status:        models.ConnectionStatusActive,
+			UpdatedAt:     now.Add(-1 * time.Minute).UTC().Time,
+		}
+		require.NoError(t, store.OpenBankingConnectionsUpsert(ctx, defaultPSU2.ID, reconnectedConnection))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserConnectionReconnected &&
+				pendingEvents[i].EntityID == reconnectedConnection.ConnectionID {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for user connection reconnected")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeOpenBankingUserConnectionReconnected, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, reconnectedConnection.ConnectionID, ourEvent.EntityID)
+		assert.Equal(t, reconnectedConnection.ConnectorID, *ourEvent.ConnectorID)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, defaultPSU2.ID.String(), payload["psuID"])
+		assert.Equal(t, reconnectedConnection.ConnectorID.String(), payload["connectorID"])
+		assert.Equal(t, reconnectedConnection.ConnectionID, payload["connectionID"])
+		assert.NotNil(t, payload["at"])
+	})
 }
 
 func TestOpenBankingConnectionsUpdateLastDataUpdate(t *testing.T) {
@@ -524,6 +695,53 @@ func TestOpenBankingConnectionsUpdateLastDataUpdate(t *testing.T) {
 		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
 		require.NoError(t, err)
 		require.Equal(t, newUpdatedAt, actual.DataUpdatedAt)
+	})
+
+	t.Run("outbox event created for user connection data synced", func(t *testing.T) {
+		// Create a new connection for this test
+		newConnection := models.OpenBankingConnection{
+			ConnectorID:   defaultConnector.ID,
+			ConnectionID:  "conn_test_sync",
+			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+			DataUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			Status:        models.ConnectionStatusActive,
+			UpdatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+		}
+		createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, newConnection)
+
+		newUpdatedAt := now.Add(-2 * time.Minute).UTC().Time
+		require.NoError(t, store.OpenBankingConnectionsUpdateLastDataUpdate(ctx, defaultPSU2.ID, newConnection.ConnectorID, newConnection.ConnectionID, newUpdatedAt))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeOpenBankingUserConnectionDataSynced &&
+				pendingEvents[i].EntityID == newConnection.ConnectionID {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for user connection data synced")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeOpenBankingUserConnectionDataSynced, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, newConnection.ConnectionID, ourEvent.EntityID)
+		assert.Equal(t, newConnection.ConnectorID, *ourEvent.ConnectorID)
+		assert.Equal(t, 0, ourEvent.RetryCount)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, defaultPSU2.ID.String(), payload["psuID"])
+		assert.Equal(t, newConnection.ConnectorID.String(), payload["connectorID"])
+		assert.Equal(t, newConnection.ConnectionID, payload["connectionID"])
+		assert.NotNil(t, payload["at"])
 	})
 }
 

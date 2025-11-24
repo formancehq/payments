@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	stdtime "time"
@@ -10,7 +12,9 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
@@ -72,7 +76,9 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	if err != nil {
 		return e("upsert payment initiations", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := fromPaymentInitiationModels(pi)
 	adjustmentsToInsert := make([]paymentInitiationAdjustment, 0, len(adjustments))
@@ -87,17 +93,107 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		return e("failed to insert payment initiations", err)
 	}
 
+	// Create outbox event for payment initiation
+	outboxEvents := make([]models.OutboxEvent, 0, 1+len(adjustments))
+
+	payload := internalEvents.PaymentInitiationMessagePayload{
+		ID:          pi.ID.String(),
+		ConnectorID: pi.ConnectorID.String(),
+		Provider:    models.ToV3Provider(pi.ConnectorID.Provider),
+		Reference:   pi.Reference,
+		CreatedAt:   pi.CreatedAt,
+		ScheduledAt: pi.ScheduledAt,
+		Description: pi.Description,
+		Type:        pi.Type.String(),
+		Amount:      pi.Amount,
+		Asset:       pi.Asset,
+		Metadata:    pi.Metadata,
+	}
+	if pi.SourceAccountID != nil {
+		payload.SourceAccountID = pi.SourceAccountID.String()
+	}
+	if pi.DestinationAccountID != nil {
+		payload.DestinationAccountID = pi.DestinationAccountID.String()
+	}
+
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(&payload)
+	if err != nil {
+		return e("failed to marshal payment initiation event payload", err)
+	}
+
+	outboxEvents = append(outboxEvents, models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: pi.IdempotencyKey(),
+			ConnectorID:         &pi.ConnectorID,
+		},
+		EventType:   events.EventTypeSavedPaymentInitiation,
+		EntityID:    pi.ID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   stdtime.Now().UTC(),
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: &pi.ConnectorID,
+	})
+
 	if len(adjustmentsToInsert) > 0 {
-		_, err = tx.NewInsert().
+		err = tx.NewInsert().
 			Model(&adjustmentsToInsert).
 			On("CONFLICT (id) DO NOTHING").
-			Exec(ctx)
+			Returning("*").
+			Scan(ctx, &adjustmentsToInsert)
 		if err != nil {
 			return e("failed to insert payment initiation adjustments", err)
 		}
+
+		// Create outbox events for each inserted adjustment
+		for _, adj := range adjustmentsToInsert {
+			adjModel := toPaymentInitiationAdjustmentModels(adj)
+			adjPayload := internalEvents.PaymentInitiationAdjustmentMessagePayload{
+				ID:                  adjModel.ID.String(),
+				PaymentInitiationID: adjModel.ID.PaymentInitiationID.String(),
+				Status:              adjModel.Status.String(),
+				Amount:              adjModel.Amount,
+				Asset:               adjModel.Asset,
+				Metadata:            adjModel.Metadata,
+			}
+			if adjModel.Error != nil {
+				errorStr := adjModel.Error.Error()
+				adjPayload.Error = &errorStr
+			}
+
+			var adjPayloadBytes []byte
+			adjPayloadBytes, err = json.Marshal(&adjPayload)
+			if err != nil {
+				return e("failed to marshal payment initiation adjustment event payload", err)
+			}
+
+			outboxEvents = append(outboxEvents, models.OutboxEvent{
+				ID: models.EventID{
+					EventIdempotencyKey: adjModel.IdempotencyKey(),
+					ConnectorID:         &adjModel.ID.PaymentInitiationID.ConnectorID,
+				},
+				EventType:   events.EventTypeSavedPaymentInitiationAdjustment,
+				EntityID:    adjModel.ID.String(),
+				Payload:     adjPayloadBytes,
+				CreatedAt:   stdtime.Now().UTC(),
+				Status:      models.OUTBOX_STATUS_PENDING,
+				ConnectorID: &adjModel.ID.PaymentInitiationID.ConnectorID,
+			})
+		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	// Insert outbox events
+	if len(outboxEvents) > 0 {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error {
@@ -105,7 +201,9 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 	if err != nil {
 		return e("update payment metadata", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var pi paymentInitiation
 	err = tx.NewSelect().
@@ -134,7 +232,11 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 		return e("update payment initiation metadata", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error) {
@@ -191,13 +293,13 @@ func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, string
 			key == "source_account_id",
 			key == "destination_account_id":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 
 		case key == "status":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 
 			// we only care about the latest adjustment, so we need to sort the adjustments
@@ -211,7 +313,7 @@ ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -220,7 +322,7 @@ ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort
 				match[0][1]: value,
 			}}, nil
 		}
-		return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+		return "", nil, e(fmt.Sprintf("unknown key '%s' when building query", key), ErrValidation)
 	}))
 
 	return join, where, args, err
@@ -276,13 +378,22 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 }
 
 func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID models.PaymentInitiationID, pID models.PaymentID, createdAt stdtime.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	toInsert := paymentInitiationRelatedPayment{
 		PaymentInitiationID: piID,
 		PaymentID:           pID,
 		CreatedAt:           time.New(createdAt),
 	}
 
-	_, err := s.db.NewInsert().
+	var res sql.Result
+	res, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (payment_initiation_id, payment_id) DO NOTHING").
 		Exec(ctx)
@@ -290,6 +401,51 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		return e("failed to insert payment initiation related payments", err)
 	}
 
+	var rowsAffected int64
+	rowsAffected, err = res.RowsAffected()
+	if err != nil {
+		return e("failed to get rows affected", err)
+	}
+
+	// Create outbox event only if related payment was actually inserted
+	if rowsAffected > 0 {
+		relatedPayment := models.PaymentInitiationRelatedPayments{
+			PaymentInitiationID: piID,
+			PaymentID:           pID,
+		}
+
+		payload := internalEvents.PaymentInitiationRelatedPaymentMessagePayload{
+			PaymentInitiationID: piID.String(),
+			PaymentID:           pID.String(),
+		}
+
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(&payload)
+		if err != nil {
+			return e("failed to marshal payment initiation related payment event payload", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: relatedPayment.IdempotencyKey(),
+				ConnectorID:         &piID.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedPaymentInitiationRelatedPayment,
+			EntityID:    fmt.Sprintf("%s:%s", piID.String(), pID.String()),
+			Payload:     payloadBytes,
+			CreatedAt:   stdtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &piID.ConnectorID,
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
 	return nil
 }
 
@@ -359,9 +515,18 @@ func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID m
 }
 
 func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	toInsert := fromPaymentInitiationAdjustmentModels(adj)
 
-	_, err := s.db.NewInsert().
+	var res sql.Result
+	res, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
@@ -369,6 +534,53 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 		return e("failed to insert payment initiation adjustments", err)
 	}
 
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return e("failed to get rows affected", err)
+	}
+
+	// Create outbox event only if adjustment was actually inserted
+	if rowsAffected > 0 {
+		adjPayload := internalEvents.PaymentInitiationAdjustmentMessagePayload{
+			ID:                  adj.ID.String(),
+			PaymentInitiationID: adj.ID.PaymentInitiationID.String(),
+			Status:              adj.Status.String(),
+			Amount:              adj.Amount,
+			Asset:               adj.Asset,
+			Metadata:            adj.Metadata,
+		}
+		if adj.Error != nil {
+			errorStr := adj.Error.Error()
+			adjPayload.Error = &errorStr
+		}
+
+		var adjPayloadBytes []byte
+		adjPayloadBytes, err = json.Marshal(&adjPayload)
+		if err != nil {
+			return e("failed to marshal payment initiation adjustment event payload", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: adj.IdempotencyKey(),
+				ConnectorID:         &adj.ID.PaymentInitiationID.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedPaymentInitiationAdjustment,
+			EntityID:    adj.ID.String(),
+			Payload:     adjPayloadBytes,
+			CreatedAt:   stdtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &adj.ID.PaymentInitiationID.ConnectorID,
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
 	return nil
 }
 
@@ -381,7 +593,9 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	if err != nil {
 		return false, e("upsert payment initiations", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var previousAdj paymentInitiationAdjustment
 	err = tx.NewSelect().
@@ -396,11 +610,16 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	}
 
 	if !predicate(toPaymentInitiationAdjustmentModels(previousAdj)) {
+		// Explicitly rollback to release the FOR UPDATE lock
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return false, e("failed to rollback transaction", rollbackErr)
+		}
 		return false, nil
 	}
 
 	toInsert := fromPaymentInitiationAdjustmentModels(adj)
-	_, err = tx.NewInsert().
+	var res sql.Result
+	res, err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
@@ -408,7 +627,56 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		return false, e("failed to insert payment initiation adjustments", err)
 	}
 
-	return true, e("failed to commit transaction", tx.Commit())
+	var rowsAffected int64
+	rowsAffected, err = res.RowsAffected()
+	if err != nil {
+		return false, e("failed to get rows affected", err)
+	}
+
+	// Create outbox event only if adjustment was actually inserted
+	if rowsAffected > 0 {
+		adjPayload := internalEvents.PaymentInitiationAdjustmentMessagePayload{
+			ID:                  adj.ID.String(),
+			PaymentInitiationID: adj.ID.PaymentInitiationID.String(),
+			Status:              adj.Status.String(),
+			Amount:              adj.Amount,
+			Asset:               adj.Asset,
+			Metadata:            adj.Metadata,
+		}
+		if adj.Error != nil {
+			errorStr := adj.Error.Error()
+			adjPayload.Error = &errorStr
+		}
+
+		var adjPayloadBytes []byte
+		adjPayloadBytes, err = json.Marshal(&adjPayload)
+		if err != nil {
+			return false, e("failed to marshal payment initiation adjustment event payload", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: adj.IdempotencyKey(),
+				ConnectorID:         &adj.ID.PaymentInitiationID.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedPaymentInitiationAdjustment,
+			EntityID:    adj.ID.String(),
+			Payload:     adjPayloadBytes,
+			CreatedAt:   stdtime.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &adj.ID.PaymentInitiationID.ConnectorID,
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return false, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, e("failed to commit transaction", err)
+	}
+	return rowsAffected > 0, nil
 }
 
 func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {
@@ -442,12 +710,12 @@ func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (str
 		switch {
 		case key == "status":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'status' column can only be used with $match: %w", ErrValidation)
+				return "", nil, e("'status' column can only be used with $match", ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
+				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 			key := "metadata"
@@ -455,7 +723,7 @@ func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (str
 				match[0][1]: value,
 			}}, nil
 		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+			return "", nil, e(fmt.Sprintf("unknown key '%s' when building query", key), ErrValidation)
 		}
 	}))
 	return where, args, err
