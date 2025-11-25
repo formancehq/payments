@@ -11,10 +11,12 @@ type V3AdyenConfig struct {
 	CompanyID          string  `json:"companyID"`
 	LiveEndpointPrefix *string `json:"liveEndpointPrefix,omitempty"`
 	Name               string  `json:"name"`
-	PollingPeriod      *string `default:"2m" json:"pollingPeriod"`
-	Provider           *string `default:"Adyen" json:"provider"`
-	WebhookPassword    *string `json:"webhookPassword,omitempty"`
-	WebhookUsername    *string `json:"webhookUsername,omitempty"`
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	PageSize        *int64  `default:"25" json:"pageSize"`
+	PollingPeriod   *string `default:"2m" json:"pollingPeriod"`
+	Provider        *string `default:"Adyen" json:"provider"`
+	WebhookPassword *string `json:"webhookPassword,omitempty"`
+	WebhookUsername *string `json:"webhookUsername,omitempty"`
 }
 
 func (v V3AdyenConfig) MarshalJSON() ([]byte, error) {
@@ -54,6 +56,13 @@ func (o *V3AdyenConfig) GetName() string {
 		return ""
 	}
 	return o.Name
+}
+
+func (o *V3AdyenConfig) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
 }
 
 func (o *V3AdyenConfig) GetPollingPeriod() *string {

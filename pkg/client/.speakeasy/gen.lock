@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 1de3f76e8519f788b2575e6371167f8f
+  docChecksum: 1557efee2eef6cfc2617f029f9fddc87
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -1379,7 +1379,7 @@ examples:
           connectorID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"clientID": "<id>", "clientSecret": "<value>", "name": "<value>", "pollingPeriod": "2m", "provider": "Plaid"}}
+          application/json: {"data": {"clientID": "<id>", "clientSecret": "<value>", "name": "<value>", "pageSize": 25, "pollingPeriod": "2m", "provider": "Plaid"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3UpdateConnectorConfig:

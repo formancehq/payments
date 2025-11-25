@@ -34,8 +34,9 @@ type V3Config struct {
 }
 
 type Property struct {
-	Type    string `yaml:"type"`
-	Default any    `yaml:"default,omitempty"`
+	Type       string `yaml:"type"`
+	Default    any    `yaml:"default,omitempty"`
+	Deprecated bool   `yaml:"deprecated,omitempty"`
 }
 
 type ConfigJson map[string]ConfigProperties

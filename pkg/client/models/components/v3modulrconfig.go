@@ -7,10 +7,12 @@ import (
 )
 
 type V3ModulrConfig struct {
-	APIKey        string  `json:"apiKey"`
-	APISecret     string  `json:"apiSecret"`
-	Endpoint      string  `json:"endpoint"`
-	Name          string  `json:"name"`
+	APIKey    string `json:"apiKey"`
+	APISecret string `json:"apiSecret"`
+	Endpoint  string `json:"endpoint"`
+	Name      string `json:"name"`
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `json:"pollingPeriod,omitempty"`
 	Provider      *string `default:"Modulr" json:"provider"`
 }
@@ -52,6 +54,13 @@ func (o *V3ModulrConfig) GetName() string {
 		return ""
 	}
 	return o.Name
+}
+
+func (o *V3ModulrConfig) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
 }
 
 func (o *V3ModulrConfig) GetPollingPeriod() *string {

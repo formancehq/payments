@@ -7,10 +7,12 @@ import (
 )
 
 type V3TinkConfig struct {
-	ClientID      string  `json:"clientID"`
-	ClientSecret  string  `json:"clientSecret"`
-	Endpoint      string  `json:"endpoint"`
-	Name          string  `json:"name"`
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+	Endpoint     string `json:"endpoint"`
+	Name         string `json:"name"`
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
 	Provider      *string `default:"Tink" json:"provider"`
 }
@@ -52,6 +54,13 @@ func (o *V3TinkConfig) GetName() string {
 		return ""
 	}
 	return o.Name
+}
+
+func (o *V3TinkConfig) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
 }
 
 func (o *V3TinkConfig) GetPollingPeriod() *string {

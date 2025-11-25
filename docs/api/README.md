@@ -749,6 +749,7 @@ Accept: application/json
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -924,6 +925,7 @@ Accept: application/json
     "companyID": "string",
     "liveEndpointPrefix": "string",
     "name": "string",
+    "pageSize": 25,
     "pollingPeriod": "2m",
     "provider": "Adyen",
     "webhookPassword": "string",
@@ -969,6 +971,7 @@ Update connector config
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -4253,6 +4256,7 @@ None ( Scopes: payments:read )
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -4392,6 +4396,7 @@ None ( Scopes: payments:read )
     "companyID": "string",
     "liveEndpointPrefix": "string",
     "name": "string",
+    "pageSize": 25,
     "pollingPeriod": "2m",
     "provider": "Adyen",
     "webhookPassword": "string",
@@ -4420,6 +4425,7 @@ None ( Scopes: payments:read )
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -6842,6 +6848,7 @@ None ( Scopes: payments:read )
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -6967,6 +6974,7 @@ xor
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -6983,6 +6991,7 @@ xor
 |companyID|string|true|none|none|
 |liveEndpointPrefix|string|false|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |webhookPassword|string|false|none|none|
@@ -7000,6 +7009,7 @@ xor
   "accessKey": "string",
   "baseUrl": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Atlar",
   "secret": "string"
@@ -7014,6 +7024,7 @@ xor
 |accessKey|string|true|none|none|
 |baseUrl|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |secret|string|true|none|none|
@@ -7030,6 +7041,7 @@ xor
   "authorizationEndpoint": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "password": "string",
   "pollingPeriod": "string",
   "provider": "Bankingcircle",
@@ -7047,6 +7059,7 @@ xor
 |authorizationEndpoint|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |password|string|true|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
@@ -7066,6 +7079,7 @@ xor
   "apiKey": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Column"
 }
@@ -7079,6 +7093,7 @@ xor
 |apiKey|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7095,6 +7110,7 @@ xor
   "endpoint": "string",
   "loginID": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Currencycloud"
 }
@@ -7109,6 +7125,7 @@ xor
 |endpoint|string|true|none|none|
 |loginID|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7124,6 +7141,7 @@ xor
   "directory": "string",
   "linkFlowError": true,
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Dummypay",
   "updateLinkFlowError": true
@@ -7138,6 +7156,7 @@ xor
 |directory|string|true|none|none|
 |linkFlowError|boolean|false|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |updateLinkFlowError|boolean|false|none|none|
@@ -7154,6 +7173,7 @@ xor
   "apiKey": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Generic"
 }
@@ -7167,6 +7187,7 @@ xor
 |apiKey|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7182,6 +7203,7 @@ xor
   "apiKey": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Increase",
   "webhookSharedSecret": "string"
@@ -7196,6 +7218,7 @@ xor
 |apiKey|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |webhookSharedSecret|string|true|none|none|
@@ -7213,6 +7236,7 @@ xor
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Mangopay"
 }
@@ -7227,6 +7251,7 @@ xor
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7243,6 +7268,7 @@ xor
   "apiSecret": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Modulr"
 }
@@ -7257,6 +7283,7 @@ xor
 |apiSecret|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7273,6 +7300,7 @@ xor
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Moneycorp"
 }
@@ -7287,6 +7315,7 @@ xor
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7303,6 +7332,7 @@ xor
   "clientSecret": "string",
   "isSandbox": true,
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Plaid"
 }
@@ -7317,6 +7347,7 @@ xor
 |clientSecret|string|true|none|none|
 |isSandbox|boolean|false|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7336,6 +7367,7 @@ xor
   "endpoint": "string",
   "maxConnectionsPerLink": 0,
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Powens"
 }
@@ -7353,6 +7385,7 @@ xor
 |endpoint|string|true|none|none|
 |maxConnectionsPerLink|integer|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7369,6 +7402,7 @@ xor
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Qonto",
   "stagingToken": "string"
@@ -7384,6 +7418,7 @@ xor
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |stagingToken|string|false|none|none|
@@ -7399,6 +7434,7 @@ xor
 {
   "apiKey": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Stripe"
 }
@@ -7411,6 +7447,7 @@ xor
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7427,6 +7464,7 @@ xor
   "clientSecret": "string",
   "endpoint": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Tink"
 }
@@ -7441,6 +7479,7 @@ xor
 |clientSecret|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
@@ -7455,6 +7494,7 @@ xor
 {
   "apiKey": "string",
   "name": "string",
+  "pageSize": 25,
   "pollingPeriod": "string",
   "provider": "Wise",
   "webhookPublicKey": "string"
@@ -7468,6 +7508,7 @@ xor
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
 |name|string|true|none|none|
+|pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |webhookPublicKey|string|true|none|none|

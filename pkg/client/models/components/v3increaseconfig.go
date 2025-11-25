@@ -7,9 +7,11 @@ import (
 )
 
 type V3IncreaseConfig struct {
-	APIKey              string  `json:"apiKey"`
-	Endpoint            string  `json:"endpoint"`
-	Name                string  `json:"name"`
+	APIKey   string `json:"apiKey"`
+	Endpoint string `json:"endpoint"`
+	Name     string `json:"name"`
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	PageSize            *int64  `default:"25" json:"pageSize"`
 	PollingPeriod       *string `json:"pollingPeriod,omitempty"`
 	Provider            *string `default:"Increase" json:"provider"`
 	WebhookSharedSecret string  `json:"webhookSharedSecret"`
@@ -45,6 +47,13 @@ func (o *V3IncreaseConfig) GetName() string {
 		return ""
 	}
 	return o.Name
+}
+
+func (o *V3IncreaseConfig) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
 }
 
 func (o *V3IncreaseConfig) GetPollingPeriod() *string {

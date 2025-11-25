@@ -7,9 +7,11 @@ import (
 )
 
 type V3DummypayConfig struct {
-	Directory           string  `json:"directory"`
-	LinkFlowError       *bool   `json:"linkFlowError,omitempty"`
-	Name                string  `json:"name"`
+	Directory     string `json:"directory"`
+	LinkFlowError *bool  `json:"linkFlowError,omitempty"`
+	Name          string `json:"name"`
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	PageSize            *int64  `default:"25" json:"pageSize"`
 	PollingPeriod       *string `default:"2m" json:"pollingPeriod"`
 	Provider            *string `default:"Dummypay" json:"provider"`
 	UpdateLinkFlowError *bool   `json:"updateLinkFlowError,omitempty"`
@@ -45,6 +47,13 @@ func (o *V3DummypayConfig) GetName() string {
 		return ""
 	}
 	return o.Name
+}
+
+func (o *V3DummypayConfig) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
 }
 
 func (o *V3DummypayConfig) GetPollingPeriod() *string {

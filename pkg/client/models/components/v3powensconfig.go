@@ -7,15 +7,17 @@ import (
 )
 
 type V3PowensConfig struct {
-	ClientID              string  `json:"clientID"`
-	ClientSecret          string  `json:"clientSecret"`
-	ConfigurationToken    string  `json:"configurationToken"`
-	Domain                string  `json:"domain"`
-	Endpoint              string  `json:"endpoint"`
-	MaxConnectionsPerLink int64   `json:"maxConnectionsPerLink"`
-	Name                  string  `json:"name"`
-	PollingPeriod         *string `default:"2m" json:"pollingPeriod"`
-	Provider              *string `default:"Powens" json:"provider"`
+	ClientID              string `json:"clientID"`
+	ClientSecret          string `json:"clientSecret"`
+	ConfigurationToken    string `json:"configurationToken"`
+	Domain                string `json:"domain"`
+	Endpoint              string `json:"endpoint"`
+	MaxConnectionsPerLink int64  `json:"maxConnectionsPerLink"`
+	Name                  string `json:"name"`
+	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	PageSize      *int64  `default:"25" json:"pageSize"`
+	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
+	Provider      *string `default:"Powens" json:"provider"`
 }
 
 func (v V3PowensConfig) MarshalJSON() ([]byte, error) {
@@ -76,6 +78,13 @@ func (o *V3PowensConfig) GetName() string {
 		return ""
 	}
 	return o.Name
+}
+
+func (o *V3PowensConfig) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
 }
 
 func (o *V3PowensConfig) GetPollingPeriod() *string {

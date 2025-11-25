@@ -5811,6 +5811,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
           default: 2m
@@ -5835,6 +5839,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -5859,6 +5867,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         password:
           type: string
         pollingPeriod:
@@ -5885,6 +5897,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -5906,6 +5922,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
           default: 2m
@@ -5924,6 +5944,10 @@ components:
           type: boolean
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
           default: 2m
@@ -5945,6 +5969,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -5964,6 +5992,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -5987,6 +6019,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -6008,6 +6044,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -6029,6 +6069,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -6049,6 +6093,10 @@ components:
           type: boolean
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
           default: 2m
@@ -6080,6 +6128,10 @@ components:
           type: integer
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
           default: 2m
@@ -6102,6 +6154,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -6119,6 +6175,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
@@ -6140,6 +6200,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
           default: 2m
@@ -6157,6 +6221,10 @@ components:
           type: string
         name:
           type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
         pollingPeriod:
           type: string
         provider:
