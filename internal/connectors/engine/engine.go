@@ -1406,7 +1406,7 @@ func (e *engine) UpdatePoolQuery(ctx context.Context, id uuid.UUID, query map[st
 	}
 
 	if pool.Type == models.POOL_TYPE_STATIC {
-		return fmt.Errorf("pool %s is a static pool, use the pool creation endpoint to update the query: %w", id, ErrValidation)
+		return fmt.Errorf("pool %s is a static pool, use the pool account addition or deletion endpoints: %w", id, ErrValidation)
 	}
 
 	pool.Query = query

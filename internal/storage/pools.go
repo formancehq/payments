@@ -174,9 +174,10 @@ func (s *store) PoolsUpdateQuery(ctx context.Context, p models.Pool, query map[s
 		Where("id = ?", p.ID).
 		Exec(ctx)
 	if err != nil {
-		return e("update pool query: %w", err)
+		return e("update pool query", err)
 	}
 
+	p.Query = query
 	err = s.sendPoolEvent(ctx, tx, p)
 	if err != nil {
 		return e("send pool event", err)

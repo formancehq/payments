@@ -6,6 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
 )
@@ -14,7 +15,7 @@ type PoolsUpdateQueryRequest struct {
 	Query map[string]any `json:"query" validate:"required"`
 }
 
-func poolsUpdateQuery(backend backend.Backend) http.HandlerFunc {
+func poolsUpdateQuery(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_poolsUpdateQuery")
 		defer span.End()
@@ -31,6 +32,12 @@ func poolsUpdateQuery(backend backend.Backend) http.HandlerFunc {
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
+			return
+		}
+
+		if _, err := validator.Validate(req); err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
