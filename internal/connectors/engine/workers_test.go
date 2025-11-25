@@ -20,6 +20,7 @@ import (
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
+	sdktemporal "go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/worker"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -137,6 +138,22 @@ var _ = Describe("Worker Tests", func() {
 			Expect(err).To(BeNil())
 		})
 
+		It("should return nil when initial workflow already started (WorkflowExecutionAlreadyStarted)", func(ctx SpecContext) {
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, serviceerror.NewWorkflowExecutionAlreadyStarted("wf already started", "", ""))
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return nil when SDK reports ErrScheduleAlreadyRunning", func(ctx SpecContext) {
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, sdktemporal.ErrScheduleAlreadyRunning)
+
+			err := pool.CreateOutboxPublisherSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
 		It("should return error when Create fails with non-AlreadyExists error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("create error")
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
@@ -195,6 +212,22 @@ var _ = Describe("Worker Tests", func() {
 		It("should return nil when schedule already exists (AlreadyExists error)", func(ctx SpecContext) {
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
 			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, serviceerror.NewAlreadyExists("already exists"))
+
+			err := pool.CreateOutboxCleanupSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return nil when initial workflow already started (WorkflowExecutionAlreadyStarted)", func(ctx SpecContext) {
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, serviceerror.NewWorkflowExecutionAlreadyStarted("wf already started", "", ""))
+
+			err := pool.CreateOutboxCleanupSchedule(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return nil when SDK reports ErrScheduleAlreadyRunning", func(ctx SpecContext) {
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().Create(ctx, gomock.Any()).Return(nil, sdktemporal.ErrScheduleAlreadyRunning)
 
 			err := pool.CreateOutboxCleanupSchedule(ctx)
 			Expect(err).To(BeNil())
