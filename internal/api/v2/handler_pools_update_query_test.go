@@ -34,20 +34,20 @@ var _ = Describe("API v2 pools update query", func() {
 		})
 
 		It("should return a bad request error when poolID is invalid", func(ctx SpecContext) {
-			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "poolID", "invalid", &map[string]any{}))
+			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "poolID", "invalid", PoolUpdateQueryRequest{Query: map[string]any{}}))
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("pools update query err")
 			m.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedErr)
-			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "poolID", poolID.String(), &map[string]any{}))
+			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "poolID", poolID.String(), PoolUpdateQueryRequest{Query: map[string]any{}}))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status no content on success", func(ctx SpecContext) {
 			m.EXPECT().PoolsUpdateQuery(gomock.Any(), poolID, gomock.Any()).Return(nil)
-			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "poolID", poolID.String(), &map[string]any{}))
+			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "poolID", poolID.String(), PoolUpdateQueryRequest{Query: map[string]any{}}))
 			assertExpectedResponse(w.Result(), http.StatusNoContent, "")
 		})
 	})
