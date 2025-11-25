@@ -15,7 +15,7 @@ type Config struct {
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 100 // mapx page size is 100
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {

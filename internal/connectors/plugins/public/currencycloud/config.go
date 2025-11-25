@@ -14,7 +14,7 @@ type Config struct {
 	Endpoint string `json:"endpoint" validate:"required"`
 }
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 25 // Limit is undocumented.
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var config Config

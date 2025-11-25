@@ -18,7 +18,7 @@ type Config struct {
 	WebhookPassword string `json:"webhookPassword" validate:""`
 }
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 100
 
 func unmarshalAndValidateConfig(payload []byte) (Config, error) {
 	var config Config

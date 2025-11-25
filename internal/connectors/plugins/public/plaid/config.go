@@ -13,7 +13,7 @@ const (
 	LinkTokenMetadataKey = "link_token"
 )
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 100 // limit is 500 (based on institution get request)
 
 var (
 	supportedLanguage = map[string]struct{}{
