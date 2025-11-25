@@ -206,7 +206,14 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig).To(Equal(config))
+
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(config.Directory))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.LinkFlowError).To(Equal(config.LinkFlowError))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(config.Name))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PageSize).To(Equal(pointer.For(int64(25)))) // the response sets a default value
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod).To(Equal(config.PollingPeriod))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(config.Provider))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.UpdateLinkFlowError).To(Equal(config.UpdateLinkFlowError))
 		})
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
