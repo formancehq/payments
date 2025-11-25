@@ -3335,6 +3335,61 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
+## Update the query of a pool
+
+<a id="opIdv3UpdatePoolQuery"></a>
+
+> Code samples
+
+```http
+PATCH /v3/pools/{poolID}/query HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`PATCH /v3/pools/{poolID}/query`
+
+> Body parameter
+
+```json
+{
+  "query": {}
+}
+```
+
+<h3 id="update-the-query-of-a-pool-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|poolID|path|string|true|The pool ID|
+|body|body|[V3UpdatePoolQueryRequest](#schemav3updatepoolqueryrequest)|false|none|
+
+> Example responses
+
+> default Response
+
+```json
+{
+  "errorCode": "VALIDATION",
+  "errorMessage": "[VALIDATION] missing required config field: pollingPeriod",
+  "details": "string"
+}
+```
+
+<h3 id="update-the-query-of-a-pool-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
 ## Get historical pool balances from a particular point in time
 
 <a id="opIdv3GetPoolBalances"></a>
@@ -6375,6 +6430,26 @@ None ( Scopes: payments:read )
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |data|string|true|none|The ID of the created pool|
+
+<h2 id="tocS_V3UpdatePoolQueryRequest">V3UpdatePoolQueryRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3updatepoolqueryrequest"></a>
+<a id="schema_V3UpdatePoolQueryRequest"></a>
+<a id="tocSv3updatepoolqueryrequest"></a>
+<a id="tocsv3updatepoolqueryrequest"></a>
+
+```json
+{
+  "query": {}
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|query|object|true|none|none|
 
 <h2 id="tocS_V3PoolsCursorResponse">V3PoolsCursorResponse</h2>
 <!-- backwards compatibility -->

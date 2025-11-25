@@ -1521,6 +1521,20 @@ func (mr *MockStorageMockRecorder) PoolsRemoveAccountsFromConnectorID(ctx, conne
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsRemoveAccountsFromConnectorID", reflect.TypeOf((*MockStorage)(nil).PoolsRemoveAccountsFromConnectorID), ctx, connectorID)
 }
 
+// PoolsUpdateQuery mocks base method.
+func (m *MockStorage) PoolsUpdateQuery(ctx context.Context, p models.Pool, query map[string]any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolsUpdateQuery", ctx, p, query)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PoolsUpdateQuery indicates an expected call of PoolsUpdateQuery.
+func (mr *MockStorageMockRecorder) PoolsUpdateQuery(ctx, p, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsUpdateQuery", reflect.TypeOf((*MockStorage)(nil).PoolsUpdateQuery), ctx, p, query)
+}
+
 // PoolsUpsert mocks base method.
 func (m *MockStorage) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 	m.ctrl.T.Helper()

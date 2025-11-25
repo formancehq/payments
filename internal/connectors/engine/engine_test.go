@@ -534,6 +534,7 @@ var _ = Describe("Engine Tests", func() {
 			}, nil)
 			err := eng.CreatePool(ctx, models.Pool{
 				ID:           poolID,
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: []models.AccountID{acc1, acc2},
 			})
 			Expect(err).ToNot(BeNil())
@@ -552,8 +553,66 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().PoolsUpsert(gomock.Any(), gomock.Any()).Return(nil)
 			err := eng.CreatePool(ctx, models.Pool{
 				ID:           poolID,
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: []models.AccountID{acc1, acc2},
 			})
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("update pool query", func() {
+		var (
+			poolID uuid.UUID
+		)
+
+		BeforeEach(func() {
+			poolID = uuid.New()
+		})
+
+		It("should return a storage error if pool is not found", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(nil, storage.ErrNotFound)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should return a validation error if pool is a static pool", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_STATIC,
+			}, nil)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should return a storage error if pool upsert fails", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("failed to update pool query"))
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(fmt.Errorf("failed to update pool query")))
+		})
+
+		It("should return a storage error if populate pool accounts fails", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("failed to populate pool accounts"))
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(fmt.Errorf("failed to populate pool accounts")))
+		})
+
+		It("should successfully update pool query", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
 			Expect(err).To(BeNil())
 		})
 	})

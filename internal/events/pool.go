@@ -10,10 +10,12 @@ import (
 )
 
 type PoolMessagePayload struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	CreatedAt  time.Time `json:"createdAt"`
-	AccountIDs []string  `json:"accountIDs"`
+	ID         string          `json:"id"`
+	Name       string          `json:"name"`
+	CreatedAt  time.Time       `json:"createdAt"`
+	Type       models.PoolType `json:"type"`
+	Query      map[string]any  `json:"query"`
+	AccountIDs []string        `json:"accountIDs"`
 }
 
 func (e Events) NewEventSavedPool(pool models.Pool) publish.EventMessage {
@@ -21,6 +23,8 @@ func (e Events) NewEventSavedPool(pool models.Pool) publish.EventMessage {
 		ID:        pool.ID.String(),
 		Name:      pool.Name,
 		CreatedAt: pool.CreatedAt,
+		Type:      pool.Type,
+		Query:     pool.Query,
 	}
 
 	payload.AccountIDs = make([]string, len(pool.PoolAccounts))

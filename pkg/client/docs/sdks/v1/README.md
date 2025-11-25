@@ -21,6 +21,7 @@
 * [CreatePool](#createpool) - Create a Pool
 * [GetPool](#getpool) - Get a Pool
 * [DeletePool](#deletepool) - Delete a Pool
+* [UpdatePoolQuery](#updatepoolquery) - Update the query of a pool
 * [AddAccountToPool](#addaccounttopool) - Add an account to a pool
 * [RemoveAccountFromPool](#removeaccountfrompool) - Remove an account from a pool
 * [GetPoolBalances](#getpoolbalances) - Get historical pool balances at a particular point in time
@@ -944,6 +945,64 @@ func main() {
 ### Response
 
 **[*operations.DeletePoolResponse](../../models/operations/deletepoolresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## UpdatePoolQuery
+
+Update the query of a pool
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"github.com/formancehq/payments/pkg/client/models/components"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V1.UpdatePoolQuery(ctx, "XXX", components.UpdatePoolQueryRequest{
+        Query: map[string]any{
+            "key": "<value>",
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                              | Type                                                                                   | Required                                                                               | Description                                                                            | Example                                                                                |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `ctx`                                                                                  | [context.Context](https://pkg.go.dev/context#Context)                                  | :heavy_check_mark:                                                                     | The context to use for the request.                                                    |                                                                                        |
+| `poolID`                                                                               | *string*                                                                               | :heavy_check_mark:                                                                     | The pool ID.                                                                           | XXX                                                                                    |
+| `updatePoolQueryRequest`                                                               | [components.UpdatePoolQueryRequest](../../models/components/updatepoolqueryrequest.md) | :heavy_check_mark:                                                                     | N/A                                                                                    |                                                                                        |
+| `opts`                                                                                 | [][operations.Option](../../models/operations/option.md)                               | :heavy_minus_sign:                                                                     | The options for this request.                                                          |                                                                                        |
+
+### Response
+
+**[*operations.UpdatePoolQueryResponse](../../models/operations/updatepoolqueryresponse.md), error**
 
 ### Errors
 

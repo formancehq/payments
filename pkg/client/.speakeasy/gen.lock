@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: c86a83ec8c81776a4306ea45508a0d47
+  docChecksum: 02cc505cbbd85e81b9b684cb0b9cce8a
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -106,6 +106,7 @@ generatedFiles:
   - /models/components/transferrequest.go
   - /models/components/transferresponse.go
   - /models/components/updatebankaccountmetadatarequest.go
+  - /models/components/updatepoolqueryrequest.go
   - /models/components/updatetransferinitiationstatusrequest.go
   - /models/components/v3account.go
   - /models/components/v3accountscursorresponse.go
@@ -217,6 +218,7 @@ generatedFiles:
   - /models/components/v3updatebankaccountmetadatarequest.go
   - /models/components/v3updateconnectorrequest.go
   - /models/components/v3updatepaymentmetadatarequest.go
+  - /models/components/v3updatepoolqueryrequest.go
   - /models/components/v3wiseconfig.go
   - /models/components/wiseconfig.go
   - /models/operations/addaccounttopool.go
@@ -262,6 +264,7 @@ generatedFiles:
   - /models/operations/updatebankaccountmetadata.go
   - /models/operations/updateconnectorconfigv1.go
   - /models/operations/updatemetadata.go
+  - /models/operations/updatepoolquery.go
   - /models/operations/updatetransferinitiationstatus.go
   - /models/operations/v3addaccounttopool.go
   - /models/operations/v3addbankaccounttopaymentserviceuser.go
@@ -320,6 +323,7 @@ generatedFiles:
   - /models/operations/v3updateconnectorconfig.go
   - /models/operations/v3updatelinkforpaymentserviceuseronconnector.go
   - /models/operations/v3updatepaymentmetadata.go
+  - /models/operations/v3updatepoolquery.go
   - USAGE.md
   - docs/models/components/account.md
   - docs/models/components/accountbalance.md
@@ -431,6 +435,7 @@ generatedFiles:
   - docs/models/components/transferrequest.md
   - docs/models/components/transferresponse.md
   - docs/models/components/updatebankaccountmetadatarequest.md
+  - docs/models/components/updatepoolqueryrequest.md
   - docs/models/components/updatetransferinitiationstatusrequest.md
   - docs/models/components/v3account.md
   - docs/models/components/v3accountraw.md
@@ -569,6 +574,7 @@ generatedFiles:
   - docs/models/components/v3updatebankaccountmetadatarequest.md
   - docs/models/components/v3updateconnectorrequest.md
   - docs/models/components/v3updatepaymentmetadatarequest.md
+  - docs/models/components/v3updatepoolqueryrequest.md
   - docs/models/components/v3wiseconfig.md
   - docs/models/components/wiseconfig.md
   - docs/models/operations/addaccounttopoolrequest.md
@@ -650,6 +656,8 @@ generatedFiles:
   - docs/models/operations/updateconnectorconfigv1response.md
   - docs/models/operations/updatemetadatarequest.md
   - docs/models/operations/updatemetadataresponse.md
+  - docs/models/operations/updatepoolqueryrequest.md
+  - docs/models/operations/updatepoolqueryresponse.md
   - docs/models/operations/updatetransferinitiationstatusrequest.md
   - docs/models/operations/updatetransferinitiationstatusresponse.md
   - docs/models/operations/v3addaccounttopoolrequest.md
@@ -760,6 +768,8 @@ generatedFiles:
   - docs/models/operations/v3updatelinkforpaymentserviceuseronconnectorresponse.md
   - docs/models/operations/v3updatepaymentmetadatarequest.md
   - docs/models/operations/v3updatepaymentmetadataresponse.md
+  - docs/models/operations/v3updatepoolqueryrequest.md
+  - docs/models/operations/v3updatepoolqueryresponse.md
   - docs/sdks/formance/README.md
   - docs/sdks/payments/README.md
   - docs/sdks/v1/README.md
@@ -1853,6 +1863,24 @@ examples:
         path:
           paymentServiceUserID: "<id>"
           connectorID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  updatePoolQuery:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      requestBody:
+        application/json: {"query": {"key": "<value>"}}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  v3UpdatePoolQuery:
+    speakeasy-default-v3-update-pool-query:
+      parameters:
+        path:
+          poolID: "<id>"
       responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
