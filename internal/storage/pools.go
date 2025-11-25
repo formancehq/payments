@@ -14,6 +14,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -299,7 +300,8 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		return e("account does not exist", err)
 	}
 
-	_, err = tx.NewInsert().
+	var insertRes sql.Result
+	insertRes, err = tx.NewInsert().
 		Model(&poolAccounts{
 			PoolID:      id,
 			AccountID:   accountID,
@@ -311,6 +313,32 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		return e("insert pool account", err)
 	}
 
+	var rowsAffected int64
+	rowsAffected, err = insertRes.RowsAffected()
+	if err != nil {
+		return e("get rows affected", err)
+	}
+
+	// Emit event only if a change was made
+	if rowsAffected > 0 {
+		// Fetch the updated pool with all accounts
+		var pool pool
+		err = tx.NewSelect().
+			Model(&pool).
+			Relation("PoolAccounts").
+			Where("id = ?", id).
+			Scan(ctx)
+		if err != nil {
+			return e("get pool", err)
+		}
+
+		poolModel := toPoolModel(pool)
+		err = s.sendPoolEvent(ctx, tx, poolModel)
+		if err != nil {
+			return e("send pool event", err)
+		}
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return e("commit transaction", err)
@@ -319,12 +347,69 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 }
 
 func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
-	_, err := s.db.NewDelete().
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	// Fetch the pool before deletion to get current state
+	// If pool doesn't exist, we'll still proceed with delete (will affect 0 rows)
+	var pool pool
+	err = tx.NewSelect().
+		Model(&pool).
+		Relation("PoolAccounts").
+		Where("id = ?", id).
+		Scan(ctx)
+	poolExists := true
+	if err != nil {
+		poolErr := e("get pool", err)
+		if errors.Is(poolErr, ErrNotFound) {
+			poolExists = false
+			err = nil // Reset error so we can proceed with delete
+		} else {
+			return poolErr
+		}
+	}
+
+	var deleteRes sql.Result
+	deleteRes, err = tx.NewDelete().
 		Model((*poolAccounts)(nil)).
 		Where("pool_id = ? AND account_id = ?", id, accountID).
 		Exec(ctx)
 	if err != nil {
 		return e("delete pool account", err)
+	}
+
+	var rowsAffected int64
+	rowsAffected, err = deleteRes.RowsAffected()
+	if err != nil {
+		return e("get rows affected", err)
+	}
+
+	// Emit event only if a change was made and pool exists
+	if rowsAffected > 0 && poolExists {
+		// Remove the account from the pool's account list
+		poolModel := toPoolModel(pool)
+		updatedAccounts := make([]models.AccountID, 0, len(poolModel.PoolAccounts))
+		for i := range poolModel.PoolAccounts {
+			if poolModel.PoolAccounts[i] != accountID {
+				updatedAccounts = append(updatedAccounts, poolModel.PoolAccounts[i])
+			}
+		}
+		poolModel.PoolAccounts = updatedAccounts
+
+		err = s.sendPoolEvent(ctx, tx, poolModel)
+		if err != nil {
+			return e("send pool event", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return e("commit transaction", err)
 	}
 	return nil
 }
