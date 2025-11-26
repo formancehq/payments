@@ -210,6 +210,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(config.Directory))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.LinkFlowError).To(Equal(config.LinkFlowError))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(config.Name))
+			//nolint:staticcheck
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PageSize).To(Equal(pointer.For(int64(25)))) // the response sets a default value
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod).To(Equal(config.PollingPeriod))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(config.Provider))
