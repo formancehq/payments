@@ -2,16 +2,10 @@ package services
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 )
-
-type aggregatedBalance struct {
-	amount          *big.Int
-	relatedAccounts []models.AccountID
-}
 
 func (s *Service) PoolsBalances(
 	ctx context.Context,
