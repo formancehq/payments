@@ -34,9 +34,10 @@ type V3Config struct {
 }
 
 type Property struct {
-	Type       string `yaml:"type"`
-	Default    any    `yaml:"default,omitempty"`
-	Deprecated bool   `yaml:"deprecated,omitempty"`
+	Type                         string `yaml:"type"`
+	Default                      any    `yaml:"default,omitempty"`
+	Deprecated                   bool   `yaml:"deprecated,omitempty"`
+	XSpeakeasyDeprecationMessage string `yaml:"x-speakeasy-deprecation-message,omitempty"`
 }
 
 type ConfigJson map[string]ConfigProperties

@@ -130,9 +130,10 @@ func readConfig(name string, caserName string) (V3Config, error) {
 			Default: "2m",
 		},
 		"pageSize": {
-			Type:       "integer",
-			Default:    25,
-			Deprecated: true,
+			Type:                         "integer",
+			Default:                      25,
+			Deprecated:                   true,
+			XSpeakeasyDeprecationMessage: "Deprecated: From v3.1, this parameter will be ignored.",
 		},
 	}
 	for _, decl := range f.Decls {
