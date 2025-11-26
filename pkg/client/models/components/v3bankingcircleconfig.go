@@ -10,7 +10,7 @@ type V3BankingcircleConfig struct {
 	AuthorizationEndpoint string `json:"authorizationEndpoint"`
 	Endpoint              string `json:"endpoint"`
 	Name                  string `json:"name"`
-	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	// Deprecated: Deprecated: From v3.1, this parameter will be ignored..
 	PageSize           *int64  `default:"25" json:"pageSize"`
 	Password           string  `json:"password"`
 	PollingPeriod      *string `json:"pollingPeriod,omitempty"`

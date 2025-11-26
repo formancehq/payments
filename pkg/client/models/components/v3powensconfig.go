@@ -14,7 +14,7 @@ type V3PowensConfig struct {
 	Endpoint              string `json:"endpoint"`
 	MaxConnectionsPerLink int64  `json:"maxConnectionsPerLink"`
 	Name                  string `json:"name"`
-	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
+	// Deprecated: Deprecated: From v3.1, this parameter will be ignored..
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
 	Provider      *string `default:"Powens" json:"provider"`
