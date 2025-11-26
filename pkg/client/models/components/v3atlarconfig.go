@@ -10,7 +10,7 @@ type V3AtlarConfig struct {
 	AccessKey string `json:"accessKey"`
 	BaseURL   string `json:"baseUrl"`
 	Name      string `json:"name"`
-	// Deprecated: From v3.1, this parameter will be ignored..
+	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `json:"pollingPeriod,omitempty"`
 	Provider      *string `default:"Atlar" json:"provider"`
