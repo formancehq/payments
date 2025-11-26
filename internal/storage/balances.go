@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -316,14 +315,10 @@ func (s *store) BalancesGetFromAccountIDs(ctx context.Context, accountIDs []mode
 		ColumnExpr("array_agg(account_id) as account_ids, asset, SUM(balance) AS balance").
 		Group("asset")
 
-	fmt.Println(query.String())
-
 	err := query.Scan(ctx, &balanceAssets)
 	if err != nil {
 		return nil, e("failed to list balance assets", err)
 	}
-
-	fmt.Println(balanceAssets)
 
 	res := make([]models.AggregatedBalance, 0, len(balanceAssets))
 	for _, balanceAsset := range balanceAssets {

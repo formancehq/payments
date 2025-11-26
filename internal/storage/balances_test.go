@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -988,7 +987,6 @@ func TestBalancesGetLatestFromAccountIDs(t *testing.T) {
 
 		balances, err := store.BalancesGetFromAccountIDs(ctx, accountIDs, nil)
 		require.NoError(t, err)
-		fmt.Println(balances)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 2)
 		assert.Equal(t, balances[1].Asset, "USD/2")
