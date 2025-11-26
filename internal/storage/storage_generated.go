@@ -25,7 +25,6 @@ import (
 type MockStorage struct {
 	ctrl     *gomock.Controller
 	recorder *MockStorageMockRecorder
-	isgomock struct{}
 }
 
 // MockStorageMockRecorder is the mock recorder for MockStorage.
@@ -159,34 +158,19 @@ func (mr *MockStorageMockRecorder) AccountsUpsert(ctx, accounts any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsUpsert", reflect.TypeOf((*MockStorage)(nil).AccountsUpsert), ctx, accounts)
 }
 
-// BalancesGetAt mocks base method.
-func (m *MockStorage) BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error) {
+// BalancesGetFromAccountIDs mocks base method.
+func (m *MockStorage) BalancesGetFromAccountIDs(ctx context.Context, accountIDs []models.AccountID, at *time.Time) ([]models.AggregatedBalance, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BalancesGetAt", ctx, accountID, at)
-	ret0, _ := ret[0].([]*models.Balance)
+	ret := m.ctrl.Call(m, "BalancesGetFromAccountIDs", ctx, accountIDs, at)
+	ret0, _ := ret[0].([]models.AggregatedBalance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// BalancesGetAt indicates an expected call of BalancesGetAt.
-func (mr *MockStorageMockRecorder) BalancesGetAt(ctx, accountID, at any) *gomock.Call {
+// BalancesGetFromAccountIDs indicates an expected call of BalancesGetFromAccountIDs.
+func (mr *MockStorageMockRecorder) BalancesGetFromAccountIDs(ctx, accountIDs, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalancesGetAt", reflect.TypeOf((*MockStorage)(nil).BalancesGetAt), ctx, accountID, at)
-}
-
-// BalancesGetLatest mocks base method.
-func (m *MockStorage) BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BalancesGetLatest", ctx, accountID)
-	ret0, _ := ret[0].([]*models.Balance)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BalancesGetLatest indicates an expected call of BalancesGetLatest.
-func (mr *MockStorageMockRecorder) BalancesGetLatest(ctx, accountID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalancesGetLatest", reflect.TypeOf((*MockStorage)(nil).BalancesGetLatest), ctx, accountID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalancesGetFromAccountIDs", reflect.TypeOf((*MockStorage)(nil).BalancesGetFromAccountIDs), ctx, accountIDs, at)
 }
 
 // BalancesList mocks base method.

@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -287,99 +287,58 @@ func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpagi
 	}, nil
 }
 
-func (s *store) balancesListAssets(ctx context.Context, accountID models.AccountID) ([]string, error) {
-	var assets []string
+// Get balances from account IDs at a specific time. If at is nil, it will return the latest balances.
+func (s *store) BalancesGetFromAccountIDs(ctx context.Context, accountIDs []models.AccountID, at *time.Time) ([]models.AggregatedBalance, error) {
+	type assetBalances struct {
+		AccountIDs []string `bun:"account_ids,array"`
+		Asset      string   `bun:"asset"`
+		Balance    *big.Int `bun:"balance"`
+	}
 
-	err := s.db.NewSelect().
-		ColumnExpr("DISTINCT asset").
-		Model(&models.Balance{}).
-		Where("account_id = ?", accountID).
-		Scan(ctx, &assets)
+	selectedBalancesQuery := s.db.NewSelect().
+		Model((*balance)(nil)).
+		DistinctOn("account_id, asset").
+		Column("account_id", "asset", "created_at", "sort_id", "balance").
+		Where("account_id IN (?)", bun.In(accountIDs)).
+		Order("account_id desc", "asset desc", "created_at desc", "sort_id desc")
+
+	if at != nil && !at.IsZero() {
+		selectedBalancesQuery = selectedBalancesQuery.Where("created_at <= ?", at).
+			Where("last_updated_at >= ?", at)
+	}
+	var balanceAssets []assetBalances
+	query := s.db.NewSelect().
+		With(
+			"selected_balances",
+			selectedBalancesQuery,
+		).
+		ModelTableExpr("selected_balances").
+		ColumnExpr("array_agg(account_id) as account_ids, asset, SUM(balance) AS balance").
+		Group("asset")
+
+	fmt.Println(query.String())
+
+	err := query.Scan(ctx, &balanceAssets)
 	if err != nil {
 		return nil, e("failed to list balance assets", err)
 	}
 
-	return assets, nil
-}
+	fmt.Println(balanceAssets)
 
-func (s *store) balancesGetAtByAsset(ctx context.Context, accountID models.AccountID, asset string, at time.Time) (*models.Balance, error) {
-	var balance balance
-
-	err := s.db.NewSelect().
-		Model(&balance).
-		Where("account_id = ?", accountID).
-		Where("asset = ?", asset).
-		Where("created_at <= ?", at).
-		Where("last_updated_at >= ?", at).
-		Order("created_at DESC", "sort_id DESC").
-		Limit(1).
-		Scan(ctx)
-	if err != nil {
-		return nil, e("failed to get balance", err)
-	}
-
-	return pointer.For(toBalanceModels(balance)), nil
-}
-
-func (s *store) balancesGetLatestByAsset(ctx context.Context, accountID models.AccountID, asset string) (*models.Balance, error) {
-	var balance balance
-
-	err := s.db.NewSelect().
-		Model(&balance).
-		Where("account_id = ?", accountID).
-		Where("asset = ?", asset).
-		Order("created_at DESC", "sort_id DESC").
-		Limit(1).
-		Scan(ctx)
-	if err != nil {
-		return nil, e("failed to get latest balance", err)
-	}
-
-	return pointer.For(toBalanceModels(balance)), nil
-}
-
-func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error) {
-	assets, err := s.balancesListAssets(ctx, accountID)
-	if err != nil {
-		return nil, e("failed to list balance assets", err)
-	}
-
-	var balances []*models.Balance
-	for _, currency := range assets {
-		balance, err := s.balancesGetAtByAsset(ctx, accountID, currency, at)
-		if err != nil {
-			if errors.Is(err, ErrNotFound) {
-				continue
-			}
-			return nil, e("failed to get balance", err)
+	res := make([]models.AggregatedBalance, 0, len(balanceAssets))
+	for _, balanceAsset := range balanceAssets {
+		relatedAccounts := make([]models.AccountID, len(balanceAsset.AccountIDs))
+		for i, accountID := range balanceAsset.AccountIDs {
+			relatedAccounts[i] = models.MustAccountIDFromString(accountID)
 		}
-
-		balances = append(balances, balance)
+		res = append(res, models.AggregatedBalance{
+			Asset:           balanceAsset.Asset,
+			Amount:          balanceAsset.Balance,
+			RelatedAccounts: relatedAccounts,
+		})
 	}
 
-	return balances, nil
-}
-
-func (s *store) BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error) {
-	assets, err := s.balancesListAssets(ctx, accountID)
-	if err != nil {
-		return nil, e("failed to list balance assets", err)
-	}
-
-	var balances []*models.Balance
-	for _, currency := range assets {
-		balance, err := s.balancesGetLatestByAsset(ctx, accountID, currency)
-		if err != nil {
-			if errors.Is(err, ErrNotFound) {
-				continue
-			}
-			return nil, e("failed to get latest balance for asset", err)
-		}
-
-		balances = append(balances, balance)
-	}
-
-	return balances, nil
+	return res, nil
 }
 
 func fromBalancesModels(from []models.Balance) []balance {
