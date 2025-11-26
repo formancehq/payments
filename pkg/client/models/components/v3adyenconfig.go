@@ -11,7 +11,7 @@ type V3AdyenConfig struct {
 	CompanyID          string  `json:"companyID"`
 	LiveEndpointPrefix *string `json:"liveEndpointPrefix,omitempty"`
 	Name               string  `json:"name"`
-	// Deprecated: Deprecated: From v3.1, this parameter will be ignored..
+	// Deprecated: From v3.1, this parameter will be ignored..
 	PageSize        *int64  `default:"25" json:"pageSize"`
 	PollingPeriod   *string `default:"2m" json:"pollingPeriod"`
 	Provider        *string `default:"Adyen" json:"provider"`
