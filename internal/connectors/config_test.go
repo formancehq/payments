@@ -16,7 +16,6 @@ func TestCombineConfigs_PluginPrecedence(t *testing.T) {
 	base := models.Config{
 		Name:          "conn-name",
 		PollingPeriod: 10 * time.Minute, // lower than plugin
-		PageSize:      50,
 	}
 
 	pluginCfg := map[string]any{
@@ -35,8 +34,6 @@ func TestCombineConfigs_PluginPrecedence(t *testing.T) {
 
 	// Base-only fields should be present
 	assert.Equal(t, "conn-name", out["name"])
-	// pageSize from base since plugin didn't set it
-	assert.Equal(t, float64(50), out["pageSize"]) // numbers become float64 via json
 
 	// Plugin specific field preserved
 	assert.Equal(t, "sk_test", out["apiKey"])

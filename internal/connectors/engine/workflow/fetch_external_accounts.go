@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -49,6 +50,12 @@ func (w Workflow) fetchExternalAccounts(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextExternalAccount.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		externalAccountsResponse, err := activities.PluginFetchNextExternalAccounts(
@@ -56,7 +63,7 @@ func (w Workflow) fetchExternalAccounts(
 			fetchNextExternalAccount.ConnectorID,
 			fetchNextExternalAccount.FromPayload.GetPayload(),
 			state.State,
-			fetchNextExternalAccount.Config.PageSize,
+			int(pageSize),
 			fetchNextExternalAccount.Periodically,
 		)
 		if err != nil {

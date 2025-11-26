@@ -13,6 +13,8 @@ type Config struct {
 	UpdateLinkFlowError bool   `json:"updateLinkFlowError" validate:""`
 }
 
+const PAGE_SIZE = 25
+
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var config Config
 	if err := json.Unmarshal(payload, &config); err != nil {

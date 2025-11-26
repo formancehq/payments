@@ -477,7 +477,7 @@ var _ = Describe("Engine Tests", func() {
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(inputJson, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), gomock.Any(), workflow.UpdateSchedulePollingPeriod{
 				ConnectorID: connectorID,
-				Config:      models.Config{Name: newName, PollingPeriod: 20 * time.Minute, PageSize: 25},
+				Config:      models.Config{Name: newName, PollingPeriod: 20 * time.Minute},
 			}).Return(nil, nil)
 
 			expectedConnector := models.Connector{

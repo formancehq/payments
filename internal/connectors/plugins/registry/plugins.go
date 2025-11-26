@@ -27,6 +27,7 @@ type PluginInformation struct {
 	capabilities []models.Capability
 	createFunc   PluginCreateFunction
 	config       Config
+	pageSize     uint64
 }
 
 var (
@@ -43,12 +44,14 @@ func RegisterPlugin(
 	createFunc PluginCreateFunction,
 	capabilities []models.Capability,
 	conf any,
+	pageSize uint64,
 ) {
 	pluginsRegistry[provider] = PluginInformation{
 		pluginType:   pluginType,
 		capabilities: capabilities,
 		createFunc:   createFunc,
 		config:       setupConfig(conf),
+		pageSize:     pageSize,
 	}
 }
 
@@ -163,4 +166,13 @@ func GetConfig(provider string) (Config, error) {
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 	return info.config, nil
+}
+
+func GetPageSize(provider string) (uint64, error) {
+	provider = strings.ToLower(provider)
+	info, ok := pluginsRegistry[provider]
+	if !ok {
+		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
+	}
+	return info.pageSize, nil
 }

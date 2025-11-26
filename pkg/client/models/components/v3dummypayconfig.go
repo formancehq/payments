@@ -7,9 +7,10 @@ import (
 )
 
 type V3DummypayConfig struct {
-	Directory           string  `json:"directory"`
-	LinkFlowError       *bool   `json:"linkFlowError,omitempty"`
-	Name                string  `json:"name"`
+	Directory     string `json:"directory"`
+	LinkFlowError *bool  `json:"linkFlowError,omitempty"`
+	Name          string `json:"name"`
+	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize            *int64  `default:"25" json:"pageSize"`
 	PollingPeriod       *string `default:"2m" json:"pollingPeriod"`
 	Provider            *string `default:"Dummypay" json:"provider"`

@@ -5814,6 +5814,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -5841,6 +5843,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5868,6 +5872,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         password:
           type: string
         pollingPeriod:
@@ -5897,6 +5903,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5921,6 +5929,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -5942,6 +5952,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -5966,6 +5978,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5988,6 +6002,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6014,6 +6030,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6038,6 +6056,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6062,6 +6082,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6085,6 +6107,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -6119,6 +6143,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -6144,6 +6170,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6164,6 +6192,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6188,6 +6218,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -6208,6 +6240,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
