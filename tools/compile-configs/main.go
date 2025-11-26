@@ -133,7 +133,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 			Type:                         "integer",
 			Default:                      25,
 			Deprecated:                   true,
-			XSpeakeasyDeprecationMessage: "From v3.1, this parameter will be ignored.",
+			XSpeakeasyDeprecationMessage: "From v3.1, this parameter will be ignored",
 		},
 	}
 	for _, decl := range f.Decls {
