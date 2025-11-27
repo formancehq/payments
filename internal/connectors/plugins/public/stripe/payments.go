@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	stripesdk "github.com/stripe/stripe-go/v79"
+	stripesdk "github.com/stripe/stripe-go/v80"
 )
 
 var (

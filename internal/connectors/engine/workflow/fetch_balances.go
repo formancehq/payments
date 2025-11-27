@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -49,6 +50,12 @@ func (w Workflow) fetchBalances(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextBalances.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		balancesResponse, err := activities.PluginFetchNextBalances(
@@ -56,11 +63,11 @@ func (w Workflow) fetchBalances(
 			fetchNextBalances.ConnectorID,
 			fetchNextBalances.FromPayload.GetPayload(),
 			state.State,
-			fetchNextBalances.Config.PageSize,
+			int(pageSize),
 			fetchNextBalances.Periodically,
 		)
 		if err != nil {
-			return errors.Wrap(err, "fetching next accounts")
+			return errors.Wrap(err, "fetching next balances")
 		}
 
 		balances, err := models.FromPSPBalances(
@@ -83,26 +90,12 @@ func (w Workflow) fetchBalances(
 				balances,
 			)
 			if err != nil {
-				return errors.Wrap(err, "storing next accounts")
+				return errors.Wrap(err, "storing next balances")
 			}
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(balancesResponse.Balances)*2)
-		for _, balance := range balances {
-			b := balance
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := w.runSendEvents(ctx, SendEvents{
-					Balance: &b,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-		}
+		errChan := make(chan error, len(balancesResponse.Balances))
 
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion

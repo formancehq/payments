@@ -12,10 +12,9 @@ import (
 	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
-	evts "github.com/formancehq/payments/pkg/events"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
@@ -32,12 +31,13 @@ var _ = Context("Payments API Payments", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                 stack,
-			PostgresConfiguration: db.GetValue().ConnectionOptions(),
-			NatsURL:               natsServer.GetValue().ClientURL(),
-			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:       temporalServer.GetValue().Address(),
-			Output:                GinkgoWriter,
+			Stack:                     stack,
+			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
+			NatsURL:                   natsServer.GetValue().ClientURL(),
+			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:           temporalServer.GetValue().Address(),
+			Output:                    GinkgoWriter,
+			SkipOutboxScheduleCreation: true,
 		}
 	})
 
@@ -48,7 +48,6 @@ var _ = Context("Payments API Payments", Serial, func() {
 	When("creating a new payment with v3", func() {
 		var (
 			connectorID   string
-			e             chan *nats.Msg
 			createdAt     time.Time
 			initialAmount *big.Int
 			asset         string
@@ -58,7 +57,6 @@ var _ = Context("Payments API Payments", Serial, func() {
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
-			e = Subscribe(GinkgoT(), app.GetValue())
 
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
@@ -79,7 +77,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 				},
 			}
 
-			debtorID, creditorID := setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			debtorID, creditorID := setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), connectorID, createdAt)
 			createRequest := &components.V3CreatePaymentRequest{
 				Reference:            "ref",
 				ConnectorID:          connectorID,
@@ -97,7 +95,15 @@ var _ = Context("Payments API Payments", Serial, func() {
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
+			paymentID := createResponse.GetV3CreatePaymentResponse().Data.ID
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPayments,
+				WithPayloadSubset(struct {
+					ConnectorID string `json:"connectorID"`
+					ID          string `json:"id"`
+				}{
+					ConnectorID: connectorID,
+					ID:          paymentID,
+				}))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, createResponse.GetV3CreatePaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
@@ -110,7 +116,6 @@ var _ = Context("Payments API Payments", Serial, func() {
 	When("creating a new payment with v2", func() {
 		var (
 			connectorID   string
-			e             chan *nats.Msg
 			createdAt     time.Time
 			initialAmount *big.Int
 			asset         string
@@ -120,7 +125,6 @@ var _ = Context("Payments API Payments", Serial, func() {
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
-			e = Subscribe(GinkgoT(), app.GetValue())
 
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
@@ -131,7 +135,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 		})
 
 		It("should be ok", func() {
-			debtorID, creditorID := setupDebtorAndCreditorV2Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			debtorID, creditorID := setupDebtorAndCreditorV2Accounts(ctx, app.GetValue(), connectorID, createdAt)
 			createRequest := components.PaymentRequest{
 				Reference:            "ref",
 				ConnectorID:          connectorID,
@@ -149,7 +153,15 @@ var _ = Context("Payments API Payments", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(createResponse.GetPaymentResponse().Data.ID).NotTo(Equal(""))
 
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
+			paymentID := createResponse.GetPaymentResponse().Data.ID
+			MustEventuallyOutbox(ctx, app.GetValue(), events.EventTypeSavedPayments,
+				WithPayloadSubset(struct {
+					ConnectorID string `json:"connectorID"`
+					ID          string `json:"id"`
+				}{
+					ConnectorID: connectorID,
+					ID:          paymentID,
+				}))
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetPayment(ctx, createResponse.GetPaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
@@ -162,7 +174,6 @@ var _ = Context("Payments API Payments", Serial, func() {
 func setupDebtorAndCreditorV3Accounts(
 	ctx context.Context,
 	app *testserver.Server,
-	e chan *nats.Msg,
 	connectorID string,
 	createdAt time.Time,
 ) (string, string) {
@@ -178,7 +189,14 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          creditorID,
+		}))
 
 	debtorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "debtor",
@@ -192,7 +210,14 @@ func setupDebtorAndCreditorV3Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          debtorID,
+		}))
 
 	return debtorID, creditorID
 }
@@ -200,7 +225,6 @@ func setupDebtorAndCreditorV3Accounts(
 func setupDebtorAndCreditorV2Accounts(
 	ctx context.Context,
 	app *testserver.Server,
-	e chan *nats.Msg,
 	connectorID string,
 	createdAt time.Time,
 ) (string, string) {
@@ -216,7 +240,14 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          creditorID,
+		}))
 
 	debtorID, err := createV2Account(ctx, app, components.AccountRequest{
 		Reference:    "debtor",
@@ -230,7 +261,14 @@ func setupDebtorAndCreditorV2Accounts(
 		},
 	})
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+	MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts,
+		WithPayloadSubset(struct {
+			ConnectorID string `json:"connectorID"`
+			ID          string `json:"id"`
+		}{
+			ConnectorID: connectorID,
+			ID:          debtorID,
+		}))
 
 	return debtorID, creditorID
 }

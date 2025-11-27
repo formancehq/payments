@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	stripesdk "github.com/stripe/stripe-go/v79"
-	gomock "github.com/golang/mock/gomock"
+	stripesdk "github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Plugin ExternalAccounts", func() {
@@ -23,7 +24,7 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg = &Plugin{client: m}
+		plg = &Plugin{client: m, logger: logging.Testing()}
 	})
 
 	AfterEach(func() {
@@ -54,12 +55,27 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 			}
 
 		})
+
+		It("skips fetching ExternalAccounts when from is the root account", func(ctx SpecContext) {
+			rootAccountID := "someRoot"
+			req := models.FetchNextExternalAccountsRequest{
+				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%s"}`, rootAccountID)),
+				State:       json.RawMessage(`{}`),
+				PageSize:    pageSize,
+			}
+			m.EXPECT().GetRootAccountID().Return(rootAccountID)
+			res, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.HasMore).To(BeFalse())
+		})
+
 		It("fetches next ExternalAccounts", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%s"}`, accRef)),
 				State:       json.RawMessage(`{}`),
 				PageSize:    pageSize,
 			}
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().GetExternalAccounts(gomock.Any(), accRef, gomock.Any(), int64(pageSize)).Return(
 				sampleExternalAccounts,
 				client.Timeline{LatestID: sampleExternalAccounts[len(sampleExternalAccounts)-1].ID},

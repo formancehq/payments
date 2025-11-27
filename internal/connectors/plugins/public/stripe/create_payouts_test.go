@@ -12,8 +12,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/stripe/stripe-go/v79"
-	gomock "github.com/golang/mock/gomock"
+	"github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Plugin Payouts Creation", func() {
@@ -100,6 +100,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().CreatePayout(gomock.Any(), &client.CreatePayoutRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
@@ -133,6 +134,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 				Status:      stripe.PayoutStatusInTransit,
 				Metadata:    samplePSPPaymentInitiation.Metadata,
 			}
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().CreatePayout(gomock.Any(), &client.CreatePayoutRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,

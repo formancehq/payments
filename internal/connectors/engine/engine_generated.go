@@ -427,3 +427,17 @@ func (mr *MockEngineMockRecorder) UpdatePaymentServiceUserLink(ctx, applicationN
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePaymentServiceUserLink", reflect.TypeOf((*MockEngine)(nil).UpdatePaymentServiceUserLink), ctx, applicationName, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
 }
+
+// UpdatePoolQuery mocks base method.
+func (m *MockEngine) UpdatePoolQuery(ctx context.Context, id uuid.UUID, query map[string]any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePoolQuery", ctx, id, query)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePoolQuery indicates an expected call of UpdatePoolQuery.
+func (mr *MockEngineMockRecorder) UpdatePoolQuery(ctx, id, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePoolQuery", reflect.TypeOf((*MockEngine)(nil).UpdatePoolQuery), ctx, id, query)
+}

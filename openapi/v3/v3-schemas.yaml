@@ -1934,10 +1934,12 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -1951,6 +1953,15 @@ components:
         data:
           description: The ID of the created pool
           type: string
+
+    V3UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
 
     V3PoolsCursorResponse:
       type: object
@@ -2005,6 +2016,7 @@ components:
         - id
         - name
         - createdAt
+        - type
         - poolAccounts
       properties:
         id:
@@ -2014,6 +2026,11 @@ components:
         createdAt:
           type: string
           format: date-time
+        type:
+          $ref: '#/components/schemas/V3PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         poolAccounts:
           type: array
           items:
@@ -2035,6 +2052,17 @@ components:
         amount:
           type: integer
           format: bigint
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
+
+    V3PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
 
     # TASKS
     V3GetTaskResponse:

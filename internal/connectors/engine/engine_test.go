@@ -185,7 +185,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should fail when storage error happens", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(expectedErr)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(expectedErr)
 			_, err := eng.InstallConnector(ctx, "psp", config)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -194,7 +194,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should fail when workflow start fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow err")
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -206,7 +206,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -475,6 +475,10 @@ var _ = Describe("Engine Tests", func() {
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(inputJson, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), gomock.Any(), workflow.UpdateSchedulePollingPeriod{
+				ConnectorID: connectorID,
+				Config:      models.Config{Name: newName, PollingPeriod: 20 * time.Minute},
+			}).Return(nil, nil)
 
 			expectedConnector := models.Connector{
 				ConnectorBase: models.ConnectorBase{
@@ -530,6 +534,7 @@ var _ = Describe("Engine Tests", func() {
 			}, nil)
 			err := eng.CreatePool(ctx, models.Pool{
 				ID:           poolID,
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: []models.AccountID{acc1, acc2},
 			})
 			Expect(err).ToNot(BeNil())
@@ -546,14 +551,68 @@ var _ = Describe("Engine Tests", func() {
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
 			store.EXPECT().PoolsUpsert(gomock.Any(), gomock.Any()).Return(nil)
-			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-creation", defaultTaskQueue),
-				workflow.RunSendEvents,
-				gomock.AssignableToTypeOf(workflow.SendEvents{}),
-			).Return(nil, nil)
 			err := eng.CreatePool(ctx, models.Pool{
 				ID:           poolID,
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: []models.AccountID{acc1, acc2},
 			})
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("update pool query", func() {
+		var (
+			poolID uuid.UUID
+		)
+
+		BeforeEach(func() {
+			poolID = uuid.New()
+		})
+
+		It("should return a storage error if pool is not found", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(nil, storage.ErrNotFound)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should return a validation error if pool is a static pool", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_STATIC,
+			}, nil)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should return a storage error if pool upsert fails", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("failed to update pool query"))
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(fmt.Errorf("failed to update pool query")))
+		})
+
+		It("should return a storage error if populate pool accounts fails", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("failed to populate pool accounts"))
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(fmt.Errorf("failed to populate pool accounts")))
+		})
+
+		It("should successfully update pool query", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
 			Expect(err).To(BeNil())
 		})
 	})
@@ -597,6 +656,7 @@ var _ = Describe("Engine Tests", func() {
 				ID:   accountID,
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
 			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(fmt.Errorf("failed to add account to pool"))
 			err := eng.AddAccountToPool(ctx, poolID, accountID)
 			Expect(err).ToNot(BeNil())
@@ -608,12 +668,8 @@ var _ = Describe("Engine Tests", func() {
 				ID:   accountID,
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
-			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
 			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
-			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-add-account", defaultTaskQueue),
-				workflow.RunSendEvents,
-				gomock.AssignableToTypeOf(workflow.SendEvents{}),
-			).Return(nil, nil)
+			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
 			err := eng.AddAccountToPool(ctx, poolID, accountID)
 			Expect(err).To(BeNil())
 		})

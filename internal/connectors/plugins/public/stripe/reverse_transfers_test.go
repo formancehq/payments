@@ -12,8 +12,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/stripe/stripe-go/v79"
-	gomock "github.com/golang/mock/gomock"
+	"github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Plugin Transfers Reversal", func() {
@@ -88,6 +88,7 @@ var _ = Describe("Stripe Plugin Transfers Reversal", func() {
 			req := models.ReverseTransferRequest{
 				PaymentInitiationReversal: samplePSPPaymentInitiationReversal,
 			}
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().ReverseTransfer(gomock.Any(), client.ReverseTransferRequest{
 				IdempotencyKey:   samplePSPPaymentInitiationReversal.Reference,
 				StripeTransferID: samplePSPPaymentInitiationReversal.Metadata["com.stripe.spec/transfer_id"],
@@ -126,6 +127,7 @@ var _ = Describe("Stripe Plugin Transfers Reversal", func() {
 					Metadata:    samplePSPPaymentInitiationReversal.RelatedPaymentInitiation.Metadata,
 				},
 			}
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().ReverseTransfer(gomock.Any(), client.ReverseTransferRequest{
 				IdempotencyKey:   samplePSPPaymentInitiationReversal.Reference,
 				StripeTransferID: samplePSPPaymentInitiationReversal.Metadata["com.stripe.spec/transfer_id"],

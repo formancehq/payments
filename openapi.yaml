@@ -275,6 +275,24 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /pools/{poolId}/query:
+    patch:
+      summary: Update the query of a pool
+      tags:
+        - payments.v1
+      operationId: updatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePoolQuery'
+      responses:
+        "204":
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /pools/{poolId}/accounts:
     post:
       summary: Add an account to a pool
@@ -2243,6 +2261,32 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /v3/pools/{poolID}/query:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update the query of a pool
+      operationId: v3UpdatePoolQuery
+      x-speakeasy-name-override: UpdatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3UpdatePoolQueryRequest'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /v3/pools/{poolID}/balances:
     get:
       tags:
@@ -3472,16 +3516,27 @@ components:
       required:
         - id
         - name
+        - type
         - accounts
       properties:
         id:
           type: string
         name:
           type: string
+        type:
+          $ref: '#/components/schemas/PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         accounts:
           type: array
           items:
             type: string
+    PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     PoolBalances:
       type: object
       required:
@@ -3509,6 +3564,11 @@ components:
         asset:
           type: string
           example: USD
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
     Account:
       type: object
       required:
@@ -3799,6 +3859,14 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
+    UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     AddAccountToPoolRequest:
       type: object
       required:
@@ -3810,10 +3878,12 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -5529,10 +5599,12 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -5545,6 +5617,14 @@ components:
         data:
           description: The ID of the created pool
           type: string
+    V3UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     V3PoolsCursorResponse:
       type: object
       required:
@@ -5595,6 +5675,7 @@ components:
         - id
         - name
         - createdAt
+        - type
         - poolAccounts
       properties:
         id:
@@ -5604,6 +5685,11 @@ components:
         createdAt:
           type: string
           format: date-time
+        type:
+          $ref: '#/components/schemas/V3PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         poolAccounts:
           type: array
           items:
@@ -5623,6 +5709,16 @@ components:
         amount:
           type: integer
           format: bigint
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
+    V3PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     V3GetTaskResponse:
       type: object
       required:
@@ -5752,6 +5848,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -5779,6 +5877,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5806,6 +5906,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         password:
           type: string
         pollingPeriod:
@@ -5860,6 +5962,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5884,6 +5988,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -5905,6 +6011,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -5929,6 +6037,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5951,6 +6061,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -5977,6 +6089,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6001,6 +6115,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6025,6 +6141,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6048,6 +6166,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -6082,6 +6202,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -6107,6 +6229,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6127,6 +6251,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6151,6 +6277,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
           default: 2m
@@ -6171,6 +6299,8 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
         provider:
@@ -6459,6 +6589,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolRequest'
+    UpdatePoolQuery:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePoolQueryRequest'
     AddAccountToPool:
       required: true
       content:

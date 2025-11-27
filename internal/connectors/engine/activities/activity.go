@@ -236,6 +236,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageConnectorsScheduleForDeletion,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageSchedulesGet",
+			Func: a.StorageSchedulesGet,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageSchedulesStore",
 			Func: a.StorageSchedulesStore,
 		}).
@@ -423,6 +427,8 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Name: "StorageOpenBankingConnectionsGetFromConnectionID",
 			Func: a.StorageOpenBankingConnectionsGetFromConnectionID,
 		}).
+		// TODO sendEvents activity should be removed in the next version (3.2)
+		// We need to keep it a while more until all RunSendEvent workflows are completed.
 		Append(temporalworker.Definition{
 			Name: "SendEvents",
 			Func: a.SendEvents,
@@ -430,6 +436,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "TemporalScheduleCreate",
 			Func: a.TemporalScheduleCreate,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalScheduleUpdatePollingPeriod",
+			Func: a.TemporalScheduleUpdatePollingPeriod,
 		}).
 		Append(temporalworker.Definition{
 			Name: "TemporalDeleteSchedule",
@@ -442,6 +452,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "TemporalWorkflowExecutionsList",
 			Func: a.TemporalWorkflowExecutionsList,
+		}).
+		Append(temporalworker.Definition{
+			Name: "OutboxPublishPendingEvents",
+			Func: a.OutboxPublishPendingEvents,
+		}).
+		Append(temporalworker.Definition{
+			Name: "OutboxDeleteOldProcessedEvents",
+			Func: a.OutboxDeleteOldProcessedEvents,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageOutboxEventsInsert",
+			Func: a.StorageOutboxEventsInsert,
 		})
 }
 

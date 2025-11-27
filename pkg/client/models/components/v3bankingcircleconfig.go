@@ -7,16 +7,17 @@ import (
 )
 
 type V3BankingcircleConfig struct {
-	AuthorizationEndpoint string  `json:"authorizationEndpoint"`
-	Endpoint              string  `json:"endpoint"`
-	Name                  string  `json:"name"`
-	PageSize              *int64  `default:"25" json:"pageSize"`
-	Password              string  `json:"password"`
-	PollingPeriod         *string `json:"pollingPeriod,omitempty"`
-	Provider              *string `default:"Bankingcircle" json:"provider"`
-	UserCertificate       string  `json:"userCertificate"`
-	UserCertificateKey    string  `json:"userCertificateKey"`
-	Username              string  `json:"username"`
+	AuthorizationEndpoint string `json:"authorizationEndpoint"`
+	Endpoint              string `json:"endpoint"`
+	Name                  string `json:"name"`
+	// Deprecated: From v3.1, this parameter will be ignored.
+	PageSize           *int64  `default:"25" json:"pageSize"`
+	Password           string  `json:"password"`
+	PollingPeriod      *string `json:"pollingPeriod,omitempty"`
+	Provider           *string `default:"Bankingcircle" json:"provider"`
+	UserCertificate    string  `json:"userCertificate"`
+	UserCertificateKey string  `json:"userCertificateKey"`
+	Username           string  `json:"username"`
 }
 
 func (v V3BankingcircleConfig) MarshalJSON() ([]byte, error) {

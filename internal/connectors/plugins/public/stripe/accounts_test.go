@@ -8,8 +8,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	stripesdk "github.com/stripe/stripe-go/v79"
-	gomock "github.com/golang/mock/gomock"
+	stripesdk "github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Plugin Accounts", func() {
@@ -51,6 +51,15 @@ var _ = Describe("Stripe Plugin Accounts", func() {
 				State:    json.RawMessage(`{}`),
 				PageSize: pageSize,
 			}
+			rootAccount := &stripesdk.Account{
+				ID: "root-account-id",
+				Settings: &stripesdk.AccountSettings{
+					Dashboard: &stripesdk.AccountSettingsDashboard{DisplayName: "displayName"}},
+			}
+			m.EXPECT().GetRootAccount().Return(
+				rootAccount,
+				nil,
+			)
 			// pageSize passed to client is less when we generate a root account
 			m.EXPECT().GetAccounts(gomock.Any(), gomock.Any(), int64(pageSize-1)).Return(
 				sampleAccounts,
@@ -62,7 +71,8 @@ var _ = Describe("Stripe Plugin Accounts", func() {
 			Expect(err).To(BeNil())
 			Expect(res.HasMore).To(BeTrue())
 			Expect(res.Accounts).To(HaveLen(req.PageSize))
-			Expect(res.Accounts[0].Reference).To(Equal("root"))
+			Expect(res.Accounts[0].Reference).To(Equal(rootAccount.ID))
+			Expect(res.Accounts[0].Name).To(Equal(&rootAccount.Settings.Dashboard.DisplayName))
 
 			var state accountsState
 

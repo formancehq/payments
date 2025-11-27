@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -27,18 +28,30 @@ func TestPoolsBalancesAt(t *testing.T) {
 
 	id := uuid.New()
 	poolsAccount := []models.AccountID{{}}
-	balancesResponse := []*models.Balance{
+	balancesResponse := []models.AggregatedBalance{
 		{
-			Asset:   "EUR/2",
-			Balance: big.NewInt(100),
+			RelatedAccounts: []models.AccountID{
+				{
+					Reference:   "test1",
+					ConnectorID: models.ConnectorID{},
+				},
+				{
+					Reference:   "test2",
+					ConnectorID: models.ConnectorID{},
+				},
+			},
+			Asset:  "EUR/2",
+			Amount: big.NewInt(400),
 		},
 		{
-			Asset:   "USD/2",
-			Balance: big.NewInt(200),
-		},
-		{
-			Asset:   "EUR/2",
-			Balance: big.NewInt(300),
+			RelatedAccounts: []models.AccountID{
+				{
+					Reference:   "test1",
+					ConnectorID: models.ConnectorID{},
+				},
+			},
+			Asset:  "USD/2",
+			Amount: big.NewInt(200),
 		},
 	}
 	at := time.Now().Add(-time.Hour)
@@ -81,11 +94,12 @@ func TestPoolsBalancesAt(t *testing.T) {
 			store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{
 				ID:           id,
 				Name:         "test",
+				Type:         models.POOL_TYPE_STATIC,
 				CreatedAt:    at,
 				PoolAccounts: poolsAccount,
 			}, test.poolsGetStorageErr)
 			if test.poolsGetStorageErr == nil {
-				store.EXPECT().BalancesGetAt(gomock.Any(), models.AccountID{}, at).Return(balancesResponse, test.accountsBalancesAtErr)
+				store.EXPECT().BalancesGetFromAccountIDs(gomock.Any(), gomock.Any(), pointer.For(at)).Return(balancesResponse, test.accountsBalancesAtErr)
 			}
 
 			balances, err := s.PoolsBalancesAt(context.Background(), id, at)
@@ -97,9 +111,18 @@ func TestPoolsBalancesAt(t *testing.T) {
 				for _, balance := range balances {
 					switch balance.Asset {
 					case "EUR/2":
+						require.Equal(t,
+							[]models.AccountID{
+								{Reference: "test1", ConnectorID: models.ConnectorID{}},
+								{Reference: "test2", ConnectorID: models.ConnectorID{}},
+							}, balance.RelatedAccounts)
 						require.Equal(t, big.NewInt(400), balance.Amount)
 						foundEUR = true
 					case "USD/2":
+						require.Equal(t,
+							[]models.AccountID{
+								{Reference: "test1", ConnectorID: models.ConnectorID{}},
+							}, balance.RelatedAccounts)
 						require.Equal(t, big.NewInt(200), balance.Amount)
 						foundUSD = true
 					default:

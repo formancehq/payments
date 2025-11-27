@@ -86,6 +86,7 @@ type Backend interface {
 
 	// Pools
 	PoolsCreate(ctx context.Context, pool models.Pool) error
+	PoolsUpdateQuery(ctx context.Context, id uuid.UUID, query map[string]any) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)
 	PoolsList(ctx context.Context, query storage.ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error)
 	PoolsDelete(ctx context.Context, id uuid.UUID) error

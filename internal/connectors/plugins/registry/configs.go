@@ -25,11 +25,6 @@ var (
 			Required:     false,
 			DefaultValue: "2m",
 		},
-		"pageSize": {
-			DataType:     TypeUnsignedInteger,
-			Required:     false,
-			DefaultValue: "100",
-		},
 		"name": {
 			DataType: TypeString,
 			Required: true,

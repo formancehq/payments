@@ -1585,6 +1585,33 @@ paths:
         - Authorization:
             - payments:write
 
+  /v3/pools/{poolID}/query:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update the query of a pool
+      operationId: v3UpdatePoolQuery
+      x-speakeasy-name-override: UpdatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3UpdatePoolQueryRequest"
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
   /v3/pools/{poolID}/balances:
     get:
       tags:

@@ -27,18 +27,30 @@ func TestPoolsBalancesLatest(t *testing.T) {
 
 	id := uuid.New()
 	poolsAccount := []models.AccountID{{}}
-	balancesResponse := []*models.Balance{
+	balancesResponse := []models.AggregatedBalance{
 		{
-			Asset:   "EUR/2",
-			Balance: big.NewInt(100),
+			RelatedAccounts: []models.AccountID{
+				{
+					Reference:   "test1",
+					ConnectorID: models.ConnectorID{},
+				},
+				{
+					Reference:   "test2",
+					ConnectorID: models.ConnectorID{},
+				},
+			},
+			Asset:  "EUR/2",
+			Amount: big.NewInt(400),
 		},
 		{
-			Asset:   "USD/2",
-			Balance: big.NewInt(200),
-		},
-		{
-			Asset:   "EUR/2",
-			Balance: big.NewInt(300),
+			RelatedAccounts: []models.AccountID{
+				{
+					Reference:   "test1",
+					ConnectorID: models.ConnectorID{},
+				},
+			},
+			Asset:  "USD/2",
+			Amount: big.NewInt(200),
 		},
 	}
 
@@ -81,10 +93,11 @@ func TestPoolsBalancesLatest(t *testing.T) {
 				ID:           id,
 				Name:         "test",
 				CreatedAt:    time.Now().Add(-time.Hour),
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: poolsAccount,
 			}, test.poolsGetStorageErr)
 			if test.poolsGetStorageErr == nil {
-				store.EXPECT().BalancesGetLatest(gomock.Any(), models.AccountID{}).Return(balancesResponse, test.accountsBalancesErr)
+				store.EXPECT().BalancesGetFromAccountIDs(gomock.Any(), gomock.Any(), nil).Return(balancesResponse, test.accountsBalancesErr)
 			}
 
 			balances, err := s.PoolsBalances(context.Background(), id)
@@ -97,8 +110,15 @@ func TestPoolsBalancesLatest(t *testing.T) {
 					switch balance.Asset {
 					case "EUR/2":
 						require.Equal(t, big.NewInt(400), balance.Amount)
+						require.Equal(t, []models.AccountID{
+							{Reference: "test1", ConnectorID: models.ConnectorID{}},
+							{Reference: "test2", ConnectorID: models.ConnectorID{}},
+						}, balance.RelatedAccounts)
 						foundEUR = true
 					case "USD/2":
+						require.Equal(t, []models.AccountID{
+							{Reference: "test1", ConnectorID: models.ConnectorID{}},
+						}, balance.RelatedAccounts)
 						require.Equal(t, big.NewInt(200), balance.Amount)
 						foundUSD = true
 					default:

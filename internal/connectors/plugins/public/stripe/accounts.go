@@ -8,15 +8,16 @@ import (
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/stripe/stripe-go/v80"
 )
 
 var (
-	rootAccountReference = "root"
+	legacyRootAccountReference = "root"
 )
 
-// root account reference is internal so we don't pass it to Stripe API clients
+// we used to create a dummy ID for the root account which we don't want to pass to Stripe API clients
 func resolveAccount(ref string) string {
-	if ref == rootAccountReference {
+	if ref == legacyRootAccountReference {
 		return ""
 	}
 	return ref
@@ -38,13 +39,15 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	if !oldState.RootCreated {
 		// create a root account if this is the first time this is being run
-		accounts = append(accounts, models.PSPAccount{
-			Name:      &rootAccountReference,
-			Reference: rootAccountReference,
-			CreatedAt: time.Now().UTC(),
-			Raw:       json.RawMessage("{}"),
-			Metadata:  map[string]string{},
-		})
+		rootAccount, err := p.client.GetRootAccount()
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
+		pspAccount, err := ToPSPAccount(*rootAccount)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
+		accounts = append(accounts, pspAccount)
 		oldState.RootCreated = true
 	}
 
@@ -58,24 +61,11 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	newState.Timeline = timeline
 
 	for _, acc := range rawAccounts {
-		raw, err := json.Marshal(acc)
+		pspAccount, err := ToPSPAccount(*acc)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
-
-		metadata := make(map[string]string)
-		for k, v := range acc.Metadata {
-			metadata[k] = v
-		}
-
-		defaultAsset := currency.FormatAsset(supportedCurrenciesWithDecimal, string(acc.DefaultCurrency))
-		accounts = append(accounts, models.PSPAccount{
-			Reference:    acc.ID,
-			CreatedAt:    time.Unix(acc.Created, 0).UTC(),
-			DefaultAsset: &defaultAsset,
-			Raw:          raw,
-			Metadata:     metadata,
-		})
+		accounts = append(accounts, pspAccount)
 	}
 
 	payload, err := json.Marshal(newState)
@@ -86,5 +76,32 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		Accounts: accounts,
 		NewState: payload,
 		HasMore:  hasMore,
+	}, nil
+}
+
+func ToPSPAccount(acc stripe.Account) (models.PSPAccount, error) {
+	raw, err := json.Marshal(acc)
+	if err != nil {
+		return models.PSPAccount{}, err
+	}
+
+	metadata := make(map[string]string)
+	for k, v := range acc.Metadata {
+		metadata[k] = v
+	}
+
+	var displayName string
+	if acc.Settings != nil && acc.Settings.Dashboard != nil {
+		displayName = acc.Settings.Dashboard.DisplayName
+	}
+
+	defaultAsset := currency.FormatAsset(supportedCurrenciesWithDecimal, string(acc.DefaultCurrency))
+	return models.PSPAccount{
+		Name:         &displayName,
+		Reference:    acc.ID,
+		CreatedAt:    time.Unix(acc.Created, 0).UTC(),
+		DefaultAsset: &defaultAsset,
+		Raw:          raw,
+		Metadata:     metadata,
 	}, nil
 }

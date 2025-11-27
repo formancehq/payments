@@ -3130,6 +3130,7 @@ Accept: application/json
 ```json
 {
   "name": "string",
+  "query": {},
   "accountIDs": [
     "string"
   ]
@@ -3214,6 +3215,8 @@ Accept: application/json
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
+        "type": "STATIC",
+        "query": {},
         "poolAccounts": [
           "string"
         ]
@@ -3266,6 +3269,8 @@ Accept: application/json
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
+    "type": "STATIC",
+    "query": {},
     "poolAccounts": [
       "string"
     ]
@@ -3330,6 +3335,61 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
+## Update the query of a pool
+
+<a id="opIdv3UpdatePoolQuery"></a>
+
+> Code samples
+
+```http
+PATCH /v3/pools/{poolID}/query HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`PATCH /v3/pools/{poolID}/query`
+
+> Body parameter
+
+```json
+{
+  "query": {}
+}
+```
+
+<h3 id="update-the-query-of-a-pool-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|poolID|path|string|true|The pool ID|
+|body|body|[V3UpdatePoolQueryRequest](#schemav3updatepoolqueryrequest)|false|none|
+
+> Example responses
+
+> default Response
+
+```json
+{
+  "errorCode": "VALIDATION",
+  "errorMessage": "[VALIDATION] missing required config field: pollingPeriod",
+  "details": "string"
+}
+```
+
+<h3 id="update-the-query-of-a-pool-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
 ## Get historical pool balances from a particular point in time
 
 <a id="opIdv3GetPoolBalances"></a>
@@ -3361,7 +3421,10 @@ Accept: application/json
   "data": [
     {
       "asset": "string",
-      "amount": 0
+      "amount": 0,
+      "relatedAccounts": [
+        "string"
+      ]
     }
   ]
 }
@@ -3409,7 +3472,10 @@ Accept: application/json
   "data": [
     {
       "asset": "string",
-      "amount": 0
+      "amount": 0,
+      "relatedAccounts": [
+        "string"
+      ]
     }
   ]
 }
@@ -6329,6 +6395,7 @@ None ( Scopes: payments:read )
 ```json
 {
   "name": "string",
+  "query": {},
   "accountIDs": [
     "string"
   ]
@@ -6341,7 +6408,8 @@ None ( Scopes: payments:read )
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |name|string|true|none|none|
-|accountIDs|[string]|true|none|none|
+|query|object|false|none|none|
+|accountIDs|[string]|false|none|none|
 
 <h2 id="tocS_V3CreatePoolResponse">V3CreatePoolResponse</h2>
 <!-- backwards compatibility -->
@@ -6363,6 +6431,26 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |data|string|true|none|The ID of the created pool|
 
+<h2 id="tocS_V3UpdatePoolQueryRequest">V3UpdatePoolQueryRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3updatepoolqueryrequest"></a>
+<a id="schema_V3UpdatePoolQueryRequest"></a>
+<a id="tocSv3updatepoolqueryrequest"></a>
+<a id="tocsv3updatepoolqueryrequest"></a>
+
+```json
+{
+  "query": {}
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|query|object|true|none|none|
+
 <h2 id="tocS_V3PoolsCursorResponse">V3PoolsCursorResponse</h2>
 <!-- backwards compatibility -->
 <a id="schemav3poolscursorresponse"></a>
@@ -6382,6 +6470,8 @@ None ( Scopes: payments:read )
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
+        "type": "STATIC",
+        "query": {},
         "poolAccounts": [
           "string"
         ]
@@ -6416,6 +6506,8 @@ None ( Scopes: payments:read )
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
+    "type": "STATIC",
+    "query": {},
     "poolAccounts": [
       "string"
     ]
@@ -6442,7 +6534,10 @@ None ( Scopes: payments:read )
   "data": [
     {
       "asset": "string",
-      "amount": 0
+      "amount": 0,
+      "relatedAccounts": [
+        "string"
+      ]
     }
   ]
 }
@@ -6467,6 +6562,8 @@ None ( Scopes: payments:read )
   "id": "string",
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
+  "type": "STATIC",
+  "query": {},
   "poolAccounts": [
     "string"
   ]
@@ -6481,6 +6578,8 @@ None ( Scopes: payments:read )
 |id|string|true|none|none|
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
+|type|[V3PoolTypeEnum](#schemav3pooltypeenum)|true|none|none|
+|query|object|false|none|none|
 |poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|none|
 
 <h2 id="tocS_V3PoolBalances">V3PoolBalances</h2>
@@ -6494,7 +6593,10 @@ None ( Scopes: payments:read )
 [
   {
     "asset": "string",
-    "amount": 0
+    "amount": 0,
+    "relatedAccounts": [
+      "string"
+    ]
   }
 ]
 
@@ -6516,7 +6618,10 @@ None ( Scopes: payments:read )
 ```json
 {
   "asset": "string",
-  "amount": 0
+  "amount": 0,
+  "relatedAccounts": [
+    "string"
+  ]
 }
 
 ```
@@ -6527,6 +6632,32 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |asset|string|true|none|none|
 |amount|integer(bigint)|true|none|none|
+|relatedAccounts|[string]¦null|false|none|none|
+
+<h2 id="tocS_V3PoolTypeEnum">V3PoolTypeEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3pooltypeenum"></a>
+<a id="schema_V3PoolTypeEnum"></a>
+<a id="tocSv3pooltypeenum"></a>
+<a id="tocsv3pooltypeenum"></a>
+
+```json
+"STATIC"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|STATIC|
+|*anonymous*|DYNAMIC|
 
 <h2 id="tocS_V3GetTaskResponse">V3GetTaskResponse</h2>
 <!-- backwards compatibility -->

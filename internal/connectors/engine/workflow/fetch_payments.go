@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -49,6 +50,12 @@ func (w Workflow) fetchNextPayments(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextPayments.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		paymentsResponse, err := activities.PluginFetchNextPayments(
@@ -56,7 +63,7 @@ func (w Workflow) fetchNextPayments(
 			fetchNextPayments.ConnectorID,
 			fetchNextPayments.FromPayload.GetPayload(),
 			state.State,
-			fetchNextPayments.Config.PageSize,
+			int(pageSize),
 			fetchNextPayments.Periodically,
 		)
 		if err != nil {
@@ -86,7 +93,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*3+len(paymentsResponse.PaymentsToDelete))
+		errChan := make(chan error, len(paymentsResponse.Payments)*2+len(paymentsResponse.PaymentsToDelete))
 		for _, payment := range payments {
 			p := payment
 
@@ -101,18 +108,6 @@ func (w Workflow) fetchNextPayments(
 					p.ID,
 				); err != nil {
 					errChan <- errors.Wrap(err, "updating payment initiation from payment")
-				}
-			})
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				// Send the payment event
-				if err := w.runSendEvents(ctx, SendEvents{
-					Payment: &p,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
 				}
 			})
 		}

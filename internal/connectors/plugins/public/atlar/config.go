@@ -16,6 +16,8 @@ type Config struct {
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
+const PAGE_SIZE = 100 // max size is 500 according to docs
+
 func unmarshalAndValidateConfig(payload []byte) (Config, error) {
 	var raw struct {
 		BaseURL       string `json:"baseUrl"`

@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 )
 
 const (
@@ -34,7 +34,7 @@ func (p *Plugin) reverseTransfer(ctx context.Context, pir models.PSPPaymentIniti
 		return models.PSPPayment{}, err
 	}
 	var account *string = nil
-	if pir.RelatedPaymentInitiation.SourceAccount != nil && pir.RelatedPaymentInitiation.SourceAccount.Reference != rootAccountReference {
+	if pir.RelatedPaymentInitiation.SourceAccount != nil && pir.RelatedPaymentInitiation.SourceAccount.Reference != p.client.GetRootAccountID() {
 		account = &pir.RelatedPaymentInitiation.SourceAccount.Reference
 	}
 	resp, err := p.client.ReverseTransfer(

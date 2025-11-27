@@ -9,12 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
- type Config struct {
+type Config struct {
 	ClientID      string                     `json:"clientID" validate:"required"`
 	APIKey        string                     `json:"apiKey" validate:"required"`
 	Endpoint      string                     `json:"endpoint" validate:"required"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
+
+const PAGE_SIZE = 100 // max page size is 100
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {

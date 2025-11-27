@@ -261,6 +261,24 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /pools/{poolId}/query:
+    patch:
+      summary: Update the query of a pool
+      tags:
+        - payments.v1
+      operationId: updatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePoolQuery'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /pools/{poolId}/accounts:
     post:
       summary: Add an account to a pool
@@ -1077,6 +1095,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolRequest'
+    UpdatePoolQuery:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePoolQueryRequest'
     AddAccountToPool:
       required: true
       content:
@@ -2088,16 +2112,27 @@ components:
       required:
         - id
         - name
+        - type
         - accounts
       properties:
         id:
           type: string
         name:
           type: string
+        type:
+          $ref: '#/components/schemas/PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         accounts:
           type: array
           items:
             type: string
+    PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     PoolBalances:
       type: object
       required:
@@ -2125,6 +2160,11 @@ components:
         asset:
           type: string
           example: USD
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
     Account:
       type: object
       required:
@@ -2415,6 +2455,14 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
+    UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     AddAccountToPoolRequest:
       type: object
       required:
@@ -2426,10 +2474,12 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:

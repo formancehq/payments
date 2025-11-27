@@ -8,8 +8,9 @@ import (
 )
 
 type PoolBalance struct {
-	Amount *big.Int `json:"amount"`
-	Asset  string   `json:"asset"`
+	Amount          *big.Int `json:"amount"`
+	Asset           string   `json:"asset"`
+	RelatedAccounts []string `json:"relatedAccounts,omitempty"`
 }
 
 func (p PoolBalance) MarshalJSON() ([]byte, error) {
@@ -35,4 +36,11 @@ func (o *PoolBalance) GetAsset() string {
 		return ""
 	}
 	return o.Asset
+}
+
+func (o *PoolBalance) GetRelatedAccounts() []string {
+	if o == nil {
+		return nil
+	}
+	return o.RelatedAccounts
 }

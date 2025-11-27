@@ -7,9 +7,10 @@ import (
 )
 
 type V3IncreaseConfig struct {
-	APIKey              string  `json:"apiKey"`
-	Endpoint            string  `json:"endpoint"`
-	Name                string  `json:"name"`
+	APIKey   string `json:"apiKey"`
+	Endpoint string `json:"endpoint"`
+	Name     string `json:"name"`
+	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize            *int64  `default:"25" json:"pageSize"`
 	PollingPeriod       *string `json:"pollingPeriod,omitempty"`
 	Provider            *string `default:"Increase" json:"provider"`

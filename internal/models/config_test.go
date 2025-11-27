@@ -17,7 +17,6 @@ func TestValidate(t *testing.T) {
 	t.Run("missing name", func(t *testing.T) {
 		config := models.Config{
 			PollingPeriod: 40 * time.Minute,
-			PageSize:      30,
 		}
 		err := config.Validate()
 		require.Error(t, err)
@@ -48,7 +47,6 @@ func TestValidate(t *testing.T) {
 				config := models.Config{
 					Name:          "test",
 					PollingPeriod: c.val,
-					PageSize:      30,
 				}
 				err := config.Validate()
 				require.Error(t, err)
@@ -56,35 +54,6 @@ func TestValidate(t *testing.T) {
 				require.True(t, ok)
 				require.Len(t, vErrs, 1)
 				assert.Equal(t, "PollingPeriod", vErrs[0].Field())
-				assert.Equal(t, c.tag, vErrs[0].Tag())
-			})
-		}
-	})
-
-	t.Run("page size out of bounds", func(t *testing.T) {
-		tests := map[string]struct {
-			val int
-			tag string
-		}{
-			"too long": {
-				val: 151,
-				tag: "lte",
-			},
-		}
-
-		for name, c := range tests {
-			t.Run(name, func(t *testing.T) {
-				config := models.Config{
-					Name:          "test",
-					PollingPeriod: 20 * time.Minute,
-					PageSize:      c.val,
-				}
-				err := config.Validate()
-				require.Error(t, err)
-				vErrs, ok := err.(validator.ValidationErrors)
-				require.True(t, ok)
-				require.Len(t, vErrs, 1)
-				assert.Equal(t, "PageSize", vErrs[0].Field())
 				assert.Equal(t, c.tag, vErrs[0].Tag())
 			})
 		}
@@ -107,7 +76,6 @@ func TestConfigMarshalJSON(t *testing.T) {
 	config := models.Config{
 		Name:          "test-config",
 		PollingPeriod: 5 * time.Minute,
-		PageSize:      50,
 	}
 
 	data, err := json.Marshal(config)
@@ -121,7 +89,6 @@ func TestConfigMarshalJSON(t *testing.T) {
 
 	assert.Equal(t, "test-config", jsonMap["name"])
 	assert.Equal(t, "5m0s", jsonMap["pollingPeriod"])
-	assert.Equal(t, float64(50), jsonMap["pageSize"])
 }
 
 func TestConfigUnmarshalJSON(t *testing.T) {
@@ -133,8 +100,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		jsonData := `{
 			"name": "test-config",
-			"pollingPeriod": "5m",
-			"pageSize": 50
+			"pollingPeriod": "5m"
 		}`
 
 		var config models.Config
@@ -145,7 +111,6 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 5*time.Minute, config.PollingPeriod)
-		assert.Equal(t, 50, config.PageSize)
 	})
 
 	t.Run("default polling period", func(t *testing.T) {
@@ -153,8 +118,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		// Given
 
 		jsonData := `{
-			"name": "test-config",
-			"pageSize": 50
+			"name": "test-config"
 		}`
 
 		var config models.Config
@@ -165,7 +129,6 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 30*time.Minute, config.PollingPeriod) // Default value
-		assert.Equal(t, 50, config.PageSize)
 	})
 
 	t.Run("invalid polling period", func(t *testing.T) {
@@ -174,8 +137,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		jsonData := `{
 			"name": "test-config",
-			"pollingPeriod": "invalid",
-			"pageSize": 50
+			"pollingPeriod": "invalid"
 		}`
 
 		var config models.Config
@@ -192,8 +154,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		jsonData := `{
 			"name": "test-config",
-			"pollingPeriod": "0s",
-			"pageSize": 0
+			"pollingPeriod": "0s"
 		}`
 
 		var config models.Config
@@ -204,7 +165,6 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 0*time.Second, config.PollingPeriod) // Zero is allowed
-		assert.Equal(t, 0, config.PageSize)                  // Zero is allowed
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
@@ -228,6 +188,5 @@ func TestDefaultConfig(t *testing.T) {
 	config := models.DefaultConfig()
 
 	assert.Equal(t, 30*time.Minute, config.PollingPeriod)
-	assert.Equal(t, 25, config.PageSize)
 	assert.Empty(t, config.Name)
 }

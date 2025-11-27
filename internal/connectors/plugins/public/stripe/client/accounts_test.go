@@ -7,8 +7,8 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/stripe/stripe-go/v79"
-	gomock "github.com/golang/mock/gomock"
+	"github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Client Accounts", func() {
@@ -18,13 +18,20 @@ var _ = Describe("Stripe Client Accounts", func() {
 		ctrl   *gomock.Controller
 		b      *client.MockBackend
 		token  string
+		err    error
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		b = client.NewMockBackend(ctrl)
 		token = "dummy"
-		cl = client.New("test", logger, b, token)
+		b.EXPECT().Call("GET", "/v1/account", token, nil, &stripe.Account{}).DoAndReturn(
+			func(_, _, _ string, _ any, account *stripe.Account) error {
+				account.ID = "rootID"
+				return nil
+			})
+		cl, err = client.New("test", logger, b, token)
+		Expect(err).To(BeNil())
 	})
 
 	Context("Get Accounts", func() {

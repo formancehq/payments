@@ -10,8 +10,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	stripesdk "github.com/stripe/stripe-go/v79"
-	gomock "github.com/golang/mock/gomock"
+	stripesdk "github.com/stripe/stripe-go/v80"
+	gomock "go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Stripe Plugin Balances", func() {

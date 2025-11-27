@@ -13,9 +13,9 @@ import (
 	bytes "bytes"
 	reflect "reflect"
 
-	stripe "github.com/stripe/stripe-go/v79"
-	form "github.com/stripe/stripe-go/v79/form"
-	gomock "github.com/golang/mock/gomock"
+	stripe "github.com/stripe/stripe-go/v80"
+	form "github.com/stripe/stripe-go/v80/form"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockBackend is a mock of Backend interface.
@@ -71,17 +71,17 @@ func (mr *MockBackendMockRecorder) CallMultipart(method, path, key, boundary, bo
 }
 
 // CallRaw mocks base method.
-func (m *MockBackend) CallRaw(method, path, key string, body *form.Values, params *stripe.Params, v stripe.LastResponseSetter) error {
+func (m *MockBackend) CallRaw(arg0, arg1, arg2 string, arg3 *form.Values, arg4 *stripe.Params, arg5 stripe.LastResponseSetter) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CallRaw", method, path, key, body, params, v)
+	ret := m.ctrl.Call(m, "CallRaw", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CallRaw indicates an expected call of CallRaw.
-func (mr *MockBackendMockRecorder) CallRaw(method, path, key, body, params, v any) *gomock.Call {
+func (mr *MockBackendMockRecorder) CallRaw(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallRaw", reflect.TypeOf((*MockBackend)(nil).CallRaw), method, path, key, body, params, v)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallRaw", reflect.TypeOf((*MockBackend)(nil).CallRaw), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // CallStreaming mocks base method.

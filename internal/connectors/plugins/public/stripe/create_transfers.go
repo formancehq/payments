@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 )
 
 func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (models.PSPPayment, error) {
@@ -29,7 +29,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 	}
 
 	var source *string = nil
-	if pi.SourceAccount != nil && pi.SourceAccount.Reference != rootAccountReference {
+	if pi.SourceAccount != nil && pi.SourceAccount.Reference != p.client.GetRootAccountID() {
 		source = &pi.SourceAccount.Reference
 	}
 

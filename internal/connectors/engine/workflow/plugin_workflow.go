@@ -3,6 +3,7 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -195,7 +196,7 @@ func (w Workflow) scheduleNextWorkflow(
 		infiniteRetryContext(ctx),
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
-			Jitter:     config.PollingPeriod / 2,
+			Jitter:     calculateJitter(config.PollingPeriod),
 			Interval: client.ScheduleIntervalSpec{
 				Every: config.PollingPeriod,
 			},
@@ -210,7 +211,9 @@ func (w Workflow) scheduleNextWorkflow(
 				},
 				TaskQueue: w.getDefaultTaskQueue(),
 			},
-			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+			// schedules are recreated at application start to ensure that any changes made to a connector's workflow take effect
+			// allow the workflow from the outdated schedule to finish running before starting a new one with the new workflow
+			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_BUFFER_ONE,
 			TriggerImmediately: true,
 			SearchAttributes: map[string]any{
 				SearchAttributeScheduleID: scheduleID,
@@ -222,6 +225,15 @@ func (w Workflow) scheduleNextWorkflow(
 		return err
 	}
 	return nil
+}
+
+func calculateJitter(pollingPeriod time.Duration) time.Duration {
+	maxJitter := time.Minute * 5
+	jitter := pollingPeriod / 2
+	if jitter <= maxJitter {
+		return jitter
+	}
+	return maxJitter
 }
 
 const Run = "Run"

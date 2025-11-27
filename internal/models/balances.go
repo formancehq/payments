@@ -73,10 +73,12 @@ func (b *Balance) IdempotencyKey() string {
 		AccountID     string
 		CreatedAt     int64
 		LastUpdatedAt int64
+		Asset         string
 	}{
 		AccountID:     b.AccountID.String(),
 		CreatedAt:     b.CreatedAt.UnixNano(),
 		LastUpdatedAt: b.LastUpdatedAt.UnixNano(),
+		Asset:         b.Asset,
 	}
 	return IdempotencyKey(ik)
 }
@@ -151,8 +153,51 @@ func (b *Balance) UnmarshalJSON(data []byte) error {
 }
 
 type AggregatedBalance struct {
-	Asset  string   `json:"asset"`
-	Amount *big.Int `json:"amount"`
+	Asset           string      `json:"asset"`
+	Amount          *big.Int    `json:"amount"`
+	RelatedAccounts []AccountID `json:"relatedAccounts"`
+}
+
+func (a AggregatedBalance) MarshalJSON() ([]byte, error) {
+	relatedAccounts := make([]string, len(a.RelatedAccounts))
+	for i := range a.RelatedAccounts {
+		relatedAccounts[i] = a.RelatedAccounts[i].String()
+	}
+
+	return json.Marshal(&struct {
+		Asset           string   `json:"asset"`
+		Amount          *big.Int `json:"amount"`
+		RelatedAccounts []string `json:"relatedAccounts"`
+	}{
+		Asset:           a.Asset,
+		Amount:          a.Amount,
+		RelatedAccounts: relatedAccounts,
+	})
+}
+
+func (a *AggregatedBalance) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		Asset           string   `json:"asset"`
+		Amount          *big.Int `json:"amount"`
+		RelatedAccounts []string `json:"relatedAccounts"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	a.Asset = aux.Asset
+	a.Amount = aux.Amount
+	a.RelatedAccounts = make([]AccountID, len(aux.RelatedAccounts))
+	for i := range aux.RelatedAccounts {
+		accountID, err := AccountIDFromString(aux.RelatedAccounts[i])
+		if err != nil {
+			return err
+		}
+		a.RelatedAccounts[i] = accountID
+	}
+
+	return nil
 }
 
 func FromPSPBalance(from PSPBalance, connectorID ConnectorID, psuId *uuid.UUID, openBankingConnectionId *string) (Balance, error) {

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 )
 
 func (c *client) GetExternalAccounts(
@@ -15,8 +15,8 @@ func (c *client) GetExternalAccounts(
 ) (results []*stripe.BankAccount, _ Timeline, hasMore bool, err error) {
 	results = make([]*stripe.BankAccount, 0, int(pageSize))
 
-	// return 0 results because this endpoint cannot be used for root account
-	if accountID == "" {
+	// this call cannot be used against the root account
+	if accountID == c.rootAccountID {
 		return results, timeline, false, nil
 	}
 

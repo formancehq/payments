@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -49,6 +50,12 @@ func (w Workflow) fetchExternalAccounts(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextExternalAccount.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		externalAccountsResponse, err := activities.PluginFetchNextExternalAccounts(
@@ -56,7 +63,7 @@ func (w Workflow) fetchExternalAccounts(
 			fetchNextExternalAccount.ConnectorID,
 			fetchNextExternalAccount.FromPayload.GetPayload(),
 			state.State,
-			fetchNextExternalAccount.Config.PageSize,
+			int(pageSize),
 			fetchNextExternalAccount.Periodically,
 		)
 		if err != nil {
@@ -87,20 +94,7 @@ func (w Workflow) fetchExternalAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
-		for _, externalAccount := range accounts {
-			acc := externalAccount
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := w.runSendEvents(ctx, SendEvents{
-					Account: &acc,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-		}
+		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts))
 
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion

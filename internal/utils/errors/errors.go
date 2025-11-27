@@ -47,3 +47,15 @@ func Cause(err error) error {
 		}
 	}
 }
+
+// RetryableError is a marker interface for errors that should be retried
+type RetryableError interface {
+	error
+	Retryable()
+}
+
+// NonRetryableError is a marker interface for errors that should not be retried
+type NonRetryableError interface {
+	error
+	NonRetryable()
+}

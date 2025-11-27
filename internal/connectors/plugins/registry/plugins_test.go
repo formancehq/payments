@@ -47,8 +47,8 @@ var _ = Describe("Register Plugin", func() {
 	})
 
 	Context("population of plugin configuration", func() {
-		RegisterPlugin(name, models.PluginTypeOpenBanking, fn, capabilities, conf)
-		RegisterPlugin(DummyPSPName, models.PluginTypePSP, fn, capabilities, conf)
+		RegisterPlugin(name, models.PluginTypeOpenBanking, fn, capabilities, conf, 25)
+		RegisterPlugin(DummyPSPName, models.PluginTypePSP, fn, capabilities, conf, 25)
 		It("can parse a required string", func(ctx SpecContext) {
 			configs := GetConfigs(false)
 			c, ok := configs[name]

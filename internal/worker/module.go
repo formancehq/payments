@@ -39,6 +39,7 @@ func NewModule(
 	temporalMaxSlotsPerPoller int,
 	temporalMaxLocalActivitySlots int,
 	debug bool,
+	skipOutboxScheduleCreation bool,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
@@ -79,6 +80,9 @@ func NewModule(
 				return engine.NewWorkerPool(logger, stack, temporalClient, workflows, activities, storage, connectors, options)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
+		fx.Invoke(func(workers *engine.WorkerPool) {
+			workers.SetSkipScheduleCreation(skipOutboxScheduleCreation)
+		}),
 		fx.Invoke(func(lc fx.Lifecycle, workers *engine.WorkerPool) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {

@@ -110,5 +110,8 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 	if configuration.Debug {
 		args = append(args, "--"+service.DebugFlag)
 	}
+	if configuration.SkipOutboxScheduleCreation {
+		args = append(args, "--"+cmd.SkipOutboxScheduleCreationFlag)
+	}
 	return args
 }
