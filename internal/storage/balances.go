@@ -288,6 +288,11 @@ func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpagi
 
 // Get balances from account IDs at a specific time. If at is nil, it will return the latest balances.
 func (s *store) BalancesGetFromAccountIDs(ctx context.Context, accountIDs []models.AccountID, at *time.Time) ([]models.AggregatedBalance, error) {
+	if len(accountIDs) == 0 {
+		// return empty array if no account IDs are provided
+		return []models.AggregatedBalance{}, nil
+	}
+
 	type assetBalances struct {
 		AccountIDs []string `bun:"account_ids,array"`
 		Asset      string   `bun:"asset"`
