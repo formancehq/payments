@@ -228,46 +228,10 @@ func transactionToPayments(tx bsclient.Transaction) ([]models.PSPPayment, error)
 	_, exchangeRate := tx.GetExchangeRate()
 	hasExchangeRate := exchangeRate != ""
 
-	// If exchange transaction with multiple legs, create two payments
-	if hasExchangeRate && len(nonZero) > 1 {
-		payments := make([]models.PSPPayment, 0, 2)
-
-		for _, l := range nonZero {
-			decimals, ok := supportedCurrenciesWithDecimal[l.Code]
-			if !ok {
-				return nil, fmt.Errorf("unsupported currency %s", l.Code)
-			}
-
-			amt, err := decimalToMinor(strings.TrimPrefix(strings.TrimSpace(l.Val), "+"), int(decimals))
-			if err != nil {
-				return nil, fmt.Errorf("parse amount %s %s: %w", l.Code, l.Val, err)
-			}
-
-			// Determine payment type based on sign
-			var pType models.PaymentType
-			var suffix string
-			if l.Neg {
-				pType = models.PAYMENT_TYPE_PAYOUT
-				suffix = "-out"
-			} else {
-				pType = models.PAYMENT_TYPE_PAYIN
-				suffix = "-in"
-			}
-
-			payment := models.PSPPayment{
-				Reference: string(tx.ID) + suffix,
-				CreatedAt: createdAt,
-				Type:      pType,
-				Amount:    amt,
-				Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, l.Code),
-				Scheme:    models.PAYMENT_SCHEME_OTHER,
-				Status:    models.PAYMENT_STATUS_SUCCEEDED,
-				Raw:       raw,
-			}
-			payments = append(payments, payment)
-		}
-
-		return payments, nil
+	// If exchange transaction, we skip it here because it will be handled by FetchTrades
+	// which generates both the Trade entity and the associated Payments.
+	if hasExchangeRate {
+		return nil, nil
 	}
 
 	// Single leg transaction - create one payment

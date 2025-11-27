@@ -101,6 +101,13 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return p.fetchNextPayments(ctx, req)
 }
 
+func (p *Plugin) FetchNextTrades(ctx context.Context, req models.FetchNextTradesRequest) (models.FetchNextTradesResponse, error) {
+	if p.client == nil {
+		return models.FetchNextTradesResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextTrades(ctx, req)
+}
+
 func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
 	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
 }

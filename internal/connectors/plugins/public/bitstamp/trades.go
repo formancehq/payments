@@ -48,8 +48,8 @@ func (p *Plugin) fetchNextTrades(ctx context.Context, req models.FetchNextTrades
 	p.logger.Infof("Fetching trades for %d accounts", len(accounts))
 
 	var (
-		allTransactions []bsclient.Transaction
-		hasMore         bool
+		allTrades []models.PSPTrade
+		hasMore   bool
 	)
 
 	offset := oldState.LastOffset
@@ -65,6 +65,7 @@ func (p *Plugin) fetchNextTrades(ctx context.Context, req models.FetchNextTrades
 
 	// Fetch transactions for each account and deduplicate by ID
 	seenTxIDs := make(map[string]bool)
+	uniqueTransactionCount := 0
 	duplicateCount := 0
 	for _, account := range accounts {
 		params := bsclient.TransactionsParams{
@@ -88,13 +89,27 @@ func (p *Plugin) fetchNextTrades(ctx context.Context, req models.FetchNextTrades
 		// Only add transactions we haven't seen yet
 		for _, tx := range rows {
 			txID := string(tx.ID)
-			if !seenTxIDs[txID] {
-				seenTxIDs[txID] = true
-				allTransactions = append(allTransactions, tx)
-			} else {
+			if seenTxIDs[txID] {
 				duplicateCount++
 				p.logger.Debugf("Skipping duplicate transaction ID: %s", txID)
+				continue
 			}
+			seenTxIDs[txID] = true
+			uniqueTransactionCount++
+
+			// Filter for exchange transactions only (those with exchange rates)
+			pair, rate := tx.GetExchangeRate()
+			if rate == "" || pair == "" {
+				continue
+			}
+
+			// Convert to PSPTrade immediately to attach account reference
+			trade, err := transactionToTrade(tx, account.ID)
+			if err != nil {
+				p.logger.Infof("Failed to convert transaction %s to trade: %v", tx.ID, err)
+				continue
+			}
+			allTrades = append(allTrades, trade)
 		}
 
 		if len(rows) >= limit {
@@ -102,47 +117,20 @@ func (p *Plugin) fetchNextTrades(ctx context.Context, req models.FetchNextTrades
 		}
 	}
 
-	p.logger.Infof("Total unique transactions: %d, duplicates filtered: %d", len(allTransactions), duplicateCount)
-
-	// Filter for exchange transactions only (those with exchange rates)
-	exchangeTransactions := make([]bsclient.Transaction, 0)
-	for _, tx := range allTransactions {
-		pair, rate := tx.GetExchangeRate()
-		if rate != "" && pair != "" {
-			exchangeTransactions = append(exchangeTransactions, tx)
-		}
-	}
-
-	p.logger.Infof("Filtered to %d exchange transactions (trades)", len(exchangeTransactions))
+	p.logger.Infof("Total unique trades: %d, duplicates filtered: %d", len(allTrades), duplicateCount)
 
 	// Sort by date (descending)
-	sort.Slice(exchangeTransactions, func(i, j int) bool {
-		timeI, errI := parseBitstampTime(exchangeTransactions[i].Datetime)
-		timeJ, errJ := parseBitstampTime(exchangeTransactions[j].Datetime)
-		if errI != nil || errJ != nil {
-			return false
-		}
-		return timeI.After(timeJ)
+	sort.Slice(allTrades, func(i, j int) bool {
+		return allTrades[i].CreatedAt.After(allTrades[j].CreatedAt)
 	})
 
-	// Convert to PSPTrades
-	trades := make([]models.PSPTrade, 0, len(exchangeTransactions))
-	for _, tx := range exchangeTransactions {
-		trade, err := transactionToTrade(tx)
-		if err != nil {
-			p.logger.Infof("Failed to convert transaction %s to trade: %v", tx.ID, err)
-			continue
-		}
-		trades = append(trades, trade)
-	}
-
-	p.logger.Infof("Converted to %d trades", len(trades))
+	p.logger.Infof("Converted to %d trades", len(allTrades))
 
 	// Update state from the *last* trade (descending order)
-	if len(trades) > 0 {
-		last := trades[len(trades)-1]
+	if len(allTrades) > 0 {
+		last := allTrades[len(allTrades)-1]
 		newState.LastCreationDate = last.CreatedAt
-		newState.LastOffset = offset + len(allTransactions)
+		newState.LastOffset = offset + uniqueTransactionCount
 	}
 
 	payload, err := json.Marshal(newState)
@@ -151,14 +139,14 @@ func (p *Plugin) fetchNextTrades(ctx context.Context, req models.FetchNextTrades
 	}
 
 	return models.FetchNextTradesResponse{
-		Trades:   trades,
+		Trades:   allTrades,
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
 }
 
 // transactionToTrade converts a Bitstamp exchange transaction to a PSPTrade
-func transactionToTrade(tx bsclient.Transaction) (models.PSPTrade, error) {
+func transactionToTrade(tx bsclient.Transaction, accountID string) (models.PSPTrade, error) {
 	// Raw
 	raw, err := json.Marshal(&tx)
 	if err != nil {
@@ -219,11 +207,11 @@ func transactionToTrade(tx bsclient.Transaction) (models.PSPTrade, error) {
 		}
 		ns := strings.TrimSpace(s)
 		isNeg := strings.HasPrefix(ns, "-")
-		
+
 		// Clean and convert to decimal string
 		cleanVal := strings.TrimPrefix(ns, "-")
 		cleanVal = strings.TrimPrefix(cleanVal, "+")
-		
+
 		nonZero = append(nonZero, leg{
 			Code:   code,
 			Val:    ns,
@@ -301,10 +289,11 @@ func transactionToTrade(tx bsclient.Transaction) (models.PSPTrade, error) {
 	symbol := fmt.Sprintf("%s-%s", baseCode, quoteCode)
 
 	return models.PSPTrade{
-		Reference:      string(tx.ID),
-		CreatedAt:      createdAt,
-		InstrumentType: models.TRADE_INSTRUMENT_TYPE_SPOT,
-		ExecutionModel: models.TRADE_EXECUTION_MODEL_ORDER_BOOK,
+		Reference:                 string(tx.ID),
+		CreatedAt:                 createdAt,
+		PortfolioAccountReference: &accountID,
+		InstrumentType:            models.TRADE_INSTRUMENT_TYPE_SPOT,
+		ExecutionModel:            models.TRADE_EXECUTION_MODEL_ORDER_BOOK,
 		Market: models.TradeMarket{
 			Symbol:     symbol,
 			BaseAsset:  baseAsset,
@@ -326,4 +315,3 @@ func transactionToTrade(tx bsclient.Transaction) (models.PSPTrade, error) {
 func ptrString(s string) *string {
 	return &s
 }
-

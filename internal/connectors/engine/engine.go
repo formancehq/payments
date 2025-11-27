@@ -497,28 +497,6 @@ func (e *engine) CreateFormanceTrade(ctx context.Context, trade models.Trade) er
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-trade-send-events-%s-%s-%s", e.stack, trade.ConnectorID.String(), trade.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			Trade: &trade,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
 	return nil
 }
 
