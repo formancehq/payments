@@ -30,8 +30,7 @@ type Storage interface {
 	// Balances
 	BalancesUpsert(ctx context.Context, balances []models.Balance) error
 	BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
-	BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error)
-	BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error)
+	BalancesGetFromAccountIDs(ctx context.Context, accountIDs []models.AccountID, at *time.Time) ([]models.AggregatedBalance, error)
 
 	// Bank Accounts
 	BankAccountsUpsert(ctx context.Context, bankAccount models.BankAccount) error

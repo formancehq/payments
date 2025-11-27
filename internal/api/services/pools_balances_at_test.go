@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -27,30 +28,30 @@ func TestPoolsBalancesAt(t *testing.T) {
 
 	id := uuid.New()
 	poolsAccount := []models.AccountID{{}}
-	balancesResponse := []*models.Balance{
+	balancesResponse := []models.AggregatedBalance{
 		{
-			AccountID: models.AccountID{
-				Reference:   "test1",
-				ConnectorID: models.ConnectorID{},
+			RelatedAccounts: []models.AccountID{
+				{
+					Reference:   "test1",
+					ConnectorID: models.ConnectorID{},
+				},
+				{
+					Reference:   "test2",
+					ConnectorID: models.ConnectorID{},
+				},
 			},
-			Asset:   "EUR/2",
-			Balance: big.NewInt(100),
+			Asset:  "EUR/2",
+			Amount: big.NewInt(400),
 		},
 		{
-			AccountID: models.AccountID{
-				Reference:   "test1",
-				ConnectorID: models.ConnectorID{},
+			RelatedAccounts: []models.AccountID{
+				{
+					Reference:   "test1",
+					ConnectorID: models.ConnectorID{},
+				},
 			},
-			Asset:   "USD/2",
-			Balance: big.NewInt(200),
-		},
-		{
-			AccountID: models.AccountID{
-				Reference:   "test2",
-				ConnectorID: models.ConnectorID{},
-			},
-			Asset:   "EUR/2",
-			Balance: big.NewInt(300),
+			Asset:  "USD/2",
+			Amount: big.NewInt(200),
 		},
 	}
 	at := time.Now().Add(-time.Hour)
@@ -98,7 +99,7 @@ func TestPoolsBalancesAt(t *testing.T) {
 				PoolAccounts: poolsAccount,
 			}, test.poolsGetStorageErr)
 			if test.poolsGetStorageErr == nil {
-				store.EXPECT().BalancesGetAt(gomock.Any(), models.AccountID{}, at).Return(balancesResponse, test.accountsBalancesAtErr)
+				store.EXPECT().BalancesGetFromAccountIDs(gomock.Any(), gomock.Any(), pointer.For(at)).Return(balancesResponse, test.accountsBalancesAtErr)
 			}
 
 			balances, err := s.PoolsBalancesAt(context.Background(), id, at)

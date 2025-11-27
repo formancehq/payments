@@ -66,6 +66,42 @@ func defaultBalances2() []models.Balance {
 	}
 }
 
+func defaultBalancesDuplicates() []models.Balance {
+	defaultAccounts := defaultAccounts()
+	return []models.Balance{
+		{
+			AccountID:     defaultAccounts[0].ID,
+			CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(100),
+		},
+		{
+			AccountID:     defaultAccounts[1].ID,
+			CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-30 * time.Minute).UTC().Time,
+			Asset:         "EUR/2",
+			Balance:       big.NewInt(1000),
+		},
+		{
+			AccountID:               defaultAccounts[0].ID,
+			CreatedAt:               now.Add(-55 * time.Minute).UTC().Time,
+			LastUpdatedAt:           now.Add(-55 * time.Minute).UTC().Time,
+			Asset:                   "EUR/2",
+			Balance:                 big.NewInt(150),
+			PsuID:                   &defaultPSU2.ID,
+			OpenBankingConnectionID: &defaultOpenBankingConnection.ConnectionID,
+		},
+		{
+			AccountID:     defaultAccounts[0].ID,
+			CreatedAt:     now.Add(-50 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-50 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(200),
+		},
+	}
+}
+
 func upsertBalances(t *testing.T, ctx context.Context, storage Storage, balances []models.Balance) {
 	require.NoError(t, storage.BalancesUpsert(ctx, balances))
 }
@@ -840,21 +876,21 @@ func TestBalancesGetAt(t *testing.T) {
 
 	t.Run("get balances at before first balance should return empty", func(t *testing.T) {
 		accounts := defaultAccounts()
-		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-61*time.Minute).UTC().Time)
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-61*time.Minute).UTC().Time))
 		require.NoError(t, err)
-		require.Nil(t, balances)
+		require.Empty(t, balances)
 	})
 
 	t.Run("get balances at after last balance updated at should return empty", func(t *testing.T) {
 		accounts := defaultAccounts()
-		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-50*time.Minute).UTC().Time)
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-50*time.Minute).UTC().Time))
 		require.NoError(t, err)
-		require.Nil(t, balances)
+		require.Empty(t, balances)
 	})
 
 	t.Run("get balances at", func(t *testing.T) {
 		accounts := defaultAccounts()
-		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-60*time.Minute).UTC().Time)
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-60*time.Minute).UTC().Time))
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 1)
@@ -872,7 +908,7 @@ func TestBalancesGetAt(t *testing.T) {
 
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
-		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-50*time.Minute).UTC().Time)
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-50*time.Minute).UTC().Time))
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 1)
@@ -899,14 +935,14 @@ func TestBalancesGetAt(t *testing.T) {
 
 		upsertBalances(t, ctx, store, []models.Balance{b, b1})
 
-		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-50*time.Minute).UTC().Time)
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-50*time.Minute).UTC().Time))
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 2)
 	})
 }
 
-func TestBalancesGetLatest(t *testing.T) {
+func TestBalancesGetLatestFromAccountIDs(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -917,11 +953,15 @@ func TestBalancesGetLatest(t *testing.T) {
 	createPSU(t, ctx, store, defaultPSU2)
 	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 	upsertAccounts(t, ctx, store, defaultAccounts())
-	upsertBalances(t, ctx, store, defaultBalances())
+	upsertBalances(t, ctx, store, defaultBalancesDuplicates())
 
 	t.Run("get latest balances returns 1 balance per currency", func(t *testing.T) {
 		accounts := defaultAccounts()
-		balances, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		accountIDs := make([]models.AccountID, len(accounts))
+		for i, account := range accounts {
+			accountIDs[i] = account.ID
+		}
+		balances, err := store.BalancesGetFromAccountIDs(ctx, accountIDs, nil)
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 2)
@@ -929,8 +969,12 @@ func TestBalancesGetLatest(t *testing.T) {
 		assert.Equal(t, balances[1].Asset, "USD/2")
 	})
 
-	t.Run("get balances after inserting a new balance", func(t *testing.T) {
+	t.Run("get latest balances after inserting a new balance", func(t *testing.T) {
 		accounts := defaultAccounts()
+		accountIDs := make([]models.AccountID, len(accounts))
+		for i, account := range accounts {
+			accountIDs[i] = account.ID
+		}
 		b := models.Balance{
 			AccountID:     accounts[0].ID,
 			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
@@ -941,15 +985,16 @@ func TestBalancesGetLatest(t *testing.T) {
 
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
-		balances, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		balances, err := store.BalancesGetFromAccountIDs(ctx, accountIDs, nil)
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 2)
 		assert.Equal(t, balances[1].Asset, "USD/2")
-		assert.Equal(t, balances[1].Balance, b.Balance)
+		assert.Equal(t, balances[1].Amount, b.Balance)
+		assert.Equal(t, balances[1].RelatedAccounts, []models.AccountID{accounts[0].ID})
 	})
 
-	t.Run("rollback on foreign key violation", func(t *testing.T) {
+	t.Run("rollback on foreign key violation with latest balances", func(t *testing.T) {
 		// Create a valid balance first
 		upsertConnector(t, ctx, store, defaultConnector)
 		createPSU(t, ctx, store, defaultPSU2)
@@ -958,7 +1003,7 @@ func TestBalancesGetLatest(t *testing.T) {
 		accounts := defaultAccounts()
 
 		// Count existing balances
-		balancesBefore, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		balancesBefore, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, nil)
 		require.NoError(t, err)
 		countBefore := len(balancesBefore)
 
@@ -977,7 +1022,7 @@ func TestBalancesGetLatest(t *testing.T) {
 		require.Error(t, err)
 
 		// Verify no balance was inserted
-		balancesAfter, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		balancesAfter, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, nil)
 		require.NoError(t, err)
 		assert.Equal(t, countBefore, len(balancesAfter), "no balances should be inserted on error")
 
