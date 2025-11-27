@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 func TestPaymentInitiationsApprove(t *testing.T) {

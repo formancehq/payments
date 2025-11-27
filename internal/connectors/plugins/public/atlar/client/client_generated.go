@@ -21,7 +21,7 @@ import (
 	third_parties "github.com/get-momo/atlar-v1-go-client/client/third_parties"
 	transactions "github.com/get-momo/atlar-v1-go-client/client/transactions"
 	models0 "github.com/get-momo/atlar-v1-go-client/models"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

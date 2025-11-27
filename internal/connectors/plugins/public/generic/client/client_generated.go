@@ -15,7 +15,7 @@ import (
 	time "time"
 
 	genericclient "github.com/formancehq/payments/genericclient"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockClient is a mock of Client interface.

@@ -12,7 +12,7 @@ package increase
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockWebhookVerifier is a mock of WebhookVerifier interface.

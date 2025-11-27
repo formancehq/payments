@@ -84,7 +84,7 @@ var _ = Context("Payments API Trades", Serial, func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+			Eventually(e, eventTimeout).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 			tradeReference := fmt.Sprintf("trade-%s", uuid.NewString())
 			price := "100.5"

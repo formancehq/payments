@@ -2,13 +2,16 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/uptrace/bun"
 )
 
@@ -22,8 +25,8 @@ type trade struct {
 	ID               models.TradeID             `bun:"id,pk,type:character varying,notnull"`
 	ConnectorID      models.ConnectorID         `bun:"connector_id,type:character varying,notnull"`
 	Reference        string                     `bun:"reference,type:text,notnull"`
-	CreatedAt        time.Time                  `bun:"created_at,type:timestamp without time zone,notnull"`
-	UpdatedAt        time.Time                  `bun:"updated_at,type:timestamp without time zone,notnull"`
+	CreatedAt        internalTime.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
+	UpdatedAt        internalTime.Time          `bun:"updated_at,type:timestamp without time zone,notnull"`
 	InstrumentType   models.TradeInstrumentType `bun:"instrument_type,type:text,notnull"`
 	ExecutionModel   models.TradeExecutionModel `bun:"execution_model,type:text,notnull"`
 	MarketSymbol     string                     `bun:"market_symbol,type:text,notnull"`
@@ -77,8 +80,8 @@ func fromTradeModels(t models.Trade) (*trade, error) {
 		ID:                 t.ID,
 		ConnectorID:        t.ConnectorID,
 		Reference:          t.Reference,
-		CreatedAt:          time.New(t.CreatedAt),
-		UpdatedAt:          time.New(t.UpdatedAt),
+		CreatedAt:          internalTime.New(t.CreatedAt),
+		UpdatedAt:          internalTime.New(t.UpdatedAt),
 		PortfolioAccountID: t.PortfolioAccountID,
 		InstrumentType:     t.InstrumentType,
 		ExecutionModel:     t.ExecutionModel,
@@ -167,7 +170,16 @@ func (s *store) TradesUpsert(ctx context.Context, trades []models.Trade) error {
 		toInsert = append(toInsert, trade)
 	}
 
-	_, err := s.db.NewInsert().
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return e("failed to create transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	var insertedTrades []trade
+	err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (id) DO UPDATE").
 		Set("updated_at = EXCLUDED.updated_at").
@@ -178,9 +190,98 @@ func (s *store) TradesUpsert(ctx context.Context, trades []models.Trade) error {
 		Set("legs = EXCLUDED.legs").
 		Set("metadata = EXCLUDED.metadata").
 		Set("raw = EXCLUDED.raw").
-		Exec(ctx)
+		Returning("*").
+		Scan(ctx, &insertedTrades)
 
-	return e("failed to upsert trades", err)
+	if err != nil {
+		return e("failed to upsert trades", err)
+	}
+
+	var outboxEvents []models.OutboxEvent
+	for _, t := range insertedTrades {
+		tradeModel, err := t.toTradeModels()
+		if err != nil {
+			return e("failed to convert trade to model", err)
+		}
+
+		payload := internalEvents.TradeMessagePayload{
+			ID:             tradeModel.ID.String(),
+			ConnectorID:    tradeModel.ConnectorID.String(),
+			Provider:       models.ToV3Provider(tradeModel.ConnectorID.Provider),
+			Reference:      tradeModel.Reference,
+			CreatedAt:      tradeModel.CreatedAt,
+			UpdatedAt:      tradeModel.UpdatedAt,
+			InstrumentType: tradeModel.InstrumentType.String(),
+			ExecutionModel: tradeModel.ExecutionModel.String(),
+			Market: internalEvents.TradeMarketPayload{
+				Symbol:     tradeModel.Market.Symbol,
+				BaseAsset:  tradeModel.Market.BaseAsset,
+				QuoteAsset: tradeModel.Market.QuoteAsset,
+			},
+			Side:     tradeModel.Side.String(),
+			Status:   tradeModel.Status.String(),
+			Metadata: tradeModel.Metadata,
+			RawData:  tradeModel.Raw,
+		}
+
+		if tradeModel.PortfolioAccountID != nil {
+			payload.PortfolioAccountID = tradeModel.PortfolioAccountID.String()
+		}
+
+		if tradeModel.OrderType != nil {
+			payload.OrderType = tradeModel.OrderType.String()
+		}
+
+		if tradeModel.TimeInForce != nil {
+			payload.TimeInForce = tradeModel.TimeInForce.String()
+		}
+
+		// Marshal complex objects
+		requestedJSON, _ := json.Marshal(tradeModel.Requested)
+		payload.Requested = requestedJSON
+
+		executedJSON, _ := json.Marshal(tradeModel.Executed)
+		payload.Executed = executedJSON
+
+		feesJSON, _ := json.Marshal(tradeModel.Fees)
+		payload.Fees = feesJSON
+
+		fillsJSON, _ := json.Marshal(tradeModel.Fills)
+		payload.Fills = fillsJSON
+
+		legsJSON, _ := json.Marshal(tradeModel.Legs)
+		payload.Legs = legsJSON
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal trade event payload", err)
+		}
+
+		outboxEvents = append(outboxEvents, models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: tradeModel.IdempotencyKey(),
+				ConnectorID:         &tradeModel.ConnectorID,
+			},
+			EventType:   events.EventTypeSavedTrade,
+			EntityID:    tradeModel.ID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   internalTime.Now().UTC().Time,
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &tradeModel.ConnectorID,
+		})
+	}
+
+	if len(outboxEvents) > 0 {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+
+	return nil
 }
 
 func (s *store) TradesUpdateMetadata(ctx context.Context, id models.TradeID, metadata map[string]string) error {

@@ -10,7 +10,7 @@ import (
 	reflect "reflect"
 
 	models "github.com/formancehq/payments/internal/models"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	uuid "github.com/google/uuid"
 )
 

@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 func TestPSUDelete(t *testing.T) {

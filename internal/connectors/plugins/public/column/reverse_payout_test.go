@@ -6,7 +6,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

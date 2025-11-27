@@ -3,7 +3,7 @@ package registry
 import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

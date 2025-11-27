@@ -9,13 +9,13 @@ import (
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"
-	legacy_gomock "github.com/golang/mock/gomock"
+	oldgomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.temporal.io/api/workflow/v1"
 	workflowservice "go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/api/workflowservicemock/v1"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -23,7 +23,7 @@ var _ = Describe("Temporal Workflow Executions List", func() {
 	var (
 		act        activities.Activities
 		ctrl       *gomock.Controller
-		legacyCtrl *legacy_gomock.Controller
+		legacyCtrl *oldgomock.Controller
 		t          *activities.MockClient
 		w          *workflowservicemock.MockWorkflowServiceClient
 		p          *connectors.MockManager
@@ -34,7 +34,7 @@ var _ = Describe("Temporal Workflow Executions List", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		legacyCtrl = legacy_gomock.NewController(GinkgoT())
+		legacyCtrl = oldgomock.NewController(GinkgoT())
 
 		p = connectors.NewMockManager(ctrl)
 		t = activities.NewMockClient(ctrl)

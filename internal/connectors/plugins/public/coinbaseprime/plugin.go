@@ -27,6 +27,7 @@ func init() {
 		},
 		capabilities,
 		Config{},
+		100,
 	)
 }
 

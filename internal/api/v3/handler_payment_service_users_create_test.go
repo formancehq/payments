@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 var _ = Describe("API v3 Payment Service Users Create", func() {

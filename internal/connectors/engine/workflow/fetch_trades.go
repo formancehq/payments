@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -47,6 +48,12 @@ func (w Workflow) fetchNextTrades(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextTrades.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		tradesResponse, err := activities.PluginFetchNextTrades(
@@ -54,7 +61,7 @@ func (w Workflow) fetchNextTrades(
 			fetchNextTrades.ConnectorID,
 			fetchNextTrades.FromPayload.GetPayload(),
 			state.State,
-			fetchNextTrades.Config.PageSize,
+			int(pageSize),
 			fetchNextTrades.Periodically,
 		)
 		if err != nil {
@@ -185,57 +192,6 @@ func (w Workflow) fetchNextTrades(
 				if err != nil {
 					return errors.Wrap(err, "updating trades with payment legs")
 				}
-			}
-		}
-
-		// STEP 4: Send events for both trades and payments
-		// Events are sent AFTER all database operations succeed, ensuring subscribers
-		// receive notifications only for fully persisted, consistent data.
-		//
-		// We send events in parallel for performance, but the WaitGroup ensures
-		// all events are sent before proceeding to the next batch of trades.
-		wg := workflow.NewWaitGroup(ctx)
-		// Calculate channel size: 1 trade event + potentially 2 payment events per trade
-		maxEvents := len(trades) * 3
-		errChan := make(chan error, maxEvents)
-
-		// Send trade events
-		for _, trade := range trades {
-			t := trade
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := w.runSendEvents(ctx, SendEvents{
-					Trade: &t,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending trade event")
-				}
-			})
-		}
-
-		// Send payment events for generated payments
-		// Each payment has adjustments, and we send one event per adjustment (v3 API contract)
-		for _, payment := range paymentsToCreate {
-			p := payment
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := w.runSendEvents(ctx, SendEvents{
-					Payment: &p,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending payment event")
-				}
-			})
-		}
-
-		wg.Wait(ctx)
-		close(errChan)
-
-		for err := range errChan {
-			if err != nil {
-				return err
 			}
 		}
 

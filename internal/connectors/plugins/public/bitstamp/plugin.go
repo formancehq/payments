@@ -19,7 +19,7 @@ const ProviderName = "bitstamp"
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypeExchange, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{})
+	}, capabilities, Config{}, 100)
 }
 
 // Plugin implements the Bitstamp connector for fetching accounts, balances, and transactions.

@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 var _ = Describe("API v2 Payment Initiation Deletion", func() {
