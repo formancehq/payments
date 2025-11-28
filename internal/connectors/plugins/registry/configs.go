@@ -23,7 +23,7 @@ var (
 		"pollingPeriod": {
 			DataType:     TypeDurationNs,
 			Required:     false,
-			DefaultValue: "2m",
+			DefaultValue: "30m",
 		},
 		"name": {
 			DataType: TypeString,

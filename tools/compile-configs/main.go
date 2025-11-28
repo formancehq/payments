@@ -127,7 +127,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 		},
 		"pollingPeriod": {
 			Type:    "string",
-			Default: "2m",
+			Default: "30m",
 		},
 		"pageSize": {
 			Type:                         "integer",

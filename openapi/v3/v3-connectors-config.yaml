@@ -61,7 +61,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Adyen
@@ -176,7 +176,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Currencycloud
@@ -199,7 +199,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Dummypay
@@ -354,7 +354,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Plaid
@@ -390,7 +390,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Powens
@@ -465,7 +465,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Tink

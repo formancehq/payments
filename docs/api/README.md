@@ -750,7 +750,7 @@ Accept: application/json
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Adyen",
   "webhookPassword": "string",
   "webhookUsername": "string"
@@ -926,7 +926,7 @@ Accept: application/json
     "liveEndpointPrefix": "string",
     "name": "string",
     "pageSize": 25,
-    "pollingPeriod": "2m",
+    "pollingPeriod": "30m",
     "provider": "Adyen",
     "webhookPassword": "string",
     "webhookUsername": "string"
@@ -972,7 +972,7 @@ Update connector config
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Adyen",
   "webhookPassword": "string",
   "webhookUsername": "string"
@@ -4257,7 +4257,7 @@ None ( Scopes: payments:read )
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Adyen",
   "webhookPassword": "string",
   "webhookUsername": "string"
@@ -4397,7 +4397,7 @@ None ( Scopes: payments:read )
     "liveEndpointPrefix": "string",
     "name": "string",
     "pageSize": 25,
-    "pollingPeriod": "2m",
+    "pollingPeriod": "30m",
     "provider": "Adyen",
     "webhookPassword": "string",
     "webhookUsername": "string"
@@ -4426,7 +4426,7 @@ None ( Scopes: payments:read )
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Adyen",
   "webhookPassword": "string",
   "webhookUsername": "string"
@@ -6849,7 +6849,7 @@ None ( Scopes: payments:read )
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Adyen",
   "webhookPassword": "string",
   "webhookUsername": "string"
@@ -6975,7 +6975,7 @@ xor
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Adyen",
   "webhookPassword": "string",
   "webhookUsername": "string"
@@ -7111,7 +7111,7 @@ xor
   "loginID": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Currencycloud"
 }
 
@@ -7142,7 +7142,7 @@ xor
   "linkFlowError": true,
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Dummypay",
   "updateLinkFlowError": true
 }
@@ -7333,7 +7333,7 @@ xor
   "isSandbox": true,
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Plaid"
 }
 
@@ -7368,7 +7368,7 @@ xor
   "maxConnectionsPerLink": 0,
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Powens"
 }
 
@@ -7465,7 +7465,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "30m",
   "provider": "Tink"
 }
 
