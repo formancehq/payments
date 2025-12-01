@@ -6403,12 +6403,14 @@ None ( Scopes: payments:read )
 
 ```
 
+Query and dynamic pools are available from Connectivity v3.1
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |name|string|true|none|none|
-|query|object|false|none|none|
+|query|object|false|none|The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.|
 |accountIDs|[string]|false|none|none|
 
 <h2 id="tocS_V3CreatePoolResponse">V3CreatePoolResponse</h2>

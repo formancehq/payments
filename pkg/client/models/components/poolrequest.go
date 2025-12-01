@@ -2,8 +2,10 @@
 
 package components
 
+// PoolRequest - Query and dynamic pools are available from Connectivity v3.1
 type PoolRequest struct {
-	Name       string         `json:"name"`
+	Name string `json:"name"`
+	// The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
 	Query      map[string]any `json:"query,omitempty"`
 	AccountIDs []string       `json:"accountIDs,omitempty"`
 }
