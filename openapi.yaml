@@ -3844,12 +3844,14 @@ components:
           type: string
     PoolRequest:
       type: object
+      description: Query and dynamic pools are available from Connectivity v3.1
       required:
         - name
       properties:
         name:
           type: string
         query:
+          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
           type: object
           additionalProperties: true
         accountIDs:
@@ -5565,12 +5567,14 @@ components:
           format: url
     V3CreatePoolRequest:
       type: object
+      description: Query and dynamic pools are available from Connectivity v3.1
       required:
         - name
       properties:
         name:
           type: string
         query:
+          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
           type: object
           additionalProperties: true
         accountIDs:

@@ -27,7 +27,7 @@ type PoolResponse struct {
 	ID       string          `json:"id"`
 	Name     string          `json:"name"`
 	Type     models.PoolType `json:"type"`
-	Query    map[string]any  `json:"query"`
+	Query    map[string]any  `json:"query,omitempty"`
 	Accounts []string        `json:"accounts"`
 }
 

@@ -36,7 +36,7 @@ func (p Pool) MarshalJSON() ([]byte, error) {
 		Name         string         `json:"name"`
 		CreatedAt    time.Time      `json:"createdAt"`
 		Type         PoolType       `json:"type"`
-		Query        map[string]any `json:"query"`
+		Query        map[string]any `json:"query,omitempty"`
 		PoolAccounts []string       `json:"poolAccounts"`
 	}
 
