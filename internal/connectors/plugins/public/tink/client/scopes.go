@@ -10,8 +10,6 @@ const (
 	SCOPES_USER_READ   Scopes = "user:read"
 	SCOPES_USER_DELETE Scopes = "user:delete"
 
-	SCOPES_CONSENTS_READONLY Scopes = "consents:readonly"
-
 	SCOPES_PROVIDERS_READ Scopes = "providers:read"
 
 	SCOPES_CREDENTIALS_READ    Scopes = "credentials:read"
@@ -33,7 +31,6 @@ var allScopes = []Scopes{
 	SCOPES_USER_CREATE,
 	SCOPES_USER_READ,
 	SCOPES_USER_DELETE,
-	SCOPES_CONSENTS_READONLY,
 	SCOPES_PROVIDERS_READ,
 	SCOPES_CREDENTIALS_READ,
 	SCOPES_CREDENTIALS_WRITE,
