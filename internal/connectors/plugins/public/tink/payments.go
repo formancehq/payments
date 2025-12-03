@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
@@ -12,6 +13,22 @@ import (
 
 type paymentsState struct {
 	NextPageToken string `json:"nextPageToken"`
+}
+
+func computeCreatedAt(transaction client.Transaction) time.Time {
+	if !transaction.TransactionDateTime.IsZero() {
+		return transaction.TransactionDateTime
+	}
+	if !transaction.Dates.Transaction.IsZero() {
+		return transaction.Dates.Transaction
+	}
+	if !transaction.BookedDateTime.IsZero() {
+		return transaction.BookedDateTime
+	}
+	if !transaction.Dates.Booked.IsZero() {
+		return transaction.Dates.Booked
+	}
+	return time.Now()
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -127,7 +144,7 @@ func toPSPPayments(
 
 		p := models.PSPPayment{
 			Reference:                   transaction.ID,
-			CreatedAt:                   transaction.TransactionDateTime,
+			CreatedAt:                   computeCreatedAt(transaction),
 			Type:                        paymentType,
 			Amount:                      amount,
 			Asset:                       currency.FormatAssetWithPrecision(transaction.Amount.CurrencyCode, precision),

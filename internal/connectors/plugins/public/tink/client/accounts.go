@@ -30,7 +30,7 @@ type AccountBalanceValue struct {
 	UnscaledValue json.Number `json:"unscaledValue"`
 }
 
-type Dates struct {
+type AccountDates struct {
 	LastRefreshed time.Time `json:"lastRefreshed"`
 }
 
@@ -39,7 +39,7 @@ type Account struct {
 	Name     string          `json:"name"`
 	Type     string          `json:"type"`
 	Balances AccountBalances `json:"balances"`
-	Dates    Dates           `json:"dates"`
+	Dates    AccountDates    `json:"dates"`
 }
 
 func (c *client) ListAccounts(ctx context.Context, userID string, nextPageToken string) (ListAccountsResponse, error) {
