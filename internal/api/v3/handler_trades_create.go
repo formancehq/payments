@@ -3,7 +3,9 @@ package v3
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/api"
@@ -317,7 +319,7 @@ func buildTradeLegs(trade models.Trade, basePayment models.Payment, quotePayment
 			Role:      models.TRADE_LEG_ROLE_BASE,
 			Direction: baseDirection,
 			Asset:     trade.Market.BaseAsset,
-			NetAmount: baseAmount.String(),
+			NetAmount: ratToString(baseAmount),
 			PaymentID: pointer.For(basePayment.ID),
 			Status:    pointer.For(basePayment.Status),
 		},
@@ -325,9 +327,21 @@ func buildTradeLegs(trade models.Trade, basePayment models.Payment, quotePayment
 			Role:      models.TRADE_LEG_ROLE_QUOTE,
 			Direction: quoteDirection,
 			Asset:     trade.Market.QuoteAsset,
-			NetAmount: quoteAmount.String(),
+			NetAmount: ratToString(quoteAmount),
 			PaymentID: pointer.For(quotePayment.ID),
 			Status:    pointer.For(quotePayment.Status),
 		},
 	}
+}
+
+func ratToString(r *big.Rat) string {
+	if r.IsInt() {
+		return r.Num().String()
+	}
+
+	// Use a high precision to capture decimals, then trim
+	s := r.FloatString(32)
+	s = strings.TrimRight(s, "0")
+	s = strings.TrimRight(s, ".")
+	return s
 }

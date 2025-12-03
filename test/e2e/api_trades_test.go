@@ -17,7 +17,6 @@ import (
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	"github.com/shopspring/decimal"
 
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
@@ -290,16 +289,16 @@ var _ = Context("Payments API Trades", Serial, func() {
 			Expect(baseLeg.Asset).To(Equal(baseAsset))
 			Expect(baseLeg.Status).NotTo(BeNil())
 			Expect(*baseLeg.Status).To(Equal("SUCCEEDED"))
-			baseNet := decimal.RequireFromString(baseLeg.NetAmount)
-			Expect(baseNet).To(Equal(decimal.RequireFromString("1")))
+			baseNet := baseLeg.NetAmount
+			Expect(baseNet).To(Equal("1"))
 
 			quoteLeg, ok := legsByRole["QUOTE"]
 			Expect(ok).To(BeTrue())
 			Expect(quoteLeg.Asset).To(Equal(quoteAsset))
 			Expect(quoteLeg.Status).NotTo(BeNil())
 			Expect(*quoteLeg.Status).To(Equal("SUCCEEDED"))
-			quoteNet := decimal.RequireFromString(quoteLeg.NetAmount)
-			Expect(quoteNet).To(Equal(decimal.RequireFromString("101")))
+			quoteNet := quoteLeg.NetAmount
+			Expect(quoteNet).To(Equal("101"))
 
 			basePaymentResp, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, basePaymentID.String())
 			Expect(err).To(BeNil())
@@ -309,7 +308,7 @@ var _ = Context("Payments API Trades", Serial, func() {
 			Expect(basePayment.Scheme).To(Equal(models.PAYMENT_SCHEME_EXCHANGE.String()))
 			Expect(basePayment.DestinationAccountID).NotTo(BeNil())
 			Expect(*basePayment.DestinationAccountID).To(Equal(portfolioAccountID))
-			Expect(decimal.NewFromBigInt(basePayment.Amount, 0)).To(Equal(baseNet))
+			Expect(basePayment.Amount.String()).To(Equal("100"))
 
 			quotePaymentResp, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, quotePaymentID.String())
 			Expect(err).To(BeNil())
@@ -319,7 +318,7 @@ var _ = Context("Payments API Trades", Serial, func() {
 			Expect(quotePayment.Scheme).To(Equal(models.PAYMENT_SCHEME_EXCHANGE.String()))
 			Expect(quotePayment.SourceAccountID).NotTo(BeNil())
 			Expect(*quotePayment.SourceAccountID).To(Equal(portfolioAccountID))
-			Expect(decimal.NewFromBigInt(quotePayment.Amount, 0)).To(Equal(quoteNet))
+			Expect(quotePayment.Amount.String()).To(Equal("10100"))
 		})
 	})
 })

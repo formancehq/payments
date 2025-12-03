@@ -5,8 +5,6 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-
-	"github.com/shopspring/decimal"
 )
 
 // TradeValidationCheck represents validation results
@@ -26,83 +24,105 @@ func ValidateTradeMath(trade Trade) TradeValidationCheck {
 
 	// 1) Per-fill math: price * quantity ≈ quoteAmount (within quantum)
 	for _, fill := range trade.Fills {
-		price, err := decimal.NewFromString(fill.Price)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("Fill %s: invalid price format: %v", fill.TradeReference, err))
+		price, ok := new(big.Rat).SetString(fill.Price)
+		if !ok {
+			errors = append(errors, fmt.Sprintf("Fill %s: invalid price format: %s", fill.TradeReference, fill.Price))
 			continue
 		}
 
-		qty, err := decimal.NewFromString(fill.Quantity)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("Fill %s: invalid quantity format: %v", fill.TradeReference, err))
+		qty, ok := new(big.Rat).SetString(fill.Quantity)
+		if !ok {
+			errors = append(errors, fmt.Sprintf("Fill %s: invalid quantity format: %s", fill.TradeReference, fill.Quantity))
 			continue
 		}
 
-		got, err := decimal.NewFromString(fill.QuoteAmount)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("Fill %s: invalid quoteAmount format: %v", fill.TradeReference, err))
+		got, ok := new(big.Rat).SetString(fill.QuoteAmount)
+		if !ok {
+			errors = append(errors, fmt.Sprintf("Fill %s: invalid quoteAmount format: %s", fill.TradeReference, fill.QuoteAmount))
 			continue
 		}
 
-		expected := roundTo(price.Mul(qty), quoteScale)
-		diff := expected.Sub(got).Abs()
+		// expected = price * qty
+		expected := new(big.Rat).Mul(price, qty)
+		
+		// diff = |expected - got|
+		diff := new(big.Rat).Sub(expected, got)
+		diff.Abs(diff)
 
-		if diff.GreaterThan(quantum(quoteScale)) {
+		// Check diff > quantum(quoteScale)
+		if diff.Cmp(quantum(quoteScale)) > 0 {
 			errors = append(errors, fmt.Sprintf(
 				"Fill %s: price*qty=%s vs quoteAmount=%s differs by %s > quantum(%d)",
-				fill.TradeReference, expected.String(), got.String(), diff.String(), quoteScale))
+				fill.TradeReference, expected.FloatString(int(quoteScale)), got.FloatString(int(quoteScale)), diff.FloatString(int(quoteScale)), quoteScale))
 		}
 	}
 
 	// 2) Executed sums
-	sumQty := decimal.Zero
-	sumQuote := decimal.Zero
+	sumQty := new(big.Rat)
+	sumQuote := new(big.Rat)
 	for _, fill := range trade.Fills {
-		qty, err := decimal.NewFromString(fill.Quantity)
-		if err != nil {
+		qty, ok := new(big.Rat).SetString(fill.Quantity)
+		if !ok {
 			continue // Already reported above
 		}
-		sumQty = sumQty.Add(qty)
+		sumQty.Add(sumQty, qty)
 
-		qa, err := decimal.NewFromString(fill.QuoteAmount)
-		if err != nil {
+		qa, ok := new(big.Rat).SetString(fill.QuoteAmount)
+		if !ok {
 			continue // Already reported above
 		}
-		sumQuote = sumQuote.Add(qa)
+		sumQuote.Add(sumQuote, qa)
 	}
 
 	if trade.Executed.Quantity != nil && *trade.Executed.Quantity != "" {
-		eq, err := decimal.NewFromString(*trade.Executed.Quantity)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("executed.quantity: invalid format: %v", err))
-		} else if eq.Sub(sumQty).Abs().GreaterThan(quantum(baseScale)) {
-			errors = append(errors, fmt.Sprintf(
-				"executed.quantity %s != sum(fills.quantity) %s",
-				eq.String(), sumQty.String()))
+		eq, ok := new(big.Rat).SetString(*trade.Executed.Quantity)
+		if !ok {
+			errors = append(errors, fmt.Sprintf("executed.quantity: invalid format: %s", *trade.Executed.Quantity))
+		} else {
+			diff := new(big.Rat).Sub(eq, sumQty)
+			diff.Abs(diff)
+			if diff.Cmp(quantum(baseScale)) > 0 {
+				errors = append(errors, fmt.Sprintf(
+					"executed.quantity %s != sum(fills.quantity) %s",
+					eq.FloatString(int(baseScale)), sumQty.FloatString(int(baseScale))))
+			}
 		}
 	}
 
 	if trade.Executed.QuoteAmount != nil && *trade.Executed.QuoteAmount != "" {
-		eqa, err := decimal.NewFromString(*trade.Executed.QuoteAmount)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("executed.quoteAmount: invalid format: %v", err))
-		} else if eqa.Sub(sumQuote).Abs().GreaterThan(quantum(quoteScale)) {
-			errors = append(errors, fmt.Sprintf(
-				"executed.quoteAmount %s != sum(fills.quoteAmount) %s",
-				eqa.String(), sumQuote.String()))
+		eqa, ok := new(big.Rat).SetString(*trade.Executed.QuoteAmount)
+		if !ok {
+			errors = append(errors, fmt.Sprintf("executed.quoteAmount: invalid format: %s", *trade.Executed.QuoteAmount))
+		} else {
+			diff := new(big.Rat).Sub(eqa, sumQuote)
+			diff.Abs(diff)
+			if diff.Cmp(quantum(quoteScale)) > 0 {
+				errors = append(errors, fmt.Sprintf(
+					"executed.quoteAmount %s != sum(fills.quoteAmount) %s",
+					eqa.FloatString(int(quoteScale)), sumQuote.FloatString(int(quoteScale))))
+			}
 		}
 	}
 
 	// 3) Average price
-	if trade.Executed.AveragePrice != nil && *trade.Executed.AveragePrice != "" && !sumQty.IsZero() {
-		computed := sumQuote.Div(sumQty)
-		got, err := decimal.NewFromString(*trade.Executed.AveragePrice)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("executed.averagePrice: invalid format: %v", err))
-		} else if !computed.Round(8).Equal(got.Round(8)) {
-			warnings = append(warnings, fmt.Sprintf(
-				"executed.averagePrice %s != computed %s (rounding differences are acceptable)",
-				got.String(), computed.String()))
+	// computed = sumQuote / sumQty
+	if trade.Executed.AveragePrice != nil && *trade.Executed.AveragePrice != "" && sumQty.Sign() != 0 {
+		computed := new(big.Rat).Quo(sumQuote, sumQty)
+		got, ok := new(big.Rat).SetString(*trade.Executed.AveragePrice)
+		if !ok {
+			errors = append(errors, fmt.Sprintf("executed.averagePrice: invalid format: %s", *trade.Executed.AveragePrice))
+		} else {
+			// Relaxed check for average price: check if within tolerance instead of strict rounding
+			// Use 8 decimal places tolerance as a heuristic (similar to previous Round(8))
+			diff := new(big.Rat).Sub(computed, got)
+			diff.Abs(diff)
+			tolerance := quantum(8) 
+			
+			if diff.Cmp(tolerance) > 0 {
+				warnings = append(warnings, fmt.Sprintf(
+					"executed.averagePrice %s != computed %s (rounding differences are acceptable)",
+					got.FloatString(8), computed.FloatString(8)))
+			}
 		}
 	}
 
@@ -110,17 +130,17 @@ func ValidateTradeMath(trade Trade) TradeValidationCheck {
 	if len(trade.Fees) > 0 {
 		fromFills := sumFeesByAssetFromFills(trade)
 		for _, fee := range trade.Fees {
-			top, err := decimal.NewFromString(fee.Amount)
-			if err != nil {
-				errors = append(errors, fmt.Sprintf("aggregated fee %s: invalid amount format: %v", fee.Asset, err))
+			top, ok := new(big.Rat).SetString(fee.Amount)
+			if !ok {
+				errors = append(errors, fmt.Sprintf("aggregated fee %s: invalid amount format: %s", fee.Asset, fee.Amount))
 				continue
 			}
 
 			if v, ok := fromFills[fee.Asset]; ok {
-				if !v.Equal(top) {
+				if v.Cmp(top) != 0 {
 					warnings = append(warnings, fmt.Sprintf(
 						"aggregated fee %s: top-level=%s vs sum(fills)=%s (ensure no double-counting)",
-						fee.Asset, top.String(), v.String()))
+						fee.Asset, top.FloatString(8), v.FloatString(8)))
 				}
 			}
 		}
@@ -134,32 +154,44 @@ func ValidateTradeMath(trade Trade) TradeValidationCheck {
 }
 
 // ExpectedLegAmounts calculates expected BASE and QUOTE payment amounts
-func ExpectedLegAmounts(trade Trade) (base decimal.Decimal, quote decimal.Decimal) {
-	sumQty := decimal.Zero
-	sumQuote := decimal.Zero
+// Returns values as big.Rat to preserve precision until conversion
+func ExpectedLegAmounts(trade Trade) (base *big.Rat, quote *big.Rat) {
+	sumQty := new(big.Rat)
+	sumQuote := new(big.Rat)
 
 	for _, fill := range trade.Fills {
-		qty, err := decimal.NewFromString(fill.Quantity)
-		if err != nil {
+		qty, ok := new(big.Rat).SetString(fill.Quantity)
+		if !ok {
 			continue
 		}
-		sumQty = sumQty.Add(qty)
+		sumQty.Add(sumQty, qty)
 
-		qa, err := decimal.NewFromString(fill.QuoteAmount)
-		if err != nil {
+		qa, ok := new(big.Rat).SetString(fill.QuoteAmount)
+		if !ok {
 			continue
 		}
-		sumQuote = sumQuote.Add(qa)
+		sumQuote.Add(sumQuote, qa)
 	}
 
 	feeByAsset := sumFeesByAssetFromFills(trade)
-	baseFee := feeByAsset[trade.Market.BaseAsset]
-	quoteFee := feeByAsset[trade.Market.QuoteAsset]
+	
+	// Helper to safely get fee
+	getFee := func(asset string) *big.Rat {
+		if f, ok := feeByAsset[asset]; ok {
+			return f
+		}
+		return new(big.Rat)
+	}
+
+	baseFee := getFee(trade.Market.BaseAsset)
+	quoteFee := getFee(trade.Market.QuoteAsset)
 
 	if trade.Side == TRADE_SIDE_BUY {
-		return sumQty, sumQuote.Add(quoteFee)
+		// BUY: You receive Base, You pay Quote + Fees
+		return sumQty, new(big.Rat).Add(sumQuote, quoteFee)
 	} else {
-		return sumQty.Add(baseFee), sumQuote
+		// SELL: You pay Base + Fees, You receive Quote
+		return new(big.Rat).Add(sumQty, baseFee), sumQuote
 	}
 }
 
@@ -183,11 +215,15 @@ func ValidatePaymentsAgainstTrade(trade Trade, basePayment Payment, quotePayment
 	baseScale := assetScale(baseAsset)
 	quoteScale := assetScale(quoteAsset)
 
-	baseExp, quoteExp := ExpectedLegAmounts(trade)
+	baseExpRat, quoteExpRat := ExpectedLegAmounts(trade)
+	
+	// Expected amounts in minor units (BigInt)
+	baseExp := ratToBigInt(baseExpRat, baseScale)
+	quoteExp := ratToBigInt(quoteExpRat, quoteScale)
 
-	// Convert big.Int amounts to decimal for comparison
-	baseGot := decimal.NewFromBigInt(basePayment.Amount, 0)
-	quoteGot := decimal.NewFromBigInt(quotePayment.Amount, 0)
+	// Got amounts (already in minor units)
+	baseGot := basePayment.Amount
+	quoteGot := quotePayment.Amount
 
 	// Check directions/types
 	if trade.Side == TRADE_SIDE_BUY {
@@ -206,19 +242,29 @@ func ValidatePaymentsAgainstTrade(trade Trade, basePayment Payment, quotePayment
 		}
 	}
 
-	// Check amounts within one quantum
-	baseDiff := baseExp.Sub(baseGot).Abs()
-	quoteDiff := quoteExp.Sub(quoteGot).Abs()
+	// Check amounts (exact integer match expected for minor units)
+	// Since we converted Expected to minor units using the same scale, they should match exactly or be within 1 unit due to rounding?
+	// Actually, if we use big.Rat for calculation and convert to Int at the end, we effectively floor/round.
+	// Let's check strict equality first, or small difference.
+	
+	baseDiff := new(big.Int).Sub(baseExp, baseGot)
+	baseDiff.Abs(baseDiff)
+	
+	quoteDiff := new(big.Int).Sub(quoteExp, quoteGot)
+	quoteDiff.Abs(quoteDiff)
 
-	if baseDiff.GreaterThan(quantum(baseScale)) {
+	// Tolerance of 1 minor unit
+	one := big.NewInt(1)
+
+	if baseDiff.Cmp(one) > 0 {
 		errors = append(errors, fmt.Sprintf(
-			"Base payment amount %s != expected %s (diff %s)",
+			"Base payment amount %s != expected %s (diff %s > 1)",
 			baseGot.String(), baseExp.String(), baseDiff.String()))
 	}
 
-	if quoteDiff.GreaterThan(quantum(quoteScale)) {
+	if quoteDiff.Cmp(one) > 0 {
 		errors = append(errors, fmt.Sprintf(
-			"Quote payment amount %s != expected %s (diff %s)",
+			"Quote payment amount %s != expected %s (diff %s > 1)",
 			quoteGot.String(), quoteExp.String(), quoteDiff.String()))
 	}
 
@@ -244,29 +290,50 @@ func assetScale(asset string) int32 {
 	return 0
 }
 
-// quantum returns the smallest unit for a given scale (10^-scale)
-func quantum(scale int32) decimal.Decimal {
-	ten := decimal.NewFromInt(10)
-	return decimal.NewFromInt(1).Div(ten.Pow(decimal.NewFromInt(int64(scale))))
+// quantum returns the smallest unit for a given scale (1/10^scale) as big.Rat
+func quantum(scale int32) *big.Rat {
+	num := big.NewInt(1)
+	den := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	return new(big.Rat).SetFrac(num, den)
 }
 
-// roundTo rounds a decimal to the specified scale
-func roundTo(d decimal.Decimal, scale int32) decimal.Decimal {
-	return d.Round(scale)
+// ratToBigInt converts a Rat to BigInt by multiplying by 10^scale (minor units)
+func ratToBigInt(r *big.Rat, scale int32) *big.Int {
+	if r == nil {
+		return big.NewInt(0)
+	}
+	multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+	
+	// r * multiplier
+	val := new(big.Rat).SetInt(multiplier)
+	val.Mul(val, r)
+	
+	// Return integer part (floor)
+	// Ideally we should round to nearest?
+	// "1.23" * 100 = 123.
+	// "1.239" * 100 = 123.9 -> 123 (floor).
+	// Let's stick to floor for now, or simple integer conversion which is what FloatString does.
+	// big.Rat.Num() / Denom()
+	
+	num := val.Num()
+	denom := val.Denom()
+	
+	res := new(big.Int).Div(num, denom)
+	return res
 }
 
 // sumFeesByAssetFromFills sums all fees by asset from fills
-func sumFeesByAssetFromFills(trade Trade) map[string]decimal.Decimal {
-	out := map[string]decimal.Decimal{}
+func sumFeesByAssetFromFills(trade Trade) map[string]*big.Rat {
+	out := map[string]*big.Rat{}
 	for _, fill := range trade.Fills {
 		for _, fee := range fill.Fees {
-			d, err := decimal.NewFromString(fee.Amount)
-			if err != nil {
+			d, ok := new(big.Rat).SetString(fee.Amount)
+			if !ok {
 				continue
 			}
 
 			if cur, ok := out[fee.Asset]; ok {
-				out[fee.Asset] = cur.Add(d)
+				cur.Add(cur, d)
 			} else {
 				out[fee.Asset] = d
 			}
@@ -278,14 +345,14 @@ func sumFeesByAssetFromFills(trade Trade) map[string]decimal.Decimal {
 // CreatePaymentsFromTrade creates two Payment objects from a Trade
 // Returns (basePayment, quotePayment, error)
 func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment, Payment, error) {
-	baseExp, quoteExp := ExpectedLegAmounts(trade)
+	baseExpRat, quoteExpRat := ExpectedLegAmounts(trade)
+	
+	baseScale := assetScale(trade.Market.BaseAsset)
+	quoteScale := assetScale(trade.Market.QuoteAsset)
 
-	// Convert decimals to big.Int for Payment amounts
-	baseAmount := new(big.Int)
-	baseAmount.SetString(baseExp.String(), 10)
-
-	quoteAmount := new(big.Int)
-	quoteAmount.SetString(quoteExp.String(), 10)
+	// Convert to minor units
+	baseAmount := ratToBigInt(baseExpRat, baseScale)
+	quoteAmount := ratToBigInt(quoteExpRat, quoteScale)
 
 	// Determine payment types based on trade side
 	var baseType, quoteType PaymentType
@@ -371,14 +438,12 @@ func CreatePaymentsFromTrade(trade Trade, portfolioAccountID AccountID) (Payment
 	quotePayment.Adjustments = make([]PaymentAdjustment, 0, len(trade.Fills))
 
 	for _, fill := range trade.Fills {
-		fillQty, _ := decimal.NewFromString(fill.Quantity)
-		fillQuoteAmt, _ := decimal.NewFromString(fill.QuoteAmount)
-
-		baseAdjAmount := new(big.Int)
-		baseAdjAmount.SetString(fillQty.String(), 10)
-
-		quoteAdjAmount := new(big.Int)
-		quoteAdjAmount.SetString(fillQuoteAmt.String(), 10)
+		fillQty, _ := new(big.Rat).SetString(fill.Quantity)
+		fillQuoteAmt, _ := new(big.Rat).SetString(fill.QuoteAmount)
+		
+		// Use ratToBigInt for proper scaling to minor units
+		baseAdjAmount := ratToBigInt(fillQty, baseScale)
+		quoteAdjAmount := ratToBigInt(fillQuoteAmt, quoteScale)
 
 		baseAdjRef := fmt.Sprintf("fill:%s", fill.TradeReference)
 		baseAdj := PaymentAdjustment{
