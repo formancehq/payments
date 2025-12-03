@@ -49,9 +49,16 @@ func (c *client) GetAccountBalances(ctx context.Context, account *Account) ([]*B
 
 	if resp.StatusCode != http.StatusOK {
 		// Try to unmarshal error response
-		body, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(body, &errRes)
-		return nil, fmt.Errorf("bitstamp: status %d: %s", resp.StatusCode, errRes.Error)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("bitstamp: status %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+
+		if err := json.Unmarshal(body, &errRes); err == nil && errRes.Error != "" {
+			return nil, fmt.Errorf("bitstamp: status %d: %s", resp.StatusCode, errRes.Error)
+		}
+
+		return nil, fmt.Errorf("bitstamp: status %d: %s", resp.StatusCode, string(body))
 	}
 
 	body, err := io.ReadAll(resp.Body)

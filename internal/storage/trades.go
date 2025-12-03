@@ -221,7 +221,6 @@ func (s *store) TradesUpsert(ctx context.Context, trades []models.Trade) error {
 			Side:     tradeModel.Side.String(),
 			Status:   tradeModel.Status.String(),
 			Metadata: tradeModel.Metadata,
-			RawData:  tradeModel.Raw,
 		}
 
 		if tradeModel.PortfolioAccountID != nil {
@@ -235,22 +234,6 @@ func (s *store) TradesUpsert(ctx context.Context, trades []models.Trade) error {
 		if tradeModel.TimeInForce != nil {
 			payload.TimeInForce = tradeModel.TimeInForce.String()
 		}
-
-		// Marshal complex objects
-		requestedJSON, _ := json.Marshal(tradeModel.Requested)
-		payload.Requested = requestedJSON
-
-		executedJSON, _ := json.Marshal(tradeModel.Executed)
-		payload.Executed = executedJSON
-
-		feesJSON, _ := json.Marshal(tradeModel.Fees)
-		payload.Fees = feesJSON
-
-		fillsJSON, _ := json.Marshal(tradeModel.Fills)
-		payload.Fills = fillsJSON
-
-		legsJSON, _ := json.Marshal(tradeModel.Legs)
-		payload.Legs = legsJSON
 
 		payloadBytes, err := json.Marshal(payload)
 		if err != nil {

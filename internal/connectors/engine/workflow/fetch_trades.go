@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -136,9 +137,9 @@ func (w Workflow) fetchNextTrades(
 			// This creates the bidirectional relationship: Trade -> Payment (via legs) and
 			// Payment -> Trade (via metadata)
 			for i, trade := range tradesWithLegs {
-				basePaymentIdx := i * 2      // Each trade generates 2 payments
+				basePaymentIdx := i * 2 // Each trade generates 2 payments
 				quotePaymentIdx := i*2 + 1
-				
+
 				basePayment := paymentsToCreate[basePaymentIdx]
 				quotePayment := paymentsToCreate[quotePaymentIdx]
 
@@ -146,7 +147,7 @@ func (w Workflow) fetchNextTrades(
 				// Direction semantics: CREDIT = funds coming in, DEBIT = funds going out
 				trade.Legs = []models.TradeLeg{
 					{
-						Role:      models.TRADE_LEG_ROLE_BASE,
+						Role: models.TRADE_LEG_ROLE_BASE,
 						Direction: func() models.TradeLegDirection {
 							if trade.Side == models.TRADE_SIDE_BUY {
 								return models.TRADE_LEG_DIRECTION_CREDIT // Buying = receiving base asset
@@ -159,7 +160,7 @@ func (w Workflow) fetchNextTrades(
 						Status:    &basePayment.Status,
 					},
 					{
-						Role:      models.TRADE_LEG_ROLE_QUOTE,
+						Role: models.TRADE_LEG_ROLE_QUOTE,
 						Direction: func() models.TradeLegDirection {
 							if trade.Side == models.TRADE_SIDE_BUY {
 								return models.TRADE_LEG_DIRECTION_DEBIT // Buying = spending quote asset
@@ -196,7 +197,51 @@ func (w Workflow) fetchNextTrades(
 		}
 
 		if len(nextTasks) > 0 {
-			// Logic for next tasks if needed
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextTrades.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
+			}
+
+			if !connector.ScheduledForDeletion {
+				wg := workflow.NewWaitGroup(ctx)
+				errChan := make(chan error, len(tradesResponse.Trades))
+
+				for _, trade := range tradesResponse.Trades {
+					t := trade
+
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
+
+						payload, err := json.Marshal(t)
+						if err != nil {
+							errChan <- errors.Wrap(err, "marshalling trade")
+							return
+						}
+
+						if err := w.runNextTasks(
+							ctx,
+							fetchNextTrades.Config,
+							connector,
+							&FromPayload{
+								ID:      t.Reference,
+								Payload: payload,
+							},
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
+				}
+
+				wg.Wait(ctx)
+				close(errChan)
+				for err := range errChan {
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
 
 		if tradesResponse.HasMore {

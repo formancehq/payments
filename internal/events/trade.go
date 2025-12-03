@@ -1,7 +1,6 @@
 package events
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/publish"
@@ -28,12 +27,6 @@ type TradeMessagePayload struct {
 	Market             TradeMarketPayload `json:"market"`
 	Side               string             `json:"side"`
 	Status             string             `json:"status"`
-	Requested          json.RawMessage    `json:"requested"`
-	Executed           json.RawMessage    `json:"executed"`
-	Fees               json.RawMessage    `json:"fees"`
-	Fills              json.RawMessage    `json:"fills"`
-	Legs               json.RawMessage    `json:"legs"`
-	RawData            json.RawMessage    `json:"rawData"`
 	Metadata           map[string]string  `json:"metadata,omitempty"`
 
 	// Optional fields
@@ -60,7 +53,6 @@ func (e Events) NewEventSavedTrades(trade models.Trade) publish.EventMessage {
 		Side:     trade.Side.String(),
 		Status:   trade.Status.String(),
 		Metadata: trade.Metadata,
-		RawData:  trade.Raw,
 	}
 
 	if trade.PortfolioAccountID != nil {
@@ -74,22 +66,6 @@ func (e Events) NewEventSavedTrades(trade models.Trade) publish.EventMessage {
 	if trade.TimeInForce != nil {
 		payload.TimeInForce = trade.TimeInForce.String()
 	}
-
-	// Marshal complex objects
-	requestedJSON, _ := json.Marshal(trade.Requested)
-	payload.Requested = requestedJSON
-
-	executedJSON, _ := json.Marshal(trade.Executed)
-	payload.Executed = executedJSON
-
-	feesJSON, _ := json.Marshal(trade.Fees)
-	payload.Fees = feesJSON
-
-	fillsJSON, _ := json.Marshal(trade.Fills)
-	payload.Fills = fillsJSON
-
-	legsJSON, _ := json.Marshal(trade.Legs)
-	payload.Legs = legsJSON
 
 	return publish.EventMessage{
 		IdempotencyKey: trade.IdempotencyKey(),

@@ -243,12 +243,15 @@ func hmacSHA256(key, msg []byte) []byte {
 // Must be unique within a 150-second window per API key.
 func newNonce() string {
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
-	b := make([]byte, 36)
+	t := time.Now().UnixNano()
+	prefix := fmt.Sprintf("%d", t)
+
+	b := make([]byte, 36-len(prefix))
 	rand.Read(b)
 	for i := range b {
 		b[i] = charset[b[i]%byte(len(charset))]
 	}
-	return string(b)
+	return prefix + string(b)
 }
 
 func mustParseURL(raw string) *url.URL {

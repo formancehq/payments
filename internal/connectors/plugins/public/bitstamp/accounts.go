@@ -9,33 +9,23 @@ import (
 )
 
 // accountsState tracks pagination state for fetching accounts.
-// Bitstamp returns accounts from configuration rather than paginated API,
-// so this remains empty but is kept for consistency with the framework.
 type accountsState struct {
-	// TODO: accountsState will be used to know at what point we're at when
-	// fetching the PSP accounts.
-	// This struct will be stored as a raw json, you're free to put whatever
-	// you want.
-	// Example:
-	// LastPage int `json:"lastPage"`
-	// LastIDCreated int64 `json:"lastIDCreated"`
+	Page int `json:"page"`
 }
 
 // fetchNextAccounts retrieves accounts from the Bitstamp connector configuration.
 // Unlike typical PSPs, Bitstamp accounts are configured at setup time with their API credentials.
-// This method returns all configured accounts in a single response (no pagination needed).
+// This method returns configured accounts with pagination support.
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var oldState accountsState
+	var state accountsState
 	if req.State != nil {
-		if err := json.Unmarshal(req.State, &oldState); err != nil {
+		if err := json.Unmarshal(req.State, &state); err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
 	}
 
-	newState := accountsState{}
-
-	// Get all accounts from config (no pagination from Bitstamp API)
-	pagedAccounts, err := p.client.GetAccounts(ctx, 0, req.PageSize)
+	// Get paged accounts from config
+	pagedAccounts, err := p.client.GetAccounts(ctx, state.Page, req.PageSize)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -62,10 +52,15 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		p.logger.Infof("Creating PSPAccount with reference: %s (name: %s)", pspAccount.Reference, acc.Name)
 		accounts = append(accounts, pspAccount)
 	}
-	
+
 	p.logger.Infof("Returning %d accounts for storage", len(accounts))
 
-	payload, err := json.Marshal(newState)
+	hasMore := len(pagedAccounts) == req.PageSize
+	if hasMore {
+		state.Page++
+	}
+
+	payload, err := json.Marshal(state)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -73,6 +68,6 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
-		HasMore:  false,
+		HasMore:  hasMore,
 	}, nil
 }

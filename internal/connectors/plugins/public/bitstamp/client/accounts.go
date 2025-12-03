@@ -22,9 +22,27 @@ type Account struct {
 func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error) {
 	_ = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
+	if page < 0 {
+		page = 0
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	start := page * pageSize
+	if start >= len(c.accounts) {
+		return []*Account{}, nil
+	}
+
+	end := start + pageSize
+	if end > len(c.accounts) {
+		end = len(c.accounts)
+	}
+
 	// put accounts from config in the response, but only the id and name fields
-	accounts := make([]*Account, len(c.accounts))
-	for i, account := range c.accounts {
+	slice := c.accounts[start:end]
+	accounts := make([]*Account, len(slice))
+	for i, account := range slice {
 		accounts[i] = &Account{
 			ID:   account.ID,
 			Name: account.Name,
