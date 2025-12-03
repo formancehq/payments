@@ -9,18 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-var (
-	refreshableItems = []string{
-		"CHECKING_ACCOUNTS",
-		"CHECKING_TRANSACTIONS",
-		"SAVING_ACCOUNTS",
-		"SAVING_TRANSACTIONS",
-		"CREDITCARD_ACCOUNTS",
-		"CREDITCARD_TRANSACTIONS",
-		"TRANSFER_DESTINATIONS",
-	}
-)
-
 func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 	if req.PaymentServiceUser == nil {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
@@ -94,9 +82,6 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	// We need to add the redirect URI to the query string directly because
 	// the encoded redirect URI is not UI friendly
 	u.RawQuery += "&redirect_uri=" + *req.FormanceRedirectURL
-	for _, item := range refreshableItems {
-		u.RawQuery += "&refreshable_items=" + item
-	}
 
 	return models.CreateUserLinkResponse{
 		Link: u.String(),
