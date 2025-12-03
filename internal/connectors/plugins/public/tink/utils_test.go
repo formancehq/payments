@@ -11,19 +11,23 @@ import (
 var _ = Describe("MapTinkAmount", func() {
 	Context("with GBP currency", func() {
 		DescribeTable("should map Tink amounts correctly",
-			func(unscaledValueStr string, scale int, expectedValue *big.Int, expectedAsset string) {
-				value, asset, err := MapTinkAmount(unscaledValueStr, strconv.Itoa(scale), "GBP")
+			func(unscaledValueStr string, scale int, currency string, expectedValue *big.Int, expectedAsset string) {
+				value, asset, err := MapTinkAmount(unscaledValueStr, strconv.Itoa(scale), currency)
 				Expect(err).To(BeNil())
-				Expect(value.Cmp(expectedValue)).To(Equal(0))
+				Expect(value).To(Equal(expectedValue))
 				Expect(*asset).To(Equal(expectedAsset))
 			},
-			Entry("negative value with scale 2", "-399", 2, big.NewInt(-399), "GBP/2"),
-			Entry("negative value with scale 1", "-99", 1, big.NewInt(-99), "GBP/1"),
-			Entry("negative value with scale 1", "-390", 1, big.NewInt(-390), "GBP/1"),
-			Entry("positive value with scale 2", "389259", 2, big.NewInt(389259), "GBP/2"),
-			Entry("positive value with scale 0", "3384", 0, big.NewInt(3384), "GBP/0"),
-			Entry("positive value with scale 2", "332635", 2, big.NewInt(332635), "GBP/2"),
-			Entry("positive value with negative scale -2", "132", -2, big.NewInt(13200), "GBP/0"),
+			Entry("negative value with scale 2", "-399", 2, "GBP", big.NewInt(-399), "GBP/2"),
+			Entry("negative value with scale 1", "-99", 1, "GBP", big.NewInt(-990), "GBP/2"),
+			Entry("negative value with scale 1", "-390", 1, "GBP", big.NewInt(-3900), "GBP/2"),
+			Entry("positive value with scale 2", "389259", 2, "GBP", big.NewInt(389259), "GBP/2"),
+			Entry("positive value with scale 4", "3000", 4, "GBP", big.NewInt(30), "GBP/2"),
+
+			Entry("positive value with scale 0", "3384", 0, "GBP", big.NewInt(338400), "GBP/2"),
+			Entry("positive value with scale 2", "332635", 2, "GBP", big.NewInt(332635), "GBP/2"),
+			Entry("positive value with negative scale -2", "132", -2, "GBP", big.NewInt(1_320_000), "GBP/2"),
+
+			Entry("currency with precision of 3", "132", 2, "JOD", big.NewInt(1320), "JOD/3"),
 		)
 	})
 

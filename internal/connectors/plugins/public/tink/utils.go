@@ -16,7 +16,7 @@ var (
 )
 
 func MapTinkAmount(unscaledValueString string, scaleString string, currencyCode string) (value *big.Int, asset *string, err error) {
-	_, ok := currency.ISO4217Currencies[currencyCode]
+	standardPrecision, ok := currency.ISO4217Currencies[currencyCode]
 	if !ok {
 		return nil, nil, errors.Wrap(ErrInvalidCurrency, fmt.Sprintf("invalid currency code: %s", currencyCode))
 	}
@@ -31,17 +31,17 @@ func MapTinkAmount(unscaledValueString string, scaleString string, currencyCode 
 		return nil, nil, errors.Wrap(ErrInvalidScale, fmt.Sprintf("invalid scale: %s", scaleString))
 	}
 
-	var precision int
-	if scale < 0 {
-		// If scale is negative, multiply by 10^(-scale)
-		multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-scale)), nil)
+	scaleDifference := standardPrecision - scale
+	if scaleDifference > 0 {
+		multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scaleDifference)), nil)
 		value = new(big.Int).Mul(unscaledValue, multiplier)
-		precision = 0
+	} else if scaleDifference < 0 {
+		divisor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(-scaleDifference)), nil)
+		value = new(big.Int).Div(unscaledValue, divisor)
 	} else {
 		value = unscaledValue
-		precision = scale
 	}
 
-	assetStr := currency.FormatAssetWithPrecision(currencyCode, precision)
+	assetStr := currency.FormatAssetWithPrecision(currencyCode, standardPrecision)
 	return value, &assetStr, nil
 }
