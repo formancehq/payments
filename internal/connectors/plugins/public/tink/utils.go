@@ -10,11 +10,17 @@ import (
 )
 
 var (
-	ErrInvalidAmount = fmt.Errorf("invalid amount")
-	ErrInvalidScale  = fmt.Errorf("invalid scale")
+	ErrInvalidAmount   = fmt.Errorf("invalid amount")
+	ErrInvalidScale    = fmt.Errorf("invalid scale")
+	ErrInvalidCurrency = fmt.Errorf("invalid currency")
 )
 
 func MapTinkAmount(unscaledValueString string, scaleString string, currencyCode string) (value *big.Int, asset *string, err error) {
+	_, ok := currency.ISO4217Currencies[currencyCode]
+	if !ok {
+		return nil, nil, errors.Wrap(ErrInvalidCurrency, fmt.Sprintf("invalid currency code: %s", currencyCode))
+	}
+
 	unscaledValue, ok := new(big.Int).SetString(unscaledValueString, 10)
 	if !ok {
 		return nil, nil, errors.Wrap(ErrInvalidAmount, fmt.Sprintf("invalid amount: %s", unscaledValueString))

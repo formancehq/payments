@@ -41,5 +41,12 @@ var _ = Describe("MapTinkAmount", func() {
 			Expect(value).To(BeNil())
 			Expect(asset).To(BeNil())
 		})
+
+		It("should return error for invalid currency", func() {
+			value, asset, err := MapTinkAmount("100", "2", "INVALID")
+			Expect(err).ToNot(BeNil())
+			Expect(value).To(BeNil())
+			Expect(asset).To(BeNil())
+		})
 	})
 })
