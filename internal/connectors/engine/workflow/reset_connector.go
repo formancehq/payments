@@ -1,20 +1,19 @@
 package workflow
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type ResetConnector struct {
 	ConnectorID       models.ConnectorID
 	DefaultWorkerName string
+	Config            models.Config
 	TaskID            models.TaskID
 }
 
@@ -84,11 +83,6 @@ func (w Workflow) resetConnector(
 		return nil, fmt.Errorf("uninstall connector: %w", err)
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return nil, temporal.NewNonRetryableApplicationError("unmarshal config", "INVALID_CONFIG", err)
-	}
-
 	// We need to change the connector ID to a new one, otherwise, we will
 	// have some conflicts with temporal and previous workflows related to the
 	// previous connector ID.
@@ -130,7 +124,7 @@ func (w Workflow) resetConnector(
 		RunInstallConnector,
 		InstallConnector{
 			ConnectorID: newConnector.ID,
-			Config:      config,
+			Config:      resetConnector.Config,
 		},
 	).Get(ctx, nil); err != nil {
 		return nil, fmt.Errorf("install connector: %w", err)

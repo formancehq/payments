@@ -35,7 +35,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_WithoutInstance_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -79,7 +79,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_WithNextTasks_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -129,7 +129,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_WithNextTasks_ConnectorScheduledFor
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -187,7 +187,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -236,7 +236,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_WithoutNextTasks_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -295,7 +295,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_HasMoreLoop_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -315,7 +315,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -343,7 +343,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesGet_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -382,7 +382,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_PluginFetchNextOthers_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -427,7 +427,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -470,7 +470,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesUpdate_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,

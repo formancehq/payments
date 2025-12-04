@@ -40,7 +40,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_WithoutInstance_Success()
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -89,7 +89,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_WithNextTasks_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -144,7 +144,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_WithNextTasks_ConnectorSc
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -207,7 +207,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -261,7 +261,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_WithoutNextTasks_Success(
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -325,7 +325,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_HasMoreLoop_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -345,7 +345,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageInstancesStore_Err
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -375,7 +375,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageStatesGet_Error() 
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -414,7 +414,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_PluginFetchNextExternalAc
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -459,7 +459,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageAccountsStore_Erro
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -505,7 +505,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageStatesStore_Error(
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -549,7 +549,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageInstancesUpdate_Er
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,

@@ -65,7 +65,11 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	temporalMaxConcurrentActivityTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentActivityTaskPollersFlag)
 	temporalMaxSlotsPerPoller, _ := cmd.Flags().GetInt(temporalMaxSlotsPerPollerFlag)
 	temporalMaxLocalActivitySlots, _ := cmd.Flags().GetInt(temporalMaxLocalActivitySlotsFlag)
+
 	skipOutboxScheduleCreation, _ := cmd.Flags().GetBool(SkipOutboxScheduleCreationFlag)
+
+	pollingPeriodDefault, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodDefault)
+	pollingPeriodMinimum, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodMinimum)
 	return fx.Options(
 		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
 		worker.NewModule(
@@ -79,6 +83,8 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 			temporalMaxLocalActivitySlots,
 			service.IsDebug(cmd),
 			skipOutboxScheduleCreation,
+			pollingPeriodDefault,
+			pollingPeriodMinimum,
 		),
 	), nil
 }

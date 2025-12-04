@@ -40,7 +40,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_WithoutInstance_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -89,7 +89,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_WithNextTasks_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -144,7 +144,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_WithNextTasks_ConnectorScheduledF
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -207,7 +207,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -261,7 +261,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_WithoutNextTasks_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -325,7 +325,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_HasMoreLoop_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -344,7 +344,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageInstancesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -374,7 +374,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageStatesGet_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -410,7 +410,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_PluginFetchNextAccounts_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -458,7 +458,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageAccountsStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -502,7 +502,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageStatesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -549,7 +549,7 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_StorageInstancesUpdate_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,

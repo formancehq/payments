@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	pluginserrors "github.com/formancehq/payments/internal/connectors/plugins"
@@ -20,7 +21,7 @@ var (
 
 //go:generate mockgen -source manager.go -destination manager_generated.go -package connectors . Manager
 type Manager interface {
-	Load(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) (json.RawMessage, error)
+	Load(models.ConnectorID, string, json.RawMessage, bool) (string, json.RawMessage, error)
 	Unload(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -33,6 +34,8 @@ type manager struct {
 	connectors map[string]connector
 	rwMutex    sync.RWMutex
 
+	configurer *Configurer
+
 	debug bool
 }
 
@@ -40,78 +43,90 @@ type connector struct {
 	plugin models.Plugin
 	config models.Config
 
+	configurer *Configurer
+
 	validatedConfigJson json.RawMessage
 }
 
 func NewManager(
 	logger logging.Logger,
 	debug bool,
+	pollingPeriodDefault time.Duration,
+	pollingPeriodMinimum time.Duration,
 ) *manager {
 	return &manager{
 		logger:     logger,
+		configurer: NewConfigurer(pollingPeriodDefault, pollingPeriodMinimum),
 		connectors: make(map[string]connector),
 		debug:      debug,
 	}
 }
 
-func (p *manager) Load(
+func (m *manager) Load(
 	connectorID models.ConnectorID,
 	provider string,
-	connectorName string,
-	config models.Config,
 	rawConfig json.RawMessage,
 	updateExisting bool,
-) (validatedConfigJson json.RawMessage, err error) {
-	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
+) (configName string, validatedConfigJson json.RawMessage, err error) {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
 
-	// Check if plugin is already installed
-	_, ok := p.connectors[connectorID.String()]
-	if ok && !updateExisting {
-		return p.connectors[connectorID.String()].validatedConfigJson, nil
+	config := m.configurer.DefaultConfig()
+	if err := json.Unmarshal(rawConfig, &config); err != nil {
+		return "", nil, err
 	}
 
-	plugin, err := registry.GetPlugin(connectorID, p.logger, provider, connectorName, rawConfig)
+	// Check if plugin is already installed
+	_, ok := m.connectors[connectorID.String()]
+	if ok && !updateExisting {
+		return config.Name, m.connectors[connectorID.String()].validatedConfigJson, nil
+	}
+
+	if err := m.configurer.Validate(config); err != nil {
+		return "", nil, err
+	}
+
+	plugin, err := registry.GetPlugin(connectorID, m.logger, provider, config.Name, rawConfig)
 	switch {
 	case errors.Is(err, pluginserrors.ErrNotImplemented),
 		errors.Is(err, pluginserrors.ErrInvalidClientRequest):
-		return nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
 	case err != nil:
-		return nil, err
+		return "", nil, err
 	}
 
 	b, err := combineConfigs(config, plugin.Config())
 	if err != nil {
-		return nil, fmt.Errorf("failed to combine configs: %w", err)
+		return "", nil, fmt.Errorf("failed to combine configs: %w", err)
 	}
 
 	validatedConfigJson = json.RawMessage(b)
-	p.connectors[connectorID.String()] = connector{
+	m.connectors[connectorID.String()] = connector{
 		plugin:              plugin,
 		config:              config,
 		validatedConfigJson: validatedConfigJson,
 	}
-	return validatedConfigJson, nil
+	return config.Name, validatedConfigJson, nil
 }
 
-func (p *manager) Unload(connectorID models.ConnectorID) {
-	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
+func (m *manager) Unload(connectorID models.ConnectorID) {
+	m.rwMutex.Lock()
+	defer m.rwMutex.Unlock()
 
-	_, ok := p.connectors[connectorID.String()]
+	_, ok := m.connectors[connectorID.String()]
 	if !ok {
 		// Nothing to do
 		return
 	}
 
-	delete(p.connectors, connectorID.String())
+	delete(m.connectors, connectorID.String())
 }
 
-func (p *manager) Get(connectorID models.ConnectorID) (models.Plugin, error) {
-	p.rwMutex.RLock()
-	defer p.rwMutex.RUnlock()
+func (m *manager) Get(connectorID models.ConnectorID) (models.Plugin, error) {
+	m.rwMutex.RLock()
+	defer m.rwMutex.RUnlock()
 
-	c, ok := p.connectors[connectorID.String()]
+	c, ok := m.connectors[connectorID.String()]
 	if !ok {
 		return nil, fmt.Errorf("%s: %w", connectorID.String(), ErrNotFound)
 	}
@@ -119,11 +134,11 @@ func (p *manager) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	return c.plugin, nil
 }
 
-func (p *manager) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
-	p.rwMutex.RLock()
-	defer p.rwMutex.RUnlock()
+func (m *manager) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
+	m.rwMutex.RLock()
+	defer m.rwMutex.RUnlock()
 
-	c, ok := p.connectors[connectorID.String()]
+	c, ok := m.connectors[connectorID.String()]
 	if !ok {
 		return models.Config{}, fmt.Errorf("%s: %w", connectorID.String(), ErrNotFound)
 	}

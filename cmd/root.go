@@ -18,6 +18,8 @@ const (
 	ConfigEncryptionKeyFlag                      = "config-encryption-key"
 	ListenFlag                                   = "listen"
 	StackFlag                                    = "stack"
+	ConnectorPollingPeriodDefault                = "connector-polling-period-default"
+	ConnectorPollingPeriodMinimum                = "connector-polling-period-minimum"
 	stackPublicURLFlag                           = "stack-public-url"
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 	temporalMaxConcurrentActivityTaskPollersFlag = "temporal-max-concurrent-activity-task-pollers"
