@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"math/big"
-	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
