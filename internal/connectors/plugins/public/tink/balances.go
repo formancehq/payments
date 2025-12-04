@@ -3,10 +3,7 @@ package tink
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"math/big"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -40,22 +37,16 @@ func toPSPBalance(
 
 	balance := account.Balances.Booked
 
-	amount := balance.Amount.Value.Value
-	amountBigInt, ok := new(big.Int).SetString(amount, 10)
-	if !ok {
-		return models.PSPBalance{}, fmt.Errorf("failed to parse amount: %s", amount)
+	amount, asset, err := MapTinkAmount(balance.Amount.Value.Value, balance.Amount.Value.Scale, balance.Amount.CurrencyCode)
+	if err != nil {
+		return models.PSPBalance{}, err
 	}
-	precision, ok := currency.ISO4217Currencies[balance.Amount.CurrencyCode]
-	if !ok {
-		return models.PSPBalance{}, fmt.Errorf("unsupported currency: %s", balance.Amount.CurrencyCode)
-	}
-	asset := currency.FormatAssetWithPrecision(balance.Amount.CurrencyCode, precision)
 
 	return models.PSPBalance{
 		AccountReference:        account.ID,
 		CreatedAt:               account.Dates.LastRefreshed.UTC(),
-		Amount:                  amountBigInt,
-		Asset:                   asset,
+		Amount:                  amount,
+		Asset:                   *asset,
 		PsuID:                   pspAccount.PsuID,
 		OpenBankingConnectionID: pspAccount.OpenBankingConnectionID, // Note -- currently Tink doesn't forward the connectionID, so this is mostly wishful thinking.
 	}, nil
