@@ -54,7 +54,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}
@@ -136,7 +136,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}
@@ -242,7 +242,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}
@@ -282,7 +282,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}
@@ -322,7 +322,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}
@@ -374,7 +374,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}
@@ -425,7 +425,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
-				Dates: client.Dates{
+				Dates: client.AccountDates{
 					LastRefreshed: refTime,
 				},
 			}

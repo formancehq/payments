@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -46,15 +47,64 @@ type Types struct {
 	Type                         string `json:"type"`
 }
 
+type TransactionDates struct {
+	Booked      time.Time `json:"booked"`
+	Transaction time.Time `json:"transaction"`
+	Value       time.Time `json:"value"`
+}
+
+func (td *TransactionDates) UnmarshalJSON(data []byte) error {
+	type datesJSON struct {
+		Booked      string `json:"booked"`
+		Transaction string `json:"transaction"`
+		Value       string `json:"value"`
+	}
+
+	var aux datesJSON
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	if aux.Booked != "" {
+		parsed, err := time.Parse(time.DateOnly, aux.Booked)
+		if err != nil {
+			return fmt.Errorf("invalid booked date %q: %w", aux.Booked, err)
+		}
+		td.Booked = parsed
+	}
+
+	if aux.Transaction != "" {
+		parsed, err := time.Parse(time.DateOnly, aux.Transaction)
+		if err != nil {
+			return fmt.Errorf("invalid transaction date %q: %w", aux.Transaction, err)
+		}
+		td.Transaction = parsed
+	}
+
+	if aux.Value != "" {
+		parsed, err := time.Parse(time.DateOnly, aux.Value)
+		if err != nil {
+			return fmt.Errorf("invalid value date %q: %w", aux.Value, err)
+		}
+		td.Value = parsed
+	}
+
+	return nil
+}
+
 type Transaction struct {
-	ID                  string       `json:"id"`
-	AccountID           string       `json:"accountId"`
-	Status              string       `json:"status"`
-	BookedDateTime      time.Time    `json:"bookedDateTime"`
-	TransactionDateTime time.Time    `json:"transactionDateTime"`
-	ValueDateTime       time.Time    `json:"valueDateTime"`
-	Amount              Amount       `json:"amount"`
-	Descriptions        Descriptions `json:"descriptions"`
+	ID        string `json:"id"`
+	AccountID string `json:"accountId"`
+	Status    string `json:"status"`
+
+	BookedDateTime      time.Time `json:"bookedDateTime"`
+	TransactionDateTime time.Time `json:"transactionDateTime"`
+	ValueDateTime       time.Time `json:"valueDateTime"`
+
+	Dates TransactionDates `json:"dates"`
+
+	Amount       Amount       `json:"amount"`
+	Descriptions Descriptions `json:"descriptions"`
 }
 
 func (c *client) ListTransactions(ctx context.Context, req ListTransactionRequest) (ListTransactionResponse, error) {
