@@ -355,6 +355,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 			},
 		},
 		migrations.Migration{
+			Name: "add trades table",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running add trades table migration...")
+					err := AddTradesTable(ctx, tx)
+					logger.WithField("error", err).Info("finished running add trades table migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
 			Name: "add dynamic pools",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {

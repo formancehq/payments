@@ -20,6 +20,7 @@ type SendEventsRequest struct {
 	IdempotencyKey string
 	At             time.Time
 
+	Trade                           *models.Trade
 	Account                         *models.Account
 	Balance                         *models.Balance
 	BankAccount                     *models.BankAccount
@@ -41,46 +42,65 @@ type SendEventsRequest struct {
 }
 
 func (a Activities) SendEvents(ctx context.Context, req SendEventsRequest) error {
+	a.logger.Info("SendEvents activity started",
+		"idempotency_key", req.IdempotencyKey,
+		"has_payment", req.Payment != nil)
+
 	eventID := models.EventID{
 		EventIdempotencyKey: req.IdempotencyKey,
 		ConnectorID:         req.ConnectorID,
 	}
 	isExisting, err := a.storage.EventsSentExists(ctx, eventID)
 	if err != nil {
+		a.logger.Error("Failed to check if event exists", "error", err)
 		return temporalStorageError(err)
 	}
 
 	if isExisting {
+		a.logger.Info("Event already sent, skipping", "idempotency_key", req.IdempotencyKey)
 		// event was already sent; nothing to do
 		return nil
 	}
-	
+
+	a.logger.Info("Sending event", "idempotency_key", req.IdempotencyKey)
 	// event was not sent yet
 	if err := a.sendEvents(ctx, req); err != nil {
+		a.logger.Error("Failed to send event", "error", err)
 		return err
 	}
 
+	a.logger.Info("Storing event sent record", "idempotency_key", req.IdempotencyKey)
 	if err := a.storage.EventsSentUpsert(ctx, models.EventSent{
 		ID:          eventID,
 		ConnectorID: req.ConnectorID,
 		SentAt:      req.At,
 	}); err != nil {
+		a.logger.Error("Failed to store event sent record", "error", err)
 		return temporalStorageError(err)
 	}
 
+	a.logger.Info("SendEvents activity completed successfully", "idempotency_key", req.IdempotencyKey)
 	return nil
 }
 
 func (a Activities) sendEvents(ctx context.Context, req SendEventsRequest) error {
+	if req.Trade != nil {
+		a.logger.Info("Publishing trade event")
+		return a.events.Publish(ctx, a.events.NewEventSavedTrades(*req.Trade))
+	}
+
 	if req.Account != nil {
+		a.logger.Info("Publishing account event")
 		return a.events.Publish(ctx, a.events.NewEventSavedAccounts(*req.Account))
 	}
 
 	if req.Balance != nil {
+		a.logger.Info("Publishing balance event")
 		return a.events.Publish(ctx, a.events.NewEventSavedBalances(*req.Balance))
 	}
 
 	if req.BankAccount != nil {
+		a.logger.Info("Publishing bank account event")
 		ba, err := a.events.NewEventSavedBankAccounts(*req.BankAccount)
 		if err != nil {
 			return fmt.Errorf("failed to send bank account: %w", err)
@@ -89,7 +109,16 @@ func (a Activities) sendEvents(ctx context.Context, req SendEventsRequest) error
 	}
 
 	if req.Payment != nil {
-		return a.events.Publish(ctx, a.events.NewEventSavedPayments(req.Payment.Payment, req.Payment.Adjustment))
+		a.logger.Info("Publishing payment event",
+			"payment_reference", req.Payment.Payment.Reference,
+			"adjustment_reference", req.Payment.Adjustment.Reference)
+		err := a.events.Publish(ctx, a.events.NewEventSavedPayments(req.Payment.Payment, req.Payment.Adjustment))
+		if err != nil {
+			a.logger.Error("Failed to publish payment event", "error", err)
+			return fmt.Errorf("failed to publish payment event: %w", err)
+		}
+		a.logger.Info("Payment event published successfully")
+		return nil
 	}
 
 	if req.PaymentDeleted != nil {

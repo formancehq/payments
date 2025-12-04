@@ -1692,6 +1692,92 @@ func (mr *MockStorageMockRecorder) TasksUpsert(ctx, task any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TasksUpsert", reflect.TypeOf((*MockStorage)(nil).TasksUpsert), ctx, task)
 }
 
+// TradesDelete mocks base method.
+func (m *MockStorage) TradesDelete(ctx context.Context, id models.TradeID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TradesDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TradesDelete indicates an expected call of TradesDelete.
+func (mr *MockStorageMockRecorder) TradesDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesDelete", reflect.TypeOf((*MockStorage)(nil).TradesDelete), ctx, id)
+}
+
+// TradesDeleteFromConnectorID mocks base method.
+func (m *MockStorage) TradesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TradesDeleteFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TradesDeleteFromConnectorID indicates an expected call of TradesDeleteFromConnectorID.
+func (mr *MockStorageMockRecorder) TradesDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).TradesDeleteFromConnectorID), ctx, connectorID)
+}
+
+// TradesGet mocks base method.
+func (m *MockStorage) TradesGet(ctx context.Context, id models.TradeID) (*models.Trade, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TradesGet", ctx, id)
+	ret0, _ := ret[0].(*models.Trade)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TradesGet indicates an expected call of TradesGet.
+func (mr *MockStorageMockRecorder) TradesGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesGet", reflect.TypeOf((*MockStorage)(nil).TradesGet), ctx, id)
+}
+
+// TradesList mocks base method.
+func (m *MockStorage) TradesList(ctx context.Context, q ListTradesQuery) (*bunpaginate.Cursor[models.Trade], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TradesList", ctx, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Trade])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TradesList indicates an expected call of TradesList.
+func (mr *MockStorageMockRecorder) TradesList(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesList", reflect.TypeOf((*MockStorage)(nil).TradesList), ctx, q)
+}
+
+// TradesUpdateMetadata mocks base method.
+func (m *MockStorage) TradesUpdateMetadata(ctx context.Context, id models.TradeID, metadata map[string]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TradesUpdateMetadata", ctx, id, metadata)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TradesUpdateMetadata indicates an expected call of TradesUpdateMetadata.
+func (mr *MockStorageMockRecorder) TradesUpdateMetadata(ctx, id, metadata any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesUpdateMetadata", reflect.TypeOf((*MockStorage)(nil).TradesUpdateMetadata), ctx, id, metadata)
+}
+
+// TradesUpsert mocks base method.
+func (m *MockStorage) TradesUpsert(ctx context.Context, trades []models.Trade) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TradesUpsert", ctx, trades)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TradesUpsert indicates an expected call of TradesUpsert.
+func (mr *MockStorageMockRecorder) TradesUpsert(ctx, trades any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesUpsert", reflect.TypeOf((*MockStorage)(nil).TradesUpsert), ctx, trades)
+}
+
 // WebhooksConfigsDeleteFromConnectorID mocks base method.
 func (m *MockStorage) WebhooksConfigsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	m.ctrl.T.Helper()

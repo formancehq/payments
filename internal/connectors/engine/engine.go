@@ -46,6 +46,9 @@ type Engine interface {
 	// Create a Formance payment, no call to the plugin, just a creation
 	// of a payment in the database related to the provided connector id.
 	CreateFormancePayment(ctx context.Context, payment models.Payment) error
+	// Create a Formance trade, no call to the plugin, just a creation
+	// of a trade in the database related to the provided connector id.
+	CreateFormanceTrade(ctx context.Context, trade models.Trade) error
 	// Create a Formance payment initiation, no call to the plugin, just a creation
 	// of a payment initiation in the database and the sending of the related event.
 	CreateFormancePaymentInitiation(ctx context.Context, paymentInitiation models.PaymentInitiation, adj models.PaymentInitiationAdjustment) error
@@ -461,6 +464,39 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	}
 
 	// Payment events are now sent via outbox pattern in PaymentsUpsert
+	return nil
+}
+
+func (e *engine) CreateFormanceTrade(ctx context.Context, trade models.Trade) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceTrade")
+	defer span.End()
+
+	provider := models.ToV3Provider(trade.ConnectorID.Provider)
+	capabilities, err := registry.GetCapabilities(provider)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	found := false
+	for _, c := range capabilities {
+		if c == models.CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		err := &ErrConnectorCapabilityNotSupported{Capability: "CreateFormanceTrade", Provider: provider}
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if err := e.storage.TradesUpsert(ctx, []models.Trade{trade}); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
 	return nil
 }
 

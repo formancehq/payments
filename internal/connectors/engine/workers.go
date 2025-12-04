@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -341,6 +342,31 @@ func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workf
 			"Stack": w.stack,
 		},
 	})
+
+	if err != nil {
+		// If the search attribute is not defined, we try to create the schedule without it
+		if strings.Contains(err.Error(), "no mapping defined for search attribute Stack") {
+			w.logger.Infof("Search attribute Stack not defined in Temporal, creating schedule without it")
+			_, err = w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+				ID: scheduleID,
+				Spec: client.ScheduleSpec{
+					Intervals: []client.ScheduleIntervalSpec{
+						{
+							Every: interval,
+						},
+					},
+				},
+				Action: &client.ScheduleWorkflowAction{
+					ID:        scheduleID,
+					Workflow:  workflowName,
+					Args:      []interface{}{}, // No arguments needed
+					TaskQueue: taskQueue,
+				},
+				Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+				TriggerImmediately: true,
+			})
+		}
+	}
 
 	if err != nil {
 		// When triggering immediately or if a workflow with the same ID already exists,

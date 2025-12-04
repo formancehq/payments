@@ -155,6 +155,14 @@ type Storage interface {
 	TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 	TasksDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
+	// Trades
+	TradesUpsert(ctx context.Context, trades []models.Trade) error
+	TradesUpdateMetadata(ctx context.Context, id models.TradeID, metadata map[string]string) error
+	TradesGet(ctx context.Context, id models.TradeID) (*models.Trade, error)
+	TradesList(ctx context.Context, q ListTradesQuery) (*bunpaginate.Cursor[models.Trade], error)
+	TradesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	TradesDelete(ctx context.Context, id models.TradeID) error
+
 	// Webhooks Configs
 	WebhooksConfigsUpsert(ctx context.Context, webhooksConfigs []models.WebhookConfig) error
 	WebhooksConfigsGet(ctx context.Context, name string, connectorID models.ConnectorID) (*models.WebhookConfig, error)

@@ -279,6 +279,21 @@ func (mr *MockPluginMockRecorder) FetchNextPayments(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextPayments", reflect.TypeOf((*MockPlugin)(nil).FetchNextPayments), arg0, arg1)
 }
 
+// FetchNextTrades mocks base method.
+func (m *MockPlugin) FetchNextTrades(arg0 context.Context, arg1 FetchNextTradesRequest) (FetchNextTradesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextTrades", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextTradesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextTrades indicates an expected call of FetchNextTrades.
+func (mr *MockPluginMockRecorder) FetchNextTrades(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextTrades", reflect.TypeOf((*MockPlugin)(nil).FetchNextTrades), arg0, arg1)
+}
+
 // Install mocks base method.
 func (m *MockPlugin) Install(arg0 context.Context, arg1 InstallRequest) (InstallResponse, error) {
 	m.ctrl.T.Helper()

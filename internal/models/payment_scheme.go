@@ -40,6 +40,8 @@ const (
 	PAYMENT_SCHEME_ACH
 	PAYMENT_SCHEME_RTP
 
+	PAYMENT_SCHEME_EXCHANGE
+
 	PAYMENT_SCHEME_OTHER PaymentScheme = 100
 )
 
@@ -91,6 +93,8 @@ func (s PaymentScheme) String() string {
 		return "ACH"
 	case PAYMENT_SCHEME_RTP:
 		return "RTP"
+	case PAYMENT_SCHEME_EXCHANGE:
+		return "EXCHANGE"
 	case PAYMENT_SCHEME_OTHER:
 		return "OTHER"
 	default:
@@ -144,6 +148,8 @@ func PaymentSchemeFromString(value string) (PaymentScheme, error) {
 		return PAYMENT_SCHEME_ACH, nil
 	case "RTP":
 		return PAYMENT_SCHEME_RTP, nil
+	case "EXCHANGE":
+		return PAYMENT_SCHEME_EXCHANGE, nil
 	case "OTHER":
 		return PAYMENT_SCHEME_OTHER, nil
 	case "UNKNOWN":

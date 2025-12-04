@@ -15,7 +15,8 @@ func TestTaskType(t *testing.T) {
 	assert.Equal(t, models.TaskType(2), models.TASK_FETCH_BALANCES)
 	assert.Equal(t, models.TaskType(3), models.TASK_FETCH_EXTERNAL_ACCOUNTS)
 	assert.Equal(t, models.TaskType(4), models.TASK_FETCH_PAYMENTS)
-	assert.Equal(t, models.TaskType(5), models.TASK_CREATE_WEBHOOKS)
+	assert.Equal(t, models.TaskType(5), models.TASK_FETCH_TRADES)
+	assert.Equal(t, models.TaskType(6), models.TASK_CREATE_WEBHOOKS)
 }
 
 func TestTaskTreeStructs(t *testing.T) {
@@ -26,6 +27,7 @@ func TestTaskTreeStructs(t *testing.T) {
 	fetchBalances := &models.TaskTreeFetchBalances{}
 	fetchExternalAccounts := &models.TaskTreeFetchExternalAccounts{}
 	fetchPayments := &models.TaskTreeFetchPayments{}
+	fetchTrades := &models.TaskTreeFetchTrades{}
 	createWebhooks := &models.TaskTreeCreateWebhooks{}
 
 	tree := models.ConnectorTaskTree{
@@ -37,6 +39,7 @@ func TestTaskTreeStructs(t *testing.T) {
 		TaskTreeFetchExternalAccounts: fetchExternalAccounts,
 		TaskTreeFetchOther:            fetchOther,
 		TaskTreeFetchPayments:         fetchPayments,
+		TaskTreeFetchTrades:           fetchTrades,
 		TaskTreeCreateWebhooks:        createWebhooks,
 	}
 
@@ -48,6 +51,7 @@ func TestTaskTreeStructs(t *testing.T) {
 	assert.Equal(t, fetchExternalAccounts, tree.TaskTreeFetchExternalAccounts)
 	assert.Equal(t, fetchOther, tree.TaskTreeFetchOther)
 	assert.Equal(t, fetchPayments, tree.TaskTreeFetchPayments)
+	assert.Equal(t, fetchTrades, tree.TaskTreeFetchTrades)
 	assert.Equal(t, createWebhooks, tree.TaskTreeCreateWebhooks)
 }
 
