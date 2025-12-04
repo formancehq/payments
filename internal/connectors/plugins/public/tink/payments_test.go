@@ -640,4 +640,149 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(payment.Metadata).To(HaveLen(0))
 		})
 	})
+
+	Context("computeCreatedAt", func() {
+		It("should return TransactionDateTime when it is set", func() {
+			expectedTime := time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC)
+			transaction := client.Transaction{
+				ID:                  "test_id",
+				AccountID:           "test_account",
+				Status:              "BOOKED",
+				TransactionDateTime: expectedTime,
+				BookedDateTime:      time.Date(2024, 1, 14, 9, 0, 0, 0, time.UTC),
+				Dates: client.TransactionDates{
+					Transaction: time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC),
+					Booked:      time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC),
+				},
+				Amount: client.Amount{
+					CurrencyCode: "EUR",
+					Value: struct {
+						Scale string `json:"scale"`
+						Value string `json:"unscaledValue"`
+					}{
+						Scale: "2",
+						Value: "1000",
+					},
+				},
+			}
+
+			result := computeCreatedAt(transaction)
+			Expect(result).To(Equal(expectedTime))
+		})
+
+		It("should return Dates.Transaction when TransactionDateTime is zero", func() {
+			expectedTime := time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC)
+			transaction := client.Transaction{
+				ID:                  "test_id",
+				AccountID:           "test_account",
+				Status:              "BOOKED",
+				TransactionDateTime: time.Time{}, // Zero time
+				BookedDateTime:      time.Date(2024, 1, 14, 9, 0, 0, 0, time.UTC),
+				Dates: client.TransactionDates{
+					Transaction: expectedTime,
+					Booked:      time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC),
+				},
+				Amount: client.Amount{
+					CurrencyCode: "EUR",
+					Value: struct {
+						Scale string `json:"scale"`
+						Value string `json:"unscaledValue"`
+					}{
+						Scale: "2",
+						Value: "1000",
+					},
+				},
+			}
+
+			result := computeCreatedAt(transaction)
+			Expect(result).To(Equal(expectedTime))
+		})
+
+		It("should return BookedDateTime when TransactionDateTime and Dates.Transaction are zero", func() {
+			expectedTime := time.Date(2024, 1, 14, 9, 0, 0, 0, time.UTC)
+			transaction := client.Transaction{
+				ID:                  "test_id",
+				AccountID:           "test_account",
+				Status:              "BOOKED",
+				TransactionDateTime: time.Time{}, // Zero time
+				BookedDateTime:      expectedTime,
+				Dates: client.TransactionDates{
+					Transaction: time.Time{}, // Zero time
+					Booked:      time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC),
+				},
+				Amount: client.Amount{
+					CurrencyCode: "EUR",
+					Value: struct {
+						Scale string `json:"scale"`
+						Value string `json:"unscaledValue"`
+					}{
+						Scale: "2",
+						Value: "1000",
+					},
+				},
+			}
+
+			result := computeCreatedAt(transaction)
+			Expect(result).To(Equal(expectedTime))
+		})
+
+		It("should return Dates.Booked when all DateTime fields are zero", func() {
+			expectedTime := time.Date(2024, 1, 12, 0, 0, 0, 0, time.UTC)
+			transaction := client.Transaction{
+				ID:                  "test_id",
+				AccountID:           "test_account",
+				Status:              "BOOKED",
+				TransactionDateTime: time.Time{}, // Zero time
+				BookedDateTime:      time.Time{}, // Zero time
+				Dates: client.TransactionDates{
+					Transaction: time.Time{}, // Zero time
+					Booked:      expectedTime,
+				},
+				Amount: client.Amount{
+					CurrencyCode: "EUR",
+					Value: struct {
+						Scale string `json:"scale"`
+						Value string `json:"unscaledValue"`
+					}{
+						Scale: "2",
+						Value: "1000",
+					},
+				},
+			}
+
+			result := computeCreatedAt(transaction)
+			Expect(result).To(Equal(expectedTime))
+		})
+
+		It("should return time.Now() when all date fields are zero", func() {
+			before := time.Now()
+			transaction := client.Transaction{
+				ID:                  "test_id",
+				AccountID:           "test_account",
+				Status:              "BOOKED",
+				TransactionDateTime: time.Time{}, // Zero time
+				BookedDateTime:      time.Time{}, // Zero time
+				Dates: client.TransactionDates{
+					Transaction: time.Time{}, // Zero time
+					Booked:      time.Time{}, // Zero time
+				},
+				Amount: client.Amount{
+					CurrencyCode: "EUR",
+					Value: struct {
+						Scale string `json:"scale"`
+						Value string `json:"unscaledValue"`
+					}{
+						Scale: "2",
+						Value: "1000",
+					},
+				},
+			}
+
+			result := computeCreatedAt(transaction)
+			after := time.Now()
+
+			Expect(result).To(BeTemporally(">=", before))
+			Expect(result).To(BeTemporally("<=", after))
+		})
+	})
 })
