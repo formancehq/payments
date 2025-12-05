@@ -26,6 +26,8 @@ const (
 	temporalMaxSlotsPerPollerFlag                = "temporal-max-slots-per-poller"
 	temporalMaxLocalActivitySlotsFlag            = "temporal-max-local-activity-slots"
 	temporalRateLimitingRetryDelay               = "temporal-rate-limiting-retry-delay"
+	OutboxPollingIntervalFlag                    = "outbox-schedule-polling-interval"
+	OutboxCleanupIntervalFlag                    = "outbox-schedule-cleanup-interval"
 	SkipOutboxScheduleCreationFlag               = "skip-outbox-schedule-creation"
 )
 

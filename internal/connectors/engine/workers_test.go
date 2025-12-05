@@ -41,7 +41,19 @@ var _ = Describe("Worker Tests", func() {
 			Expect(err).To(BeNil())
 			store = storage.NewMockStorage(ctrl)
 			manager = connectors.NewMockManager(ctrl)
-			pool = engine.NewWorkerPool(logger, "stackname", cl, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, manager, worker.Options{})
+
+			pool = engine.NewWorkerPool(
+				logger,
+				"stackname",
+				cl,
+				[]temporal.DefinitionSet{},
+				[]temporal.DefinitionSet{},
+				store,
+				manager,
+				worker.Options{},
+				time.Second,
+				time.Hour,
+			)
 			// Skip schedule creation in tests since we don't have a Temporal server
 			pool.SetSkipScheduleCreation(true)
 
@@ -93,6 +105,9 @@ var _ = Describe("Worker Tests", func() {
 			mockScheduleClient *activities.MockScheduleClient
 			mockHandle         *activities.MockScheduleHandle
 			stackName          string
+
+			pollingInterval = time.Second
+			cleanupInterval = time.Hour
 		)
 
 		BeforeEach(func() {
@@ -104,7 +119,18 @@ var _ = Describe("Worker Tests", func() {
 			mockHandle = activities.NewMockScheduleHandle(ctrl)
 			store := storage.NewMockStorage(ctrl)
 			manager := connectors.NewMockManager(ctrl)
-			pool = engine.NewWorkerPool(logger, stackName, mockClient, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, manager, worker.Options{})
+			pool = engine.NewWorkerPool(
+				logger,
+				stackName,
+				mockClient,
+				[]temporal.DefinitionSet{},
+				[]temporal.DefinitionSet{},
+				store,
+				manager,
+				worker.Options{},
+				pollingInterval,
+				cleanupInterval,
+			)
 			// Don't skip schedule creation for these tests
 			pool.SetSkipScheduleCreation(false)
 		})
@@ -117,7 +143,7 @@ var _ = Describe("Worker Tests", func() {
 				Expect(opts.TriggerImmediately).To(BeTrue())
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
 				Expect(opts.Spec.Intervals).To(HaveLen(1))
-				Expect(opts.Spec.Intervals[0].Every).To(Equal(5 * time.Second))
+				Expect(opts.Spec.Intervals[0].Every).To(Equal(pollingInterval))
 				//nolint:staticcheck
 				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
@@ -172,6 +198,9 @@ var _ = Describe("Worker Tests", func() {
 			mockScheduleClient *activities.MockScheduleClient
 			mockHandle         *activities.MockScheduleHandle
 			stackName          string
+
+			pollingInterval = time.Second
+			cleanupInterval = time.Hour
 		)
 
 		BeforeEach(func() {
@@ -183,7 +212,18 @@ var _ = Describe("Worker Tests", func() {
 			mockHandle = activities.NewMockScheduleHandle(ctrl)
 			store := storage.NewMockStorage(ctrl)
 			manager := connectors.NewMockManager(ctrl)
-			pool = engine.NewWorkerPool(logger, stackName, mockClient, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, manager, worker.Options{})
+			pool = engine.NewWorkerPool(
+				logger,
+				stackName,
+				mockClient,
+				[]temporal.DefinitionSet{},
+				[]temporal.DefinitionSet{},
+				store,
+				manager,
+				worker.Options{},
+				pollingInterval,
+				cleanupInterval,
+			)
 			// Don't skip schedule creation for these tests
 			pool.SetSkipScheduleCreation(false)
 		})
@@ -196,7 +236,7 @@ var _ = Describe("Worker Tests", func() {
 				Expect(opts.TriggerImmediately).To(BeTrue())
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
 				Expect(opts.Spec.Intervals).To(HaveLen(1))
-				Expect(opts.Spec.Intervals[0].Every).To(Equal(7 * 24 * time.Hour))
+				Expect(opts.Spec.Intervals[0].Every).To(Equal(cleanupInterval))
 				//nolint:staticcheck
 				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)

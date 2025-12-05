@@ -42,6 +42,8 @@ func NewModule(
 	skipOutboxScheduleCreation bool,
 	pollingPeriodDefault time.Duration,
 	pollingPeriodMinimum time.Duration,
+	outboxPollingInterval time.Duration,
+	outboxCleanupInterval time.Duration,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
@@ -88,6 +90,8 @@ func NewModule(
 					storage,
 					connectors,
 					options,
+					outboxPollingInterval,
+					outboxCleanupInterval,
 				)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),

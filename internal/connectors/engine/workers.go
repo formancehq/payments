@@ -42,13 +42,13 @@ type WorkerPool struct {
 	// skipScheduleCreation if true, skips creating the outbox publisher schedule
 	// Useful for tests that don't have a Temporal server available
 	skipScheduleCreation bool
+	outboxPollingPeriod  time.Duration
+	outboxCleanupPeriod  time.Duration
 }
 
 type Worker struct {
 	worker worker.Worker
 }
-
-const OUTBOX_POLLING_PERIOD = 5 * time.Second
 
 func NewWorkerPool(
 	logger logging.Logger,
@@ -59,19 +59,22 @@ func NewWorkerPool(
 	storage storage.Storage,
 	connectors connectors.Manager,
 	options worker.Options,
+	outboxPollingPeriod time.Duration,
+	outboxCleanupPeriod time.Duration,
 ) *WorkerPool {
 	workers := &WorkerPool{
-		logger:         logger,
-		stack:          stack,
-		temporalClient: temporalClient,
-		workers:        make(map[string]Worker),
-		workflows:      workflows,
-		activities:     activities,
-		storage:        storage,
-		connectors:     connectors,
-		options:        options,
+		logger:              logger,
+		stack:               stack,
+		temporalClient:      temporalClient,
+		workers:             make(map[string]Worker),
+		workflows:           workflows,
+		activities:          activities,
+		storage:             storage,
+		connectors:          connectors,
+		options:             options,
+		outboxPollingPeriod: outboxPollingPeriod,
+		outboxCleanupPeriod: outboxCleanupPeriod,
 	}
-
 	return workers
 }
 
@@ -356,7 +359,7 @@ func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
 		ctx,
 		"outbox-publisher",
 		"OutboxPublisher",
-		OUTBOX_POLLING_PERIOD,
+		w.outboxPollingPeriod,
 		"failed to create outbox publisher schedule",
 	)
 }
@@ -366,7 +369,7 @@ func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
 		ctx,
 		"outbox-cleanup",
 		"OutboxCleanup",
-		7*24*time.Hour,
+		w.outboxCleanupPeriod,
 		"failed to create outbox cleanup schedule",
 	)
 }
