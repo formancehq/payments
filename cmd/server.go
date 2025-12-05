@@ -24,8 +24,6 @@ func newServer() *cobra.Command {
 	commonFlags(cmd)
 
 	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
-	cmd.Flags().Bool(SkipOutboxScheduleCreationFlag, false, "Skip creating the outbox event publisher schedule (e.g. for tests)")
-
 	return cmd
 }
 

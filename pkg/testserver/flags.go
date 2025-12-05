@@ -34,6 +34,9 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 
 	if command == "worker" {
 		args = append(args, "--"+cmd.OutboxPollingIntervalFlag+fmt.Sprintf("=%s", configuration.OutboxPollingInterval))
+		if configuration.SkipOutboxScheduleCreation {
+			args = append(args, "--"+cmd.SkipOutboxScheduleCreationFlag+"=true")
+		}
 	}
 
 	if configuration.PostgresConfiguration.MaxIdleConns != 0 {
@@ -119,9 +122,6 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 
 	if configuration.Debug {
 		args = append(args, "--"+service.DebugFlag)
-	}
-	if configuration.SkipOutboxScheduleCreation {
-		args = append(args, "--"+cmd.SkipOutboxScheduleCreationFlag)
 	}
 	return args
 }
