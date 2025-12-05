@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/bombsimon/logrusr/v3"
 	sharedapi "github.com/formancehq/go-libs/v3/api"
@@ -35,6 +36,8 @@ func setLogger() {
 func commonFlags(cmd *cobra.Command) {
 	cmd.Flags().String(StackFlag, "", "Stack name")
 	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
+	cmd.Flags().Duration(ConnectorPollingPeriodDefault, 30*time.Minute, "Default polling period for connectors")
+	cmd.Flags().Duration(ConnectorPollingPeriodMinimum, 20*time.Minute, "Minimum polling period for connectors")
 	service.AddFlags(cmd.Flags())
 	otlpmetrics.AddFlags(cmd.Flags())
 	otlptraces.AddFlags(cmd.Flags())

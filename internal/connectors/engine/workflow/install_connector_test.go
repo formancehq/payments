@@ -28,7 +28,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Success() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -54,7 +54,7 @@ func (s *UnitTestSuite) Test_InstallConnector_ConnectorScheduledForDeletion_Succ
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -79,7 +79,7 @@ func (s *UnitTestSuite) Test_InstallConnector_NoConfigs_Success() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -96,7 +96,7 @@ func (s *UnitTestSuite) Test_InstallConnector_PluginInstallConnector_Error() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -117,7 +117,7 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorTasksTreeStore_Err
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -137,7 +137,7 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorsDelete_Error() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -159,7 +159,7 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorsGet_Error() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -183,7 +183,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_Error() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -208,7 +208,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_ErrorAlreadyStarted() {
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

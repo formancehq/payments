@@ -7,7 +7,6 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -39,6 +38,7 @@ var _ = Context("Publishes events", Ordered, Serial, func() {
 			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
 			TemporalAddress:            temporalServer.GetValue().Address(),
 			Output:                     GinkgoWriter,
+			OutboxPollingInterval:      time.Second,
 			SkipOutboxScheduleCreation: false,
 		}
 	})
@@ -84,7 +84,8 @@ var _ = Context("Publishes events", Ordered, Serial, func() {
 			Name:        "foo",
 			Provider:    "dummypay",
 		}
-		Eventually(e, engine.OUTBOX_POLLING_PERIOD*3, engine.OUTBOX_POLLING_PERIOD).
+		pollingInterval := app.GetValue().Config().OutboxPollingInterval
+		Eventually(e, pollingInterval*5, pollingInterval).
 			Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(expectedEventPayload))))
 	})
 })

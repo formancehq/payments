@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors"
@@ -10,10 +11,16 @@ import (
 	"go.uber.org/fx"
 )
 
-func Module(stack string, stackPublicURL string, debug bool) fx.Option {
+func Module(
+	stack string,
+	stackPublicURL string,
+	debug bool,
+	pollingPeriodDefault time.Duration,
+	pollingPeriodMinimum time.Duration,
+) fx.Option {
 	ret := []fx.Option{
 		fx.Provide(func(logger logging.Logger) connectors.Manager {
-			return connectors.NewManager(logger, debug)
+			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum)
 		}),
 		fx.Provide(func(
 			logger logging.Logger,

@@ -3,6 +3,7 @@ package testserver
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunconnect"
 	"github.com/formancehq/go-libs/v3/otlp"
@@ -15,6 +16,10 @@ import (
 )
 
 func Flags(command string, serverID string, configuration Configuration) []string {
+	if configuration.OutboxPollingInterval < time.Second {
+		configuration.OutboxPollingInterval = time.Second
+	}
+
 	args := []string{
 		command,
 		"--" + cmd.ListenFlag, ":0",
@@ -26,6 +31,14 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 		"--" + cmd.StackFlag, configuration.Stack,
 		"--" + profiling.ProfilerEnableFlag + "=false",
 	}
+
+	if command == "worker" {
+		args = append(args, "--"+cmd.OutboxPollingIntervalFlag+fmt.Sprintf("=%s", configuration.OutboxPollingInterval))
+		if configuration.SkipOutboxScheduleCreation {
+			args = append(args, "--"+cmd.SkipOutboxScheduleCreationFlag+"=true")
+		}
+	}
+
 	if configuration.PostgresConfiguration.MaxIdleConns != 0 {
 		args = append(
 			args,
@@ -109,9 +122,6 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 
 	if configuration.Debug {
 		args = append(args, "--"+service.DebugFlag)
-	}
-	if configuration.SkipOutboxScheduleCreation {
-		args = append(args, "--"+cmd.SkipOutboxScheduleCreationFlag)
 	}
 	return args
 }

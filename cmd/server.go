@@ -24,8 +24,6 @@ func newServer() *cobra.Command {
 	commonFlags(cmd)
 
 	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
-	cmd.Flags().Bool(SkipOutboxScheduleCreationFlag, false, "Skip creating the outbox event publisher schedule (e.g. for tests)")
-
 	return cmd
 }
 
@@ -54,11 +52,13 @@ func serverOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
+	pollingPeriodDefault, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodDefault)
+	pollingPeriodMinimum, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodMinimum)
 	return fx.Options(
 		auth.FXModuleFromFlags(cmd),
 		api.NewModule(listen, service.IsDebug(cmd)),
 		v2.NewModule(),
 		v3.NewModule(),
-		engine.Module(stack, stackPublicURL, service.IsDebug(cmd)),
+		engine.Module(stack, stackPublicURL, service.IsDebug(cmd), pollingPeriodDefault, pollingPeriodMinimum),
 	), nil
 }

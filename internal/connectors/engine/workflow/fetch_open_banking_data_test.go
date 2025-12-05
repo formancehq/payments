@@ -17,7 +17,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_Success() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
@@ -53,7 +53,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_WithFromPayload_Success() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	fromPayload := &FromPayload{
 		ID:      "test-payload-id",
 		Payload: []byte(`{"test": "data"}`),
@@ -91,7 +91,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextAccounts_Error() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
@@ -128,7 +128,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextPayments_Error() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
@@ -165,7 +165,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_StoragePSUOpenBankingConnectio
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
@@ -202,7 +202,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_BothChildWorkflows_Error() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
@@ -242,7 +242,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_EmptyDataToFetch_Error() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{} // Empty array
 
 	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
@@ -267,7 +267,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Success() 
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 	}
@@ -300,7 +300,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Error() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 	}
@@ -335,7 +335,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_PaymentsOnly_Success() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchPayments,
 	}
@@ -367,7 +367,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_PaymentsOnly_Error() {
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
-	config := models.DefaultConfig()
+	config := models.Config{}
 	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchPayments,
 	}

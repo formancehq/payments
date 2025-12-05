@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -243,9 +243,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_Success() {
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
-		return &s.connector, nil
-	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
 		return &activities.StorageOpenBankingConnectionsGetFromConnectionIDResult{
 			Connection: &models.OpenBankingConnection{
@@ -296,59 +293,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_Success() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_StorageConnectorsGet_Error() {
-	connectionID := "test-connection-id"
-	psuID := uuid.New()
-
-	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
-		return &models.TranslateWebhookResponse{
-			Responses: []models.WebhookResponse{
-				{
-					DataReadyToFetch: &models.PSPDataReadyToFetch{
-						PSUID:        &psuID,
-						ConnectionID: &connectionID,
-						FromPayload:  []byte(`{"test": "data"}`),
-						DataToFetch: []models.OpenBankingDataToFetch{
-							models.OpenBankingDataToFetchAccountsAndBalances,
-							models.OpenBankingDataToFetchPayments,
-						},
-					},
-				},
-			},
-		}, nil
-	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Once().Return(
-		(*models.Connector)(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
-	)
-
-	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
-		ConnectorID: s.connectorID,
-		URLPath:     "/test",
-		Webhook: models.Webhook{
-			ID:          "test",
-			ConnectorID: s.connectorID,
-			QueryValues: map[string][]string{
-				"test": {"test"},
-			},
-			Headers: map[string][]string{
-				"test": {"test"},
-			},
-			Body: []byte(`{}`),
-		},
-		Config: &models.WebhookConfig{
-			Name:        "test",
-			ConnectorID: s.connectorID,
-			URLPath:     "/test",
-		},
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, "error-test")
-}
-
 func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_EmptyDataToFetch_Success() {
 	connectionID := "test-connection-id"
 	psuID := uuid.New()
@@ -367,9 +311,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_EmptyDataToFetch_Su
 				},
 			},
 		}, nil
-	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
-		return &s.connector, nil
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
 		return &activities.StorageOpenBankingConnectionsGetFromConnectionIDResult{
@@ -444,9 +385,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_AccountsAndBalances
 				},
 			},
 		}, nil
-	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
-		return &s.connector, nil
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
 		return &activities.StorageOpenBankingConnectionsGetFromConnectionIDResult{
@@ -1387,9 +1325,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_MultipleResponses_Success() {
 	})
 
 	// Mock for DataReadyToFetch
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
-		return &s.connector, nil
-	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
 		return &activities.StorageOpenBankingConnectionsGetFromConnectionIDResult{
 			Connection: &models.OpenBankingConnection{

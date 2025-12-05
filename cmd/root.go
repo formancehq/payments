@@ -18,12 +18,16 @@ const (
 	ConfigEncryptionKeyFlag                      = "config-encryption-key"
 	ListenFlag                                   = "listen"
 	StackFlag                                    = "stack"
+	ConnectorPollingPeriodDefault                = "connector-polling-period-default"
+	ConnectorPollingPeriodMinimum                = "connector-polling-period-minimum"
 	stackPublicURLFlag                           = "stack-public-url"
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 	temporalMaxConcurrentActivityTaskPollersFlag = "temporal-max-concurrent-activity-task-pollers"
 	temporalMaxSlotsPerPollerFlag                = "temporal-max-slots-per-poller"
 	temporalMaxLocalActivitySlotsFlag            = "temporal-max-local-activity-slots"
 	temporalRateLimitingRetryDelay               = "temporal-rate-limiting-retry-delay"
+	OutboxPollingIntervalFlag                    = "outbox-schedule-polling-interval"
+	OutboxCleanupIntervalFlag                    = "outbox-schedule-cleanup-interval"
 	SkipOutboxScheduleCreationFlag               = "skip-outbox-schedule-creation"
 )
 

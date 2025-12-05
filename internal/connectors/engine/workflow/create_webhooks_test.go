@@ -40,7 +40,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Success() {
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -57,7 +57,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_PluginCreateWebhooksActivity_Error()
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -88,7 +88,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -119,7 +119,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageConnectorsGetActivity_Error()
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 

@@ -16,11 +16,12 @@ import (
 )
 
 type HandleWebhooks struct {
-	ConnectorID models.ConnectorID
-	URL         string
-	URLPath     string
-	Webhook     models.Webhook
-	Config      *models.WebhookConfig
+	ConnectorID     models.ConnectorID
+	ConnectorConfig models.Config
+	URL             string
+	URLPath         string
+	Webhook         models.Webhook
+	Config          *models.WebhookConfig
 }
 
 func (w Workflow) runHandleWebhooks(
@@ -30,6 +31,10 @@ func (w Workflow) runHandleWebhooks(
 	err := activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
 	if err != nil {
 		return fmt.Errorf("storing webhook: %w", err)
+	}
+
+	if handleWebhooks.Config == nil {
+		return fmt.Errorf("invalid config for webhook %q", handleWebhooks.Webhook.ID)
 	}
 
 	resp, err := activities.PluginTranslateWebhook(
@@ -261,14 +266,6 @@ func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	connector, err := activities.StorageConnectorsGet(
-		infiniteRetryContext(ctx),
-		handleWebhooks.ConnectorID,
-	)
-	if err != nil {
-		return fmt.Errorf("getting connector: %w", err)
-	}
-
 	var conn *models.OpenBankingConnection
 	var obForwardedUser *models.OpenBankingForwardedUser
 	var psuID uuid.UUID
@@ -312,11 +309,6 @@ func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 		return fmt.Errorf("marshalling open banking from payload: %w", err)
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return fmt.Errorf("unmarshalling connector config: %w", err)
-	}
-
 	fromPayload := &FromPayload{
 		ID: func() string {
 			if response.DataReadyToFetch.ConnectionID != nil {
@@ -344,7 +336,7 @@ func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 			PsuID:        psuID,
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
-			Config:       config,
+			Config:       handleWebhooks.ConnectorConfig,
 			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},
