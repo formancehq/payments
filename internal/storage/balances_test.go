@@ -913,7 +913,7 @@ func TestBalancesGetAt(t *testing.T) {
 
 		b := models.Balance{
 			AccountID:     accounts[0].ID,
-			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+			CreatedAt:     now.Add(-18 * time.Minute).UTC().Time,
 			LastUpdatedAt: now.UTC().Time,
 			Asset:         "USD/2",
 			Balance:       big.NewInt(100),
@@ -921,8 +921,8 @@ func TestBalancesGetAt(t *testing.T) {
 
 		b1 := models.Balance{
 			AccountID:     accounts[0].ID,
-			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
-			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			CreatedAt:     now.Add(-15 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-15 * time.Minute).UTC().Time,
 			Asset:         "EUR/2",
 			Balance:       big.NewInt(100),
 		}
