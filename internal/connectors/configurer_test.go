@@ -35,7 +35,7 @@ func TestValidateConfig(t *testing.T) {
 	invalidConfig := models.Config{Name: "name2", PollingPeriod: 3 * time.Minute}
 	err = configurer.Validate(invalidConfig)
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, models.ErrInvalidConfig)
+	assert.ErrorIs(t, err, connectors.ErrPollingPeriod)
 
 	invalidConfig = models.Config{Name: "n", PollingPeriod: 10 * time.Minute}
 	err = configurer.Validate(invalidConfig)

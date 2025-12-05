@@ -140,7 +140,9 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
-	_, _, err := w.connectors.Load(connector.ID, connector.Provider, connector.Config, false)
+
+	// skip strict polling period validation if installed by another instance
+	_, _, err := w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %s", err.Error())
 		// We don't want to crash the pod if the plugin registration fails,
@@ -166,7 +168,8 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		return err
 	}
@@ -203,7 +206,8 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return nil
 	}
 
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, true)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
 		return err

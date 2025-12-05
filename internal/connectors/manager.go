@@ -16,12 +16,13 @@ import (
 var (
 	ErrNotFound         = errors.New("plugin not loaded in manager")
 	ErrValidation       = errors.New("validation error")
+	ErrPollingPeriod    = errors.New("polling period invalid")
 	ErrInvalidOperation = errors.New("invalid operation")
 )
 
 //go:generate mockgen -source manager.go -destination manager_generated.go -package connectors . Manager
 type Manager interface {
-	Load(models.ConnectorID, string, json.RawMessage, bool) (string, json.RawMessage, error)
+	Load(models.ConnectorID, string, json.RawMessage, bool, bool) (string, json.RawMessage, error)
 	Unload(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -42,8 +43,6 @@ type manager struct {
 type connector struct {
 	plugin models.Plugin
 	config models.Config
-
-	configurer *Configurer
 
 	validatedConfigJson json.RawMessage
 }
@@ -67,6 +66,7 @@ func (m *manager) Load(
 	provider string,
 	rawConfig json.RawMessage,
 	updateExisting bool,
+	strictValidation bool,
 ) (configName string, validatedConfigJson json.RawMessage, err error) {
 	m.rwMutex.Lock()
 	defer m.rwMutex.Unlock()
@@ -83,7 +83,18 @@ func (m *manager) Load(
 	}
 
 	if err := m.configurer.Validate(config); err != nil {
-		return "", nil, err
+		if !errors.Is(err, ErrPollingPeriod) {
+			return "", nil, err
+		}
+
+		// strict validation takes place on install/update but not when launching a new instance of the app
+		// which is only loading a presumably already validated value from the DB
+		if strictValidation {
+			return "", nil, fmt.Errorf("%w: %w", models.ErrInvalidConfig, err)
+		}
+		// if the polling period is lower that the current system default we should still load the plugin
+		// since creating validation errors will not change the schedule in temporal
+		m.logger.Errorf("connector %q has a low polling period of %s", connectorID.String(), config.PollingPeriod)
 	}
 
 	plugin, err := registry.GetPlugin(connectorID, m.logger, provider, config.Name, rawConfig)

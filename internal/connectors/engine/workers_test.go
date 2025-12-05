@@ -79,8 +79,8 @@ var _ = Describe("Worker Tests", func() {
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{
 				Data: conns,
 			}, nil)
-			manager.EXPECT().Load(conns[0].ID, conns[0].Provider, conns[0].Config, false).Return("name", json.RawMessage(`{}`), nil)
-			manager.EXPECT().Load(conns[1].ID, conns[1].Provider, conns[1].Config, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Load(conns[0].ID, conns[0].Provider, conns[0].Config, false, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Load(conns[1].ID, conns[1].Provider, conns[1].Config, false, false).Return("name", json.RawMessage(`{}`), nil)
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})

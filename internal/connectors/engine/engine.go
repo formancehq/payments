@@ -142,7 +142,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Reference: uuid.New(),
 		Provider:  provider,
 	}
-	connectorName, validatedConfig, err := e.connectors.Load(connectorID, provider, rawConfig, false)
+	connectorName, validatedConfig, err := e.connectors.Load(connectorID, provider, rawConfig, false, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -345,7 +345,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	connectorName, validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, rawConfig, true)
+	connectorName, validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, rawConfig, true, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -1595,7 +1595,8 @@ func (w *engine) onInsertPlugin(ctx context.Context, connectorID models.Connecto
 		return err
 	}
 
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		return err
 	}
@@ -1620,7 +1621,8 @@ func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.Connecto
 		return nil
 	}
 
-	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, true)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
 	if err != nil {
 		e.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
@@ -1639,7 +1641,9 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
-	if _, _, err := e.connectors.Load(connector.ID, connector.Provider, connector.Config, false); err != nil {
+
+	// skip strict polling period validation if installed by another instance
+	if _, _, err := e.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false); err != nil {
 		return err
 	}
 

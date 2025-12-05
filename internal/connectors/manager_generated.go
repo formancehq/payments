@@ -72,9 +72,9 @@ func (mr *MockManagerMockRecorder) GetConfig(arg0 any) *gomock.Call {
 }
 
 // Load mocks base method.
-func (m *MockManager) Load(arg0 models.ConnectorID, arg1 string, arg2 json.RawMessage, arg3 bool) (string, json.RawMessage, error) {
+func (m *MockManager) Load(arg0 models.ConnectorID, arg1 string, arg2 json.RawMessage, arg3, arg4 bool) (string, json.RawMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "Load", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(json.RawMessage)
 	ret2, _ := ret[2].(error)
@@ -82,9 +82,9 @@ func (m *MockManager) Load(arg0 models.ConnectorID, arg1 string, arg2 json.RawMe
 }
 
 // Load indicates an expected call of Load.
-func (mr *MockManagerMockRecorder) Load(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockManagerMockRecorder) Load(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockManager)(nil).Load), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockManager)(nil).Load), arg0, arg1, arg2, arg3, arg4)
 }
 
 // Unload mocks base method.

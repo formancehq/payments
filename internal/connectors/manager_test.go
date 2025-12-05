@@ -29,30 +29,42 @@ func TestManager_Load(t *testing.T) {
 		config      models.Config
 		rawConfig   json.RawMessage
 		expectError bool
+		strictMode  bool
 	}{
 		"unregistered plugin provider": {
 			provider:    "test",
 			config:      models.Config{},
 			rawConfig:   json.RawMessage(`{}`),
 			expectError: true,
+			strictMode:  true,
 		},
 		"invalid config for provider": {
 			provider:    registry.DummyPSPName,
 			config:      models.Config{},
 			rawConfig:   json.RawMessage(`{}`),
 			expectError: true,
+			strictMode:  true,
+		},
+		"polling period issues ignored when not in strict mode": {
+			provider:    registry.DummyPSPName,
+			config:      models.Config{Name: "polling period issues ignored when not in strict mode", PollingPeriod: time.Second},
+			rawConfig:   json.RawMessage(`{"name":"polling period issues ignored when not in strict mode","pollingPeriod":"1s"}`),
+			expectError: true,
+			strictMode:  false,
 		},
 		"successful load": {
 			provider:    registry.DummyPSPName,
 			config:      models.Config{Name: "successful load", PollingPeriod: 40 * time.Minute},
 			rawConfig:   json.RawMessage(`{"name":"successful load","directory":"/tmp","pollingPeriod":"40m"}`),
 			expectError: false,
+			strictMode:  true,
 		},
 		"polling period is set to default when missing": {
 			provider:    registry.DummyPSPName,
 			config:      models.Config{Name: "polling period is set to default when missing", PollingPeriod: defaultPollingPeriod},
 			rawConfig:   json.RawMessage(`{"name":"polling period is set to default when missing","directory":"/tmp"}`),
 			expectError: false,
+			strictMode:  true,
 		},
 	}
 
@@ -60,7 +72,7 @@ func TestManager_Load(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod)
 			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
-			returnedName, _, err := manager.Load(connectorID, tt.provider, tt.rawConfig, false)
+			returnedName, _, err := manager.Load(connectorID, tt.provider, tt.rawConfig, false, tt.strictMode)
 			if tt.expectError {
 				require.Error(t, err)
 

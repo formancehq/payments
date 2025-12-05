@@ -33,7 +33,7 @@ func (c *Configurer) Validate(conf models.Config) error {
 	}
 
 	if conf.PollingPeriod < c.connectorPollingPeriodMinimum {
-		return fmt.Errorf("%w: polling period cannot be lower than minimum of %s", models.ErrInvalidConfig, c.connectorPollingPeriodMinimum)
+		return fmt.Errorf("%w: polling period cannot be lower than minimum of %s", ErrPollingPeriod, c.connectorPollingPeriodMinimum)
 	}
 	return nil
 }
