@@ -3,6 +3,7 @@ package connectors
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -53,9 +54,15 @@ func NewManager(
 	pollingPeriodDefault time.Duration,
 	pollingPeriodMinimum time.Duration,
 ) *manager {
+	configurer, err := NewConfigurer(pollingPeriodDefault, pollingPeriodMinimum)
+	if err != nil {
+		// NewManager is only expected to be called in modules - we'd rather fail starting the app than
+		// start it misconfigured
+		log.Panicf("invalid connector polling period configuration: %v", err)
+	}
 	return &manager{
 		logger:     logger,
-		configurer: NewConfigurer(pollingPeriodDefault, pollingPeriodMinimum),
+		configurer: configurer,
 		connectors: make(map[string]connector),
 		debug:      debug,
 	}

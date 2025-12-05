@@ -212,7 +212,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 	// skip strict polling period validation if installed by another instance
 	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
 	if err != nil {
-		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
+		w.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
 	}
 	return nil

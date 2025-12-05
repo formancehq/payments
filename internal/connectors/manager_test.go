@@ -45,11 +45,25 @@ func TestManager_Load(t *testing.T) {
 			expectError: true,
 			strictMode:  true,
 		},
+		"provider config present - base config error": {
+			provider:    registry.DummyPSPName,
+			config:      models.Config{},
+			rawConfig:   json.RawMessage(`{"directory":"/tmp"}`),
+			expectError: true,
+			strictMode:  true,
+		},
+		"base config present - provider specific config error": {
+			provider:    registry.DummyPSPName,
+			config:      models.Config{},
+			rawConfig:   json.RawMessage(`{"name":"base config present - provider specific config error"}`),
+			expectError: true,
+			strictMode:  true,
+		},
 		"polling period issues ignored when not in strict mode": {
 			provider:    registry.DummyPSPName,
 			config:      models.Config{Name: "polling period issues ignored when not in strict mode", PollingPeriod: time.Second},
-			rawConfig:   json.RawMessage(`{"name":"polling period issues ignored when not in strict mode","pollingPeriod":"1s"}`),
-			expectError: true,
+			rawConfig:   json.RawMessage(`{"name":"polling period issues ignored when not in strict mode","pollingPeriod":"1s","directory":"/tmp"}`),
+			expectError: false,
 			strictMode:  false,
 		},
 		"successful load": {

@@ -176,6 +176,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 
 	config, err := e.connectors.GetConfig(connector.ID)
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
