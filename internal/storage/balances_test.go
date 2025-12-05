@@ -881,13 +881,6 @@ func TestBalancesGetAt(t *testing.T) {
 		require.Empty(t, balances)
 	})
 
-	t.Run("get balances at after last balance updated at should return empty", func(t *testing.T) {
-		accounts := defaultAccounts()
-		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-50*time.Minute).UTC().Time))
-		require.NoError(t, err)
-		require.Empty(t, balances)
-	})
-
 	t.Run("get balances at", func(t *testing.T) {
 		accounts := defaultAccounts()
 		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-60*time.Minute).UTC().Time))
@@ -903,15 +896,16 @@ func TestBalancesGetAt(t *testing.T) {
 			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
 			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
 			Asset:         "USD/2",
-			Balance:       big.NewInt(100),
+			Balance:       big.NewInt(50),
 		}
 
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
-		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-50*time.Minute).UTC().Time))
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-10*time.Minute).UTC().Time))
 		require.NoError(t, err)
 		require.NotNil(t, balances)
-		require.Len(t, balances, 1)
+		require.Len(t, balances, 2)
+		require.Equal(t, balances[1].Amount, b.Balance)
 	})
 
 	t.Run("get balances at after inserting two new balances with different asset", func(t *testing.T) {
@@ -920,7 +914,7 @@ func TestBalancesGetAt(t *testing.T) {
 		b := models.Balance{
 			AccountID:     accounts[0].ID,
 			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
-			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.UTC().Time,
 			Asset:         "USD/2",
 			Balance:       big.NewInt(100),
 		}
@@ -935,10 +929,32 @@ func TestBalancesGetAt(t *testing.T) {
 
 		upsertBalances(t, ctx, store, []models.Balance{b, b1})
 
-		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-50*time.Minute).UTC().Time))
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(now.Add(-10*time.Minute).UTC().Time))
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 2)
+		require.Equal(t, balances[1].Amount, b1.Balance)
+		require.Equal(t, balances[0].Amount, b.Balance)
+	})
+
+	t.Run("get balances at when last row has created_at equals last_updated_at", func(t *testing.T) {
+		accounts := defaultAccounts()
+		balanceCreatedAt := now.Add(-30 * time.Minute).UTC().Time
+		b := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     balanceCreatedAt,
+			LastUpdatedAt: balanceCreatedAt,
+			Asset:         "GBP/2",
+			Balance:       big.NewInt(500),
+		}
+		upsertBalances(t, ctx, store, []models.Balance{b})
+
+		queryTime := now.Add(-10 * time.Minute).UTC().Time
+		balances, err := store.BalancesGetFromAccountIDs(ctx, []models.AccountID{accounts[0].ID}, pointer.For(queryTime))
+		require.NoError(t, err)
+		require.NotNil(t, balances)
+		require.Len(t, balances, 3)
+		require.Equal(t, balances[1].Amount, b.Balance)
 	})
 }
 

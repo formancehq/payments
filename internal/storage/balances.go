@@ -308,7 +308,7 @@ func (s *store) BalancesGetFromAccountIDs(ctx context.Context, accountIDs []mode
 
 	if at != nil && !at.IsZero() {
 		selectedBalancesQuery = selectedBalancesQuery.Where("created_at <= ?", at).
-			Where("last_updated_at >= ?", at)
+			Where("last_updated_at >= ? OR last_updated_at = created_at", at)
 	}
 	var balanceAssets []assetBalances
 	query := s.db.NewSelect().
