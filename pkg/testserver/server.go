@@ -52,6 +52,7 @@ type Configuration struct {
 	Output                     io.Writer
 	Debug                      bool
 	OTLPConfig                 *OTLPConfig
+	OutboxPollingInterval      time.Duration
 	SkipOutboxScheduleCreation bool
 }
 
@@ -161,6 +162,10 @@ func (s *Server) Client() *Client {
 
 func (s *Server) SDK() *formance.Formance {
 	return s.sdk
+}
+
+func (s *Server) Config() Configuration {
+	return s.configuration
 }
 
 func (s *Server) Restart(ctx context.Context) error {

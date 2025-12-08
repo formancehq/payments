@@ -41,7 +41,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithoutInstance_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -91,7 +91,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -147,7 +147,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_ConnectorScheduledF
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -212,7 +212,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -267,7 +267,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithoutNextTasks_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -331,7 +331,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_HasMoreLoop_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -351,7 +351,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -379,7 +379,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesGet_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -418,7 +418,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_PluginFetchNextPayments_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -463,7 +463,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StoragePaymentsStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -509,7 +509,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StoragePaymentInitiationUpdateFro
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -556,7 +556,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -601,7 +601,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesUpdate_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
-		Config:       models.DefaultConfig(),
+		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,

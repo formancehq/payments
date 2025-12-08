@@ -40,6 +40,10 @@ func NewModule(
 	temporalMaxLocalActivitySlots int,
 	debug bool,
 	skipOutboxScheduleCreation bool,
+	pollingPeriodDefault time.Duration,
+	pollingPeriodMinimum time.Duration,
+	outboxPollingInterval time.Duration,
+	outboxCleanupInterval time.Duration,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
@@ -53,7 +57,7 @@ func NewModule(
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func(logger logging.Logger) connectors.Manager {
-			return connectors.NewManager(logger, debug)
+			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum)
 		}),
 		fx.Provide(func(temporalClient client.Client, manager connectors.Manager, logger logging.Logger) workflow.Workflow {
 			return workflow.New(temporalClient, temporalNamespace, manager, stack, stackURL, logger)
@@ -77,7 +81,18 @@ func NewModule(
 				connectors connectors.Manager,
 				options worker.Options,
 			) *engine.WorkerPool {
-				return engine.NewWorkerPool(logger, stack, temporalClient, workflows, activities, storage, connectors, options)
+				return engine.NewWorkerPool(
+					logger,
+					stack,
+					temporalClient,
+					workflows,
+					activities,
+					storage,
+					connectors,
+					options,
+					outboxPollingInterval,
+					outboxCleanupInterval,
+				)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
 		fx.Invoke(func(workers *engine.WorkerPool) {

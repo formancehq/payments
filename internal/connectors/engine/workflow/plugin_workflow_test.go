@@ -31,7 +31,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -61,14 +61,14 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx workflow.Context, req FetchNextAccounts, nextTasks []models.ConnectorTaskTree) error {
 		s.Equal(s.connectorID, req.ConnectorID)
-		s.Equal(models.DefaultConfig(), req.Config)
+		s.Equal(models.Config{}, req.Config)
 		s.False(req.Periodically)
 		return nil
 	})
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -101,7 +101,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success(
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -134,7 +134,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -167,7 +167,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -200,7 +200,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -233,7 +233,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -257,7 +257,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -286,7 +286,7 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",
@@ -316,7 +316,7 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 
 	s.env.ExecuteWorkflow(
 		Run,
-		models.DefaultConfig(),
+		models.Config{},
 		s.connector,
 		&FromPayload{
 			ID:      "1",

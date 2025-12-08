@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -43,13 +42,13 @@ type WorkerPool struct {
 	// skipScheduleCreation if true, skips creating the outbox publisher schedule
 	// Useful for tests that don't have a Temporal server available
 	skipScheduleCreation bool
+	outboxPollingPeriod  time.Duration
+	outboxCleanupPeriod  time.Duration
 }
 
 type Worker struct {
 	worker worker.Worker
 }
-
-const OUTBOX_POLLING_PERIOD = 5 * time.Second
 
 func NewWorkerPool(
 	logger logging.Logger,
@@ -60,19 +59,22 @@ func NewWorkerPool(
 	storage storage.Storage,
 	connectors connectors.Manager,
 	options worker.Options,
+	outboxPollingPeriod time.Duration,
+	outboxCleanupPeriod time.Duration,
 ) *WorkerPool {
 	workers := &WorkerPool{
-		logger:         logger,
-		stack:          stack,
-		temporalClient: temporalClient,
-		workers:        make(map[string]Worker),
-		workflows:      workflows,
-		activities:     activities,
-		storage:        storage,
-		connectors:     connectors,
-		options:        options,
+		logger:              logger,
+		stack:               stack,
+		temporalClient:      temporalClient,
+		workers:             make(map[string]Worker),
+		workflows:           workflows,
+		activities:          activities,
+		storage:             storage,
+		connectors:          connectors,
+		options:             options,
+		outboxPollingPeriod: outboxPollingPeriod,
+		outboxCleanupPeriod: outboxCleanupPeriod,
 	}
-
 	return workers
 }
 
@@ -141,12 +143,9 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
 
-	_, err := w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err := w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %s", err.Error())
 		// We don't want to crash the pod if the plugin registration fails,
@@ -172,12 +171,8 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	_, err = w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		return err
 	}
@@ -214,14 +209,10 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return nil
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	_, err = w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
 	if err != nil {
-		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
+		w.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
 	}
 	return nil
@@ -368,7 +359,7 @@ func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
 		ctx,
 		"outbox-publisher",
 		"OutboxPublisher",
-		OUTBOX_POLLING_PERIOD,
+		w.outboxPollingPeriod,
 		"failed to create outbox publisher schedule",
 	)
 }
@@ -378,7 +369,7 @@ func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
 		ctx,
 		"outbox-cleanup",
 		"OutboxCleanup",
-		7*24*time.Hour,
+		w.outboxCleanupPeriod,
 		"failed to create outbox cleanup schedule",
 	)
 }
