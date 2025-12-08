@@ -1,13 +1,14 @@
 package client_test
 
 import (
+	"context"
 	"errors"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -18,13 +19,20 @@ var _ = Describe("Stripe Client Payments", func() {
 		ctrl   *gomock.Controller
 		b      *client.MockBackend
 		token  string
+		err    error
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		b = client.NewMockBackend(ctrl)
 		token = "dummy"
-		cl = client.New("test", logger, b, token)
+		b.EXPECT().Call("GET", "/v1/account", token, nil, &stripe.Account{}).DoAndReturn(
+			func(_, _, _ string, _ any, account *stripe.Account) error {
+				account.ID = "rootID"
+				return nil
+			})
+		cl, err = client.New("test", logger, b, token)
+		Expect(err).To(BeNil())
 	})
 
 	Context("Get Payments", func() {
@@ -46,6 +54,34 @@ var _ = Describe("Stripe Client Payments", func() {
 			)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("loop exits when context cancel is seen", func(_ SpecContext) {
+			ctx, cancel := context.WithCancel(context.Background())
+
+			b.EXPECT().CallRaw("GET", "/v1/balance_transactions", token, gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(
+				method, path, token string, p, p2 any, l *stripe.BalanceTransactionList,
+			) error {
+				cancel()
+				results := []*stripe.BalanceTransaction{
+					&stripe.BalanceTransaction{
+						ID:     "tnx_something",
+						Source: &stripe.BalanceTransactionSource{},
+					},
+				}
+				l.Data = append(l.Data, results...)
+				l.ListMeta = stripe.ListMeta{HasMore: true, TotalCount: uint32(len(l.Data))}
+				return nil
+			})
+
+			_, _, _, err := cl.GetPayments(
+				ctx,
+				accountID,
+				timeline,
+				int64(pageSize),
+			)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context"))
 		})
 
 		It("returns expected number of results in chronological order and sets latest ID to newest entry", func(ctx SpecContext) {

@@ -46,15 +46,16 @@ var _ = Describe("Tink *Plugin Create User", func() {
 				},
 			}
 
-			expectedUserID := userID.String()
-			expectedMarket := "FR"
+		expectedUserID := userID.String()
+		expectedMarket := "FR"
+		expectedLocale := "fr_FR"
 
-			m.EXPECT().CreateUser(gomock.Any(), expectedUserID, expectedMarket).Return(
-				client.CreateUserResponse{
-					UserID: "tink_user_123",
-				},
-				nil,
-			)
+		m.EXPECT().CreateUser(gomock.Any(), expectedUserID, expectedMarket, expectedLocale).Return(
+			client.CreateUserResponse{
+				UserID: "tink_user_123",
+			},
+			nil,
+		)
 
 			resp, err := plg.CreateUser(ctx, req)
 			Expect(err).To(BeNil())
@@ -164,13 +165,14 @@ var _ = Describe("Tink *Plugin Create User", func() {
 				},
 			}
 
-			expectedUserID := userID.String()
-			expectedMarket := "FR"
+		expectedUserID := userID.String()
+		expectedMarket := "FR"
+		expectedLocale := "fr_FR"
 
-			m.EXPECT().CreateUser(gomock.Any(), expectedUserID, expectedMarket).Return(
-				client.CreateUserResponse{},
-				errors.New("client error"),
-			)
+		m.EXPECT().CreateUser(gomock.Any(), expectedUserID, expectedMarket, expectedLocale).Return(
+			client.CreateUserResponse{},
+			errors.New("client error"),
+		)
 
 			resp, err := plg.CreateUser(ctx, req)
 			Expect(err).ToNot(BeNil())

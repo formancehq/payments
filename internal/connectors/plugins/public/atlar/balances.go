@@ -23,6 +23,13 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
+	// https://docs.atlar.com/docs/deprecations#v1-accountbalance
+	// some accounts no longer return balance: we'll need to upgrade to API v2 to get those balances
+	// but for now we can avoid a panic
+	if account.Payload == nil || account.Payload.Balance == nil {
+		return models.FetchNextBalancesResponse{}, err
+	}
+
 	balance := account.Payload.Balance
 	balanceTimestamp, err := ParseAtlarTimestamp(balance.Timestamp)
 	if err != nil {

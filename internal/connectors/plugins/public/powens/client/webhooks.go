@@ -159,25 +159,34 @@ type ConnectionSyncedConnection struct {
 	ID           int       `json:"id"`
 	State        string    `json:"state"`
 	ErrorMessage string    `json:"error_message"`
-	LastUpdate   time.Time `json:"last_update"`
+	LastUpdate   time.Time `json:"last_update,omitempty"`
 	Active       bool      `json:"active"`
 
 	Accounts []BankAccount `json:"accounts"`
 }
 
 func (c ConnectionSyncedConnection) MarshalJSON() ([]byte, error) {
+	var lastUpdate string
+	if !c.LastUpdate.IsZero() {
+		var err error
+		lastUpdate, err = ConvertUTCToPowensTime(c.LastUpdate, time.DateTime)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return json.Marshal(struct {
 		ID           int           `json:"id"`
 		State        string        `json:"state"`
 		ErrorMessage string        `json:"error_message"`
-		LastUpdate   string        `json:"last_update"`
+		LastUpdate   string        `json:"last_update,omitempty"`
 		Active       bool          `json:"active"`
 		Accounts     []BankAccount `json:"accounts"`
 	}{
 		ID:           c.ID,
 		State:        c.State,
 		ErrorMessage: c.ErrorMessage,
-		LastUpdate:   c.LastUpdate.Format(time.DateTime),
+		LastUpdate:   lastUpdate,
 		Active:       c.Active,
 		Accounts:     c.Accounts,
 	})
@@ -188,7 +197,7 @@ func (c *ConnectionSyncedConnection) UnmarshalJSON(data []byte) error {
 		ID           int           `json:"id"`
 		State        string        `json:"state"`
 		ErrorMessage string        `json:"error_message"`
-		LastUpdate   string        `json:"last_update"`
+		LastUpdate   string        `json:"last_update,omitempty"`
 		Active       bool          `json:"active"`
 		Accounts     []BankAccount `json:"accounts"`
 	}
@@ -199,9 +208,9 @@ func (c *ConnectionSyncedConnection) UnmarshalJSON(data []byte) error {
 	}
 
 	lastUpdate := time.Time{}
+	var err error
 	if aux.LastUpdate != "" {
-		var err error
-		lastUpdate, err = time.Parse(time.DateTime, aux.LastUpdate)
+		lastUpdate, err = ConvertPowensTimeToUTC(aux.LastUpdate, time.DateTime)
 		if err != nil {
 			return err
 		}

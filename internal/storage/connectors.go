@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	stdtime "time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -92,7 +95,7 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 	return nil
 }
 
-func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error {
+func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("cannot begin transaction: %w", err)
@@ -127,7 +130,43 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 		return e("failed to encrypt config", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	// Create outbox event for connector reset if oldConnectorID is provided
+	if oldConnectorID != nil {
+		now := toInsert.CreatedAt.UTC()
+		payload := internalEvents.ConnectorMessagePayload{
+			CreatedAt:   now.Time,
+			ConnectorID: oldConnectorID.String(),
+		}
+
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(payload)
+		if err != nil {
+			return e("failed to marshal connector reset event payload", err)
+		}
+
+		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Time.Format(stdtime.RFC3339Nano))
+		outboxEvent := models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: idempotencyKey,
+				ConnectorID:         &toInsert.ID,
+			},
+			EventType:   events.EventTypeConnectorReset,
+			EntityID:    oldConnectorID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   now.Time,
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &toInsert.ID,
+		}
+
+		if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error {
@@ -154,7 +193,10 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 		return e("failed to encrypt config", err)
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error {
@@ -187,10 +229,12 @@ func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*mode
 	}
 
 	return &models.Connector{
-		ID:                   connector.ID,
-		Name:                 connector.Name,
-		CreatedAt:            connector.CreatedAt.Time,
-		Provider:             connector.Provider,
+		ConnectorBase: models.ConnectorBase{
+			ID:        connector.ID,
+			Name:      connector.Name,
+			CreatedAt: connector.CreatedAt.Time,
+			Provider:  connector.Provider,
+		},
 		Config:               connector.DecryptedConfig,
 		ScheduledForDeletion: connector.ScheduledForDeletion,
 	}, nil
@@ -259,14 +303,7 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 
 	connectors := make([]models.Connector, 0, len(cursor.Data))
 	for _, c := range cursor.Data {
-		connectors = append(connectors, models.Connector{
-			ID:                   c.ID,
-			Name:                 c.Name,
-			CreatedAt:            c.CreatedAt.Time,
-			Provider:             c.Provider,
-			Config:               c.DecryptedConfig,
-			ScheduledForDeletion: c.ScheduledForDeletion,
-		})
+		connectors = append(connectors, toConnectorModels(c))
 	}
 
 	return &bunpaginate.Cursor[models.Connector]{
@@ -276,4 +313,21 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 		Next:     cursor.Next,
 		Data:     connectors,
 	}, nil
+}
+
+func toConnectorModels(from connector) models.Connector {
+	return models.Connector{
+		ConnectorBase:        toConnectorBaseModels(from),
+		Config:               from.DecryptedConfig,
+		ScheduledForDeletion: from.ScheduledForDeletion,
+	}
+}
+
+func toConnectorBaseModels(from connector) models.ConnectorBase {
+	return models.ConnectorBase{
+		ID:        from.ID,
+		Name:      from.Name,
+		CreatedAt: from.CreatedAt.Time,
+		Provider:  from.Provider,
+	}
 }

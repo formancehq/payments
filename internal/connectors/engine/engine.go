@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
@@ -82,6 +83,8 @@ type Engine interface {
 
 	// Create a Formance pool composed of accounts.
 	CreatePool(ctx context.Context, pool models.Pool) error
+	// Update Pool Query
+	UpdatePoolQuery(ctx context.Context, id uuid.UUID, query map[string]any) error
 	// Add an account to a Formance pool.
 	AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	// Remove an account from a Formance pool.
@@ -135,22 +138,11 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	ctx, span := otel.Tracer().Start(ctx, "engine.InstallConnector")
 	defer span.End()
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(rawConfig, &config); err != nil {
-		otel.RecordError(span, err)
-		return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
-	}
-
-	if err := config.Validate(); err != nil {
-		otel.RecordError(span, err)
-		return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
-	}
-
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
 		Provider:  provider,
 	}
-	validatedConfig, err := e.connectors.Load(connectorID, provider, config.Name, config, rawConfig, false)
+	connectorName, validatedConfig, err := e.connectors.Load(connectorID, provider, rawConfig, false, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -160,11 +152,13 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	}
 
 	connector := models.Connector{
-		ID:        connectorID,
-		Name:      config.Name,
-		CreatedAt: time.Now().UTC(),
-		Provider:  provider,
-		Config:    validatedConfig,
+		ConnectorBase: models.ConnectorBase{
+			ID:        connectorID,
+			Name:      connectorName,
+			CreatedAt: time.Now().UTC(),
+			Provider:  provider,
+		},
+		Config: validatedConfig,
 	}
 
 	// Detached the context to avoid being in a weird state if request is
@@ -175,13 +169,19 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	if err := e.storage.ConnectorsInstall(detachedCtx, connector); err != nil {
+	if err := e.storage.ConnectorsInstall(detachedCtx, connector, nil); err != nil {
+		otel.RecordError(span, err)
+		return models.ConnectorID{}, err
+	}
+
+	config, err := e.connectors.GetConfig(connector.ID)
+	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
 	// Launch the workflow
-	run, err := e.launchInstallWorkflow(detachedCtx, connector, config)
+	run, err := e.launchInstallWorkflow(detachedCtx, connector, config, false)
 	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
@@ -290,7 +290,12 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		return models.Task{}, err
 	}
 
-	_, err := e.temporalClient.ExecuteWorkflow(
+	config, err := e.connectors.GetConfig(connectorID)
+	if err != nil {
+		return models.Task{}, err
+	}
+
+	_, err = e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
@@ -304,6 +309,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		workflow.RunResetConnector,
 		workflow.ResetConnector{
 			ConnectorID:       connectorID,
+			Config:            config,
 			DefaultWorkerName: GetDefaultTaskQueue(e.stack),
 			TaskID:            task.ID,
 		},
@@ -326,17 +332,6 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 	ctx, span := otel.Tracer().Start(ctx, "engine.UpdateConnector")
 	defer span.End()
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(rawConfig, &config); err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	if err := config.Validate(); err != nil {
-		otel.RecordError(span, err)
-		return errors.Wrap(ErrValidation, err.Error())
-	}
-
 	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
@@ -351,7 +346,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, config.Name, config, rawConfig, true)
+	connectorName, validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, rawConfig, true, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -359,10 +354,37 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		}
 		return err
 	}
-	connector.Name = config.Name
+	connector.Name = connectorName
 	connector.Config = validatedConfig
 
 	if err := e.storage.ConnectorsConfigUpdate(ctx, *connector); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	config, err := e.connectors.GetConfig(connector.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("update-schedule-polling-period-%s-%s", e.stack, connector.ID.String()),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: true,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunUpdateSchedulePollingPeriod,
+		workflow.UpdateSchedulePollingPeriod{
+			ConnectorID: connector.ID,
+			Config:      config,
+		},
+	)
+	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
@@ -394,29 +416,8 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		return err
 	}
 
+	// AccountsUpsert now handles outbox events transactionally
 	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s-%s", e.stack, account.ConnectorID.String(), account.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			Account: &account,
-		},
-	)
-	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
@@ -454,28 +455,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s-%s", e.stack, payment.ConnectorID.String(), payment.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			Payment: &payment,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Payment events are now sent via outbox pattern in PaymentsUpsert
 	return nil
 }
 
@@ -488,29 +468,7 @@ func (e *engine) CreateFormancePaymentInitiation(ctx context.Context, pi models.
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-payment-initiation-send-events-%s-%s-%s", e.stack, pi.ConnectorID.String(), pi.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PaymentInitiation:           &pi,
-			PaymentInitiationAdjustment: &adj,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Payment initiation events are now sent via outbox pattern in PaymentInitiationsInsert
 	return nil
 }
 
@@ -1247,7 +1205,7 @@ func (e *engine) CompletePaymentServiceUserLink(ctx context.Context, connectorID
 	return nil
 }
 
-func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, webhook models.Webhook) error {
+func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, in models.Webhook) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
 	defer span.End()
 
@@ -1255,7 +1213,12 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	webhooks, config, err := e.verifyAndTrimWebhook(ctx, urlPath, webhook)
+	webhooks, config, err := e.verifyAndTrimWebhook(ctx, urlPath, in)
+	if err != nil {
+		return err
+	}
+
+	connectorConfig, err := e.connectors.GetConfig(in.ConnectorID)
 	if err != nil {
 		return err
 	}
@@ -1277,11 +1240,12 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 				},
 				workflow.RunHandleWebhooks,
 				workflow.HandleWebhooks{
-					ConnectorID: w.ConnectorID,
-					URL:         url,
-					URLPath:     urlPath,
-					Webhook:     w,
-					Config:      config,
+					ConnectorID:     w.ConnectorID,
+					ConnectorConfig: connectorConfig,
+					URL:             url,
+					URLPath:         urlPath,
+					Webhook:         w,
+					Config:          config,
 				},
 			); err != nil {
 				return err
@@ -1392,24 +1356,35 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
-	eg, groupCtx := errgroup.WithContext(ctx)
-	for _, accountID := range pool.PoolAccounts {
-		aID := accountID
-		eg.Go(func() error {
-			acc, err := e.storage.AccountsGet(groupCtx, aID)
-			if err != nil {
-				return err
-			}
-			if acc.Type != models.ACCOUNT_TYPE_INTERNAL {
-				return fmt.Errorf("account %s is not an internal account: %w", aID, ErrValidation)
-			}
-			return nil
-		})
-	}
+	switch pool.Type {
+	case models.POOL_TYPE_STATIC:
+		eg, groupCtx := errgroup.WithContext(ctx)
+		for _, accountID := range pool.PoolAccounts {
+			aID := accountID
+			eg.Go(func() error {
+				acc, err := e.storage.AccountsGet(groupCtx, aID)
+				if err != nil {
+					return err
+				}
+				if acc.Type != models.ACCOUNT_TYPE_INTERNAL {
+					return fmt.Errorf("account %s is not an internal account: %w", aID, ErrValidation)
+				}
+				return nil
+			})
+		}
 
-	if err := eg.Wait(); err != nil {
-		otel.RecordError(span, err)
-		return err
+		if err := eg.Wait(); err != nil {
+			otel.RecordError(span, err)
+			return err
+		}
+
+	case models.POOL_TYPE_DYNAMIC:
+		accounts, err := e.populatePoolAccounts(ctx, &pool)
+		if err != nil {
+			otel.RecordError(span, err)
+			return err
+		}
+		pool.PoolAccounts = accounts
 	}
 
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
@@ -1417,31 +1392,39 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.ID.String()),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsCreation: &pool,
-		},
-	)
+	// Pool events are now sent via outbox pattern in PoolsUpsert
+	return nil
+}
+
+func (e *engine) UpdatePoolQuery(ctx context.Context, id uuid.UUID, query map[string]any) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.UpdatePoolQuery")
+	defer span.End()
+
+	pool, err := e.storage.PoolsGet(ctx, id)
 	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if pool.Type == models.POOL_TYPE_STATIC {
+		return fmt.Errorf("pool %s is a static pool, use the pool account addition or deletion endpoints: %w", id, ErrValidation)
+	}
+
+	pool.Query = query
+	// populate the pool accounts before sending the event.
+	pool.PoolAccounts, err = e.populatePoolAccounts(ctx, pool)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if err := e.storage.PoolsUpdateQuery(ctx, *pool, query); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
 	return nil
 }
-
 func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
@@ -1457,45 +1440,24 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		return fmt.Errorf("account %s is not an internal account: %w", accountID, ErrValidation)
 	}
 
+	// Check next if the pool is dynamic, in that case, we send an error to the
+	// user telling him to use the pool query update endpoint.
+	pool, err := e.storage.PoolsGet(ctx, id)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		return fmt.Errorf("pool %s is a dynamic pool, use the pool query update endpoint to add an account: %w", id, ErrValidation)
+	}
+
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	detachedCtx := context.WithoutCancel(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
-
-	pool, err := e.storage.PoolsGet(detachedCtx, id)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-add-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsCreation: pool,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Pool events are now sent via outbox pattern in PoolsUpsert
 	return nil
 }
 
@@ -1503,83 +1465,77 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	ctx, span := otel.Tracer().Start(ctx, "engine.RemoveAccountFromPool")
 	defer span.End()
 
+	pool, err := e.storage.PoolsGet(ctx, id)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		return fmt.Errorf("pool %s is a dynamic pool, use the pool query update endpoint to remove an account: %w", id, ErrValidation)
+	}
+
 	if err := e.storage.PoolsRemoveAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	detachedCtx := context.WithoutCancel(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
-
-	pool, err := e.storage.PoolsGet(detachedCtx, id)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsCreation: pool,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
+	// Pool events are now sent via outbox pattern in PoolsUpsert
 	return nil
 }
 
 func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
-
-	deleted, err := e.storage.PoolsDelete(ctx, poolID)
+	_, err := e.storage.PoolsDelete(ctx, poolID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	if deleted {
-		// Do not wait for sending of events
-		_, err := e.temporalClient.ExecuteWorkflow(
-			ctx,
-			client.StartWorkflowOptions{
-				ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
-				TaskQueue:                                GetDefaultTaskQueue(e.stack),
-				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-				WorkflowExecutionErrorWhenAlreadyStarted: false,
-				SearchAttributes: map[string]interface{}{
-					workflow.SearchAttributeStack: e.stack,
-				},
-			},
-			workflow.RunSendEvents,
-			workflow.SendEvents{
-				PoolsDeletion: &poolID,
-			},
-		)
+	// Pool deletion events are now sent via outbox pattern in PoolsDelete
+	return nil
+}
+
+func (e *engine) populatePoolAccounts(ctx context.Context, pool *models.Pool) ([]models.AccountID, error) {
+	queryJSON, err := json.Marshal(pool.Query)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal pool query: %w", err)
+	}
+
+	qb, err := query.ParseJSON(string(queryJSON))
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse pool query: %w", err)
+	}
+
+	q := storage.NewListAccountsQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
+			WithPageSize(100).
+			WithQueryBuilder(qb),
+	)
+
+	res := make([]models.AccountID, 0)
+	for {
+		cursor, err := e.storage.AccountsList(ctx, q)
 		if err != nil {
-			otel.RecordError(span, err)
-			return err
+			return nil, fmt.Errorf("cannot list accounts: %w", err)
+		}
+
+		for _, account := range cursor.Data {
+			res = append(res, account.ID)
+		}
+
+		if !cursor.HasMore {
+			break
+		}
+
+		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		if err != nil {
+			return nil, fmt.Errorf("cannot unmarshal cursor: %w", err)
 		}
 	}
 
-	return nil
+	return res, nil
 }
 
 func (e *engine) OnStop(ctx context.Context) {
@@ -1640,18 +1596,8 @@ func (w *engine) onInsertPlugin(ctx context.Context, connectorID models.Connecto
 		return err
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	_, err = w.connectors.Load(
-		connector.ID,
-		connector.Provider,
-		connector.Name,
-		config,
-		connector.Config,
-		false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		return err
 	}
@@ -1676,19 +1622,8 @@ func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.Connecto
 		return nil
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	_, err = e.connectors.Load(
-		connector.ID,
-		connector.Provider,
-		connector.Name,
-		config,
-		connector.Config,
-		true,
-	)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
 	if err != nil {
 		e.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
@@ -1707,32 +1642,28 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
+
+	// skip strict polling period validation if installed by another instance
+	if _, _, err := e.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false); err != nil {
 		return err
 	}
 
 	if !connector.ScheduledForDeletion {
-		if _, err := e.connectors.Load(
-			connector.ID,
-			connector.Provider,
-			connector.Name,
-			config,
-			connector.Config,
-			false,
-		); err != nil {
+		config, err := e.connectors.GetConfig(connector.ID)
+		if err != nil {
 			return err
 		}
 
 		// Launch the workflow
-		if _, err := e.launchInstallWorkflow(ctx, connector, config); err != nil {
+		_, err = e.launchInstallWorkflow(ctx, connector, config, true)
+		if err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Connector, config models.Config) (client.WorkflowRun, error) {
+func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Connector, config models.Config, onStart bool) (client.WorkflowRun, error) {
 	return e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
@@ -1748,6 +1679,7 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 		workflow.InstallConnector{
 			ConnectorID: connector.ID,
 			Config:      config,
+			OnStart:     onStart,
 		},
 	)
 }

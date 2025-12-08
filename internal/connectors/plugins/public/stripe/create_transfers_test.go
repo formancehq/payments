@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -100,6 +100,7 @@ var _ = Describe("Stripe Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().CreateTransfer(gomock.Any(), &client.CreateTransferRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
@@ -132,6 +133,7 @@ var _ = Describe("Stripe Plugin Transfers Creation", func() {
 				ID:          "t1",
 				Metadata:    samplePSPPaymentInitiation.Metadata,
 			}
+			m.EXPECT().GetRootAccountID().Return("roooooot")
 			m.EXPECT().CreateTransfer(gomock.Any(), &client.CreateTransferRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,

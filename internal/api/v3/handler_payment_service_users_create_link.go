@@ -16,7 +16,7 @@ import (
 )
 
 type PaymentServiceUserCreateLinkRequest struct {
-	ApplicationName   string `json:"applicationName" validate:"required"`
+	ApplicationName   string `json:"applicationName"` // Note: might be mandatory for some open banking providers
 	ClientRedirectURL string `json:"clientRedirectURL" validate:"required,url"`
 }
 

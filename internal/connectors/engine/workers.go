@@ -2,9 +2,9 @@ package engine
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
@@ -13,8 +13,11 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
+	sdktemporal "go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/worker"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 )
@@ -35,6 +38,12 @@ type WorkerPool struct {
 
 	connectors connectors.Manager
 	options    worker.Options
+
+	// skipScheduleCreation if true, skips creating the outbox publisher schedule
+	// Useful for tests that don't have a Temporal server available
+	skipScheduleCreation bool
+	outboxPollingPeriod  time.Duration
+	outboxCleanupPeriod  time.Duration
 }
 
 type Worker struct {
@@ -50,19 +59,22 @@ func NewWorkerPool(
 	storage storage.Storage,
 	connectors connectors.Manager,
 	options worker.Options,
+	outboxPollingPeriod time.Duration,
+	outboxCleanupPeriod time.Duration,
 ) *WorkerPool {
 	workers := &WorkerPool{
-		logger:         logger,
-		stack:          stack,
-		temporalClient: temporalClient,
-		workers:        make(map[string]Worker),
-		workflows:      workflows,
-		activities:     activities,
-		storage:        storage,
-		connectors:     connectors,
-		options:        options,
+		logger:              logger,
+		stack:               stack,
+		temporalClient:      temporalClient,
+		workers:             make(map[string]Worker),
+		workflows:           workflows,
+		activities:          activities,
+		storage:             storage,
+		connectors:          connectors,
+		options:             options,
+		outboxPollingPeriod: outboxPollingPeriod,
+		outboxCleanupPeriod: outboxCleanupPeriod,
 	}
-
 	return workers
 }
 
@@ -112,6 +124,17 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
+
+	// Create the outbox publisher schedule (unless explicitly skipped)
+	if !w.skipScheduleCreation {
+		if err := w.CreateOutboxPublisherSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+		}
+		if err := w.CreateOutboxCleanupSchedule(ctx); err != nil {
+			return fmt.Errorf("failed to create outbox cleanup schedule: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -120,12 +143,9 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
 
-	_, err := w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err := w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %s", err.Error())
 		// We don't want to crash the pod if the plugin registration fails,
@@ -151,12 +171,8 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	_, err = w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		return err
 	}
@@ -193,14 +209,10 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return nil
 	}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	_, err = w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	// skip strict polling period validation if installed by another instance
+	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
 	if err != nil {
-		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
+		w.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
 	}
 	return nil
@@ -292,4 +304,78 @@ func (w *WorkerPool) RemoveWorker(name string) error {
 	w.logger.Infof("worker for connector %s removed", name)
 
 	return nil
+}
+
+func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workflowName string, interval time.Duration, errorMsg string) error {
+	scheduleID := fmt.Sprintf("%s-%s", w.stack, scheduleIDSuffix)
+	taskQueue := GetDefaultTaskQueue(w.stack)
+
+	// Create the schedule
+	_, err := w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+		ID: scheduleID,
+		Spec: client.ScheduleSpec{
+			Intervals: []client.ScheduleIntervalSpec{
+				{
+					Every: interval,
+				},
+			},
+		},
+		Action: &client.ScheduleWorkflowAction{
+			ID:        scheduleID,
+			Workflow:  workflowName,
+			Args:      []interface{}{}, // No arguments needed
+			TaskQueue: taskQueue,
+		},
+		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+		TriggerImmediately: true,
+		SearchAttributes: map[string]interface{}{
+			"Stack": w.stack,
+		},
+	})
+
+	if err != nil {
+		// When triggering immediately or if a workflow with the same ID already exists,
+		// Temporal may return either AlreadyExists (schedule exists) or
+		// WorkflowExecutionAlreadyStarted (the workflow action with same ID already exists),
+		// or the SDK sentinel error temporal.ErrScheduleAlreadyRunning when a schedule with the same ID
+		// is already registered. All these cases should be treated as success as the desired state is achieved.
+		var already *serviceerror.AlreadyExists
+		var wfAlreadyStarted *serviceerror.WorkflowExecutionAlreadyStarted
+		if errors.As(err, &wfAlreadyStarted) || errors.As(err, &already) {
+			// Workflow already started with the same ID, treat as success
+			return nil
+		}
+		if errors.Is(err, sdktemporal.ErrScheduleAlreadyRunning) {
+			return nil
+		}
+
+		return fmt.Errorf("%s: %w", errorMsg, err)
+	}
+	return nil
+}
+
+func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
+	return w.createSchedule(
+		ctx,
+		"outbox-publisher",
+		"OutboxPublisher",
+		w.outboxPollingPeriod,
+		"failed to create outbox publisher schedule",
+	)
+}
+
+func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
+	return w.createSchedule(
+		ctx,
+		"outbox-cleanup",
+		"OutboxCleanup",
+		w.outboxCleanupPeriod,
+		"failed to create outbox cleanup schedule",
+	)
+}
+
+// SetSkipScheduleCreation sets whether to skip creating the outbox publisher schedule.
+// Useful for tests that don't have a Temporal server available.
+func (w *WorkerPool) SetSkipScheduleCreation(skip bool) {
+	w.skipScheduleCreation = skip
 }

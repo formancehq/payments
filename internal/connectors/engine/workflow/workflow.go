@@ -73,6 +73,18 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runFetchNextPayments,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunListActiveSchedules,
+			Func: w.runListActiveSchedules,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunUpdateSchedulePollingPeriod,
+			Func: w.runUpdateSchedulePollingPeriod,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunTerminateScheduleByID,
+			Func: w.runTerminateScheduleByID,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunTerminateSchedules,
 			Func: w.runTerminateSchedules,
 		}).
@@ -122,7 +134,7 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		}).
 		Append(temporalworker.Definition{
 			Name: Run,
-			Func: w.run,
+			Func: w.runNextTasks,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunCreateWebhooks,
@@ -135,14 +147,6 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunStoreWebhookTranslation,
 			Func: w.runStoreWebhookTranslation,
-		}).
-		Append(temporalworker.Definition{
-			Name: RunSendEvents,
-			Func: w.runSendEvents,
-		}).
-		Append(temporalworker.Definition{
-			Name: RunUpdatePaymentInitiationFromPayment,
-			Func: w.runUpdatePaymentInitiationFromPayment,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunDeletePSU,
@@ -167,6 +171,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunDeleteOpenBankingConnectionData,
 			Func: w.runDeleteOpenBankingConnectionData,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunOutboxPublisher,
+			Func: w.runOutboxPublisher,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunOutboxCleanup,
+			Func: w.runOutboxCleanup,
 		})
 }
 

@@ -275,6 +275,24 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /pools/{poolId}/query:
+    patch:
+      summary: Update the query of a pool
+      tags:
+        - payments.v1
+      operationId: updatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePoolQuery'
+      responses:
+        "204":
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /pools/{poolId}/accounts:
     post:
       summary: Add an account to a pool
@@ -2243,6 +2261,32 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /v3/pools/{poolID}/query:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update the query of a pool
+      operationId: v3UpdatePoolQuery
+      x-speakeasy-name-override: UpdatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3UpdatePoolQueryRequest'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /v3/pools/{poolID}/balances:
     get:
       tags:
@@ -2842,10 +2886,10 @@ components:
           default: Stripe
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe API.
-          default: 120s
+          default: 30m
         apiKey:
           type: string
           example: XXX
@@ -2855,7 +2899,7 @@ components:
           minimum: 0
           description: |
             Number of BalanceTransaction to fetch at each polling interval.
-          default: 10
+          default: 100
           example: 50
     DummyPayConfig:
       type: object
@@ -2873,7 +2917,7 @@ components:
           type: string
           example: 60s
           description: The frequency at which the connector will try to fetch new payment objects from the directory
-          default: 10s
+          default: 30s
         directory:
           type: string
           example: /tmp/dummypay
@@ -2902,10 +2946,10 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from Wise API.
-          default: 120s
+          default: 30m
     ModulrConfig:
       type: object
       required:
@@ -2930,10 +2974,10 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from Modulr API.
-          default: 120s
+          default: 30m
     BankingCircleConfig:
       type: object
       required:
@@ -2971,10 +3015,10 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from Banking Circle API.
-          default: 120s
+          default: 30m
     GenericConfig:
       type: object
       required:
@@ -2996,10 +3040,10 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from the API.
-          default: 120s
+          default: 30m
     MangoPayConfig:
       type: object
       required:
@@ -3016,10 +3060,10 @@ components:
           default: Mangopay
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from MangoPay API.
-          default: 120s
+          default: 30m
         clientID:
           type: string
           example: XXX
@@ -3054,10 +3098,10 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector will try to fetch new BalanceTransaction objects from MoneyCorp API.
-          default: 120s
+          default: 30m
     CurrencyCloudConfig:
       type: object
       required:
@@ -3136,11 +3180,12 @@ components:
             The base URL the client uses for making requests towards the Atlar API.
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: |
             The frequency at which the connector tries to fetch new Transaction objects from the Atlar API.
-          default: 120s
+          default: 30m
         transferInitiationStatusPollingPeriod:
+          deprecated: true
           type: string
           example: 60s
           description: |
@@ -3161,7 +3206,7 @@ components:
         pageSize:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 10
           description: |
             Number of items to fetch when querying paginated APIs.
           default: 25
@@ -3274,7 +3319,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: '#/components/schemas/LegacyPaymentStatus'
         error:
           type: string
           nullable: true
@@ -3439,16 +3484,27 @@ components:
       required:
         - id
         - name
+        - type
         - accounts
       properties:
         id:
           type: string
         name:
           type: string
+        type:
+          $ref: '#/components/schemas/PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         accounts:
           type: array
           items:
             type: string
+    PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     PoolBalances:
       type: object
       required:
@@ -3476,6 +3532,11 @@ components:
         asset:
           type: string
           example: USD
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
     Account:
       type: object
       required:
@@ -3766,6 +3827,14 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
+    UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     AddAccountToPoolRequest:
       type: object
       required:
@@ -3775,12 +3844,16 @@ components:
           type: string
     PoolRequest:
       type: object
+      description: Query and dynamic pools are available from Connectivity v3.1
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -3965,6 +4038,32 @@ components:
         - ach debit
         - ach
         - rtp
+    LegacyPaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - SUCCEEDED
+        - CANCELLED
+        - FAILED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - OTHER
+        - WAITING_FOR_VALIDATION
+        - PROCESSING
+        - PROCESSED
+        - FAILED
+        - REJECTED
+        - VALIDATED
+        - ASK_RETRIED
+        - ASK_REVERSED
+        - REVERSE_PROCESSING
+        - REVERSE_FAILED
+        - PARTIALLY_REVERSED
+        - REVERSED
     PaymentStatus:
       type: string
       enum:
@@ -4093,6 +4192,8 @@ components:
         connectorID:
           type: string
           format: byte
+        connector:
+          $ref: '#/components/schemas/V3ConnectorBase'
         provider:
           type: string
         reference:
@@ -4490,6 +4591,20 @@ components:
           type: boolean
         config:
           type: object
+    V3ConnectorBase:
+      type: object
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        provider:
+          type: string
     V3Schedule:
       type: object
       required:
@@ -5408,12 +5523,11 @@ components:
     V3PaymentServiceUserCreateLinkRequest:
       type: object
       required:
-        - applicationName
         - clientRedirectURL
       properties:
         applicationName:
           type: string
-          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider).
+          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.
         clientRedirectURL:
           type: string
           format: url
@@ -5432,11 +5546,11 @@ components:
     V3PaymentServiceUserUpdateLinkRequest:
       type: object
       required:
-        - applicationName
         - clientRedirectURL
       properties:
         applicationName:
           type: string
+          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.
         clientRedirectURL:
           type: string
           format: url
@@ -5453,12 +5567,16 @@ components:
           format: url
     V3CreatePoolRequest:
       type: object
+      description: Query and dynamic pools are available from Connectivity v3.1
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -5471,6 +5589,14 @@ components:
         data:
           description: The ID of the created pool
           type: string
+    V3UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     V3PoolsCursorResponse:
       type: object
       required:
@@ -5521,6 +5647,7 @@ components:
         - id
         - name
         - createdAt
+        - type
         - poolAccounts
       properties:
         id:
@@ -5530,6 +5657,11 @@ components:
         createdAt:
           type: string
           format: date-time
+        type:
+          $ref: '#/components/schemas/V3PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         poolAccounts:
           type: array
           items:
@@ -5549,6 +5681,16 @@ components:
         amount:
           type: integer
           format: bigint
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
+    V3PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     V3GetTaskResponse:
       type: object
       required:
@@ -5676,9 +5818,11 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
+          default: 30m
         provider:
           type: string
           default: Adyen
@@ -5703,9 +5847,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Atlar
@@ -5731,11 +5876,12 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         password:
           type: string
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Bankingcircle
@@ -5761,9 +5907,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Column
@@ -5786,9 +5933,11 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
+          default: 30m
         provider:
           type: string
           default: Currencycloud
@@ -5807,9 +5956,11 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
+          default: 30m
         provider:
           type: string
           default: Dummypay
@@ -5831,9 +5982,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Generic
@@ -5854,9 +6006,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Increase
@@ -5881,9 +6034,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Mangopay
@@ -5906,9 +6060,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Modulr
@@ -5931,9 +6086,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Moneycorp
@@ -5955,9 +6111,11 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
+          default: 30m
         provider:
           type: string
           default: Plaid
@@ -5989,9 +6147,11 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
+          default: 30m
         provider:
           type: string
           default: Powens
@@ -6014,9 +6174,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Qonto
@@ -6035,9 +6196,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Stripe
@@ -6060,9 +6222,11 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
+          default: 30m
         provider:
           type: string
           default: Tink
@@ -6080,9 +6244,10 @@ components:
         pageSize:
           type: integer
           default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Wise
@@ -6369,6 +6534,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolRequest'
+    UpdatePoolQuery:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePoolQueryRequest'
     AddAccountToPool:
       required: true
       content:

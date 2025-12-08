@@ -2,9 +2,11 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
@@ -14,10 +16,30 @@ type ListAccountsResponse struct {
 	NextPageToken string    `json:"nextPageToken"`
 }
 
+type AccountBalances struct {
+	Booked      AccountBalance `json:"booked"`
+	Available   AccountBalance `json:"available"`
+	CreditLimit AccountBalance `json:"creditLimit"`
+}
+type AccountBalance struct {
+	Amount Amount `json:"amount"`
+}
+
+type AccountBalanceValue struct {
+	Scale         json.Number `json:"scale"`
+	UnscaledValue json.Number `json:"unscaledValue"`
+}
+
+type AccountDates struct {
+	LastRefreshed time.Time `json:"lastRefreshed"`
+}
+
 type Account struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ID       string          `json:"id"`
+	Name     string          `json:"name"`
+	Type     string          `json:"type"`
+	Balances AccountBalances `json:"balances"`
+	Dates    AccountDates    `json:"dates"`
 }
 
 func (c *client) ListAccounts(ctx context.Context, userID string, nextPageToken string) (ListAccountsResponse, error) {

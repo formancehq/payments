@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -16,30 +15,18 @@ func (s *Service) PoolsBalances(
 	if err != nil {
 		return nil, newStorageError(err, "cannot get pool")
 	}
-	res := make(map[string]*big.Int)
-	for i := range pool.PoolAccounts {
-		balances, err := s.storage.BalancesGetLatest(ctx, pool.PoolAccounts[i])
+
+	if pool.Type == models.POOL_TYPE_DYNAMIC {
+		// populate the pool accounts from the query
+		pool.PoolAccounts, err = s.populatePoolAccounts(ctx, pool)
 		if err != nil {
-			return nil, newStorageError(err, "cannot get latest balances")
-		}
-
-		for _, balance := range balances {
-			amount, ok := res[balance.Asset]
-			if !ok {
-				amount = big.NewInt(0)
-			}
-
-			amount.Add(amount, balance.Balance)
-			res[balance.Asset] = amount
+			return nil, newStorageError(err, "cannot populate pool accounts")
 		}
 	}
 
-	balances := make([]models.AggregatedBalance, 0, len(res))
-	for asset, amount := range res {
-		balances = append(balances, models.AggregatedBalance{
-			Asset:  asset,
-			Amount: amount,
-		})
+	balances, err := s.storage.BalancesGetFromAccountIDs(ctx, pool.PoolAccounts, nil)
+	if err != nil {
+		return nil, newStorageError(err, "cannot get latest balances")
 	}
 
 	return balances, nil

@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/go-playground/validator/v10"
@@ -14,11 +15,14 @@ import (
 )
 
 type Config struct {
-	APIKey           string `json:"apiKey" validate:"required"`
-	WebhookPublicKey string `json:"webhookPublicKey" validate:"required"`
+	APIKey           string                     `json:"apiKey" validate:"required"`
+	WebhookPublicKey string                     `json:"webhookPublicKey" validate:"required"`
+	PollingPeriod    sharedconfig.PollingPeriod `json:"pollingPeriod"`
 
 	webhookPublicKey *rsa.PublicKey `json:"-"`
 }
+
+const PAGE_SIZE = 100 // max page size is 100
 
 func (c *Config) validate() error {
 	p, _ := pem.Decode([]byte(c.WebhookPublicKey))
@@ -51,10 +55,30 @@ func (c *Config) validate() error {
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
-	var config Config
-	if err := json.Unmarshal(payload, &config); err != nil {
+	var raw struct {
+		APIKey           string `json:"apiKey"`
+		WebhookPublicKey string `json:"webhookPublicKey"`
+		PollingPeriod    string `json:"pollingPeriod"`
+	}
+	if err := json.Unmarshal(payload, &raw); err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
+
+	pp, err := sharedconfig.NewPollingPeriod(
+		raw.PollingPeriod,
+		sharedconfig.DefaultPollingPeriod,
+		sharedconfig.MinimumPollingPeriod,
+	)
+	if err != nil {
+		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
+	}
+
+	config := Config{
+		APIKey:           raw.APIKey,
+		WebhookPublicKey: raw.WebhookPublicKey,
+		PollingPeriod:    pp,
+	}
+
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	if err := validate.Struct(config); err != nil {
 		return config, err

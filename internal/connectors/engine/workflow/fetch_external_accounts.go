@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -50,14 +50,20 @@ func (w Workflow) fetchExternalAccounts(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextExternalAccount.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		externalAccountsResponse, err := activities.PluginFetchNextExternalAccounts(
-			infiniteRetryContext(ctx),
+			fetchNextActivityRetryContext(ctx),
 			fetchNextExternalAccount.ConnectorID,
 			fetchNextExternalAccount.FromPayload.GetPayload(),
 			state.State,
-			fetchNextExternalAccount.Config.PageSize,
+			int(pageSize),
 			fetchNextExternalAccount.Periodically,
 		)
 		if err != nil {
@@ -88,69 +94,45 @@ func (w Workflow) fetchExternalAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
-		for _, externalAccount := range accounts {
-			acc := externalAccount
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts))
 
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
+		if len(nextTasks) > 0 {
+			// First, we need to get the connector to check if it is scheduled for deletion
+			// because if it is, we don't need to run the next tasks
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextExternalAccount.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
+			}
+
+			if !connector.ScheduledForDeletion {
+				for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
+					acc := externalAccount
+
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
+
+						payload, err := json.Marshal(acc)
+						if err != nil {
+							errChan <- errors.Wrap(err, "marshalling external account")
+							return
+						}
+
+						if err := w.runNextTasks(
+							ctx,
+							fetchNextExternalAccount.Config,
+							connector,
+							&FromPayload{
+								ID:      acc.Reference,
+								Payload: payload,
 							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Account: &acc,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
 				}
-			})
-		}
-
-		for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
-			acc := externalAccount
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				payload, err := json.Marshal(acc)
-				if err != nil {
-					errChan <- errors.Wrap(err, "marshalling external account")
-				}
-
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					Run,
-					fetchNextExternalAccount.Config,
-					fetchNextExternalAccount.ConnectorID,
-					&FromPayload{
-						ID:      acc.Reference,
-						Payload: payload,
-					},
-					nextTasks,
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "running next workflow")
-				}
-			})
+			}
 		}
 
 		wg.Wait(ctx)

@@ -23,12 +23,7 @@ var (
 		"pollingPeriod": {
 			DataType:     TypeDurationNs,
 			Required:     false,
-			DefaultValue: "2m",
-		},
-		"pageSize": {
-			DataType:     TypeUnsignedInteger,
-			Required:     false,
-			DefaultValue: "100",
+			DefaultValue: "30m",
 		},
 		"name": {
 			DataType: TypeString,

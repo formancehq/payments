@@ -27,9 +27,9 @@ func (s *UnitTestSuite) Test_TerminateSchedules_Success() {
 	)
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test").Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
+	s.env.ExecuteWorkflow(RunTerminateSchedules, TerminateSchedules{
+		ConnectorID:   s.connectorID,
+		NextPageToken: "",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -47,9 +47,9 @@ func (s *UnitTestSuite) Test_TerminateSchedules_EmptyScheduleList_Success() {
 		nil,
 	)
 
-	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
+	s.env.ExecuteWorkflow(RunTerminateSchedules, TerminateSchedules{
+		ConnectorID:   s.connectorID,
+		NextPageToken: "",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -84,9 +84,9 @@ func (s *UnitTestSuite) Test_TerminateSchedules_HasMore_Success() {
 		nil,
 	)
 
-	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
+	s.env.ExecuteWorkflow(RunTerminateSchedules, TerminateSchedules{
+		ConnectorID:   s.connectorID,
+		NextPageToken: "",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -100,9 +100,9 @@ func (s *UnitTestSuite) Test_TerminateSchedules_StorageSchedulesList_Error() {
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
+	s.env.ExecuteWorkflow(RunTerminateSchedules, TerminateSchedules{
+		ConnectorID:   s.connectorID,
+		NextPageToken: "",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -130,9 +130,9 @@ func (s *UnitTestSuite) Test_TerminateSchedules_TemporalScheduleDelete_Error() {
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
+	s.env.ExecuteWorkflow(RunTerminateSchedules, TerminateSchedules{
+		ConnectorID:   s.connectorID,
+		NextPageToken: "",
 	})
 
 	// Should log the error but continue
@@ -159,9 +159,9 @@ func (s *UnitTestSuite) Test_TerminateSchedules__CursorError_Error() {
 	)
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test").Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
-		ConnectorID:       s.connectorID,
-		DefaultWorkerName: "test",
+	s.env.ExecuteWorkflow(RunTerminateSchedules, TerminateSchedules{
+		ConnectorID:   s.connectorID,
+		NextPageToken: "",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

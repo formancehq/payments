@@ -116,11 +116,15 @@ jobs:
         with:
           fetch-depth: 0
       - name: Tailscale
-        uses: tailscale/github-action@v3
+        uses: formancehq/tailscale-github-action@v3+formance
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
+          tags: ${{ vars.TS_TAGS }}
+          version: ${{ vars.TS_VERSION }}
+          args: ${{ vars.TS_ARGS }}
+          retry: ${{ vars.TS_RETRY }}
+          timeout: ${{ vars.TS_TIMEOUT }}
       - name: "Deploy in staging"
         env:
           TAG: ${{ github.sha }}

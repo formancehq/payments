@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 1b279e480d776e792ce044e9201cea96
+  docChecksum: 1d818b1311e2b3ebe3141712d7d9590c
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -58,6 +58,7 @@ generatedFiles:
   - /models/components/forwardbankaccountrequest.go
   - /models/components/genericconfig.go
   - /models/components/httpmetadata.go
+  - /models/components/legacypaymentstatus.go
   - /models/components/mangopayconfig.go
   - /models/components/modulrconfig.go
   - /models/components/moneycorpconfig.go
@@ -79,6 +80,7 @@ generatedFiles:
   - /models/components/poolrequest.go
   - /models/components/poolresponse.go
   - /models/components/poolscursor.go
+  - /models/components/pooltypeenum.go
   - /models/components/reversetransferinitiationrequest.go
   - /models/components/security.go
   - /models/components/serverinfo.go
@@ -104,6 +106,7 @@ generatedFiles:
   - /models/components/transferrequest.go
   - /models/components/transferresponse.go
   - /models/components/updatebankaccountmetadatarequest.go
+  - /models/components/updatepoolqueryrequest.go
   - /models/components/updatetransferinitiationstatusrequest.go
   - /models/components/v3account.go
   - /models/components/v3accountscursorresponse.go
@@ -122,6 +125,7 @@ generatedFiles:
   - /models/components/v3columnconfig.go
   - /models/components/v3connectionstatusenum.go
   - /models/components/v3connector.go
+  - /models/components/v3connectorbase.go
   - /models/components/v3connectorconfig.go
   - /models/components/v3connectorconfigsresponse.go
   - /models/components/v3connectorscheduleinstancescursorresponse.go
@@ -198,6 +202,7 @@ generatedFiles:
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
+  - /models/components/v3pooltypeenum.go
   - /models/components/v3powensconfig.go
   - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
@@ -213,6 +218,7 @@ generatedFiles:
   - /models/components/v3updatebankaccountmetadatarequest.go
   - /models/components/v3updateconnectorrequest.go
   - /models/components/v3updatepaymentmetadatarequest.go
+  - /models/components/v3updatepoolqueryrequest.go
   - /models/components/v3wiseconfig.go
   - /models/components/wiseconfig.go
   - /models/operations/addaccounttopool.go
@@ -258,6 +264,7 @@ generatedFiles:
   - /models/operations/updatebankaccountmetadata.go
   - /models/operations/updateconnectorconfigv1.go
   - /models/operations/updatemetadata.go
+  - /models/operations/updatepoolquery.go
   - /models/operations/updatetransferinitiationstatus.go
   - /models/operations/v3addaccounttopool.go
   - /models/operations/v3addbankaccounttopaymentserviceuser.go
@@ -316,6 +323,7 @@ generatedFiles:
   - /models/operations/v3updateconnectorconfig.go
   - /models/operations/v3updatelinkforpaymentserviceuseronconnector.go
   - /models/operations/v3updatepaymentmetadata.go
+  - /models/operations/v3updatepoolquery.go
   - USAGE.md
   - docs/models/components/account.md
   - docs/models/components/accountbalance.md
@@ -352,6 +360,7 @@ generatedFiles:
   - docs/models/components/forwardbankaccountrequest.md
   - docs/models/components/genericconfig.md
   - docs/models/components/httpmetadata.md
+  - docs/models/components/legacypaymentstatus.md
   - docs/models/components/mangopayconfig.md
   - docs/models/components/modulrconfig.md
   - docs/models/components/moneycorpconfig.md
@@ -377,6 +386,7 @@ generatedFiles:
   - docs/models/components/poolresponse.md
   - docs/models/components/poolscursor.md
   - docs/models/components/poolscursorcursor.md
+  - docs/models/components/pooltypeenum.md
   - docs/models/components/reversetransferinitiationrequest.md
   - docs/models/components/security.md
   - docs/models/components/serverinfo.md
@@ -425,6 +435,7 @@ generatedFiles:
   - docs/models/components/transferrequest.md
   - docs/models/components/transferresponse.md
   - docs/models/components/updatebankaccountmetadatarequest.md
+  - docs/models/components/updatepoolqueryrequest.md
   - docs/models/components/updatetransferinitiationstatusrequest.md
   - docs/models/components/v3account.md
   - docs/models/components/v3accountraw.md
@@ -448,6 +459,7 @@ generatedFiles:
   - docs/models/components/v3columnconfig.md
   - docs/models/components/v3connectionstatusenum.md
   - docs/models/components/v3connector.md
+  - docs/models/components/v3connectorbase.md
   - docs/models/components/v3connectorconfig.md
   - docs/models/components/v3connectorconfigsresponse.md
   - docs/models/components/v3connectorconfigsresponsedata.md
@@ -543,6 +555,7 @@ generatedFiles:
   - docs/models/components/v3poolbalancesresponse.md
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3pooltypeenum.md
   - docs/models/components/v3powensconfig.md
   - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
@@ -561,6 +574,7 @@ generatedFiles:
   - docs/models/components/v3updatebankaccountmetadatarequest.md
   - docs/models/components/v3updateconnectorrequest.md
   - docs/models/components/v3updatepaymentmetadatarequest.md
+  - docs/models/components/v3updatepoolqueryrequest.md
   - docs/models/components/v3wiseconfig.md
   - docs/models/components/wiseconfig.md
   - docs/models/operations/addaccounttopoolrequest.md
@@ -642,6 +656,8 @@ generatedFiles:
   - docs/models/operations/updateconnectorconfigv1response.md
   - docs/models/operations/updatemetadatarequest.md
   - docs/models/operations/updatemetadataresponse.md
+  - docs/models/operations/updatepoolqueryrequest.md
+  - docs/models/operations/updatepoolqueryresponse.md
   - docs/models/operations/updatetransferinitiationstatusrequest.md
   - docs/models/operations/updatetransferinitiationstatusresponse.md
   - docs/models/operations/v3addaccounttopoolrequest.md
@@ -752,6 +768,8 @@ generatedFiles:
   - docs/models/operations/v3updatelinkforpaymentserviceuseronconnectorresponse.md
   - docs/models/operations/v3updatepaymentmetadatarequest.md
   - docs/models/operations/v3updatepaymentmetadataresponse.md
+  - docs/models/operations/v3updatepoolqueryrequest.md
+  - docs/models/operations/v3updatepoolqueryresponse.md
   - docs/sdks/formance/README.md
   - docs/sdks/payments/README.md
   - docs/sdks/v1/README.md
@@ -906,7 +924,7 @@ examples:
           sort: ["date:asc", "status:desc"]
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "accounts": ["<value>"]}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "type": "DYNAMIC", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "type": "DYNAMIC", "accounts": ["<value>"]}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   createPool:
@@ -915,7 +933,7 @@ examples:
         application/json: {"name": "<value>", "accountIDs": ["<value>", "<value>", "<value>"]}
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "accounts": []}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "DYNAMIC", "accounts": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   getPool:
@@ -925,7 +943,7 @@ examples:
           poolId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "accounts": []}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "type": "STATIC", "accounts": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   deletePool:
@@ -1095,7 +1113,7 @@ examples:
         path:
           connector: "ATLAR"
       requestBody:
-        application/json: {"name": "My Wise Account", "provider": "Wise", "apiKey": "XXX", "pollingPeriod": "60s"}
+        application/json: {"name": "My Wise Account", "provider": "Wise", "apiKey": "XXX", "pollingPeriod": "120m"}
       responses:
         "201":
           application/json: {"data": {"connectorID": "<id>"}}
@@ -1125,7 +1143,7 @@ examples:
           connector: "GENERIC"
       responses:
         "200":
-          application/json: {"data": {"name": "My Atlar Account", "provider": "Atlar", "baseUrl": "https://api.example.com", "pollingPeriod": "60s", "transferInitiationStatusPollingPeriod": "60s", "accessKey": "XXX", "secret": "XXX", "pageSize": 50}}
+          application/json: {"data": {"name": "My Atlar Account", "provider": "Atlar", "baseUrl": "https://api.example.com", "pollingPeriod": "120m", "transferInitiationStatusPollingPeriod": "60s", "accessKey": "XXX", "secret": "XXX", "pageSize": 50}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   updateConnectorConfigV1:
@@ -1361,7 +1379,7 @@ examples:
           connectorID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"clientID": "<id>", "clientSecret": "<value>", "name": "<value>", "pageSize": "25", "pollingPeriod": "2m", "provider": "Plaid"}}
+          application/json: {"data": {"clientID": "<id>", "clientSecret": "<value>", "name": "<value>", "pageSize": 25, "pollingPeriod": "2m", "provider": "Plaid"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3UpdateConnectorConfig:
@@ -1622,7 +1640,7 @@ examples:
           cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "poolAccounts": ["<value>"]}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "type": "DYNAMIC", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "type": "DYNAMIC", "poolAccounts": ["<value>"]}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3GetPool:
@@ -1632,7 +1650,7 @@ examples:
           poolID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "poolAccounts": ["<value>"]}}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "type": "STATIC", "poolAccounts": ["<value>"]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3DeletePool:
@@ -1845,6 +1863,24 @@ examples:
         path:
           paymentServiceUserID: "<id>"
           connectorID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  updatePoolQuery:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      requestBody:
+        application/json: {"query": {"key": "<value>"}}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  v3UpdatePoolQuery:
+    speakeasy-default-v3-update-pool-query:
+      parameters:
+        path:
+          poolID: "<id>"
       responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}

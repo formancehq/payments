@@ -1,3 +1,5 @@
+//go:build it
+
 package test_suite
 
 import (
@@ -36,12 +38,13 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                 stack,
-			NatsURL:               natsServer.GetValue().ClientURL(),
-			PostgresConfiguration: db.GetValue().ConnectionOptions(),
-			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:       temporalServer.GetValue().Address(),
-			Output:                GinkgoWriter,
+			Stack:                     stack,
+			NatsURL:                   natsServer.GetValue().ClientURL(),
+			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
+			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:           temporalServer.GetValue().Address(),
+			Output:                    GinkgoWriter,
+			SkipOutboxScheduleCreation: true,
 		}
 	})
 
@@ -168,12 +171,13 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 
 		It("should be ok", func() {
+			applicationName := "test"
 			resp, err := app.GetValue().SDK().Payments.V3.CreateLinkForPaymentServiceUser(
 				ctx,
 				psuID,
 				connectorID,
 				&components.V3PaymentServiceUserCreateLinkRequest{
-					ApplicationName:   "test",
+					ApplicationName:   &applicationName,
 					ClientRedirectURL: "https://www.google.com",
 				},
 			)
@@ -248,12 +252,13 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 
 		It("the link flow should be in error and the attempt should be updated to exited, no connection should be created", func() {
+			applicationName := "test"
 			resp, err := app.GetValue().SDK().Payments.V3.CreateLinkForPaymentServiceUser(
 				ctx,
 				psuID,
 				connectorID,
 				&components.V3PaymentServiceUserCreateLinkRequest{
-					ApplicationName:   "test",
+					ApplicationName:   &applicationName,
 					ClientRedirectURL: "https://www.google.com",
 				},
 			)

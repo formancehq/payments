@@ -21,10 +21,19 @@ type BankAccount struct {
 	Error        string    `json:"error"`
 	LastUpdate   time.Time `json:"last_update"`
 
+	Balance      json.Number   `json:"balance"`
 	Transactions []Transaction `json:"transactions"`
 }
 
 func (b BankAccount) MarshalJSON() ([]byte, error) {
+	var lastUpdate string
+	if !b.LastUpdate.IsZero() {
+		var err error
+		lastUpdate, err = ConvertUTCToPowensTime(b.LastUpdate, time.DateTime)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return json.Marshal(struct {
 		ID           int      `json:"id"`
 		UserID       int      `json:"id_user"`
@@ -32,8 +41,9 @@ func (b BankAccount) MarshalJSON() ([]byte, error) {
 		Currency     Currency `json:"currency"`
 		OriginalName string   `json:"original_name"`
 		Error        string   `json:"error"`
-		LastUpdate   string   `json:"last_update"`
+		LastUpdate   string   `json:"last_update,omitempty"`
 
+		Balance      json.Number   `json:"balance"`
 		Transactions []Transaction `json:"transactions"`
 	}{
 		ID:           b.ID,
@@ -42,8 +52,9 @@ func (b BankAccount) MarshalJSON() ([]byte, error) {
 		Currency:     b.Currency,
 		OriginalName: b.OriginalName,
 		Error:        b.Error,
-		LastUpdate:   b.LastUpdate.Format(time.DateTime),
+		LastUpdate:   lastUpdate,
 
+		Balance:      b.Balance,
 		Transactions: b.Transactions,
 	})
 }
@@ -56,8 +67,9 @@ func (b *BankAccount) UnmarshalJSON(data []byte) error {
 		Currency     Currency `json:"currency"`
 		OriginalName string   `json:"original_name"`
 		Error        string   `json:"error"`
-		LastUpdate   string   `json:"last_update"`
+		LastUpdate   string   `json:"last_update,omitempty"`
 
+		Balance      json.Number   `json:"balance"`
 		Transactions []Transaction `json:"transactions"`
 	}
 
@@ -69,7 +81,7 @@ func (b *BankAccount) UnmarshalJSON(data []byte) error {
 	var lastUpdate time.Time
 	if ba.LastUpdate != "" {
 		var err error
-		lastUpdate, err = time.Parse(time.DateTime, ba.LastUpdate)
+		lastUpdate, err = ConvertPowensTimeToUTC(ba.LastUpdate, time.DateTime)
 		if err != nil {
 			return err
 		}
@@ -83,6 +95,7 @@ func (b *BankAccount) UnmarshalJSON(data []byte) error {
 		OriginalName: ba.OriginalName,
 		Error:        ba.Error,
 		LastUpdate:   lastUpdate,
+		Balance:      ba.Balance,
 		Transactions: ba.Transactions,
 	}
 

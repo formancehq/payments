@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/stripe/stripe-go/v79"
+	"github.com/stripe/stripe-go/v80"
 )
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) (*stripe.Balance, error) {

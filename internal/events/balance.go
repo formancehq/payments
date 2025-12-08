@@ -1,6 +1,8 @@
 package events
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -17,6 +19,45 @@ type BalanceMessagePayload struct {
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 	Asset         string    `json:"asset"`
 	Balance       *big.Int  `json:"balance"`
+}
+
+func (b *BalanceMessagePayload) MarshalJSON() ([]byte, error) {
+	type Alias BalanceMessagePayload
+	var balanceStr *string
+	if b.Balance != nil {
+		s := b.Balance.String()
+		balanceStr = &s
+	}
+	return json.Marshal(&struct {
+		Balance *string `json:"balance"`
+		*Alias
+	}{
+		Balance: balanceStr,
+		Alias:   (*Alias)(b),
+	})
+}
+
+func (b *BalanceMessagePayload) UnmarshalJSON(data []byte) error {
+	type Alias BalanceMessagePayload
+	aux := &struct {
+		Balance *string `json:"balance"`
+		*Alias
+	}{
+		Alias: (*Alias)(b),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.Balance != nil {
+		bi := new(big.Int)
+		if _, ok := bi.SetString(*aux.Balance, 10); !ok {
+			return fmt.Errorf("invalid balance string: %s", *aux.Balance)
+		}
+		b.Balance = bi
+	} else {
+		b.Balance = nil
+	}
+	return nil
 }
 
 func (e Events) NewEventSavedBalances(balance models.Balance) publish.EventMessage {

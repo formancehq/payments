@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -50,14 +50,20 @@ func (w Workflow) fetchNextPayments(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextPayments.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		paymentsResponse, err := activities.PluginFetchNextPayments(
-			infiniteRetryContext(ctx),
+			fetchNextActivityRetryContext(ctx),
 			fetchNextPayments.ConnectorID,
 			fetchNextPayments.FromPayload.GetPayload(),
 			state.State,
-			fetchNextPayments.Config.PageSize,
+			int(pageSize),
 			fetchNextPayments.Periodically,
 		)
 		if err != nil {
@@ -87,7 +93,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*3+len(paymentsResponse.PaymentsToDelete))
+		errChan := make(chan error, len(paymentsResponse.Payments)*2+len(paymentsResponse.PaymentsToDelete))
 		for _, payment := range payments {
 			p := payment
 
@@ -95,90 +101,52 @@ func (w Workflow) fetchNextPayments(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
-				// We want to update the payment initiation from the payment
-				// if it exists
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunUpdatePaymentInitiationFromPayment,
-					UpdatePaymentInitiationFromPayment{
-						Payment: &p,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				// Send the payment event
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Payment: &p,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
+				if err := activities.StoragePaymentInitiationUpdateFromPayment(
+					infiniteRetryContext(ctx),
+					p.Status,
+					p.CreatedAt,
+					p.ID,
+				); err != nil {
+					errChan <- errors.Wrap(err, "updating payment initiation from payment")
 				}
 			})
 		}
 
-		for _, payment := range paymentsResponse.Payments {
-			p := payment
+		if len(nextTasks) > 0 {
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextPayments.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
+			}
 
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+			if !connector.ScheduledForDeletion {
+				for _, payment := range paymentsResponse.Payments {
+					p := payment
 
-				payload, err := json.Marshal(p)
-				if err != nil {
-					errChan <- errors.Wrap(err, "marshalling payment")
-				}
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
 
-				// Run next tasks
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
+						payload, err := json.Marshal(p)
+						if err != nil {
+							errChan <- errors.Wrap(err, "marshalling payment")
+							return
+						}
+
+						if err := w.runNextTasks(
+							ctx,
+							fetchNextPayments.Config,
+							connector,
+							&FromPayload{
+								ID:      p.Reference,
+								Payload: payload,
 							},
-						},
-					),
-					Run,
-					fetchNextPayments.Config,
-					fetchNextPayments.ConnectorID,
-					&FromPayload{
-						ID:      p.Reference,
-						Payload: payload,
-					},
-					nextTasks,
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "running next workflow")
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
 				}
-			})
+			}
 		}
 
 		for _, payment := range paymentsResponse.PaymentsToDelete {

@@ -14,6 +14,7 @@ import (
 type InstallConnector struct {
 	ConnectorID models.ConnectorID
 	Config      models.Config
+	OnStart     bool // if this is being called at application startup
 }
 
 func (w Workflow) runInstallConnector(
@@ -45,9 +46,7 @@ func (w Workflow) installConnector(
 	// Second step: install the connector via the plugin and get the list of
 	// capabilities and the workflow of polling data
 	installResponse, err := activities.PluginInstallConnector(
-		// disable retries as grpc plugin boot command cannot be run more than once by the go-plugin client
-		// this also causes API install calls to fail immediately which is more desirable in the case that a plugin is timing out or not compiled correctly
-		maximumAttemptsRetryContext(ctx, 1),
+		infiniteRetryContext(ctx),
 		installConnector.ConnectorID,
 	)
 	if err != nil {
@@ -60,6 +59,22 @@ func (w Workflow) installConnector(
 		return errors.Wrap(err, "failed to store tasks tree")
 	}
 
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), installConnector.ConnectorID)
+	if err != nil {
+		return fmt.Errorf("getting connector: %w", err)
+	}
+
+	if connector.ScheduledForDeletion {
+		return nil
+	}
+
+	// if this is being triggered by an app restart allow the install workflow to run again with the same ID
+	// this only applies to workflows that have already terminated and doesn't allow concurrency of the same workflow
+	reusePolicy := enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY
+	if installConnector.OnStart {
+		reusePolicy = enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE
+	}
+
 	// Fifth step: launch the workflow tree, do not wait for the result
 	// by using the GetChildWorkflowExecution function that returns a future
 	// which will be ready when the child workflow has successfully started.
@@ -68,7 +83,7 @@ func (w Workflow) installConnector(
 			ctx,
 			workflow.ChildWorkflowOptions{
 				WorkflowID:            fmt.Sprintf("run-tasks-%s-%s", w.stack, installConnector.ConnectorID.String()),
-				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+				WorkflowIDReusePolicy: reusePolicy,
 				TaskQueue:             w.getDefaultTaskQueue(),
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
@@ -78,7 +93,7 @@ func (w Workflow) installConnector(
 		),
 		Run,
 		installConnector.Config,
-		installConnector.ConnectorID,
+		connector,
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {

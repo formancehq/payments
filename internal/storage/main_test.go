@@ -6,12 +6,14 @@ import (
 	"database/sql"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunconnect"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/testing/docker"
 	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v3/testing/utils"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
@@ -34,7 +36,12 @@ func TestMain(m *testing.M) {
 
 		bunDB = bun.NewDB(db, pgdialect.New())
 
-		return m.Run()
+		//return m.Run()
+		code := m.Run()
+
+		// Ensure the global bunDB is closed at the end of the test suite
+		_ = bunDB.Close()
+		return code
 	})
 }
 
@@ -54,5 +61,31 @@ func newStore(t *testing.T) Storage {
 	err = Migrate(context.Background(), logging.Testing(), db, "test")
 	require.NoError(t, err)
 
-	return newStorage(logging.Testing(), db, string(key))
+	//return newStorage(logging.Testing(), db, string(key))
+
+	st := newStorage(logging.Testing(), db, string(key))
+
+	// Ensure the store (and its DB connections) are closed before the per-test database is dropped.
+	t.Cleanup(func() {
+		_ = st.Close()
+	})
+
+	return st
+}
+
+func cleanupOutboxHelper(ctx context.Context, store Storage) func() {
+	return func() {
+		pendingEvents, _ := store.OutboxEventsPollPending(ctx, 1000)
+		var eventIDs []models.EventID
+		var eventsSent []models.EventSent
+		for _, event := range pendingEvents {
+			eventIDs = append(eventIDs, event.ID)
+			eventsSent = append(eventsSent, models.EventSent{})
+		}
+		if len(eventIDs) > 0 {
+			_ = store.OutboxEventsMarkProcessedAndRecordSent(ctx, eventIDs, eventsSent)
+			tomorrow := time.Now().AddDate(0, 0, 1)
+			_ = store.OutboxEventsDeleteOldProcessed(ctx, tomorrow)
+		}
+	}
 }

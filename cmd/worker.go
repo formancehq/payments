@@ -30,6 +30,10 @@ func newWorker() *cobra.Command {
 	cmd.Flags().Int(temporalMaxLocalActivitySlotsFlag, 50, "Max local activity slots")
 	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	cmd.Flags().Duration(temporalRateLimitingRetryDelay, 5*time.Second, "Additional delay before a rate limited request is retried by Temporal workers")
+
+	cmd.Flags().Duration(OutboxPollingIntervalFlag, 10*time.Second, "Polling interval for notifications outbox")
+	cmd.Flags().Duration(OutboxCleanupIntervalFlag, 7*24*time.Hour, "Cleanup interval for notifications outbox")
+	cmd.Flags().Bool(SkipOutboxScheduleCreationFlag, false, "Skip creating the outbox event publisher schedule (e.g. for tests)")
 	return cmd
 }
 
@@ -64,6 +68,14 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	temporalMaxConcurrentActivityTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentActivityTaskPollersFlag)
 	temporalMaxSlotsPerPoller, _ := cmd.Flags().GetInt(temporalMaxSlotsPerPollerFlag)
 	temporalMaxLocalActivitySlots, _ := cmd.Flags().GetInt(temporalMaxLocalActivitySlotsFlag)
+
+	skipOutboxScheduleCreation, _ := cmd.Flags().GetBool(SkipOutboxScheduleCreationFlag)
+
+	pollingPeriodDefault, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodDefault)
+	pollingPeriodMinimum, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodMinimum)
+
+	outboxPollingInterval, _ := cmd.Flags().GetDuration(OutboxPollingIntervalFlag)
+	outboxCleanupInterval, _ := cmd.Flags().GetDuration(OutboxCleanupIntervalFlag)
 	return fx.Options(
 		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
 		worker.NewModule(
@@ -76,6 +88,11 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 			temporalMaxSlotsPerPoller,
 			temporalMaxLocalActivitySlots,
 			service.IsDebug(cmd),
+			skipOutboxScheduleCreation,
+			pollingPeriodDefault,
+			pollingPeriodMinimum,
+			outboxPollingInterval,
+			outboxCleanupInterval,
 		),
 	), nil
 }

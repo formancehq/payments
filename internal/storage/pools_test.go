@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -9,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -28,19 +30,26 @@ func defaultPools() []models.Pool {
 			ID:           poolID1,
 			Name:         "test1",
 			CreatedAt:    now.Add(-60 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
 			PoolAccounts: []models.AccountID{defaultAccounts[0].ID, defaultAccounts[1].ID},
 		},
 		{
 			ID:           poolID2,
 			Name:         "test2",
 			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
 			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
 		},
 		{
-			ID:           poolID3,
-			Name:         "test3",
-			CreatedAt:    now.Add(-55 * time.Minute).UTC().Time,
-			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
+			ID:        poolID3,
+			Name:      "test3",
+			CreatedAt: now.Add(-55 * time.Minute).UTC().Time,
+			Type:      models.POOL_TYPE_DYNAMIC,
+			Query: map[string]any{
+				"$match": map[string]any{
+					"account_id": "test3",
+				},
+			},
 		},
 	}
 }
@@ -54,7 +63,9 @@ func TestPoolsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	t.Cleanup(func() {
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -66,6 +77,7 @@ func TestPoolsUpsert(t *testing.T) {
 		p := models.Pool{
 			ID:           poolID3,
 			Name:         "test1",
+			Type:         models.POOL_TYPE_STATIC,
 			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
 			PoolAccounts: []models.AccountID{defaultAccounts()[2].ID},
 		}
@@ -103,6 +115,107 @@ func TestPoolsUpsert(t *testing.T) {
 		err := store.PoolsUpsert(ctx, p)
 		require.Error(t, err)
 	})
+
+	t.Run("outbox event created for new pool", func(t *testing.T) {
+		// Create a new pool for this test
+		newPool := models.Pool{
+			ID:           uuid.New(),
+			Name:         "outbox-test-pool",
+			CreatedAt:    now.Add(-10 * time.Minute).UTC().Time,
+			PoolAccounts: []models.AccountID{defaultAccounts()[0].ID},
+		}
+
+		expectedKey := newPool.IdempotencyKey()
+
+		require.NoError(t, store.PoolsUpsert(ctx, newPool))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeSavedPool &&
+				pendingEvents[i].EntityID == newPool.ID.String() &&
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for pool saved")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeSavedPool, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, newPool.ID.String(), ourEvent.EntityID)
+		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newPool.ID.String(), payload["id"])
+		assert.Equal(t, newPool.Name, payload["name"])
+		assert.NotNil(t, payload["accountIDs"])
+		assert.NotNil(t, payload["createdAt"])
+	})
+
+	t.Run("no outbox event for existing pool update", func(t *testing.T) {
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Update existing pool (should not create event)
+		existingPool := defaultPools()[1]
+		existingPool.PoolAccounts = append(existingPool.PoolAccounts, defaultAccounts()[0].ID)
+		require.NoError(t, store.PoolsUpsert(ctx, existingPool))
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new pool saved event)
+		assert.Equal(t, countBefore, countAfter, "updating existing pool should not create saved event")
+	})
+}
+
+func TestPoolsUpdateQuery(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
+	upsertPool(t, ctx, store, defaultPools()[2])
+
+	t.Run("update query of existing pool", func(t *testing.T) {
+		err := store.PoolsUpdateQuery(ctx, defaultPools()[2], map[string]any{
+			"$match": map[string]any{
+				"account_id": "newtest",
+			},
+		})
+		require.NoError(t, err)
+
+		updated := defaultPools()[2]
+		updated.Query = map[string]any{
+			"$match": map[string]any{
+				"account_id": "newtest",
+			},
+		}
+
+		actual, err := store.PoolsGet(ctx, defaultPools()[2].ID)
+		require.NoError(t, err)
+		require.Equal(t, updated, *actual)
+	})
 }
 
 func TestPoolsGet(t *testing.T) {
@@ -139,7 +252,9 @@ func TestPoolsDelete(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	t.Cleanup(func() {
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -171,6 +286,72 @@ func TestPoolsDelete(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, defaultPools()[1], *actual)
 	})
+
+	t.Run("outbox event created for pool deletion", func(t *testing.T) {
+		// Create a new pool for this test
+		deleteTestPool := models.Pool{
+			ID:           uuid.New(),
+			Name:         "delete-test-pool",
+			CreatedAt:    now.Add(-5 * time.Minute).UTC().Time,
+			PoolAccounts: []models.AccountID{defaultAccounts()[0].ID},
+		}
+		require.NoError(t, store.PoolsUpsert(ctx, deleteTestPool))
+
+		// Delete the pool
+		deleted, err := store.PoolsDelete(ctx, deleteTestPool.ID)
+		require.NoError(t, err)
+		require.True(t, deleted)
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeDeletePool &&
+				pendingEvents[i].EntityID == deleteTestPool.ID.String() {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for pool deleted")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeDeletePool, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, deleteTestPool.ID.String(), ourEvent.EntityID)
+		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, deleteTestPool.ID.String(), ourEvent.ID.EventIdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, deleteTestPool.ID.String(), payload["id"])
+		assert.NotNil(t, payload["createdAt"])
+	})
+
+	t.Run("no outbox event for non-existent pool deletion", func(t *testing.T) {
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Try to delete non-existent pool
+		deleted, err := store.PoolsDelete(ctx, uuid.New())
+		require.NoError(t, err)
+		require.False(t, deleted)
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new pool deleted event)
+		assert.Equal(t, countBefore, countAfter, "deleting non-existent pool should not create deleted event")
+	})
 }
 
 func TestPoolsAddAccount(t *testing.T) {
@@ -178,7 +359,9 @@ func TestPoolsAddAccount(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	t.Cleanup(func() {
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -208,6 +391,95 @@ func TestPoolsAddAccount(t *testing.T) {
 		})
 		require.Error(t, err)
 	})
+
+	t.Run("outbox event created when adding account to pool", func(t *testing.T) {
+		// Create a new pool for this test
+		testPool := models.Pool{
+			ID:           uuid.New(),
+			Name:         "add-account-test-pool",
+			CreatedAt:    now.Add(-10 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
+			PoolAccounts: []models.AccountID{defaultAccounts()[0].ID},
+		}
+		require.NoError(t, store.PoolsUpsert(ctx, testPool))
+
+		// Clear any existing events
+		_, _ = store.OutboxEventsPollPending(ctx, 1000)
+
+		// Add account to pool
+		require.NoError(t, store.PoolsAddAccount(ctx, testPool.ID, defaultAccounts()[1].ID))
+
+		// Expected pool state after adding account
+		expectedPool := testPool
+		expectedPool.PoolAccounts = append(expectedPool.PoolAccounts, defaultAccounts()[1].ID)
+		expectedKey := expectedPool.IdempotencyKey()
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeSavedPool &&
+				pendingEvents[i].EntityID == testPool.ID.String() &&
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for pool saved after adding account")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeSavedPool, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, testPool.ID.String(), ourEvent.EntityID)
+		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, testPool.ID.String(), payload["id"])
+		assert.Equal(t, testPool.Name, payload["name"])
+		accountIDs, ok := payload["accountIDs"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, accountIDs, 2)
+		assert.NotNil(t, payload["createdAt"])
+	})
+
+	t.Run("no outbox event when adding account already in pool", func(t *testing.T) {
+		// Create a new pool for this test
+		testPool := models.Pool{
+			ID:           uuid.New(),
+			Name:         "add-duplicate-test-pool",
+			CreatedAt:    now.Add(-10 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
+			PoolAccounts: []models.AccountID{defaultAccounts()[0].ID},
+		}
+		require.NoError(t, store.PoolsUpsert(ctx, testPool))
+
+		// Clear any existing events
+		_, _ = store.OutboxEventsPollPending(ctx, 1000)
+
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Try to add account that's already in the pool (should not create event)
+		require.NoError(t, store.PoolsAddAccount(ctx, testPool.ID, defaultAccounts()[0].ID))
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new pool saved event)
+		assert.Equal(t, countBefore, countAfter, "adding duplicate account should not create saved event")
+	})
 }
 
 func TestPoolsRemoveAccount(t *testing.T) {
@@ -215,7 +487,9 @@ func TestPoolsRemoveAccount(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	t.Cleanup(func() {
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -243,6 +517,95 @@ func TestPoolsRemoveAccount(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, p, *actual)
 	})
+
+	t.Run("outbox event created when removing account from pool", func(t *testing.T) {
+		// Create a new pool for this test
+		testPool := models.Pool{
+			ID:           uuid.New(),
+			Name:         "remove-account-test-pool",
+			CreatedAt:    now.Add(-10 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
+			PoolAccounts: []models.AccountID{defaultAccounts()[0].ID, defaultAccounts()[1].ID},
+		}
+		require.NoError(t, store.PoolsUpsert(ctx, testPool))
+
+		// Clear any existing events
+		_, _ = store.OutboxEventsPollPending(ctx, 1000)
+
+		// Remove account from pool
+		require.NoError(t, store.PoolsRemoveAccount(ctx, testPool.ID, defaultAccounts()[1].ID))
+
+		// Expected pool state after removing account
+		expectedPool := testPool
+		expectedPool.PoolAccounts = []models.AccountID{defaultAccounts()[0].ID}
+		expectedKey := expectedPool.IdempotencyKey()
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Find our event
+		var ourEvent *models.OutboxEvent
+		for i := range pendingEvents {
+			if pendingEvents[i].EventType == events.EventTypeSavedPool &&
+				pendingEvents[i].EntityID == testPool.ID.String() &&
+				pendingEvents[i].ID.EventIdempotencyKey == expectedKey {
+				ourEvent = &pendingEvents[i]
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected outbox event for pool saved after removing account")
+
+		// Verify event details
+		assert.Equal(t, events.EventTypeSavedPool, ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Equal(t, testPool.ID.String(), ourEvent.EntityID)
+		assert.Nil(t, ourEvent.ConnectorID) // Pools don't have connector ID
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Equal(t, expectedKey, ourEvent.ID.EventIdempotencyKey)
+
+		// Verify payload
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, testPool.ID.String(), payload["id"])
+		assert.Equal(t, testPool.Name, payload["name"])
+		accountIDs, ok := payload["accountIDs"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, accountIDs, 1)
+		assert.NotNil(t, payload["createdAt"])
+	})
+
+	t.Run("no outbox event when removing account not in pool", func(t *testing.T) {
+		// Create a new pool for this test
+		testPool := models.Pool{
+			ID:           uuid.New(),
+			Name:         "remove-unknown-test-pool",
+			CreatedAt:    now.Add(-10 * time.Minute).UTC().Time,
+			Type:         models.POOL_TYPE_STATIC,
+			PoolAccounts: []models.AccountID{defaultAccounts()[0].ID},
+		}
+		require.NoError(t, store.PoolsUpsert(ctx, testPool))
+
+		// Clear any existing events
+		_, _ = store.OutboxEventsPollPending(ctx, 1000)
+
+		// Count events before
+		eventsBefore, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countBefore := len(eventsBefore)
+
+		// Try to remove account that's not in the pool (should not create event)
+		require.NoError(t, store.PoolsRemoveAccount(ctx, testPool.ID, defaultAccounts()[1].ID))
+
+		// Verify no new outbox event was created
+		eventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		countAfter := len(eventsAfter)
+
+		// Should have same number of events (no new pool saved event)
+		assert.Equal(t, countBefore, countAfter, "removing non-existent account should not create saved event")
+	})
 }
 
 func TestPoolsRemoveAccountFromConnectorID(t *testing.T) {
@@ -250,7 +613,9 @@ func TestPoolsRemoveAccountFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	t.Cleanup(func() {
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -281,7 +646,9 @@ func TestPoolsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	t.Cleanup(func() {
+		store.Close()
+	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -390,11 +757,11 @@ func TestPoolsList(t *testing.T) {
 
 		cursor, err := store.PoolsList(ctx, q)
 		require.NoError(t, err)
-		require.Len(t, cursor.Data, 2)
+		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
-		require.Equal(t, []models.Pool{defaultPools()[1], defaultPools()[2]}, cursor.Data)
+		require.Equal(t, []models.Pool{defaultPools()[1]}, cursor.Data)
 	})
 
 	t.Run("list pools by unknown account id", func(t *testing.T) {
@@ -478,5 +845,16 @@ func TestPoolsList(t *testing.T) {
 		require.Empty(t, cursor.Previous)
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Pool{defaultPools[1]}, cursor.Data)
+	})
+
+	t.Run("list pools with validation issues in filter", func(t *testing.T) {
+		q := NewListPoolsQuery(bunpaginate.PaginatedQueryOptions[PoolQuery]{
+			QueryBuilder: query.And(query.Match("id", "not a valid uuid")),
+			PageSize:     uint64(5),
+		})
+
+		_, err := store.PoolsList(ctx, q)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrValidation)
 	})
 }

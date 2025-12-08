@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
@@ -38,11 +39,13 @@ var _ = Describe("API v3 Connector Config Update", func() {
 			}
 			connectorName := "some-name"
 			connector = models.Connector{
-				ID:       connectorID,
-				Name:     connectorName,
-				Provider: connectorID.Provider,
+				ConnectorBase: models.ConnectorBase{
+					ID:       connectorID,
+					Name:     connectorName,
+					Provider: connectorID.Provider,
+				},
 			}
-			config = models.DefaultConfig()
+			config = models.Config{PollingPeriod: 20 * time.Minute}
 			config.Name = connectorName
 			conf, err := config.MarshalJSON()
 			require.Nil(GinkgoT(), err)

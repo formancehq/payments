@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type PaymentInitiationAdjustmentStatus int
@@ -124,34 +125,34 @@ func (t *PaymentInitiationAdjustmentStatus) Scan(value interface{}) error {
 	return nil
 }
 
-func FromPaymentToPaymentInitiationAdjustment(from *Payment, piID PaymentInitiationID) *PaymentInitiationAdjustment {
-	var status PaymentInitiationAdjustmentStatus
+func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdAt time.Time, piID PaymentInitiationID) *PaymentInitiationAdjustment {
+	var piStatus PaymentInitiationAdjustmentStatus
 	var err error
 
-	switch from.Status {
+	switch status {
 	case PAYMENT_STATUS_AMOUNT_ADJUSTMENT, PAYMENT_STATUS_UNKNOWN:
 		// No need to add an adjustment for this payment initiation
 		return nil
 	case PAYMENT_STATUS_PENDING, PAYMENT_STATUS_AUTHORISATION:
-		status = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING
 	case PAYMENT_STATUS_SUCCEEDED,
 		PAYMENT_STATUS_CAPTURE,
 		PAYMENT_STATUS_REFUND_REVERSED,
 		PAYMENT_STATUS_DISPUTE_WON:
-		status = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED
 	case PAYMENT_STATUS_CANCELLED,
 		PAYMENT_STATUS_CAPTURE_FAILED,
 		PAYMENT_STATUS_EXPIRED,
 		PAYMENT_STATUS_FAILED,
 		PAYMENT_STATUS_DISPUTE_LOST:
-		status = PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
 		err = errors.New("payment failed")
 	case PAYMENT_STATUS_DISPUTE:
-		status = PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
 	case PAYMENT_STATUS_REFUNDED:
-		status = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED
 	case PAYMENT_STATUS_REFUNDED_FAILURE:
-		status = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
+		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
 		err = errors.New("payment refund failed")
 	default:
 		return nil
@@ -160,11 +161,11 @@ func FromPaymentToPaymentInitiationAdjustment(from *Payment, piID PaymentInitiat
 	return &PaymentInitiationAdjustment{
 		ID: PaymentInitiationAdjustmentID{
 			PaymentInitiationID: piID,
-			CreatedAt:           from.CreatedAt,
-			Status:              status,
+			CreatedAt:           createdAt,
+			Status:              piStatus,
 		},
-		CreatedAt: from.CreatedAt,
-		Status:    status,
+		CreatedAt: createdAt,
+		Status:    piStatus,
 		Error:     err,
 	}
 }

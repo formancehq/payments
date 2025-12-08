@@ -2,9 +2,12 @@
 
 package components
 
+// PoolRequest - Query and dynamic pools are available from Connectivity v3.1
 type PoolRequest struct {
-	Name       string   `json:"name"`
-	AccountIDs []string `json:"accountIDs"`
+	Name string `json:"name"`
+	// The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+	Query      map[string]any `json:"query,omitempty"`
+	AccountIDs []string       `json:"accountIDs,omitempty"`
 }
 
 func (o *PoolRequest) GetName() string {
@@ -14,9 +17,16 @@ func (o *PoolRequest) GetName() string {
 	return o.Name
 }
 
+func (o *PoolRequest) GetQuery() map[string]any {
+	if o == nil {
+		return nil
+	}
+	return o.Query
+}
+
 func (o *PoolRequest) GetAccountIDs() []string {
 	if o == nil {
-		return []string{}
+		return nil
 	}
 	return o.AccountIDs
 }

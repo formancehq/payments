@@ -2,10 +2,11 @@ package v3
 
 import (
 	"errors"
-	"github.com/formancehq/payments/internal/connectors/engine"
 	"net/http"
 	"net/http/httptest"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/engine"
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
@@ -45,7 +46,7 @@ var _ = Describe("API v3 Accounts Create", func() {
 			notSupportedConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
 
 			expectedErr := &engine.ErrConnectorCapabilityNotSupported{Capability: "CreateFormanceAccount", Provider: notSupportedConnectorID.Provider}
-			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
+			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(nil, expectedErr)
 
 			cra = CreateAccountRequest{
 				Reference:   "reference",
@@ -83,7 +84,7 @@ var _ = Describe("API v3 Accounts Create", func() {
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("account create err")
-			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
+			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(nil, expectedErr)
 			cra = CreateAccountRequest{
 				Reference:   "reference",
 				ConnectorID: connID.String(),
@@ -96,7 +97,7 @@ var _ = Describe("API v3 Accounts Create", func() {
 		})
 
 		It("should return status created on success", func(ctx SpecContext) {
-			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(nil)
+			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(&models.Account{ConnectorID: connID}, nil)
 			cra = CreateAccountRequest{
 				Reference:   "reference",
 				ConnectorID: connID.String(),

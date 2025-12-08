@@ -48,11 +48,12 @@ func (m *MockBackend) EXPECT() *MockBackendMockRecorder {
 }
 
 // AccountsCreate mocks base method.
-func (m *MockBackend) AccountsCreate(ctx context.Context, account models.Account) error {
+func (m *MockBackend) AccountsCreate(ctx context.Context, account models.Account) (*models.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AccountsCreate", ctx, account)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*models.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AccountsCreate indicates an expected call of AccountsCreate.
@@ -885,6 +886,20 @@ func (m *MockBackend) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, acco
 func (mr *MockBackendMockRecorder) PoolsRemoveAccount(ctx, id, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsRemoveAccount", reflect.TypeOf((*MockBackend)(nil).PoolsRemoveAccount), ctx, id, accountID)
+}
+
+// PoolsUpdateQuery mocks base method.
+func (m *MockBackend) PoolsUpdateQuery(ctx context.Context, id uuid.UUID, query map[string]any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolsUpdateQuery", ctx, id, query)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PoolsUpdateQuery indicates an expected call of PoolsUpdateQuery.
+func (mr *MockBackendMockRecorder) PoolsUpdateQuery(ctx, id, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsUpdateQuery", reflect.TypeOf((*MockBackend)(nil).PoolsUpdateQuery), ctx, id, query)
 }
 
 // SchedulesGet mocks base method.

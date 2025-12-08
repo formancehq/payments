@@ -2,10 +2,13 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
@@ -26,9 +29,17 @@ type task struct {
 }
 
 func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("failed to begin transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	t := fromTaskModel(task)
 
-	query := s.db.NewInsert().
+	query := tx.NewInsert().
 		Model(&t).
 		On("CONFLICT (id) DO UPDATE").
 		Set("status = EXCLUDED.status").
@@ -44,10 +55,55 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 		query.Set("error = NULL")
 	}
 
-	_, err := query.
-		Exec(ctx)
+	_, err = query.Exec(ctx)
+	if err != nil {
+		return e("failed to insert task", err)
+	}
 
-	return e("failed to insert task", err)
+	// Create outbox event for task update
+	payload := internalEvents.TaskMessagePayload{
+		ID:              task.ID.String(),
+		Status:          string(task.Status),
+		CreatedAt:       task.CreatedAt,
+		UpdatedAt:       task.UpdatedAt,
+		CreatedObjectID: task.CreatedObjectID,
+	}
+	if task.ConnectorID != nil {
+		connectorIDStr := task.ConnectorID.String()
+		payload.ConnectorID = &connectorIDStr
+	}
+	if task.Error != nil {
+		errorStr := task.Error.Error()
+		payload.Error = &errorStr
+	}
+
+	var payloadBytes []byte
+	payloadBytes, err = json.Marshal(payload)
+	if err != nil {
+		return e("failed to marshal task event payload", err)
+	}
+
+	outboxEvent := models.OutboxEvent{
+		ID: models.EventID{
+			EventIdempotencyKey: task.IdempotencyKey(),
+			ConnectorID:         task.ConnectorID,
+		},
+		EventType:   events.EventTypeUpdatedTask,
+		EntityID:    task.ID.String(),
+		Payload:     payloadBytes,
+		CreatedAt:   time.Now().UTC().Time,
+		Status:      models.OUTBOX_STATUS_PENDING,
+		ConnectorID: task.ConnectorID,
+	}
+
+	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error) {

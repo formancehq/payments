@@ -18,7 +18,6 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/client"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -99,7 +98,8 @@ var _ = Describe("Engine Tests", func() {
 			expectedErr := fmt.Errorf("workflow error")
 			conf := json.RawMessage(`{}`)
 			connector := models.Connector{Config: conf}
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(conf, nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, false).Return("name", conf, nil)
+			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
@@ -119,7 +119,8 @@ var _ = Describe("Engine Tests", func() {
 			}
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(conf, nil).MinTimes(len(connectors))
+			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil).MinTimes(len(connectors))
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, false).Return("name", conf, nil).MinTimes(len(connectors))
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -134,36 +135,12 @@ var _ = Describe("Engine Tests", func() {
 			config json.RawMessage
 		)
 		BeforeEach(func() {
-			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
-		})
-
-		It("should return validation error when config is not a valid json", func(ctx SpecContext) {
-			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(`{`))
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(engine.ErrValidation))
-		})
-
-		It("should return error when config has validation issues", func(ctx SpecContext) {
-			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(`{}`))
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(engine.ErrValidation))
-		})
-
-		It("prefills config with default values when empty", func(ctx SpecContext) {
-			connectorName := "non-default-val"
-			expectedConfig := models.DefaultConfig()
-			expectedConfig.Name = connectorName
-
-			registerErr := errors.New("stop here")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(nil, registerErr)
-			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(registerErr))
+			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30m"}`)
 		})
 
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("hi")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, true).Return("connectorname",
 				nil,
 				expectedErr,
 			)
@@ -173,7 +150,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should return validation error when plugin registry fails with validation issues", func(ctx SpecContext) {
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, true).Return("connectorname",
 				nil,
 				models.ErrInvalidConfig,
 			)
@@ -184,8 +161,8 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when storage error happens", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(expectedErr)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, true).Return("name", json.RawMessage(`{}`), nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(expectedErr)
 			_, err := eng.InstallConnector(ctx, "psp", config)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -193,8 +170,9 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when workflow start fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow err")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, true).Return("connectorname", json.RawMessage(`{}`), nil)
+			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -205,8 +183,9 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
-			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), false, true).Return("connectorname", json.RawMessage(`{}`), nil)
+			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), gomock.Nil()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -292,6 +271,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("calls task upsert twice on workflow failure", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow storage err")
+			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil).MinTimes(2)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorReset, defaultTaskQueue),
 				workflow.RunResetConnector,
@@ -305,6 +285,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("returns a task without waiting for workflow run", func(ctx SpecContext) {
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorReset, defaultTaskQueue),
 				workflow.RunResetConnector,
 				gomock.AssignableToTypeOf(workflow.ResetConnector{}),
@@ -360,7 +341,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when workflow cannot be started", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
-				&models.Connector{ID: connID}, nil,
+				&models.Connector{ConnectorBase: models.ConnectorBase{ID: connID}}, nil,
 			)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			expectedErr := fmt.Errorf("workflow failed")
@@ -376,7 +357,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should launch workflow and return task", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
-				&models.Connector{ID: connID}, nil,
+				&models.Connector{ConnectorBase: models.ConnectorBase{ID: connID}}, nil,
 			)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixBankAccountCreate, defaultTaskQueue),
@@ -399,42 +380,19 @@ var _ = Describe("Engine Tests", func() {
 			connectorID models.ConnectorID
 		)
 		BeforeEach(func() {
-			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
+			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30m"}`)
 			connectorID = models.ConnectorID{Provider: "dummypay", Reference: uuid.New()}
-		})
-
-		It("should return error when config has validation issues", func(ctx SpecContext) {
-			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(`{}`))
-
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(engine.ErrValidation))
-		})
-
-		It("prefills config with default values when empty", func(ctx SpecContext) {
-			connectorName := "new-name"
-			expectedConfig := models.DefaultConfig()
-			expectedConfig.Name = connectorName
-
-			connector := &models.Connector{
-				ID:     connectorID,
-				Config: json.RawMessage(`{"name":"original-name"}`),
-			}
-
-			registerErr := errors.New("stop here")
-			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(nil, registerErr)
-			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(registerErr))
 		})
 
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("hi")
 			connector := &models.Connector{
-				ID: connectorID,
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
+			manager.EXPECT().Load(connectorID, gomock.Any(), gomock.Any(), true, true).Return("connectorname",
 				nil,
 				expectedErr,
 			)
@@ -446,10 +404,12 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when storage fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
 			connector := &models.Connector{
-				ID: connectorID,
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(json.RawMessage(`{}`), nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), true, true).Return("connectorname", json.RawMessage(`{}`), nil)
 			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(expectedErr)
 			err := eng.UpdateConnector(ctx, connectorID, config)
 			Expect(err).NotTo(BeNil())
@@ -458,22 +418,32 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should store the updated config", func(ctx SpecContext) {
 			newName := "new-name"
-			inputJson := json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"2m","pageSize":25}`, newName))
+			inputJson := json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"20m","pageSize":25}`, newName))
 			connector := &models.Connector{
-				ID:        connectorID,
-				CreatedAt: time.Now().UTC(),
-				Provider:  connectorID.Provider,
-				Config:    json.RawMessage(`{"name":"original-name"}`),
+				ConnectorBase: models.ConnectorBase{
+					ID:        connectorID,
+					CreatedAt: time.Now().UTC(),
+					Provider:  connectorID.Provider,
+				},
+				Config: json.RawMessage(`{"name":"original-name"}`),
 			}
+			expectedConfig := models.Config{Name: newName, PollingPeriod: 20 * time.Minute}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(inputJson, nil)
+			manager.EXPECT().GetConfig(gomock.Any()).Return(expectedConfig, nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), true, true).Return(newName, inputJson, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), gomock.Any(), workflow.UpdateSchedulePollingPeriod{
+				ConnectorID: connectorID,
+				Config:      expectedConfig,
+			}).Return(nil, nil)
 
 			expectedConnector := models.Connector{
-				ID:        connectorID,
-				Name:      newName,
-				CreatedAt: connector.CreatedAt,
-				Provider:  connector.Provider,
-				Config:    inputJson,
+				ConnectorBase: models.ConnectorBase{
+					ID:        connectorID,
+					Name:      newName,
+					CreatedAt: connector.CreatedAt,
+					Provider:  connector.Provider,
+				},
+				Config: inputJson,
 			}
 			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), expectedConnector).Return(nil)
 			err := eng.UpdateConnector(ctx, connectorID, inputJson)
@@ -520,6 +490,7 @@ var _ = Describe("Engine Tests", func() {
 			}, nil)
 			err := eng.CreatePool(ctx, models.Pool{
 				ID:           poolID,
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: []models.AccountID{acc1, acc2},
 			})
 			Expect(err).ToNot(BeNil())
@@ -536,14 +507,68 @@ var _ = Describe("Engine Tests", func() {
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
 			store.EXPECT().PoolsUpsert(gomock.Any(), gomock.Any()).Return(nil)
-			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-creation", defaultTaskQueue),
-				workflow.RunSendEvents,
-				gomock.AssignableToTypeOf(workflow.SendEvents{}),
-			).Return(nil, nil)
 			err := eng.CreatePool(ctx, models.Pool{
 				ID:           poolID,
+				Type:         models.POOL_TYPE_STATIC,
 				PoolAccounts: []models.AccountID{acc1, acc2},
 			})
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("update pool query", func() {
+		var (
+			poolID uuid.UUID
+		)
+
+		BeforeEach(func() {
+			poolID = uuid.New()
+		})
+
+		It("should return a storage error if pool is not found", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(nil, storage.ErrNotFound)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should return a validation error if pool is a static pool", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_STATIC,
+			}, nil)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should return a storage error if pool upsert fails", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("failed to update pool query"))
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(fmt.Errorf("failed to update pool query")))
+		})
+
+		It("should return a storage error if populate pool accounts fails", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("failed to populate pool accounts"))
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(fmt.Errorf("failed to populate pool accounts")))
+		})
+
+		It("should successfully update pool query", func(ctx SpecContext) {
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
+				Type: models.POOL_TYPE_DYNAMIC,
+			}, nil)
+			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
 			Expect(err).To(BeNil())
 		})
 	})
@@ -587,6 +612,7 @@ var _ = Describe("Engine Tests", func() {
 				ID:   accountID,
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
 			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(fmt.Errorf("failed to add account to pool"))
 			err := eng.AddAccountToPool(ctx, poolID, accountID)
 			Expect(err).ToNot(BeNil())
@@ -598,12 +624,8 @@ var _ = Describe("Engine Tests", func() {
 				ID:   accountID,
 				Type: models.ACCOUNT_TYPE_INTERNAL,
 			}, nil)
-			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
 			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
-			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-add-account", defaultTaskQueue),
-				workflow.RunSendEvents,
-				gomock.AssignableToTypeOf(workflow.SendEvents{}),
-			).Return(nil, nil)
+			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
 			err := eng.AddAccountToPool(ctx, poolID, accountID)
 			Expect(err).To(BeNil())
 		})

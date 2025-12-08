@@ -1,12 +1,35 @@
-# Formance Payments [![test](https://github.com/formancehq/payments/actions/workflows/main.yml/badge.svg)](https://github.com/formancehq/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/formancehq/payments)](https://goreportcard.com/report/github.com/formancehq/payments) [![discord](https://img.shields.io/discord/846686859869814784?label=chat%20@%20discord)](https://discord.gg/xyHvcbzk4w) [![codecov](https://codecov.io/github/formancehq/payments/graph/badge.svg?token=SrhCCbrtnV)](https://codecov.io/github/formancehq/payments)
+<p align="center">
+  <img src="https://formance01.b-cdn.net/Github-Attachements/banners/connectivity-readme-banner.webp" alt="connectivity" width="100%" />
+</p>
+
+# Formance Payments [![test](https://github.com/formancehq/payments/actions/workflows/main.yml/badge.svg)](https://github.com/formancehq/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/formancehq/payments)](https://goreportcard.com/report/github.com/formancehq/payments) [![codecov](https://codecov.io/github/formancehq/payments/graph/badge.svg?token=SrhCCbrtnV)](https://codecov.io/github/formancehq/payments)
 
 # Getting started
 
-Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.formance.com/oss/payments/get-started/installation).
+Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases).
+You can move the binary to any executable path, such as to `/usr/local/bin`. Installing it locally using Docker is also
+possible, and probably easier for testing purposes as it comes prepackaged with all the dependencies.
+
+Note that you need to set up the `STACK_PUBLIC_URL` env variable to set up a publicly available URL so that webhooks
+and redirects from the Payment Service Providers (PSP) can be sent to the application.
+You can use [NGrok](https://ngrok.com/) for that, for example. If you don't plan on using any connectors with webhooks,
+you could simply set it as localhost (or anything, really).
 
 ```SHELL
-payments
+$ git clone git@github.com:formancehq/payments.git
+$ cd payments
+$ just compile-plugins
+$ STACK_PUBLIC_URL=http://localhost docker compose up
 ```
+
+## Debugging
+You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and
+live reloading.
+
+## Use console as a frontend
+
+The payment application comes with a console frontend when deploying through docker-compose (with or without debugging).
+You can access it at http://localhost:3000/formance/localhost?region=localhost.
 
 # What is it?
 
@@ -21,6 +44,6 @@ Because it is a framework, it is extensible. Please follow the guide below if yo
 
 # Contribute
 
-Please follow [this guide](./CONTRIBUTING.md) if you want to contribute.
-
-![Frame 1 (2)](https://user-images.githubusercontent.com/1770991/134163361-d86c5728-6075-4510-8de7-06df1f6ed740.png)
+Please see the following documents:
+- Connector development tutorial: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- General development guidelines: [CONTRIBUTING_GUIDE.md](./CONTRIBUTING_GUIDE.md)

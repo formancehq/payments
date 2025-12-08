@@ -33,11 +33,14 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Success() {
 	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
 		return nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
+		&s.connector,
+		nil,
+	)
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -54,7 +57,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_PluginCreateWebhooksActivity_Error()
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -85,7 +88,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -95,7 +98,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_CreateWebhooks_Run_Error() {
+func (s *UnitTestSuite) Test_CreateWebhooks_StorageConnectorsGetActivity_Error() {
 	s.env.OnActivity(activities.PluginCreateWebhooksActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateWebhooksRequest) (*models.CreateWebhooksResponse, error) {
 		s.Equal(s.connectorID, req.ConnectorID)
 		s.Equal(s.connectorID.String(), req.Req.ConnectorID)
@@ -109,13 +112,14 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Run_Error() {
 			},
 		}, nil
 	})
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", errors.New("error-test")),
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
+		(*models.Connector)(nil),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.DefaultConfig(),
+		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 

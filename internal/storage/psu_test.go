@@ -58,6 +58,15 @@ var (
 		},
 		BankAccountIDs: []uuid.UUID{defaultBankAccount2.ID},
 	}
+
+	defaultPSU4 = models.PaymentServiceUser{
+		ID:        uuid.New(),
+		Name:      "test4",
+		CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+		ContactDetails: &models.ContactDetails{
+			Locale: pointer.For("en-US"),
+		},
+	}
 )
 
 func createPSU(t *testing.T, ctx context.Context, storage Storage, psu models.PaymentServiceUser) {
@@ -114,6 +123,48 @@ func TestPSUCreate(t *testing.T) {
 
 		require.Error(t, store.PaymentServiceUsersCreate(ctx, cp))
 	})
+
+	t.Run("create psu with only locale in contact details", func(t *testing.T) {
+		psu := models.PaymentServiceUser{
+			ID:        uuid.New(),
+			Name:      "test_locale_only",
+			CreatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			ContactDetails: &models.ContactDetails{
+				Locale: pointer.For("fr-FR"),
+			},
+		}
+
+		require.NoError(t, store.PaymentServiceUsersCreate(ctx, psu))
+
+		actual, err := store.PaymentServiceUsersGet(ctx, psu.ID)
+		require.NoError(t, err)
+		comparePSUs(t, psu, *actual)
+		require.NotNil(t, actual.ContactDetails)
+		require.Nil(t, actual.ContactDetails.Email)
+		require.Nil(t, actual.ContactDetails.PhoneNumber)
+		require.NotNil(t, actual.ContactDetails.Locale)
+		require.Equal(t, "fr-FR", *actual.ContactDetails.Locale)
+	})
+
+	t.Run("create psu with empty contact details should return nil contact details", func(t *testing.T) {
+		psu := models.PaymentServiceUser{
+			ID:        uuid.New(),
+			Name:      "test_empty_contact",
+			CreatedAt: now.Add(-15 * time.Minute).UTC().Time,
+			ContactDetails: &models.ContactDetails{
+				Email:       nil,
+				PhoneNumber: nil,
+				Locale:      nil,
+			},
+		}
+
+		require.NoError(t, store.PaymentServiceUsersCreate(ctx, psu))
+
+		actual, err := store.PaymentServiceUsersGet(ctx, psu.ID)
+		require.NoError(t, err)
+		// ContactDetails should be nil when all fields are nil
+		require.Nil(t, actual.ContactDetails)
+	})
 }
 
 func TestPSUGet(t *testing.T) {
@@ -145,6 +196,13 @@ func TestPSUGet(t *testing.T) {
 		actual, err := store.PaymentServiceUsersGet(ctx, defaultPSU3.ID)
 		require.NoError(t, err)
 		comparePSUs(t, defaultPSU3, *actual)
+	})
+
+	t.Run("get psu with only locale in contact details", func(t *testing.T) {
+		createPSU(t, ctx, store, defaultPSU4)
+		actual, err := store.PaymentServiceUsersGet(ctx, defaultPSU4.ID)
+		require.NoError(t, err)
+		comparePSUs(t, defaultPSU4, *actual)
 	})
 }
 
@@ -370,6 +428,7 @@ func compareCounterPartiesContactDetails(t *testing.T, expected, actual *models.
 	case expected != nil && actual != nil:
 		compareInterface(t, "Email", expected.Email, actual.Email)
 		compareInterface(t, "Phone", expected.PhoneNumber, actual.PhoneNumber)
+		compareInterface(t, "Locale", expected.Locale, actual.Locale)
 	default:
 		require.Fail(t, "ContactDetails is different")
 	}

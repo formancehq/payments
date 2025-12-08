@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -50,14 +50,20 @@ func (w Workflow) fetchAccounts(
 		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
 	}
 
+	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
+	pageSize, err := registry.GetPageSize(fetchNextAccount.ConnectorID.Provider)
+	if err != nil {
+		return fmt.Errorf("getting page size: %w", err)
+	}
+
 	hasMore := true
 	for hasMore {
 		accountsResponse, err := activities.PluginFetchNextAccounts(
-			infiniteRetryContext(ctx),
+			fetchNextActivityRetryContext(ctx),
 			fetchNextAccount.ConnectorID,
 			fetchNextAccount.FromPayload.GetPayload(),
 			state.State,
-			fetchNextAccount.Config.PageSize,
+			int(pageSize),
 			fetchNextAccount.Periodically,
 		)
 		if err != nil {
@@ -88,70 +94,46 @@ func (w Workflow) fetchAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(accountsResponse.Accounts)*2)
-		for _, account := range accounts {
-			acc := account
+		errChan := make(chan error, len(accountsResponse.Accounts))
 
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+		if len(nextTasks) > 0 {
+			// First, we need to get the connector to check if it is scheduled for deletion
+			// because if it is, we don't need to run the next tasks
+			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextAccount.ConnectorID)
+			if err != nil {
+				return fmt.Errorf("getting connector: %w", err)
+			}
 
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
+			if !connector.ScheduledForDeletion {
+				for _, account := range accountsResponse.Accounts {
+					acc := account
+
+					wg.Add(1)
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						defer wg.Done()
+
+						payload, err := json.Marshal(acc)
+						if err != nil {
+							errChan <- errors.Wrap(err, "marshalling account")
+							// don't continue if we can't marshal the account
+							return
+						}
+
+						if err := w.runNextTasks(
+							ctx,
+							fetchNextAccount.Config,
+							connector,
+							&FromPayload{
+								ID:      acc.Reference,
+								Payload: payload,
 							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Account: &acc,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
+							nextTasks,
+						); err != nil {
+							errChan <- errors.Wrap(err, "running next tasks")
+						}
+					})
 				}
-			})
-		}
-
-		for _, account := range accountsResponse.Accounts {
-			acc := account
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				payload, err := json.Marshal(acc)
-				if err != nil {
-					errChan <- errors.Wrap(err, "marshalling account")
-				}
-
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					Run,
-					fetchNextAccount.Config,
-					fetchNextAccount.ConnectorID,
-					&FromPayload{
-						ID:      acc.Reference,
-						Payload: payload,
-					},
-					nextTasks,
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "running next workflow")
-				}
-			})
+			}
 		}
 
 		wg.Wait(ctx)

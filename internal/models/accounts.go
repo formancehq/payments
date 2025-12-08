@@ -59,7 +59,8 @@ type Account struct {
 	// Unique Account ID generated from account information
 	ID AccountID `json:"id"`
 	// Related Connector ID
-	ConnectorID ConnectorID `json:"connectorID"`
+	ConnectorID ConnectorID    `json:"connectorID"`
+	Connector   *ConnectorBase `json:"connector"`
 
 	// PSP reference of the account. Should be unique.
 	Reference string `json:"reference"`
@@ -76,9 +77,9 @@ type Account struct {
 	// in minor currencies unit.
 	DefaultAsset *string `json:"defaultAsset"`
 	// Optional, can be filled if the account is related to an open banking connector
-	PsuID *uuid.UUID `json:"psuID"`
+	PsuID *uuid.UUID `json:"psuID,omitempty"`
 	// Optional, can be filled if the account is related to an open banking connector
-	OpenBankingConnectionID *string `json:"openBankingConnectionID"`
+	OpenBankingConnectionID *string `json:"openBankingConnectionID,omitempty"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
@@ -91,6 +92,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                      string            `json:"id"`
 		ConnectorID             string            `json:"connectorID"`
+		Connector               *ConnectorBase    `json:"connector"`
 		Provider                string            `json:"provider"`
 		Reference               string            `json:"reference"`
 		CreatedAt               time.Time         `json:"createdAt"`
@@ -104,6 +106,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	}{
 		ID:           a.ID.String(),
 		ConnectorID:  a.ConnectorID.String(),
+		Connector:    a.Connector,
 		Provider:     ToV3Provider(a.ConnectorID.Provider),
 		Reference:    a.Reference,
 		CreatedAt:    a.CreatedAt,
@@ -130,6 +133,7 @@ func (a *Account) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID                      string            `json:"id"`
 		ConnectorID             string            `json:"connectorID"`
+		Connector               *ConnectorBase    `json:"connector"`
 		Reference               string            `json:"reference"`
 		CreatedAt               time.Time         `json:"createdAt"`
 		Type                    AccountType       `json:"type"`
@@ -169,6 +173,7 @@ func (a *Account) UnmarshalJSON(data []byte) error {
 
 	a.ID = id
 	a.ConnectorID = connectorID
+	a.Connector = aux.Connector
 	a.Reference = aux.Reference
 	a.CreatedAt = aux.CreatedAt
 	a.Type = aux.Type

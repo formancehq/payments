@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v3/auth"
-	"github.com/formancehq/go-libs/v3/service"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/go-chi/chi/v5"
@@ -15,8 +14,6 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 	validator := validation.NewValidator()
 
 	r.Group(func(r chi.Router) {
-		r.Use(service.OTLPMiddleware("payments", debug))
-
 		// Public routes
 		r.Group(func(r chi.Router) {
 			r.Post("/connectors/webhooks/{connector}/connectorID", connectorsWebhooks(backend))
@@ -68,6 +65,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 				r.Route("/{poolID}", func(r chi.Router) {
 					r.Get("/", poolsGet(backend))
 					r.Delete("/", poolsDelete(backend))
+					r.Patch("/query", poolsUpdateQuery(backend, validator))
 					r.Get("/balances", poolsBalancesAt(backend))
 					r.Get("/balances/latest", poolsBalancesLatest(backend))
 

@@ -261,6 +261,24 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /pools/{poolId}/query:
+    patch:
+      summary: Update the query of a pool
+      tags:
+        - payments.v1
+      operationId: updatePoolQuery
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdatePoolQuery'
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /pools/{poolId}/accounts:
     post:
       summary: Add an account to a pool
@@ -1077,6 +1095,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolRequest'
+    UpdatePoolQuery:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePoolQueryRequest'
     AddAccountToPool:
       required: true
       content:
@@ -1469,11 +1493,11 @@ components:
           default: Stripe
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Stripe API.
-          default: 120s
+          default: 30m
         apiKey:
           type: string
           example: XXX
@@ -1483,7 +1507,7 @@ components:
           minimum: 0
           description: |
             Number of BalanceTransaction to fetch at each polling interval.
-          default: 10
+          default: 100
           example: 50
     DummyPayConfig:
       type: object
@@ -1503,7 +1527,7 @@ components:
           description: >-
             The frequency at which the connector will try to fetch new payment
             objects from the directory
-          default: 10s
+          default: 30s
         directory:
           type: string
           example: /tmp/dummypay
@@ -1532,11 +1556,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Wise API.
-          default: 120s
+          default: 30m
     ModulrConfig:
       type: object
       required:
@@ -1561,11 +1585,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Modulr API.
-          default: 120s
+          default: 30m
     BankingCircleConfig:
       type: object
       required:
@@ -1603,11 +1627,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Banking Circle API.
-          default: 120s
+          default: 30m
     GenericConfig:
       type: object
       required:
@@ -1629,11 +1653,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from the API.
-          default: 120s
+          default: 30m
     MangoPayConfig:
       type: object
       required:
@@ -1650,11 +1674,11 @@ components:
           default: Mangopay
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from MangoPay API.
-          default: 120s
+          default: 30m
         clientID:
           type: string
           example: XXX
@@ -1689,11 +1713,11 @@ components:
           example: XXX
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from MoneyCorp API.
-          default: 120s
+          default: 30m
     CurrencyCloudConfig:
       type: object
       required:
@@ -1776,12 +1800,13 @@ components:
             API.
         pollingPeriod:
           type: string
-          example: 60s
+          example: 120m
           description: >
             The frequency at which the connector tries to fetch new Transaction
             objects from the Atlar API.
-          default: 120s
+          default: 30m
         transferInitiationStatusPollingPeriod:
+          deprecated: true
           type: string
           example: 60s
           description: >
@@ -1809,7 +1834,7 @@ components:
         pageSize:
           type: integer
           format: int64
-          minimum: 0
+          minimum: 10
           description: |
             Number of items to fetch when querying paginated APIs.
           default: 25
@@ -1922,7 +1947,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: '#/components/schemas/LegacyPaymentStatus'
         error:
           type: string
           nullable: true
@@ -2087,16 +2112,27 @@ components:
       required:
         - id
         - name
+        - type
         - accounts
       properties:
         id:
           type: string
         name:
           type: string
+        type:
+          $ref: '#/components/schemas/PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         accounts:
           type: array
           items:
             type: string
+    PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
     PoolBalances:
       type: object
       required:
@@ -2124,6 +2160,11 @@ components:
         asset:
           type: string
           example: USD
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
     Account:
       type: object
       required:
@@ -2414,6 +2455,14 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
+    UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
     AddAccountToPoolRequest:
       type: object
       required:
@@ -2423,12 +2472,16 @@ components:
           type: string
     PoolRequest:
       type: object
+      description: Query and dynamic pools are available from Connectivity v3.1
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -2613,6 +2666,32 @@ components:
         - ach debit
         - ach
         - rtp
+    LegacyPaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - SUCCEEDED
+        - CANCELLED
+        - FAILED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - OTHER
+        - WAITING_FOR_VALIDATION
+        - PROCESSING
+        - PROCESSED
+        - FAILED
+        - REJECTED
+        - VALIDATED
+        - ASK_RETRIED
+        - ASK_REVERSED
+        - REVERSE_PROCESSING
+        - REVERSE_FAILED
+        - PARTIALLY_REVERSED
+        - REVERSED
     PaymentStatus:
       type: string
       enum:

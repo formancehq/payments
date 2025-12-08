@@ -57,9 +57,11 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Adyen
@@ -84,9 +86,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Atlar
@@ -112,11 +115,12 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 password:
                     type: string
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Bankingcircle
@@ -142,9 +146,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Column
@@ -167,9 +172,11 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Currencycloud
@@ -188,9 +195,11 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Dummypay
@@ -212,9 +221,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Generic
@@ -235,9 +245,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Increase
@@ -262,9 +273,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Mangopay
@@ -287,9 +299,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Modulr
@@ -312,9 +325,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Moneycorp
@@ -336,9 +350,11 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Plaid
@@ -370,9 +386,11 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Powens
@@ -395,9 +413,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Qonto
@@ -416,9 +435,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Stripe
@@ -441,9 +461,11 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
+                    default: 30m
                 provider:
                     type: string
                     default: Tink
@@ -461,9 +483,10 @@ components:
                 pageSize:
                     type: integer
                     default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Wise

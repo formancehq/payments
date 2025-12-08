@@ -11,7 +11,7 @@ type MangoPayConfig struct {
 	Provider *string `default:"Mangopay" json:"provider"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from MangoPay API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	ClientID      string  `json:"clientID"`
 	APIKey        string  `json:"apiKey"`
 	Endpoint      string  `json:"endpoint"`

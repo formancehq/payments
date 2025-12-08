@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -47,10 +48,21 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 		SearchAttributes:   options.SearchAttributes,
 	})
 	if err != nil {
-		if errors.Is(err, temporal.ErrScheduleAlreadyRunning) {
-			// No need to do anything if schedule is already running
+		// When triggering immediately or if a workflow with the same ID already exists,
+		// Temporal may return either AlreadyExists (schedule exists) or
+		// WorkflowExecutionAlreadyStarted (the workflow action with same ID already exists),
+		// or the SDK sentinel error temporal.ErrScheduleAlreadyRunning when a schedule with the same ID
+		// is already registered. All these cases should be treated as success as the desired state is achieved.
+		var already *serviceerror.AlreadyExists
+		var wfAlreadyStarted *serviceerror.WorkflowExecutionAlreadyStarted
+		if errors.As(err, &wfAlreadyStarted) || errors.As(err, &already) {
+			// Workflow already started with the same ID, treat as success
 			return nil
 		}
+		if errors.Is(err, temporal.ErrScheduleAlreadyRunning) {
+			return nil
+		}
+
 		return err
 	}
 

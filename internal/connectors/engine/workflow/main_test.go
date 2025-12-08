@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -68,7 +69,7 @@ func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
 func TestUnitTestSuite(t *testing.T) {
 	logger := logging.Testing()
 	w := Workflow{
-		connectors:     connectors.NewManager(logger, true),
+		connectors:     connectors.NewManager(logger, true, time.Minute, time.Minute),
 		stackPublicURL: "http://localhost:8080",
 		stack:          "test",
 		logger:         logger,
@@ -88,8 +89,9 @@ func (s *UnitTestSuite) addData() {
 
 	registry.RegisterPlugin("test", models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return dummypay.New(name, logger, rm)
-	}, []models.Capability{}, struct{}{})
-	_, err := s.w.connectors.Load(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{"directory":"/tmp"}`), true)
+	}, []models.Capability{}, struct{}{}, 25)
+	dummyConf := json.RawMessage(`{"name":"somename","directory":"/tmp"}`)
+	_, _, err := s.w.connectors.Load(s.connectorID, "test", dummyConf, true, true)
 	s.NoError(err)
 
 	s.accountID = models.AccountID{
@@ -293,10 +295,12 @@ func (s *UnitTestSuite) addData() {
 	}
 
 	s.connector = models.Connector{
-		ID:                   s.connectorID,
-		Name:                 "test",
-		CreatedAt:            now,
-		Provider:             "test",
+		ConnectorBase: models.ConnectorBase{
+			ID:        s.connectorID,
+			Name:      "test",
+			CreatedAt: now,
+			Provider:  "test",
+		},
 		ScheduledForDeletion: false,
 		Config:               []byte(`{"name": "test", "pollingPeriod": "2m", "pageSize": 25}`),
 	}

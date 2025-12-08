@@ -1,12 +1,9 @@
 package workflow
 
 import (
-	"fmt"
-
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -53,24 +50,6 @@ func (w Workflow) updateTask(ctx workflow.Context, task models.Task) error {
 		return err
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		SendEvents{
-			Task: &task,
-		},
-	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		return fmt.Errorf("send events: %w", err)
-	}
-
+	// Task events are now sent via outbox pattern in TasksUpsert
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -38,28 +37,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		return err
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		SendEvents{
-			Payment: &payment,
-			PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
-				PaymentInitiationID: paymentInitiationID,
-				PaymentID:           payment.ID,
-			},
-		},
-	).Get(ctx, nil); err != nil {
-		return err
-	}
+	// Payment events are now sent via outbox pattern in PaymentsUpsert
 
 	err = w.addPIAdjustment(
 		ctx,
@@ -104,25 +82,7 @@ func (w Workflow) addPIAdjustment(
 		return err
 	}
 
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
-			},
-		),
-		RunSendEvents,
-		SendEvents{
-			PaymentInitiationAdjustment: &adj,
-		},
-	).Get(ctx, nil); err != nil {
-		return err
-	}
-
+	// Payment initiation adjustment events are now sent via outbox pattern in PaymentInitiationAdjustmentsUpsert
 	return nil
 }
 

@@ -3,15 +3,31 @@ package tink
 import (
 	"context"
 	"encoding/json"
-	"strconv"
+	"math/big"
+	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
 type paymentsState struct {
 	NextPageToken string `json:"nextPageToken"`
+}
+
+func computeCreatedAt(transaction client.Transaction) time.Time {
+	if !transaction.TransactionDateTime.IsZero() {
+		return transaction.TransactionDateTime
+	}
+	if !transaction.Dates.Transaction.IsZero() {
+		return transaction.Dates.Transaction
+	}
+	if !transaction.BookedDateTime.IsZero() {
+		return transaction.BookedDateTime
+	}
+	if !transaction.Dates.Booked.IsZero() {
+		return transaction.Dates.Booked
+	}
+	return time.Now()
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -87,12 +103,7 @@ func toPSPPayments(
 	from models.OpenBankingForwardedUserFromPayload,
 ) ([]models.PSPPayment, error) {
 	for _, transaction := range transactions {
-		precision, err := strconv.Atoi(transaction.Amount.Value.Scale)
-		if err != nil {
-			return payments, err
-		}
-
-		amount, err := currency.GetAmountWithPrecisionFromString(transaction.Amount.Value.Value, precision)
+		amount, asset, err := MapTinkAmount(transaction.Amount.Value.Value, transaction.Amount.Value.Scale, transaction.Amount.CurrencyCode)
 		if err != nil {
 			return payments, err
 		}
@@ -108,7 +119,7 @@ func toPSPPayments(
 			destinationReference = &transaction.AccountID
 		}
 
-		amount = amount.Abs(amount)
+		amount = new(big.Int).Abs(amount)
 
 		raw, err := json.Marshal(transaction)
 		if err != nil {
@@ -127,10 +138,10 @@ func toPSPPayments(
 
 		p := models.PSPPayment{
 			Reference:                   transaction.ID,
-			CreatedAt:                   transaction.TransactionDateTime,
+			CreatedAt:                   computeCreatedAt(transaction),
 			Type:                        paymentType,
 			Amount:                      amount,
-			Asset:                       currency.FormatAssetWithPrecision(transaction.Amount.CurrencyCode, precision),
+			Asset:                       *asset,
 			Scheme:                      models.PAYMENT_SCHEME_OTHER,
 			Status:                      status,
 			SourceAccountReference:      sourceReference,

@@ -228,6 +228,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageConnectorsScheduleForDeletion,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageSchedulesGet",
+			Func: a.StorageSchedulesGet,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageSchedulesStore",
 			Func: a.StorageSchedulesStore,
 		}).
@@ -274,10 +278,6 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentServiceUsersDelete",
 			Func: a.StoragePaymentServiceUsersDelete,
-		}).
-		Append(temporalworker.Definition{
-			Name: "StorageBalancesDelete",
-			Func: a.StorageBalancesDelete,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageBalancesStore",
@@ -328,8 +328,8 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePaymentInitiationsAdjustmentsIfPredicateStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePaymentInitiationIDsListFromPaymentID",
-			Func: a.StoragePaymentInitiationIDsListFromPaymentID,
+			Name: "StoragePaymentInitiationUpdateFromPayment",
+			Func: a.StoragePaymentInitiationUpdateFromPayment,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentInitiationsDelete",
@@ -419,81 +419,19 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Name: "StorageOpenBankingConnectionsGetFromConnectionID",
 			Func: a.StorageOpenBankingConnectionsGetFromConnectionID,
 		}).
+		// TODO sendEvents activity should be removed in the next version (3.2)
+		// We need to keep it a while more until all RunSendEvent workflows are completed.
 		Append(temporalworker.Definition{
-			Name: "EventsSendAccount",
-			Func: a.EventsSendAccount,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendBalance",
-			Func: a.EventsSendBalance,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendBankAccount",
-			Func: a.EventsSendBankAccount,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendConnectorReset",
-			Func: a.EventsSendConnectorReset,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPayment",
-			Func: a.EventsSendPayment,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentDeleted",
-			Func: a.EventsSendPaymentDeleted,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPoolCreation",
-			Func: a.EventsSendPoolCreation,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPoolDeletion",
-			Func: a.EventsSendPoolDeletion,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentInitiation",
-			Func: a.EventsSendPaymentInitiation,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentInitiationAdjustment",
-			Func: a.EventsSendPaymentInitiationAdjustment,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendPaymentInitiationRelatedPayment",
-			Func: a.EventsSendPaymentInitiationRelatedPayment,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserPendingDisconnect",
-			Func: a.EventsSendUserPendingDisconnect,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserConnectionDisconnected",
-			Func: a.EventsSendUserConnectionDisconnected,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserConnectionReconnected",
-			Func: a.EventsSendUserConnectionReconnected,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserDisconnected",
-			Func: a.EventsSendUserDisconnected,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserLinkStatus",
-			Func: a.EventsSendUserLinkStatus,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendUserConnectionDataSynced",
-			Func: a.EventsSendUserConnectionDataSynced,
-		}).
-		Append(temporalworker.Definition{
-			Name: "EventsSendTaskUpdated",
-			Func: a.EventsSendTaskUpdated,
+			Name: "SendEvents",
+			Func: a.SendEvents,
 		}).
 		Append(temporalworker.Definition{
 			Name: "TemporalScheduleCreate",
 			Func: a.TemporalScheduleCreate,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalScheduleUpdatePollingPeriod",
+			Func: a.TemporalScheduleUpdatePollingPeriod,
 		}).
 		Append(temporalworker.Definition{
 			Name: "TemporalDeleteSchedule",
@@ -506,6 +444,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "TemporalWorkflowExecutionsList",
 			Func: a.TemporalWorkflowExecutionsList,
+		}).
+		Append(temporalworker.Definition{
+			Name: "OutboxPublishPendingEvents",
+			Func: a.OutboxPublishPendingEvents,
+		}).
+		Append(temporalworker.Definition{
+			Name: "OutboxDeleteOldProcessedEvents",
+			Func: a.OutboxDeleteOldProcessedEvents,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageOutboxEventsInsert",
+			Func: a.StorageOutboxEventsInsert,
 		})
 }
 

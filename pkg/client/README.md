@@ -151,6 +151,7 @@ func main() {
 * [CreatePool](docs/sdks/v1/README.md#createpool) - Create a Pool
 * [GetPool](docs/sdks/v1/README.md#getpool) - Get a Pool
 * [DeletePool](docs/sdks/v1/README.md#deletepool) - Delete a Pool
+* [UpdatePoolQuery](docs/sdks/v1/README.md#updatepoolquery) - Update the query of a pool
 * [AddAccountToPool](docs/sdks/v1/README.md#addaccounttopool) - Add an account to a pool
 * [RemoveAccountFromPool](docs/sdks/v1/README.md#removeaccountfrompool) - Remove an account from a pool
 * [GetPoolBalances](docs/sdks/v1/README.md#getpoolbalances) - Get historical pool balances at a particular point in time
@@ -239,6 +240,7 @@ Allows to check if users used the link and completed the oauth flow.
 * [ListPools](docs/sdks/v3/README.md#listpools) - List all pools
 * [GetPool](docs/sdks/v3/README.md#getpool) - Get a pool by ID
 * [DeletePool](docs/sdks/v3/README.md#deletepool) - Delete a pool by ID
+* [UpdatePoolQuery](docs/sdks/v3/README.md#updatepoolquery) - Update the query of a pool
 * [GetPoolBalances](docs/sdks/v3/README.md#getpoolbalances) - Get historical pool balances from a particular point in time
 * [GetPoolBalancesLatest](docs/sdks/v3/README.md#getpoolbalanceslatest) - Get latest pool balances
 * [AddAccountToPool](docs/sdks/v3/README.md#addaccounttopool) - Add an account to a pool

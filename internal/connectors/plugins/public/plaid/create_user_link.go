@@ -12,7 +12,7 @@ import (
 
 func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 	if req.ApplicationName == "" {
-		return fmt.Errorf("missing client name: %w", models.ErrInvalidRequest)
+		return fmt.Errorf("missing application name: %w", models.ErrInvalidRequest)
 	}
 
 	if req.PaymentServiceUser == nil {

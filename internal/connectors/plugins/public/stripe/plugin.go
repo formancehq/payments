@@ -3,20 +3,22 @@ package stripe
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/stripe/stripe-go/v80"
 )
 
 const ProviderName = "stripe"
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, rm)
-	}, capabilities, Config{})
+		return New(name, logger, rm, nil)
+	}, capabilities, Config{}, PAGE_SIZE)
 }
 
 type Plugin struct {
@@ -28,13 +30,21 @@ type Plugin struct {
 	config Config
 }
 
-func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+func New(
+	name string,
+	logger logging.Logger,
+	rawConfig json.RawMessage,
+	backend stripe.Backend,
+) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	client := client.New(ProviderName, logger, nil, config.APIKey)
+	client, err := client.New(ProviderName, logger, backend, config.APIKey)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),
@@ -61,6 +71,18 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	if p.client == nil {
+		return models.UninstallResponse{}, nil
+	}
+
+	if len(req.WebhookConfigs) == 0 {
+		return models.UninstallResponse{}, nil
+	}
+
+	err := p.client.DeleteWebhookEndpoints(req.WebhookConfigs)
+	if err != nil {
+		return models.UninstallResponse{}, fmt.Errorf("failed to delete stripe webhooks on uninstall: %w", err)
+	}
 	return models.UninstallResponse{}, nil
 }
 
@@ -134,6 +156,59 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 
 	return models.CreatePayoutResponse{
 		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	if p.client == nil {
+		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+	}
+	configs, err := p.createWebhooks(ctx, req)
+	if err != nil {
+		return models.CreateWebhooksResponse{}, err
+	}
+
+	others := make([]models.PSPOther, 0, len(configs))
+	for _, config := range configs {
+		raw, err := json.Marshal(&config)
+		if err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
+		others = append(others, models.PSPOther{
+			ID:    config.Name,
+			Other: raw,
+		})
+	}
+	return models.CreateWebhooksResponse{
+		Others:  others,
+		Configs: configs,
+	}, nil
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	idempotencyKey, err := p.verifyWebhook(ctx, req)
+	if err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+	return models.VerifyWebhookResponse{WebhookIdempotencyKey: idempotencyKey}, nil
+}
+
+func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+	if p.client == nil {
+		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	responses, err := p.translateWebhook(ctx, req)
+	if err != nil {
+		return models.TranslateWebhookResponse{}, err
+	}
+
+	return models.TranslateWebhookResponse{
+		Responses: responses,
 	}, nil
 }
 

@@ -2,8 +2,10 @@ package v2
 
 import (
 	"errors"
-	"github.com/formancehq/payments/internal/connectors/engine"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine"
 
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/payments/internal/api/common"
@@ -31,7 +33,7 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.NotFound(w, err)
 	case errors.Is(err, storage.ErrValidation):
 		api.BadRequest(w, ErrValidation, err)
-	case errors.Is(err, services.ErrValidation):
+	case errors.Is(err, services.ErrValidation), errors.Is(err, connectors.ErrValidation):
 		cause := errorsutils.Cause(err)
 		api.BadRequest(w, ErrValidation, cause)
 	case errors.Is(err, services.ErrNotFound):

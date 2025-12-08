@@ -17,7 +17,7 @@ const ProviderName = "tink"
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypeOpenBanking, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{})
+	}, capabilities, Config{}, PAGE_SIZE)
 }
 
 type Plugin struct {
@@ -96,8 +96,14 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
-
 	return p.fetchNextPayments(ctx, req)
+}
+
+func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+	if p.client == nil {
+		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {

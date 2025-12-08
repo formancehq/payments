@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/powens/client"
@@ -144,6 +145,25 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			Expect(err.Error()).To(ContainSubstring("unsupported webhook event type"))
 			Expect(resp).To(Equal(models.TranslateWebhookResponse{}))
 		})
+
+		It("sets balance CreatedAt to account lastUpdate when present and converts to UTC from default Europe/Paris", func(ctx SpecContext) {
+			body := []byte(`{"user":{"id":1},"connection":{"id":10,"state":"","accounts":[{"id":100,"id_user":1,"id_connection":10,"currency":{"id":"EUR","precision":2},"last_update":"2023-05-01 12:34:56","balance":"123.45","transactions":[]}]}}`)
+			req := models.TranslateWebhookRequest{
+				Name:    string(client.WebhookEventTypeConnectionSynced),
+				Webhook: models.PSPWebhook{Body: body},
+			}
+			resp, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			// Last responses include balance if present; find it
+			var found bool
+			for _, r := range resp.Responses {
+				if r.Balance != nil {
+					found = true
+					Expect(r.Balance.CreatedAt.String()).To(Equal("2023-05-01 10:34:56 +0000 UTC"))
+				}
+			}
+			Expect(found).To(BeTrue())
+		})
 	})
 
 	Context("trim webhook", func() {
@@ -200,6 +220,48 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			resp, err := plg.TrimWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Webhooks).To(HaveLen(1))
+		})
+
+		It("should trim connection synced webhook successfully with last updated at as UTC", func(ctx SpecContext) {
+			req := models.TrimWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: string(client.WebhookEventTypeConnectionSynced),
+				},
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{"user": {"id": 1}, "connection": {"id": 1, "state": "", "last_update": "2021-10-20 19:00:00", "accounts": [{"id": 1}]}}`),
+				},
+			}
+
+			resp, err := plg.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Webhooks).To(HaveLen(1))
+
+			var webhook client.ConnectionSyncedWebhook
+			err = json.Unmarshal(resp.Webhooks[0].Body, &webhook)
+			Expect(err).To(BeNil())
+
+			Expect(webhook.Connection.LastUpdate.String()).To(Equal("2021-10-20 17:00:00 +0000 UTC"))
+		})
+
+		It("should keep account balance after trimming", func(ctx SpecContext) {
+			req := models.TrimWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: string(client.WebhookEventTypeConnectionSynced),
+				},
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{"user":{"id":1},"connection":{"id":10,"state":"","accounts":[{"id":100,"id_user":1,"id_connection":10,"currency":{"id":"EUR","precision":2},"balance":"123.45","transactions":[]}]}}`),
+				},
+			}
+
+			resp, err := plg.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Webhooks).To(HaveLen(1))
+
+			var trimmed client.ConnectionSyncedWebhook
+			err = json.Unmarshal(resp.Webhooks[0].Body, &trimmed)
+			Expect(err).To(BeNil())
+			Expect(trimmed.Connection.Accounts).To(HaveLen(1))
+			Expect(trimmed.Connection.Accounts[0].Balance.String()).To(Equal("123.45"))
 		})
 	})
 })

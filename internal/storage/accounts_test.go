@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -10,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +26,7 @@ func defaultAccounts() []models.Account {
 				ConnectorID: defaultConnector.ID,
 			},
 			ConnectorID:  defaultConnector.ID,
+			Connector:    defaultConnector.Base(),
 			Reference:    "test1",
 			CreatedAt:    now.Add(-60 * time.Minute).UTC().Time,
 			Type:         models.ACCOUNT_TYPE_INTERNAL,
@@ -40,6 +43,7 @@ func defaultAccounts() []models.Account {
 				ConnectorID: defaultConnector.ID,
 			},
 			ConnectorID: defaultConnector.ID,
+			Connector:   defaultConnector.Base(),
 			Reference:   "test2",
 			CreatedAt:   now.Add(-30 * time.Minute).UTC().Time,
 			Type:        models.ACCOUNT_TYPE_INTERNAL,
@@ -54,6 +58,7 @@ func defaultAccounts() []models.Account {
 				ConnectorID: defaultConnector.ID,
 			},
 			ConnectorID: defaultConnector.ID,
+			Connector:   defaultConnector.Base(),
 			Reference:   "test3",
 			CreatedAt:   now.Add(-45 * time.Minute).UTC().Time,
 			Type:        models.ACCOUNT_TYPE_EXTERNAL,
@@ -74,6 +79,7 @@ func defaultAccounts2() []models.Account {
 				ConnectorID: defaultConnector2.ID,
 			},
 			ConnectorID:  defaultConnector2.ID,
+			Connector:    defaultConnector2.Base(),
 			Reference:    "test1",
 			CreatedAt:    now.Add(-55 * time.Minute).UTC().Time,
 			Type:         models.ACCOUNT_TYPE_INTERNAL,
@@ -96,6 +102,7 @@ func defaultAccounts3() []models.Account {
 				ConnectorID: defaultConnector2.ID,
 			},
 			ConnectorID:  defaultConnector2.ID,
+			Connector:    defaultConnector2.Base(),
 			Reference:    "sort-test",
 			CreatedAt:    createdAt,
 			Type:         models.ACCOUNT_TYPE_INTERNAL,
@@ -112,6 +119,7 @@ func defaultAccounts3() []models.Account {
 				ConnectorID: defaultConnector2.ID,
 			},
 			ConnectorID:  defaultConnector2.ID,
+			Connector:    defaultConnector2.Base(),
 			Reference:    "sort-test2",
 			CreatedAt:    createdAt,
 			Type:         models.ACCOUNT_TYPE_INTERNAL,
@@ -132,19 +140,21 @@ func upsertAccounts(t *testing.T, ctx context.Context, storage Storage, accounts
 func TestAccountsUpsert(t *testing.T) {
 	t.Parallel()
 
-	now := time.Now()
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
+	cleanupOutboxHelper(ctx, store)() // Remove the outbox events created by updserting accounts
 
 	t.Run("upsert empty list", func(t *testing.T) {
 		require.NoError(t, store.AccountsUpsert(ctx, []models.Account{}))
 	})
 
 	t.Run("same id insert", func(t *testing.T) {
+		defer cleanupOutboxHelper(ctx, store)() // Also clean up after test
+
 		id := models.AccountID{
 			Reference:   "test1",
 			ConnectorID: defaultConnector.ID,
@@ -154,6 +164,7 @@ func TestAccountsUpsert(t *testing.T) {
 		acc := models.Account{
 			ID:           id,
 			ConnectorID:  defaultConnector.ID,
+			Connector:    defaultConnector.Base(),
 			Reference:    "test1",
 			CreatedAt:    now.Add(-12 * time.Minute).UTC().Time,
 			Type:         models.ACCOUNT_TYPE_EXTERNAL,
@@ -173,9 +184,17 @@ func TestAccountsUpsert(t *testing.T) {
 
 		// Accounts should not have changed
 		require.Equal(t, defaultAccounts()[0], *account)
+
+		// Verify outbox events were not created (account already existed)
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		// Should have no new events since the account already existed
+		assert.Len(t, pendingEvents, 0, "No outbox events should be created for existing accounts")
 	})
 
 	t.Run("unknown connector id", func(t *testing.T) {
+		defer cleanupOutboxHelper(ctx, store)()
+
 		unknownConnectorID := models.ConnectorID{
 			Reference: uuid.New(),
 			Provider:  "unknown",
@@ -199,6 +218,159 @@ func TestAccountsUpsert(t *testing.T) {
 		}
 
 		require.Error(t, store.AccountsUpsert(ctx, []models.Account{acc}))
+
+		// Verify outbox events were not created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		require.Len(t, pendingEvents, 0)
+	})
+
+	t.Run("outbox events created for new accounts", func(t *testing.T) {
+		defer cleanupOutboxHelper(ctx, store)()
+
+		// Create new accounts
+		newAccounts := []models.Account{
+			{
+				ID: models.AccountID{
+					Reference:   "outbox-test-1",
+					ConnectorID: defaultConnector.ID,
+				},
+				ConnectorID:  defaultConnector.ID,
+				Connector:    defaultConnector.Base(),
+				Reference:    "outbox-test-1",
+				CreatedAt:    time.Now().UTC().Time,
+				Type:         models.ACCOUNT_TYPE_INTERNAL,
+				Name:         pointer.For("Outbox Test 1"),
+				DefaultAsset: pointer.For("USD/2"),
+				Metadata: map[string]string{
+					"test": "outbox",
+				},
+				Raw: []byte(`{}`),
+			},
+			{
+				ID: models.AccountID{
+					Reference:   "outbox-test-2",
+					ConnectorID: defaultConnector.ID,
+				},
+				ConnectorID:  defaultConnector.ID,
+				Connector:    defaultConnector.Base(),
+				Reference:    "outbox-test-2",
+				CreatedAt:    time.Now().UTC().Time,
+				Type:         models.ACCOUNT_TYPE_EXTERNAL,
+				Name:         pointer.For("Outbox Test 2"),
+				DefaultAsset: pointer.For("EUR/2"),
+				Metadata: map[string]string{
+					"test": "outbox",
+				},
+				Raw: []byte(`{}`),
+			},
+		}
+
+		// Create a set of expected idempotency keys
+		expectedKeys := make(map[string]bool)
+		for _, account := range newAccounts {
+			expectedKeys[account.IdempotencyKey()] = true
+		}
+
+		// Insert accounts
+		require.NoError(t, store.AccountsUpsert(ctx, newAccounts))
+
+		// Verify outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only those we just created
+		ourEvents := make([]models.OutboxEvent, 0)
+		for _, event := range pendingEvents {
+			if event.EventType == events.EventTypeSavedAccounts && expectedKeys[event.ID.EventIdempotencyKey] {
+				ourEvents = append(ourEvents, event)
+			}
+		}
+		require.Len(t, ourEvents, 2, "expected 2 outbox events for 2 new accounts")
+
+		// Create a map of expected accounts by idempotency key for easier lookup
+		expectedAccountsByKey := make(map[string]models.Account)
+		for _, account := range newAccounts {
+			expectedAccountsByKey[account.IdempotencyKey()] = account
+		}
+
+		// Check event details
+		for _, event := range ourEvents {
+			assert.Equal(t, events.EventTypeSavedAccounts, event.EventType)
+			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
+			assert.Equal(t, 0, event.RetryCount)
+			assert.Nil(t, event.Error)
+			assert.NotEmpty(t, event.ID.EventIdempotencyKey)
+
+			// Find the matching account by idempotency key
+			expectedAccount, found := expectedAccountsByKey[event.ID.EventIdempotencyKey]
+			require.True(t, found, "event idempotency key should match one of the accounts")
+
+			// Verify payload contains account data
+			var payload map[string]interface{}
+			err := json.Unmarshal(event.Payload, &payload)
+			require.NoError(t, err)
+			assert.Equal(t, expectedAccount.ID.String(), payload["id"])
+			assert.Contains(t, payload, "name")
+			assert.Contains(t, payload, "type")
+			assert.Equal(t, expectedAccount.ConnectorID.String(), payload["connectorID"])
+
+			// Verify EntityID matches account ID
+			assert.Equal(t, expectedAccount.ID.String(), event.EntityID)
+
+			// Verify idempotency key matches account
+			assert.Equal(t, expectedAccount.IdempotencyKey(), event.ID.EventIdempotencyKey)
+		}
+	})
+
+	t.Run("no outbox events for existing accounts", func(t *testing.T) {
+		defer cleanupOutboxHelper(ctx, store)()
+
+		// Try to insert existing accounts (should not create outbox events due to ON CONFLICT DO NOTHING)
+		require.NoError(t, store.AccountsUpsert(ctx, defaultAccounts()))
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		assert.Len(t, pendingEvents, 0)
+	})
+
+	t.Run("rollback on foreign key violation", func(t *testing.T) {
+		defer cleanupOutboxHelper(ctx, store)()
+
+		upsertConnector(t, ctx, store, defaultConnector)
+
+		// Count existing accounts
+		accountsBefore, err := store.AccountsList(ctx, NewListAccountsQuery(bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
+		require.NoError(t, err)
+		countBefore := len(accountsBefore.Data)
+
+		// Create an account with an invalid connector ID that doesn't exist
+		invalidConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "non-existent-provider"}
+		invalidAccount := models.Account{
+			ID:          models.AccountID{Reference: "invalid-ref", ConnectorID: invalidConnectorID},
+			ConnectorID: invalidConnectorID,
+			CreatedAt:   time.Now().UTC().Time,
+			Reference:   "invalid-ref",
+			Type:        models.ACCOUNT_TYPE_EXTERNAL,
+		}
+
+		// Attempt to upsert - should fail due to foreign key violation
+		err = store.AccountsUpsert(ctx, []models.Account{invalidAccount})
+		require.Error(t, err)
+
+		// Verify no account was inserted
+		accountsAfter, err := store.AccountsList(ctx, NewListAccountsQuery(bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
+		require.NoError(t, err)
+		assert.Equal(t, countBefore, len(accountsAfter.Data), "no accounts should be inserted on error")
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			assert.NotEqual(t, invalidAccount.ID.String(), event.EntityID, "no outbox event should be created for failed insert")
+		}
 	})
 }
 

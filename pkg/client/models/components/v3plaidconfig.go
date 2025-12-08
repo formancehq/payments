@@ -7,12 +7,13 @@ import (
 )
 
 type V3PlaidConfig struct {
-	ClientID      string  `json:"clientID"`
-	ClientSecret  string  `json:"clientSecret"`
-	IsSandbox     *bool   `json:"isSandbox,omitempty"`
-	Name          string  `json:"name"`
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+	IsSandbox    *bool  `json:"isSandbox,omitempty"`
+	Name         string `json:"name"`
+	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	Provider      *string `default:"Plaid" json:"provider"`
 }
 

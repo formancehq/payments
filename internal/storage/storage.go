@@ -29,10 +29,8 @@ type Storage interface {
 
 	// Balances
 	BalancesUpsert(ctx context.Context, balances []models.Balance) error
-	BalancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
-	BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error)
-	BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error)
+	BalancesGetFromAccountIDs(ctx context.Context, accountIDs []models.AccountID, at *time.Time) ([]models.AggregatedBalance, error)
 
 	// Bank Accounts
 	BankAccountsUpsert(ctx context.Context, bankAccount models.BankAccount) error
@@ -44,7 +42,7 @@ type Storage interface {
 
 	// Connectors
 	ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error
-	ConnectorsInstall(ctx context.Context, c models.Connector) error
+	ConnectorsInstall(ctx context.Context, c models.Connector, oldConnectorID *models.ConnectorID) error
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
 	ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
@@ -115,6 +113,7 @@ type Storage interface {
 
 	// Pools
 	PoolsUpsert(ctx context.Context, pool models.Pool) error
+	PoolsUpdateQuery(ctx context.Context, p models.Pool, query map[string]any) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)
 	PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error)
 	PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
@@ -173,6 +172,14 @@ type Storage interface {
 	InstancesGet(ctx context.Context, id string, scheduleID string, connectorID models.ConnectorID) (*models.Instance, error)
 	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
+	// Outbox Events
+	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error
+	OutboxEventsInsertWithTx(ctx context.Context, events []models.OutboxEvent) error
+	OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error)
+	OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error
+	OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error
+	OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
@@ -198,14 +205,18 @@ func (s *store) Close() error {
 	s.rwMutex.Lock()
 	defer s.rwMutex.Unlock()
 
-	if err := s.db.Close(); err != nil {
-		return err
-	}
-
+	// Close any dedicated connections first to ensure the database can be dropped
 	for _, conn := range s.conns {
 		if err := conn.Close(); err != nil {
 			return err
 		}
+	}
+	// Clear the slice to avoid double-close in case Close is called twice
+	s.conns = nil
+
+	// Close the main bun DB (which closes the underlying sql.DB pool)
+	if err := s.db.Close(); err != nil {
+		return err
 	}
 
 	return nil

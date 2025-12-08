@@ -75,9 +75,6 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 	// We need to add the redirect URI to the query string directly because
 	// the encoded redirect URI is not UI friendly
 	u.RawQuery += "&redirect_uri=" + *req.FormanceRedirectURL
-	for _, item := range refreshableItems {
-		u.RawQuery += "&refreshable_items=" + item
-	}
 
 	return models.UpdateUserLinkResponse{
 		Link: u.String(),

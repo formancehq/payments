@@ -45,7 +45,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return e("begin transaction", err)
 	}
 
 	var errTx error
@@ -75,7 +75,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 	).Exec(ctx)
 	if err != nil {
 		errTx = err
-		return e("insert psu: %w", err)
+		return e("insert psu", err)
 	}
 
 	if len(relatedBankAccounts) > 0 {
@@ -125,7 +125,7 @@ func (s *store) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*mode
 	err := query.
 		Scan(ctx)
 	if err != nil {
-		return nil, e("select psu: %w", err)
+		return nil, e("select psu", err)
 	}
 
 	res := toPaymentServiceUserModels(psu)
@@ -139,12 +139,12 @@ func (s *store) PaymentServiceUsersDelete(ctx context.Context, paymentServiceUse
 		Where("id = ?", paymentServiceUserID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete psu: %w", err)
+		return e("delete psu", err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return e("delete psu: %w", err)
+		return e("delete psu", err)
 	}
 
 	if rowsAffected == 0 {
@@ -333,7 +333,7 @@ func fillAddress(from paymentServiceUser) *models.Address {
 }
 
 func fillContactDetails(from paymentServiceUser) *models.ContactDetails {
-	if from.Email == nil && from.PhoneNumber == nil {
+	if from.Email == nil && from.PhoneNumber == nil && from.Locale == nil {
 		return nil
 	}
 

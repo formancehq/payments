@@ -14,6 +14,8 @@ const (
 	tinkLinkBaseURL = "https://link.tink.com/1.0/transactions"
 )
 
+const PAGE_SIZE = 100 // max page size is 100
+
 var (
 	supportedMarkets = map[string]struct{}{
 		"AT": {},
@@ -38,6 +40,7 @@ var (
 
 	supportedLocales = map[string]struct{}{
 		"en_US": {},
+		"en_GB": {},
 		"da_DK": {},
 		"de_DE": {},
 		"es_ES": {},

@@ -62,6 +62,7 @@ Allows to check if users used the link and completed the oauth flow.
 * [ListPools](#listpools) - List all pools
 * [GetPool](#getpool) - Get a pool by ID
 * [DeletePool](#deletepool) - Delete a pool by ID
+* [UpdatePoolQuery](#updatepoolquery) - Update the query of a pool
 * [GetPoolBalances](#getpoolbalances) - Get historical pool balances from a particular point in time
 * [GetPoolBalancesLatest](#getpoolbalanceslatest) - Get latest pool balances
 * [AddAccountToPool](#addaccounttopool) - Add an account to a pool
@@ -2837,6 +2838,59 @@ func main() {
 ### Response
 
 **[*operations.V3DeletePoolResponse](../../models/operations/v3deletepoolresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## UpdatePoolQuery
+
+Update the query of a pool
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.UpdatePoolQuery(ctx, "<id>", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                                   | Type                                                                                        | Required                                                                                    | Description                                                                                 |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `ctx`                                                                                       | [context.Context](https://pkg.go.dev/context#Context)                                       | :heavy_check_mark:                                                                          | The context to use for the request.                                                         |
+| `poolID`                                                                                    | *string*                                                                                    | :heavy_check_mark:                                                                          | The pool ID                                                                                 |
+| `v3UpdatePoolQueryRequest`                                                                  | [*components.V3UpdatePoolQueryRequest](../../models/components/v3updatepoolqueryrequest.md) | :heavy_minus_sign:                                                                          | N/A                                                                                         |
+| `opts`                                                                                      | [][operations.Option](../../models/operations/option.md)                                    | :heavy_minus_sign:                                                                          | The options for this request.                                                               |
+
+### Response
+
+**[*operations.V3UpdatePoolQueryResponse](../../models/operations/v3updatepoolqueryresponse.md), error**
 
 ### Errors
 

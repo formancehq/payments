@@ -75,5 +75,19 @@ var _ = Describe("API v3 Pools Create", func() {
 			handlerFn(w, prepareJSONRequest(http.MethodPost, &cpr))
 			assertExpectedResponse(w.Result(), http.StatusCreated, "data")
 		})
+
+		It("should return status created on success with a query", func(ctx SpecContext) {
+			m.EXPECT().PoolsCreate(gomock.Any(), gomock.Any()).Return(nil)
+			cpr = CreatePoolRequest{
+				Name: "name",
+				Query: map[string]any{
+					"$match": map[string]any{
+						"account_id": accID.String(),
+					},
+				},
+			}
+			handlerFn(w, prepareJSONRequest(http.MethodPost, &cpr))
+			assertExpectedResponse(w.Result(), http.StatusCreated, "data")
+		})
 	})
 })

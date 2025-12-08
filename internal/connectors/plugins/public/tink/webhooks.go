@@ -222,9 +222,19 @@ func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req mode
 		return nil, err
 	}
 
+	psuID, err := uuid.Parse(accountTransactionsModifiedWebhook.ExternalUserID)
+	if err != nil {
+		return nil, err
+	}
+
 	response := models.WebhookResponse{
 		DataReadyToFetch: &models.PSPDataReadyToFetch{
+			PSUID:       &psuID,
 			FromPayload: payload,
+			DataToFetch: []models.OpenBankingDataToFetch{
+				models.OpenBankingDataToFetchAccountsAndBalances,
+				models.OpenBankingDataToFetchPayments,
+			},
 		},
 	}
 
@@ -281,6 +291,10 @@ func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateW
 			DataReadyToFetch: &models.PSPDataReadyToFetch{
 				PSUID:       &psuID,
 				FromPayload: payload,
+				DataToFetch: []models.OpenBankingDataToFetch{
+					models.OpenBankingDataToFetchAccountsAndBalances,
+					models.OpenBankingDataToFetchPayments,
+				},
 			},
 		},
 	}, nil
@@ -314,6 +328,7 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 		return []models.WebhookResponse{
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
+					PSPUserID:    refreshFinishedWebhook.UserID,
 					ConnectionID: refreshFinishedWebhook.CredentialsID,
 					At:           time.Unix(0, refreshFinishedWebhook.Finished*int64(time.Millisecond)),
 				},

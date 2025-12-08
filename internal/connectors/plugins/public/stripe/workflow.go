@@ -12,7 +12,7 @@ func workflow() models.ConnectorTasksTree {
 				{
 					TaskType:     models.TASK_FETCH_BALANCES,
 					Name:         "fetch_balances",
-					Periodically: true,
+					Periodically: false,
 					NextTasks:    []models.ConnectorTaskTree{},
 				},
 				{
@@ -28,6 +28,12 @@ func workflow() models.ConnectorTasksTree {
 					NextTasks:    []models.ConnectorTaskTree{},
 				},
 			},
+		},
+		{
+			TaskType:     models.TASK_CREATE_WEBHOOKS,
+			Name:         "create_webhooks",
+			Periodically: false,
+			NextTasks:    []models.ConnectorTaskTree{},
 		},
 	}
 }

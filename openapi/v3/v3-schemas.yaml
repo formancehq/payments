@@ -100,6 +100,8 @@ components:
         connectorID:
           type: string
           format: byte
+        connector:
+          $ref: '#/components/schemas/V3ConnectorBase'
         provider:
           type: string
         reference:
@@ -525,6 +527,21 @@ components:
           type: boolean
         config:
           type: object
+
+    V3ConnectorBase:
+      type: object
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        provider:
+          type: string
 
     V3Schedule:
       type: object
@@ -1501,12 +1518,11 @@ components:
     V3PaymentServiceUserCreateLinkRequest:
       type: object
       required:
-        - applicationName
         - clientRedirectURL
       properties:
         applicationName:
           type: string
-          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider).
+          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.
         clientRedirectURL:
           type: string
           format: url
@@ -1527,11 +1543,11 @@ components:
     V3PaymentServiceUserUpdateLinkRequest:
       type: object
       required:
-        - applicationName
         - clientRedirectURL
       properties:
         applicationName:
           type: string
+          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.
         clientRedirectURL:
           type: string
           format: url
@@ -1551,12 +1567,16 @@ components:
     # POOLS
     V3CreatePoolRequest:
       type: object
+      description: Query and dynamic pools are available from Connectivity v3.1
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
+        query:
+          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+          type: object
+          additionalProperties: true
         accountIDs:
           type: array
           items:
@@ -1570,6 +1590,15 @@ components:
         data:
           description: The ID of the created pool
           type: string
+
+    V3UpdatePoolQueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: object
+          additionalProperties: true
 
     V3PoolsCursorResponse:
       type: object
@@ -1624,6 +1653,7 @@ components:
         - id
         - name
         - createdAt
+        - type
         - poolAccounts
       properties:
         id:
@@ -1633,6 +1663,11 @@ components:
         createdAt:
           type: string
           format: date-time
+        type:
+          $ref: '#/components/schemas/V3PoolTypeEnum'
+        query:
+          type: object
+          additionalProperties: true
         poolAccounts:
           type: array
           items:
@@ -1654,6 +1689,17 @@ components:
         amount:
           type: integer
           format: bigint
+        relatedAccounts:
+          nullable: true
+          type: array
+          items:
+            type: string
+
+    V3PoolTypeEnum:
+      type: string
+      enum:
+        - STATIC
+        - DYNAMIC
 
     # TASKS
     V3GetTaskResponse:
