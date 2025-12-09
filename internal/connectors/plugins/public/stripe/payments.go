@@ -447,7 +447,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 	case stripesdk.BalanceTransactionTypeAdjustment:
 		if balanceTransaction.Source.Dispute == nil {
 			// We are only handling dispute adjustments
-			p.logger.WithField("type", balanceTransaction.Type).WithField("reference", balanceTransaction.ID).Errorf("skipping unsupported balance transaction: %v", ErrUnsupportedAdjustment)
+			p.logger.WithField("type", balanceTransaction.Type).WithField("reference", balanceTransaction.ID).Infof("skipping unsupported balance transaction: %v", ErrUnsupportedAdjustment)
 			return nil, nil
 		}
 
