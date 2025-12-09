@@ -178,6 +178,19 @@ var _ = Describe("Stripe Plugin Payments", func() {
 					},
 				},
 				{
+					ID:   "adjustment_without_dispute_also_skipped", // adjustments are supported but not this kind
+					Type: stripesdk.BalanceTransactionTypeAdjustment,
+					Source: &stripesdk.BalanceTransactionSource{
+						Refund: &stripesdk.Refund{
+							FailureReason: stripesdk.RefundFailureReasonExpiredOrCanceledCard,
+							Charge: &stripesdk.Charge{
+								Currency:           stripesdk.CurrencyDZD,
+								BalanceTransaction: &stripesdk.BalanceTransaction{ID: "adjustment_refund_original"},
+							},
+						},
+					},
+				},
+				{
 					ID:   "skipped", // unsupported types are skipped
 					Type: stripesdk.BalanceTransactionTypeStripeFee,
 					Source: &stripesdk.BalanceTransactionSource{
@@ -235,7 +248,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 			)
 			res, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Payments).To(HaveLen(len(samplePayments) - 1))
+			Expect(res.Payments).To(HaveLen(len(samplePayments) - 2))
 			Expect(res.HasMore).To(BeTrue())
 
 			// Charges
