@@ -16,6 +16,7 @@ const (
 	CAPABILITY_FETCH_BALANCES
 	CAPABILITY_FETCH_EXTERNAL_ACCOUNTS
 	CAPABILITY_FETCH_PAYMENTS
+	CAPABILITY_FETCH_TRADES
 	CAPABILITY_FETCH_OTHERS
 
 	// Webhooks capabilities indicates that the connector can create, manage and
@@ -36,6 +37,7 @@ const (
 	// still want us to record the accounts and payments.
 	CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION
 	CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION
+	CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION
 )
 
 func (t Capability) String() string {
@@ -48,6 +50,8 @@ func (t Capability) String() string {
 		return "FETCH_EXTERNAL_ACCOUNTS"
 	case CAPABILITY_FETCH_PAYMENTS:
 		return "FETCH_PAYMENTS"
+	case CAPABILITY_FETCH_TRADES:
+		return "FETCH_TRADES"
 	case CAPABILITY_FETCH_OTHERS:
 		return "FETCH_OTHERS"
 
@@ -67,6 +71,8 @@ func (t Capability) String() string {
 		return "ALLOW_FORMANCE_ACCOUNT_CREATION"
 	case CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION:
 		return "ALLOW_FORMANCE_PAYMENT_CREATION"
+	case CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION:
+		return "ALLOW_FORMANCE_TRADE_CREATION"
 
 	default:
 		return "UNKNOWN"
@@ -105,6 +111,8 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_FETCH_EXTERNAL_ACCOUNTS
 	case "FETCH_PAYMENTS":
 		*t = CAPABILITY_FETCH_PAYMENTS
+	case "FETCH_TRADES":
+		*t = CAPABILITY_FETCH_TRADES
 	case "FETCH_OTHERS":
 		*t = CAPABILITY_FETCH_OTHERS
 
@@ -124,6 +132,8 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION
 	case "ALLOW_FORMANCE_PAYMENT_CREATION":
 		*t = CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION
+	case "ALLOW_FORMANCE_TRADE_CREATION":
+		*t = CAPABILITY_ALLOW_FORMANCE_TRADE_CREATION
 
 	default:
 		return fmt.Errorf("unknown capability")

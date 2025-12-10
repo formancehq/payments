@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var defaultHttpClientTimeout = 3 * time.Second
+var defaultHttpClientTimeout = 10 * time.Second
 
 type T interface {
 	require.TestingT

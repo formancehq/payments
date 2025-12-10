@@ -52,6 +52,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginFetchNextPayments,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginFetchNextTrades",
+			Func: a.PluginFetchNextTrades,
+		}).
+		Append(temporalworker.Definition{
 			Name: "PluginFetchNextOthers",
 			Func: a.PluginFetchNextOthers,
 		}).
@@ -190,6 +194,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentsDeleteFromConnectionID",
 			Func: a.StoragePaymentsDeleteFromConnectionID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageTradesStore",
+			Func: a.StorageTradesStore,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageStatesGet",

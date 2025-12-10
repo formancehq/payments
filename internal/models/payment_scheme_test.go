@@ -43,6 +43,7 @@ func TestPaymentScheme(t *testing.T) {
 			{models.PAYMENT_SCHEME_ACH_DEBIT, "ACH_DEBIT"},
 			{models.PAYMENT_SCHEME_ACH, "ACH"},
 			{models.PAYMENT_SCHEME_RTP, "RTP"},
+			{models.PAYMENT_SCHEME_EXCHANGE, "EXCHANGE"},
 			{models.PAYMENT_SCHEME_OTHER, "OTHER"},
 			{models.PaymentScheme(999), "UNKNOWN"}, // Test default case
 		}
@@ -87,6 +88,7 @@ func TestPaymentScheme(t *testing.T) {
 			{"ACH_DEBIT", models.PAYMENT_SCHEME_ACH_DEBIT, false},
 			{"ACH", models.PAYMENT_SCHEME_ACH, false},
 			{"RTP", models.PAYMENT_SCHEME_RTP, false},
+			{"EXCHANGE", models.PAYMENT_SCHEME_EXCHANGE, false},
 			{"OTHER", models.PAYMENT_SCHEME_OTHER, false},
 			{"UNKNOWN", models.PAYMENT_SCHEME_UNKNOWN, false},
 			{"invalid", models.PAYMENT_SCHEME_UNKNOWN, true},

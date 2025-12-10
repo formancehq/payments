@@ -53,6 +53,14 @@ components:
       schema:
         type: string
 
+    V3TradeID:
+      name: tradeID
+      in: path
+      required: true
+      description: The trade ID
+      schema:
+        type: string
+
     V3PaymentInitiationID:
       name: paymentInitiationID
       in: path
