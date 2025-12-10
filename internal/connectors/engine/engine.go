@@ -181,7 +181,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	}
 
 	// Launch the workflow
-	run, err := e.launchInstallWorkflow(detachedCtx, connector, config, false)
+	run, err := e.launchInstallWorkflow(detachedCtx, connector, config)
 	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
@@ -1655,7 +1655,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 		}
 
 		// Launch the workflow
-		_, err = e.launchInstallWorkflow(ctx, connector, config, true)
+		_, err = e.launchInstallWorkflow(ctx, connector, config)
 		if err != nil {
 			return err
 		}
@@ -1663,7 +1663,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	return nil
 }
 
-func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Connector, config models.Config, onStart bool) (client.WorkflowRun, error) {
+func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Connector, config models.Config) (client.WorkflowRun, error) {
 	return e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
@@ -1679,7 +1679,6 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 		workflow.InstallConnector{
 			ConnectorID: connector.ID,
 			Config:      config,
-			OnStart:     onStart,
 		},
 	)
 }
