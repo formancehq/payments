@@ -996,6 +996,9 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	openBankingForwardedUser, err := e.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return "", "", fmt.Errorf("payment service user has not been forwarded to connector '%s'. Please forward the payment service user to the connector before creating a link: %w", connectorID, ErrValidation)
+		}
 		return "", "", err
 	}
 
@@ -1089,6 +1092,9 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	openBankingForwardedUser, err := e.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return "", "", fmt.Errorf("payment service user has not been forwarded to connector '%s'. Please forward the payment service user to the connector before updating a link: %w", connectorID, ErrValidation)
+		}
 		return "", "", err
 	}
 

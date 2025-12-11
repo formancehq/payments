@@ -139,6 +139,43 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 	})
 
+	When("creating a link without forwarding PSU", func() {
+		var (
+			connectorID string
+		)
+
+		BeforeEach(func() {
+			var err error
+
+			id := uuid.New()
+			conf := newV3ConnectorConfigFn()(id)
+			conf.LinkFlowError = pointer.For(false)
+			conf.UpdateLinkFlowError = pointer.For(false)
+			connectorID, err = installV3Connector(ctx, app.GetValue(), conf, id)
+			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
+		})
+
+		It("should fail with clear error message when PSU has not been forwarded", func() {
+			applicationName := "test"
+			_, err := app.GetValue().SDK().Payments.V3.CreateLinkForPaymentServiceUser(
+				ctx,
+				psuID,
+				connectorID,
+				&components.V3PaymentServiceUserCreateLinkRequest{
+					ApplicationName:   &applicationName,
+					ClientRedirectURL: "https://www.google.com",
+				},
+			)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("payment service user has not been forwarded to connector"))
+			Expect(err.Error()).To(ContainSubstring("Please forward the payment service user to the connector before creating a link"))
+		})
+	})
+
 	When("creating a link and call it - success", func() {
 		var (
 			connectorID string
