@@ -133,7 +133,7 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runPollTransfer,
 		}).
 		Append(temporalworker.Definition{
-			Name: Run,
+			Name: RunNextTasks,
 			Func: w.runNextTasks,
 		}).
 		Append(temporalworker.Definition{

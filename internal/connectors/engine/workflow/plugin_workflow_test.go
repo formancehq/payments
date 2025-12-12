@@ -30,7 +30,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -67,7 +67,7 @@ func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -100,7 +100,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success(
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -133,7 +133,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -166,7 +166,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -199,7 +199,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -232,7 +232,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -256,7 +256,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 
 func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -285,7 +285,7 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 	)
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
@@ -315,7 +315,7 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 	)
 
 	s.env.ExecuteWorkflow(
-		Run,
+		RunNextTasks,
 		models.Config{},
 		s.connector,
 		&FromPayload{
