@@ -83,7 +83,7 @@ func (w Workflow) installConnector(
 				},
 			},
 		),
-		Run,
+		RunNextTasks,
 		installConnector.Config,
 		connector,
 		nil,

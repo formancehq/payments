@@ -224,4 +224,4 @@ func calculateJitter(pollingPeriod time.Duration) time.Duration {
 	return maxJitter
 }
 
-const Run = "Run"
+const RunNextTasks = "Run"
