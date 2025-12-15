@@ -43,6 +43,7 @@ func (w Workflow) runResetConnector(
 	)
 }
 
+// TODO this stores API keys in Temporal (by using StorageConnectorsGet & StorageConnectorsStore
 func (w Workflow) resetConnector(
 	ctx workflow.Context,
 	resetConnector ResetConnector,

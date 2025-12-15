@@ -29,10 +29,17 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 		return nil
 	})
 
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
+
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -59,6 +66,13 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 }
 
 func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
+
 	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx workflow.Context, req FetchNextAccounts, nextTasks []models.ConnectorTaskTree) error {
 		s.Equal(s.connectorID, req.ConnectorID)
 		s.Equal(models.Config{}, req.Config)
@@ -69,7 +83,7 @@ func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -90,6 +104,12 @@ func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 }
 
 func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {
 		s.Equal(fmt.Sprintf("test-%s-FETCH_EXTERNAL_ACCOUNTS-1", s.connectorID.String()), schedule.ID)
 		return nil
@@ -102,7 +122,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success(
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -123,6 +143,12 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success(
 }
 
 func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {
 		s.Equal(fmt.Sprintf("test-%s-FETCH_OTHERS-1", s.connectorID.String()), schedule.ID)
 		return nil
@@ -135,7 +161,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -156,6 +182,12 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
 }
 
 func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {
 		s.Equal(fmt.Sprintf("test-%s-FETCH_PAYMENTS-1", s.connectorID.String()), schedule.ID)
 		return nil
@@ -168,7 +200,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -189,6 +221,12 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
 }
 
 func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {
 		s.Equal(fmt.Sprintf("test-%s-FETCH_BALANCES-1", s.connectorID.String()), schedule.ID)
 		return nil
@@ -201,7 +239,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -222,6 +260,12 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
 }
 
 func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {
 		s.Equal(fmt.Sprintf("test-%s-CREATE_WEBHOOKS-1", s.connectorID.String()), schedule.ID)
 		return nil
@@ -234,7 +278,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -280,6 +324,12 @@ func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
 }
 
 func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
@@ -287,7 +337,7 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -309,6 +359,12 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 }
 
 func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
+	connectorMetadata := models.ConnectorMetadata{
+		ConnectorID:          s.connector.ID,
+		Provider:             s.connector.Provider,
+		PollingPeriod:        models.DefaultConfig().PollingPeriod,
+		ScheduledForDeletion: s.connector.ScheduledForDeletion,
+	}
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
@@ -317,7 +373,7 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
 		models.Config{},
-		s.connector,
+		connectorMetadata,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -332,8 +388,7 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 		},
 	)
 
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	s.True(s.env.IsWorkflowCompleted()) err := s.env.GetWorkflowError()
 	s.Error(err)
 	s.ErrorContains(err, "error-test")
 }

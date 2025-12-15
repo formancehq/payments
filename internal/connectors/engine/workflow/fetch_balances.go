@@ -100,12 +100,12 @@ func (w Workflow) fetchBalances(
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextBalances.ConnectorID)
+			connectorMetadata, err := activities.StorageConnectorsGetMetadata(infiniteRetryContext(ctx), fetchNextBalances.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !connectorMetadata.ScheduledForDeletion {
 				for _, balance := range balancesResponse.Balances {
 					b := balance
 
@@ -122,7 +122,7 @@ func (w Workflow) fetchBalances(
 						if err := w.runNextTasks(
 							ctx,
 							fetchNextBalances.Config,
-							connector,
+							connectorMetadata,
 							&FromPayload{
 								ID:      fmt.Sprintf("%s-balances", b.AccountReference),
 								Payload: payload,

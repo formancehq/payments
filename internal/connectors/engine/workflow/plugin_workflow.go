@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 func (w Workflow) runNextTasks(
 	ctx workflow.Context,
 	config models.Config,
-	connector *models.Connector,
+	connectorMetadata *models.ConnectorMetadata,
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
@@ -29,7 +28,7 @@ func (w Workflow) runNextTasks(
 		case models.TASK_FETCH_ACCOUNTS:
 			req := FetchNextAccounts{
 				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorMetadata.ConnectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -41,7 +40,7 @@ func (w Workflow) runNextTasks(
 		case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 			req := FetchNextExternalAccounts{
 				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorMetadata.ConnectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -53,7 +52,7 @@ func (w Workflow) runNextTasks(
 		case models.TASK_FETCH_OTHERS:
 			req := FetchNextOthers{
 				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorMetadata.ConnectorID,
 				Name:         task.Name,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -66,7 +65,7 @@ func (w Workflow) runNextTasks(
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
 				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorMetadata.ConnectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -78,7 +77,7 @@ func (w Workflow) runNextTasks(
 		case models.TASK_FETCH_BALANCES:
 			req := FetchNextBalances{
 				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorMetadata.ConnectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -90,7 +89,7 @@ func (w Workflow) runNextTasks(
 		case models.TASK_CREATE_WEBHOOKS:
 			req := CreateWebhooks{
 				Config:      config,
-				ConnectorID: connector.ID,
+				ConnectorID: connectorMetadata.ConnectorID,
 				FromPayload: fromPayload,
 			}
 
@@ -107,7 +106,7 @@ func (w Workflow) runNextTasks(
 			// TODO(polo): context
 			err := w.scheduleNextWorkflow(
 				ctx,
-				connector,
+				connectorMetadata,
 				capability,
 				task,
 				fromPayload,
@@ -146,7 +145,7 @@ func (w Workflow) runNextTasks(
 
 func (w Workflow) scheduleNextWorkflow(
 	ctx workflow.Context,
-	connector *models.Connector,
+	connectorMetadata *models.ConnectorMetadata,
 	capability models.Capability,
 	task models.ConnectorTaskTree,
 	fromPayload *FromPayload,
@@ -154,21 +153,15 @@ func (w Workflow) scheduleNextWorkflow(
 	request interface{},
 ) error {
 	var (
-		config     models.Config
 		scheduleID string
 	)
+	connectorID := connectorMetadata.ConnectorID
 	if fromPayload == nil {
-		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connector.ID.String(), capability.String())
+		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connectorID.String(), capability.String())
 	} else {
-		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connector.ID.String(), capability.String(), fromPayload.ID)
+		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
 	}
 
-	// use most up-to-date configuration
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	connectorID := connector.ID
 	err := activities.StorageSchedulesStore(
 		infiniteRetryContext(ctx),
 		models.Schedule{
@@ -184,9 +177,9 @@ func (w Workflow) scheduleNextWorkflow(
 		infiniteRetryContext(ctx),
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
-			Jitter:     calculateJitter(config.PollingPeriod),
+			Jitter:     calculateJitter(connectorMetadata.PollingPeriod),
 			Interval: client.ScheduleIntervalSpec{
-				Every: config.PollingPeriod,
+				Every: connectorMetadata.PollingPeriod,
 			},
 			Action: client.ScheduleWorkflowAction{
 				// Use the same ID as the schedule ID, so we can identify the workflows running.

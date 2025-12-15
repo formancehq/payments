@@ -99,12 +99,12 @@ func (w Workflow) fetchAccounts(
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextAccount.ConnectorID)
+			connectorMetadata, err := activities.StorageConnectorsGetMetadata(infiniteRetryContext(ctx), fetchNextAccount.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !connectorMetadata.ScheduledForDeletion {
 				for _, account := range accountsResponse.Accounts {
 					acc := account
 
@@ -122,7 +122,7 @@ func (w Workflow) fetchAccounts(
 						if err := w.runNextTasks(
 							ctx,
 							fetchNextAccount.Config,
-							connector,
+							connectorMetadata,
 							&FromPayload{
 								ID:      acc.Reference,
 								Payload: payload,

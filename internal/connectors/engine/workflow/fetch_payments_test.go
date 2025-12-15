@@ -82,8 +82,13 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_Success() {
 		return nil
 	})
 	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          s.connector.ID,
+			Provider:             s.connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: s.connector.ScheduledForDeletion,
+		},
 		nil,
 	)
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
@@ -140,8 +145,13 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_ConnectorScheduledF
 		return nil
 	})
 	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          connector.ID,
+			Provider:             connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: connector.ScheduledForDeletion,
+		},
 		nil,
 	)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
