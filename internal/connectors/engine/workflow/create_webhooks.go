@@ -65,16 +65,17 @@ func (w Workflow) createWebhooks(
 			return fmt.Errorf("storing webhooks: %w", err)
 		}
 	}
-
-	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
-	if err != nil {
-		return fmt.Errorf("getting connector: %w", err)
-	}
-
-	if connector.ScheduledForDeletion {
-		// avoid scheduling next tasks if connector is scheduled for deletion
-		return nil
-	}
+	
+	//plugin, err := w.connectors.Get(createWebhooks.ConnectorID)
+	////connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
+	//if err != nil {
+	//	return fmt.Errorf("getting connector: %w", err)
+	//}
+	//
+	//if connector.ScheduledForDeletion { // todo switch to verify that in the activity of the child workflow?
+	//	// avoid scheduling next tasks if connector is scheduled for deletion
+	//	return nil
+	//}
 
 	wg := workflow.NewWaitGroup(ctx)
 	errChan := make(chan error, len(resp.Others)*2)
@@ -87,8 +88,10 @@ func (w Workflow) createWebhooks(
 
 			if err := w.runNextTasks(
 				ctx,
-				createWebhooks.Config,
-				connector,
+				createWebhooks.Config, // todo need to pass null
+				&models.ConnectorIDOnly{
+					ID: createWebhooks.ConnectorID,
+				},
 				&FromPayload{
 					ID:      o.ID,
 					Payload: o.Other,

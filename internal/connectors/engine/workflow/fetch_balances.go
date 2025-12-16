@@ -122,7 +122,9 @@ func (w Workflow) fetchBalances(
 						if err := w.runNextTasks(
 							ctx,
 							fetchNextBalances.Config,
-							connector,
+							&models.ConnectorIDOnly{
+								ID: fetchNextBalances.ConnectorID,
+							},
 							&FromPayload{
 								ID:      fmt.Sprintf("%s-balances", b.AccountReference),
 								Payload: payload,

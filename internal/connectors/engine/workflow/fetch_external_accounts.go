@@ -121,7 +121,9 @@ func (w Workflow) fetchExternalAccounts(
 						if err := w.runNextTasks(
 							ctx,
 							fetchNextExternalAccount.Config,
-							connector,
+							&models.ConnectorIDOnly{
+								ID: fetchNextExternalAccount.ConnectorID,
+							},
 							&FromPayload{
 								ID:      acc.Reference,
 								Payload: payload,
