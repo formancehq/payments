@@ -1589,15 +1589,15 @@ func (e *engine) OnStart(ctx context.Context) error {
 	return nil
 }
 
-func (w *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	w.logger.Debugf("api got insert notification for %q", connectorID.String())
-	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
+func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	e.logger.Debugf("api got insert notification for %q", connectorID.String())
+	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
 		return err
 	}
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
+	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
 	if err != nil {
 		return err
 	}
