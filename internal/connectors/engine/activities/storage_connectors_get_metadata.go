@@ -18,7 +18,7 @@ func (a Activities) StorageConnectorsGetMetadata(ctx context.Context, connectorI
 	}
 
 	// Default polling period from models.DefaultConfig
-	polling := models.DefaultConfig().PollingPeriod
+	polling := models.Config{}.PollingPeriod
 
 	// Try to extract pollingPeriod from the stored connector config payload
 	if len(connector.Config) > 0 {

@@ -14,8 +14,8 @@ import (
 
 func (w Workflow) runNextTasks(
 	ctx workflow.Context,
-	config models.Config,
-	connectorMetadata *models.ConnectorMetadata,
+	config models.Config, // todo pass in nil
+	connectorMetadata *models.ConnectorMetadata, // TODO this used to be connectors, maybe only send connectors.ID
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
@@ -106,7 +106,7 @@ func (w Workflow) runNextTasks(
 			// TODO(polo): context
 			err := w.scheduleNextWorkflow(
 				ctx,
-				connectorMetadata,
+				connectorMetadata, // todo what if we have existing workflows with connectors instead? We should let them finish (migration time)
 				capability,
 				task,
 				fromPayload,
