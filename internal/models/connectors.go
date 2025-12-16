@@ -124,6 +124,37 @@ func (c *Connector) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ConnectorIDOnly represents a connector ID without the full connector details, meant to be used by temporal activities
+// and workflows in favor of passing the full connector struct.
+// The full connector struct will instead be loaded from DB when needed, allowing the activity to use the latest connector details
+// (notably whether the connector is scheduled for deletion or not).
+type ConnectorIDOnly struct {
+	ID ConnectorID `json:"id"`
+}
+
+func (c ConnectorIDOnly) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		ID string `json:"id"`
+	}{
+		ID: c.ID.String(),
+	})
+}
+
+func (c *ConnectorIDOnly) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	id, err := ConnectorIDFromString(aux.ID)
+	if err != nil {
+		return err
+	}
+	c.ID = id
+	return nil
+}
+
 // When using the provider inside the connectorID struct, we need to convert it
 // to the v3 version. This is because we can't change the connectorID struct
 // when migrating from v2 to v3 because we do not want to break the API for the
