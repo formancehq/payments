@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 func (w Workflow) runNextTasks(
 	ctx workflow.Context,
 	config models.Config,
-	connector *models.Connector,
+	connector *models.ConnectorIDOnly,
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
@@ -107,7 +106,7 @@ func (w Workflow) runNextTasks(
 			// TODO(polo): context
 			err := w.scheduleNextWorkflow(
 				ctx,
-				connector,
+				connector.ID,
 				capability,
 				task,
 				fromPayload,
@@ -146,7 +145,7 @@ func (w Workflow) runNextTasks(
 
 func (w Workflow) scheduleNextWorkflow(
 	ctx workflow.Context,
-	connector *models.Connector,
+	connectorID models.ConnectorID,
 	capability models.Capability,
 	task models.ConnectorTaskTree,
 	fromPayload *FromPayload,
@@ -154,21 +153,14 @@ func (w Workflow) scheduleNextWorkflow(
 	request interface{},
 ) error {
 	var (
-		config     models.Config
 		scheduleID string
 	)
 	if fromPayload == nil {
-		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connector.ID.String(), capability.String())
+		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connectorID.String(), capability.String())
 	} else {
-		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connector.ID.String(), capability.String(), fromPayload.ID)
+		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
 	}
 
-	// use most up-to-date configuration
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	connectorID := connector.ID
 	err := activities.StorageSchedulesStore(
 		infiniteRetryContext(ctx),
 		models.Schedule{
@@ -176,6 +168,11 @@ func (w Workflow) scheduleNextWorkflow(
 			ConnectorID: connectorID,
 			CreatedAt:   workflow.Now(ctx).UTC(),
 		})
+	if err != nil {
+		return err
+	}
+
+	config, err := w.connectors.GetConfig(connectorID) // TODO does the manager gets updated in workflows?
 	if err != nil {
 		return err
 	}
