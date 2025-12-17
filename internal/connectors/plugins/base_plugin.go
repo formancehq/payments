@@ -6,7 +6,9 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type basePlugin struct{}
+type basePlugin struct {
+	isScheduledForDeletion bool
+}
 
 func NewBasePlugin() models.Plugin {
 	return &basePlugin{}
@@ -14,6 +16,14 @@ func NewBasePlugin() models.Plugin {
 
 func (dp *basePlugin) Name() string {
 	return "default"
+}
+
+func (dp *basePlugin) IsScheduledForDeletion() bool {
+	return dp.isScheduledForDeletion
+}
+
+func (dp *basePlugin) ScheduleForDeletion(isScheduledForDeletion bool) {
+	dp.isScheduledForDeletion = isScheduledForDeletion
 }
 
 func (dp *basePlugin) Config() models.PluginInternalConfig {
