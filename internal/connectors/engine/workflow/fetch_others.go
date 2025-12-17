@@ -73,12 +73,12 @@ func (w Workflow) fetchNextOthers(
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextOthers.ConnectorID)
+			plugin, err := w.connectors.Get(fetchNextOthers.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !plugin.IsScheduledForDeletion() {
 				wg := workflow.NewWaitGroup(ctx)
 				errChan := make(chan error, len(othersResponse.Others))
 				for _, other := range othersResponse.Others {
