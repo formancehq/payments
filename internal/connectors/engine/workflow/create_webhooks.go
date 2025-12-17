@@ -12,7 +12,7 @@ import (
 
 type CreateWebhooks struct {
 	ConnectorID models.ConnectorID
-	Config      models.Config
+	Config      models.Config // todo I think we can get rid of that (depending on whether Temporal still finds the right method etc)
 	FromPayload *FromPayload
 }
 
@@ -65,7 +65,7 @@ func (w Workflow) createWebhooks(
 			return fmt.Errorf("storing webhooks: %w", err)
 		}
 	}
-	
+
 	//plugin, err := w.connectors.Get(createWebhooks.ConnectorID)
 	////connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
 	//if err != nil {
