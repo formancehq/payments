@@ -13,7 +13,6 @@ import (
 
 type InstallConnector struct {
 	ConnectorID models.ConnectorID
-	Config      models.Config
 }
 
 func (w Workflow) runInstallConnector(
@@ -86,7 +85,7 @@ func (w Workflow) installConnector(
 			},
 		),
 		RunNextTasks,
-		installConnector.Config,
+		models.Config{},
 		models.ConnectorIDOnly{
 			ID: installConnector.ConnectorID,
 		},

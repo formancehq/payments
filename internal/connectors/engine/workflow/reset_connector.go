@@ -13,7 +13,6 @@ import (
 type ResetConnector struct {
 	ConnectorID       models.ConnectorID
 	DefaultWorkerName string
-	Config            models.Config
 	TaskID            models.TaskID
 }
 
@@ -125,7 +124,6 @@ func (w Workflow) resetConnector(
 		RunInstallConnector,
 		InstallConnector{
 			ConnectorID: newConnector.ID,
-			Config:      resetConnector.Config,
 		},
 	).Get(ctx, nil); err != nil {
 		return nil, fmt.Errorf("install connector: %w", err)

@@ -27,7 +27,6 @@ func (w Workflow) runNextTasks(
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
 			req := FetchNextAccounts{
-				Config:       config,
 				ConnectorID:  connector.ID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -39,7 +38,6 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 			req := FetchNextExternalAccounts{
-				Config:       config,
 				ConnectorID:  connector.ID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -51,7 +49,6 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_OTHERS:
 			req := FetchNextOthers{
-				Config:       config,
 				ConnectorID:  connector.ID,
 				Name:         task.Name,
 				FromPayload:  fromPayload,
@@ -64,7 +61,6 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
-				Config:       config,
 				ConnectorID:  connector.ID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -76,7 +72,6 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_BALANCES:
 			req := FetchNextBalances{
-				Config:       config,
 				ConnectorID:  connector.ID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -88,7 +83,6 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_CREATE_WEBHOOKS:
 			req := CreateWebhooks{
-				Config:      config,
 				ConnectorID: connector.ID,
 				FromPayload: fromPayload,
 			}

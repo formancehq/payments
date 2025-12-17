@@ -16,12 +16,11 @@ import (
 )
 
 type HandleWebhooks struct {
-	ConnectorID     models.ConnectorID
-	ConnectorConfig models.Config
-	URL             string
-	URLPath         string
-	Webhook         models.Webhook
-	Config          *models.WebhookConfig
+	ConnectorID models.ConnectorID
+	URL         string
+	URLPath     string
+	Webhook     models.Webhook
+	Config      *models.WebhookConfig
 }
 
 func (w Workflow) runHandleWebhooks(
@@ -336,7 +335,6 @@ func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 			PsuID:        psuID,
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
-			Config:       handleWebhooks.ConnectorConfig,
 			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},

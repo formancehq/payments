@@ -11,7 +11,6 @@ import (
 )
 
 type FetchNextOthers struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	Name         string             `json:"name"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
@@ -90,7 +89,7 @@ func (w Workflow) fetchNextOthers(
 
 						if err := w.runNextTasks(
 							ctx,
-							fetchNextOthers.Config,
+							models.Config{},
 							&models.ConnectorIDOnly{
 								ID: fetchNextOthers.ConnectorID,
 							},

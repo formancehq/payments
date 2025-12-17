@@ -13,7 +13,6 @@ import (
 )
 
 type FetchNextPayments struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
 	Periodically bool               `json:"periodically"`
@@ -136,7 +135,7 @@ func (w Workflow) fetchNextPayments(
 
 						if err := w.runNextTasks(
 							ctx,
-							fetchNextPayments.Config,
+							models.Config{},
 							&models.ConnectorIDOnly{
 								ID: fetchNextPayments.ConnectorID,
 							},
