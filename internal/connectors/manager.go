@@ -112,6 +112,8 @@ func (m *manager) Load(connectorModel models.Connector, updateExisting bool, str
 		return "", nil, fmt.Errorf("failed to combine configs: %w", err)
 	}
 
+	plugin.ScheduleForDeletion(connectorModel.ScheduledForDeletion)
+
 	validatedConfigJson = json.RawMessage(b)
 	m.connectors[connectorModel.ID.String()] = connector{
 		plugin:              plugin,
