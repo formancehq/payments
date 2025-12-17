@@ -12,7 +12,6 @@ import (
 
 type CreateWebhooks struct {
 	ConnectorID models.ConnectorID
-	Config      models.Config // todo I think we can get rid of that (depending on whether Temporal still finds the right method etc)
 	FromPayload *FromPayload
 }
 
@@ -66,16 +65,13 @@ func (w Workflow) createWebhooks(
 		}
 	}
 
-	//plugin, err := w.connectors.Get(createWebhooks.ConnectorID)
-	////connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
-	//if err != nil {
-	//	return fmt.Errorf("getting connector: %w", err)
-	//}
-	//
-	//if connector.ScheduledForDeletion { // todo switch to verify that in the activity of the child workflow?
-	//	// avoid scheduling next tasks if connector is scheduled for deletion
-	//	return nil
-	//}
+	plugin, err := w.connectors.Get(createWebhooks.ConnectorID)
+	if err != nil {
+		return fmt.Errorf("getting connector: %w", err)
+	}
+	if plugin.IsScheduledForDeletion() {
+		return nil
+	}
 
 	wg := workflow.NewWaitGroup(ctx)
 	errChan := make(chan error, len(resp.Others)*2)
@@ -88,7 +84,7 @@ func (w Workflow) createWebhooks(
 
 			if err := w.runNextTasks(
 				ctx,
-				createWebhooks.Config, // todo need to pass null
+				models.Config{}, // todo need to pass null
 				&models.ConnectorIDOnly{
 					ID: createWebhooks.ConnectorID,
 				},

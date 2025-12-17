@@ -299,12 +299,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		return models.Task{}, err
 	}
 
-	config, err := e.connectors.GetConfig(connectorID)
-	if err != nil {
-		return models.Task{}, err
-	}
-
-	_, err = e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
@@ -318,7 +313,6 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		workflow.RunResetConnector,
 		workflow.ResetConnector{
 			ConnectorID:       connectorID,
-			Config:            config,
 			DefaultWorkerName: GetDefaultTaskQueue(e.stack),
 			TaskID:            task.ID,
 		},
@@ -1228,11 +1222,6 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 		return err
 	}
 
-	connectorConfig, err := e.connectors.GetConfig(in.ConnectorID)
-	if err != nil {
-		return err
-	}
-
 	errGroup, groupCtx := errgroup.WithContext(ctx)
 	for _, webhook := range webhooks {
 		w := webhook
@@ -1250,12 +1239,11 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 				},
 				workflow.RunHandleWebhooks,
 				workflow.HandleWebhooks{
-					ConnectorID:     w.ConnectorID,
-					ConnectorConfig: connectorConfig,
-					URL:             url,
-					URLPath:         urlPath,
-					Webhook:         w,
-					Config:          config,
+					ConnectorID: w.ConnectorID,
+					URL:         url,
+					URLPath:     urlPath,
+					Webhook:     w,
+					Config:      config,
 				},
 			); err != nil {
 				return err
@@ -1688,7 +1676,6 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 		workflow.RunInstallConnector,
 		workflow.InstallConnector{
 			ConnectorID: connector.ID,
-			Config:      config,
 		},
 	)
 }

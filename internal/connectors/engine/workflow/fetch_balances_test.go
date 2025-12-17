@@ -40,7 +40,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithoutInstance_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -85,7 +84,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithNextTasks_Success() {
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -137,7 +135,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithNextTasks_ConnectorScheduledF
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:      models.Config{},
 		ConnectorID: s.connectorID,
 		FromPayload: &FromPayload{
 			ID:      "1",
@@ -200,7 +197,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -254,7 +250,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_WithoutNextTasks_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -318,7 +313,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_HasMoreLoop_Success() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -338,7 +332,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -366,7 +359,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesGet_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -405,7 +397,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_PluginFetchNextBalances_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -450,7 +441,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageBalancesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -496,7 +486,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesStore_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,
@@ -540,7 +529,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesUpdate_Error() {
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
-		Config:       models.Config{},
 		ConnectorID:  s.connectorID,
 		FromPayload:  nil,
 		Periodically: false,

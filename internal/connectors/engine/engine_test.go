@@ -271,7 +271,6 @@ var _ = Describe("Engine Tests", func() {
 
 		It("calls task upsert twice on workflow failure", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow storage err")
-			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil).MinTimes(2)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorReset, defaultTaskQueue),
 				workflow.RunResetConnector,
@@ -285,7 +284,6 @@ var _ = Describe("Engine Tests", func() {
 
 		It("returns a task without waiting for workflow run", func(ctx SpecContext) {
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
-			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorReset, defaultTaskQueue),
 				workflow.RunResetConnector,
 				gomock.AssignableToTypeOf(workflow.ResetConnector{}),

@@ -13,7 +13,6 @@ import (
 )
 
 type FetchNextExternalAccounts struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
 	Periodically bool               `json:"periodically"`
@@ -120,7 +119,7 @@ func (w Workflow) fetchExternalAccounts(
 
 						if err := w.runNextTasks(
 							ctx,
-							fetchNextExternalAccount.Config,
+							models.Config{},
 							&models.ConnectorIDOnly{
 								ID: fetchNextExternalAccount.ConnectorID,
 							},

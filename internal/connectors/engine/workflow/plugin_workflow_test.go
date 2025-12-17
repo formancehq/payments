@@ -61,7 +61,6 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx workflow.Context, req FetchNextAccounts, nextTasks []models.ConnectorTaskTree) error {
 		s.Equal(s.connectorID, req.ConnectorID)
-		s.Equal(models.Config{}, req.Config)
 		s.False(req.Periodically)
 		return nil
 	})

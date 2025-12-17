@@ -36,12 +36,96 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Success() {
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_CreateWebhooks_WithNextTasks_Success() {
+	s.env.OnActivity(activities.PluginCreateWebhooksActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateWebhooksRequest) (*models.CreateWebhooksResponse, error) {
+		s.Equal(s.connectorID, req.ConnectorID)
+		s.Equal(s.connectorID.String(), req.Req.ConnectorID)
+		s.Equal("http://localhost:8080/api/payments/v3/connectors/webhooks/"+s.connectorID.String(), req.Req.WebhookBaseUrl)
+		return &models.CreateWebhooksResponse{
+			Others: []models.PSPOther{
+				{
+					ID:    "test",
+					Other: []byte(`{}`),
+				},
+			},
+			Configs: []models.PSPWebhookConfig{
+				{
+					Name:    "test",
+					URLPath: "/test",
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
+		return nil
+	})
+	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
+		ConnectorID: s.connectorID,
+		FromPayload: nil,
+	}, []models.ConnectorTaskTree{
+		{
+			TaskType:     models.TASK_FETCH_OTHERS,
+			Name:         "test",
+			Periodically: true,
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_CreateWebhooks_WithNextTasks_ConnectorScheduledForDeletion_Success() {
+	s.configuredConnector.ScheduledForDeletion = true
+	_, _, err := s.w.connectors.Load(s.configuredConnector, true, false)
+	s.NoError(err)
+	s.env.OnActivity(activities.PluginCreateWebhooksActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateWebhooksRequest) (*models.CreateWebhooksResponse, error) {
+		s.Equal(s.connectorID, req.ConnectorID)
+		s.Equal(s.connectorID.String(), req.Req.ConnectorID)
+		s.Equal("http://localhost:8080/api/payments/v3/connectors/webhooks/"+s.connectorID.String(), req.Req.WebhookBaseUrl)
+		return &models.CreateWebhooksResponse{
+			Others: []models.PSPOther{
+				{
+					ID:    "test",
+					Other: []byte(`{}`),
+				},
+			},
+			Configs: []models.PSPWebhookConfig{
+				{
+					Name:    "test",
+					URLPath: "/test",
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
+		ConnectorID: s.connectorID,
+		FromPayload: nil,
+	}, []models.ConnectorTaskTree{
+		{
+			TaskType:     models.TASK_FETCH_OTHERS,
+			Name:         "test",
+			Periodically: true,
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -53,7 +137,6 @@ func (s *UnitTestSuite) Test_CreateWebhooks_PluginCreateWebhooksActivity_Error()
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -84,7 +167,6 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
-		Config:      models.Config{},
 		FromPayload: nil,
 	}, []models.ConnectorTaskTree{})
 
@@ -93,34 +175,3 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 	s.Error(err)
 	s.ErrorContains(err, "error-test")
 }
-
-//func (s *UnitTestSuite) Test_CreateWebhooks_StorageConnectorsGetActivity_Error() {
-//	s.env.OnActivity(activities.PluginCreateWebhooksActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateWebhooksRequest) (*models.CreateWebhooksResponse, error) {
-//		s.Equal(s.connectorID, req.ConnectorID)
-//		s.Equal(s.connectorID.String(), req.Req.ConnectorID)
-//		s.Equal("http://localhost:8080/api/payments/v3/connectors/webhooks/"+s.connectorID.String(), req.Req.WebhookBaseUrl)
-//		return &models.CreateWebhooksResponse{
-//			Others: []models.PSPOther{
-//				{
-//					ID:    "test",
-//					Other: []byte(`{}`),
-//				},
-//			},
-//		}, nil
-//	})
-//	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-//		(*models.Connector)(nil),
-//		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
-//	)
-//
-//	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
-//		ConnectorID: s.connectorID,
-//		Config:      models.Config{},
-//		FromPayload: nil,
-//	}, []models.ConnectorTaskTree{})
-//
-//	s.True(s.env.IsWorkflowCompleted())
-//	err := s.env.GetWorkflowError()
-//	s.Error(err)
-//	s.ErrorContains(err, "error-test")
-//}
