@@ -86,7 +86,15 @@ func TestManager_Load(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod)
 			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
-			returnedName, _, err := manager.Load(connectorID, tt.provider, tt.rawConfig, false, tt.strictMode)
+			connector := models.Connector{
+				ConnectorBase: models.ConnectorBase{
+					ID:       connectorID,
+					Provider: tt.provider,
+				},
+				Config:               tt.rawConfig,
+				ScheduledForDeletion: false,
+			}
+			returnedName, _, err := manager.Load(connector, false, tt.strictMode)
 			if tt.expectError {
 				require.Error(t, err)
 

@@ -23,7 +23,7 @@ var (
 
 //go:generate mockgen -source manager.go -destination manager_generated.go -package connectors . Manager
 type Manager interface {
-	Load(models.ConnectorID, string, json.RawMessage, bool, bool) (string, json.RawMessage, error)
+	Load(models.Connector, bool, bool) (string, json.RawMessage, error)
 	Unload(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -68,25 +68,19 @@ func NewManager(
 	}
 }
 
-func (m *manager) Load(
-	connectorID models.ConnectorID,
-	provider string,
-	rawConfig json.RawMessage,
-	updateExisting bool,
-	strictValidation bool,
-) (configName string, validatedConfigJson json.RawMessage, err error) {
+func (m *manager) Load(connectorModel models.Connector, updateExisting bool, strictValidation bool) (configName string, validatedConfigJson json.RawMessage, err error) {
 	m.rwMutex.Lock()
 	defer m.rwMutex.Unlock()
 
 	config := m.configurer.DefaultConfig()
-	if err := json.Unmarshal(rawConfig, &config); err != nil {
+	if err := json.Unmarshal(connectorModel.Config, &config); err != nil {
 		return "", nil, err
 	}
 
 	// Check if plugin is already installed
-	_, ok := m.connectors[connectorID.String()]
+	_, ok := m.connectors[connectorModel.ID.String()]
 	if ok && !updateExisting {
-		return config.Name, m.connectors[connectorID.String()].validatedConfigJson, nil
+		return config.Name, m.connectors[connectorModel.ID.String()].validatedConfigJson, nil
 	}
 
 	if err := m.configurer.Validate(config); err != nil {
@@ -101,10 +95,10 @@ func (m *manager) Load(
 		}
 		// if the polling period is lower that the current system default we should still load the plugin
 		// since creating validation errors will not change the schedule in temporal
-		m.logger.Errorf("connector %q has a low polling period of %s", connectorID.String(), config.PollingPeriod)
+		m.logger.Errorf("connector %q has a low polling period of %s", connectorModel.ID.String(), config.PollingPeriod)
 	}
 
-	plugin, err := registry.GetPlugin(connectorID, m.logger, provider, config.Name, rawConfig)
+	plugin, err := registry.GetPlugin(connectorModel.ID, m.logger, connectorModel.Provider, config.Name, connectorModel.Config)
 	switch {
 	case errors.Is(err, pluginserrors.ErrNotImplemented),
 		errors.Is(err, pluginserrors.ErrInvalidClientRequest):
@@ -119,7 +113,7 @@ func (m *manager) Load(
 	}
 
 	validatedConfigJson = json.RawMessage(b)
-	m.connectors[connectorID.String()] = connector{
+	m.connectors[connectorModel.ID.String()] = connector{
 		plugin:              plugin,
 		config:              config,
 		validatedConfigJson: validatedConfigJson,

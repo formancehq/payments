@@ -145,7 +145,7 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 	// after the deletion of the connector entry in the database.
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err := w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
+	_, _, err := w.connectors.Load(connector, false, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %s", err.Error())
 		// We don't want to crash the pod if the plugin registration fails,
@@ -172,7 +172,7 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 	}
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
+	_, _, err = w.connectors.Load(*connector, false, false)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 	}
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
+	_, _, err = w.connectors.Load(*connector, true, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
