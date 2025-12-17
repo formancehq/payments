@@ -113,12 +113,14 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		if len(nextTasks) > 0 {
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextPayments.ConnectorID)
+			// First, we need to get the connector to check if it is scheduled for deletion
+			// because if it is, we don't need to run the next tasks
+			plugin, err := w.connectors.Get(fetchNextPayments.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !plugin.IsScheduledForDeletion() {
 				for _, payment := range paymentsResponse.Payments {
 					p := payment
 

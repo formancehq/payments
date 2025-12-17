@@ -99,12 +99,12 @@ func (w Workflow) fetchExternalAccounts(
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextExternalAccount.ConnectorID)
+			plugin, err := w.connectors.Get(fetchNextExternalAccount.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !plugin.IsScheduledForDeletion() {
 				for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
 					acc := externalAccount
 

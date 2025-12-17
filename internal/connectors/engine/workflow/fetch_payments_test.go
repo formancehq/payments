@@ -82,10 +82,6 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_Success() {
 		return nil
 	})
 	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
-		nil,
-	)
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
@@ -112,8 +108,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_Success() {
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_ConnectorScheduledForDeletion_Success() {
-	connector := s.connector
-	connector.ScheduledForDeletion = true
+	s.configuredConnector.ScheduledForDeletion = true
+	_, _, err := s.w.connectors.Load(s.configuredConnector, true, false)
+	s.NoError(err)
 	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
 		&models.State{
 			ID: models.StateID{
@@ -140,10 +137,6 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_ConnectorScheduledF
 		return nil
 	})
 	s.env.OnActivity(activities.StoragePaymentInitiationUpdateFromPaymentActivity, mock.Anything, s.pspPayment.Status, s.pspPayment.CreatedAt, s.paymentPayoutID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&connector,
-		nil,
-	)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
@@ -163,7 +156,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_WithNextTasks_ConnectorScheduledF
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
