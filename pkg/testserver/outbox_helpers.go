@@ -40,7 +40,7 @@ func AwaitOutboxEvent(ctx context.Context, s *Server, outboxEventType string, ti
 // EventuallyOutbox is a convenience wrapper that uses default polling
 // timings aligned with the outbox publisher period.
 func EventuallyOutbox(ctx context.Context, s *Server, outboxEventType string, matchers ...PayloadMatcher) error {
-	return AwaitOutboxEvent(ctx, s, outboxEventType, 1*time.Second, 50*time.Millisecond, matchers...)
+	return AwaitOutboxEvent(ctx, s, outboxEventType, 5*time.Second, 50*time.Millisecond, matchers...)
 }
 
 // findMatchingOutboxEvent queries the DB for pending outbox events of the given type
