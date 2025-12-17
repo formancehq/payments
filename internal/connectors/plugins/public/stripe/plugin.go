@@ -24,10 +24,11 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name   string
-	logger logging.Logger
-	client client.Client
-	config Config
+	name                   string
+	logger                 logging.Logger
+	client                 client.Client
+	config                 Config
+	isScheduledForDeletion bool
 }
 
 func New(
@@ -58,6 +59,14 @@ func New(
 
 func (p *Plugin) Name() string {
 	return p.name
+}
+
+func (p *Plugin) ScheduleForDeletion(isScheduledForDeletion bool) {
+	p.isScheduledForDeletion = isScheduledForDeletion
+}
+
+func (p *Plugin) IsScheduledForDeletion() bool {
+	return p.isScheduledForDeletion
 }
 
 func (p *Plugin) Config() models.PluginInternalConfig {

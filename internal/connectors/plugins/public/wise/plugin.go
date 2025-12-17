@@ -38,9 +38,10 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	config            Config
-	client            client.Client
-	supportedWebhooks map[string]supportedWebhook
+	config                 Config
+	client                 client.Client
+	supportedWebhooks      map[string]supportedWebhook
+	isScheduledForDeletion bool
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -80,6 +81,14 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 
 func (p *Plugin) Name() string {
 	return p.name
+}
+
+func (p *Plugin) ScheduleForDeletion(isScheduledForDeletion bool) {
+	p.isScheduledForDeletion = isScheduledForDeletion
+}
+
+func (p *Plugin) IsScheduledForDeletion() bool {
+	return p.isScheduledForDeletion
 }
 
 func (p *Plugin) Config() models.PluginInternalConfig {

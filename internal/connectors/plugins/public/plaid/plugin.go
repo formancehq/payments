@@ -29,6 +29,8 @@ type Plugin struct {
 	config Config
 
 	supportedWebhooks map[string]supportedWebhook
+
+	isScheduledForDeletion bool
 }
 
 func New(name string, logger logging.Logger, connectorID models.ConnectorID, rawConfig json.RawMessage) (*Plugin, error) {
@@ -58,6 +60,14 @@ func New(name string, logger logging.Logger, connectorID models.ConnectorID, raw
 
 func (p *Plugin) Name() string {
 	return p.name
+}
+
+func (p *Plugin) ScheduleForDeletion(isScheduledForDeletion bool) {
+	p.isScheduledForDeletion = isScheduledForDeletion
+}
+
+func (p *Plugin) IsScheduledForDeletion() bool {
+	return p.isScheduledForDeletion
 }
 
 func (p *Plugin) Config() models.PluginInternalConfig {

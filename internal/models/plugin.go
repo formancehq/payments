@@ -27,6 +27,8 @@ type Plugin interface {
 	Name() string
 	// Config is used to fetch back the validated config struct from a plugin
 	Config() PluginInternalConfig
+	IsScheduledForDeletion() bool
+	ScheduleForDeletion(bool)
 	Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
