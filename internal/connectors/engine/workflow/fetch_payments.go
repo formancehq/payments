@@ -135,7 +135,6 @@ func (w Workflow) fetchNextPayments(
 
 						if err := w.runNextTasks(
 							ctx,
-							models.Config{},
 							&models.ConnectorIDOnly{
 								ID: fetchNextPayments.ConnectorID,
 							},

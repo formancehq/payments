@@ -120,7 +120,6 @@ func (w Workflow) fetchAccounts(
 
 						if err := w.runNextTasks(
 							ctx,
-							models.Config{},
 							&models.ConnectorIDOnly{
 								ID: fetchNextAccount.ConnectorID,
 							},
