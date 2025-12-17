@@ -142,7 +142,16 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Reference: uuid.New(),
 		Provider:  provider,
 	}
-	connectorName, validatedConfig, err := e.connectors.Load(connectorID, provider, rawConfig, false, true)
+
+	connector := models.Connector{
+		ConnectorBase: models.ConnectorBase{
+			ID:       connectorID,
+			Provider: provider,
+		},
+		Config:               rawConfig,
+		ScheduledForDeletion: false,
+	}
+	connectorName, validatedConfig, err := e.connectors.Load(connector, false, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -151,7 +160,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	connector := models.Connector{
+	connector = models.Connector{
 		ConnectorBase: models.ConnectorBase{
 			ID:        connectorID,
 			Name:      connectorName,
@@ -346,7 +355,8 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	connectorName, validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, rawConfig, true, true)
+	connector.Config = rawConfig
+	connectorName, validatedConfig, err := e.connectors.Load(*connector, true, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -1597,7 +1607,7 @@ func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.Connecto
 	}
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
+	_, _, err = e.connectors.Load(*connector, false, false)
 	if err != nil {
 		return err
 	}
@@ -1620,10 +1630,10 @@ func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.Connecto
 	if connector.ScheduledForDeletion {
 		// if we're deleting the plugin no other changes matter
 		return nil
-	}
+	} // TODO we might need to move that in the Load()
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
+	_, _, err = e.connectors.Load(*connector, true, false)
 	if err != nil {
 		e.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
@@ -1644,7 +1654,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	// after the deletion of the connector entry in the database.
 
 	// skip strict polling period validation if installed by another instance
-	if _, _, err := e.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false); err != nil {
+	if _, _, err := e.connectors.Load(connector, false, false); err != nil {
 		return err
 	}
 
