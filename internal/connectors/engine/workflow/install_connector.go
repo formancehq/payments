@@ -85,7 +85,6 @@ func (w Workflow) installConnector(
 			},
 		),
 		RunNextTasks,
-		models.Config{},
 		models.ConnectorIDOnly{
 			ID: installConnector.ConnectorID,
 		},

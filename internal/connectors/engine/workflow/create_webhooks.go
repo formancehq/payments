@@ -84,7 +84,6 @@ func (w Workflow) createWebhooks(
 
 			if err := w.runNextTasks(
 				ctx,
-				models.Config{}, // todo need to pass null
 				&models.ConnectorIDOnly{
 					ID: createWebhooks.ConnectorID,
 				},

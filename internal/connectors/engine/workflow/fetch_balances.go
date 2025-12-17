@@ -120,7 +120,6 @@ func (w Workflow) fetchBalances(
 
 						if err := w.runNextTasks(
 							ctx,
-							models.Config{},
 							&models.ConnectorIDOnly{
 								ID: fetchNextBalances.ConnectorID,
 							},

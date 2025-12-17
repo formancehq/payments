@@ -14,7 +14,6 @@ import (
 
 func (w Workflow) runNextTasks(
 	ctx workflow.Context,
-	config models.Config,
 	connector *models.ConnectorIDOnly,
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
