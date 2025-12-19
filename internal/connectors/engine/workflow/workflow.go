@@ -183,6 +183,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunSendEvents,   //lint:ignore SA1019 (ignore deprecation)
 			Func: w.runSendEvents, //lint:ignore SA1019 (ignore deprecation)
+		}).
+		Append(temporalworker.Definition{
+			Name: RunUpdatePaymentInitiationFromPayment,   //lint:ignore SA1019 (ignore deprecation)
+			Func: w.runUpdatePaymentInitiationFromPayment, //lint:ignore SA1019 (ignore deprecation)
 		})
 }
 
