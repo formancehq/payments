@@ -89,9 +89,7 @@ func (w Workflow) fetchNextOthers(
 
 						if err := w.runNextTasks(
 							ctx,
-							&models.ConnectorIDOnly{
-								ID: fetchNextOthers.ConnectorID,
-							},
+							fetchNextOthers.ConnectorID,
 							&FromPayload{
 								ID:      o.ID,
 								Payload: o.Other,

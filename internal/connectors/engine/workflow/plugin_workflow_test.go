@@ -31,9 +31,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -68,9 +66,7 @@ func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -102,9 +98,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success(
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -136,9 +130,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -170,9 +162,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -204,9 +194,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -238,9 +226,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -263,9 +249,7 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -293,9 +277,7 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -324,9 +306,7 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 
 	s.env.ExecuteWorkflow(
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: s.connectorID,
-		},
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),

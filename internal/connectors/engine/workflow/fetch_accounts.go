@@ -120,9 +120,7 @@ func (w Workflow) fetchAccounts(
 
 						if err := w.runNextTasks(
 							ctx,
-							&models.ConnectorIDOnly{
-								ID: fetchNextAccount.ConnectorID,
-							},
+							fetchNextAccount.ConnectorID,
 							&FromPayload{
 								ID:      acc.Reference,
 								Payload: payload,
