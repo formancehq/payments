@@ -237,10 +237,10 @@ func readConfig(name string, caserName string) (V3Config, error) {
 						if strings.HasPrefix(defaultValue, "\"") && strings.HasSuffix(defaultValue, "\"") {
 							defaultValue = defaultValue[1 : len(defaultValue)-1]
 						}
-						properties[name] = Property{
-							Type:    properties[name].Type,
-							Default: defaultValue,
-						}
+
+						propCopy := properties[name]
+						propCopy.Default = defaultValue
+						properties[name] = propCopy
 					}
 
 				}
