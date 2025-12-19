@@ -29,8 +29,9 @@ func (w Workflow) runUpdatePaymentInitiationFromPayment(
 	}
 
 	for _, piID := range piIDs {
-		adjustment := models.FromPaymentToPaymentInitiationAdjustment(
-			updatePaymentInitiationFromPayment.Payment,
+		adjustment := models.FromPaymentDataToPaymentInitiationAdjustment(
+			updatePaymentInitiationFromPayment.Payment.Status,
+			updatePaymentInitiationFromPayment.Payment.CreatedAt,
 			piID,
 		)
 
