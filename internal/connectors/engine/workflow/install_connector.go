@@ -84,7 +84,7 @@ func (w Workflow) installConnector(
 				},
 			},
 		),
-		RunNextTasks,
+		RunNextTasksV3_1,
 		installConnector.ConnectorID,
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),

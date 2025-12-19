@@ -82,7 +82,7 @@ func (w Workflow) createWebhooks(
 		workflow.Go(ctx, func(ctx workflow.Context) {
 			defer wg.Done()
 
-			if err := w.runNextTasks(
+			if err := w.runNextTasksV3_1(
 				ctx,
 				createWebhooks.ConnectorID,
 				&FromPayload{

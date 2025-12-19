@@ -118,7 +118,7 @@ func (w Workflow) fetchAccounts(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
 							fetchNextAccount.ConnectorID,
 							&FromPayload{
