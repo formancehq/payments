@@ -21,17 +21,16 @@ func init() {
 }
 
 type Plugin struct {
-	models.Plugin
+    models.Plugin
 
-	name     string
-	logger   logging.Logger
-	clientID string
+    name     string
+    logger   logging.Logger
+    clientID string
 
-	client client.Client
-	config Config
+    client client.Client
+    config Config
 
-	supportedWebhooks      map[client.WebhookEventType]supportedWebhook
-	isScheduledForDeletion bool
+    supportedWebhooks map[client.WebhookEventType]supportedWebhook
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -62,19 +61,11 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 }
 
 func (p *Plugin) Name() string {
-	return p.name
-}
-
-func (p *Plugin) ScheduleForDeletion(isScheduledForDeletion bool) {
-	p.isScheduledForDeletion = isScheduledForDeletion
-}
-
-func (p *Plugin) IsScheduledForDeletion() bool {
-	return p.isScheduledForDeletion
+    return p.name
 }
 
 func (p *Plugin) Config() models.PluginInternalConfig {
-	return p.config
+    return p.config
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
