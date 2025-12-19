@@ -17,12 +17,12 @@ func (a Activities) StoragePaymentInitiationIDsListFromPaymentID(ctx context.Con
 }
 
 // Deprecated: should not be used after version 3.0; we keep it in 3.1 for ongoing workflows.
-var StoragePaymentInitiationIDsListFromPaymentIDActivity = Activities{}.StoragePaymentInitiationIDsListFromPaymentID //lint:ignore SA1019 (ignore deprecation)
+var StoragePaymentInitiationIDsListFromPaymentIDActivity = Activities{}.StoragePaymentInitiationIDsListFromPaymentID //nolint:staticcheck // ignore deprecation
 
 // Deprecated: should not be used after version 3.0; we keep it in 3.1 for ongoing workflows.
 func StoragePaymentInitiationIDsListFromPaymentID(ctx workflow.Context, paymentID models.PaymentID) ([]models.PaymentInitiationID, error) {
 	ret := []models.PaymentInitiationID{}
-	//lint:ignore SA1019 (ignore deprecation)
+	//nolint:staticcheck // ignore deprecation
 	if err := executeActivity(ctx, StoragePaymentInitiationIDsListFromPaymentIDActivity, &ret, paymentID); err != nil {
 		return nil, err
 	}

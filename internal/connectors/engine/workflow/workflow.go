@@ -183,16 +183,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunNextTasks,   //nolint:staticcheckk
 			Func: w.runNextTasks, //nolint:staticcheckk
-			Name: RunSendEvents,   //lint:ignore SA1019 (ignore deprecation)
-			Func: w.runSendEvents, //lint:ignore SA1019 (ignore deprecation)
 		}).
 		Append(temporalworker.Definition{
-			Name: RunSendEvents,   //lint:ignore SA1019 (ignore deprecation)
-			Func: w.runSendEvents, //lint:ignore SA1019 (ignore deprecation)
+			Name: RunSendEvents,   //nolint:staticcheck // ignore deprecation
+			Func: w.runSendEvents, //nolint:staticcheck // ignore deprecation
 		}).
 		Append(temporalworker.Definition{
-			Name: RunUpdatePaymentInitiationFromPayment,   //lint:ignore SA1019 (ignore deprecation)
-			Func: w.runUpdatePaymentInitiationFromPayment, //lint:ignore SA1019 (ignore deprecation)
+			Name: RunUpdatePaymentInitiationFromPayment,   //nolint:staticcheck // ignore deprecation
+			Func: w.runUpdatePaymentInitiationFromPayment, //nolint:staticcheck // ignore deprecation
 		})
 
 }

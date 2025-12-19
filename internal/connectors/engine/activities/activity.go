@@ -459,7 +459,7 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		}).
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentInitiationIDsListFromPaymentID",
-			Func: a.StoragePaymentInitiationIDsListFromPaymentID, //lint:ignore SA1019 (ignore deprecation)
+			Func: a.StoragePaymentInitiationIDsListFromPaymentID, //nolint:staticcheck // ignore deprecation
 		})
 }
 

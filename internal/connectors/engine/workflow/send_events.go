@@ -33,7 +33,7 @@ type SendEvents struct {
 
 // RunSendEvents
 // Deprecated: should not be used after version 3.0; we keep it in 3.1 for ongoing workflows.
-func (w Workflow) runSendEvents( //lint:ignore SA1019 (ignore deprecation)
+func (w Workflow) runSendEvents( //nolint:staticcheck // ignore deprecation
 	ctx workflow.Context,
 	sendEvents SendEvents,
 ) error {
@@ -316,4 +316,4 @@ func (w Workflow) runSendEvents( //lint:ignore SA1019 (ignore deprecation)
 
 // RunSendEvents
 // Deprecated: should not be used after version 3.0; we keep it in 3.1 for ongoing workflows.
-const RunSendEvents = "RunSendEvents" //lint:ignore SA1019 (ignore deprecation)
+const RunSendEvents = "RunSendEvents" //nolint:staticcheck // ignore deprecation
