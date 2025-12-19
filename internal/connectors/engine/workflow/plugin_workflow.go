@@ -14,7 +14,7 @@ import (
 
 func (w Workflow) runNextTasks(
 	ctx workflow.Context,
-	connector *models.ConnectorIDOnly,
+	connectorID models.ConnectorID,
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
@@ -26,7 +26,7 @@ func (w Workflow) runNextTasks(
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
 			req := FetchNextAccounts{
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -37,7 +37,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 			req := FetchNextExternalAccounts{
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -48,7 +48,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_OTHERS:
 			req := FetchNextOthers{
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				Name:         task.Name,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -60,7 +60,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -71,7 +71,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_BALANCES:
 			req := FetchNextBalances{
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -82,7 +82,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_CREATE_WEBHOOKS:
 			req := CreateWebhooks{
-				ConnectorID: connector.ID,
+				ConnectorID: connectorID,
 				FromPayload: fromPayload,
 			}
 
@@ -99,7 +99,7 @@ func (w Workflow) runNextTasks(
 			// TODO(polo): context
 			err := w.scheduleNextWorkflow(
 				ctx,
-				connector.ID,
+				connectorID,
 				capability,
 				task,
 				fromPayload,

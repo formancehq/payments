@@ -85,9 +85,7 @@ func (w Workflow) installConnector(
 			},
 		),
 		RunNextTasks,
-		models.ConnectorIDOnly{
-			ID: installConnector.ConnectorID,
-		},
+		installConnector.ConnectorID,
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {

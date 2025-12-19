@@ -84,9 +84,7 @@ func (w Workflow) createWebhooks(
 
 			if err := w.runNextTasks(
 				ctx,
-				&models.ConnectorIDOnly{
-					ID: createWebhooks.ConnectorID,
-				},
+				createWebhooks.ConnectorID,
 				&FromPayload{
 					ID:      o.ID,
 					Payload: o.Other,
