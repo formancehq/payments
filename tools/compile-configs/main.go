@@ -233,13 +233,13 @@ func readConfig(name string, caserName string) (V3Config, error) {
 							required = append(required, name)
 						}
 					case "default":
-						withoutUnnecessaryQuotes := fields[1]
-						if len(withoutUnnecessaryQuotes) > 2 {
-							withoutUnnecessaryQuotes = withoutUnnecessaryQuotes[1 : len(fields[1])-1]
+						defaultValue := fields[1]
+						if strings.HasPrefix(defaultValue, "\"") && strings.HasSuffix(defaultValue, "\"") {
+							defaultValue = defaultValue[1 : len(defaultValue)-1]
 						}
 						properties[name] = Property{
 							Type:    properties[name].Type,
-							Default: withoutUnnecessaryQuotes,
+							Default: defaultValue,
 						}
 					}
 
