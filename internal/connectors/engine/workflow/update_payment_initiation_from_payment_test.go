@@ -11,6 +11,7 @@ import (
 )
 
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_Success() {
+	//nolint:staticcheck // ignore deprecation
 	s.env.OnActivity(activities.StoragePaymentInitiationIDsListFromPaymentIDActivity, mock.Anything, s.paymentPayoutID).Once().Return(
 		[]models.PaymentInitiationID{s.paymentInitiationID},
 		nil,
@@ -20,6 +21,7 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_Success() {
 		return nil
 	})
 
+	//nolint:staticcheck // ignore deprecation
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
 		Payment: &s.paymentPayout,
 	})
@@ -30,11 +32,13 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_Success() {
 }
 
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_NoIds_Success() {
+	//nolint:staticcheck // ignore deprecation
 	s.env.OnActivity(activities.StoragePaymentInitiationIDsListFromPaymentIDActivity, mock.Anything, s.paymentPayoutID).Once().Return(
 		[]models.PaymentInitiationID{},
 		nil,
 	)
 
+	//nolint:staticcheck // ignore deprecation
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
 		Payment: &s.paymentPayout,
 	})
@@ -45,11 +49,12 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_NoIds_Success() 
 }
 
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_SkipAdjustment_Success() {
+	//nolint:staticcheck // ignore deprecation
 	s.env.OnActivity(activities.StoragePaymentInitiationIDsListFromPaymentIDActivity, mock.Anything, s.paymentPayoutID).Once().Return(
 		[]models.PaymentInitiationID{s.paymentInitiationID},
 		nil,
 	)
-
+	//nolint:staticcheck // ignore deprecation
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
 		Payment: &s.paymentWithAdjustmentAmount,
 	})
@@ -60,11 +65,13 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_SkipAdjustment_S
 }
 
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentInitiationIDsListFromPaymentID_Error() {
+	//nolint:staticcheck // ignore deprecation
 	s.env.OnActivity(activities.StoragePaymentInitiationIDsListFromPaymentIDActivity, mock.Anything, s.paymentPayoutID).Once().Return(
 		nil,
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
+	//nolint:staticcheck // ignore deprecation
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
 		Payment: &s.paymentPayout,
 	})
@@ -76,6 +83,7 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentIn
 }
 
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentInitiationsAdjustmentsStore_Error() {
+	//nolint:staticcheck // ignore deprecation
 	s.env.OnActivity(activities.StoragePaymentInitiationIDsListFromPaymentIDActivity, mock.Anything, s.paymentPayoutID).Once().Return(
 		[]models.PaymentInitiationID{s.paymentInitiationID},
 		nil,
@@ -84,6 +92,7 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentIn
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
+	//nolint:staticcheck // ignore deprecation
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
 		Payment: &s.paymentPayout,
 	})
