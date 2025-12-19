@@ -118,7 +118,7 @@ func (w Workflow) fetchBalances(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
 							fetchNextBalances.ConnectorID,
 							&FromPayload{

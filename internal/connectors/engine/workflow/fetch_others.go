@@ -87,7 +87,7 @@ func (w Workflow) fetchNextOthers(
 					workflow.Go(ctx, func(ctx workflow.Context) {
 						defer wg.Done()
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
 							fetchNextOthers.ConnectorID,
 							&FromPayload{

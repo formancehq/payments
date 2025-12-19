@@ -20,7 +20,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Success() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TasksTreeStoreRequest) error {
 		return nil
 	})
-	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -62,7 +62,7 @@ func (s *UnitTestSuite) Test_InstallConnector_NoConfigs_Success() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TasksTreeStoreRequest) error {
 		return nil
 	})
-	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -137,7 +137,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_Error() {
 		Workflow: []models.ConnectorTaskTree{},
 	}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("error-test")),
 	)
 
@@ -157,7 +157,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_ErrorAlreadyStarted() {
 		Workflow: []models.ConnectorTaskTree{},
 	}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		serviceerror.NewWorkflowExecutionAlreadyStarted("test", "test", "test"),
 	)
 

@@ -12,7 +12,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w Workflow) runNextTasks(
+func (w Workflow) runNextTasksV3_1(
 	ctx workflow.Context,
 	connectorID models.ConnectorID,
 	fromPayload *FromPayload,
@@ -214,4 +214,23 @@ func calculateJitter(pollingPeriod time.Duration) time.Duration {
 	return maxJitter
 }
 
-const RunNextTasks = "Run"
+// Deprecated: use RunNextTasksV3_1 instead, we keep that it during 3.0 => 3.1 migration
+func (w Workflow) runNextTasks(
+	ctx workflow.Context,
+	config models.Config,
+	connectorID models.ConnectorID,
+	fromPayload *FromPayload,
+	taskTree []models.ConnectorTaskTree,
+) error {
+	return w.runNextTasksV3_1(
+		ctx,
+		connectorID,
+		fromPayload,
+		taskTree,
+	)
+}
+
+const RunNextTasksV3_1 = "RunNextTasksV3_1"
+
+// Deprecated: use RunNextTasksV3_1 instead, we keep that it during 3.0 => 3.1 migration
+const RunNextTasks = "Run" //nolint:staticcheckk

@@ -133,7 +133,7 @@ func (w Workflow) fetchNextPayments(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
 							fetchNextPayments.ConnectorID,
 							&FromPayload{
