@@ -90,6 +90,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Atlar
@@ -121,6 +122,7 @@ components:
                     type: string
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Bankingcircle
@@ -150,6 +152,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Column
@@ -225,6 +228,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Generic
@@ -249,6 +253,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Increase
@@ -277,6 +282,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Mangopay
@@ -303,6 +309,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Modulr
@@ -329,6 +336,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Moneycorp
@@ -417,6 +425,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Qonto
@@ -439,6 +448,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Stripe
@@ -448,7 +458,6 @@ components:
                 - name
                 - clientID
                 - clientSecret
-                - endpoint
             properties:
                 clientID:
                     type: string
@@ -456,6 +465,7 @@ components:
                     type: string
                 endpoint:
                     type: string
+                    default: https://api.tink.com
                 name:
                     type: string
                 pageSize:
@@ -487,6 +497,7 @@ components:
                     x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
                 pollingPeriod:
                     type: string
+                    default: 30m
                 provider:
                     type: string
                     default: Wise

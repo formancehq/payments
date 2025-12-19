@@ -7,10 +7,10 @@ import (
 )
 
 type V3TinkConfig struct {
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	Endpoint     string `json:"endpoint"`
-	Name         string `json:"name"`
+	ClientID     string  `json:"clientID"`
+	ClientSecret string  `json:"clientSecret"`
+	Endpoint     *string `default:"https://api.tink.com" json:"endpoint"`
+	Name         string  `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
@@ -42,9 +42,9 @@ func (o *V3TinkConfig) GetClientSecret() string {
 	return o.ClientSecret
 }
 
-func (o *V3TinkConfig) GetEndpoint() string {
+func (o *V3TinkConfig) GetEndpoint() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.Endpoint
 }

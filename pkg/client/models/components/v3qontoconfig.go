@@ -13,7 +13,7 @@ type V3QontoConfig struct {
 	Name     string `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `json:"pollingPeriod,omitempty"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	Provider      *string `default:"Qonto" json:"provider"`
 	StagingToken  *string `json:"stagingToken,omitempty"`
 }
