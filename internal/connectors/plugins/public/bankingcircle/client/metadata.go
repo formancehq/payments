@@ -1,7 +1,7 @@
 package client
 
 const (
-	bankingCircleMetadataSpecNamespace = "com.atlar.spec/"
+	bankingCircleMetadataSpecNamespace = "com.bankingCircle.spec/"
 
 	BankingCircleChargeBearerMetadataKey    = bankingCircleMetadataSpecNamespace + "chargeBearer"
 	BankingCircleClearingNetworkMetadataKey = bankingCircleMetadataSpecNamespace + "clearingNetwork"
