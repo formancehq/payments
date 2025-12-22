@@ -222,6 +222,19 @@ func (w Workflow) runNextTasks(
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
+	noStorageConnectorGet := workflow.GetVersion(ctx, "no_storage_connector_get", workflow.DefaultVersion, 1)
+	if noStorageConnectorGet == workflow.DefaultVersion {
+		connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), connectorID)
+		if err != nil {
+			return err
+		}
+
+		// avoid scheduling next workflow if connector has been flagged for deletion
+		if connector.ScheduledForDeletion {
+			return nil
+		}
+	}
+
 	return w.runNextTasksV3_1(
 		ctx,
 		connectorID,

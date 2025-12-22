@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -35,6 +36,9 @@ func (w Workflow) fetchBalances(
 	fetchNextBalances FetchNextBalances,
 	nextTasks []models.ConnectorTaskTree,
 ) error {
+	stopRunSendEvent := workflow.GetVersion(ctx, "stop_run_send_event", workflow.DefaultVersion, 1)
+	runNextTaskAsActivity := workflow.GetVersion(ctx, "run_next_task_as_activity", workflow.DefaultVersion, 1)
+
 	stateReference := models.CAPABILITY_FETCH_BALANCES.String()
 	if fetchNextBalances.FromPayload != nil {
 		stateReference = fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_BALANCES.String(), fetchNextBalances.FromPayload.ID)
@@ -94,16 +98,26 @@ func (w Workflow) fetchBalances(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(balancesResponse.Balances))
+		errChanLen := len(balancesResponse.Balances)
+		if stopRunSendEvent == workflow.DefaultVersion {
+			errChanLen += len(balancesResponse.Balances)
+		}
+		errChan := make(chan error, errChanLen)
 
-		if len(nextTasks) > 0 {
-			// First, we need to get the connector to check if it is scheduled for deletion
-			// because if it is, we don't need to run the next tasks
-			plugin, err := w.connectors.Get(fetchNextBalances.ConnectorID)
-			if err != nil {
-				return fmt.Errorf("getting connector: %w", err)
-			}
+		if stopRunSendEvent == workflow.DefaultVersion {
+			errChan = w.runSendEventsForBalances(ctx, balances, wg, errChan)
+		}
 
+		// First, we need to get the connector to check if it is scheduled for deletion
+		// because if it is, we don't need to run the next tasks
+		plugin, err := w.connectors.Get(fetchNextBalances.ConnectorID)
+		if err != nil {
+			return fmt.Errorf("getting connector: %w", err)
+		}
+
+		if runNextTaskAsActivity == workflow.DefaultVersion {
+			errChan = w.runNextTasksAsWorkflow(ctx, fetchNextBalances, nextTasks, balancesResponse, wg, errChan, plugin)
+		} else if len(nextTasks) > 0 {
 			if !plugin.IsScheduledForDeletion() {
 				for _, balance := range balancesResponse.Balances {
 					b := balance
@@ -167,6 +181,82 @@ func (w Workflow) fetchBalances(
 	}
 
 	return nil
+}
+
+func (w Workflow) runNextTasksAsWorkflow(ctx workflow.Context, fetchNextBalances FetchNextBalances, nextTasks []models.ConnectorTaskTree, balancesResponse *models.FetchNextBalancesResponse, wg workflow.WaitGroup, errChan chan error, plugin models.Plugin) chan error {
+	for _, balance := range balancesResponse.Balances {
+		b := balance
+
+		wg.Add(1)
+		config := map[string]interface{}{
+			"name":          "qonto",
+			"pollingPeriod": "2m0s",
+			"pageSize":      30,
+		}
+		workflow.Go(ctx, func(ctx workflow.Context) {
+			defer wg.Done()
+
+			payload, err := json.Marshal(b)
+			if err != nil {
+				errChan <- errors.Wrap(err, "marshalling account")
+			}
+
+			if err := workflow.ExecuteChildWorkflow(
+				workflow.WithChildOptions(
+					ctx,
+					workflow.ChildWorkflowOptions{
+						TaskQueue:         w.getDefaultTaskQueue(),
+						ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+						SearchAttributes: map[string]interface{}{
+							SearchAttributeStack: w.stack,
+						},
+					},
+				),
+				RunNextTasks, //nolint:staticcheck // ignore deprecated
+				config,
+				fetchNextBalances.ConnectorID,
+				&FromPayload{
+					ID:      fmt.Sprintf("%s-balances", b.AccountReference),
+					Payload: payload,
+				},
+				nextTasks,
+			).Get(ctx, nil); err != nil {
+				errChan <- errors.Wrap(err, "running next workflow")
+			}
+		})
+	}
+	return errChan
+}
+
+func (w Workflow) runSendEventsForBalances(ctx workflow.Context, balances []models.Balance, wg workflow.WaitGroup, errChan chan error) chan error {
+	for _, balance := range balances {
+		b := balance
+
+		wg.Add(1)
+		workflow.Go(ctx, func(ctx workflow.Context) {
+			defer wg.Done()
+
+			if err := workflow.ExecuteChildWorkflow(
+				workflow.WithChildOptions(
+					ctx,
+					workflow.ChildWorkflowOptions{
+						TaskQueue:         w.getDefaultTaskQueue(),
+						ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+						SearchAttributes: map[string]interface{}{
+							SearchAttributeStack: w.stack,
+						},
+					},
+				),
+				RunSendEvents, // nolint: staticcheck // ignore deprecated
+				SendEvents{
+					Balance: &b,
+				},
+			).Get(ctx, nil); err != nil {
+				errChan <- errors.Wrap(err, "sending events")
+			}
+		})
+	}
+	return errChan
 }
 
 const RunFetchNextBalances = "FetchBalances"

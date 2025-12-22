@@ -192,7 +192,6 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Name: RunUpdatePaymentInitiationFromPayment,   //nolint:staticcheck // ignore deprecation
 			Func: w.runUpdatePaymentInitiationFromPayment, //nolint:staticcheck // ignore deprecation
 		})
-
 }
 
 func (w Workflow) shouldContinueAsNew(ctx workflow.Context) bool {
