@@ -178,8 +178,9 @@ var _ = Describe("Stripe Plugin Payments", func() {
 					},
 				},
 				{
-					ID:   "adjustment_without_dispute_also_skipped", // adjustments are supported but not this kind
-					Type: stripesdk.BalanceTransactionTypeAdjustment,
+					ID:       "adjustment_without_dispute",
+					Type:     stripesdk.BalanceTransactionTypeAdjustment,
+					Currency: stripesdk.CurrencyUSD,
 					Source: &stripesdk.BalanceTransactionSource{
 						Refund: &stripesdk.Refund{
 							FailureReason: stripesdk.RefundFailureReasonExpiredOrCanceledCard,
@@ -191,9 +192,10 @@ var _ = Describe("Stripe Plugin Payments", func() {
 					},
 				},
 				{
-					ID:     "payment_refund_failure_skipped", // Skipped because no source
-					Type:   stripesdk.BalanceTransactionTypePaymentFailureRefund,
-					Source: nil,
+					ID:       "payment_refund_failure_without_source",
+					Type:     stripesdk.BalanceTransactionTypePaymentFailureRefund,
+					Source:   &stripesdk.BalanceTransactionSource{},
+					Currency: stripesdk.CurrencyUSD,
 				},
 				{
 					ID:   "skipped", // unsupported types are skipped
@@ -253,7 +255,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 			)
 			res, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Payments).To(HaveLen(len(samplePayments) - 3))
+			Expect(res.Payments).To(HaveLen(len(samplePayments) - 1))
 			Expect(res.HasMore).To(BeTrue())
 
 			// Charges
@@ -305,6 +307,17 @@ var _ = Describe("Stripe Plugin Payments", func() {
 			Expect(res.Payments[11].ParentReference).To(Equal(samplePayments[11].Source.Dispute.Charge.BalanceTransaction.ID))
 			Expect(res.Payments[11].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(res.Payments[11].Status).To(Equal(models.PAYMENT_STATUS_DISPUTE))
+			Expect(res.Payments[12].Reference).To(Equal(samplePayments[12].ID))
+			Expect(res.Payments[12].ParentReference).To(Equal(""))
+			Expect(res.Payments[12].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			Expect(res.Payments[12].Status).To(Equal(models.PAYMENT_STATUS_UNKNOWN))
+			Expect(res.Payments[12].Scheme).To(Equal(models.PAYMENT_SCHEME_UNKNOWN))
+
+			// Payment failure refund
+			Expect(res.Payments[13].Reference).To(Equal(samplePayments[13].ID))
+			Expect(res.Payments[13].ParentReference).To(Equal(""))
+			Expect(res.Payments[13].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			Expect(res.Payments[13].Status).To(Equal(models.PAYMENT_STATUS_REFUNDED_FAILURE))
 
 			var state paymentsState
 
