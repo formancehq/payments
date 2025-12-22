@@ -276,6 +276,9 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 			amount = balanceTransaction.Amount
 			parentReference = ""
 		} else {
+			if balanceTransaction.Source.Refund.Charge == nil {
+				return nil, fmt.Errorf("refund charge missing from payment refund failure payload: %q", balanceTransaction.ID)
+			}
 			transactionCurrency = strings.ToUpper(string(balanceTransaction.Source.Refund.Currency))
 			amount = balanceTransaction.Source.Refund.Amount
 			parentReference = balanceTransaction.Source.Refund.Charge.BalanceTransaction.ID
@@ -283,10 +286,6 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 			appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.Metadata)
 			if balanceTransaction.Source.Refund.Charge.PaymentIntent != nil {
 				appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
-			}
-
-			if balanceTransaction.Source.Refund.Charge == nil {
-				return nil, fmt.Errorf("refund charge missing from payment refund failure payload: %q", balanceTransaction.ID)
 			}
 		}
 
