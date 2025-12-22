@@ -7464,7 +7464,7 @@ xor
 {
   "clientID": "string",
   "clientSecret": "string",
-  "endpoint": "https://api.tink.com",
+  "endpoint": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
@@ -7479,7 +7479,7 @@ xor
 |---|---|---|---|---|
 |clientID|string|true|none|none|
 |clientSecret|string|true|none|none|
-|endpoint|string|false|none|none|
+|endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

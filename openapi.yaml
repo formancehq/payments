@@ -6219,6 +6219,7 @@ components:
         - name
         - clientID
         - clientSecret
+        - endpoint
       properties:
         clientID:
           type: string
@@ -6226,7 +6227,6 @@ components:
           type: string
         endpoint:
           type: string
-          default: https://api.tink.com
         name:
           type: string
         pageSize:

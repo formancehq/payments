@@ -218,31 +218,18 @@ func readConfig(name string, caserName string) (V3Config, error) {
 						default:
 							return V3Config{}, fmt.Errorf("invalid type: %s", typName)
 						}
+						propCopy := properties[name]
+						propCopy.Type = fieldType
 
 						if forcedDefaultValue != "" {
-							properties[name] = Property{
-								Type:    fieldType,
-								Default: forcedDefaultValue}
-						} else {
-							properties[name] = Property{
-								Type: fieldType,
-							}
+							propCopy.Default = forcedDefaultValue
 						}
+						properties[name] = propCopy
 					case "validate":
 						if strings.Contains(fields[1], "required") {
 							required = append(required, name)
 						}
-					case "default":
-						defaultValue := fields[1]
-						if strings.HasPrefix(defaultValue, "\"") && strings.HasSuffix(defaultValue, "\"") {
-							defaultValue = defaultValue[1 : len(defaultValue)-1]
-						}
-
-						propCopy := properties[name]
-						propCopy.Default = defaultValue
-						properties[name] = propCopy
 					}
-
 				}
 			}
 		}
