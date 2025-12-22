@@ -16,9 +16,6 @@ import (
 )
 
 var (
-	ErrInvalidPaymentSource       = errors.New("payment source is invalid")
-	ErrUnsupportedAdjustment      = errors.New("unsupported adjustment")
-	ErrUnsupportedRefundFailure   = errors.New("unsupported refund failure")
 	ErrUnsupportedTransactionType = errors.New("unsupported TransactionType")
 	ErrUnsupportedCurrency        = errors.New("unsupported currency")
 )
