@@ -191,6 +191,11 @@ var _ = Describe("Stripe Plugin Payments", func() {
 					},
 				},
 				{
+					ID:     "payment_refund_failure_skipped", // Skipped because no source
+					Type:   stripesdk.BalanceTransactionTypePaymentFailureRefund,
+					Source: nil,
+				},
+				{
 					ID:   "skipped", // unsupported types are skipped
 					Type: stripesdk.BalanceTransactionTypeStripeFee,
 					Source: &stripesdk.BalanceTransactionSource{
@@ -248,7 +253,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 			)
 			res, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Payments).To(HaveLen(len(samplePayments) - 2))
+			Expect(res.Payments).To(HaveLen(len(samplePayments) - 3))
 			Expect(res.HasMore).To(BeTrue())
 
 			// Charges

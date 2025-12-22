@@ -18,6 +18,7 @@ import (
 var (
 	ErrInvalidPaymentSource       = errors.New("payment source is invalid")
 	ErrUnsupportedAdjustment      = errors.New("unsupported adjustment")
+	ErrUnsupportedRefundFailure   = errors.New("unsupported refund failure")
 	ErrUnsupportedTransactionType = errors.New("unsupported TransactionType")
 	ErrUnsupportedCurrency        = errors.New("unsupported currency")
 )
@@ -244,7 +245,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 
 		appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.Metadata)
 		if balanceTransaction.Source.Refund.Charge.PaymentIntent != nil {
-			appendMetadata(balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
+			appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
 		}
 
 		payment = &models.PSPPayment{
@@ -268,6 +269,13 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		// when the payment is created. Another Balance transaction of type payment_failure_refund appears
 		// if the pending payment later fails.
 		// cf https://stripe.com/docs/reports/balance-transaction-types
+
+		if balanceTransaction.Source.Refund == nil {
+			// We are only handling failures with refund
+			p.logger.WithField("type", balanceTransaction.Type).WithField("reference", balanceTransaction.ID).Infof("skipping unsupported balance transaction: %v", ErrUnsupportedRefundFailure)
+			return nil, nil
+		}
+
 		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Refund.Currency))
 		_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
 		if !ok {
