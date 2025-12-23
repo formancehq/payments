@@ -15,7 +15,7 @@ func (w Workflow) runUpdatePaymentInitiationFromPayment(
 	ctx workflow.Context,
 	updatePaymentInitiationFromPayment UpdatePaymentInitiationFromPayment,
 ) error {
-	piIDs, err := activities.StoragePaymentInitiationIDsListFromPaymentID(
+	piIDs, err := activities.StoragePaymentInitiationIDsListFromPaymentID( //nolint:staticcheck // ignore deprecation
 		infiniteRetryContext(ctx),
 		updatePaymentInitiationFromPayment.Payment.ID,
 	)
