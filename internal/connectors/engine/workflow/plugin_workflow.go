@@ -165,7 +165,7 @@ func (w Workflow) scheduleNextWorkflow(
 		return err
 	}
 
-	config, err := w.connectors.GetConfig(connectorID) // TODO does the manager gets updated in workflows?
+	config, err := w.connectors.GetConfig(connectorID)
 	if err != nil {
 		return err
 	}

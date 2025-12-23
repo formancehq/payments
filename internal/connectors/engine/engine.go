@@ -1618,7 +1618,7 @@ func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.Connecto
 	if connector.ScheduledForDeletion {
 		// if we're deleting the plugin no other changes matter
 		return nil
-	} // TODO we might need to move that in the Load()
+	} // TODO I think we still need to update the manager as we're not fetching from DB anymore -- it needs testing
 
 	// skip strict polling period validation if installed by another instance
 	_, _, err = e.connectors.Load(*connector, true, false)
