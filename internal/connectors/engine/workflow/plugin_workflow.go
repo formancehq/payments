@@ -222,6 +222,16 @@ func (w Workflow) runNextTasks(
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), connectorID)
+	if err != nil {
+		return err
+	}
+
+	// avoid scheduling next workflow if connector has been flagged for deletion
+	if connector.ScheduledForDeletion {
+		return nil
+	}
+
 	return w.runNextTasksV3_1(
 		ctx,
 		connectorID,
