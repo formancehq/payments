@@ -69,7 +69,20 @@ func (w Workflow) fetchNextOthers(
 			return errors.Wrap(err, "fetching next others")
 		}
 
-		if len(nextTasks) > 0 {
+		wg := workflow.NewWaitGroup(ctx)
+		errChan := make(chan error, len(othersResponse.Others))
+
+		if !IsRunNextTaskAsActivityEnabled(ctx) {
+			for _, other := range othersResponse.Others {
+				o := other
+				fromPayload := &FromPayload{
+					ID:      o.ID,
+					Payload: o.Other,
+				}
+
+				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextOthers.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
 			plugin, err := w.connectors.Get(fetchNextOthers.ConnectorID)
@@ -78,8 +91,6 @@ func (w Workflow) fetchNextOthers(
 			}
 
 			if !plugin.IsScheduledForDeletion() {
-				wg := workflow.NewWaitGroup(ctx)
-				errChan := make(chan error, len(othersResponse.Others))
 				for _, other := range othersResponse.Others {
 					o := other
 
@@ -100,14 +111,14 @@ func (w Workflow) fetchNextOthers(
 						}
 					})
 				}
+			}
+		}
 
-				wg.Wait(ctx)
-				close(errChan)
-				for err := range errChan {
-					if err != nil {
-						return err
-					}
-				}
+		wg.Wait(ctx)
+		close(errChan)
+		for err := range errChan {
+			if err != nil {
+				return err
 			}
 		}
 
