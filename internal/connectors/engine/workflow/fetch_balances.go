@@ -36,9 +36,6 @@ func (w Workflow) fetchBalances(
 	fetchNextBalances FetchNextBalances,
 	nextTasks []models.ConnectorTaskTree,
 ) error {
-	stopRunSendEvent := workflow.GetVersion(ctx, "stop_run_send_event", workflow.DefaultVersion, 1)
-	runNextTaskAsActivity := workflow.GetVersion(ctx, "run_next_task_as_activity", workflow.DefaultVersion, 1)
-
 	stateReference := models.CAPABILITY_FETCH_BALANCES.String()
 	if fetchNextBalances.FromPayload != nil {
 		stateReference = fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_BALANCES.String(), fetchNextBalances.FromPayload.ID)
@@ -99,12 +96,12 @@ func (w Workflow) fetchBalances(
 
 		wg := workflow.NewWaitGroup(ctx)
 		errChanLen := len(balancesResponse.Balances)
-		if stopRunSendEvent == workflow.DefaultVersion {
+		if !IsEventOutboxPatternEnabled(ctx) {
 			errChanLen += len(balancesResponse.Balances)
 		}
 		errChan := make(chan error, errChanLen)
 
-		if stopRunSendEvent == workflow.DefaultVersion {
+		if !IsEventOutboxPatternEnabled(ctx) {
 			errChan = w.runSendEventsForBalances(ctx, balances, wg, errChan)
 		}
 
@@ -115,8 +112,8 @@ func (w Workflow) fetchBalances(
 			return fmt.Errorf("getting connector: %w", err)
 		}
 
-		if runNextTaskAsActivity == workflow.DefaultVersion {
-			errChan = w.runNextTasksAsWorkflow(ctx, fetchNextBalances, nextTasks, balancesResponse, wg, errChan, plugin)
+		if !IsRunNextTaskAsActivityEnabled(ctx) {
+			errChan = w.runNextTasksAsWorkflow(ctx, fetchNextBalances, nextTasks, balancesResponse, wg, errChan)
 		} else if len(nextTasks) > 0 {
 			if !plugin.IsScheduledForDeletion() {
 				for _, balance := range balancesResponse.Balances {
@@ -183,16 +180,11 @@ func (w Workflow) fetchBalances(
 	return nil
 }
 
-func (w Workflow) runNextTasksAsWorkflow(ctx workflow.Context, fetchNextBalances FetchNextBalances, nextTasks []models.ConnectorTaskTree, balancesResponse *models.FetchNextBalancesResponse, wg workflow.WaitGroup, errChan chan error, plugin models.Plugin) chan error {
+func (w Workflow) runNextTasksAsWorkflow(ctx workflow.Context, fetchNextBalances FetchNextBalances, nextTasks []models.ConnectorTaskTree, balancesResponse *models.FetchNextBalancesResponse, wg workflow.WaitGroup, errChan chan error) chan error {
 	for _, balance := range balancesResponse.Balances {
 		b := balance
 
 		wg.Add(1)
-		config := map[string]interface{}{
-			"name":          "qonto",
-			"pollingPeriod": "2m0s",
-			"pageSize":      30,
-		}
 		workflow.Go(ctx, func(ctx workflow.Context) {
 			defer wg.Done()
 
@@ -213,7 +205,7 @@ func (w Workflow) runNextTasksAsWorkflow(ctx workflow.Context, fetchNextBalances
 					},
 				),
 				RunNextTasks, //nolint:staticcheck // ignore deprecated
-				config,
+				models.Config{},
 				fetchNextBalances.ConnectorID,
 				&FromPayload{
 					ID:      fmt.Sprintf("%s-balances", b.AccountReference),
