@@ -328,6 +328,16 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 }
 
 func (s *UnitTestSuite) Test_Run_PreviousWorkflowVersion_Succeed() {
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).
+		Once().
+		Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
+			return &models.Connector{
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
+			}, nil
+		})
+
 	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx workflow.Context, req FetchNextAccounts, nextTasks []models.ConnectorTaskTree) error {
 		s.Equal(s.connectorID, req.ConnectorID)
 		s.False(req.Periodically)
