@@ -135,6 +135,7 @@ func (w Workflow) handleDataToStoreWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
+	// TODO do we need a child workflow, or an activity could do?
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -260,6 +261,7 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	})
 }
 
+// TODO do we need a child workflow, or an activity could do?
 func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,

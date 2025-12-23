@@ -17,7 +17,7 @@ func IsEventOutboxPatternEnabled(ctx workflow.Context) bool {
 
 func IsRunNextTaskAsActivityEnabled(ctx workflow.Context) bool {
 	version := workflow.GetVersion(ctx, versionFlagRunNextTaskAsActivity, workflow.DefaultVersion, 1)
-	if version == workflow.DefaultVersion {
+	if version > workflow.DefaultVersion {
 		return true
 	}
 	return false

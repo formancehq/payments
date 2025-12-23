@@ -92,7 +92,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*2+len(paymentsResponse.PaymentsToDelete))
+		errChan := make(chan error, len(paymentsResponse.Payments)*2)
 		for _, payment := range payments {
 			p := payment
 
@@ -100,6 +100,7 @@ func (w Workflow) fetchNextPayments(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
+				// TODO this should be a child workflow in 3.0
 				if err := activities.StoragePaymentInitiationUpdateFromPayment(
 					infiniteRetryContext(ctx),
 					p.Status,
@@ -111,7 +112,33 @@ func (w Workflow) fetchNextPayments(
 			})
 		}
 
-		if len(nextTasks) > 0 {
+		if !IsEventOutboxPatternEnabled(ctx) {
+			errChan = make(chan error, len(paymentsResponse.Payments)*3)
+			for _, payment := range payments {
+				p := payment
+
+				sendEvents := SendEvents{
+					Payment: &p,
+				}
+				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+			}
+		}
+
+		if !IsRunNextTaskAsActivityEnabled(ctx) {
+			for _, payment := range paymentsResponse.Payments {
+				p := payment
+				payload, err := json.Marshal(p)
+				if err != nil {
+					errChan <- errors.Wrap(err, "marshalling payment")
+				}
+				fromPayload := &FromPayload{
+					ID:      p.Reference,
+					Payload: payload,
+				}
+
+				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextPayments.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
 			plugin, err := w.connectors.Get(fetchNextPayments.ConnectorID)

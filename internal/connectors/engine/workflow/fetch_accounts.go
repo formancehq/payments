@@ -95,7 +95,33 @@ func (w Workflow) fetchAccounts(
 		wg := workflow.NewWaitGroup(ctx)
 		errChan := make(chan error, len(accountsResponse.Accounts))
 
-		if len(nextTasks) > 0 {
+		if !IsEventOutboxPatternEnabled(ctx) {
+			errChan = make(chan error, len(accountsResponse.Accounts)*2)
+			for _, account := range accounts {
+				a := account
+
+				sendEvents := SendEvents{
+					Account: &a,
+				}
+				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+			}
+		}
+
+		if !IsRunNextTaskAsActivityEnabled(ctx) {
+			for _, account := range accountsResponse.Accounts {
+				acc := account
+				payload, err := json.Marshal(acc)
+				if err != nil {
+					errChan <- errors.Wrap(err, "marshalling account")
+				}
+				fromPayload := &FromPayload{
+					ID:      acc.Reference,
+					Payload: payload,
+				}
+
+				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextAccount.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
 			plugin, err := w.connectors.Get(fetchNextAccount.ConnectorID)

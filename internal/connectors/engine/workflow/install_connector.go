@@ -59,6 +59,10 @@ func (w Workflow) installConnector(
 
 	// First, we need to get the connector to check if it is scheduled for deletion
 	// because if it is, we don't need to run the next tasks
+
+	// Fourth step: launch the workflow tree, do not wait for the result
+	// by using the GetChildWorkflowExecution function that returns a future
+	// which will be ready when the child workflow has successfully started.
 	plugin, err := w.connectors.Get(installConnector.ConnectorID)
 	if err != nil {
 		return fmt.Errorf("getting connector: %w", err)
@@ -67,31 +71,53 @@ func (w Workflow) installConnector(
 	if plugin.IsScheduledForDeletion() {
 		return nil
 	}
-
-	// Fifth step: launch the workflow tree, do not wait for the result
-	// by using the GetChildWorkflowExecution function that returns a future
-	// which will be ready when the child workflow has successfully started.
-	if err := workflow.ExecuteChildWorkflow(
-		workflow.WithChildOptions(
-			ctx,
-			workflow.ChildWorkflowOptions{
-				WorkflowID:            fmt.Sprintf("run-tasks-%s-%s", w.stack, installConnector.ConnectorID.String()),
-				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
-				TaskQueue:             w.getDefaultTaskQueue(),
-				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
+	if IsRunNextTaskAsActivityEnabled(ctx) {
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					WorkflowID:            fmt.Sprintf("run-tasks-%s-%s", w.stack, installConnector.ConnectorID.String()),
+					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
 				},
-			},
-		),
-		RunNextTasksV3_1,
-		installConnector.ConnectorID,
-		nil,
-		[]models.ConnectorTaskTree(installResponse.Workflow),
-	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		if temporal.IsWorkflowExecutionAlreadyStartedError(err) {
-			return nil
-		} else {
+			),
+			RunNextTasksV3_1,
+			installConnector.ConnectorID,
+			nil,
+			[]models.ConnectorTaskTree(installResponse.Workflow),
+		).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+			if temporal.IsWorkflowExecutionAlreadyStartedError(err) {
+				return nil
+			}
+			return errors.Wrap(err, "running next workflow")
+		}
+	} else {
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					WorkflowID:            fmt.Sprintf("run-tasks-%s-%s", w.stack, installConnector.ConnectorID.String()),
+					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunNextTasks, //nolint:staticcheck // ignore deprecation
+			models.Config{},
+			installConnector.ConnectorID,
+			nil,
+			[]models.ConnectorTaskTree(installResponse.Workflow),
+		).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+			if temporal.IsWorkflowExecutionAlreadyStartedError(err) {
+				return nil
+			}
 			return errors.Wrap(err, "running next workflow")
 		}
 	}

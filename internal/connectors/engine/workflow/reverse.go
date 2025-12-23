@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -81,6 +82,27 @@ func (w Workflow) validateOnlyReverse(
 	}
 
 	// Payment initiation adjustment events are now sent via outbox pattern in PaymentInitiationAdjustmentsUpsertIfPredicate
+	// (unless it's a rerun from a previous version, in which case -- )
+	if !IsEventOutboxPatternEnabled(ctx) {
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunSendEvents, //nolint:staticcheck // ignore deprecation
+			SendEvents{
+				PaymentInitiationAdjustment: &adj,
+			},
+		).Get(ctx, nil); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
