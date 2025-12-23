@@ -6,7 +6,9 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/go-faster/errors"
 	"github.com/google/uuid"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -312,6 +314,31 @@ func (w Workflow) runSendEvents( //nolint:staticcheck // ignore deprecation
 	}
 
 	return nil
+}
+
+func (w Workflow) runSendEventAsChildWorkflow(ctx workflow.Context, wg workflow.WaitGroup, evts SendEvents, errChan chan error) chan error {
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunSendEvents, // nolint: staticcheck // ignore deprecated
+			evts,
+		).Get(ctx, nil); err != nil {
+			errChan <- errors.Wrap(err, "sending events")
+		}
+	})
+	return errChan
 }
 
 // RunSendEvents

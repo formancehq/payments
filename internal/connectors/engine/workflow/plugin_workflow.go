@@ -230,6 +230,34 @@ func (w Workflow) runNextTasks(
 	)
 }
 
+func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID models.ConnectorID, nextTasks []models.ConnectorTaskTree, wg workflow.WaitGroup, fromPayload *FromPayload, errChan chan error) chan error {
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunNextTasks, //nolint:staticcheck // ignore deprecated
+			models.Config{},
+			connectorID,
+			fromPayload,
+			nextTasks,
+		).Get(ctx, nil); err != nil {
+			errChan <- errors.Wrap(err, "running next workflow")
+		}
+	})
+	return errChan
+}
+
 const RunNextTasksV3_1 = "RunNextTasksV3_1"
 
 // Deprecated: use RunNextTasksV3_1 instead, we keep that it during 3.0 => 3.1 migration
