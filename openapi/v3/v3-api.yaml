@@ -651,6 +651,114 @@ paths:
         - Authorization:
             - payments:write
 
+  # TRADES
+  /v3/trades:
+    post:
+      tags:
+        - payments.v3
+      summary: Create a trade
+      operationId: v3CreateTrade
+      x-speakeasy-name-override: CreateTrade
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreateTradeRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreateTradeResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List trades
+      operationId: v3ListTrades
+      x-speakeasy-name-override: ListTrades
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3TradesCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/trades/{tradeID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a trade
+      operationId: v3GetTrade
+      x-speakeasy-name-override: GetTrade
+      parameters:
+        - $ref: '#/components/parameters/V3TradeID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetTradeResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/trades/{tradeID}/metadata:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update trade metadata
+      operationId: v3UpdateTradeMetadata
+      x-speakeasy-name-override: UpdateTradeMetadata
+      parameters:
+        - $ref: '#/components/parameters/V3TradeID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3UpdateTradeMetadataRequest"
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
   # PAYMENT INITIATIONS
   /v3/payment-initiations:
     post:

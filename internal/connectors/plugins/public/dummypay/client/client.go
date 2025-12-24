@@ -18,6 +18,7 @@ type Client interface {
 	DeleteUser(ctx context.Context, userID string) error
 	CompleteLink(ctx context.Context, userID string, connectionID string) error
 	DeleteUserConnection(ctx context.Context, userID string, connectionID string) error
+	FetchTrades(ctx context.Context) ([]models.PSPTrade, error)
 }
 
 type client struct {

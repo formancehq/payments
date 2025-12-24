@@ -16,6 +16,7 @@ const (
 	PluginTypePSP PluginType = iota
 	PluginTypeOpenBanking
 	PluginTypeBoth
+	PluginTypeExchange
 )
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
@@ -34,6 +35,9 @@ type Plugin interface {
 	TrimWebhook(context.Context, TrimWebhookRequest) (TrimWebhookResponse, error)
 	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
+
+	// Trades ingestion (optional)
+	FetchNextTrades(context.Context, FetchNextTradesRequest) (FetchNextTradesResponse, error)
 }
 
 type InstallRequest struct {
@@ -108,6 +112,18 @@ type WebhookResponse struct {
 	UserConnectionPendingDisconnect *PSPUserConnectionPendingDisconnect
 	UserConnectionDisconnected      *PSPUserConnectionDisconnected
 	UserConnectionReconnected       *PSPUserConnectionReconnected
+}
+
+type FetchNextTradesRequest struct {
+	State       json.RawMessage
+	PageSize    int
+	FromPayload json.RawMessage
+}
+
+type FetchNextTradesResponse struct {
+	Trades   []PSPTrade
+	NewState json.RawMessage
+	HasMore  bool
 }
 
 type OpenBankingDataToFetch string
