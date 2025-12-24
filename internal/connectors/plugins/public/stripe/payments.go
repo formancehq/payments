@@ -16,9 +16,8 @@ import (
 )
 
 var (
-	ErrInvalidPaymentSource       = errors.New("payment source is invalid")
-	ErrUnsupportedAdjustment      = errors.New("unsupported adjustment")
 	ErrUnsupportedTransactionType = errors.New("unsupported TransactionType")
+	ErrUnsupportedAdjustment      = errors.New("unsupported adjustment")
 	ErrUnsupportedCurrency        = errors.New("unsupported currency")
 )
 
@@ -244,7 +243,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 
 		appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.Metadata)
 		if balanceTransaction.Source.Refund.Charge.PaymentIntent != nil {
-			appendMetadata(balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
+			appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
 		}
 
 		payment = &models.PSPPayment{
@@ -268,27 +267,41 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		// when the payment is created. Another Balance transaction of type payment_failure_refund appears
 		// if the pending payment later fails.
 		// cf https://stripe.com/docs/reports/balance-transaction-types
-		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Refund.Currency))
+
+		var transactionCurrency string
+		var amount int64
+		var parentReference string
+
+		if balanceTransaction.Source.Refund == nil {
+			p.logger.WithFields(map[string]any{"type": balanceTransaction.Type, "reference": balanceTransaction.ID}).Infof("Handling a payment_failure_refund balance transaction without a refund source, we will store it as a single payment as we cannot trace to the original payment")
+			transactionCurrency = strings.ToUpper(string(balanceTransaction.Currency))
+			amount = balanceTransaction.Amount
+			parentReference = ""
+		} else {
+			if balanceTransaction.Source.Refund.Charge == nil {
+				return nil, fmt.Errorf("refund charge missing from payment refund failure payload: %q", balanceTransaction.ID)
+			}
+			transactionCurrency = strings.ToUpper(string(balanceTransaction.Source.Refund.Currency))
+			amount = balanceTransaction.Source.Refund.Amount
+			parentReference = balanceTransaction.Source.Refund.Charge.BalanceTransaction.ID
+
+			appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.Metadata)
+			if balanceTransaction.Source.Refund.Charge.PaymentIntent != nil {
+				appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
+			}
+		}
+
 		_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
 		if !ok {
 			return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
 		}
 
-		if balanceTransaction.Source.Refund.Charge == nil {
-			return nil, fmt.Errorf("refund charge missing from payment refund failure payload: %q", balanceTransaction.ID)
-		}
-
-		appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.Metadata)
-		if balanceTransaction.Source.Refund.Charge.PaymentIntent != nil {
-			appendMetadata(metadata, balanceTransaction.Source.Refund.Charge.PaymentIntent.Metadata)
-		}
-
 		payment = &models.PSPPayment{
 			Reference:                   balanceTransaction.ID,
-			ParentReference:             balanceTransaction.Source.Refund.Charge.BalanceTransaction.ID,
+			ParentReference:             parentReference,
 			Type:                        models.PAYMENT_TYPE_PAYIN,
 			Status:                      models.PAYMENT_STATUS_REFUNDED_FAILURE,
-			Amount:                      big.NewInt(balanceTransaction.Source.Refund.Amount),
+			Amount:                      big.NewInt(amount),
 			Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transactionCurrency),
 			Scheme:                      models.PAYMENT_SCHEME_OTHER,
 			CreatedAt:                   time.Unix(balanceTransaction.Created, 0),
@@ -445,20 +458,26 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		}
 
 	case stripesdk.BalanceTransactionTypeAdjustment:
+		var transactionCurrency string
+		var amount int64
+		var parentReference string
+		var scheme models.PaymentScheme
+		var paymentStatus models.PaymentStatus
+
 		if balanceTransaction.Source.Dispute == nil {
-			// We are only handling dispute adjustments
 			p.logger.WithField("type", balanceTransaction.Type).WithField("reference", balanceTransaction.ID).Infof("skipping unsupported balance transaction: %v", ErrUnsupportedAdjustment)
 			return nil, nil
 		}
 
-		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Dispute.Charge.Currency))
-		_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
-		if !ok {
-			return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
+		if balanceTransaction.Source.Dispute.Charge == nil {
+			return nil, fmt.Errorf("refund charge missing from payment dispute payload: %q", balanceTransaction.ID)
 		}
-
+		transactionCurrency = strings.ToUpper(string(balanceTransaction.Source.Dispute.Charge.Currency))
+		amount = balanceTransaction.Source.Dispute.Charge.Amount
+		parentReference = balanceTransaction.Source.Dispute.Charge.BalanceTransaction.ID
+		scheme = detailsToPaymentScheme(balanceTransaction.Source.Dispute.Charge.PaymentMethodDetails)
 		disputeStatus := convertDisputeStatus(balanceTransaction.Source.Dispute.Status)
-		paymentStatus := models.PAYMENT_STATUS_DISPUTE
+		paymentStatus = models.PAYMENT_STATUS_DISPUTE
 		switch disputeStatus {
 		case models.PAYMENT_STATUS_DISPUTE_WON:
 			paymentStatus = models.PAYMENT_STATUS_SUCCEEDED
@@ -471,14 +490,19 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 			appendMetadata(metadata, balanceTransaction.Source.Dispute.Charge.PaymentIntent.Metadata)
 		}
 
+		_, ok := supportedCurrenciesWithDecimal[transactionCurrency]
+		if !ok {
+			return nil, fmt.Errorf("%w %q", ErrUnsupportedCurrency, transactionCurrency)
+		}
+
 		payment = &models.PSPPayment{
 			Reference:                   balanceTransaction.ID,
-			ParentReference:             balanceTransaction.Source.Dispute.Charge.BalanceTransaction.ID,
+			ParentReference:             parentReference,
 			Type:                        models.PAYMENT_TYPE_PAYIN,
-			Status:                      paymentStatus, // Dispute is occuring, we don't know the outcome yet
-			Amount:                      big.NewInt(balanceTransaction.Amount),
+			Status:                      paymentStatus, // Dispute is occurring, we don't know the outcome yet
+			Amount:                      big.NewInt(amount),
 			Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transactionCurrency),
-			Scheme:                      detailsToPaymentScheme(balanceTransaction.Source.Dispute.Charge.PaymentMethodDetails),
+			Scheme:                      scheme,
 			CreatedAt:                   time.Unix(balanceTransaction.Created, 0),
 			DestinationAccountReference: accountRef,
 			Raw:                         rawData,

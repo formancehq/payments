@@ -17,7 +17,7 @@ import (
 type PSPPayment struct {
 	// Original PSP payment/transaction reference.
 	// In case of refunds, dispute etc... this reference should be the original
-	// payment reference. In case it's the first payment, ths reference should
+	// payment reference. In case it's the first payment, this reference should
 	// be empty
 	ParentReference string
 
