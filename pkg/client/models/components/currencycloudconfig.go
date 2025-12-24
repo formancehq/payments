@@ -13,7 +13,7 @@ type CurrencyCloudConfig struct {
 	// Username of the API Key holder
 	LoginID string `json:"loginID"`
 	// The frequency at which the connector will fetch transactions
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	// The endpoint to use for the API. Defaults to https://devapi.currencycloud.com
 	Endpoint *string `json:"endpoint,omitempty"`
 }

@@ -7012,7 +7012,7 @@ xor
   "baseUrl": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Atlar",
   "secret": "string"
 }
@@ -7045,7 +7045,7 @@ xor
   "name": "string",
   "pageSize": 25,
   "password": "string",
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Bankingcircle",
   "userCertificate": "string",
   "userCertificateKey": "string",
@@ -7082,7 +7082,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Column"
 }
 
@@ -7176,7 +7176,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Generic"
 }
 
@@ -7206,7 +7206,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Increase",
   "webhookSharedSecret": "string"
 }
@@ -7239,7 +7239,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Mangopay"
 }
 
@@ -7271,7 +7271,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Modulr"
 }
 
@@ -7303,7 +7303,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Moneycorp"
 }
 
@@ -7405,7 +7405,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Qonto",
   "stagingToken": "string"
 }
@@ -7437,7 +7437,7 @@ xor
   "apiKey": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Stripe"
 }
 
@@ -7497,7 +7497,7 @@ xor
   "apiKey": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "string",
+  "pollingPeriod": "30m",
   "provider": "Wise",
   "webhookPublicKey": "string"
 }

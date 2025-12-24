@@ -13,7 +13,7 @@ type V3BankingcircleConfig struct {
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize           *int64  `default:"25" json:"pageSize"`
 	Password           string  `json:"password"`
-	PollingPeriod      *string `json:"pollingPeriod,omitempty"`
+	PollingPeriod      *string `default:"30m" json:"pollingPeriod"`
 	Provider           *string `default:"Bankingcircle" json:"provider"`
 	UserCertificate    string  `json:"userCertificate"`
 	UserCertificateKey string  `json:"userCertificateKey"`

@@ -97,6 +97,8 @@ func main() {
 }
 
 func readConfig(name string, caserName string) (V3Config, error) {
+	defaultPollingPeriod := "30m"
+
 	// Verify the opened file is within the intended directory
 	absPath, err := filepath.Abs(*path)
 	if err != nil {
@@ -127,7 +129,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 		},
 		"pollingPeriod": {
 			Type:    "string",
-			Default: "30m",
+			Default: defaultPollingPeriod,
 		},
 		"pageSize": {
 			Type:                         "integer",
@@ -167,7 +169,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 				tagValue := strings.Trim(field.Tag.Value, "`")
 				arr := strings.Split(tagValue, " ")
 				for _, tag := range arr {
-					fields := strings.Split(tag, ":")
+					fields := strings.SplitN(tag, ":", 2)
 					if len(fields) < 2 {
 						return V3Config{}, fmt.Errorf("invalid tag: %s", tag)
 					}
@@ -198,6 +200,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 						}
 
 						fieldType := ""
+						forcedDefaultValue := ""
 						switch typName {
 						case "string":
 							fieldType = "string"
@@ -211,12 +214,17 @@ func readConfig(name string, caserName string) (V3Config, error) {
 						case "PollingPeriod":
 							// sharedconfig.PollingPeriod is represented as a string in JSON/schema
 							fieldType = "string"
+							forcedDefaultValue = defaultPollingPeriod
 						default:
 							return V3Config{}, fmt.Errorf("invalid type: %s", typName)
 						}
-						properties[name] = Property{
-							Type: fieldType,
+						propCopy := properties[name]
+						propCopy.Type = fieldType
+
+						if forcedDefaultValue != "" {
+							propCopy.Default = forcedDefaultValue
 						}
+						properties[name] = propCopy
 					case "validate":
 						if strings.Contains(fields[1], "required") {
 							required = append(required, name)
