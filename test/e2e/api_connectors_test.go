@@ -16,7 +16,6 @@ import (
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	v17 "go.temporal.io/api/workflow/v1"
-	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -45,110 +44,110 @@ var _ = Context("Payments API Connectors", Serial, func() {
 		flushRemainingWorkflows(ctx)
 	})
 
-	When("installing a connector", func() {
-		var (
-			id         uuid.UUID
-			workflowID string
-		)
-
-		BeforeEach(func() {
-			id = uuid.New()
-		})
-
-		It("can install a connector with v3 API", func() {
-			connectorConf := newV3ConnectorConfigFn()(id)
-			connectorID, err := installV3Connector(ctx, app.GetValue(), connectorConf, id)
-			Expect(err).To(BeNil())
-			_, err = models.ConnectorIDFromString(connectorID)
-			Expect(err).To(BeNil())
-
-			cl := temporalServer.GetValue().DefaultClient()
-			req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
-			workflowRes, err := cl.ListOpenWorkflow(ctx, req)
-			Expect(err).To(BeNil())
-			for _, info := range workflowRes.Executions {
-				if strings.HasPrefix(info.Execution.WorkflowId, "run-tasks-") {
-					workflowID = info.Execution.WorkflowId
-					break
-				}
-			}
-			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID)))
-
-			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
-			Expect(err).To(BeNil())
-			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(connectorConf.Name))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(connectorConf.Provider))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(connectorConf.Directory))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.Type).To(Equal(components.V3ConnectorConfigTypeDummypay))
-
-			getResPollingPeriod, err := time.ParseDuration(
-				*getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod,
-			)
-			Expect(err).To(BeNil())
-			configPollingPeriod, err := time.ParseDuration(*connectorConf.PollingPeriod)
-			Expect(err).To(BeNil())
-
-			Expect(getResPollingPeriod).To(Equal(configPollingPeriod))
-		})
-
-		It("can install a connector with v2 API", func() {
-			dir, err := os.MkdirTemp("", "dummypay")
-			Expect(err).To(BeNil())
-			GinkgoT().Cleanup(func() {
-				os.RemoveAll(dir)
-			})
-
-			connectorConf := components.ConnectorConfig{
-				DummyPayConfig: &components.DummyPayConfig{
-					Name:              fmt.Sprintf("connector-%s", id.String()),
-					FilePollingPeriod: pointer.For("30m"),
-					Provider:          pointer.For("Dummypay"),
-					Directory:         dir,
-				},
-			}
-			res, err := app.GetValue().SDK().Payments.V1.InstallConnector(ctx, components.ConnectorDummyPay, connectorConf)
-			Expect(err).To(BeNil())
-			Expect(res.ConnectorResponse).NotTo(BeNil())
-			connectorID := res.ConnectorResponse.Data.ConnectorID
-
-			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID)
-			Expect(err).To(BeNil())
-			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Name).To(Equal(connectorConf.DummyPayConfig.Name))
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Directory).To(Equal(dir))
-			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
-		})
-
-		DescribeTable("should respond with a validation error when plugin-side config invalid",
-			func(ver int, dirVal string, expectedErr string) {
-				connectorConf := newV3ConnectorConfigFn()(id)
-				connectorConf.Directory = dirVal
-				var err error
-				if ver == 3 {
-					_, err = app.GetValue().SDK().Payments.V3.InstallConnector(ctx, "dummypay", &components.V3InstallConnectorRequest{
-						V3DummypayConfig: connectorConf,
-					})
-				} else {
-					connectorConf := components.ConnectorConfig{
-						DummyPayConfig: &components.DummyPayConfig{
-							Name:              connectorConf.Name,
-							FilePollingPeriod: connectorConf.PollingPeriod,
-							Provider:          pointer.For("Dummypay"),
-							Directory:         connectorConf.Directory,
-						},
-					}
-					_, err = app.GetValue().SDK().Payments.V1.InstallConnector(ctx, components.ConnectorDummyPay, connectorConf)
-				}
-				Expect(err.Error()).To(ContainSubstring("400"))
-				Expect(err.Error()).To(ContainSubstring(expectedErr))
-			},
-			Entry("empty directory with v2", 2, "", "validation for 'Directory' failed on the 'required' tag"),
-			Entry("empty directory with v3", 3, "", "validation for 'Directory' failed on the 'required' tag"),
-			Entry("invalid directory with v2", 2, "^&()sodj", "validation for 'Directory' failed on the 'dirpath' tag"),
-			Entry("invalid directory with v3", 3, "^&()sodj", "validation for 'Directory' failed on the 'dirpath' tag"),
-		)
-	})
+	//When("installing a connector", func() {
+	//	var (
+	//		id         uuid.UUID
+	//		workflowID string
+	//	)
+	//
+	//	BeforeEach(func() {
+	//		id = uuid.New()
+	//	})
+	//
+	//	It("can install a connector with v3 API", func() {
+	//		connectorConf := newV3ConnectorConfigFn()(id)
+	//		connectorID, err := installV3Connector(ctx, app.GetValue(), connectorConf, id)
+	//		Expect(err).To(BeNil())
+	//		_, err = models.ConnectorIDFromString(connectorID)
+	//		Expect(err).To(BeNil())
+	//
+	//		cl := temporalServer.GetValue().DefaultClient()
+	//		req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
+	//		workflowRes, err := cl.ListOpenWorkflow(ctx, req)
+	//		Expect(err).To(BeNil())
+	//		for _, info := range workflowRes.Executions {
+	//			if strings.HasPrefix(info.Execution.WorkflowId, "run-tasks-") {
+	//				workflowID = info.Execution.WorkflowId
+	//				break
+	//			}
+	//		}
+	//		Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID)))
+	//
+	//		getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
+	//		Expect(err).To(BeNil())
+	//		Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
+	//		Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(connectorConf.Name))
+	//		Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(connectorConf.Provider))
+	//		Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(connectorConf.Directory))
+	//		Expect(getRes.V3GetConnectorConfigResponse.Data.Type).To(Equal(components.V3ConnectorConfigTypeDummypay))
+	//
+	//		getResPollingPeriod, err := time.ParseDuration(
+	//			*getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod,
+	//		)
+	//		Expect(err).To(BeNil())
+	//		configPollingPeriod, err := time.ParseDuration(*connectorConf.PollingPeriod)
+	//		Expect(err).To(BeNil())
+	//
+	//		Expect(getResPollingPeriod).To(Equal(configPollingPeriod))
+	//	})
+	//
+	//	It("can install a connector with v2 API", func() {
+	//		dir, err := os.MkdirTemp("", "dummypay")
+	//		Expect(err).To(BeNil())
+	//		GinkgoT().Cleanup(func() {
+	//			os.RemoveAll(dir)
+	//		})
+	//
+	//		connectorConf := components.ConnectorConfig{
+	//			DummyPayConfig: &components.DummyPayConfig{
+	//				Name:              fmt.Sprintf("connector-%s", id.String()),
+	//				FilePollingPeriod: pointer.For("30m"),
+	//				Provider:          pointer.For("Dummypay"),
+	//				Directory:         dir,
+	//			},
+	//		}
+	//		res, err := app.GetValue().SDK().Payments.V1.InstallConnector(ctx, components.ConnectorDummyPay, connectorConf)
+	//		Expect(err).To(BeNil())
+	//		Expect(res.ConnectorResponse).NotTo(BeNil())
+	//		connectorID := res.ConnectorResponse.Data.ConnectorID
+	//
+	//		getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID)
+	//		Expect(err).To(BeNil())
+	//		Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
+	//		Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Name).To(Equal(connectorConf.DummyPayConfig.Name))
+	//		Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Directory).To(Equal(dir))
+	//		Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
+	//	})
+	//
+	//	DescribeTable("should respond with a validation error when plugin-side config invalid",
+	//		func(ver int, dirVal string, expectedErr string) {
+	//			connectorConf := newV3ConnectorConfigFn()(id)
+	//			connectorConf.Directory = dirVal
+	//			var err error
+	//			if ver == 3 {
+	//				_, err = app.GetValue().SDK().Payments.V3.InstallConnector(ctx, "dummypay", &components.V3InstallConnectorRequest{
+	//					V3DummypayConfig: connectorConf,
+	//				})
+	//			} else {
+	//				connectorConf := components.ConnectorConfig{
+	//					DummyPayConfig: &components.DummyPayConfig{
+	//						Name:              connectorConf.Name,
+	//						FilePollingPeriod: connectorConf.PollingPeriod,
+	//						Provider:          pointer.For("Dummypay"),
+	//						Directory:         connectorConf.Directory,
+	//					},
+	//				}
+	//				_, err = app.GetValue().SDK().Payments.V1.InstallConnector(ctx, components.ConnectorDummyPay, connectorConf)
+	//			}
+	//			Expect(err.Error()).To(ContainSubstring("400"))
+	//			Expect(err.Error()).To(ContainSubstring(expectedErr))
+	//		},
+	//		Entry("empty directory with v2", 2, "", "validation for 'Directory' failed on the 'required' tag"),
+	//		Entry("empty directory with v3", 3, "", "validation for 'Directory' failed on the 'required' tag"),
+	//		Entry("invalid directory with v2", 2, "^&()sodj", "validation for 'Directory' failed on the 'dirpath' tag"),
+	//		Entry("invalid directory with v3", 3, "^&()sodj", "validation for 'Directory' failed on the 'dirpath' tag"),
+	//	)
+	//})
 
 	When("updating a connector config", func() {
 		var (

@@ -20,11 +20,16 @@ func (s *UnitTestSuite) Test_InstallConnector_Success() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TasksTreeStoreRequest) error {
 		return nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          s.connector.ID,
+			Provider:             s.connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: s.connector.ScheduledForDeletion,
+		},
 		nil,
 	)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -47,8 +52,13 @@ func (s *UnitTestSuite) Test_InstallConnector_ConnectorScheduledForDeletion_Succ
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TasksTreeStoreRequest) error {
 		return nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          connector.ID,
+			Provider:             connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: connector.ScheduledForDeletion,
+		},
 		nil,
 	)
 
@@ -71,11 +81,16 @@ func (s *UnitTestSuite) Test_InstallConnector_NoConfigs_Success() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TasksTreeStoreRequest) error {
 		return nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          s.connector.ID,
+			Provider:             s.connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: s.connector.ScheduledForDeletion,
+		},
 		nil,
 	)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -152,7 +167,7 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorsGet_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
 		nil,
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
@@ -173,11 +188,16 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_Error() {
 		Workflow: []models.ConnectorTaskTree{},
 	}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          s.connector.ID,
+			Provider:             s.connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: s.connector.ScheduledForDeletion,
+		},
 		nil,
 	)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("error-test")),
 	)
 
@@ -198,11 +218,16 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_ErrorAlreadyStarted() {
 		Workflow: []models.ConnectorTaskTree{},
 	}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          s.connector.ID,
+			Provider:             s.connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: s.connector.ScheduledForDeletion,
+		},
 		nil,
 	)
-	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnWorkflow(RunNextTasks, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		serviceerror.NewWorkflowExecutionAlreadyStarted("test", "test", "test"),
 	)
 

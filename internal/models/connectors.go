@@ -61,7 +61,7 @@ type Connector struct {
 	ConnectorBase
 
 	// ScheduledForDeletion indicates if the connector is scheduled for deletion
-	ScheduledForDeletion bool `json:"scheduledForDeletion"`
+	ScheduledForDeletion bool `json:"scheduledForDeletion"` // TODO this should be coming from DB instead fo being passed around in Temporal
 
 	// Config given by the user. It will be encrypted when stored
 	Config json.RawMessage `json:"config"`

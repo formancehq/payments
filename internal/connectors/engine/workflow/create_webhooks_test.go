@@ -33,8 +33,13 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Success() {
 	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
 		return nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		&s.connector,
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		&models.ConnectorMetadata{
+			ConnectorID:          s.connectorID,
+			Provider:             s.connector.Provider,
+			PollingPeriod:        models.DefaultConfig().PollingPeriod,
+			ScheduledForDeletion: s.connector.ScheduledForDeletion,
+		},
 		nil,
 	)
 
@@ -112,8 +117,8 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageConnectorsGetActivity_Error()
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
-		(*models.Connector)(nil),
+	s.env.OnActivity(activities.StorageConnectorsGetMetadataActivity, mock.Anything, s.connectorID).Once().Return(
+		(*models.ConnectorMetadata)(nil),
 		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 

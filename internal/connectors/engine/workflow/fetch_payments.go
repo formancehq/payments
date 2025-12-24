@@ -113,12 +113,12 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		if len(nextTasks) > 0 {
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextPayments.ConnectorID)
+			connectorMetadata, err := activities.StorageConnectorsGetMetadata(infiniteRetryContext(ctx), fetchNextPayments.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !connectorMetadata.ScheduledForDeletion {
 				for _, payment := range paymentsResponse.Payments {
 					p := payment
 
@@ -135,7 +135,7 @@ func (w Workflow) fetchNextPayments(
 						if err := w.runNextTasks(
 							ctx,
 							fetchNextPayments.Config,
-							connector,
+							connectorMetadata,
 							&FromPayload{
 								ID:      p.Reference,
 								Payload: payload,

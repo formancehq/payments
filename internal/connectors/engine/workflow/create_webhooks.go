@@ -66,12 +66,11 @@ func (w Workflow) createWebhooks(
 		}
 	}
 
-	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
+	connectorMetadata, err := activities.StorageConnectorsGetMetadata(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
 	if err != nil {
-		return fmt.Errorf("getting connector: %w", err)
+		return fmt.Errorf("getting connector metadata: %w", err)
 	}
-
-	if connector.ScheduledForDeletion {
+	if connectorMetadata.ScheduledForDeletion {
 		// avoid scheduling next tasks if connector is scheduled for deletion
 		return nil
 	}
@@ -88,7 +87,7 @@ func (w Workflow) createWebhooks(
 			if err := w.runNextTasks(
 				ctx,
 				createWebhooks.Config,
-				connector,
+				connectorMetadata,
 				&FromPayload{
 					ID:      o.ID,
 					Payload: o.Other,

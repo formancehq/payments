@@ -58,12 +58,12 @@ func (w Workflow) installConnector(
 		return errors.Wrap(err, "failed to store tasks tree")
 	}
 
-	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), installConnector.ConnectorID)
+	connectorMetadata, err := activities.StorageConnectorsGetMetadata(infiniteRetryContext(ctx), installConnector.ConnectorID)
 	if err != nil {
-		return fmt.Errorf("getting connector: %w", err)
+		return fmt.Errorf("getting connector metadata: %w", err)
 	}
 
-	if connector.ScheduledForDeletion {
+	if connectorMetadata.ScheduledForDeletion {
 		return nil
 	}
 
@@ -83,9 +83,9 @@ func (w Workflow) installConnector(
 				},
 			},
 		),
-		Run,
+		RunNextTasks,
 		installConnector.Config,
-		connector,
+		connectorMetadata,
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
