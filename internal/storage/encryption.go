@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -22,16 +23,22 @@ func (s *store) EncryptRaw(message json.RawMessage) (json.RawMessage, error) {
 	return []byte(fmt.Sprintf("%q", b64)), nil
 }
 
-// DecryptRaw decrypts a JSON payload previously encrypted with encryptRaw
+// ErrNotEncrypted indicates that the provided payload is not an encrypted blob
+// produced by EncryptRaw, but rather plain JSON. Callers may treat this as a
+// no-op and pass the original payload through unchanged.
+var ErrNotEncrypted = errors.New("storage: not encrypted")
+
+// DecryptRaw decrypts a JSON payload previously encrypted with EncryptRaw.
 func (s *store) DecryptRaw(message json.RawMessage) (json.RawMessage, error) {
-	// Expect a JSON string containing base64-encoded ciphertext
+	// Expect a JSON string containing base64-encoded ciphertext.
+	// If it's not a JSON string (e.g., it's an object/array), treat as plain text.
 	var b64 string
 	if err := json.Unmarshal(message, &b64); err != nil {
-		return nil, err
+		return nil, ErrNotEncrypted
 	}
 	cipher, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
-		return nil, err
+		return nil, ErrNotEncrypted
 	}
 
 	var plain string
