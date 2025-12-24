@@ -15,7 +15,6 @@ type FetchOpenBankingData struct {
 	PsuID        uuid.UUID
 	ConnectionID string
 	ConnectorID  models.ConnectorID
-	Config       models.Config
 	DataToFetch  []models.OpenBankingDataToFetch
 	FromPayload  *FromPayload
 }
@@ -90,7 +89,6 @@ func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpen
 			),
 			RunFetchNextAccounts,
 			FetchNextAccounts{
-				Config:       fetchOpenBankingData.Config,
 				ConnectorID:  fetchOpenBankingData.ConnectorID,
 				FromPayload:  fetchOpenBankingData.FromPayload,
 				Periodically: false,
@@ -127,7 +125,6 @@ func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpe
 			),
 			RunFetchNextPayments,
 			FetchNextPayments{
-				Config:       fetchOpenBankingData.Config,
 				ConnectorID:  fetchOpenBankingData.ConnectorID,
 				FromPayload:  fetchOpenBankingData.FromPayload,
 				Periodically: false,

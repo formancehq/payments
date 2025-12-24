@@ -13,7 +13,6 @@ import (
 )
 
 type FetchNextAccounts struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
 	Periodically bool               `json:"periodically"`
@@ -96,15 +95,41 @@ func (w Workflow) fetchAccounts(
 		wg := workflow.NewWaitGroup(ctx)
 		errChan := make(chan error, len(accountsResponse.Accounts))
 
-		if len(nextTasks) > 0 {
+		if !IsEventOutboxPatternEnabled(ctx) {
+			errChan = make(chan error, len(accountsResponse.Accounts)*2)
+			for _, account := range accounts {
+				a := account
+
+				sendEvents := SendEvents{
+					Account: &a,
+				}
+				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+			}
+		}
+
+		if !IsRunNextTaskAsActivityEnabled(ctx) {
+			for _, account := range accountsResponse.Accounts {
+				acc := account
+				payload, err := json.Marshal(acc)
+				if err != nil {
+					errChan <- errors.Wrap(err, "marshalling account")
+				}
+				fromPayload := &FromPayload{
+					ID:      acc.Reference,
+					Payload: payload,
+				}
+
+				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextAccount.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextAccount.ConnectorID)
+			plugin, err := w.connectors.Get(fetchNextAccount.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !plugin.IsScheduledForDeletion() {
 				for _, account := range accountsResponse.Accounts {
 					acc := account
 
@@ -119,10 +144,9 @@ func (w Workflow) fetchAccounts(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
-							fetchNextAccount.Config,
-							connector,
+							fetchNextAccount.ConnectorID,
 							&FromPayload{
 								ID:      acc.Reference,
 								Payload: payload,

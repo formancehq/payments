@@ -12,7 +12,6 @@ import (
 
 type CreateWebhooks struct {
 	ConnectorID models.ConnectorID
-	Config      models.Config
 	FromPayload *FromPayload
 }
 
@@ -66,13 +65,11 @@ func (w Workflow) createWebhooks(
 		}
 	}
 
-	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), createWebhooks.ConnectorID)
+	plugin, err := w.connectors.Get(createWebhooks.ConnectorID)
 	if err != nil {
 		return fmt.Errorf("getting connector: %w", err)
 	}
-
-	if connector.ScheduledForDeletion {
-		// avoid scheduling next tasks if connector is scheduled for deletion
+	if plugin.IsScheduledForDeletion() {
 		return nil
 	}
 
@@ -85,10 +82,9 @@ func (w Workflow) createWebhooks(
 		workflow.Go(ctx, func(ctx workflow.Context) {
 			defer wg.Done()
 
-			if err := w.runNextTasks(
+			if err := w.runNextTasksV3_1(
 				ctx,
-				createWebhooks.Config,
-				connector,
+				createWebhooks.ConnectorID,
 				&FromPayload{
 					ID:      o.ID,
 					Payload: o.Other,

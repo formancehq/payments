@@ -13,7 +13,6 @@ import (
 type ResetConnector struct {
 	ConnectorID       models.ConnectorID
 	DefaultWorkerName string
-	Config            models.Config
 	TaskID            models.TaskID
 }
 
@@ -47,6 +46,7 @@ func (w Workflow) resetConnector(
 	ctx workflow.Context,
 	resetConnector ResetConnector,
 ) (*models.ConnectorID, error) {
+	// TODO loading from plugin will not work, but as-is we store in Temporal twice (storageGet + storageStore)
 	connector, err := activities.StorageConnectorsGet(
 		infiniteRetryContext(ctx),
 		resetConnector.ConnectorID,
@@ -124,7 +124,6 @@ func (w Workflow) resetConnector(
 		RunInstallConnector,
 		InstallConnector{
 			ConnectorID: newConnector.ID,
-			Config:      resetConnector.Config,
 		},
 	).Get(ctx, nil); err != nil {
 		return nil, fmt.Errorf("install connector: %w", err)

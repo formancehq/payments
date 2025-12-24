@@ -34,6 +34,7 @@ type UnitTestSuite struct {
 	paymentReversalID   models.PaymentInitiationReversalID
 
 	connector                   models.Connector
+	configuredConnector         models.Connector
 	bankAccount                 models.BankAccount
 	paymentServiceUser          models.PaymentServiceUser
 	paymentPayout               models.Payment
@@ -91,7 +92,19 @@ func (s *UnitTestSuite) addData() {
 		return dummypay.New(name, logger, rm)
 	}, []models.Capability{}, struct{}{}, 25)
 	dummyConf := json.RawMessage(`{"name":"somename","directory":"/tmp"}`)
-	_, _, err := s.w.connectors.Load(s.connectorID, "test", dummyConf, true, true)
+
+	connector := models.Connector{
+		ConnectorBase: models.ConnectorBase{
+			ID:        s.connectorID,
+			Name:      "test",
+			CreatedAt: now,
+			Provider:  "test",
+		},
+		ScheduledForDeletion: false,
+		Config:               dummyConf,
+	}
+	s.configuredConnector = connector
+	_, _, err := s.w.connectors.Load(s.configuredConnector, true, true)
 	s.NoError(err)
 
 	s.accountID = models.AccountID{

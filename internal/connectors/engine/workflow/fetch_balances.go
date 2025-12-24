@@ -13,7 +13,6 @@ import (
 )
 
 type FetchNextBalances struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
 	Periodically bool               `json:"periodically"`
@@ -97,15 +96,41 @@ func (w Workflow) fetchBalances(
 		wg := workflow.NewWaitGroup(ctx)
 		errChan := make(chan error, len(balancesResponse.Balances))
 
-		if len(nextTasks) > 0 {
-			// First, we need to get the connector to check if it is scheduled for deletion
-			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextBalances.ConnectorID)
-			if err != nil {
-				return fmt.Errorf("getting connector: %w", err)
-			}
+		if !IsEventOutboxPatternEnabled(ctx) {
+			errChan = make(chan error, len(balancesResponse.Balances)*2)
+			for _, balance := range balances {
+				b := balance
 
-			if !connector.ScheduledForDeletion {
+				sendEvents := SendEvents{
+					Balance: &b,
+				}
+				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+			}
+		}
+
+		// First, we need to get the connector to check if it is scheduled for deletion
+		// because if it is, we don't need to run the next tasks
+		plugin, err := w.connectors.Get(fetchNextBalances.ConnectorID)
+		if err != nil {
+			return fmt.Errorf("getting connector: %w", err)
+		}
+
+		if !IsRunNextTaskAsActivityEnabled(ctx) {
+			for _, balance := range balancesResponse.Balances {
+				b := balance
+				payload, err := json.Marshal(b)
+				if err != nil {
+					errChan <- errors.Wrap(err, "marshalling balance")
+				}
+				fromPayload := &FromPayload{
+					ID:      fmt.Sprintf("%s-balances", b.AccountReference),
+					Payload: payload,
+				}
+
+				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextBalances.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
+			if !plugin.IsScheduledForDeletion() {
 				for _, balance := range balancesResponse.Balances {
 					b := balance
 
@@ -119,10 +144,9 @@ func (w Workflow) fetchBalances(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
-							fetchNextBalances.Config,
-							connector,
+							fetchNextBalances.ConnectorID,
 							&FromPayload{
 								ID:      fmt.Sprintf("%s-balances", b.AccountReference),
 								Payload: payload,

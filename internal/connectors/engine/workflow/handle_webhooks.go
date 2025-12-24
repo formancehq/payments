@@ -16,12 +16,11 @@ import (
 )
 
 type HandleWebhooks struct {
-	ConnectorID     models.ConnectorID
-	ConnectorConfig models.Config
-	URL             string
-	URLPath         string
-	Webhook         models.Webhook
-	Config          *models.WebhookConfig
+	ConnectorID models.ConnectorID
+	URL         string
+	URLPath     string
+	Webhook     models.Webhook
+	Config      *models.WebhookConfig
 }
 
 func (w Workflow) runHandleWebhooks(
@@ -136,6 +135,7 @@ func (w Workflow) handleDataToStoreWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
+	// TODO do we need a child workflow, or an activity could do?
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -261,6 +261,7 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	})
 }
 
+// TODO do we need a child workflow, or an activity could do?
 func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
@@ -336,7 +337,6 @@ func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 			PsuID:        psuID,
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
-			Config:       handleWebhooks.ConnectorConfig,
 			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},

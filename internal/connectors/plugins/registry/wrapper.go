@@ -27,6 +27,14 @@ func (i *impl) Name() string {
 	return i.plugin.Name()
 }
 
+func (i *impl) IsScheduledForDeletion() bool {
+	return i.plugin.IsScheduledForDeletion()
+}
+
+func (i *impl) ScheduleForDeletion(isScheduledForDeletion bool) {
+	i.plugin.ScheduleForDeletion(isScheduledForDeletion)
+}
+
 func (i *impl) Config() models.PluginInternalConfig {
 	return i.plugin.Config()
 }
