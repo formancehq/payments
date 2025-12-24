@@ -8,6 +8,11 @@ import (
 )
 
 func (a Activities) StorageConnectorsStore(ctx context.Context, connector models.Connector, oldConnectorID *models.ConnectorID) error {
+	decryptedConfig, err := a.storage.DecryptRaw(connector.Config)
+	if err != nil {
+		return temporalStorageError(err)
+	}
+	connector.Config = decryptedConfig
 	return temporalStorageError(a.storage.ConnectorsInstall(ctx, connector, oldConnectorID))
 }
 
