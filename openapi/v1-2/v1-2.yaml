@@ -1742,7 +1742,7 @@ components:
           type: string
           example: 60s
           description: The frequency at which the connector will fetch transactions
-          default: 120s
+          default: 30m
         endpoint:
           type: string
           example: XXX
@@ -1777,7 +1777,7 @@ components:
           description: >
             The frequency at which the connector will try to fetch new
             BalanceTransaction objects from Adyen API.
-          default: 120s
+          default: 30m
     AtlarConfig:
       type: object
       required:

@@ -14,7 +14,7 @@ type AdyenConfig struct {
 	LiveEndpointPrefix *string `json:"liveEndpointPrefix,omitempty"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Adyen API.
 	//
-	PollingPeriod *string `default:"120s" json:"pollingPeriod"`
+	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 }
 
 func (a AdyenConfig) MarshalJSON() ([]byte, error) {
