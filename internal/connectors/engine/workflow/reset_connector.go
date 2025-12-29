@@ -46,7 +46,6 @@ func (w Workflow) resetConnector(
 	ctx workflow.Context,
 	resetConnector ResetConnector,
 ) (*models.ConnectorID, error) {
-	// TODO loading from plugin will not work, but as-is we store in Temporal twice (storageGet + storageStore)
 	connector, err := activities.StorageConnectorsGet(
 		infiniteRetryContext(ctx),
 		resetConnector.ConnectorID,

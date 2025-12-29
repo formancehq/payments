@@ -231,8 +231,7 @@ func (w *WorkerPool) AddDefaultWorker() error {
 	return w.AddWorker(GetDefaultTaskQueue(w.stack))
 }
 
-// Installing a new connector lauches a new worker
-// A default one is instantiated when the workers struct is created
+// AddWorker instantiates a temporal worker
 func (w *WorkerPool) AddWorker(name string) error {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
