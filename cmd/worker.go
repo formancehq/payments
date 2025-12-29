@@ -93,6 +93,8 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 			pollingPeriodMinimum,
 			outboxPollingInterval,
 			outboxCleanupInterval,
+			ServiceName,
+			Version+"-"+Commit,
 		),
 	), nil
 }

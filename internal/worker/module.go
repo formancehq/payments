@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
+	temporalworkflow "go.temporal.io/sdk/workflow"
 	"go.uber.org/fx"
 )
 
@@ -44,6 +45,8 @@ func NewModule(
 	pollingPeriodMinimum time.Duration,
 	outboxPollingInterval time.Duration,
 	outboxCleanupInterval time.Duration,
+	serviceName string,
+	version string,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
@@ -52,6 +55,14 @@ func NewModule(
 			MaxConcurrentActivityTaskPollers:        temporalMaxConcurrentActivityTaskPollers,
 			MaxConcurrentActivityExecutionSize:      temporalMaxConcurrentActivityTaskPollers * temporalMaxSlotsPerPoller,
 			MaxConcurrentLocalActivityExecutionSize: temporalMaxLocalActivitySlots,
+			DeploymentOptions: worker.DeploymentOptions{
+				UseVersioning: true,
+				Version: worker.WorkerDeploymentVersion{
+					DeploymentName: serviceName,
+					BuildID:        version,
+				},
+				DefaultVersioningBehavior: temporalworkflow.VersioningBehaviorAutoUpgrade,
+			},
 		}),
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)
