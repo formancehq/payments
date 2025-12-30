@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -44,14 +43,6 @@ var (
 		},
 		Asset:   "USD/2",
 		Balance: big.NewInt(100),
-	}
-
-	paymentID = models.PaymentID{
-		PaymentReference: models.PaymentReference{
-			Reference: "test",
-			Type:      models.PAYMENT_TYPE_PAYIN,
-		},
-		ConnectorID: connectorID,
 	}
 
 	payment = models.Payment{
@@ -110,52 +101,6 @@ var (
 			ConnectorID: connectorID,
 		},
 		PaymentID: payment.ID,
-	}
-
-	userPendingDisconnect = models.UserConnectionPendingDisconnect{
-		PsuID:        uuid.New(),
-		ConnectorID:  connectorID,
-		ConnectionID: "test-connection-id",
-		At:           time.Now().UTC(),
-		Reason:       pointer.For("test-reason"),
-	}
-
-	userDisconnected = models.UserDisconnected{
-		PsuID:       uuid.New(),
-		ConnectorID: connectorID,
-		At:          time.Now().UTC(),
-		Reason:      pointer.For("test-reason"),
-	}
-
-	userConnectionDisconnected = models.UserConnectionDisconnected{
-		PsuID:        uuid.New(),
-		ConnectorID:  connectorID,
-		ConnectionID: "test-connection-id",
-		ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
-		At:           time.Now().UTC(),
-		Reason:       pointer.For("test-reason"),
-	}
-
-	userConnectionReconnected = models.UserConnectionReconnected{
-		PsuID:        uuid.New(),
-		ConnectorID:  connectorID,
-		ConnectionID: "test-connection-id",
-		At:           time.Now().UTC(),
-	}
-
-	userLinkStatus = models.UserLinkSessionFinished{
-		PsuID:       uuid.New(),
-		ConnectorID: connectorID,
-		AttemptID:   uuid.New(),
-		Status:      models.OpenBankingConnectionAttemptStatusCompleted,
-		Error:       nil,
-	}
-
-	userConnectionDataSynced = models.UserConnectionDataSynced{
-		PsuID:        uuid.New(),
-		ConnectorID:  connectorID,
-		ConnectionID: "test-connection-id",
-		At:           time.Now().UTC(),
 	}
 )
 
