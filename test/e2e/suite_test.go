@@ -42,8 +42,6 @@ var (
 	logger         = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
 	stack          = "somestackval-abcd"
 	magicCookieVal = "needed-for-plugin-to-work"
-	//bunDB             *bun.DB
-	//currentDBDeferred *deferred.Deferred[*pgtesting.Database]
 
 	DBTemplate = "dbtemplate"
 )
