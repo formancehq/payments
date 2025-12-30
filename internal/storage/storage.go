@@ -184,9 +184,9 @@ type Storage interface {
 
 	// Raw encryption helpers
 	// EncryptRaw encrypts a JSON payload using the storage encryption key via Postgres pgcrypto
-	EncryptRaw(message json.RawMessage) (json.RawMessage, error)
+	EncryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error)
 	// DecryptRaw decrypts a previously encrypted JSON payload using the storage encryption key via Postgres pgcrypto
-	DecryptRaw(message json.RawMessage) (json.RawMessage, error)
+	DecryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error)
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"

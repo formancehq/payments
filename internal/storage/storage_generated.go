@@ -434,33 +434,33 @@ func (mr *MockStorageMockRecorder) ConnectorsUninstall(ctx, id any) *gomock.Call
 }
 
 // DecryptRaw mocks base method.
-func (m *MockStorage) DecryptRaw(message json.RawMessage) (json.RawMessage, error) {
+func (m *MockStorage) DecryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DecryptRaw", message)
+	ret := m.ctrl.Call(m, "DecryptRaw", ctx, message)
 	ret0, _ := ret[0].(json.RawMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DecryptRaw indicates an expected call of DecryptRaw.
-func (mr *MockStorageMockRecorder) DecryptRaw(message any) *gomock.Call {
+func (mr *MockStorageMockRecorder) DecryptRaw(ctx, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecryptRaw", reflect.TypeOf((*MockStorage)(nil).DecryptRaw), message)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecryptRaw", reflect.TypeOf((*MockStorage)(nil).DecryptRaw), ctx, message)
 }
 
 // EncryptRaw mocks base method.
-func (m *MockStorage) EncryptRaw(message json.RawMessage) (json.RawMessage, error) {
+func (m *MockStorage) EncryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EncryptRaw", message)
+	ret := m.ctrl.Call(m, "EncryptRaw", ctx, message)
 	ret0, _ := ret[0].(json.RawMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EncryptRaw indicates an expected call of EncryptRaw.
-func (mr *MockStorageMockRecorder) EncryptRaw(message any) *gomock.Call {
+func (mr *MockStorageMockRecorder) EncryptRaw(ctx, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptRaw", reflect.TypeOf((*MockStorage)(nil).EncryptRaw), message)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptRaw", reflect.TypeOf((*MockStorage)(nil).EncryptRaw), ctx, message)
 }
 
 // EventsSentDeleteFromConnectorID mocks base method.

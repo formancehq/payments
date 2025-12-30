@@ -12,7 +12,7 @@ func (a Activities) StorageConnectorsGet(ctx context.Context, connectorID models
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}
-	encryptedConfig, err := a.storage.EncryptRaw(connector.Config)
+	encryptedConfig, err := a.storage.EncryptRaw(ctx, connector.Config)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}

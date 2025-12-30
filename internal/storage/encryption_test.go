@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"testing"
@@ -15,7 +16,7 @@ func TestEncryptDecryptRaw(t *testing.T) {
 
 	plain := json.RawMessage(`{"foo":"bar","n":123}`)
 
-	cipher, err := st.EncryptRaw(plain)
+	cipher, err := st.EncryptRaw(context.Background(), plain)
 	require.NoError(t, err)
 	require.NotNil(t, cipher)
 	require.NotEqual(t, string(plain), string(cipher))
@@ -26,7 +27,7 @@ func TestEncryptDecryptRaw(t *testing.T) {
 	_, err = base64.StdEncoding.DecodeString(b64)
 	require.NoError(t, err)
 
-	back, err := st.DecryptRaw(cipher)
+	back, err := st.DecryptRaw(context.Background(), cipher)
 	require.NoError(t, err)
 	require.Equal(t, string(plain), string(back))
 }

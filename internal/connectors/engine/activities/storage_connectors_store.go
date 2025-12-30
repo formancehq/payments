@@ -10,7 +10,7 @@ import (
 )
 
 func (a Activities) StorageConnectorsStore(ctx context.Context, connector models.Connector, oldConnectorID *models.ConnectorID) error {
-	decryptedConfig, err := a.storage.DecryptRaw(connector.Config)
+	decryptedConfig, err := a.storage.DecryptRaw(ctx, connector.Config)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotEncrypted) {
 			// payload is already plain JSON; leave as-is

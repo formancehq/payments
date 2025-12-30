@@ -61,7 +61,7 @@ var _ = Describe("Activity StorageConnectorsStore", func() {
 	})
 
 	It("returns error when storage.DecryptRaw fails", func(ctx SpecContext) {
-		s.EXPECT().DecryptRaw(connector.Config).Return(nil, errors.New("dec-fail"))
+		s.EXPECT().DecryptRaw(gomock.Any(), connector.Config).Return(nil, errors.New("dec-fail"))
 
 		err := act.StorageConnectorsStore(ctx, connector, oldConnID)
 		Expect(err).To(HaveOccurred())
@@ -71,7 +71,7 @@ var _ = Describe("Activity StorageConnectorsStore", func() {
 	It("returns error when storage.ConnectorsInstall fails after decrypt", func(ctx SpecContext) {
 		decrypted := json.RawMessage(`{"b":2}`)
 
-		s.EXPECT().DecryptRaw(connector.Config).Return(decrypted, nil)
+		s.EXPECT().DecryptRaw(gomock.Any(), connector.Config).Return(decrypted, nil)
 		s.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), oldConnID).
 			DoAndReturn(func(_ context.Context, c models.Connector, old *models.ConnectorID) error {
 				Expect(string(c.Config)).To(Equal(string(decrypted)))
@@ -87,7 +87,7 @@ var _ = Describe("Activity StorageConnectorsStore", func() {
 
 	It("passes through plain-text config when DecryptRaw signals not encrypted", func(ctx SpecContext) {
 		// DecryptRaw indicates the config is not encrypted
-		s.EXPECT().DecryptRaw(connector.Config).Return(nil, storage.ErrNotEncrypted)
+		s.EXPECT().DecryptRaw(gomock.Any(), connector.Config).Return(nil, storage.ErrNotEncrypted)
 
 		// ConnectorsInstall should be called with the original config
 		s.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), oldConnID).
@@ -105,7 +105,7 @@ var _ = Describe("Activity StorageConnectorsStore", func() {
 	It("succeeds and calls ConnectorsInstall with decrypted config and oldConnectorID", func(ctx SpecContext) {
 		decrypted := json.RawMessage(`{"c":3}`)
 
-		s.EXPECT().DecryptRaw(connector.Config).Return(decrypted, nil)
+		s.EXPECT().DecryptRaw(gomock.Any(), connector.Config).Return(decrypted, nil)
 		s.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any(), oldConnID).
 			DoAndReturn(func(_ context.Context, c models.Connector, old *models.ConnectorID) error {
 				Expect(string(c.Config)).To(Equal(string(decrypted)))
