@@ -271,4 +271,4 @@ func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID m
 const RunNextTasksV3_1 = "RunNextTasksV3_1"
 
 // Deprecated: use RunNextTasksV3_1 instead, we keep that it during 3.0 => 3.1 migration
-const RunNextTasks = "Run" //nolint:staticcheckk
+const RunNextTasks = "Run" //nolint:staticcheck

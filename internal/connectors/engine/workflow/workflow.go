@@ -181,8 +181,8 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runOutboxCleanup,
 		}).
 		Append(temporalworker.Definition{
-			Name: RunNextTasks,   //nolint:staticcheckk
-			Func: w.runNextTasks, //nolint:staticcheckk
+			Name: RunNextTasks,   //nolint:staticcheck
+			Func: w.runNextTasks, //nolint:staticcheck
 		}).
 		Append(temporalworker.Definition{
 			Name: RunSendEvents,   //nolint:staticcheck // ignore deprecation

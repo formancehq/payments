@@ -87,7 +87,7 @@ func TestManager_Load(t *testing.T) {
 			rawConfig:              json.RawMessage(`{"name":"connector is scheduled for deletion","directory":"/tmp","pollingPeriod":"40m"}`),
 			expectError:            false,
 			strictMode:             false,
-			isScheduledForDeletion: false,
+			isScheduledForDeletion: true,
 		},
 	}
 
