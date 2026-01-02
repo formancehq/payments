@@ -69,31 +69,42 @@ func (w Workflow) createWebhooks(
 	if err != nil {
 		return fmt.Errorf("getting connector: %w", err)
 	}
-	if plugin.IsScheduledForDeletion() {
-		return nil
-	}
 
 	wg := workflow.NewWaitGroup(ctx)
 	errChan := make(chan error, len(resp.Others)*2)
-	for _, other := range resp.Others {
-		o := other
 
-		wg.Add(1)
-		workflow.Go(ctx, func(ctx workflow.Context) {
-			defer wg.Done()
-
-			if err := w.runNextTasksV3_1(
-				ctx,
-				createWebhooks.ConnectorID,
-				&FromPayload{
-					ID:      o.ID,
-					Payload: o.Other,
-				},
-				nextTasks,
-			); err != nil {
-				errChan <- errors.Wrap(err, "running next tasks")
+	if !IsRunNextTaskAsActivityEnabled(ctx) {
+		for _, other := range resp.Others {
+			o := other
+			payload := &FromPayload{
+				ID:      o.ID,
+				Payload: o.Other,
 			}
-		})
+			w.runNextTaskAsChildWorkflow(ctx, createWebhooks.ConnectorID, nextTasks, wg, payload, errChan)
+		}
+	} else {
+		if !plugin.IsScheduledForDeletion() {
+			for _, other := range resp.Others {
+				o := other
+
+				wg.Add(1)
+				workflow.Go(ctx, func(ctx workflow.Context) {
+					defer wg.Done()
+
+					if err := w.runNextTasksV3_1(
+						ctx,
+						createWebhooks.ConnectorID,
+						&FromPayload{
+							ID:      o.ID,
+							Payload: o.Other,
+						},
+						nextTasks,
+					); err != nil {
+						errChan <- errors.Wrap(err, "running next tasks")
+					}
+				})
+			}
+		}
 	}
 
 	wg.Wait(ctx)
