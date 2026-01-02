@@ -1641,18 +1641,6 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 		return err
 	}
 
-	if !connector.ScheduledForDeletion {
-		config, err := e.connectors.GetConfig(connector.ID)
-		if err != nil {
-			return err
-		}
-
-		// Launch the workflow
-		_, err = e.launchInstallWorkflow(ctx, connector, config)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

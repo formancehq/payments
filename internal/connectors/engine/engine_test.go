@@ -94,24 +94,7 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should fail when workflow cannot be launched", func(ctx SpecContext) {
-			expectedErr := fmt.Errorf("workflow error")
-			conf := json.RawMessage(`{}`)
-			connector := models.Connector{Config: conf}
-			manager.EXPECT().Load(gomock.Any(), false, false).Return("name", conf, nil)
-			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil)
-			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
-			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil)
-			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
-				workflow.RunInstallConnector,
-				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
-			).Return(nil, expectedErr)
-			err := eng.OnStart(ctx)
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(expectedErr))
-		})
-
-		It("should launch a workflow for each connector", func(ctx SpecContext) {
+		It("should load each connector", func(ctx SpecContext) {
 			conf := json.RawMessage(`{}`)
 			connectors := []models.Connector{
 				{Config: conf},
@@ -119,12 +102,7 @@ var _ = Describe("Engine Tests", func() {
 			}
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
-			manager.EXPECT().GetConfig(gomock.Any()).Return(models.Config{}, nil).MinTimes(len(connectors))
 			manager.EXPECT().Load(gomock.Any(), false, false).Return("name", conf, nil).MinTimes(len(connectors))
-			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
-				workflow.RunInstallConnector,
-				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
-			).Return(wr, nil).MinTimes(len(connectors))
 			err := eng.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})
