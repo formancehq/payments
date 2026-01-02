@@ -11,15 +11,15 @@ import (
 
 func (a Activities) StorageConnectorsStore(ctx context.Context, connector models.Connector, oldConnectorID *models.ConnectorID) error {
 	decryptedConfig, err := a.storage.DecryptRaw(ctx, connector.Config)
-	if err != nil {
-		if errors.Is(err, storage.ErrNotEncrypted) {
-			// payload is already plain JSON; leave as-is
-		} else {
-			return temporalStorageError(err)
-		}
-	} else {
+	switch {
+	case err == nil:
 		connector.Config = decryptedConfig
+	case errors.Is(err, storage.ErrNotEncrypted):
+		// Payload is already plain JSON; leave as-is
+	default:
+		return temporalStorageError(err)
 	}
+
 	return temporalStorageError(a.storage.ConnectorsInstall(ctx, connector, oldConnectorID))
 }
 
