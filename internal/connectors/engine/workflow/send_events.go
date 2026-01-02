@@ -273,7 +273,7 @@ func sendEvent(
 	return nil
 }
 
-func (w Workflow) runSendEventAsChildWorkflow(ctx workflow.Context, wg workflow.WaitGroup, evts SendEvents, errChan chan error) chan error {
+func (w Workflow) runSendEventAsChildWorkflow(ctx workflow.Context, wg workflow.WaitGroup, evts SendEvents, errChan chan<- error) {
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
@@ -295,7 +295,6 @@ func (w Workflow) runSendEventAsChildWorkflow(ctx workflow.Context, wg workflow.
 			errChan <- errors.Wrap(err, "sending events")
 		}
 	})
-	return errChan
 }
 
 // RunSendEvents

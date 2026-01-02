@@ -104,7 +104,7 @@ func (w Workflow) fetchBalances(
 				sendEvents := SendEvents{
 					Balance: &b,
 				}
-				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+				w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
 			}
 		}
 
@@ -127,7 +127,7 @@ func (w Workflow) fetchBalances(
 					Payload: payload,
 				}
 
-				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextBalances.ConnectorID, nextTasks, wg, fromPayload, errChan)
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextBalances.ConnectorID, nextTasks, wg, fromPayload, errChan)
 			}
 		} else if len(nextTasks) > 0 {
 			if !plugin.IsScheduledForDeletion() {

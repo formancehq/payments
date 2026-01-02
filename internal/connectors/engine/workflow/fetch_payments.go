@@ -141,7 +141,7 @@ func (w Workflow) fetchNextPayments(
 				sendEvents := SendEvents{
 					Payment: &p,
 				}
-				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+				w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
 			}
 		}
 
@@ -157,7 +157,7 @@ func (w Workflow) fetchNextPayments(
 					Payload: payload,
 				}
 
-				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextPayments.ConnectorID, nextTasks, wg, fromPayload, errChan)
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextPayments.ConnectorID, nextTasks, wg, fromPayload, errChan)
 			}
 		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion

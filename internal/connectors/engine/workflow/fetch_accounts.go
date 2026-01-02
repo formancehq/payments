@@ -103,7 +103,7 @@ func (w Workflow) fetchAccounts(
 				sendEvents := SendEvents{
 					Account: &a,
 				}
-				errChan = w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+				w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
 			}
 		}
 
@@ -119,7 +119,7 @@ func (w Workflow) fetchAccounts(
 					Payload: payload,
 				}
 
-				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextAccount.ConnectorID, nextTasks, wg, fromPayload, errChan)
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextAccount.ConnectorID, nextTasks, wg, fromPayload, errChan)
 			}
 		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion

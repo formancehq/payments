@@ -240,7 +240,7 @@ func (w Workflow) runNextTasks(
 	)
 }
 
-func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID models.ConnectorID, nextTasks []models.ConnectorTaskTree, wg workflow.WaitGroup, fromPayload *FromPayload, errChan chan error) chan error {
+func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID models.ConnectorID, nextTasks []models.ConnectorTaskTree, wg workflow.WaitGroup, fromPayload *FromPayload, errChan chan<- error) {
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
@@ -265,7 +265,6 @@ func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID m
 			errChan <- errors.Wrap(err, "running next workflow")
 		}
 	})
-	return errChan
 }
 
 const RunNextTasksV3_1 = "RunNextTasksV3_1"

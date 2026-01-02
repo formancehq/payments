@@ -80,7 +80,7 @@ func (w Workflow) fetchNextOthers(
 					Payload: o.Other,
 				}
 
-				errChan = w.runNextTaskAsChildWorkflow(ctx, fetchNextOthers.ConnectorID, nextTasks, wg, fromPayload, errChan)
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextOthers.ConnectorID, nextTasks, wg, fromPayload, errChan)
 			}
 		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
