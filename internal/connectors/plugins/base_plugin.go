@@ -2,12 +2,13 @@ package plugins
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/formancehq/payments/internal/models"
 )
 
 type basePlugin struct {
-	isScheduledForDeletion bool
+	isScheduledForDeletion atomic.Bool
 }
 
 func NewBasePlugin() models.Plugin {
@@ -19,11 +20,11 @@ func (dp *basePlugin) Name() string {
 }
 
 func (dp *basePlugin) IsScheduledForDeletion() bool {
-	return dp.isScheduledForDeletion
+	return dp.isScheduledForDeletion.Load()
 }
 
 func (dp *basePlugin) ScheduleForDeletion(isScheduledForDeletion bool) {
-	dp.isScheduledForDeletion = isScheduledForDeletion
+	dp.isScheduledForDeletion.Store(isScheduledForDeletion)
 }
 
 func (dp *basePlugin) Config() models.PluginInternalConfig {
