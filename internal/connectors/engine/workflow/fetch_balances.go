@@ -140,7 +140,7 @@ func (w Workflow) fetchBalances(
 
 						payload, err := json.Marshal(b)
 						if err != nil {
-							errChan <- errors.Wrap(err, "marshalling account")
+							errChan <- errors.Wrap(err, "marshalling balances")
 							return
 						}
 
