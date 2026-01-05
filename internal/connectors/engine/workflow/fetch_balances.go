@@ -94,10 +94,9 @@ func (w Workflow) fetchBalances(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(balancesResponse.Balances))
+		errChan := make(chan error, len(balancesResponse.Balances)*2)
 
 		if !IsEventOutboxPatternEnabled(ctx) {
-			errChan = make(chan error, len(balancesResponse.Balances)*2)
 			for _, balance := range balances {
 				b := balance
 

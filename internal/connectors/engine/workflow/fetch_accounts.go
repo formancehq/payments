@@ -93,10 +93,9 @@ func (w Workflow) fetchAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(accountsResponse.Accounts))
+		errChan := make(chan error, len(accountsResponse.Accounts)*2)
 
 		if !IsEventOutboxPatternEnabled(ctx) {
-			errChan = make(chan error, len(accountsResponse.Accounts)*2)
 			for _, account := range accounts {
 				a := account
 

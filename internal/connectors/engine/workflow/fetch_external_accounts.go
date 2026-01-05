@@ -93,10 +93,9 @@ func (w Workflow) fetchExternalAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts))
+		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
 
 		if !IsEventOutboxPatternEnabled(ctx) {
-			errChan = make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
 			for _, account := range accounts {
 				a := account
 

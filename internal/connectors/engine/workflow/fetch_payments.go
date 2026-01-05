@@ -93,10 +93,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*2)
-		if IsRunNextTaskAsActivityEnabled(ctx) {
-			errChan = make(chan error, len(paymentsResponse.Payments)*3)
-		}
+		errChan := make(chan error, len(paymentsResponse.Payments)*3)
 		for _, payment := range payments {
 			p := payment
 
