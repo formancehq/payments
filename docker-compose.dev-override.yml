@@ -14,6 +14,8 @@ services:
     image: payments-dev:latest
     pull_policy: never
     command: go run . migrate up
+#    image: ghcr.io/formancehq/payments:v3.0.18-scratch
+#    command: migrate up
     volumes:
       - .:/app
 
@@ -24,6 +26,8 @@ services:
     image: payments-dev:latest
     pull_policy: never
     command: sh -c "mkdir -p /app/tmp && chmod 755 /app/tmp && air -c .air.toml -- server"
+#    image: ghcr.io/formancehq/payments:v3.0.18-scratch
+#    command: server
     ports:
       - "8080:8080"
       - "9090:9090"
@@ -38,8 +42,15 @@ services:
       context: .
       dockerfile: dev.Dockerfile
     image: payments-dev:latest
+# Uncomment the below if you want multiple versions of the same pod. Note that you need to drop the port forwarding
+# as well, including in the main docker-compose.yml file
+#    deploy:
+#      mode: replicated
+#      replicas: 2
     pull_policy: never
     command: sh -c "mkdir -p /app/tmp && chmod 755 /app/tmp && air -c .air.toml -- worker"
+#    image: ghcr.io/formancehq/payments:v3.0.18-scratch
+#    command: worker
     ports:
       - "9191:9090"
       - "2346:2345"  # Delve debug port for worker
@@ -47,3 +58,35 @@ services:
       - .:/app
     environment:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
+
+#  # You can use the below (change image tag!) to test compatibility with previous versions of payments.
+#  # This is super useful to check that previous code still works with current DB, and likewise to test that Temporal
+#  # workflows created on the new code can be ran by the old one.
+#  # Keep in mind that in a multi pod environment, you will have both versions cohabitating during deployment.
+#  payments-worker-previous-version:
+#    image: ghcr.io/formancehq/payments:v3.0.18-scratch
+#    command: worker
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      payments-migrate:
+#        condition: service_completed_successfully
+#    ports:
+#      - "9192:9090"
+#    volumes:
+#      - .:/app/components/payments
+#    working_dir: /app/components/payments
+#    environment:
+#      DEBUG: true
+#      POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
+#      CONFIG_ENCRYPTION_KEY: mysuperencryptionkey
+#      TEMPORAL_ADDRESS: temporal:7233
+#      PLUGIN_MAGIC_COOKIE: mysupercookie
+#      TEMPORAL_INIT_SEARCH_ATTRIBUTES: false
+#      STACK_URL: http://gateway:8092
+#      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
