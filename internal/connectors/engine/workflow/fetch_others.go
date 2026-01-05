@@ -72,7 +72,7 @@ func (w Workflow) fetchNextOthers(
 		wg := workflow.NewWaitGroup(ctx)
 		errChan := make(chan error, len(othersResponse.Others))
 
-		if !IsRunNextTaskAsActivityEnabled(ctx) {
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
 			for _, other := range othersResponse.Others {
 				o := other
 				fromPayload := &FromPayload{

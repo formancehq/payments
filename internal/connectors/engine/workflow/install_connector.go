@@ -71,7 +71,7 @@ func (w Workflow) installConnector(
 	if plugin.IsScheduledForDeletion() {
 		return nil
 	}
-	if IsRunNextTaskAsActivityEnabled(ctx) {
+	if IsRunNextTaskOptimizationsEnabled(ctx) {
 		if err := workflow.ExecuteChildWorkflow(
 			workflow.WithChildOptions(
 				ctx,

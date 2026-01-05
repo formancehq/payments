@@ -106,7 +106,7 @@ func (w Workflow) fetchExternalAccounts(
 			}
 		}
 
-		if !IsRunNextTaskAsActivityEnabled(ctx) {
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
 			for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
 				acc := externalAccount
 				payload, err := json.Marshal(acc)

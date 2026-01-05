@@ -114,7 +114,7 @@ func (w Workflow) fetchBalances(
 			return fmt.Errorf("getting connector: %w", err)
 		}
 
-		if !IsRunNextTaskAsActivityEnabled(ctx) {
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
 			for _, balance := range balancesResponse.Balances {
 				b := balance
 				payload, err := json.Marshal(b)

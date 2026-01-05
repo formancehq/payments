@@ -101,7 +101,7 @@ func (w Workflow) fetchNextPayments(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
-				if IsPaymentInitiationUpdateAsActivityEnabled(ctx) {
+				if IsPaymentInitiationUpdateOptimizationsEnabled(ctx) {
 					if err := activities.StoragePaymentInitiationUpdateFromPayment(
 						infiniteRetryContext(ctx),
 						p.Status,
@@ -142,7 +142,7 @@ func (w Workflow) fetchNextPayments(
 			}
 		}
 
-		if !IsRunNextTaskAsActivityEnabled(ctx) {
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
 			for _, payment := range paymentsResponse.Payments {
 				p := payment
 				payload, err := json.Marshal(p)

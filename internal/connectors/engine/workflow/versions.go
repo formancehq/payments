@@ -13,12 +13,12 @@ func IsEventOutboxPatternEnabled(ctx workflow.Context) bool {
 	return version > workflow.DefaultVersion
 }
 
-func IsRunNextTaskAsActivityEnabled(ctx workflow.Context) bool {
+func IsRunNextTaskOptimizationsEnabled(ctx workflow.Context) bool {
 	version := workflow.GetVersion(ctx, versionFlagRunNextTaskAsActivity, workflow.DefaultVersion, 1)
 	return version > workflow.DefaultVersion
 }
 
-func IsPaymentInitiationUpdateAsActivityEnabled(ctx workflow.Context) bool {
+func IsPaymentInitiationUpdateOptimizationsEnabled(ctx workflow.Context) bool {
 	version := workflow.GetVersion(ctx, versionFlagPaymentInitiationUpdateAsActivity, workflow.DefaultVersion, 1)
 	return version > workflow.DefaultVersion
 }

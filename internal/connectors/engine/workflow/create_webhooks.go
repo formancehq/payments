@@ -73,7 +73,7 @@ func (w Workflow) createWebhooks(
 	wg := workflow.NewWaitGroup(ctx)
 	errChan := make(chan error, len(resp.Others)*2)
 
-	if !IsRunNextTaskAsActivityEnabled(ctx) {
+	if !IsRunNextTaskOptimizationsEnabled(ctx) {
 		for _, other := range resp.Others {
 			o := other
 			payload := &FromPayload{

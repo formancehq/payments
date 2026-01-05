@@ -106,7 +106,7 @@ func (w Workflow) fetchAccounts(
 			}
 		}
 
-		if !IsRunNextTaskAsActivityEnabled(ctx) {
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
 			for _, account := range accountsResponse.Accounts {
 				acc := account
 				payload, err := json.Marshal(acc)
