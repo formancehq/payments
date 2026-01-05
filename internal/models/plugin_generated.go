@@ -294,6 +294,20 @@ func (mr *MockPluginMockRecorder) Install(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Install", reflect.TypeOf((*MockPlugin)(nil).Install), arg0, arg1)
 }
 
+// IsScheduledForDeletion mocks base method.
+func (m *MockPlugin) IsScheduledForDeletion() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsScheduledForDeletion")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsScheduledForDeletion indicates an expected call of IsScheduledForDeletion.
+func (mr *MockPluginMockRecorder) IsScheduledForDeletion() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsScheduledForDeletion", reflect.TypeOf((*MockPlugin)(nil).IsScheduledForDeletion))
+}
+
 // Name mocks base method.
 func (m *MockPlugin) Name() string {
 	m.ctrl.T.Helper()
@@ -366,6 +380,18 @@ func (m *MockPlugin) ReverseTransfer(arg0 context.Context, arg1 ReverseTransferR
 func (mr *MockPluginMockRecorder) ReverseTransfer(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReverseTransfer", reflect.TypeOf((*MockPlugin)(nil).ReverseTransfer), arg0, arg1)
+}
+
+// ScheduleForDeletion mocks base method.
+func (m *MockPlugin) ScheduleForDeletion(arg0 bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ScheduleForDeletion", arg0)
+}
+
+// ScheduleForDeletion indicates an expected call of ScheduleForDeletion.
+func (mr *MockPluginMockRecorder) ScheduleForDeletion(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleForDeletion", reflect.TypeOf((*MockPlugin)(nil).ScheduleForDeletion), arg0)
 }
 
 // TranslateWebhook mocks base method.

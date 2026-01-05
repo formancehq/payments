@@ -11,7 +11,6 @@ import (
 )
 
 type FetchNextOthers struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	Name         string             `json:"name"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
@@ -70,17 +69,28 @@ func (w Workflow) fetchNextOthers(
 			return errors.Wrap(err, "fetching next others")
 		}
 
-		if len(nextTasks) > 0 {
+		wg := workflow.NewWaitGroup(ctx)
+		errChan := make(chan error, len(othersResponse.Others))
+
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
+			for _, other := range othersResponse.Others {
+				o := other
+				fromPayload := &FromPayload{
+					ID:      o.ID,
+					Payload: o.Other,
+				}
+
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextOthers.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextOthers.ConnectorID)
+			plugin, err := w.connectors.Get(fetchNextOthers.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
-				wg := workflow.NewWaitGroup(ctx)
-				errChan := make(chan error, len(othersResponse.Others))
+			if !plugin.IsScheduledForDeletion() {
 				for _, other := range othersResponse.Others {
 					o := other
 
@@ -88,10 +98,9 @@ func (w Workflow) fetchNextOthers(
 					workflow.Go(ctx, func(ctx workflow.Context) {
 						defer wg.Done()
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
-							fetchNextOthers.Config,
-							connector,
+							fetchNextOthers.ConnectorID,
 							&FromPayload{
 								ID:      o.ID,
 								Payload: o.Other,
@@ -102,14 +111,14 @@ func (w Workflow) fetchNextOthers(
 						}
 					})
 				}
+			}
+		}
 
-				wg.Wait(ctx)
-				close(errChan)
-				for err := range errChan {
-					if err != nil {
-						return err
-					}
-				}
+		wg.Wait(ctx)
+		close(errChan)
+		for err := range errChan {
+			if err != nil {
+				return err
 			}
 		}
 

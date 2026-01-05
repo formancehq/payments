@@ -142,7 +142,16 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Reference: uuid.New(),
 		Provider:  provider,
 	}
-	connectorName, validatedConfig, err := e.connectors.Load(connectorID, provider, rawConfig, false, true)
+
+	connector := models.Connector{
+		ConnectorBase: models.ConnectorBase{
+			ID:       connectorID,
+			Provider: provider,
+		},
+		Config:               rawConfig,
+		ScheduledForDeletion: false,
+	}
+	connectorName, validatedConfig, err := e.connectors.Load(connector, false, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -151,7 +160,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	connector := models.Connector{
+	connector = models.Connector{
 		ConnectorBase: models.ConnectorBase{
 			ID:        connectorID,
 			Name:      connectorName,
@@ -290,12 +299,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		return models.Task{}, err
 	}
 
-	config, err := e.connectors.GetConfig(connectorID)
-	if err != nil {
-		return models.Task{}, err
-	}
-
-	_, err = e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
@@ -309,7 +313,6 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		workflow.RunResetConnector,
 		workflow.ResetConnector{
 			ConnectorID:       connectorID,
-			Config:            config,
 			DefaultWorkerName: GetDefaultTaskQueue(e.stack),
 			TaskID:            task.ID,
 		},
@@ -346,7 +349,8 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	connectorName, validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, rawConfig, true, true)
+	connector.Config = rawConfig
+	connectorName, validatedConfig, err := e.connectors.Load(*connector, true, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -1218,11 +1222,6 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 		return err
 	}
 
-	connectorConfig, err := e.connectors.GetConfig(in.ConnectorID)
-	if err != nil {
-		return err
-	}
-
 	errGroup, groupCtx := errgroup.WithContext(ctx)
 	for _, webhook := range webhooks {
 		w := webhook
@@ -1240,12 +1239,11 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 				},
 				workflow.RunHandleWebhooks,
 				workflow.HandleWebhooks{
-					ConnectorID:     w.ConnectorID,
-					ConnectorConfig: connectorConfig,
-					URL:             url,
-					URLPath:         urlPath,
-					Webhook:         w,
-					Config:          config,
+					ConnectorID: w.ConnectorID,
+					URL:         url,
+					URLPath:     urlPath,
+					Webhook:     w,
+					Config:      config,
 				},
 			); err != nil {
 				return err
@@ -1589,15 +1587,15 @@ func (e *engine) OnStart(ctx context.Context) error {
 	return nil
 }
 
-func (w *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	w.logger.Debugf("api got insert notification for %q", connectorID.String())
-	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
+func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	e.logger.Debugf("api got insert notification for %q", connectorID.String())
+	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
 		return err
 	}
 
 	// skip strict polling period validation if installed by another instance
-	_, _, err = w.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false)
+	_, _, err = e.connectors.Load(*connector, false, false)
 	if err != nil {
 		return err
 	}
@@ -1617,13 +1615,8 @@ func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.Connecto
 		return err
 	}
 
-	if connector.ScheduledForDeletion {
-		// if we're deleting the plugin no other changes matter
-		return nil
-	}
-
 	// skip strict polling period validation if installed by another instance
-	_, _, err = e.connectors.Load(connector.ID, connector.Provider, connector.Config, true, false)
+	_, _, err = e.connectors.Load(*connector, true, false)
 	if err != nil {
 		e.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
@@ -1644,22 +1637,10 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	// after the deletion of the connector entry in the database.
 
 	// skip strict polling period validation if installed by another instance
-	if _, _, err := e.connectors.Load(connector.ID, connector.Provider, connector.Config, false, false); err != nil {
+	if _, _, err := e.connectors.Load(connector, false, false); err != nil {
 		return err
 	}
 
-	if !connector.ScheduledForDeletion {
-		config, err := e.connectors.GetConfig(connector.ID)
-		if err != nil {
-			return err
-		}
-
-		// Launch the workflow
-		_, err = e.launchInstallWorkflow(ctx, connector, config)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -1678,7 +1659,6 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 		workflow.RunInstallConnector,
 		workflow.InstallConnector{
 			ConnectorID: connector.ID,
-			Config:      config,
 		},
 	)
 }

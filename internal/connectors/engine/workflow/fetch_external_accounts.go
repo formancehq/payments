@@ -13,7 +13,6 @@ import (
 )
 
 type FetchNextExternalAccounts struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
 	Periodically bool               `json:"periodically"`
@@ -94,17 +93,42 @@ func (w Workflow) fetchExternalAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts))
+		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
 
-		if len(nextTasks) > 0 {
+		if !IsEventOutboxPatternEnabled(ctx) {
+			for _, account := range accounts {
+				a := account
+
+				sendEvents := SendEvents{
+					Account: &a,
+				}
+				w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+			}
+		}
+
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
+			for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
+				acc := externalAccount
+				payload, err := json.Marshal(acc)
+				if err != nil {
+					errChan <- errors.Wrap(err, "marshalling external account")
+				}
+				fromPayload := &FromPayload{
+					ID:      acc.Reference,
+					Payload: payload,
+				}
+
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextExternalAccount.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion
 			// because if it is, we don't need to run the next tasks
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextExternalAccount.ConnectorID)
+			plugin, err := w.connectors.Get(fetchNextExternalAccount.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !plugin.IsScheduledForDeletion() {
 				for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
 					acc := externalAccount
 
@@ -118,10 +142,9 @@ func (w Workflow) fetchExternalAccounts(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
-							fetchNextExternalAccount.Config,
-							connector,
+							fetchNextExternalAccount.ConnectorID,
 							&FromPayload{
 								ID:      acc.Reference,
 								Payload: payload,

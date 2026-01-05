@@ -419,12 +419,6 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Name: "StorageOpenBankingConnectionsGetFromConnectionID",
 			Func: a.StorageOpenBankingConnectionsGetFromConnectionID,
 		}).
-		// TODO sendEvents activity should be removed in the next version (3.2)
-		// We need to keep it a while more until all RunSendEvent workflows are completed.
-		Append(temporalworker.Definition{
-			Name: "SendEvents",
-			Func: a.SendEvents,
-		}).
 		Append(temporalworker.Definition{
 			Name: "TemporalScheduleCreate",
 			Func: a.TemporalScheduleCreate,
@@ -456,6 +450,60 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StorageOutboxEventsInsert",
 			Func: a.StorageOutboxEventsInsert,
+		}).
+		// TODO sendEvents activity should be removed in the next version (3.2)
+		// We need to keep it a while more until all RunSendEvent workflows are completed.
+		Append(temporalworker.Definition{
+			Name: "SendEvents",
+			Func: a.SendEvents, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationIDsListFromPaymentID",
+			Func: a.StoragePaymentInitiationIDsListFromPaymentID, //nolint:staticcheck // ignore deprecation
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendAccount",
+			Func: a.EventsSendAccount, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendBalance",
+			Func: a.EventsSendBalance, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendBankAccount",
+			Func: a.EventsSendBankAccount, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendConnectorReset",
+			Func: a.EventsSendConnectorReset, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPayment",
+			Func: a.EventsSendPayment, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPoolCreation",
+			Func: a.EventsSendPoolCreation, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPoolDeletion",
+			Func: a.EventsSendPoolDeletion, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentInitiation",
+			Func: a.EventsSendPaymentInitiation, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentInitiationAdjustment",
+			Func: a.EventsSendPaymentInitiationAdjustment, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentInitiationRelatedPayment",
+			Func: a.EventsSendPaymentInitiationRelatedPayment, //nolint:staticcheck // ignore deprecated
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendTaskUpdated",
+			Func: a.EventsSendTaskUpdated, //nolint:staticcheck // ignore deprecated
 		})
 }
 

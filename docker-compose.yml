@@ -44,7 +44,7 @@ services:
       POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
 
   temporal:
-    image: temporalio/auto-setup:1.25.0
+    image: temporalio/auto-setup:1.29.1
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,7 +66,7 @@ services:
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CLI_ADDRESS=temporal:7233
-    image: temporalio/admin-tools:1.25.0-tctl-1.18.1-cli-1.0.0
+    image: temporalio/admin-tools:1.29.1-tctl-1.18.4-cli-1.5.0
     stdin_open: true
     tty: true
   temporal-ui:
@@ -76,7 +76,7 @@ services:
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    image: temporalio/ui:2.26.2
+    image: temporalio/ui:2.44.0
     ports:
       - 8081:8080
 
