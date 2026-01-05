@@ -133,8 +133,8 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runPollTransfer,
 		}).
 		Append(temporalworker.Definition{
-			Name: Run,
-			Func: w.runNextTasks,
+			Name: RunNextTasksV3_1,
+			Func: w.runNextTasksV3_1,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunCreateWebhooks,
@@ -179,6 +179,18 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunOutboxCleanup,
 			Func: w.runOutboxCleanup,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunNextTasks,   //nolint:staticcheck
+			Func: w.runNextTasks, //nolint:staticcheck
+		}).
+		Append(temporalworker.Definition{
+			Name: RunSendEvents,   //nolint:staticcheck // ignore deprecation
+			Func: w.runSendEvents, //nolint:staticcheck // ignore deprecation
+		}).
+		Append(temporalworker.Definition{
+			Name: RunUpdatePaymentInitiationFromPayment,   //nolint:staticcheck // ignore deprecation
+			Func: w.runUpdatePaymentInitiationFromPayment, //nolint:staticcheck // ignore deprecation
 		})
 }
 

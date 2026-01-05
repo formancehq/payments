@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -13,10 +12,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w Workflow) runNextTasks(
+func (w Workflow) runNextTasksV3_1(
 	ctx workflow.Context,
-	config models.Config,
-	connector *models.Connector,
+	connectorID models.ConnectorID,
 	fromPayload *FromPayload,
 	taskTree []models.ConnectorTaskTree,
 ) error {
@@ -28,8 +26,7 @@ func (w Workflow) runNextTasks(
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
 			req := FetchNextAccounts{
-				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -40,8 +37,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 			req := FetchNextExternalAccounts{
-				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -52,8 +48,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_OTHERS:
 			req := FetchNextOthers{
-				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				Name:         task.Name,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
@@ -65,8 +60,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
-				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -77,8 +71,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_FETCH_BALANCES:
 			req := FetchNextBalances{
-				Config:       config,
-				ConnectorID:  connector.ID,
+				ConnectorID:  connectorID,
 				FromPayload:  fromPayload,
 				Periodically: task.Periodically,
 			}
@@ -89,8 +82,7 @@ func (w Workflow) runNextTasks(
 
 		case models.TASK_CREATE_WEBHOOKS:
 			req := CreateWebhooks{
-				Config:      config,
-				ConnectorID: connector.ID,
+				ConnectorID: connectorID,
 				FromPayload: fromPayload,
 			}
 
@@ -107,7 +99,7 @@ func (w Workflow) runNextTasks(
 			// TODO(polo): context
 			err := w.scheduleNextWorkflow(
 				ctx,
-				connector,
+				connectorID,
 				capability,
 				task,
 				fromPayload,
@@ -146,7 +138,7 @@ func (w Workflow) runNextTasks(
 
 func (w Workflow) scheduleNextWorkflow(
 	ctx workflow.Context,
-	connector *models.Connector,
+	connectorID models.ConnectorID,
 	capability models.Capability,
 	task models.ConnectorTaskTree,
 	fromPayload *FromPayload,
@@ -154,21 +146,14 @@ func (w Workflow) scheduleNextWorkflow(
 	request interface{},
 ) error {
 	var (
-		config     models.Config
 		scheduleID string
 	)
 	if fromPayload == nil {
-		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connector.ID.String(), capability.String())
+		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connectorID.String(), capability.String())
 	} else {
-		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connector.ID.String(), capability.String(), fromPayload.ID)
+		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
 	}
 
-	// use most up-to-date configuration
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	connectorID := connector.ID
 	err := activities.StorageSchedulesStore(
 		infiniteRetryContext(ctx),
 		models.Schedule{
@@ -176,6 +161,11 @@ func (w Workflow) scheduleNextWorkflow(
 			ConnectorID: connectorID,
 			CreatedAt:   workflow.Now(ctx).UTC(),
 		})
+	if err != nil {
+		return err
+	}
+
+	config, err := w.connectors.GetConfig(connectorID)
 	if err != nil {
 		return err
 	}
@@ -224,4 +214,60 @@ func calculateJitter(pollingPeriod time.Duration) time.Duration {
 	return maxJitter
 }
 
-const Run = "Run"
+// Deprecated: use RunNextTasksV3_1 instead, we keep that it during 3.0 => 3.1 migration
+func (w Workflow) runNextTasks(
+	ctx workflow.Context,
+	config models.Config,
+	connectorID models.ConnectorID,
+	fromPayload *FromPayload,
+	taskTree []models.ConnectorTaskTree,
+) error {
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), connectorID)
+	if err != nil {
+		return err
+	}
+
+	// avoid scheduling next workflow if connector has been flagged for deletion
+	if connector.ScheduledForDeletion {
+		return nil
+	}
+
+	return w.runNextTasksV3_1(
+		ctx,
+		connectorID,
+		fromPayload,
+		taskTree,
+	)
+}
+
+func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID models.ConnectorID, nextTasks []models.ConnectorTaskTree, wg workflow.WaitGroup, fromPayload *FromPayload, errChan chan<- error) {
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunNextTasks, //nolint:staticcheck // ignore deprecated
+			models.Config{},
+			connectorID,
+			fromPayload,
+			nextTasks,
+		).Get(ctx, nil); err != nil {
+			errChan <- errors.Wrap(err, "running next workflow")
+		}
+	})
+}
+
+const RunNextTasksV3_1 = "RunNextTasksV3_1"
+
+// Deprecated: use RunNextTasksV3_1 instead, we keep that it during 3.0 => 3.1 migration
+const RunNextTasks = "Run" //nolint:staticcheck

@@ -30,9 +30,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -61,15 +60,13 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 func (s *UnitTestSuite) Test_Run_NoPeriodically_FetchAccounts_Success() {
 	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx workflow.Context, req FetchNextAccounts, nextTasks []models.ConnectorTaskTree) error {
 		s.Equal(s.connectorID, req.ConnectorID)
-		s.Equal(models.Config{}, req.Config)
 		s.False(req.Periodically)
 		return nil
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -100,9 +97,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextExternalAccounts_Success(
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -133,9 +129,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextOthers_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -166,9 +161,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextPayments_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -199,9 +193,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchNextBalances_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -232,9 +225,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 	})
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -256,9 +248,8 @@ func (s *UnitTestSuite) Test_Run_Periodically_CreateWebhooks_Success() {
 
 func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -285,9 +276,8 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 	)
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -315,9 +305,8 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 	)
 
 	s.env.ExecuteWorkflow(
-		Run,
-		models.Config{},
-		s.connector,
+		RunNextTasksV3_1,
+		s.connectorID,
 		&FromPayload{
 			ID:      "1",
 			Payload: []byte(`{}`),
@@ -336,4 +325,44 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 	err := s.env.GetWorkflowError()
 	s.Error(err)
 	s.ErrorContains(err, "error-test")
+}
+
+func (s *UnitTestSuite) Test_Run_PreviousWorkflowVersion_Succeed() {
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).
+		Once().
+		Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
+			return &models.Connector{
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
+			}, nil
+		})
+
+	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx workflow.Context, req FetchNextAccounts, nextTasks []models.ConnectorTaskTree) error {
+		s.Equal(s.connectorID, req.ConnectorID)
+		s.False(req.Periodically)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(
+		RunNextTasks, // nolint:staticcheck
+		models.Config{},
+		s.connectorID,
+		&FromPayload{
+			ID:      "1",
+			Payload: []byte(`{}`),
+		},
+		[]models.ConnectorTaskTree{
+			{
+				TaskType:     models.TASK_FETCH_ACCOUNTS,
+				Name:         "test",
+				Periodically: false,
+				NextTasks:    []models.ConnectorTaskTree{},
+			},
+		},
+	)
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
 }

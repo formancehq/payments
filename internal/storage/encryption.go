@@ -1,0 +1,49 @@
+package storage
+
+import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
+// EncryptRaw encrypts a JSON payload using Postgres pgcrypto and the storage encryption key.
+// It mirrors the encryption performed in other storage methods (e.g., connectors install).
+func (s *store) EncryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error) {
+	// Use a simple SELECT to leverage pgp_sym_encrypt with consistent options
+	// We encrypt the JSON as TEXT to match existing patterns
+	var cipher []byte
+	// bun.NewRaw with positional args; we cast to text in the SQL expression
+	if err := s.db.NewRaw("SELECT pgp_sym_encrypt(?::TEXT, ?::TEXT, ?::TEXT)", string(message), s.configEncryptionKey, encryptionOptions).Scan(ctx, &cipher); err != nil {
+		return nil, err
+	}
+	// Base64-encode the binary ciphertext so it can be safely marshaled as JSON
+	b64 := base64.StdEncoding.EncodeToString(cipher)
+	return []byte(fmt.Sprintf("%q", b64)), nil
+}
+
+// ErrNotEncrypted indicates that the provided payload is not an encrypted blob
+// produced by EncryptRaw, but rather plain JSON. Callers may treat this as a
+// no-op and pass the original payload through unchanged.
+var ErrNotEncrypted = errors.New("storage: not encrypted")
+
+// DecryptRaw decrypts a JSON payload previously encrypted with EncryptRaw.
+func (s *store) DecryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error) {
+	// Expect a JSON string containing base64-encoded ciphertext.
+	// If it's not a JSON string (e.g., it's an object/array), treat as plain text.
+	var b64 string
+	if err := json.Unmarshal(message, &b64); err != nil {
+		return nil, ErrNotEncrypted
+	}
+	cipher, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, ErrNotEncrypted
+	}
+
+	var plain string
+	if err := s.db.NewRaw("SELECT pgp_sym_decrypt(?::BYTEA, ?::TEXT, ?::TEXT)", cipher, s.configEncryptionKey, encryptionOptions).Scan(ctx, &plain); err != nil {
+		return nil, err
+	}
+	return json.RawMessage(plain), nil
+}

@@ -21,15 +21,15 @@ func init() {
 }
 
 type Plugin struct {
-	models.Plugin
+    models.Plugin
 
-	name   string
-	logger logging.Logger
+    name   string
+    logger logging.Logger
 
-	client              client.Client
-	config              Config
-	supportedWebhooks   map[client.EventCategory]supportedWebhook
-	webhookSharedSecret string
+    client              client.Client
+    config              Config
+    supportedWebhooks   map[client.EventCategory]supportedWebhook
+    webhookSharedSecret string
 }
 
 func New(connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -54,11 +54,11 @@ func New(connectorID models.ConnectorID, name string, logger logging.Logger, raw
 }
 
 func (p *Plugin) Name() string {
-	return p.name
+    return p.name
 }
 
 func (p *Plugin) Config() models.PluginInternalConfig {
-	return p.config
+    return p.config
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {

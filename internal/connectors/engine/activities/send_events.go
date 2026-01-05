@@ -40,6 +40,8 @@ type SendEventsRequest struct {
 	Task                            *models.Task
 }
 
+// SendEvents
+// Deprecated: from 3.1 we're using outbox pattern, this is kept for backward compatibility
 func (a Activities) SendEvents(ctx context.Context, req SendEventsRequest) error {
 	eventID := models.EventID{
 		EventIdempotencyKey: req.IdempotencyKey,
@@ -54,7 +56,7 @@ func (a Activities) SendEvents(ctx context.Context, req SendEventsRequest) error
 		// event was already sent; nothing to do
 		return nil
 	}
-	
+
 	// event was not sent yet
 	if err := a.sendEvents(ctx, req); err != nil {
 		return err

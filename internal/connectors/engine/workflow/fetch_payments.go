@@ -8,12 +8,12 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type FetchNextPayments struct {
-	Config       models.Config      `json:"config"`
 	ConnectorID  models.ConnectorID `json:"connectorID"`
 	FromPayload  *FromPayload       `json:"fromPayload"`
 	Periodically bool               `json:"periodically"`
@@ -93,7 +93,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*2+len(paymentsResponse.PaymentsToDelete))
+		errChan := make(chan error, len(paymentsResponse.Payments)*3)
 		for _, payment := range payments {
 			p := payment
 
@@ -101,24 +101,70 @@ func (w Workflow) fetchNextPayments(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
-				if err := activities.StoragePaymentInitiationUpdateFromPayment(
-					infiniteRetryContext(ctx),
-					p.Status,
-					p.CreatedAt,
-					p.ID,
-				); err != nil {
-					errChan <- errors.Wrap(err, "updating payment initiation from payment")
+				if IsPaymentInitiationUpdateOptimizationsEnabled(ctx) {
+					if err := activities.StoragePaymentInitiationUpdateFromPayment(
+						infiniteRetryContext(ctx),
+						p.Status,
+						p.CreatedAt,
+						p.ID,
+					); err != nil {
+						errChan <- errors.Wrap(err, "updating payment initiation from payment")
+					}
+				} else {
+					if err := workflow.ExecuteChildWorkflow(
+						workflow.WithChildOptions(
+							ctx,
+							workflow.ChildWorkflowOptions{
+								TaskQueue:         w.getDefaultTaskQueue(),
+								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+								SearchAttributes: map[string]interface{}{
+									SearchAttributeStack: w.stack,
+								},
+							},
+						),
+						RunUpdatePaymentInitiationFromPayment, // nolint:staticcheck // ignore deprecation
+						UpdatePaymentInitiationFromPayment{
+							Payment: &p,
+						},
+					).Get(ctx, nil); err != nil {
+						errChan <- errors.Wrap(err, "sending events")
+					}
 				}
 			})
+
+			if !IsEventOutboxPatternEnabled(ctx) {
+				p := payment
+
+				sendEvents := SendEvents{
+					Payment: &p,
+				}
+				w.runSendEventAsChildWorkflow(ctx, wg, sendEvents, errChan)
+			}
 		}
 
-		if len(nextTasks) > 0 {
-			connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), fetchNextPayments.ConnectorID)
+		if !IsRunNextTaskOptimizationsEnabled(ctx) {
+			for _, payment := range paymentsResponse.Payments {
+				p := payment
+				payload, err := json.Marshal(p)
+				if err != nil {
+					errChan <- errors.Wrap(err, "marshalling payment")
+				}
+				fromPayload := &FromPayload{
+					ID:      p.Reference,
+					Payload: payload,
+				}
+
+				w.runNextTaskAsChildWorkflow(ctx, fetchNextPayments.ConnectorID, nextTasks, wg, fromPayload, errChan)
+			}
+		} else if len(nextTasks) > 0 {
+			// First, we need to get the connector to check if it is scheduled for deletion
+			// because if it is, we don't need to run the next tasks
+			plugin, err := w.connectors.Get(fetchNextPayments.ConnectorID)
 			if err != nil {
 				return fmt.Errorf("getting connector: %w", err)
 			}
 
-			if !connector.ScheduledForDeletion {
+			if !plugin.IsScheduledForDeletion() {
 				for _, payment := range paymentsResponse.Payments {
 					p := payment
 
@@ -132,10 +178,9 @@ func (w Workflow) fetchNextPayments(
 							return
 						}
 
-						if err := w.runNextTasks(
+						if err := w.runNextTasksV3_1(
 							ctx,
-							fetchNextPayments.Config,
-							connector,
+							fetchNextPayments.ConnectorID,
 							&FromPayload{
 								ID:      p.Reference,
 								Payload: payload,

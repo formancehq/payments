@@ -25,60 +25,69 @@ func TestManager_Load(t *testing.T) {
 	logger := logging.NewDefaultLogger(io.Discard, false, false, false)
 
 	tests := map[string]struct {
-		provider    string
-		config      models.Config
-		rawConfig   json.RawMessage
-		expectError bool
-		strictMode  bool
+		provider               string
+		expectedConfig         models.Config
+		rawConfig              json.RawMessage
+		expectError            bool
+		strictMode             bool
+		isScheduledForDeletion bool
 	}{
 		"unregistered plugin provider": {
-			provider:    "test",
-			config:      models.Config{},
-			rawConfig:   json.RawMessage(`{}`),
-			expectError: true,
-			strictMode:  true,
+			provider:       "test",
+			expectedConfig: models.Config{},
+			rawConfig:      json.RawMessage(`{}`),
+			expectError:    true,
+			strictMode:     true,
 		},
 		"invalid config for provider": {
-			provider:    registry.DummyPSPName,
-			config:      models.Config{},
-			rawConfig:   json.RawMessage(`{}`),
-			expectError: true,
-			strictMode:  true,
+			provider:       registry.DummyPSPName,
+			expectedConfig: models.Config{},
+			rawConfig:      json.RawMessage(`{}`),
+			expectError:    true,
+			strictMode:     true,
 		},
 		"provider config present - base config error": {
-			provider:    registry.DummyPSPName,
-			config:      models.Config{},
-			rawConfig:   json.RawMessage(`{"directory":"/tmp"}`),
-			expectError: true,
-			strictMode:  true,
+			provider:       registry.DummyPSPName,
+			expectedConfig: models.Config{},
+			rawConfig:      json.RawMessage(`{"directory":"/tmp"}`),
+			expectError:    true,
+			strictMode:     true,
 		},
 		"base config present - provider specific config error": {
-			provider:    registry.DummyPSPName,
-			config:      models.Config{},
-			rawConfig:   json.RawMessage(`{"name":"base config present - provider specific config error"}`),
-			expectError: true,
-			strictMode:  true,
+			provider:       registry.DummyPSPName,
+			expectedConfig: models.Config{},
+			rawConfig:      json.RawMessage(`{"name":"base config present - provider specific config error"}`),
+			expectError:    true,
+			strictMode:     true,
 		},
 		"polling period issues ignored when not in strict mode": {
-			provider:    registry.DummyPSPName,
-			config:      models.Config{Name: "polling period issues ignored when not in strict mode", PollingPeriod: time.Second},
-			rawConfig:   json.RawMessage(`{"name":"polling period issues ignored when not in strict mode","pollingPeriod":"1s","directory":"/tmp"}`),
-			expectError: false,
-			strictMode:  false,
+			provider:       registry.DummyPSPName,
+			expectedConfig: models.Config{Name: "polling period issues ignored when not in strict mode", PollingPeriod: time.Second},
+			rawConfig:      json.RawMessage(`{"name":"polling period issues ignored when not in strict mode","pollingPeriod":"1s","directory":"/tmp"}`),
+			expectError:    false,
+			strictMode:     false,
 		},
 		"successful load": {
-			provider:    registry.DummyPSPName,
-			config:      models.Config{Name: "successful load", PollingPeriod: 40 * time.Minute},
-			rawConfig:   json.RawMessage(`{"name":"successful load","directory":"/tmp","pollingPeriod":"40m"}`),
-			expectError: false,
-			strictMode:  true,
+			provider:       registry.DummyPSPName,
+			expectedConfig: models.Config{Name: "successful load", PollingPeriod: 40 * time.Minute},
+			rawConfig:      json.RawMessage(`{"name":"successful load","directory":"/tmp","pollingPeriod":"40m"}`),
+			expectError:    false,
+			strictMode:     true,
 		},
 		"polling period is set to default when missing": {
-			provider:    registry.DummyPSPName,
-			config:      models.Config{Name: "polling period is set to default when missing", PollingPeriod: defaultPollingPeriod},
-			rawConfig:   json.RawMessage(`{"name":"polling period is set to default when missing","directory":"/tmp"}`),
-			expectError: false,
-			strictMode:  true,
+			provider:       registry.DummyPSPName,
+			expectedConfig: models.Config{Name: "polling period is set to default when missing", PollingPeriod: defaultPollingPeriod},
+			rawConfig:      json.RawMessage(`{"name":"polling period is set to default when missing","directory":"/tmp"}`),
+			expectError:    false,
+			strictMode:     true,
+		},
+		"connector is scheduled for deletion": {
+			provider:               registry.DummyPSPName,
+			expectedConfig:         models.Config{Name: "connector is scheduled for deletion", PollingPeriod: 40 * time.Minute},
+			rawConfig:              json.RawMessage(`{"name":"connector is scheduled for deletion","directory":"/tmp","pollingPeriod":"40m"}`),
+			expectError:            false,
+			strictMode:             false,
+			isScheduledForDeletion: true,
 		},
 	}
 
@@ -86,7 +95,15 @@ func TestManager_Load(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod)
 			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
-			returnedName, _, err := manager.Load(connectorID, tt.provider, tt.rawConfig, false, tt.strictMode)
+			connector := models.Connector{
+				ConnectorBase: models.ConnectorBase{
+					ID:       connectorID,
+					Provider: tt.provider,
+				},
+				Config:               tt.rawConfig,
+				ScheduledForDeletion: tt.isScheduledForDeletion,
+			}
+			returnedName, _, err := manager.Load(connector, false, tt.strictMode)
 			if tt.expectError {
 				require.Error(t, err)
 
@@ -103,12 +120,13 @@ func TestManager_Load(t *testing.T) {
 
 				config, err := manager.GetConfig(connectorID)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.config, config)
+				assert.Equal(t, tt.expectedConfig, config)
 
 				plugin, err := manager.Get(connectorID)
 				assert.NoError(t, err)
 				assert.Equal(t, name, plugin.Name())
 				assert.Equal(t, returnedName, plugin.Name())
+				assert.Equal(t, tt.isScheduledForDeletion, plugin.IsScheduledForDeletion())
 			}
 		})
 	}

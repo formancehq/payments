@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"time"
 
@@ -180,6 +181,12 @@ type Storage interface {
 	OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error
 	OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error
 	OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error
+
+	// Raw encryption helpers
+	// EncryptRaw encrypts a JSON payload using the storage encryption key via Postgres pgcrypto
+	EncryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error)
+	// DecryptRaw decrypts a previously encrypted JSON payload using the storage encryption key via Postgres pgcrypto
+	DecryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error)
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
