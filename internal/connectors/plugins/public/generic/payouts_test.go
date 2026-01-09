@@ -2,28 +2,24 @@ package generic
 
 import (
 	"context"
-	"encoding/json"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/generic/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
-
-func testPlugin(t *testing.T) *Plugin {
-	logger := logging.NewDefaultLogger(nil, true, false, false)
-	config := json.RawMessage(`{"apiKey": "test", "endpoint": "https://api.example.com"}`)
-	plugin, err := New("generic-test", logger, config)
-	require.NoError(t, err)
-	return plugin
-}
 
 func TestCreatePayout(t *testing.T) {
 	t.Parallel()
 
-	plugin := testPlugin(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := client.NewMockClient(ctrl)
+	plugin := &Plugin{client: mockClient}
 
 	now := time.Now().UTC()
 	pi := models.PSPPaymentInitiation{
@@ -43,6 +39,18 @@ func TestCreatePayout(t *testing.T) {
 		},
 	}
 
+	mockClient.EXPECT().CreatePayout(gomock.Any(), gomock.Any()).Return(&client.PayoutResponse{
+		Id:                   "payout_test_payout_ref",
+		IdempotencyKey:       "test_payout_ref",
+		Amount:               "10.00",
+		Currency:             "USD",
+		SourceAccountId:      "source_account_123",
+		DestinationAccountId: "dest_account_456",
+		Status:               "PENDING",
+		CreatedAt:            now.Format(time.RFC3339),
+		Metadata:             map[string]string{"test_key": "test_value"},
+	}, nil)
+
 	payment, err := plugin.createPayout(context.Background(), pi)
 	require.NoError(t, err)
 
@@ -60,7 +68,25 @@ func TestCreatePayout(t *testing.T) {
 func TestPollPayoutStatus(t *testing.T) {
 	t.Parallel()
 
-	plugin := testPlugin(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := client.NewMockClient(ctrl)
+	plugin := &Plugin{client: mockClient}
+
+	now := time.Now().UTC()
+
+	mockClient.EXPECT().GetPayoutStatus(gomock.Any(), "test_payout_id").Return(&client.PayoutResponse{
+		Id:                   "test_payout_id",
+		IdempotencyKey:       "test_payout_key",
+		Amount:               "10.00",
+		Currency:             "USD",
+		SourceAccountId:      "source_account",
+		DestinationAccountId: "dest_account",
+		Status:               "SUCCEEDED",
+		CreatedAt:            now.Format(time.RFC3339),
+		Metadata:             make(map[string]string),
+	}, nil)
 
 	payment, err := plugin.pollPayoutStatus(context.Background(), "test_payout_id")
 	require.NoError(t, err)
@@ -73,7 +99,7 @@ func TestPollPayoutStatus(t *testing.T) {
 func TestValidatePayoutRequest(t *testing.T) {
 	t.Parallel()
 
-	plugin := testPlugin(t)
+	plugin := &Plugin{}
 
 	t.Run("valid request", func(t *testing.T) {
 		pi := models.PSPPaymentInitiation{
