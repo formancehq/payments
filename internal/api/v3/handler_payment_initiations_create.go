@@ -66,6 +66,12 @@ func paymentInitiationsCreate(backend backend.Backend, validator *validation.Val
 
 		noValidation := r.URL.Query().Get("noValidation") == "true"
 
+		now := time.Now()
+		scheduledAt := payload.ScheduledAt
+		if scheduledAt.IsZero() {
+			scheduledAt = now
+		}
+
 		pi := models.PaymentInitiation{
 			ID: models.PaymentInitiationID{
 				Reference:   payload.Reference,
@@ -73,8 +79,8 @@ func paymentInitiationsCreate(backend backend.Backend, validator *validation.Val
 			},
 			ConnectorID: connectorID,
 			Reference:   payload.Reference,
-			CreatedAt:   time.Now(),
-			ScheduledAt: payload.ScheduledAt,
+			CreatedAt:   now,
+			ScheduledAt: scheduledAt,
 			Description: payload.Description,
 			Type:        models.MustPaymentInitiationTypeFromString(payload.Type),
 			Amount:      payload.Amount,
