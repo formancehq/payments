@@ -8,12 +8,12 @@ import (
 )
 
 type V3Pool struct {
-	ID           string         `json:"id"`
-	Name         string         `json:"name"`
-	CreatedAt    time.Time      `json:"createdAt"`
-	Type         V3PoolTypeEnum `json:"type"`
-	Query        map[string]any `json:"query,omitempty"`
-	PoolAccounts []string       `json:"poolAccounts"`
+	ID           string          `json:"id"`
+	Name         string          `json:"name"`
+	CreatedAt    time.Time       `json:"createdAt"`
+	Type         *V3PoolTypeEnum `json:"type,omitempty"`
+	Query        map[string]any  `json:"query,omitempty"`
+	PoolAccounts []string        `json:"poolAccounts"`
 }
 
 func (v V3Pool) MarshalJSON() ([]byte, error) {
@@ -48,9 +48,9 @@ func (o *V3Pool) GetCreatedAt() time.Time {
 	return o.CreatedAt
 }
 
-func (o *V3Pool) GetType() V3PoolTypeEnum {
+func (o *V3Pool) GetType() *V3PoolTypeEnum {
 	if o == nil {
-		return V3PoolTypeEnum("")
+		return nil
 	}
 	return o.Type
 }

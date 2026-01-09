@@ -6580,7 +6580,7 @@ Query and dynamic pools are available from Connectivity v3.1
 |id|string|true|none|none|
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
-|type|[V3PoolTypeEnum](#schemav3pooltypeenum)|true|none|none|
+|type|[V3PoolTypeEnum](#schemav3pooltypeenum)|false|none|none|
 |query|object|false|none|none|
 |poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|none|
 
