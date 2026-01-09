@@ -5647,7 +5647,6 @@ components:
         - id
         - name
         - createdAt
-        - type
         - poolAccounts
       properties:
         id:
