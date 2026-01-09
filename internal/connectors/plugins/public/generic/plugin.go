@@ -104,6 +104,15 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 		return models.CreatePayoutResponse{}, err
 	}
 
+	// If the payment status is pending, return PollingPayoutID so Temporal
+	// sets up a schedule to poll for status updates. Otherwise return the
+	// payment immediately.
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.CreatePayoutResponse{
+			PollingPayoutID: &payment.Reference,
+		}, nil
+	}
+
 	return models.CreatePayoutResponse{
 		Payment: &payment,
 	}, nil
@@ -121,6 +130,13 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 	payment, err := p.pollPayoutStatus(ctx, req.PayoutID)
 	if err != nil {
 		return models.PollPayoutStatusResponse{}, err
+	}
+
+	// If still pending, return nil Payment so polling continues
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.PollPayoutStatusResponse{
+			Payment: nil,
+		}, nil
 	}
 
 	return models.PollPayoutStatusResponse{
