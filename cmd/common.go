@@ -62,9 +62,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	}
 
 	return fx.Options(
-		fx.Provide(func() *bunconnect.ConnectionOptions {
-			return connectionOptions
-		}),
+		fx.Supply(connectionOptions),
 		otlp.FXModuleFromFlags(cmd),
 		otlptraces.FXModuleFromFlags(cmd),
 		otlpmetrics.FXModuleFromFlags(cmd),
