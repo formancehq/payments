@@ -111,34 +111,35 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("create bank account", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.CreateBankAccountRequest{}
 			_, err := plg.CreateBankAccount(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
 	Context("create transfer", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
 	Context("reverse transfer", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail because not supported", func(ctx SpecContext) {
 			req := models.ReverseTransferRequest{}
 			_, err := plg.ReverseTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("transfer reversal not supported"))
 		})
 	})
 
 	Context("poll transfer status", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.PollTransferStatusRequest{}
 			_, err := plg.PollTransferStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
