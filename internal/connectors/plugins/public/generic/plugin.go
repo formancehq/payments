@@ -144,4 +144,61 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 	}, nil
 }
 
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	if p.client == nil {
+		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	// If the payment status is pending, return PollingTransferID so Temporal
+	// sets up a schedule to poll for status updates
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.CreateTransferResponse{
+			PollingTransferID: &payment.Reference,
+		}, nil
+	}
+
+	return models.CreateTransferResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	return models.ReverseTransferResponse{}, fmt.Errorf("transfer reversal not supported by generic connector")
+}
+
+func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+	if p.client == nil {
+		return models.PollTransferStatusResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.pollTransferStatus(ctx, req.TransferID)
+	if err != nil {
+		return models.PollTransferStatusResponse{}, err
+	}
+
+	// If still pending, return nil Payment so polling continues
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.PollTransferStatusResponse{
+			Payment: nil,
+		}, nil
+	}
+
+	return models.PollTransferStatusResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+	if p.client == nil {
+		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createBankAccount(ctx, req.BankAccount)
+}
+
 var _ models.Plugin = &Plugin{}
