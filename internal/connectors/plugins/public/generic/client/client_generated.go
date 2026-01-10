@@ -131,3 +131,48 @@ func (mr *MockClientMockRecorder) GetPayoutStatus(ctx, payoutId any) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPayoutStatus", reflect.TypeOf((*MockClient)(nil).GetPayoutStatus), ctx, payoutId)
 }
+
+// CreateTransfer mocks base method.
+func (m *MockClient) CreateTransfer(ctx context.Context, request *TransferRequest) (*TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTransfer", ctx, request)
+	ret0, _ := ret[0].(*TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTransfer indicates an expected call of CreateTransfer.
+func (mr *MockClientMockRecorder) CreateTransfer(ctx, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockClient)(nil).CreateTransfer), ctx, request)
+}
+
+// GetTransferStatus mocks base method.
+func (m *MockClient) GetTransferStatus(ctx context.Context, transferId string) (*TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransferStatus", ctx, transferId)
+	ret0, _ := ret[0].(*TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransferStatus indicates an expected call of GetTransferStatus.
+func (mr *MockClientMockRecorder) GetTransferStatus(ctx, transferId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransferStatus", reflect.TypeOf((*MockClient)(nil).GetTransferStatus), ctx, transferId)
+}
+
+// CreateBankAccount mocks base method.
+func (m *MockClient) CreateBankAccount(ctx context.Context, request *BankAccountRequest) (*BankAccountResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBankAccount", ctx, request)
+	ret0, _ := ret[0].(*BankAccountResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBankAccount indicates an expected call of CreateBankAccount.
+func (mr *MockClientMockRecorder) CreateBankAccount(ctx, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBankAccount", reflect.TypeOf((*MockClient)(nil).CreateBankAccount), ctx, request)
+}
