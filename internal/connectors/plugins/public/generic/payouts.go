@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
@@ -27,7 +26,13 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		)
 	}
 
-	amount := amountToString(*pi.Amount, precision)
+	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
+	if err != nil {
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to convert amount to string: %w", err),
+			models.ErrInvalidRequest,
+		)
+	}
 
 	req := &client.PayoutRequest{
 		IdempotencyKey:       pi.Reference,
@@ -94,28 +99,16 @@ func (p *Plugin) validatePayoutRequest(pi models.PSPPaymentInitiation) error {
 }
 
 func payoutResponseToPayment(resp *client.PayoutResponse, precision int) (models.PSPPayment, error) {
-	// Parse amount - handle both integer and decimal formats
-	amount, err := parseAmountFromString(resp.Amount, precision)
+	amount, err := currency.GetAmountWithPrecisionFromString(resp.Amount, precision)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to parse amount: %w", err)
+		return models.PSPPayment{}, fmt.Errorf("failed to parse amount %s: %w", resp.Amount, err)
 	}
 
 	createdAt, err := time.Parse(time.RFC3339, resp.CreatedAt)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to parse created at: %w", err)
+		return models.PSPPayment{}, fmt.Errorf("failed to parse createdAt: %w", err)
 	}
 
-	status := models.PAYMENT_STATUS_PENDING
-	switch resp.Status {
-	case "SUCCEEDED":
-		status = models.PAYMENT_STATUS_SUCCEEDED
-	case "FAILED":
-		status = models.PAYMENT_STATUS_FAILED
-	case "PENDING":
-		status = models.PAYMENT_STATUS_PENDING
-	}
-
-	// Create raw JSON for the payment
 	raw, err := json.Marshal(resp)
 	if err != nil {
 		return models.PSPPayment{}, fmt.Errorf("failed to marshal raw response: %w", err)
@@ -129,7 +122,7 @@ func payoutResponseToPayment(resp *client.PayoutResponse, precision int) (models
 		Amount:                      amount,
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, resp.Currency),
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
-		Status:                      status,
+		Status:                      mapStringToPaymentStatus(resp.Status),
 		SourceAccountReference:      &resp.SourceAccountId,
 		DestinationAccountReference: &resp.DestinationAccountId,
 		Metadata:                    resp.Metadata,
@@ -137,53 +130,17 @@ func payoutResponseToPayment(resp *client.PayoutResponse, precision int) (models
 	}, nil
 }
 
-func amountToString(amount big.Int, precision int) string {
-	raw := amount.String()
-	if precision < 0 {
-		precision = 0
+// mapStringToPaymentStatus maps a string status from the external API to the internal PaymentStatus.
+// This is used for payout and transfer responses where the status comes as a string.
+func mapStringToPaymentStatus(status string) models.PaymentStatus {
+	switch status {
+	case "SUCCEEDED":
+		return models.PAYMENT_STATUS_SUCCEEDED
+	case "FAILED":
+		return models.PAYMENT_STATUS_FAILED
+	case "PENDING":
+		return models.PAYMENT_STATUS_PENDING
+	default:
+		return models.PAYMENT_STATUS_OTHER
 	}
-	insertPosition := len(raw) - precision
-	if insertPosition <= 0 {
-		return "0." + strings.Repeat("0", -insertPosition) + raw
-	}
-	return raw[:insertPosition] + "." + raw[insertPosition:]
-}
-
-func parseAmountFromString(amountStr string, precision int) (*big.Int, error) {
-	if precision < 0 {
-		precision = 0
-	}
-
-	// If it contains a decimal point, handle it
-	if strings.Contains(amountStr, ".") {
-		parts := strings.Split(amountStr, ".")
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid decimal format: %s", amountStr)
-		}
-
-		integerPart := parts[0]
-		decimalPart := parts[1]
-
-		// Pad or truncate decimal part to match precision
-		if len(decimalPart) > precision {
-			decimalPart = decimalPart[:precision]
-		} else if len(decimalPart) < precision {
-			decimalPart = decimalPart + strings.Repeat("0", precision-len(decimalPart))
-		}
-
-		// Combine integer and decimal parts
-		combinedStr := integerPart + decimalPart
-		amount, ok := new(big.Int).SetString(combinedStr, 10)
-		if !ok {
-			return nil, fmt.Errorf("failed to parse combined amount: %s", combinedStr)
-		}
-		return amount, nil
-	}
-
-	// If no decimal point, assume it's already in minor units
-	amount, ok := new(big.Int).SetString(amountStr, 10)
-	if !ok {
-		return nil, fmt.Errorf("failed to parse integer amount: %s", amountStr)
-	}
-	return amount, nil
 }

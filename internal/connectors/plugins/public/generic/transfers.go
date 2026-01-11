@@ -26,7 +26,13 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		)
 	}
 
-	amount := amountToString(*pi.Amount, precision)
+	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
+	if err != nil {
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to convert amount to string: %w", err),
+			models.ErrInvalidRequest,
+		)
+	}
 
 	req := &client.TransferRequest{
 		IdempotencyKey:       pi.Reference,
@@ -93,24 +99,14 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 }
 
 func transferResponseToPayment(resp *client.TransferResponse, precision int) (models.PSPPayment, error) {
-	amount, err := parseAmountFromString(resp.Amount, precision)
+	amount, err := currency.GetAmountWithPrecisionFromString(resp.Amount, precision)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to parse amount: %w", err)
+		return models.PSPPayment{}, fmt.Errorf("failed to parse amount %s: %w", resp.Amount, err)
 	}
 
 	createdAt, err := time.Parse(time.RFC3339, resp.CreatedAt)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to parse created at: %w", err)
-	}
-
-	status := models.PAYMENT_STATUS_PENDING
-	switch resp.Status {
-	case "SUCCEEDED":
-		status = models.PAYMENT_STATUS_SUCCEEDED
-	case "FAILED":
-		status = models.PAYMENT_STATUS_FAILED
-	case "PENDING":
-		status = models.PAYMENT_STATUS_PENDING
+		return models.PSPPayment{}, fmt.Errorf("failed to parse createdAt: %w", err)
 	}
 
 	raw, err := json.Marshal(resp)
@@ -126,7 +122,7 @@ func transferResponseToPayment(resp *client.TransferResponse, precision int) (mo
 		Amount:                      amount,
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, resp.Currency),
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
-		Status:                      status,
+		Status:                      mapStringToPaymentStatus(resp.Status),
 		SourceAccountReference:      &resp.SourceAccountId,
 		DestinationAccountReference: &resp.DestinationAccountId,
 		Metadata:                    resp.Metadata,
