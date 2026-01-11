@@ -60,7 +60,7 @@ func (c *client) CreatePayout(ctx context.Context, request *PayoutRequest) (*Pay
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute payout request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *client) GetPayoutStatus(ctx context.Context, payoutId string) (*PayoutR
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute get payout status request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
