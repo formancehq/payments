@@ -829,18 +829,6 @@ func TestListTransactions_Error(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TestCreatePayout_ReadBodyError tests the error path when reading response body fails.
-// This uses a custom RoundTripper to simulate a body read error.
-type errorReader struct{}
-
-func (e *errorReader) Read(p []byte) (n int, err error) {
-	return 0, io.ErrUnexpectedEOF
-}
-
-func (e *errorReader) Close() error {
-	return nil
-}
-
 func TestCreatePayout_ReadBodyError(t *testing.T) {
 	t.Parallel()
 
