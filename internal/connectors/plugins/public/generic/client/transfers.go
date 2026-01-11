@@ -60,7 +60,7 @@ func (c *client) CreateTransfer(ctx context.Context, request *TransferRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute transfer request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *client) GetTransferStatus(ctx context.Context, transferId string) (*Tra
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute get transfer status request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -47,7 +47,7 @@ func TestCreatePayout_Success(t *testing.T) {
 
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		var req PayoutRequest
 		err = json.Unmarshal(body, &req)
@@ -56,7 +56,7 @@ func TestCreatePayout_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(expectedResp)
+		_ = json.NewEncoder(w).Encode(expectedResp)
 	})
 	defer server.Close()
 
@@ -79,7 +79,7 @@ func TestCreatePayout_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "bad request"}`))
+		_, _ = w.Write([]byte(`{"error": "bad request"}`))
 	})
 	defer server.Close()
 
@@ -96,7 +96,7 @@ func TestCreatePayout_InvalidJSON(t *testing.T) {
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{invalid json`))
+		_, _ = w.Write([]byte(`{invalid json`))
 	})
 	defer server.Close()
 
@@ -129,7 +129,7 @@ func TestGetPayoutStatus_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(expectedResp)
+		_ = json.NewEncoder(w).Encode(expectedResp)
 	})
 	defer server.Close()
 
@@ -143,7 +143,7 @@ func TestGetPayoutStatus_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		_, _ = w.Write([]byte(`{"error": "not found"}`))
 	})
 	defer server.Close()
 
@@ -159,7 +159,7 @@ func TestGetPayoutStatus_InvalidJSON(t *testing.T) {
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{invalid`))
+		_, _ = w.Write([]byte(`{invalid`))
 	})
 	defer server.Close()
 
@@ -192,7 +192,7 @@ func TestCreateTransfer_Success(t *testing.T) {
 
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		var req TransferRequest
 		err = json.Unmarshal(body, &req)
@@ -201,7 +201,7 @@ func TestCreateTransfer_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(expectedResp)
+		_ = json.NewEncoder(w).Encode(expectedResp)
 	})
 	defer server.Close()
 
@@ -226,7 +226,7 @@ func TestCreateTransfer_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "internal error"}`))
+		_, _ = w.Write([]byte(`{"error": "internal error"}`))
 	})
 	defer server.Close()
 
@@ -243,7 +243,7 @@ func TestCreateTransfer_InvalidJSON(t *testing.T) {
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`not json`))
+		_, _ = w.Write([]byte(`not json`))
 	})
 	defer server.Close()
 
@@ -276,7 +276,7 @@ func TestGetTransferStatus_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(expectedResp)
+		_ = json.NewEncoder(w).Encode(expectedResp)
 	})
 	defer server.Close()
 
@@ -290,7 +290,7 @@ func TestGetTransferStatus_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		_, _ = w.Write([]byte(`{"error": "not found"}`))
 	})
 	defer server.Close()
 
@@ -306,7 +306,7 @@ func TestGetTransferStatus_InvalidJSON(t *testing.T) {
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`broken`))
+		_, _ = w.Write([]byte(`broken`))
 	})
 	defer server.Close()
 
@@ -336,7 +336,7 @@ func TestCreateBankAccount_Success(t *testing.T) {
 
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		var req BankAccountRequest
 		err = json.Unmarshal(body, &req)
@@ -345,7 +345,7 @@ func TestCreateBankAccount_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(expectedResp)
+		_ = json.NewEncoder(w).Encode(expectedResp)
 	})
 	defer server.Close()
 
@@ -365,7 +365,7 @@ func TestCreateBankAccount_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "invalid IBAN"}`))
+		_, _ = w.Write([]byte(`{"error": "invalid IBAN"}`))
 	})
 	defer server.Close()
 
@@ -382,7 +382,7 @@ func TestCreateBankAccount_InvalidJSON(t *testing.T) {
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{not valid}`))
+		_, _ = w.Write([]byte(`{not valid}`))
 	})
 	defer server.Close()
 
@@ -409,7 +409,7 @@ func TestAPITransport_AddsAuthHeader(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedHeader = r.Header.Get("Authorization")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`[]`))
+		_, _ = w.Write([]byte(`[]`))
 	}))
 	defer server.Close()
 
@@ -432,15 +432,15 @@ func TestCreatePayout_WithMetadata(t *testing.T) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		var req PayoutRequest
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 		require.Equal(t, "value1", req.Metadata["key1"])
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(PayoutResponse{
+		_ = json.NewEncoder(w).Encode(PayoutResponse{
 			Id:        "payout_meta",
 			CreatedAt: now,
 			Status:    "PENDING",
@@ -466,17 +466,17 @@ func TestCreateTransfer_WithDescription(t *testing.T) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		var req TransferRequest
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 		require.NotNil(t, req.Description)
 		require.Equal(t, "Payment for services", *req.Description)
 
 		desc := req.Description
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(TransferResponse{
+		_ = json.NewEncoder(w).Encode(TransferResponse{
 			Id:          "transfer_desc",
 			CreatedAt:   now,
 			Status:      "PENDING",
@@ -504,10 +504,10 @@ func TestCreateBankAccount_AllFields(t *testing.T) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 
 		var req BankAccountRequest
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 		require.Equal(t, "Test Account", req.Name)
 		require.NotNil(t, req.AccountNumber)
 		require.NotNil(t, req.IBAN)
@@ -516,7 +516,7 @@ func TestCreateBankAccount_AllFields(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(BankAccountResponse{
+		_ = json.NewEncoder(w).Encode(BankAccountResponse{
 			Id:            "ba_full",
 			Name:          req.Name,
 			AccountNumber: req.AccountNumber,
@@ -567,7 +567,7 @@ func TestGetPayoutStatus_AllStatuses(t *testing.T) {
 			c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(PayoutResponse{
+				_ = json.NewEncoder(w).Encode(PayoutResponse{
 					Id:        "payout_status",
 					CreatedAt: now,
 					Status:    status,
@@ -596,7 +596,7 @@ func TestGetTransferStatus_AllStatuses(t *testing.T) {
 			c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(TransferResponse{
+				_ = json.NewEncoder(w).Encode(TransferResponse{
 					Id:        "transfer_status",
 					CreatedAt: now,
 					Status:    status,
@@ -622,7 +622,7 @@ func TestListAccounts_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]map[string]interface{}{
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
 			{
 				"id":        "acc_1",
 				"name":      "Test Account",
@@ -648,7 +648,7 @@ func TestListAccounts_WithCreatedAtFrom(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{})
 	})
 	defer server.Close()
 
@@ -662,7 +662,7 @@ func TestListAccounts_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "server error"}`))
+		_, _ = w.Write([]byte(`{"error": "server error"}`))
 	})
 	defer server.Close()
 
@@ -680,7 +680,7 @@ func TestGetBalances_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"balances": []map[string]interface{}{
 				{
 					"currency": "USD",
@@ -701,7 +701,7 @@ func TestGetBalances_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+		_, _ = w.Write([]byte(`{"error": "not found"}`))
 	})
 	defer server.Close()
 
@@ -720,7 +720,7 @@ func TestListBeneficiaries_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]map[string]interface{}{
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
 			{
 				"id":        "ben_1",
 				"name":      "Test Beneficiary",
@@ -745,7 +745,7 @@ func TestListBeneficiaries_WithCreatedAtFrom(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{})
 	})
 	defer server.Close()
 
@@ -759,7 +759,7 @@ func TestListBeneficiaries_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "server error"}`))
+		_, _ = w.Write([]byte(`{"error": "server error"}`))
 	})
 	defer server.Close()
 
@@ -778,7 +778,7 @@ func TestListTransactions_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]map[string]interface{}{
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
 			{
 				"id":        "tx_1",
 				"amount":    "1000",
@@ -807,7 +807,7 @@ func TestListTransactions_WithUpdatedAtFrom(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{})
 	})
 	defer server.Close()
 
@@ -821,7 +821,7 @@ func TestListTransactions_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "server error"}`))
+		_, _ = w.Write([]byte(`{"error": "server error"}`))
 	})
 	defer server.Close()
 
