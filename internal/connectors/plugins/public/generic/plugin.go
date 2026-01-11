@@ -3,6 +3,7 @@ package generic
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -91,6 +92,113 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
+}
+
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	if p.client == nil {
+		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createPayout(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreatePayoutResponse{}, err
+	}
+
+	// If the payment status is pending, return PollingPayoutID so Temporal
+	// sets up a schedule to poll for status updates. Otherwise return the
+	// payment immediately.
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.CreatePayoutResponse{
+			PollingPayoutID: &payment.Reference,
+		}, nil
+	}
+
+	return models.CreatePayoutResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	return models.ReversePayoutResponse{}, fmt.Errorf("payout reversal not supported by generic connector")
+}
+
+func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+	if p.client == nil {
+		return models.PollPayoutStatusResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.pollPayoutStatus(ctx, req.PayoutID)
+	if err != nil {
+		return models.PollPayoutStatusResponse{}, err
+	}
+
+	// If still pending, return nil Payment so polling continues
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.PollPayoutStatusResponse{
+			Payment: nil,
+		}, nil
+	}
+
+	return models.PollPayoutStatusResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	if p.client == nil {
+		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	// If the payment status is pending, return PollingTransferID so Temporal
+	// sets up a schedule to poll for status updates
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.CreateTransferResponse{
+			PollingTransferID: &payment.Reference,
+		}, nil
+	}
+
+	return models.CreateTransferResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	return models.ReverseTransferResponse{}, fmt.Errorf("transfer reversal not supported by generic connector")
+}
+
+func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+	if p.client == nil {
+		return models.PollTransferStatusResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.pollTransferStatus(ctx, req.TransferID)
+	if err != nil {
+		return models.PollTransferStatusResponse{}, err
+	}
+
+	// If still pending, return nil Payment so polling continues
+	if payment.Status == models.PAYMENT_STATUS_PENDING {
+		return models.PollTransferStatusResponse{
+			Payment: nil,
+		}, nil
+	}
+
+	return models.PollTransferStatusResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+	if p.client == nil {
+		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createBankAccount(ctx, req.BankAccount)
 }
 
 var _ models.Plugin = &Plugin{}
