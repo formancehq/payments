@@ -495,7 +495,7 @@ func TestTransferResponseToPayment(t *testing.T) {
 		require.Contains(t, err.Error(), "failed to parse amount")
 	})
 
-	t.Run("invalid created at", func(t *testing.T) {
+	t.Run("invalid createdAt", func(t *testing.T) {
 		resp := &client.TransferResponse{
 			Id:                   "transfer_123",
 			IdempotencyKey:       "idem_key",
@@ -509,7 +509,7 @@ func TestTransferResponseToPayment(t *testing.T) {
 
 		_, err := transferResponseToPayment(resp, 2)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to parse created at")
+		require.Contains(t, err.Error(), "failed to parse createdAt")
 	})
 
 	t.Run("JPY currency with 0 precision", func(t *testing.T) {
@@ -528,4 +528,59 @@ func TestTransferResponseToPayment(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, big.NewInt(1000), payment.Amount)
 	})
+
+	t.Run("all status mappings", func(t *testing.T) {
+		statuses := map[string]models.PaymentStatus{
+			"PENDING":   models.PAYMENT_STATUS_PENDING,
+			"SUCCEEDED": models.PAYMENT_STATUS_SUCCEEDED,
+			"FAILED":    models.PAYMENT_STATUS_FAILED,
+			"CANCELLED": models.PAYMENT_STATUS_OTHER,
+			"OTHER":     models.PAYMENT_STATUS_OTHER,
+		}
+
+		for status, expected := range statuses {
+			resp := &client.TransferResponse{
+				Id:                   "transfer_123",
+				IdempotencyKey:       "idem_key",
+				Amount:               "10.00",
+				Currency:             "USD",
+				SourceAccountId:      "source",
+				DestinationAccountId: "dest",
+				Status:               status,
+				CreatedAt:            now.Format(time.RFC3339),
+			}
+
+			payment, err := transferResponseToPayment(resp, 2)
+			require.NoError(t, err)
+			require.Equal(t, expected, payment.Status)
+		}
+	})
+}
+
+func TestCreateTransfer_NilAmount(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := client.NewMockClient(ctrl)
+	plugin := &Plugin{client: mockClient}
+
+	pi := models.PSPPaymentInitiation{
+		Reference:   "test_transfer_ref",
+		Amount:      nil, // nil amount triggers validation error
+		Asset:       "USD/2",
+		Description: "Test transfer",
+		SourceAccount: &models.PSPAccount{
+			Reference: "source_account_123",
+		},
+		DestinationAccount: &models.PSPAccount{
+			Reference: "dest_account_456",
+		},
+	}
+
+	resp, err := plugin.CreateTransfer(context.Background(), models.CreateTransferRequest{PaymentInitiation: pi})
+	require.Error(t, err)
+	require.Nil(t, resp.Payment)
+	require.Contains(t, err.Error(), "amount must be positive")
 }

@@ -332,6 +332,7 @@ func TestPayoutResponseToPayment(t *testing.T) {
 		require.Equal(t, models.PAYMENT_STATUS_SUCCEEDED, payment.Status)
 		require.Equal(t, models.PAYMENT_TYPE_PAYOUT, payment.Type)
 		require.Equal(t, big.NewInt(1000), payment.Amount)
+		require.Equal(t, "USD/2", payment.Asset)
 	})
 
 	t.Run("invalid amount", func(t *testing.T) {
@@ -351,7 +352,7 @@ func TestPayoutResponseToPayment(t *testing.T) {
 		require.Contains(t, err.Error(), "failed to parse amount")
 	})
 
-	t.Run("invalid created at", func(t *testing.T) {
+	t.Run("invalid createdAt", func(t *testing.T) {
 		resp := &client.PayoutResponse{
 			Id:                   "payout_123",
 			IdempotencyKey:       "idem_key",
@@ -365,74 +366,78 @@ func TestPayoutResponseToPayment(t *testing.T) {
 
 		_, err := payoutResponseToPayment(resp, 2)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to parse created at")
+		require.Contains(t, err.Error(), "failed to parse createdAt")
+	})
+
+	t.Run("unknown status maps to OTHER", func(t *testing.T) {
+		resp := &client.PayoutResponse{
+			Id:                   "payout_123",
+			IdempotencyKey:       "idem_key",
+			Amount:               "10.00",
+			Currency:             "USD",
+			SourceAccountId:      "source",
+			DestinationAccountId: "dest",
+			Status:               "UNKNOWN_STATUS",
+			CreatedAt:            now.Format(time.RFC3339),
+		}
+
+		payment, err := payoutResponseToPayment(resp, 2)
+		require.NoError(t, err)
+		require.Equal(t, models.PaymentStatus(models.PAYMENT_STATUS_OTHER), payment.Status)
 	})
 }
 
-func TestAmountToString(t *testing.T) {
+func TestCreatePayout_NilAmount(t *testing.T) {
 	t.Parallel()
 
-	t.Run("standard USD amount", func(t *testing.T) {
-		amount := big.NewInt(1000)
-		result := amountToString(*amount, 2)
-		require.Equal(t, "10.00", result)
-	})
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	t.Run("JPY amount with 0 precision", func(t *testing.T) {
-		amount := big.NewInt(1000)
-		result := amountToString(*amount, 0)
-		require.Equal(t, "1000.", result)
-	})
+	mockClient := client.NewMockClient(ctrl)
+	plugin := &Plugin{client: mockClient}
 
-	t.Run("small amount", func(t *testing.T) {
-		amount := big.NewInt(5)
-		result := amountToString(*amount, 2)
-		require.Equal(t, "0.05", result)
-	})
+	pi := models.PSPPaymentInitiation{
+		Reference:   "test_payout_ref",
+		Amount:      nil, // nil amount to trigger validation error
+		Asset:       "USD/2",
+		Description: "Test payout",
+		SourceAccount: &models.PSPAccount{
+			Reference: "source_account_123",
+		},
+		DestinationAccount: &models.PSPAccount{
+			Reference: "dest_account_456",
+		},
+	}
 
-	t.Run("very small amount", func(t *testing.T) {
-		amount := big.NewInt(1)
-		result := amountToString(*amount, 3)
-		require.Equal(t, "0.001", result)
-	})
+	resp, err := plugin.CreatePayout(context.Background(), models.CreatePayoutRequest{PaymentInitiation: pi})
+	require.Error(t, err)
+	require.Nil(t, resp.Payment)
+	require.Contains(t, err.Error(), "amount must be positive")
 }
 
-func TestParseAmountFromString(t *testing.T) {
+func TestMapStringToPaymentStatus(t *testing.T) {
 	t.Parallel()
 
-	t.Run("decimal format", func(t *testing.T) {
-		amount, err := parseAmountFromString("10.00", 2)
-		require.NoError(t, err)
-		require.Equal(t, big.NewInt(1000), amount)
-	})
+	tests := []struct {
+		input    string
+		expected models.PaymentStatus
+	}{
+		{"SUCCEEDED", models.PAYMENT_STATUS_SUCCEEDED},
+		{"FAILED", models.PAYMENT_STATUS_FAILED},
+		{"PENDING", models.PAYMENT_STATUS_PENDING},
+		{"PROCESSING", models.PAYMENT_STATUS_OTHER},
+		{"CANCELLED", models.PAYMENT_STATUS_OTHER},
+		{"", models.PAYMENT_STATUS_OTHER},
+	}
 
-	t.Run("integer format", func(t *testing.T) {
-		amount, err := parseAmountFromString("1000", 2)
-		require.NoError(t, err)
-		require.Equal(t, big.NewInt(1000), amount)
-	})
-
-	t.Run("decimal with fewer digits", func(t *testing.T) {
-		amount, err := parseAmountFromString("10.5", 2)
-		require.NoError(t, err)
-		require.Equal(t, big.NewInt(1050), amount)
-	})
-
-	t.Run("decimal with more digits truncated", func(t *testing.T) {
-		amount, err := parseAmountFromString("10.999", 2)
-		require.NoError(t, err)
-		require.Equal(t, big.NewInt(1099), amount)
-	})
-
-	t.Run("invalid decimal format", func(t *testing.T) {
-		_, err := parseAmountFromString("10.00.00", 2)
-		require.Error(t, err)
-	})
-
-	t.Run("invalid integer", func(t *testing.T) {
-		_, err := parseAmountFromString("invalid", 2)
-		require.Error(t, err)
-	})
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			t.Parallel()
+			result := mapStringToPaymentStatus(tc.input)
+			require.Equal(t, tc.expected, result)
+		})
+	}
 }
 
 func TestValidatePayoutRequest(t *testing.T) {
