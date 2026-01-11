@@ -6,11 +6,91 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/generic/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+// TestCreateBankAccount_Plugin_NotInstalled tests that CreateBankAccount returns
+// ErrNotYetInstalled when the client is not initialized (plugin not installed)
+func TestCreateBankAccount_Plugin_NotInstalled(t *testing.T) {
+	t.Parallel()
+
+	plugin := &Plugin{client: nil}
+
+	accountNumber := "123456789"
+	ba := models.BankAccount{
+		Name:          "Test Bank Account",
+		AccountNumber: &accountNumber,
+	}
+
+	_, err := plugin.CreateBankAccount(context.Background(), models.CreateBankAccountRequest{BankAccount: ba})
+	require.Error(t, err)
+	require.ErrorIs(t, err, plugins.ErrNotYetInstalled)
+}
+
+// TestCreateBankAccount_Plugin_ForwardFlow tests the full forward flow at the plugin level
+// This simulates what happens when BankAccountsForwardToConnector API is called
+func TestCreateBankAccount_Plugin_ForwardFlow(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := client.NewMockClient(ctrl)
+	plugin := &Plugin{client: mockClient}
+
+	now := time.Now().UTC()
+	accountNumber := "123456789"
+	iban := "DE89370400440532013000"
+	swiftCode := "COBADEFFXXX"
+	country := "DE"
+
+	// Simulate the bank account data that would come from the forward request
+	ba := models.BankAccount{
+		Name:          "Test Bank Account",
+		AccountNumber: &accountNumber,
+		IBAN:          &iban,
+		SwiftBicCode:  &swiftCode,
+		Country:       &country,
+		Metadata: map[string]string{
+			"forwarded": "true",
+		},
+	}
+
+	mockClient.EXPECT().CreateBankAccount(gomock.Any(), &client.BankAccountRequest{
+		Name:          "Test Bank Account",
+		AccountNumber: &accountNumber,
+		IBAN:          &iban,
+		SwiftBicCode:  &swiftCode,
+		Country:       &country,
+		Metadata:      map[string]string{"forwarded": "true"},
+	}).Return(&client.BankAccountResponse{
+		Id:            "external_bank_account_123",
+		Name:          "Test Bank Account",
+		AccountNumber: &accountNumber,
+		IBAN:          &iban,
+		SwiftBicCode:  &swiftCode,
+		Country:       &country,
+		CreatedAt:     now.Format(time.RFC3339),
+		Metadata:      map[string]string{"forwarded": "true"},
+	}, nil)
+
+	// Call the plugin's CreateBankAccount method (this is what the activity calls)
+	resp, err := plugin.CreateBankAccount(context.Background(), models.CreateBankAccountRequest{BankAccount: ba})
+	require.NoError(t, err)
+	require.Equal(t, "external_bank_account_123", resp.RelatedAccount.Reference)
+	require.Equal(t, "Test Bank Account", *resp.RelatedAccount.Name)
+	require.NotNil(t, resp.RelatedAccount.Raw)
+
+	// Verify metadata is populated correctly
+	require.Equal(t, accountNumber, resp.RelatedAccount.Metadata[models.AccountAccountNumberMetadataKey])
+	require.Equal(t, iban, resp.RelatedAccount.Metadata[models.AccountIBANMetadataKey])
+	require.Equal(t, swiftCode, resp.RelatedAccount.Metadata[models.AccountSwiftBicCodeMetadataKey])
+	require.Equal(t, country, resp.RelatedAccount.Metadata[models.AccountBankAccountCountryMetadataKey])
+}
 
 func TestCreateBankAccount_Success(t *testing.T) {
 	t.Parallel()
