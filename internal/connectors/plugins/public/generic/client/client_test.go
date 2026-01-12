@@ -32,8 +32,8 @@ func TestCreatePayout_Success(t *testing.T) {
 	expectedResp := PayoutResponse{
 		Id:                   "payout_123",
 		IdempotencyKey:       "ref_123",
-		Amount:               "100.00",
-		Currency:             "USD",
+		Amount:               "10000", // 100.00 in minor units (cents)
+		Currency:             "USD/2",
 		SourceAccountId:      "src_acc",
 		DestinationAccountId: "dst_acc",
 		Status:               "PENDING",
@@ -62,8 +62,8 @@ func TestCreatePayout_Success(t *testing.T) {
 
 	req := &PayoutRequest{
 		IdempotencyKey:       "ref_123",
-		Amount:               "100.00",
-		Currency:             "USD",
+		Amount:               "10000", // 100.00 in minor units (cents)
+		Currency:             "USD/2",
 		SourceAccountId:      "src_acc",
 		DestinationAccountId: "dst_acc",
 	}
@@ -115,8 +115,8 @@ func TestGetPayoutStatus_Success(t *testing.T) {
 	expectedResp := PayoutResponse{
 		Id:                   "payout_123",
 		IdempotencyKey:       "ref_123",
-		Amount:               "100.00",
-		Currency:             "USD",
+		Amount:               "10000", // 100.00 in minor units (cents)
+		Currency:             "USD/2",
 		SourceAccountId:      "src_acc",
 		DestinationAccountId: "dst_acc",
 		Status:               "SUCCEEDED",
@@ -177,8 +177,8 @@ func TestCreateTransfer_Success(t *testing.T) {
 	expectedResp := TransferResponse{
 		Id:                   "transfer_123",
 		IdempotencyKey:       "ref_456",
-		Amount:               "500.00",
-		Currency:             "EUR",
+		Amount:               "50000", // 500.00 in minor units (cents)
+		Currency:             "EUR/2",
 		SourceAccountId:      "src_acc",
 		DestinationAccountId: "dst_acc",
 		Status:               "PENDING",
@@ -208,8 +208,8 @@ func TestCreateTransfer_Success(t *testing.T) {
 	desc := "Test transfer"
 	req := &TransferRequest{
 		IdempotencyKey:       "ref_456",
-		Amount:               "500.00",
-		Currency:             "EUR",
+		Amount:               "50000", // 500.00 in minor units (cents)
+		Currency:             "EUR/2",
 		SourceAccountId:      "src_acc",
 		DestinationAccountId: "dst_acc",
 		Description:          &desc,
@@ -262,8 +262,8 @@ func TestGetTransferStatus_Success(t *testing.T) {
 	expectedResp := TransferResponse{
 		Id:                   "transfer_123",
 		IdempotencyKey:       "ref_456",
-		Amount:               "500.00",
-		Currency:             "EUR",
+		Amount:               "50000", // 500.00 in minor units (cents)
+		Currency:             "EUR/2",
 		SourceAccountId:      "src_acc",
 		DestinationAccountId: "dst_acc",
 		Status:               "SUCCEEDED",
@@ -847,7 +847,7 @@ func TestCreatePayout_ReadBodyError(t *testing.T) {
 
 	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
 
-	req := &PayoutRequest{IdempotencyKey: "ref_123", Amount: "100.00", Currency: "USD"}
+	req := &PayoutRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"}
 	// This should succeed but return empty body, which will fail unmarshal
 	_, err := c.CreatePayout(context.Background(), req)
 	require.Error(t, err)
@@ -867,7 +867,7 @@ func TestCreateTransfer_ReadBodyError(t *testing.T) {
 
 	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
 
-	req := &TransferRequest{IdempotencyKey: "ref_123", Amount: "100.00", Currency: "USD"}
+	req := &TransferRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"}
 	_, err := c.CreateTransfer(context.Background(), req)
 	require.Error(t, err)
 }

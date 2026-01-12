@@ -91,7 +91,7 @@ var _ = Describe("API v3 Payments Create", func() {
 			Entry("scheme missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "DKK/2", Amount: big.NewInt(4467), Type: "PAYOUT"}),
 			Entry("scheme invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "EUR/2", Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "invalid"}),
 			Entry("asset missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA"}),
-			Entry("asset invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "wut", Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA"}),
+			Entry("asset invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "/2", Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA"}),
 			Entry("adjustments missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2"}),
 			Entry("adjustments missing reference", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2", Adjustments: []CreatePaymentsAdjustmentsRequest{
 				{},

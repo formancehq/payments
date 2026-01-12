@@ -104,11 +104,12 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 		return models.CreatePayoutResponse{}, err
 	}
 
-	// If the payment status is pending, return PollingPayoutID so Temporal
-	// sets up a schedule to poll for status updates. Otherwise return the
-	// payment immediately.
-	if payment.Status == models.PAYMENT_STATUS_PENDING {
+	// If the payment status is pending or processing, return BOTH Payment AND PollingPayoutID:
+	// - Payment: creates the payment record with current status
+	// - PollingPayoutID: sets up Temporal schedule to poll for status updates
+	if payment.Status == models.PAYMENT_STATUS_PENDING || payment.Status == models.PAYMENT_STATUS_PROCESSING {
 		return models.CreatePayoutResponse{
+			Payment:         &payment,
 			PollingPayoutID: &payment.Reference,
 		}, nil
 	}
@@ -132,13 +133,8 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 		return models.PollPayoutStatusResponse{}, err
 	}
 
-	// If still pending, return nil Payment so polling continues
-	if payment.Status == models.PAYMENT_STATUS_PENDING {
-		return models.PollPayoutStatusResponse{
-			Payment: nil,
-		}, nil
-	}
-
+	// Always return the payment so the workflow can update the record.
+	// The workflow checks isPaymentStatusFinal to continue polling for PENDING/PROCESSING.
 	return models.PollPayoutStatusResponse{
 		Payment: &payment,
 	}, nil
@@ -154,10 +150,12 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 		return models.CreateTransferResponse{}, err
 	}
 
-	// If the payment status is pending, return PollingTransferID so Temporal
-	// sets up a schedule to poll for status updates
-	if payment.Status == models.PAYMENT_STATUS_PENDING {
+	// If the payment status is pending or processing, return BOTH Payment AND PollingTransferID:
+	// - Payment: creates the payment record with current status
+	// - PollingTransferID: sets up Temporal schedule to poll for status updates
+	if payment.Status == models.PAYMENT_STATUS_PENDING || payment.Status == models.PAYMENT_STATUS_PROCESSING {
 		return models.CreateTransferResponse{
+			Payment:           &payment,
 			PollingTransferID: &payment.Reference,
 		}, nil
 	}
@@ -181,13 +179,8 @@ func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransfer
 		return models.PollTransferStatusResponse{}, err
 	}
 
-	// If still pending, return nil Payment so polling continues
-	if payment.Status == models.PAYMENT_STATUS_PENDING {
-		return models.PollTransferStatusResponse{
-			Payment: nil,
-		}, nil
-	}
-
+	// Always return the payment so the workflow can update the record.
+	// The workflow checks isPaymentStatusFinal to continue polling for PENDING/PROCESSING.
 	return models.PollTransferStatusResponse{
 		Payment: &payment,
 	}, nil

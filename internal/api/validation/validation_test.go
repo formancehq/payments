@@ -160,19 +160,19 @@ var _ = Describe("Validator custom type checks", func() {
 				FieldName int `validate:"paymentInitiationType"`
 			}{FieldName: 34}),
 
-			// asset
-			Entry("asset: invalid value of string on required field", "asset", "StringFieldName", struct {
+			// asset - now accepts any UMN format (CURRENCY or CURRENCY/PRECISION)
+			Entry("asset: invalid - negative precision", "asset", "StringFieldName", struct {
 				StringFieldName string `validate:"required,asset"`
-			}{StringFieldName: "invalid"}),
-			Entry("asset: invalid value of string", "asset", "StringFieldName", struct {
+			}{StringFieldName: "USD/-1"}),
+			Entry("asset: invalid - non-numeric precision", "asset", "StringFieldName", struct {
 				StringFieldName string `validate:"omitempty,asset"`
-			}{StringFieldName: "invalid"}),
-			Entry("asset: invalid value on string pointer on required field", "asset", "PointerFieldName", struct {
+			}{StringFieldName: "USD/abc"}),
+			Entry("asset: invalid - empty currency code", "asset", "PointerFieldName", struct {
 				PointerFieldName *string `validate:"required,asset"`
-			}{PointerFieldName: pointer.For("invalid")}),
-			Entry("asset: invalid value on string pointer", "asset", "PointerFieldName", struct {
+			}{PointerFieldName: pointer.For("/2")}),
+			Entry("asset: invalid - too many slashes", "asset", "PointerFieldName", struct {
 				PointerFieldName *string `validate:"omitempty,asset"`
-			}{PointerFieldName: pointer.For("invalid")}),
+			}{PointerFieldName: pointer.For("USD/2/3")}),
 			Entry("asset: unsupported type for this matcher", "asset", "FieldName", struct {
 				FieldName int `validate:"asset"`
 			}{FieldName: 34}),
@@ -274,9 +274,24 @@ var _ = Describe("Validator custom type checks", func() {
 			Expect(err).To(BeNil())
 		})
 		It("asset supports expected values", func(ctx SpecContext) {
+			// ISO 4217 currencies
 			_, err := validate.Validate(CustomStruct{
 				Asset:         "JPY/0",
 				AssetNullable: pointer.For("cad/2"),
+			})
+			Expect(err).To(BeNil())
+
+			// Non-ISO currencies (crypto)
+			_, err = validate.Validate(CustomStruct{
+				Asset:         "BTC/8",
+				AssetNullable: pointer.For("ETH/18"),
+			})
+			Expect(err).To(BeNil())
+
+			// Custom tokens without precision
+			_, err = validate.Validate(CustomStruct{
+				Asset:         "COIN",
+				AssetNullable: pointer.For("TOKEN"),
 			})
 			Expect(err).To(BeNil())
 		})

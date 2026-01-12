@@ -50,7 +50,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 					Id:                   fmt.Sprint(i),
 					CreatedAt:            now.Add(-time.Duration(50-i) * time.Minute).UTC(),
 					UpdatedAt:            now.Add(-time.Duration(50-i) * time.Minute).UTC(),
-					Currency:             "EUR",
+					Currency:             "EUR/2", // UMN format
 					Type:                 genericclient.PAYIN,
 					Status:               genericclient.SUCCEEDED,
 					Amount:               "1000",
@@ -215,6 +215,7 @@ func TestMatchPaymentStatus(t *testing.T) {
 		expected models.PaymentStatus
 	}{
 		{"PENDING", genericclient.PENDING, models.PAYMENT_STATUS_PENDING},
+		{"PROCESSING", genericclient.PROCESSING, models.PAYMENT_STATUS_PROCESSING},
 		{"FAILED", genericclient.FAILED, models.PAYMENT_STATUS_FAILED},
 		{"SUCCEEDED", genericclient.SUCCEEDED, models.PAYMENT_STATUS_SUCCEEDED},
 		{"Unknown", genericclient.TransactionStatus("UNKNOWN"), models.PAYMENT_STATUS_OTHER},
@@ -240,7 +241,7 @@ func TestFillPayments_WithRelatedTransactionID(t *testing.T) {
 			Id:                   "tx_1",
 			CreatedAt:            now,
 			UpdatedAt:            now.Add(time.Second),
-			Currency:             "USD",
+			Currency:             "USD/2", // UMN format
 			Type:                 genericclient.TRANSFER,
 			Status:               genericclient.SUCCEEDED,
 			Amount:               "5000",
@@ -267,7 +268,7 @@ func TestFillPayments_WithoutSourceOrDestination(t *testing.T) {
 			Id:        "tx_no_accounts",
 			CreatedAt: now,
 			UpdatedAt: now.Add(time.Second),
-			Currency:  "EUR",
+			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.PENDING,
 			Amount:    "1000",
@@ -293,7 +294,7 @@ func TestFillPayments_InvalidAmount(t *testing.T) {
 			Id:        "tx_bad_amount",
 			CreatedAt: now,
 			UpdatedAt: now.Add(time.Second),
-			Currency:  "EUR",
+			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
 			Amount:    "not-a-number",
@@ -317,7 +318,7 @@ func TestFillPayments_SkipsOldPayments(t *testing.T) {
 			Id:        "tx_old",
 			CreatedAt: now.Add(-2 * time.Hour),
 			UpdatedAt: now.Add(-2 * time.Hour), // Before state's LastUpdatedAtFrom
-			Currency:  "EUR",
+			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
 			Amount:    "1000",
@@ -326,7 +327,7 @@ func TestFillPayments_SkipsOldPayments(t *testing.T) {
 			Id:        "tx_new",
 			CreatedAt: now,
 			UpdatedAt: now, // After state's LastUpdatedAtFrom
-			Currency:  "EUR",
+			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
 			Amount:    "2000",
@@ -351,7 +352,7 @@ func TestFillPayments_AllPaymentTypes(t *testing.T) {
 			Id:        "tx_payin",
 			CreatedAt: now,
 			UpdatedAt: now.Add(time.Second),
-			Currency:  "EUR",
+			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
 			Amount:    "1000",
@@ -360,7 +361,7 @@ func TestFillPayments_AllPaymentTypes(t *testing.T) {
 			Id:        "tx_payout",
 			CreatedAt: now,
 			UpdatedAt: now.Add(2 * time.Second),
-			Currency:  "EUR",
+			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYOUT,
 			Status:    genericclient.PENDING,
 			Amount:    "2000",
@@ -369,7 +370,7 @@ func TestFillPayments_AllPaymentTypes(t *testing.T) {
 			Id:        "tx_transfer",
 			CreatedAt: now,
 			UpdatedAt: now.Add(3 * time.Second),
-			Currency:  "USD",
+			Currency:  "USD/2", // UMN format
 			Type:      genericclient.TRANSFER,
 			Status:    genericclient.FAILED,
 			Amount:    "3000",
@@ -403,7 +404,7 @@ func TestFillPayments_WithMetadata(t *testing.T) {
 			Id:        "tx_meta",
 			CreatedAt: now,
 			UpdatedAt: now.Add(time.Second),
-			Currency:  "GBP",
+			Currency:  "GBP/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
 			Amount:    "5000",
@@ -431,7 +432,7 @@ func TestFillPayments_WithSourceAndDestination(t *testing.T) {
 			Id:                   "tx_accounts",
 			CreatedAt:            now,
 			UpdatedAt:            now.Add(time.Second),
-			Currency:             "EUR",
+			Currency:             "EUR/2", // UMN format
 			Type:                 genericclient.TRANSFER,
 			Status:               genericclient.SUCCEEDED,
 			Amount:               "10000",
@@ -486,7 +487,7 @@ func TestFetchNextPayments_NilState(t *testing.T) {
 				Id:        "tx_1",
 				CreatedAt: now,
 				UpdatedAt: now.Add(time.Second),
-				Currency:  "EUR",
+				Currency:  "EUR/2", // UMN format
 				Type:      genericclient.PAYIN,
 				Status:    genericclient.SUCCEEDED,
 				Amount:    "1000",

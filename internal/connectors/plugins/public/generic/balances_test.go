@@ -46,11 +46,11 @@ var _ = Describe("Generic Plugin Balances", func() {
 				Balances: []genericclient.Balance{
 					{
 						Amount:   "100",
-						Currency: "USD",
+						Currency: "USD/2", // UMN format
 					},
 					{
 						Amount:   "15001",
-						Currency: "EUR",
+						Currency: "EUR/2", // UMN format
 					},
 				},
 			}

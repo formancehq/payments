@@ -161,7 +161,9 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 		models.PAYMENT_STATUS_FAILED,
 		models.PAYMENT_STATUS_EXPIRED:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
-	case models.PAYMENT_STATUS_PENDING,
+	case models.PAYMENT_STATUS_PENDING:
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PENDING
+	case models.PAYMENT_STATUS_PROCESSING,
 		models.PAYMENT_STATUS_AUTHORISATION:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING
 	case models.PAYMENT_STATUS_REFUNDED:
@@ -170,6 +172,20 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
 	default:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
+	}
+}
+
+// isPaymentStatusFinal returns true if the payment status is final and polling should stop.
+// Intermediate statuses (PENDING, PROCESSING) return false to continue polling.
+func isPaymentStatusFinal(status models.PaymentStatus) bool {
+	switch status {
+	case models.PAYMENT_STATUS_PENDING,
+		models.PAYMENT_STATUS_PROCESSING,
+		models.PAYMENT_STATUS_AUTHORISATION:
+		return false
+	default:
+		// All other statuses are considered final
+		return true
 	}
 }
 
