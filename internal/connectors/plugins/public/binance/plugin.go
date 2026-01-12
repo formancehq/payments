@@ -167,5 +167,19 @@ func (p *Plugin) StartOrderWebSocket(ctx context.Context, req models.StartOrderW
 	return p.startOrderWebSocket(ctx, req)
 }
 
+func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextConversions(ctx, req)
+}
+
+func (p *Plugin) CreateConversion(ctx context.Context, req models.CreateConversionRequest) (models.CreateConversionResponse, error) {
+	if p.client == nil {
+		return models.CreateConversionResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.createConversion(ctx, req)
+}
+
 var _ models.Plugin = &Plugin{}
 var _ models.WebSocketPlugin = &Plugin{}

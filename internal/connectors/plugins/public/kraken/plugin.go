@@ -143,4 +143,18 @@ func (p *Plugin) GetOHLC(ctx context.Context, req models.GetOHLCRequest) (models
 	return p.fetchOHLC(ctx, req)
 }
 
+func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextConversions(ctx, req)
+}
+
+func (p *Plugin) CreateConversion(ctx context.Context, req models.CreateConversionRequest) (models.CreateConversionResponse, error) {
+	if p.client == nil {
+		return models.CreateConversionResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.createConversion(ctx, req)
+}
+
 var _ models.Plugin = &Plugin{}
