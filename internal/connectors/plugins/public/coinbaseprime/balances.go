@@ -2,6 +2,7 @@ package coinbaseprime
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -14,6 +15,24 @@ import (
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+	// The FromPayload contains the account (wallet) info
+	// We need to match balances to wallets by symbol
+	var walletSymbol string
+	var walletID string
+
+	if req.FromPayload != nil {
+		var wallet struct {
+			Reference string            `json:"reference"`
+			Metadata  map[string]string `json:"metadata"`
+		}
+		if err := json.Unmarshal(req.FromPayload, &wallet); err == nil {
+			walletID = wallet.Reference
+			if wallet.Metadata != nil {
+				walletSymbol = wallet.Metadata["symbol"]
+			}
+		}
+	}
+
 	// Fetch balances for the portfolio
 	balancesResp, err := p.client.GetPortfolioBalances(ctx)
 	if err != nil {
@@ -22,7 +41,18 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	balances := make([]models.PSPBalance, 0, len(balancesResp.Balances))
 	for _, bal := range balancesResp.Balances {
-		balance, err := modelBalanceToBalance(bal, p.config.PortfolioID)
+		// If we have a wallet symbol, only include balances that match
+		if walletSymbol != "" && !strings.EqualFold(bal.Symbol, walletSymbol) {
+			continue
+		}
+
+		// Use wallet ID as account reference if available, otherwise use portfolio ID
+		accountRef := p.config.PortfolioID
+		if walletID != "" {
+			accountRef = walletID
+		}
+
+		balance, err := modelBalanceToBalance(bal, accountRef)
 		if err != nil {
 			p.logger.Errorf("failed to convert balance for %s: %v", bal.Symbol, err)
 			continue
