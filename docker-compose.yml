@@ -107,7 +107,7 @@ services:
       PLUGIN_MAGIC_COOKIE: mysupercookie
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: true
       STACK_URL: http://gateway:8092
-      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
   payments-worker:
     image: golang:1.24.7-alpine
@@ -135,7 +135,7 @@ services:
       PLUGIN_MAGIC_COOKIE: mysupercookie
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: false
       STACK_URL: http://gateway:8092
-      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
   console:
     image: ghcr.io/formancehq/console-v3:v1.17.0
