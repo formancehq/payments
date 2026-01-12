@@ -31,8 +31,8 @@ type order struct {
 	BaseQuantityOrdered *big.Int             `bun:"base_quantity_ordered,type:numeric,notnull"`
 	TimeInForce         models.TimeInForce   `bun:"time_in_force,type:text,notnull"`
 
-	// Scan only fields - status is derived from adjustments
-	Status models.OrderStatus `bun:"status,type:text,notnull,scanonly"`
+	// Status field - also stored in adjustments for history
+	Status models.OrderStatus `bun:"status,type:text,notnull"`
 
 	// Optional fields
 	BaseQuantityFilled *big.Int          `bun:"base_quantity_filled,type:numeric,nullzero"`
@@ -96,7 +96,7 @@ func (s *store) OrdersUpsert(ctx context.Context, orders []models.Order) error {
 			Set("fee = EXCLUDED.fee").
 			Set("fee_asset = EXCLUDED.fee_asset").
 			Set("average_fill_price = EXCLUDED.average_fill_price").
-			Set("metadata = order.metadata || EXCLUDED.metadata").
+			Set("metadata = \"order\".metadata || EXCLUDED.metadata").
 			Exec(ctx)
 		if err != nil {
 			return e("failed to insert orders", err)
