@@ -1569,6 +1569,338 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
+## List all orders
+
+<a id="opIdv3ListOrders"></a>
+
+> Code samples
+
+```http
+GET /v3/orders HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`GET /v3/orders`
+
+> Body parameter
+
+```json
+{}
+```
+
+<h3 id="list-all-orders-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "direction": "UNKNOWN",
+        "sourceAsset": "string",
+        "targetAsset": "string",
+        "type": "UNKNOWN",
+        "status": "UNKNOWN",
+        "baseQuantityOrdered": 0,
+        "baseQuantityFilled": 0,
+        "limitPrice": 0,
+        "stopPrice": 0,
+        "timeInForce": "UNKNOWN",
+        "expiresAt": "2019-08-24T14:15:22Z",
+        "fee": 0,
+        "feeAsset": "string",
+        "averageFillPrice": 0,
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "adjustments": [
+          {
+            "id": "string",
+            "reference": "string",
+            "createdAt": "2019-08-24T14:15:22Z",
+            "status": "UNKNOWN",
+            "baseQuantityFilled": 0,
+            "fee": 0,
+            "feeAsset": "string",
+            "metadata": {
+              "property1": "string",
+              "property2": "string"
+            }
+          }
+        ],
+        "error": "string"
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-all-orders-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3OrdersCursorResponse](#schemav3orderscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get an order by ID
+
+<a id="opIdv3GetOrder"></a>
+
+> Code samples
+
+```http
+GET /v3/orders/{orderID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/orders/{orderID}`
+
+<h3 id="get-an-order-by-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|orderID|path|string|true|The order ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "direction": "UNKNOWN",
+    "sourceAsset": "string",
+    "targetAsset": "string",
+    "type": "UNKNOWN",
+    "status": "UNKNOWN",
+    "baseQuantityOrdered": 0,
+    "baseQuantityFilled": 0,
+    "limitPrice": 0,
+    "stopPrice": 0,
+    "timeInForce": "UNKNOWN",
+    "expiresAt": "2019-08-24T14:15:22Z",
+    "fee": 0,
+    "feeAsset": "string",
+    "averageFillPrice": 0,
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "adjustments": [
+      {
+        "id": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "status": "UNKNOWN",
+        "baseQuantityFilled": 0,
+        "fee": 0,
+        "feeAsset": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ],
+    "error": "string"
+  }
+}
+```
+
+<h3 id="get-an-order-by-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetOrderResponse](#schemav3getorderresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## List all conversions
+
+<a id="opIdv3ListConversions"></a>
+
+> Code samples
+
+```http
+GET /v3/conversions HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`GET /v3/conversions`
+
+> Body parameter
+
+```json
+{}
+```
+
+<h3 id="list-all-conversions-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "sourceAsset": "string",
+        "targetAsset": "string",
+        "sourceAmount": 0,
+        "targetAmount": 0,
+        "status": "UNKNOWN",
+        "walletId": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "error": "string"
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-all-conversions-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConversionsCursorResponse](#schemav3conversionscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get a conversion by ID
+
+<a id="opIdv3GetConversion"></a>
+
+> Code samples
+
+```http
+GET /v3/conversions/{conversionID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/conversions/{conversionID}`
+
+<h3 id="get-a-conversion-by-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|conversionID|path|string|true|The conversion ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "sourceAsset": "string",
+    "targetAsset": "string",
+    "sourceAmount": 0,
+    "targetAmount": 0,
+    "status": "UNKNOWN",
+    "walletId": "string",
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "error": "string"
+  }
+}
+```
+
+<h3 id="get-a-conversion-by-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetConversionResponse](#schemav3getconversionresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
 ## Initiate a payment
 
 <a id="opIdv3InitiatePayment"></a>
@@ -5154,6 +5486,536 @@ None ( Scopes: payments:read )
 |*anonymous*|CAPTURE|
 |*anonymous*|CAPTURE_FAILED|
 |*anonymous*|OTHER|
+
+<h2 id="tocS_V3OrdersCursorResponse">V3OrdersCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderscursorresponse"></a>
+<a id="schema_V3OrdersCursorResponse"></a>
+<a id="tocSv3orderscursorresponse"></a>
+<a id="tocsv3orderscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "direction": "UNKNOWN",
+        "sourceAsset": "string",
+        "targetAsset": "string",
+        "type": "UNKNOWN",
+        "status": "UNKNOWN",
+        "baseQuantityOrdered": 0,
+        "baseQuantityFilled": 0,
+        "limitPrice": 0,
+        "stopPrice": 0,
+        "timeInForce": "UNKNOWN",
+        "expiresAt": "2019-08-24T14:15:22Z",
+        "fee": 0,
+        "feeAsset": "string",
+        "averageFillPrice": 0,
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "adjustments": [
+          {
+            "id": "string",
+            "reference": "string",
+            "createdAt": "2019-08-24T14:15:22Z",
+            "status": "UNKNOWN",
+            "baseQuantityFilled": 0,
+            "fee": 0,
+            "feeAsset": "string",
+            "metadata": {
+              "property1": "string",
+              "property2": "string"
+            }
+          }
+        ],
+        "error": "string"
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3Order](#schemav3order)]|true|none|none|
+
+<h2 id="tocS_V3GetOrderResponse">V3GetOrderResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3getorderresponse"></a>
+<a id="schema_V3GetOrderResponse"></a>
+<a id="tocSv3getorderresponse"></a>
+<a id="tocsv3getorderresponse"></a>
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "direction": "UNKNOWN",
+    "sourceAsset": "string",
+    "targetAsset": "string",
+    "type": "UNKNOWN",
+    "status": "UNKNOWN",
+    "baseQuantityOrdered": 0,
+    "baseQuantityFilled": 0,
+    "limitPrice": 0,
+    "stopPrice": 0,
+    "timeInForce": "UNKNOWN",
+    "expiresAt": "2019-08-24T14:15:22Z",
+    "fee": 0,
+    "feeAsset": "string",
+    "averageFillPrice": 0,
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "adjustments": [
+      {
+        "id": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "status": "UNKNOWN",
+        "baseQuantityFilled": 0,
+        "fee": 0,
+        "feeAsset": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ],
+    "error": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[V3Order](#schemav3order)|true|none|none|
+
+<h2 id="tocS_V3Order">V3Order</h2>
+<!-- backwards compatibility -->
+<a id="schemav3order"></a>
+<a id="schema_V3Order"></a>
+<a id="tocSv3order"></a>
+<a id="tocsv3order"></a>
+
+```json
+{
+  "id": "string",
+  "connectorID": "string",
+  "provider": "string",
+  "reference": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "updatedAt": "2019-08-24T14:15:22Z",
+  "direction": "UNKNOWN",
+  "sourceAsset": "string",
+  "targetAsset": "string",
+  "type": "UNKNOWN",
+  "status": "UNKNOWN",
+  "baseQuantityOrdered": 0,
+  "baseQuantityFilled": 0,
+  "limitPrice": 0,
+  "stopPrice": 0,
+  "timeInForce": "UNKNOWN",
+  "expiresAt": "2019-08-24T14:15:22Z",
+  "fee": 0,
+  "feeAsset": "string",
+  "averageFillPrice": 0,
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  },
+  "adjustments": [
+    {
+      "id": "string",
+      "reference": "string",
+      "createdAt": "2019-08-24T14:15:22Z",
+      "status": "UNKNOWN",
+      "baseQuantityFilled": 0,
+      "fee": 0,
+      "feeAsset": "string",
+      "metadata": {
+        "property1": "string",
+        "property2": "string"
+      }
+    }
+  ],
+  "error": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|none|
+|connectorID|string(byte)|true|none|none|
+|provider|string|true|none|none|
+|reference|string|true|none|none|
+|createdAt|string(date-time)|true|none|none|
+|updatedAt|string(date-time)|true|none|none|
+|direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|true|none|none|
+|sourceAsset|string|true|none|none|
+|targetAsset|string|true|none|none|
+|type|[V3OrderTypeEnum](#schemav3ordertypeenum)|true|none|none|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|none|
+|baseQuantityOrdered|integer(bigint)|true|none|none|
+|baseQuantityFilled|integer(bigint)¦null|false|none|none|
+|limitPrice|integer(bigint)¦null|false|none|none|
+|stopPrice|integer(bigint)¦null|false|none|none|
+|timeInForce|[V3TimeInForceEnum](#schemav3timeinforceenum)|true|none|none|
+|expiresAt|string(date-time)¦null|false|none|none|
+|fee|integer(bigint)¦null|false|none|none|
+|feeAsset|string¦null|false|none|none|
+|averageFillPrice|integer(bigint)¦null|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|adjustments|[[V3OrderAdjustment](#schemav3orderadjustment)]¦null|false|none|none|
+|error|string¦null|false|none|none|
+
+<h2 id="tocS_V3OrderAdjustment">V3OrderAdjustment</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderadjustment"></a>
+<a id="schema_V3OrderAdjustment"></a>
+<a id="tocSv3orderadjustment"></a>
+<a id="tocsv3orderadjustment"></a>
+
+```json
+{
+  "id": "string",
+  "reference": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "status": "UNKNOWN",
+  "baseQuantityFilled": 0,
+  "fee": 0,
+  "feeAsset": "string",
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|none|
+|reference|string|true|none|none|
+|createdAt|string(date-time)|true|none|none|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|none|
+|baseQuantityFilled|integer(bigint)¦null|false|none|none|
+|fee|integer(bigint)¦null|false|none|none|
+|feeAsset|string¦null|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+
+<h2 id="tocS_V3OrderDirectionEnum">V3OrderDirectionEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderdirectionenum"></a>
+<a id="schema_V3OrderDirectionEnum"></a>
+<a id="tocSv3orderdirectionenum"></a>
+<a id="tocsv3orderdirectionenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|BUY|
+|*anonymous*|SELL|
+
+<h2 id="tocS_V3OrderTypeEnum">V3OrderTypeEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3ordertypeenum"></a>
+<a id="schema_V3OrderTypeEnum"></a>
+<a id="tocSv3ordertypeenum"></a>
+<a id="tocsv3ordertypeenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|MARKET|
+|*anonymous*|LIMIT|
+|*anonymous*|STOP_LIMIT|
+
+<h2 id="tocS_V3OrderStatusEnum">V3OrderStatusEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderstatusenum"></a>
+<a id="schema_V3OrderStatusEnum"></a>
+<a id="tocSv3orderstatusenum"></a>
+<a id="tocsv3orderstatusenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|PENDING|
+|*anonymous*|OPEN|
+|*anonymous*|PARTIALLY_FILLED|
+|*anonymous*|FILLED|
+|*anonymous*|CANCELLED|
+|*anonymous*|FAILED|
+|*anonymous*|EXPIRED|
+
+<h2 id="tocS_V3TimeInForceEnum">V3TimeInForceEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3timeinforceenum"></a>
+<a id="schema_V3TimeInForceEnum"></a>
+<a id="tocSv3timeinforceenum"></a>
+<a id="tocsv3timeinforceenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|GOOD_UNTIL_CANCELLED|
+|*anonymous*|GOOD_UNTIL_DATE_TIME|
+|*anonymous*|IMMEDIATE_OR_CANCEL|
+|*anonymous*|FILL_OR_KILL|
+
+<h2 id="tocS_V3ConversionsCursorResponse">V3ConversionsCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversionscursorresponse"></a>
+<a id="schema_V3ConversionsCursorResponse"></a>
+<a id="tocSv3conversionscursorresponse"></a>
+<a id="tocsv3conversionscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "sourceAsset": "string",
+        "targetAsset": "string",
+        "sourceAmount": 0,
+        "targetAmount": 0,
+        "status": "UNKNOWN",
+        "walletId": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "error": "string"
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3Conversion](#schemav3conversion)]|true|none|none|
+
+<h2 id="tocS_V3GetConversionResponse">V3GetConversionResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3getconversionresponse"></a>
+<a id="schema_V3GetConversionResponse"></a>
+<a id="tocSv3getconversionresponse"></a>
+<a id="tocsv3getconversionresponse"></a>
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "sourceAsset": "string",
+    "targetAsset": "string",
+    "sourceAmount": 0,
+    "targetAmount": 0,
+    "status": "UNKNOWN",
+    "walletId": "string",
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "error": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[V3Conversion](#schemav3conversion)|true|none|none|
+
+<h2 id="tocS_V3Conversion">V3Conversion</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversion"></a>
+<a id="schema_V3Conversion"></a>
+<a id="tocSv3conversion"></a>
+<a id="tocsv3conversion"></a>
+
+```json
+{
+  "id": "string",
+  "connectorID": "string",
+  "provider": "string",
+  "reference": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "updatedAt": "2019-08-24T14:15:22Z",
+  "sourceAsset": "string",
+  "targetAsset": "string",
+  "sourceAmount": 0,
+  "targetAmount": 0,
+  "status": "UNKNOWN",
+  "walletId": "string",
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  },
+  "error": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|none|
+|connectorID|string(byte)|true|none|none|
+|provider|string|true|none|none|
+|reference|string|true|none|none|
+|createdAt|string(date-time)|true|none|none|
+|updatedAt|string(date-time)|true|none|none|
+|sourceAsset|string|true|none|none|
+|targetAsset|string|true|none|none|
+|sourceAmount|integer(bigint)|true|none|none|
+|targetAmount|integer(bigint)¦null|false|none|none|
+|status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|none|
+|walletId|string|true|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|error|string¦null|false|none|none|
+
+<h2 id="tocS_V3ConversionStatusEnum">V3ConversionStatusEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversionstatusenum"></a>
+<a id="schema_V3ConversionStatusEnum"></a>
+<a id="tocSv3conversionstatusenum"></a>
+<a id="tocsv3conversionstatusenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|PENDING|
+|*anonymous*|COMPLETED|
+|*anonymous*|FAILED|
 
 <h2 id="tocS_V3InitiatePaymentRequest">V3InitiatePaymentRequest</h2>
 <!-- backwards compatibility -->
