@@ -21,6 +21,7 @@ type TransactionStatus string
 // List of TransactionStatus
 const (
 	PENDING TransactionStatus = "PENDING"
+	PROCESSING TransactionStatus = "PROCESSING"
 	SUCCEEDED TransactionStatus = "SUCCEEDED"
 	FAILED TransactionStatus = "FAILED"
 )
@@ -28,6 +29,7 @@ const (
 // All allowed values of TransactionStatus enum
 var AllowedTransactionStatusEnumValues = []TransactionStatus{
 	"PENDING",
+	"PROCESSING",
 	"SUCCEEDED",
 	"FAILED",
 }

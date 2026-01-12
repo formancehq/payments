@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/genericclient"
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"
 )
@@ -104,7 +103,7 @@ func fillPayments(
 			CreatedAt: payment.CreatedAt,
 			Type:      paymentType,
 			Amount:    &amount,
-			Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, payment.Currency),
+			Asset:     payment.Currency, // UMN format from PSP: "USD/2", "BTC/8"
 			Scheme:    models.PAYMENT_SCHEME_OTHER,
 			Status:    paymentStatus,
 			Metadata:  payment.Metadata,
@@ -151,6 +150,8 @@ func matchPaymentStatus(
 	switch status {
 	case genericclient.PENDING:
 		return models.PAYMENT_STATUS_PENDING
+	case genericclient.PROCESSING:
+		return models.PAYMENT_STATUS_PROCESSING
 	case genericclient.FAILED:
 		return models.PAYMENT_STATUS_FAILED
 	case genericclient.SUCCEEDED:

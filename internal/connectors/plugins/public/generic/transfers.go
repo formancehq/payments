@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/generic/client"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
@@ -18,26 +17,19 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return models.PSPPayment{}, err
 	}
 
-	curr, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
-	if err != nil {
+	// Validate asset format (e.g., "USD/2", "BTC/8", "COIN", "JPY")
+	if _, _, err := parseAssetUMN(pi.Asset); err != nil {
 		return models.PSPPayment{}, errorsutils.NewWrappedError(
-			fmt.Errorf("failed to get currency and precision from asset: %w", err),
+			fmt.Errorf("failed to parse asset %s: %w", pi.Asset, err),
 			models.ErrInvalidRequest,
 		)
 	}
 
-	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
-	if err != nil {
-		return models.PSPPayment{}, errorsutils.NewWrappedError(
-			fmt.Errorf("failed to convert amount to string: %w", err),
-			models.ErrInvalidRequest,
-		)
-	}
-
+	// All amounts are integers (minor units) - pass through directly
 	req := &client.TransferRequest{
 		IdempotencyKey:       pi.Reference,
-		Amount:               amount,
-		Currency:             curr,
+		Amount:               pi.Amount.String(),
+		Currency:             pi.Asset, // Pass full UMN in currency field: "USD/2", "BTC/8"
 		SourceAccountId:      pi.SourceAccount.Reference,
 		DestinationAccountId: pi.DestinationAccount.Reference,
 		Description:          &pi.Description,
@@ -49,7 +41,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return models.PSPPayment{}, err
 	}
 
-	return transferResponseToPayment(resp, precision)
+	return transferResponseToPayment(resp)
 }
 
 func (p *Plugin) pollTransferStatus(ctx context.Context, transferID string) (models.PSPPayment, error) {
@@ -58,12 +50,8 @@ func (p *Plugin) pollTransferStatus(ctx context.Context, transferID string) (mod
 		return models.PSPPayment{}, err
 	}
 
-	// Look up precision from ISO4217 currency table
-	_, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, resp.Currency)
-	if err != nil {
-		precision = 2 // Default fallback for unknown currencies
-	}
-	return transferResponseToPayment(resp, precision)
+	// PSP returns asset in UMN format - use directly
+	return transferResponseToPayment(resp)
 }
 
 func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
@@ -98,10 +86,12 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 	return nil
 }
 
-func transferResponseToPayment(resp *client.TransferResponse, precision int) (models.PSPPayment, error) {
-	amount, err := currency.GetAmountWithPrecisionFromString(resp.Amount, precision)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to parse amount %s: %w", resp.Amount, err)
+func transferResponseToPayment(resp *client.TransferResponse) (models.PSPPayment, error) {
+	// All amounts are integers (minor units) - no decimal conversion
+	var amount big.Int
+	_, ok := amount.SetString(resp.Amount, 10)
+	if !ok {
+		return models.PSPPayment{}, fmt.Errorf("failed to parse amount %s as integer", resp.Amount)
 	}
 
 	createdAt, err := time.Parse(time.RFC3339, resp.CreatedAt)
@@ -119,8 +109,8 @@ func transferResponseToPayment(resp *client.TransferResponse, precision int) (mo
 		Reference:                   resp.Id,
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_TRANSFER,
-		Amount:                      amount,
-		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, resp.Currency),
+		Amount:                      &amount,
+		Asset:                       resp.Currency, // UMN format from PSP via currency field: "USD/2", "BTC/8"
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		Status:                      mapStringToPaymentStatus(resp.Status),
 		SourceAccountReference:      &resp.SourceAccountId,

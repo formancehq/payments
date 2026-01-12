@@ -13,7 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestCreateTransfer_Pending_ReturnsPollingID(t *testing.T) {
+func TestCreateTransfer_Pending_ReturnsBothPaymentAndPollingID(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -43,8 +43,8 @@ func TestCreateTransfer_Pending_ReturnsPollingID(t *testing.T) {
 	mockClient.EXPECT().CreateTransfer(gomock.Any(), gomock.Any()).Return(&client.TransferResponse{
 		Id:                   "transfer_test_transfer_ref",
 		IdempotencyKey:       "test_transfer_ref",
-		Amount:               "10.00",
-		Currency:             "USD",
+		Amount:               "1000",
+		Currency:             "USD/2",
 		SourceAccountId:      "source_account_123",
 		DestinationAccountId: "dest_account_456",
 		Status:               "PENDING",
@@ -52,10 +52,13 @@ func TestCreateTransfer_Pending_ReturnsPollingID(t *testing.T) {
 		Metadata:             map[string]string{"test_key": "test_value"},
 	}, nil)
 
+	// When status is PENDING, CreateTransfer should return BOTH Payment AND PollingTransferID
 	resp, err := plugin.CreateTransfer(context.Background(), models.CreateTransferRequest{PaymentInitiation: pi})
 	require.NoError(t, err)
-	require.Nil(t, resp.Payment)
-	require.NotNil(t, resp.PollingTransferID)
+	require.NotNil(t, resp.Payment, "Payment should be returned to create the payment record")
+	require.Equal(t, models.PAYMENT_STATUS_PENDING, resp.Payment.Status)
+	require.Equal(t, "transfer_test_transfer_ref", resp.Payment.Reference)
+	require.NotNil(t, resp.PollingTransferID, "PollingTransferID should be returned to set up polling")
 	require.Equal(t, "transfer_test_transfer_ref", *resp.PollingTransferID)
 }
 
@@ -86,8 +89,8 @@ func TestCreateTransfer_Succeeded_ReturnsPayment(t *testing.T) {
 	mockClient.EXPECT().CreateTransfer(gomock.Any(), gomock.Any()).Return(&client.TransferResponse{
 		Id:                   "transfer_test_transfer_ref",
 		IdempotencyKey:       "test_transfer_ref",
-		Amount:               "10.00",
-		Currency:             "USD",
+		Amount:               "1000",
+		Currency:             "USD/2",
 		SourceAccountId:      "source_account_123",
 		DestinationAccountId: "dest_account_456",
 		Status:               "SUCCEEDED",
@@ -129,8 +132,8 @@ func TestCreateTransfer_Failed_ReturnsPayment(t *testing.T) {
 	mockClient.EXPECT().CreateTransfer(gomock.Any(), gomock.Any()).Return(&client.TransferResponse{
 		Id:                   "transfer_test_transfer_ref",
 		IdempotencyKey:       "test_transfer_ref",
-		Amount:               "10.00",
-		Currency:             "USD",
+		Amount:               "1000",
+		Currency:             "USD/2",
 		SourceAccountId:      "source_account_123",
 		DestinationAccountId: "dest_account_456",
 		Status:               "FAILED",
@@ -175,7 +178,7 @@ func TestCreateTransfer_ClientError(t *testing.T) {
 	require.Nil(t, resp.Payment)
 }
 
-func TestCreateTransfer_InvalidCurrency(t *testing.T) {
+func TestCreateTransfer_InvalidAssetFormat(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -184,10 +187,11 @@ func TestCreateTransfer_InvalidCurrency(t *testing.T) {
 	mockClient := client.NewMockClient(ctrl)
 	plugin := &Plugin{client: mockClient}
 
+	// Test invalid UMN format (too many slashes)
 	pi := models.PSPPaymentInitiation{
 		Reference:   "test_transfer_ref",
 		Amount:      big.NewInt(1000),
-		Asset:       "INVALID/2",
+		Asset:       "USD/2/3", // Invalid: too many slashes
 		Description: "Test transfer",
 		SourceAccount: &models.PSPAccount{
 			Reference: "source_account_123",
@@ -199,10 +203,11 @@ func TestCreateTransfer_InvalidCurrency(t *testing.T) {
 
 	resp, err := plugin.CreateTransfer(context.Background(), models.CreateTransferRequest{PaymentInitiation: pi})
 	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid asset format")
 	require.Nil(t, resp.Payment)
 }
 
-func TestPollTransferStatus_Pending_ReturnsNil(t *testing.T) {
+func TestPollTransferStatus_Pending_ReturnsPayment(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -216,18 +221,20 @@ func TestPollTransferStatus_Pending_ReturnsNil(t *testing.T) {
 	mockClient.EXPECT().GetTransferStatus(gomock.Any(), "test_transfer_id").Return(&client.TransferResponse{
 		Id:                   "test_transfer_id",
 		IdempotencyKey:       "test_transfer_key",
-		Amount:               "10.00",
-		Currency:             "USD",
+		Amount:               "1000",
+		Currency:             "USD/2",
 		SourceAccountId:      "source_account",
 		DestinationAccountId: "dest_account",
 		Status:               "PENDING",
 		CreatedAt:            now.Format(time.RFC3339),
 	}, nil)
 
+	// When status is PENDING, PollTransferStatus returns Payment so workflow can update the record.
+	// The workflow handles the logic to continue or stop polling based on status.
 	resp, err := plugin.PollTransferStatus(context.Background(), models.PollTransferStatusRequest{TransferID: "test_transfer_id"})
 	require.NoError(t, err)
-	require.Nil(t, resp.Payment)
-	require.Nil(t, resp.Error)
+	require.NotNil(t, resp.Payment)
+	require.Equal(t, models.PAYMENT_STATUS_PENDING, resp.Payment.Status)
 }
 
 func TestPollTransferStatus_Succeeded_ReturnsPayment(t *testing.T) {
@@ -244,8 +251,8 @@ func TestPollTransferStatus_Succeeded_ReturnsPayment(t *testing.T) {
 	mockClient.EXPECT().GetTransferStatus(gomock.Any(), "test_transfer_id").Return(&client.TransferResponse{
 		Id:                   "test_transfer_id",
 		IdempotencyKey:       "test_transfer_key",
-		Amount:               "10.00",
-		Currency:             "USD",
+		Amount:               "1000",
+		Currency:             "USD/2",
 		SourceAccountId:      "source_account",
 		DestinationAccountId: "dest_account",
 		Status:               "SUCCEEDED",
@@ -273,8 +280,8 @@ func TestPollTransferStatus_Failed_ReturnsPayment(t *testing.T) {
 	mockClient.EXPECT().GetTransferStatus(gomock.Any(), "test_transfer_id").Return(&client.TransferResponse{
 		Id:                   "test_transfer_id",
 		IdempotencyKey:       "test_transfer_key",
-		Amount:               "10.00",
-		Currency:             "USD",
+		Amount:               "1000",
+		Currency:             "USD/2",
 		SourceAccountId:      "source_account",
 		DestinationAccountId: "dest_account",
 		Status:               "FAILED",
@@ -318,7 +325,7 @@ func TestPollTransferStatus_UnknownCurrency_DefaultsPrecision(t *testing.T) {
 	mockClient.EXPECT().GetTransferStatus(gomock.Any(), "test_transfer_id").Return(&client.TransferResponse{
 		Id:                   "test_transfer_id",
 		IdempotencyKey:       "test_transfer_key",
-		Amount:               "10.00",
+		Amount:               "1000",
 		Currency:             "UNKNOWN",
 		SourceAccountId:      "source_account",
 		DestinationAccountId: "dest_account",
@@ -458,8 +465,8 @@ func TestTransferResponseToPayment(t *testing.T) {
 		resp := &client.TransferResponse{
 			Id:                   "transfer_123",
 			IdempotencyKey:       "idem_key",
-			Amount:               "10.00",
-			Currency:             "USD",
+			Amount:               "1000", // Minor units (integer)
+			Currency:             "USD/2",
 			SourceAccountId:      "source",
 			DestinationAccountId: "dest",
 			Status:               "SUCCEEDED",
@@ -467,7 +474,7 @@ func TestTransferResponseToPayment(t *testing.T) {
 			Metadata:             map[string]string{"key": "value"},
 		}
 
-		payment, err := transferResponseToPayment(resp, 2)
+		payment, err := transferResponseToPayment(resp)
 		require.NoError(t, err)
 		require.Equal(t, "transfer_123", payment.Reference)
 		require.Equal(t, "idem_key", payment.ParentReference)
@@ -483,14 +490,14 @@ func TestTransferResponseToPayment(t *testing.T) {
 			Id:                   "transfer_123",
 			IdempotencyKey:       "idem_key",
 			Amount:               "invalid",
-			Currency:             "USD",
+			Currency:             "USD/2",
 			SourceAccountId:      "source",
 			DestinationAccountId: "dest",
 			Status:               "SUCCEEDED",
 			CreatedAt:            now.Format(time.RFC3339),
 		}
 
-		_, err := transferResponseToPayment(resp, 2)
+		_, err := transferResponseToPayment(resp)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to parse amount")
 	})
@@ -499,15 +506,15 @@ func TestTransferResponseToPayment(t *testing.T) {
 		resp := &client.TransferResponse{
 			Id:                   "transfer_123",
 			IdempotencyKey:       "idem_key",
-			Amount:               "10.00",
-			Currency:             "USD",
+			Amount:               "1000",
+			Currency:             "USD/2",
 			SourceAccountId:      "source",
 			DestinationAccountId: "dest",
 			Status:               "SUCCEEDED",
 			CreatedAt:            "invalid-date",
 		}
 
-		_, err := transferResponseToPayment(resp, 2)
+		_, err := transferResponseToPayment(resp)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to parse createdAt")
 	})
@@ -517,40 +524,41 @@ func TestTransferResponseToPayment(t *testing.T) {
 			Id:                   "transfer_123",
 			IdempotencyKey:       "idem_key",
 			Amount:               "1000",
-			Currency:             "JPY",
+			Currency:             "JPY/0",
 			SourceAccountId:      "source",
 			DestinationAccountId: "dest",
 			Status:               "SUCCEEDED",
 			CreatedAt:            now.Format(time.RFC3339),
 		}
 
-		payment, err := transferResponseToPayment(resp, 0)
+		payment, err := transferResponseToPayment(resp)
 		require.NoError(t, err)
 		require.Equal(t, big.NewInt(1000), payment.Amount)
 	})
 
 	t.Run("all status mappings", func(t *testing.T) {
 		statuses := map[string]models.PaymentStatus{
-			"PENDING":   models.PAYMENT_STATUS_PENDING,
-			"SUCCEEDED": models.PAYMENT_STATUS_SUCCEEDED,
-			"FAILED":    models.PAYMENT_STATUS_FAILED,
-			"CANCELLED": models.PAYMENT_STATUS_OTHER,
-			"OTHER":     models.PAYMENT_STATUS_OTHER,
+			"PENDING":    models.PAYMENT_STATUS_PENDING,
+			"PROCESSING": models.PAYMENT_STATUS_PROCESSING,
+			"SUCCEEDED":  models.PAYMENT_STATUS_SUCCEEDED,
+			"FAILED":     models.PAYMENT_STATUS_FAILED,
+			"CANCELLED":  models.PAYMENT_STATUS_CANCELLED,
+			"OTHER":      models.PAYMENT_STATUS_OTHER,
 		}
 
 		for status, expected := range statuses {
 			resp := &client.TransferResponse{
 				Id:                   "transfer_123",
 				IdempotencyKey:       "idem_key",
-				Amount:               "10.00",
-				Currency:             "USD",
+				Amount:               "1000",
+				Currency:             "USD/2",
 				SourceAccountId:      "source",
 				DestinationAccountId: "dest",
 				Status:               status,
 				CreatedAt:            now.Format(time.RFC3339),
 			}
 
-			payment, err := transferResponseToPayment(resp, 2)
+			payment, err := transferResponseToPayment(resp)
 			require.NoError(t, err)
 			require.Equal(t, expected, payment.Status)
 		}

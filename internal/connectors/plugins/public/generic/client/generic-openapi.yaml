@@ -328,8 +328,10 @@ components:
       properties:
         amount:
           type: string
+          description: Amount in minor units (integer string)
         currency:
           type: string
+          description: Asset in UMN format with optional precision (e.g., "USD/2", "BTC/8", "COIN", "JPY")
 
     Beneficiary:
       type: object
@@ -372,6 +374,7 @@ components:
           format: date-time
         currency:
           type: string
+          description: Asset in UMN format with optional precision (e.g., "USD/2", "BTC/8", "COIN", "JPY")
         scheme: 
           type: string
         type:
@@ -380,6 +383,7 @@ components:
           $ref: '#/components/schemas/TransactionStatus'
         amount:
           type: string
+          description: Amount in minor units (integer string)
         sourceAccountID:
           type: string
         destinationAccountID:
@@ -404,6 +408,7 @@ components:
       type: string
       enum:
         - PENDING
+        - PROCESSING
         - SUCCEEDED
         - FAILED
 

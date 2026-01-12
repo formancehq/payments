@@ -387,12 +387,14 @@ components:
       type: object
     Balance:
       example:
-        amount: amount
-        currency: currency
+        amount: "1000"
+        currency: "USD/2"
       properties:
         amount:
+          description: Amount in minor units (integer string)
           type: string
         currency:
+          description: Asset in UMN format with optional precision (e.g., "USD/2", "BTC/8", "COIN", "JPY")
           type: string
       required:
       - amount
@@ -426,12 +428,12 @@ components:
     Transaction:
       example:
         createdAt: 2000-01-23T04:56:07.000+00:00
-        amount: amount
+        amount: "1000"
         sourceAccountID: sourceAccountID
         metadata:
           key: metadata
         scheme: scheme
-        currency: currency
+        currency: "USD/2"
         id: id
         relatedTransactionID: relatedTransactionID
         type: null
@@ -450,6 +452,7 @@ components:
           format: date-time
           type: string
         currency:
+          description: Asset in UMN format with optional precision (e.g., "USD/2", "BTC/8", "COIN", "JPY")
           type: string
         scheme:
           type: string
@@ -458,6 +461,7 @@ components:
         status:
           $ref: '#/components/schemas/TransactionStatus'
         amount:
+          description: Amount in minor units (integer string)
           type: string
         sourceAccountID:
           type: string
@@ -491,6 +495,7 @@ components:
     TransactionStatus:
       enum:
       - PENDING
+      - PROCESSING
       - SUCCEEDED
       - FAILED
       type: string

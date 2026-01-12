@@ -15,7 +15,7 @@ import (
 type PayoutRequest struct {
 	IdempotencyKey       string            `json:"idempotencyKey"`
 	Amount               string            `json:"amount"`
-	Currency             string            `json:"currency"`
+	Currency             string            `json:"currency"` // UMN format: "USD/2", "BTC/8"
 	SourceAccountId      string            `json:"sourceAccountId"`
 	DestinationAccountId string            `json:"destinationAccountId"`
 	Description          *string           `json:"description,omitempty"`
@@ -26,7 +26,7 @@ type PayoutResponse struct {
 	Id                   string            `json:"id"`
 	IdempotencyKey       string            `json:"idempotencyKey"`
 	Amount               string            `json:"amount"`
-	Currency             string            `json:"currency"`
+	Currency             string            `json:"currency"` // UMN format: "USD/2", "BTC/8"
 	SourceAccountId      string            `json:"sourceAccountId"`
 	DestinationAccountId string            `json:"destinationAccountId"`
 	Description          *string           `json:"description,omitempty"`

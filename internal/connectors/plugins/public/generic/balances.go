@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
@@ -40,7 +39,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			AccountReference: balances.AccountID,
 			CreatedAt:        balances.At,
 			Amount:           &amount,
-			Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, balance.Currency),
+			Asset:            balance.Currency, // UMN format from PSP: "USD/2", "BTC/8"
 		})
 	}
 

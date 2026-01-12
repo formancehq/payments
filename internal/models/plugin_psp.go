@@ -159,4 +159,9 @@ type PollPayoutStatusResponse struct {
 	// If not nil, it means that the payout failed, the payment initiation
 	// will be marked as fail and the workflow will be terminated
 	Error *string
+
+	// If true, continue polling even when Payment is set (for intermediate statuses).
+	// This allows connectors to control their own polling behavior.
+	// Default (false) means stop polling when Payment is returned.
+	HasMore bool
 }
