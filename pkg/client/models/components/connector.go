@@ -21,6 +21,17 @@ const (
 	ConnectorAtlar         Connector = "ATLAR"
 	ConnectorAdyen         Connector = "ADYEN"
 	ConnectorGeneric       Connector = "GENERIC"
+	ConnectorBinance       Connector = "BINANCE"
+	ConnectorBitstamp      Connector = "BITSTAMP"
+	ConnectorCoinbaseprime Connector = "COINBASEPRIME"
+	ConnectorColumn        Connector = "COLUMN"
+	ConnectorFireblocks    Connector = "FIREBLOCKS"
+	ConnectorIncrease      Connector = "INCREASE"
+	ConnectorKraken        Connector = "KRAKEN"
+	ConnectorPlaid         Connector = "PLAID"
+	ConnectorPowens        Connector = "POWENS"
+	ConnectorQonto         Connector = "QONTO"
+	ConnectorTink          Connector = "TINK"
 )
 
 func (e Connector) ToPointer() *Connector {
@@ -53,6 +64,28 @@ func (e *Connector) UnmarshalJSON(data []byte) error {
 	case "ADYEN":
 		fallthrough
 	case "GENERIC":
+		fallthrough
+	case "BINANCE":
+		fallthrough
+	case "BITSTAMP":
+		fallthrough
+	case "COINBASEPRIME":
+		fallthrough
+	case "COLUMN":
+		fallthrough
+	case "FIREBLOCKS":
+		fallthrough
+	case "INCREASE":
+		fallthrough
+	case "KRAKEN":
+		fallthrough
+	case "PLAID":
+		fallthrough
+	case "POWENS":
+		fallthrough
+	case "QONTO":
+		fallthrough
+	case "TINK":
 		*e = Connector(v)
 		return nil
 	default:
