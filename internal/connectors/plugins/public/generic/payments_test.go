@@ -216,8 +216,20 @@ func TestMatchPaymentStatus(t *testing.T) {
 	}{
 		{"PENDING", genericclient.PENDING, models.PAYMENT_STATUS_PENDING},
 		{"PROCESSING", genericclient.PROCESSING, models.PAYMENT_STATUS_PROCESSING},
-		{"FAILED", genericclient.FAILED, models.PAYMENT_STATUS_FAILED},
 		{"SUCCEEDED", genericclient.SUCCEEDED, models.PAYMENT_STATUS_SUCCEEDED},
+		{"FAILED", genericclient.FAILED, models.PAYMENT_STATUS_FAILED},
+		{"CANCELLED", genericclient.CANCELLED, models.PAYMENT_STATUS_CANCELLED},
+		{"EXPIRED", genericclient.EXPIRED, models.PAYMENT_STATUS_EXPIRED},
+		{"REFUNDED", genericclient.REFUNDED, models.PAYMENT_STATUS_REFUNDED},
+		{"REFUNDED_FAILURE", genericclient.REFUNDED_FAILURE, models.PAYMENT_STATUS_REFUNDED_FAILURE},
+		{"REFUND_REVERSED", genericclient.REFUND_REVERSED, models.PAYMENT_STATUS_REFUND_REVERSED},
+		{"DISPUTE", genericclient.DISPUTE, models.PAYMENT_STATUS_DISPUTE},
+		{"DISPUTE_WON", genericclient.DISPUTE_WON, models.PAYMENT_STATUS_DISPUTE_WON},
+		{"DISPUTE_LOST", genericclient.DISPUTE_LOST, models.PAYMENT_STATUS_DISPUTE_LOST},
+		{"AUTHORISATION", genericclient.AUTHORISATION, models.PAYMENT_STATUS_AUTHORISATION},
+		{"CAPTURE", genericclient.CAPTURE, models.PAYMENT_STATUS_CAPTURE},
+		{"CAPTURE_FAILED", genericclient.CAPTURE_FAILED, models.PAYMENT_STATUS_CAPTURE_FAILED},
+		{"OTHER", genericclient.OTHER, models.PAYMENT_STATUS_OTHER},
 		{"Unknown", genericclient.TransactionStatus("UNKNOWN"), models.PAYMENT_STATUS_OTHER},
 	}
 

@@ -152,10 +152,34 @@ func matchPaymentStatus(
 		return models.PAYMENT_STATUS_PENDING
 	case genericclient.PROCESSING:
 		return models.PAYMENT_STATUS_PROCESSING
-	case genericclient.FAILED:
-		return models.PAYMENT_STATUS_FAILED
 	case genericclient.SUCCEEDED:
 		return models.PAYMENT_STATUS_SUCCEEDED
+	case genericclient.FAILED:
+		return models.PAYMENT_STATUS_FAILED
+	case genericclient.CANCELLED:
+		return models.PAYMENT_STATUS_CANCELLED
+	case genericclient.EXPIRED:
+		return models.PAYMENT_STATUS_EXPIRED
+	case genericclient.REFUNDED:
+		return models.PAYMENT_STATUS_REFUNDED
+	case genericclient.REFUNDED_FAILURE:
+		return models.PAYMENT_STATUS_REFUNDED_FAILURE
+	case genericclient.REFUND_REVERSED:
+		return models.PAYMENT_STATUS_REFUND_REVERSED
+	case genericclient.DISPUTE:
+		return models.PAYMENT_STATUS_DISPUTE
+	case genericclient.DISPUTE_WON:
+		return models.PAYMENT_STATUS_DISPUTE_WON
+	case genericclient.DISPUTE_LOST:
+		return models.PAYMENT_STATUS_DISPUTE_LOST
+	case genericclient.AUTHORISATION:
+		return models.PAYMENT_STATUS_AUTHORISATION
+	case genericclient.CAPTURE:
+		return models.PAYMENT_STATUS_CAPTURE
+	case genericclient.CAPTURE_FAILED:
+		return models.PAYMENT_STATUS_CAPTURE_FAILED
+	case genericclient.OTHER:
+		return models.PAYMENT_STATUS_OTHER
 	default:
 		return models.PAYMENT_STATUS_OTHER
 	}

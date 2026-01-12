@@ -493,9 +493,23 @@ components:
       - TRANSFER
       type: string
     TransactionStatus:
+      description: |
+        Payment/transaction status. All Formance payment statuses are supported.
       enum:
       - PENDING
       - PROCESSING
       - SUCCEEDED
       - FAILED
+      - CANCELLED
+      - EXPIRED
+      - REFUNDED
+      - REFUNDED_FAILURE
+      - REFUND_REVERSED
+      - DISPUTE
+      - DISPUTE_WON
+      - DISPUTE_LOST
+      - AUTHORISATION
+      - CAPTURE
+      - CAPTURE_FAILED
+      - OTHER
       type: string
