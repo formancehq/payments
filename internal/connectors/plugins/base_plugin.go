@@ -87,6 +87,26 @@ func (dp *basePlugin) PollPayoutStatus(ctx context.Context, req models.PollPayou
 	return models.PollPayoutStatusResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	return models.FetchNextOrdersResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	return models.FetchNextConversionsResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CreateOrder(ctx context.Context, req models.CreateOrderRequest) (models.CreateOrderResponse, error) {
+	return models.CreateOrderResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CancelOrder(ctx context.Context, req models.CancelOrderRequest) (models.CancelOrderResponse, error) {
+	return models.CancelOrderResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CreateConversion(ctx context.Context, req models.CreateConversionRequest) (models.CreateConversionResponse, error) {
+	return models.CreateConversionResponse{}, ErrNotImplemented
+}
+
 func (dp *basePlugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	return models.CreateWebhooksResponse{}, ErrNotImplemented
 }

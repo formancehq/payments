@@ -489,4 +489,94 @@ func (i *impl) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (mo
 	return resp, nil
 }
 
+func (i *impl) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextOrders", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetching next orders...")
+
+	resp, err := i.plugin.FetchNextOrders(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next orders failed:", err)
+		otel.RecordError(span, err)
+		return models.FetchNextOrdersResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetched next orders succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextConversions", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetching next conversions...")
+
+	resp, err := i.plugin.FetchNextConversions(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next conversions failed:", err)
+		otel.RecordError(span, err)
+		return models.FetchNextConversionsResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetched next conversions succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CreateOrder(ctx context.Context, req models.CreateOrderRequest) (models.CreateOrderResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateOrder", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("creating order...")
+
+	resp, err := i.plugin.CreateOrder(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating order failed:", err)
+		otel.RecordError(span, err)
+		return models.CreateOrderResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("created order succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CancelOrder(ctx context.Context, req models.CancelOrderRequest) (models.CancelOrderResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CancelOrder", attribute.String("psp", i.connectorID.Provider), attribute.String("orderID", req.OrderID))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("cancelling order...")
+
+	resp, err := i.plugin.CancelOrder(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("cancelling order failed:", err)
+		otel.RecordError(span, err)
+		return models.CancelOrderResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("cancelled order succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CreateConversion(ctx context.Context, req models.CreateConversionRequest) (models.CreateConversionResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateConversion", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("creating conversion...")
+
+	resp, err := i.plugin.CreateConversion(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating conversion failed:", err)
+		otel.RecordError(span, err)
+		return models.CreateConversionResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("created conversion succeeded!")
+
+	return resp, nil
+}
+
 var _ models.Plugin = &impl{}
