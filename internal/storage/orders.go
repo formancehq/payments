@@ -125,15 +125,16 @@ func (s *store) OrdersGet(ctx context.Context, id models.OrderID) (*models.Order
 	var o order
 	err := s.db.NewSelect().
 		Model(&o).
-		Column("order.*", "oad.status").
+		ModelTableExpr("orders AS o").
+		Column("o.*", "oad.status").
 		Join(`join lateral (
 			select status
 			from order_adjustments oad
-			where order_id = "order".id
+			where order_id = o.id
 			order by created_at desc, sort_id desc
 			limit 1
 		) oad on true`).
-		Where("order.id = ?", id).
+		Where("o.id = ?", id).
 		Scan(ctx)
 	if err != nil {
 		return nil, e("failed to get order", err)
@@ -310,11 +311,12 @@ func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate
 				query = query.Where(where, args...)
 			}
 
-			query.Column("order.*", "oad.status").
+			query.ModelTableExpr("orders AS o").
+				Column("o.*", "oad.status").
 				Join(`join lateral (
 				select status
 				from order_adjustments oad
-				where order_id = "order".id
+				where order_id = o.id
 				order by created_at desc, sort_id desc
 				limit 1
 			) oad on true`)
