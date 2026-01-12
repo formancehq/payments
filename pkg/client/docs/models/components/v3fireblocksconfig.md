@@ -1,0 +1,15 @@
+# V3FireblocksConfig
+
+
+## Fields
+
+| Field                                                                   | Type                                                                    | Required                                                                | Description                                                             |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `APIKey`                                                                | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |
+| `BaseURL`                                                               | **string*                                                               | :heavy_minus_sign:                                                      | N/A                                                                     |
+| `Name`                                                                  | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |
+| ~~`PageSize`~~                                                          | **int64*                                                                | :heavy_minus_sign:                                                      | : warning: ** DEPRECATED **: From v3.1, this parameter will be ignored. |
+| `PollingPeriod`                                                         | **string*                                                               | :heavy_minus_sign:                                                      | N/A                                                                     |
+| `PrivateKey`                                                            | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |
+| `Provider`                                                              | **string*                                                               | :heavy_minus_sign:                                                      | N/A                                                                     |
+| `Sandbox`                                                               | **bool*                                                                 | :heavy_minus_sign:                                                      | N/A                                                                     |

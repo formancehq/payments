@@ -57,6 +57,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigCurrencycloud(components.
 v3ConnectorConfig := components.CreateV3ConnectorConfigDummypay(components.V3DummypayConfig{/* values here */})
 ```
 
+### V3FireblocksConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigFireblocks(components.V3FireblocksConfig{/* values here */})
+```
+
 ### V3GenericConfig
 
 ```go

@@ -57,6 +57,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestCurrencyc
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestDummypay(components.V3DummypayConfig{/* values here */})
 ```
 
+### V3FireblocksConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestFireblocks(components.V3FireblocksConfig{/* values here */})
+```
+
 ### V3GenericConfig
 
 ```go

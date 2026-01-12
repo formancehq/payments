@@ -89,6 +89,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestDummypay() *comp
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestFireblocks() *components.V3FireblocksConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3FireblocksConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestGeneric() *components.V3GenericConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3GenericConfig

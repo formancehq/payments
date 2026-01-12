@@ -89,6 +89,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestDummypay() *
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestFireblocks() *components.V3FireblocksConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3FireblocksConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestGeneric() *components.V3GenericConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3GenericConfig

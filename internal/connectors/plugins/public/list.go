@@ -10,6 +10,7 @@ import (
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/column"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"
+    _ "github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/generic"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/increase"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/kraken"

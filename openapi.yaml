@@ -5773,6 +5773,7 @@ components:
           Column: '#/components/schemas/V3ColumnConfig'
           Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
           Dummypay: '#/components/schemas/V3DummypayConfig'
+          Fireblocks: '#/components/schemas/V3FireblocksConfig'
           Generic: '#/components/schemas/V3GenericConfig'
           Increase: '#/components/schemas/V3IncreaseConfig'
           Kraken: '#/components/schemas/V3KrakenConfig'
@@ -5795,6 +5796,7 @@ components:
         - $ref: '#/components/schemas/V3ColumnConfig'
         - $ref: '#/components/schemas/V3CurrencycloudConfig'
         - $ref: '#/components/schemas/V3DummypayConfig'
+        - $ref: '#/components/schemas/V3FireblocksConfig'
         - $ref: '#/components/schemas/V3GenericConfig'
         - $ref: '#/components/schemas/V3IncreaseConfig'
         - $ref: '#/components/schemas/V3KrakenConfig'
@@ -6061,6 +6063,34 @@ components:
           type: string
           default: Dummypay
         updateLinkFlowError:
+          type: boolean
+    V3FireblocksConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - privateKey
+      properties:
+        apiKey:
+          type: string
+        baseUrl:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+        pollingPeriod:
+          type: string
+          default: 30m
+        privateKey:
+          type: string
+        provider:
+          type: string
+          default: Fireblocks
+        sandbox:
           type: boolean
     V3GenericConfig:
       type: object
