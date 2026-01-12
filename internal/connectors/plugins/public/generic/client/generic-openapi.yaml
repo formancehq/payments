@@ -406,11 +406,41 @@ components:
 
     TransactionStatus:
       type: string
+      description: |
+        Payment/transaction status. All Formance payment statuses are supported:
+        - PENDING: Payment is awaiting processing
+        - PROCESSING: Payment is being processed
+        - SUCCEEDED: Payment completed successfully
+        - FAILED: Payment failed
+        - CANCELLED: Payment was cancelled
+        - EXPIRED: Payment expired
+        - REFUNDED: Payment was refunded
+        - REFUNDED_FAILURE: Refund attempt failed
+        - REFUND_REVERSED: Refund was reversed
+        - DISPUTE: Payment is under dispute
+        - DISPUTE_WON: Dispute resolved in merchant's favor
+        - DISPUTE_LOST: Dispute resolved against merchant
+        - AUTHORISATION: Payment authorized but not captured
+        - CAPTURE: Payment captured
+        - CAPTURE_FAILED: Capture attempt failed
+        - OTHER: Other/unknown status
       enum:
         - PENDING
         - PROCESSING
         - SUCCEEDED
         - FAILED
+        - CANCELLED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - REFUND_REVERSED
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - AUTHORISATION
+        - CAPTURE
+        - CAPTURE_FAILED
+        - OTHER
 
     PayoutRequest:
       type: object
