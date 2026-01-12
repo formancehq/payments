@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 type balancesState struct {
@@ -40,6 +41,13 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	for _, vaultAccount := range resp.Accounts {
 		for _, asset := range vaultAccount.Assets {
+			// Format and validate the asset
+			formattedAsset := currency.FormatAsset(supportedCurrenciesWithDecimal, asset.ID)
+			if !assets.IsValid(formattedAsset) {
+				// Skip assets with invalid format
+				continue
+			}
+
 			// Parse the available balance
 			available, precision, err := parseAmountWithPrecision(asset.Available, asset.ID)
 			if err != nil {
@@ -51,7 +59,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 			balance := models.PSPBalance{
 				AccountReference: accountRef,
-				Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, asset.ID),
+				Asset:            formattedAsset,
 				Amount:           available,
 				CreatedAt:        now,
 			}
@@ -64,7 +72,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 				if err == nil && frozen.Cmp(big.NewInt(0)) > 0 {
 					frozenBalance := models.PSPBalance{
 						AccountReference: accountRef + "-frozen",
-						Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, asset.ID),
+						Asset:            formattedAsset,
 						Amount:           frozen,
 						CreatedAt:        now,
 					}
@@ -78,7 +86,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 				if err == nil && pending.Cmp(big.NewInt(0)) > 0 {
 					pendingBalance := models.PSPBalance{
 						AccountReference: accountRef + "-pending",
-						Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, asset.ID),
+						Asset:            formattedAsset,
 						Amount:           pending,
 						CreatedAt:        now,
 					}

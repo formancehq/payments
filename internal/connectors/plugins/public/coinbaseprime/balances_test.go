@@ -144,5 +144,97 @@ var _ = Describe("Coinbase Prime Plugin Balances", func() {
 			Expect(res.Balances).To(HaveLen(1))
 			Expect(res.Balances[0].Asset).To(Equal("BTC"))
 		})
+
+		It("normalizes lowercase symbols to uppercase", func(ctx SpecContext) {
+			lowercaseBalances := []*model.Balance{
+				{
+					Symbol: "btc",
+					Amount: "1.5",
+				},
+				{
+					Symbol: "eth",
+					Amount: "10.25",
+				},
+			}
+
+			req := models.FetchNextBalancesRequest{
+				State:    json.RawMessage(`{}`),
+				PageSize: 100,
+			}
+
+			m.EXPECT().GetPortfolioBalances(gomock.Any()).Return(
+				&balances.ListPortfolioBalancesResponse{
+					Balances: lowercaseBalances,
+				},
+				nil,
+			)
+
+			res, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Balances).To(HaveLen(2))
+			Expect(res.Balances[0].Asset).To(Equal("BTC"))
+			Expect(res.Balances[1].Asset).To(Equal("ETH"))
+		})
+
+		It("skips balances with empty symbols", func(ctx SpecContext) {
+			emptySymbolBalances := []*model.Balance{
+				{
+					Symbol: "BTC",
+					Amount: "1.5",
+				},
+				{
+					Symbol: "",
+					Amount: "10.25",
+				},
+			}
+
+			req := models.FetchNextBalancesRequest{
+				State:    json.RawMessage(`{}`),
+				PageSize: 100,
+			}
+
+			m.EXPECT().GetPortfolioBalances(gomock.Any()).Return(
+				&balances.ListPortfolioBalancesResponse{
+					Balances: emptySymbolBalances,
+				},
+				nil,
+			)
+
+			res, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Balances).To(HaveLen(1))
+			Expect(res.Balances[0].Asset).To(Equal("BTC"))
+		})
+
+		It("handles mixed case symbols", func(ctx SpecContext) {
+			mixedCaseBalances := []*model.Balance{
+				{
+					Symbol: "Btc",
+					Amount: "1.5",
+				},
+				{
+					Symbol: "uSdC",
+					Amount: "100.00",
+				},
+			}
+
+			req := models.FetchNextBalancesRequest{
+				State:    json.RawMessage(`{}`),
+				PageSize: 100,
+			}
+
+			m.EXPECT().GetPortfolioBalances(gomock.Any()).Return(
+				&balances.ListPortfolioBalancesResponse{
+					Balances: mixedCaseBalances,
+				},
+				nil,
+			)
+
+			res, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Balances).To(HaveLen(2))
+			Expect(res.Balances[0].Asset).To(Equal("BTC"))
+			Expect(res.Balances[1].Asset).To(Equal("USDC"))
+		})
 	})
 })

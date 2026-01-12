@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
@@ -42,6 +43,11 @@ func parseKrakenBalance(asset string, amountStr string) (models.PSPBalance, erro
 	// Normalize Kraken asset names
 	normalizedAsset := normalizeKrakenAsset(asset)
 
+	// Validate the normalized asset
+	if !assets.IsValid(normalizedAsset) {
+		return models.PSPBalance{}, fmt.Errorf("invalid asset %q (normalized: %q): does not match required format", asset, normalizedAsset)
+	}
+
 	// Get precision for the asset
 	precision := GetPrecision(normalizedAsset)
 
@@ -59,7 +65,8 @@ func parseKrakenBalance(asset string, amountStr string) (models.PSPBalance, erro
 	}, nil
 }
 
-// normalizeKrakenAsset converts Kraken's internal asset names to standard names
+// normalizeKrakenAsset converts Kraken's internal asset names to standard names.
+// It handles Kraken's special prefixes and converts to uppercase.
 func normalizeKrakenAsset(asset string) string {
 	// Kraken uses special prefixes for some assets
 	// X prefix for crypto (e.g., XXBT = BTC)
@@ -85,7 +92,8 @@ func normalizeKrakenAsset(asset string) string {
 		return standardName
 	}
 
-	return asset
+	// Convert to uppercase for assets not in the mapping
+	return strings.ToUpper(strings.TrimSpace(asset))
 }
 
 func parseKrakenAmount(amountStr string, asset string) (*big.Int, error) {

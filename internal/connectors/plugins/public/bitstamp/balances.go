@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
@@ -45,7 +46,10 @@ func parseBitstampBalance(currency string, amountStr string) (models.PSPBalance,
 	}
 
 	// Normalize currency (Bitstamp uses lowercase)
-	normalizedCurrency := strings.ToUpper(currency)
+	normalizedCurrency, err := normalizeSymbol(currency)
+	if err != nil {
+		return models.PSPBalance{}, fmt.Errorf("invalid currency %q: %w", currency, err)
+	}
 
 	// Get precision for the asset
 	precision := GetPrecision(normalizedCurrency)
@@ -120,4 +124,22 @@ func parseBitstampAmount(amountStr string, asset string) (*big.Int, error) {
 // parseDecimalString parses a decimal string to big.Int with a given precision
 func parseDecimalString(s string, precision int) (*big.Int, error) {
 	return parseAmountWithPrecision(s, precision)
+}
+
+// normalizeSymbol converts a Bitstamp symbol to the standard format
+// required by the asset validation (uppercase, alphanumeric only).
+func normalizeSymbol(symbol string) (string, error) {
+	if symbol == "" {
+		return "", fmt.Errorf("empty symbol")
+	}
+
+	// Convert to uppercase
+	normalized := strings.ToUpper(strings.TrimSpace(symbol))
+
+	// Validate the normalized symbol
+	if !assets.IsValid(normalized) {
+		return "", fmt.Errorf("symbol %q does not match required format", normalized)
+	}
+
+	return normalized, nil
 }
