@@ -182,6 +182,22 @@ type Storage interface {
 	OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error
 	OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error
 
+	// Orders
+	OrdersUpsert(ctx context.Context, orders []models.Order) error
+	OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error)
+	OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error)
+	OrdersDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	OrdersDelete(ctx context.Context, id models.OrderID) error
+	OrdersUpdateStatus(ctx context.Context, id models.OrderID, status models.OrderStatus) error
+
+	// Conversions
+	ConversionsUpsert(ctx context.Context, conversions []models.Conversion) error
+	ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error)
+	ConversionsList(ctx context.Context, q ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error)
+	ConversionsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	ConversionsDelete(ctx context.Context, id models.ConversionID) error
+	ConversionsUpdateStatus(ctx context.Context, id models.ConversionID, status models.ConversionStatus) error
+
 	// Raw encryption helpers
 	// EncryptRaw encrypts a JSON payload using the storage encryption key via Postgres pgcrypto
 	EncryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error)

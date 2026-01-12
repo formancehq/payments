@@ -433,6 +433,92 @@ func (mr *MockStorageMockRecorder) ConnectorsUninstall(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsUninstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsUninstall), ctx, id)
 }
 
+// ConversionsDelete mocks base method.
+func (m *MockStorage) ConversionsDelete(ctx context.Context, id models.ConversionID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConversionsDelete indicates an expected call of ConversionsDelete.
+func (mr *MockStorageMockRecorder) ConversionsDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsDelete", reflect.TypeOf((*MockStorage)(nil).ConversionsDelete), ctx, id)
+}
+
+// ConversionsDeleteFromConnectorID mocks base method.
+func (m *MockStorage) ConversionsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsDeleteFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConversionsDeleteFromConnectorID indicates an expected call of ConversionsDeleteFromConnectorID.
+func (mr *MockStorageMockRecorder) ConversionsDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).ConversionsDeleteFromConnectorID), ctx, connectorID)
+}
+
+// ConversionsGet mocks base method.
+func (m *MockStorage) ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsGet", ctx, id)
+	ret0, _ := ret[0].(*models.Conversion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConversionsGet indicates an expected call of ConversionsGet.
+func (mr *MockStorageMockRecorder) ConversionsGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsGet", reflect.TypeOf((*MockStorage)(nil).ConversionsGet), ctx, id)
+}
+
+// ConversionsList mocks base method.
+func (m *MockStorage) ConversionsList(ctx context.Context, q ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsList", ctx, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Conversion])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConversionsList indicates an expected call of ConversionsList.
+func (mr *MockStorageMockRecorder) ConversionsList(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsList", reflect.TypeOf((*MockStorage)(nil).ConversionsList), ctx, q)
+}
+
+// ConversionsUpdateStatus mocks base method.
+func (m *MockStorage) ConversionsUpdateStatus(ctx context.Context, id models.ConversionID, status models.ConversionStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsUpdateStatus", ctx, id, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConversionsUpdateStatus indicates an expected call of ConversionsUpdateStatus.
+func (mr *MockStorageMockRecorder) ConversionsUpdateStatus(ctx, id, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsUpdateStatus", reflect.TypeOf((*MockStorage)(nil).ConversionsUpdateStatus), ctx, id, status)
+}
+
+// ConversionsUpsert mocks base method.
+func (m *MockStorage) ConversionsUpsert(ctx context.Context, conversions []models.Conversion) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsUpsert", ctx, conversions)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConversionsUpsert indicates an expected call of ConversionsUpsert.
+func (mr *MockStorageMockRecorder) ConversionsUpsert(ctx, conversions any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsUpsert", reflect.TypeOf((*MockStorage)(nil).ConversionsUpsert), ctx, conversions)
+}
+
 // DecryptRaw mocks base method.
 func (m *MockStorage) DecryptRaw(ctx context.Context, message json.RawMessage) (json.RawMessage, error) {
 	m.ctrl.T.Helper()
@@ -824,6 +910,92 @@ func (m *MockStorage) OpenBankingForwardedUserUpsert(ctx context.Context, psuID 
 func (mr *MockStorageMockRecorder) OpenBankingForwardedUserUpsert(ctx, psuID, from any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingForwardedUserUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingForwardedUserUpsert), ctx, psuID, from)
+}
+
+// OrdersDelete mocks base method.
+func (m *MockStorage) OrdersDelete(ctx context.Context, id models.OrderID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OrdersDelete indicates an expected call of OrdersDelete.
+func (mr *MockStorageMockRecorder) OrdersDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersDelete", reflect.TypeOf((*MockStorage)(nil).OrdersDelete), ctx, id)
+}
+
+// OrdersDeleteFromConnectorID mocks base method.
+func (m *MockStorage) OrdersDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersDeleteFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OrdersDeleteFromConnectorID indicates an expected call of OrdersDeleteFromConnectorID.
+func (mr *MockStorageMockRecorder) OrdersDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).OrdersDeleteFromConnectorID), ctx, connectorID)
+}
+
+// OrdersGet mocks base method.
+func (m *MockStorage) OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersGet", ctx, id)
+	ret0, _ := ret[0].(*models.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrdersGet indicates an expected call of OrdersGet.
+func (mr *MockStorageMockRecorder) OrdersGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersGet", reflect.TypeOf((*MockStorage)(nil).OrdersGet), ctx, id)
+}
+
+// OrdersList mocks base method.
+func (m *MockStorage) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersList", ctx, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Order])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrdersList indicates an expected call of OrdersList.
+func (mr *MockStorageMockRecorder) OrdersList(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersList", reflect.TypeOf((*MockStorage)(nil).OrdersList), ctx, q)
+}
+
+// OrdersUpdateStatus mocks base method.
+func (m *MockStorage) OrdersUpdateStatus(ctx context.Context, id models.OrderID, status models.OrderStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersUpdateStatus", ctx, id, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OrdersUpdateStatus indicates an expected call of OrdersUpdateStatus.
+func (mr *MockStorageMockRecorder) OrdersUpdateStatus(ctx, id, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersUpdateStatus", reflect.TypeOf((*MockStorage)(nil).OrdersUpdateStatus), ctx, id, status)
+}
+
+// OrdersUpsert mocks base method.
+func (m *MockStorage) OrdersUpsert(ctx context.Context, orders []models.Order) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersUpsert", ctx, orders)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OrdersUpsert indicates an expected call of OrdersUpsert.
+func (mr *MockStorageMockRecorder) OrdersUpsert(ctx, orders any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersUpsert", reflect.TypeOf((*MockStorage)(nil).OrdersUpsert), ctx, orders)
 }
 
 // OutboxEventsDeleteOldProcessed mocks base method.

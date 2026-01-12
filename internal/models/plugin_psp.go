@@ -11,6 +11,8 @@ type PSPPlugin interface {
 	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
 	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
 	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
+	FetchNextOrders(context.Context, FetchNextOrdersRequest) (FetchNextOrdersResponse, error)
+	FetchNextConversions(context.Context, FetchNextConversionsRequest) (FetchNextConversionsResponse, error)
 
 	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
 	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
@@ -19,6 +21,9 @@ type PSPPlugin interface {
 	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
 	ReversePayout(context.Context, ReversePayoutRequest) (ReversePayoutResponse, error)
 	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
+	CreateOrder(context.Context, CreateOrderRequest) (CreateOrderResponse, error)
+	CancelOrder(context.Context, CancelOrderRequest) (CancelOrderResponse, error)
+	CreateConversion(context.Context, CreateConversionRequest) (CreateConversionResponse, error)
 }
 
 type FetchNextAccountsRequest struct {
@@ -159,4 +164,63 @@ type PollPayoutStatusResponse struct {
 	// If not nil, it means that the payout failed, the payment initiation
 	// will be marked as fail and the workflow will be terminated
 	Error *string
+}
+
+// Order-related request/response types
+
+type FetchNextOrdersRequest struct {
+	FromPayload json.RawMessage
+	State       json.RawMessage
+	PageSize    int
+}
+
+type FetchNextOrdersResponse struct {
+	Orders   []PSPOrder
+	NewState json.RawMessage
+	HasMore  bool
+}
+
+type CreateOrderRequest struct {
+	Order PSPOrder
+}
+
+type CreateOrderResponse struct {
+	// If order is immediately created/filled, return it here
+	Order *PSPOrder
+	// Otherwise, return the order ID to be polled
+	PollingOrderID *string
+}
+
+type CancelOrderRequest struct {
+	OrderID string
+}
+
+type CancelOrderResponse struct {
+	// Updated order after cancellation
+	Order PSPOrder
+}
+
+// Conversion-related request/response types
+
+type FetchNextConversionsRequest struct {
+	FromPayload json.RawMessage
+	State       json.RawMessage
+	PageSize    int
+}
+
+type FetchNextConversionsResponse struct {
+	Conversions []PSPConversion
+	NewState    json.RawMessage
+	HasMore     bool
+}
+
+type CreateConversionRequest struct {
+	Conversion PSPConversion
+}
+
+type CreateConversionResponse struct {
+	// If conversion is immediately completed, return it here
+	Conversion *PSPConversion
+	// Otherwise, return the conversion ID to be polled
+	PollingConversionID *string
 }
