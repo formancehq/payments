@@ -55,6 +55,17 @@ const (
 	connectorAtlar         string = "ATLAR"
 	connectorAdyen         string = "ADYEN"
 	connectorGeneric       string = "GENERIC"
+	connectorBinance       string = "BINANCE"
+	connectorBitstamp      string = "BITSTAMP"
+	connectorCoinbaseprime string = "COINBASEPRIME"
+	connectorColumn        string = "COLUMN"
+	connectorFireblocks    string = "FIREBLOCKS"
+	connectorIncrease      string = "INCREASE"
+	connectorKraken        string = "KRAKEN"
+	connectorPlaid         string = "PLAID"
+	connectorPowens        string = "POWENS"
+	connectorQonto         string = "QONTO"
+	connectorTink          string = "TINK"
 )
 
 func toV2Provider(provider string) string {
@@ -81,6 +92,28 @@ func toV2Provider(provider string) string {
 		return connectorStripe
 	case "wise":
 		return connectorWise
+	case "binance":
+		return connectorBinance
+	case "bitstamp":
+		return connectorBitstamp
+	case "coinbaseprime":
+		return connectorCoinbaseprime
+	case "column":
+		return connectorColumn
+	case "fireblocks":
+		return connectorFireblocks
+	case "increase":
+		return connectorIncrease
+	case "kraken":
+		return connectorKraken
+	case "plaid":
+		return connectorPlaid
+	case "powens":
+		return connectorPowens
+	case "qonto":
+		return connectorQonto
+	case "tink":
+		return connectorTink
 	default:
 		return provider
 	}
@@ -110,6 +143,28 @@ func toV3Provider(provider string) string {
 		return "stripe"
 	case connectorWise:
 		return "wise"
+	case connectorBinance:
+		return "binance"
+	case connectorBitstamp:
+		return "bitstamp"
+	case connectorCoinbaseprime:
+		return "coinbaseprime"
+	case connectorColumn:
+		return "column"
+	case connectorFireblocks:
+		return "fireblocks"
+	case connectorIncrease:
+		return "increase"
+	case connectorKraken:
+		return "kraken"
+	case connectorPlaid:
+		return "plaid"
+	case connectorPowens:
+		return "powens"
+	case connectorQonto:
+		return "qonto"
+	case connectorTink:
+		return "tink"
 	default:
 		return provider
 	}

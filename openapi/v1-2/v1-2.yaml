@@ -1437,6 +1437,17 @@ components:
         - ATLAR
         - ADYEN
         - GENERIC
+        - BINANCE
+        - BITSTAMP
+        - COINBASEPRIME
+        - COLUMN
+        - FIREBLOCKS
+        - INCREASE
+        - KRAKEN
+        - PLAID
+        - POWENS
+        - QONTO
+        - TINK
     TransferInitiationStatus:
       type: string
       enum:
