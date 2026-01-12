@@ -108,14 +108,22 @@ func (c *client) sign(method, path, contentType string, nonce, timestamp string,
 func (c *client) doPrivateRequest(ctx context.Context, method, path string, params url.Values) ([]byte, error) {
 	nonce := generateNonce()
 	timestamp := generateTimestamp()
-	contentType := "application/x-www-form-urlencoded"
 
 	body := ""
 	if params != nil {
 		body = params.Encode()
 	}
 
-	signature := c.sign(method, path, contentType, nonce, timestamp, body)
+	// Only set Content-Type when there's a body - Bitstamp rejects requests with
+	// Content-Type header when there's no body (API0020 error)
+	contentType := ""
+	if body != "" {
+		contentType = "application/x-www-form-urlencoded"
+	}
+
+	// The signature must use the full path including /api/v2 prefix
+	fullPath := "/api/v2" + path
+	signature := c.sign(method, fullPath, contentType, nonce, timestamp, body)
 
 	reqURL := baseURL + path
 	var req *http.Request
@@ -130,8 +138,10 @@ func (c *client) doPrivateRequest(ctx context.Context, method, path string, para
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Set headers
-	req.Header.Set("Content-Type", contentType)
+	// Set Content-Type header only when there's a body
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
 	req.Header.Set("X-Auth", fmt.Sprintf("BITSTAMP %s", c.apiKey))
 	req.Header.Set("X-Auth-Signature", signature)
 	req.Header.Set("X-Auth-Nonce", nonce)

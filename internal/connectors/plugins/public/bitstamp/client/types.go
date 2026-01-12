@@ -158,9 +158,27 @@ type OHLCResponse struct {
 
 // UserTransaction represents a user transaction from Bitstamp
 type UserTransaction struct {
-	ID       int64   `json:"id"`
-	DateTime string  `json:"datetime"`
-	Type     string  `json:"type"` // 0 = deposit, 1 = withdrawal, 2 = market trade, 14 = sub account transfer
-	Fee      string  `json:"fee"`
-	OrderID  int64   `json:"order_id"`
+	ID       int64  `json:"id"`
+	DateTime string `json:"datetime"`
+	Type     string `json:"type"` // 0 = deposit, 1 = withdrawal, 2 = market trade, 14 = sub account transfer
+	Fee      string `json:"fee"`
+	OrderID  int64  `json:"order_id"`
+}
+
+// InstantOrderRequest contains parameters for creating an instant (market) order
+// Used for conversions - executing immediately at current market price
+type InstantOrderRequest struct {
+	Market        string // Trading pair (e.g., "btcusd")
+	Amount        string // Amount to buy/sell
+	ClientOrderID string // Optional client-provided order ID
+}
+
+// InstantOrderResponse contains the response from an instant order
+type InstantOrderResponse struct {
+	ID            string `json:"id"`
+	DateTime      string `json:"datetime"`
+	Type          string `json:"type"` // 0 = buy, 1 = sell
+	Price         string `json:"price"`
+	Amount        string `json:"amount"`
+	ClientOrderID string `json:"client_order_id,omitempty"`
 }
