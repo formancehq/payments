@@ -209,6 +209,10 @@ func main() {
 * [ListPayments](docs/sdks/v3/README.md#listpayments) - List all payments
 * [GetPayment](docs/sdks/v3/README.md#getpayment) - Get a payment by ID
 * [UpdatePaymentMetadata](docs/sdks/v3/README.md#updatepaymentmetadata) - Update a payment's metadata
+* [ListOrders](docs/sdks/v3/README.md#listorders) - List all orders
+* [GetOrder](docs/sdks/v3/README.md#getorder) - Get an order by ID
+* [ListConversions](docs/sdks/v3/README.md#listconversions) - List all conversions
+* [GetConversion](docs/sdks/v3/README.md#getconversion) - Get a conversion by ID
 * [InitiatePayment](docs/sdks/v3/README.md#initiatepayment) - Initiate a payment
 * [ListPaymentInitiations](docs/sdks/v3/README.md#listpaymentinitiations) - List all payment initiations
 * [DeletePaymentInitiation](docs/sdks/v3/README.md#deletepaymentinitiation) - Delete a payment initiation by ID
