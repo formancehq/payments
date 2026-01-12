@@ -107,6 +107,26 @@ func (dp *basePlugin) CreateConversion(ctx context.Context, req models.CreateCon
 	return models.CreateConversionResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) GetOrderBook(ctx context.Context, req models.GetOrderBookRequest) (models.GetOrderBookResponse, error) {
+	return models.GetOrderBookResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) GetQuote(ctx context.Context, req models.GetQuoteRequest) (models.GetQuoteResponse, error) {
+	return models.GetQuoteResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) GetTradableAssets(ctx context.Context, req models.GetTradableAssetsRequest) (models.GetTradableAssetsResponse, error) {
+	return models.GetTradableAssetsResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) GetTicker(ctx context.Context, req models.GetTickerRequest) (models.GetTickerResponse, error) {
+	return models.GetTickerResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) GetOHLC(ctx context.Context, req models.GetOHLCRequest) (models.GetOHLCResponse, error) {
+	return models.GetOHLCResponse{}, ErrNotImplemented
+}
+
 func (dp *basePlugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	return models.CreateWebhooksResponse{}, ErrNotImplemented
 }

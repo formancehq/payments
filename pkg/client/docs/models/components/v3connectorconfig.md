@@ -21,6 +21,18 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigAtlar(components.V3AtlarC
 v3ConnectorConfig := components.CreateV3ConnectorConfigBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3BinanceConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigBinance(components.V3BinanceConfig{/* values here */})
+```
+
+### V3BitstampConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigBitstamp(components.V3BitstampConfig{/* values here */})
+```
+
 ### V3CoinbaseprimeConfig
 
 ```go
@@ -55,6 +67,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigGeneric(components.V3Gene
 
 ```go
 v3ConnectorConfig := components.CreateV3ConnectorConfigIncrease(components.V3IncreaseConfig{/* values here */})
+```
+
+### V3KrakenConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigKraken(components.V3KrakenConfig{/* values here */})
 ```
 
 ### V3MangopayConfig

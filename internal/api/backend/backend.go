@@ -39,6 +39,11 @@ type Backend interface {
 	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
 	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
+	ConnectorsGetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error)
+	ConnectorsGetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error)
+	ConnectorsGetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error)
+	ConnectorsGetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error)
+	ConnectorsGetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error)
 
 	// Payments
 	PaymentsCreate(ctx context.Context, payment models.Payment) error

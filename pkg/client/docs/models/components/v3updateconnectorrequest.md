@@ -21,6 +21,18 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestAtlar(compo
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3BinanceConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestBinance(components.V3BinanceConfig{/* values here */})
+```
+
+### V3BitstampConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestBitstamp(components.V3BitstampConfig{/* values here */})
+```
+
 ### V3CoinbaseprimeConfig
 
 ```go
@@ -55,6 +67,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestGeneric(com
 
 ```go
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestIncrease(components.V3IncreaseConfig{/* values here */})
+```
+
+### V3KrakenConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestKraken(components.V3KrakenConfig{/* values here */})
 ```
 
 ### V3MangopayConfig

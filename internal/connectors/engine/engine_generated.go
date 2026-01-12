@@ -261,6 +261,81 @@ func (mr *MockEngineMockRecorder) ForwardPaymentServiceUser(ctx, psuID, connecto
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardPaymentServiceUser", reflect.TypeOf((*MockEngine)(nil).ForwardPaymentServiceUser), ctx, psuID, connectorID)
 }
 
+// GetOHLC mocks base method.
+func (m *MockEngine) GetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOHLC", ctx, connectorID, req)
+	ret0, _ := ret[0].(*models.OHLCData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOHLC indicates an expected call of GetOHLC.
+func (mr *MockEngineMockRecorder) GetOHLC(ctx, connectorID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOHLC", reflect.TypeOf((*MockEngine)(nil).GetOHLC), ctx, connectorID, req)
+}
+
+// GetOrderBook mocks base method.
+func (m *MockEngine) GetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderBook", ctx, connectorID, pair, depth)
+	ret0, _ := ret[0].(*models.OrderBook)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderBook indicates an expected call of GetOrderBook.
+func (mr *MockEngineMockRecorder) GetOrderBook(ctx, connectorID, pair, depth any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderBook", reflect.TypeOf((*MockEngine)(nil).GetOrderBook), ctx, connectorID, pair, depth)
+}
+
+// GetQuote mocks base method.
+func (m *MockEngine) GetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQuote", ctx, connectorID, req)
+	ret0, _ := ret[0].(*models.Quote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetQuote indicates an expected call of GetQuote.
+func (mr *MockEngineMockRecorder) GetQuote(ctx, connectorID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuote", reflect.TypeOf((*MockEngine)(nil).GetQuote), ctx, connectorID, req)
+}
+
+// GetTicker mocks base method.
+func (m *MockEngine) GetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicker", ctx, connectorID, pair)
+	ret0, _ := ret[0].(*models.Ticker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTicker indicates an expected call of GetTicker.
+func (mr *MockEngineMockRecorder) GetTicker(ctx, connectorID, pair any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicker", reflect.TypeOf((*MockEngine)(nil).GetTicker), ctx, connectorID, pair)
+}
+
+// GetTradableAssets mocks base method.
+func (m *MockEngine) GetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTradableAssets", ctx, connectorID)
+	ret0, _ := ret[0].([]models.TradableAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTradableAssets indicates an expected call of GetTradableAssets.
+func (mr *MockEngineMockRecorder) GetTradableAssets(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradableAssets", reflect.TypeOf((*MockEngine)(nil).GetTradableAssets), ctx, connectorID)
+}
+
 // HandleWebhook mocks base method.
 func (m *MockEngine) HandleWebhook(ctx context.Context, url, urlPath string, webhook models.Webhook) error {
 	m.ctrl.T.Helper()

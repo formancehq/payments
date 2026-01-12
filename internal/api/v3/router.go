@@ -95,6 +95,13 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 						r.Get("/", schedulesGet(backend))
 						r.Get("/instances", workflowsInstancesList(backend))
 					})
+
+					// Market data endpoints
+					r.Get("/orderbook", connectorsOrderBook(backend))
+					r.Post("/quotes", connectorsQuote(backend))
+					r.Get("/tradable-assets", connectorsTradableAssets(backend))
+					r.Get("/ticker", connectorsTicker(backend))
+					r.Get("/ohlc", connectorsOHLC(backend))
 				})
 			})
 

@@ -119,6 +119,21 @@ func (mr *MockClientMockRecorder) GetOrder(ctx, orderID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrder", reflect.TypeOf((*MockClient)(nil).GetOrder), ctx, orderID)
 }
 
+// GetOrderBook mocks base method.
+func (m *MockClient) GetOrderBook(ctx context.Context, productID string, depth int) (*OrderBookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderBook", ctx, productID, depth)
+	ret0, _ := ret[0].(*OrderBookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderBook indicates an expected call of GetOrderBook.
+func (mr *MockClientMockRecorder) GetOrderBook(ctx, productID, depth any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderBook", reflect.TypeOf((*MockClient)(nil).GetOrderBook), ctx, productID, depth)
+}
+
 // GetPortfolio mocks base method.
 func (m *MockClient) GetPortfolio(ctx context.Context) (*portfolios.GetPortfolioResponse, error) {
 	m.ctrl.T.Helper()
@@ -147,6 +162,21 @@ func (m *MockClient) GetPortfolioBalances(ctx context.Context) (*balances.ListPo
 func (mr *MockClientMockRecorder) GetPortfolioBalances(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPortfolioBalances", reflect.TypeOf((*MockClient)(nil).GetPortfolioBalances), ctx)
+}
+
+// GetProducts mocks base method.
+func (m *MockClient) GetProducts(ctx context.Context) ([]Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProducts", ctx)
+	ret0, _ := ret[0].([]Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProducts indicates an expected call of GetProducts.
+func (mr *MockClientMockRecorder) GetProducts(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProducts", reflect.TypeOf((*MockClient)(nil).GetProducts), ctx)
 }
 
 // GetWallets mocks base method.

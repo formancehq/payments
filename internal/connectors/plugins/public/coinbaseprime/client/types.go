@@ -53,3 +53,44 @@ type CreateConversionRequest struct {
 type CreateConversionResponse struct {
 	Conversion Conversion `json:"conversion"`
 }
+
+// OrderBookEntry represents a single price level in the order book
+type OrderBookEntry struct {
+	Price    string `json:"price"`
+	Size     string `json:"size"`
+	NumOrders int    `json:"num_orders,omitempty"`
+}
+
+// OrderBookResponse represents the order book from Coinbase
+type OrderBookResponse struct {
+	ProductID string           `json:"product_id"`
+	Bids      []OrderBookEntry `json:"bids"`
+	Asks      []OrderBookEntry `json:"asks"`
+	Sequence  int64            `json:"sequence"`
+	Time      time.Time        `json:"time"`
+}
+
+// Product represents a tradable product from Coinbase Exchange
+type Product struct {
+	ID                     string `json:"id"`
+	BaseCurrency           string `json:"base_currency"`
+	QuoteCurrency          string `json:"quote_currency"`
+	BaseMinSize            string `json:"base_min_size"`
+	BaseMaxSize            string `json:"base_max_size"`
+	QuoteIncrement         string `json:"quote_increment"`
+	BaseIncrement          string `json:"base_increment"`
+	DisplayName            string `json:"display_name"`
+	MinMarketFunds         string `json:"min_market_funds"`
+	MaxMarketFunds         string `json:"max_market_funds"`
+	MarginEnabled          bool   `json:"margin_enabled"`
+	PostOnly               bool   `json:"post_only"`
+	LimitOnly              bool   `json:"limit_only"`
+	CancelOnly             bool   `json:"cancel_only"`
+	Status                 string `json:"status"`
+	StatusMessage          string `json:"status_message"`
+	TradingDisabled        bool   `json:"trading_disabled"`
+	FxStablecoin           bool   `json:"fx_stablecoin"`
+	MaxSlippagePercentage  string `json:"max_slippage_percentage"`
+	AuctionMode            bool   `json:"auction_mode"`
+	HighBidLimitPercentage string `json:"high_bid_limit_percentage"`
+}

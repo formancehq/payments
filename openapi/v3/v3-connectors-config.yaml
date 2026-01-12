@@ -7,12 +7,15 @@ components:
                     Adyen: '#/components/schemas/V3AdyenConfig'
                     Atlar: '#/components/schemas/V3AtlarConfig'
                     Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+                    Binance: '#/components/schemas/V3BinanceConfig'
+                    Bitstamp: '#/components/schemas/V3BitstampConfig'
                     Coinbaseprime: '#/components/schemas/V3CoinbaseprimeConfig'
                     Column: '#/components/schemas/V3ColumnConfig'
                     Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
                     Dummypay: '#/components/schemas/V3DummypayConfig'
                     Generic: '#/components/schemas/V3GenericConfig'
                     Increase: '#/components/schemas/V3IncreaseConfig'
+                    Kraken: '#/components/schemas/V3KrakenConfig'
                     Mangopay: '#/components/schemas/V3MangopayConfig'
                     Modulr: '#/components/schemas/V3ModulrConfig'
                     Moneycorp: '#/components/schemas/V3MoneycorpConfig'
@@ -26,12 +29,15 @@ components:
                 - $ref: '#/components/schemas/V3AdyenConfig'
                 - $ref: '#/components/schemas/V3AtlarConfig'
                 - $ref: '#/components/schemas/V3BankingcircleConfig'
+                - $ref: '#/components/schemas/V3BinanceConfig'
+                - $ref: '#/components/schemas/V3BitstampConfig'
                 - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
                 - $ref: '#/components/schemas/V3ColumnConfig'
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
                 - $ref: '#/components/schemas/V3GenericConfig'
                 - $ref: '#/components/schemas/V3IncreaseConfig'
+                - $ref: '#/components/schemas/V3KrakenConfig'
                 - $ref: '#/components/schemas/V3MangopayConfig'
                 - $ref: '#/components/schemas/V3ModulrConfig'
                 - $ref: '#/components/schemas/V3MoneycorpConfig'
@@ -134,6 +140,56 @@ components:
                     type: string
                 username:
                     type: string
+        V3BinanceConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - secretKey
+            properties:
+                apiKey:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+                pollingPeriod:
+                    type: string
+                    default: 30m
+                provider:
+                    type: string
+                    default: Binance
+                secretKey:
+                    type: string
+                testNet:
+                    type: boolean
+        V3BitstampConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - apiSecret
+            properties:
+                apiKey:
+                    type: string
+                apiSecret:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+                pollingPeriod:
+                    type: string
+                    default: 30m
+                provider:
+                    type: string
+                    default: Bitstamp
         V3CoinbaseprimeConfig:
             type: object
             required:
@@ -296,6 +352,33 @@ components:
                     type: string
                     default: Increase
                 webhookSharedSecret:
+                    type: string
+        V3KrakenConfig:
+            type: object
+            required:
+                - name
+                - endpoint
+                - publicKey
+                - privateKey
+            properties:
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+                pollingPeriod:
+                    type: string
+                    default: 30m
+                privateKey:
+                    type: string
+                provider:
+                    type: string
+                    default: Kraken
+                publicKey:
                     type: string
         V3MangopayConfig:
             type: object

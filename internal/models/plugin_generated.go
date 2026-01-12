@@ -354,6 +354,81 @@ func (mr *MockPluginMockRecorder) FetchNextPayments(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextPayments", reflect.TypeOf((*MockPlugin)(nil).FetchNextPayments), arg0, arg1)
 }
 
+// GetOHLC mocks base method.
+func (m *MockPlugin) GetOHLC(arg0 context.Context, arg1 GetOHLCRequest) (GetOHLCResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOHLC", arg0, arg1)
+	ret0, _ := ret[0].(GetOHLCResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOHLC indicates an expected call of GetOHLC.
+func (mr *MockPluginMockRecorder) GetOHLC(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOHLC", reflect.TypeOf((*MockPlugin)(nil).GetOHLC), arg0, arg1)
+}
+
+// GetOrderBook mocks base method.
+func (m *MockPlugin) GetOrderBook(arg0 context.Context, arg1 GetOrderBookRequest) (GetOrderBookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderBook", arg0, arg1)
+	ret0, _ := ret[0].(GetOrderBookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderBook indicates an expected call of GetOrderBook.
+func (mr *MockPluginMockRecorder) GetOrderBook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderBook", reflect.TypeOf((*MockPlugin)(nil).GetOrderBook), arg0, arg1)
+}
+
+// GetQuote mocks base method.
+func (m *MockPlugin) GetQuote(arg0 context.Context, arg1 GetQuoteRequest) (GetQuoteResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQuote", arg0, arg1)
+	ret0, _ := ret[0].(GetQuoteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetQuote indicates an expected call of GetQuote.
+func (mr *MockPluginMockRecorder) GetQuote(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuote", reflect.TypeOf((*MockPlugin)(nil).GetQuote), arg0, arg1)
+}
+
+// GetTicker mocks base method.
+func (m *MockPlugin) GetTicker(arg0 context.Context, arg1 GetTickerRequest) (GetTickerResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicker", arg0, arg1)
+	ret0, _ := ret[0].(GetTickerResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTicker indicates an expected call of GetTicker.
+func (mr *MockPluginMockRecorder) GetTicker(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicker", reflect.TypeOf((*MockPlugin)(nil).GetTicker), arg0, arg1)
+}
+
+// GetTradableAssets mocks base method.
+func (m *MockPlugin) GetTradableAssets(arg0 context.Context, arg1 GetTradableAssetsRequest) (GetTradableAssetsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTradableAssets", arg0, arg1)
+	ret0, _ := ret[0].(GetTradableAssetsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTradableAssets indicates an expected call of GetTradableAssets.
+func (mr *MockPluginMockRecorder) GetTradableAssets(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradableAssets", reflect.TypeOf((*MockPlugin)(nil).GetTradableAssets), arg0, arg1)
+}
+
 // Install mocks base method.
 func (m *MockPlugin) Install(arg0 context.Context, arg1 InstallRequest) (InstallResponse, error) {
 	m.ctrl.T.Helper()

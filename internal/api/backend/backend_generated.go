@@ -223,6 +223,81 @@ func (mr *MockBackendMockRecorder) ConnectorsConfigs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsConfigs", reflect.TypeOf((*MockBackend)(nil).ConnectorsConfigs))
 }
 
+// ConnectorsGetOHLC mocks base method.
+func (m *MockBackend) ConnectorsGetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsGetOHLC", ctx, connectorID, req)
+	ret0, _ := ret[0].(*models.OHLCData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorsGetOHLC indicates an expected call of ConnectorsGetOHLC.
+func (mr *MockBackendMockRecorder) ConnectorsGetOHLC(ctx, connectorID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsGetOHLC", reflect.TypeOf((*MockBackend)(nil).ConnectorsGetOHLC), ctx, connectorID, req)
+}
+
+// ConnectorsGetOrderBook mocks base method.
+func (m *MockBackend) ConnectorsGetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsGetOrderBook", ctx, connectorID, pair, depth)
+	ret0, _ := ret[0].(*models.OrderBook)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorsGetOrderBook indicates an expected call of ConnectorsGetOrderBook.
+func (mr *MockBackendMockRecorder) ConnectorsGetOrderBook(ctx, connectorID, pair, depth any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsGetOrderBook", reflect.TypeOf((*MockBackend)(nil).ConnectorsGetOrderBook), ctx, connectorID, pair, depth)
+}
+
+// ConnectorsGetQuote mocks base method.
+func (m *MockBackend) ConnectorsGetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsGetQuote", ctx, connectorID, req)
+	ret0, _ := ret[0].(*models.Quote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorsGetQuote indicates an expected call of ConnectorsGetQuote.
+func (mr *MockBackendMockRecorder) ConnectorsGetQuote(ctx, connectorID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsGetQuote", reflect.TypeOf((*MockBackend)(nil).ConnectorsGetQuote), ctx, connectorID, req)
+}
+
+// ConnectorsGetTicker mocks base method.
+func (m *MockBackend) ConnectorsGetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsGetTicker", ctx, connectorID, pair)
+	ret0, _ := ret[0].(*models.Ticker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorsGetTicker indicates an expected call of ConnectorsGetTicker.
+func (mr *MockBackendMockRecorder) ConnectorsGetTicker(ctx, connectorID, pair any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsGetTicker", reflect.TypeOf((*MockBackend)(nil).ConnectorsGetTicker), ctx, connectorID, pair)
+}
+
+// ConnectorsGetTradableAssets mocks base method.
+func (m *MockBackend) ConnectorsGetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsGetTradableAssets", ctx, connectorID)
+	ret0, _ := ret[0].([]models.TradableAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorsGetTradableAssets indicates an expected call of ConnectorsGetTradableAssets.
+func (mr *MockBackendMockRecorder) ConnectorsGetTradableAssets(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsGetTradableAssets", reflect.TypeOf((*MockBackend)(nil).ConnectorsGetTradableAssets), ctx, connectorID)
+}
+
 // ConnectorsHandleWebhooks mocks base method.
 func (m *MockBackend) ConnectorsHandleWebhooks(ctx context.Context, url, urlPath string, webhook models.Webhook) error {
 	m.ctrl.T.Helper()

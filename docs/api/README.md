@@ -6883,6 +6883,18 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3BinanceConfig](#schemav3binanceconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3BitstampConfig](#schemav3bitstampconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
 
 xor
@@ -6914,6 +6926,12 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |*anonymous*|[V3IncreaseConfig](#schemav3increaseconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3KrakenConfig](#schemav3krakenconfig)|false|none|none|
 
 xor
 
@@ -7074,6 +7092,68 @@ xor
 |userCertificate|string|true|none|none|
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
+
+<h2 id="tocS_V3BinanceConfig">V3BinanceConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3binanceconfig"></a>
+<a id="schema_V3BinanceConfig"></a>
+<a id="tocSv3binanceconfig"></a>
+<a id="tocsv3binanceconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "provider": "Binance",
+  "secretKey": "string",
+  "testNet": true
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+|secretKey|string|true|none|none|
+|testNet|boolean|false|none|none|
+
+<h2 id="tocS_V3BitstampConfig">V3BitstampConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3bitstampconfig"></a>
+<a id="schema_V3BitstampConfig"></a>
+<a id="tocSv3bitstampconfig"></a>
+<a id="tocsv3bitstampconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "apiSecret": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "provider": "Bitstamp"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|apiSecret|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3CoinbaseprimeConfig">V3CoinbaseprimeConfig</h2>
 <!-- backwards compatibility -->
@@ -7268,6 +7348,38 @@ xor
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |webhookSharedSecret|string|true|none|none|
+
+<h2 id="tocS_V3KrakenConfig">V3KrakenConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3krakenconfig"></a>
+<a id="schema_V3KrakenConfig"></a>
+<a id="tocSv3krakenconfig"></a>
+<a id="tocsv3krakenconfig"></a>
+
+```json
+{
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "privateKey": "string",
+  "provider": "Kraken",
+  "publicKey": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|privateKey|string|true|none|none|
+|provider|string|false|none|none|
+|publicKey|string|true|none|none|
 
 <h2 id="tocS_V3MangopayConfig">V3MangopayConfig</h2>
 <!-- backwards compatibility -->

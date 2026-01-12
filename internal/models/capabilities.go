@@ -41,6 +41,9 @@ const (
 	CAPABILITY_GET_TICKER
 	CAPABILITY_GET_OHLC
 
+	// WebSocket capabilities for real-time updates
+	CAPABILITY_WEBSOCKET_ORDERS
+
 	// Thanks to the formance API, we can create formance object of an account
 	// and a payment without sending anything to the connector.
 	// It can be useful for testing, but also for the generic connector if the
@@ -95,6 +98,9 @@ func (t Capability) String() string {
 		return "GET_TICKER"
 	case CAPABILITY_GET_OHLC:
 		return "GET_OHLC"
+
+	case CAPABILITY_WEBSOCKET_ORDERS:
+		return "WEBSOCKET_ORDERS"
 
 	case CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION:
 		return "ALLOW_FORMANCE_ACCOUNT_CREATION"
@@ -173,6 +179,9 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_GET_TICKER
 	case "GET_OHLC":
 		*t = CAPABILITY_GET_OHLC
+
+	case "WEBSOCKET_ORDERS":
+		*t = CAPABILITY_WEBSOCKET_ORDERS
 
 	case "ALLOW_FORMANCE_ACCOUNT_CREATION":
 		*t = CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION

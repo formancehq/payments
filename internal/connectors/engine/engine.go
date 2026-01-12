@@ -96,6 +96,13 @@ type Engine interface {
 	OnStart(ctx context.Context) error
 	// Called when the engine is stopping, to stop all the connectors.
 	OnStop(ctx context.Context)
+
+	// Market data methods - real-time calls to the plugin
+	GetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error)
+	GetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error)
+	GetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error)
+	GetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error)
+	GetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error)
 }
 
 type engine struct {
@@ -1661,6 +1668,119 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 			ConnectorID: connector.ID,
 		},
 	)
+}
+
+func (e *engine) GetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetOrderBook")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetOrderBook(ctx, models.GetOrderBookRequest{
+		Pair:  pair,
+		Depth: depth,
+	})
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.OrderBook, nil
+}
+
+func (e *engine) GetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetQuote")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetQuote(ctx, req)
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.Quote, nil
+}
+
+func (e *engine) GetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetTradableAssets")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetTradableAssets(ctx, models.GetTradableAssetsRequest{})
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return resp.Assets, nil
+}
+
+func (e *engine) GetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetTicker")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetTicker(ctx, models.GetTickerRequest{Pair: pair})
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.Ticker, nil
+}
+
+func (e *engine) GetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetOHLC")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetOHLC(ctx, req)
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.Data, nil
 }
 
 var _ Engine = &engine{}

@@ -25,6 +25,14 @@ func (o *V3GetConnectorConfigResponse) GetDataBankingcircle() *V3BankingcircleCo
 	return o.GetData().V3BankingcircleConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataBinance() *V3BinanceConfig {
+	return o.GetData().V3BinanceConfig
+}
+
+func (o *V3GetConnectorConfigResponse) GetDataBitstamp() *V3BitstampConfig {
+	return o.GetData().V3BitstampConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataCoinbaseprime() *V3CoinbaseprimeConfig {
 	return o.GetData().V3CoinbaseprimeConfig
 }
@@ -47,6 +55,10 @@ func (o *V3GetConnectorConfigResponse) GetDataGeneric() *V3GenericConfig {
 
 func (o *V3GetConnectorConfigResponse) GetDataIncrease() *V3IncreaseConfig {
 	return o.GetData().V3IncreaseConfig
+}
+
+func (o *V3GetConnectorConfigResponse) GetDataKraken() *V3KrakenConfig {
+	return o.GetData().V3KrakenConfig
 }
 
 func (o *V3GetConnectorConfigResponse) GetDataMangopay() *V3MangopayConfig {

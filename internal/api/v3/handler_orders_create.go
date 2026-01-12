@@ -1,10 +1,12 @@
 package v3
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/api"
@@ -22,12 +24,26 @@ type CreateOrderRequest struct {
 	Direction           string            `json:"direction" validate:"required,oneof=BUY SELL"`
 	SourceAsset         string            `json:"sourceAsset" validate:"required,asset"`
 	TargetAsset         string            `json:"targetAsset" validate:"required,asset"`
-	Type                string            `json:"type" validate:"required,oneof=MARKET LIMIT"`
+	Type                string            `json:"type" validate:"required,oneof=MARKET LIMIT STOP_LIMIT"`
 	BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered" validate:"required"`
 	LimitPrice          *big.Int          `json:"limitPrice,omitempty"`
+	StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 	TimeInForce         string            `json:"timeInForce" validate:"omitempty,oneof=GOOD_UNTIL_CANCELLED GOOD_UNTIL_DATE_TIME IMMEDIATE_OR_CANCEL FILL_OR_KILL GTC GTD IOC FOK"`
 	ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
 	Metadata            map[string]string `json:"metadata"`
+	SkipValidation      bool              `json:"skipValidation,omitempty"` // Skip trading pair and order size validation
+}
+
+// OrderValidationWarning represents a non-blocking validation warning
+type OrderValidationWarning struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// CreateOrderResponse wraps the order with any validation warnings
+type CreateOrderResponse struct {
+	Order    models.Order             `json:"order"`
+	Warnings []OrderValidationWarning `json:"warnings,omitempty"`
 }
 
 func ordersCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
@@ -58,6 +74,20 @@ func ordersCreate(backend backend.Backend, validator *validation.Validator) http
 			return
 		}
 
+		// Validate STOP_LIMIT orders require both limitPrice and stopPrice
+		if req.Type == "STOP_LIMIT" {
+			if req.LimitPrice == nil {
+				otel.RecordError(span, fmt.Errorf("limitPrice is required for STOP_LIMIT orders"))
+				api.BadRequest(w, ErrValidation, fmt.Errorf("limitPrice is required for STOP_LIMIT orders"))
+				return
+			}
+			if req.StopPrice == nil {
+				otel.RecordError(span, fmt.Errorf("stopPrice is required for STOP_LIMIT orders"))
+				api.BadRequest(w, ErrValidation, fmt.Errorf("stopPrice is required for STOP_LIMIT orders"))
+				return
+			}
+		}
+
 		// Validate GTD orders require expiresAt
 		if (req.TimeInForce == "GOOD_UNTIL_DATE_TIME" || req.TimeInForce == "GTD") && req.ExpiresAt == nil {
 			otel.RecordError(span, fmt.Errorf("expiresAt is required for GTD orders"))
@@ -66,6 +96,20 @@ func ordersCreate(backend backend.Backend, validator *validation.Validator) http
 		}
 
 		connectorID := models.MustConnectorIDFromString(req.ConnectorID)
+
+		// Validate trading pair and order size (unless skipValidation is true)
+		var warnings []OrderValidationWarning
+		if !req.SkipValidation {
+			validationWarnings, validationErr := validateOrderAgainstConnector(
+				ctx, backend, connectorID, req.SourceAsset, req.TargetAsset, req.BaseQuantityOrdered,
+			)
+			if validationErr != nil {
+				otel.RecordError(span, validationErr)
+				api.BadRequest(w, ErrValidation, validationErr)
+				return
+			}
+			warnings = validationWarnings
+		}
 
 		direction, err := models.OrderDirectionFromString(req.Direction)
 		if err != nil {
@@ -111,6 +155,7 @@ func ordersCreate(backend backend.Backend, validator *validation.Validator) http
 			BaseQuantityOrdered: req.BaseQuantityOrdered,
 			BaseQuantityFilled:  big.NewInt(0),
 			LimitPrice:          req.LimitPrice,
+			StopPrice:           req.StopPrice,
 			TimeInForce:         timeInForce,
 			ExpiresAt:           req.ExpiresAt,
 			Metadata:            req.Metadata,
@@ -145,8 +190,116 @@ func ordersCreate(backend backend.Backend, validator *validation.Validator) http
 			return
 		}
 
-		api.Created(w, order)
+		// Return order with any validation warnings
+		response := CreateOrderResponse{
+			Order:    order,
+			Warnings: warnings,
+		}
+		api.Created(w, response)
 	}
+}
+
+// validateOrderAgainstConnector validates the order against connector's tradable assets
+// Returns validation warnings (non-blocking) and an error if validation fails completely
+func validateOrderAgainstConnector(
+	ctx context.Context,
+	b backend.Backend,
+	connectorID models.ConnectorID,
+	sourceAsset, targetAsset string,
+	quantity *big.Int,
+) ([]OrderValidationWarning, error) {
+	var warnings []OrderValidationWarning
+
+	// Try to get tradable assets from connector
+	assets, err := b.ConnectorsGetTradableAssets(ctx, connectorID)
+	if err != nil {
+		// If we can't get tradable assets, add a warning but don't fail
+		warnings = append(warnings, OrderValidationWarning{
+			Code:    "TRADABLE_ASSETS_UNAVAILABLE",
+			Message: "Could not validate trading pair - tradable assets unavailable from connector",
+		})
+		return warnings, nil
+	}
+
+	// Build the pair in standard format
+	pair := sourceAsset + "/" + targetAsset
+
+	// Look for matching trading pair
+	var matchedAsset *models.TradableAsset
+	for i, asset := range assets {
+		// Check various pair formats
+		if strings.EqualFold(asset.Pair, pair) ||
+			strings.EqualFold(asset.BaseAsset+"/"+asset.QuoteAsset, pair) ||
+			strings.EqualFold(asset.BaseAsset+asset.QuoteAsset, sourceAsset+targetAsset) {
+			matchedAsset = &assets[i]
+			break
+		}
+	}
+
+	if matchedAsset == nil {
+		return nil, fmt.Errorf("trading pair %s is not supported by this connector", pair)
+	}
+
+	// Check if trading is enabled
+	if matchedAsset.Status != "" && !strings.EqualFold(matchedAsset.Status, "online") &&
+		!strings.EqualFold(matchedAsset.Status, "TRADING") &&
+		!strings.EqualFold(matchedAsset.Status, "Enabled") {
+		return nil, fmt.Errorf("trading pair %s is currently not available (status: %s)", pair, matchedAsset.Status)
+	}
+
+	// Validate minimum order size if available
+	if matchedAsset.MinOrderSize != "" && quantity != nil {
+		minSize, ok := new(big.Int).SetString(matchedAsset.MinOrderSize, 10)
+		if !ok {
+			// Try parsing as decimal
+			minSize = parseMinOrderSize(matchedAsset.MinOrderSize, matchedAsset.SizePrecision)
+		}
+		if minSize != nil && quantity.Cmp(minSize) < 0 {
+			return nil, fmt.Errorf("order quantity %s is below minimum order size %s for %s",
+				quantity.String(), matchedAsset.MinOrderSize, pair)
+		}
+	}
+
+	return warnings, nil
+}
+
+// parseMinOrderSize parses a minimum order size string that may be in decimal format
+func parseMinOrderSize(minOrderSizeStr string, precision int) *big.Int {
+	if minOrderSizeStr == "" {
+		return nil
+	}
+
+	// Handle decimal format (e.g., "0.0001")
+	parts := strings.Split(minOrderSizeStr, ".")
+	intPart := parts[0]
+	fracPart := ""
+	if len(parts) > 1 {
+		fracPart = parts[1]
+	}
+
+	// Use the precision from the asset or default to 8
+	if precision <= 0 {
+		precision = 8
+	}
+
+	// Pad or truncate fractional part
+	if len(fracPart) > precision {
+		fracPart = fracPart[:precision]
+	} else {
+		for len(fracPart) < precision {
+			fracPart += "0"
+		}
+	}
+
+	combined := intPart + fracPart
+	combined = strings.TrimLeft(combined, "0")
+	if combined == "" {
+		combined = "0"
+	}
+
+	result := new(big.Int)
+	result.SetString(combined, 10)
+	return result
 }
 
 func populateSpanFromOrderCreateRequest(span trace.Span, req CreateOrderRequest) {
@@ -161,6 +314,9 @@ func populateSpanFromOrderCreateRequest(span trace.Span, req CreateOrderRequest)
 	}
 	if req.LimitPrice != nil {
 		span.SetAttributes(attribute.String("limitPrice", req.LimitPrice.String()))
+	}
+	if req.StopPrice != nil {
+		span.SetAttributes(attribute.String("stopPrice", req.StopPrice.String()))
 	}
 	span.SetAttributes(attribute.String("timeInForce", req.TimeInForce))
 	if req.ExpiresAt != nil {

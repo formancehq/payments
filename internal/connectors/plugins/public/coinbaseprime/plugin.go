@@ -125,4 +125,39 @@ func (p *Plugin) CreateConversion(ctx context.Context, req models.CreateConversi
 	return p.createConversion(ctx, req)
 }
 
+func (p *Plugin) GetOrderBook(ctx context.Context, req models.GetOrderBookRequest) (models.GetOrderBookResponse, error) {
+	if p.client == nil {
+		return models.GetOrderBookResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchOrderBook(ctx, req)
+}
+
+func (p *Plugin) GetQuote(ctx context.Context, req models.GetQuoteRequest) (models.GetQuoteResponse, error) {
+	if p.client == nil {
+		return models.GetQuoteResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchQuote(ctx, req)
+}
+
+func (p *Plugin) GetTradableAssets(ctx context.Context, req models.GetTradableAssetsRequest) (models.GetTradableAssetsResponse, error) {
+	if p.client == nil {
+		return models.GetTradableAssetsResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchTradableAssets(ctx, req)
+}
+
+func (p *Plugin) GetTicker(ctx context.Context, req models.GetTickerRequest) (models.GetTickerResponse, error) {
+	if p.client == nil {
+		return models.GetTickerResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchTicker(ctx, req)
+}
+
+func (p *Plugin) GetOHLC(ctx context.Context, req models.GetOHLCRequest) (models.GetOHLCResponse, error) {
+	if p.client == nil {
+		return models.GetOHLCResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchOHLC(ctx, req)
+}
+
 var _ models.Plugin = &Plugin{}

@@ -15,12 +15,15 @@ const (
 	V3UpdateConnectorRequestTypeAdyen         V3UpdateConnectorRequestType = "Adyen"
 	V3UpdateConnectorRequestTypeAtlar         V3UpdateConnectorRequestType = "Atlar"
 	V3UpdateConnectorRequestTypeBankingcircle V3UpdateConnectorRequestType = "Bankingcircle"
+	V3UpdateConnectorRequestTypeBinance       V3UpdateConnectorRequestType = "Binance"
+	V3UpdateConnectorRequestTypeBitstamp      V3UpdateConnectorRequestType = "Bitstamp"
 	V3UpdateConnectorRequestTypeCoinbaseprime V3UpdateConnectorRequestType = "Coinbaseprime"
 	V3UpdateConnectorRequestTypeColumn        V3UpdateConnectorRequestType = "Column"
 	V3UpdateConnectorRequestTypeCurrencycloud V3UpdateConnectorRequestType = "Currencycloud"
 	V3UpdateConnectorRequestTypeDummypay      V3UpdateConnectorRequestType = "Dummypay"
 	V3UpdateConnectorRequestTypeGeneric       V3UpdateConnectorRequestType = "Generic"
 	V3UpdateConnectorRequestTypeIncrease      V3UpdateConnectorRequestType = "Increase"
+	V3UpdateConnectorRequestTypeKraken        V3UpdateConnectorRequestType = "Kraken"
 	V3UpdateConnectorRequestTypeMangopay      V3UpdateConnectorRequestType = "Mangopay"
 	V3UpdateConnectorRequestTypeModulr        V3UpdateConnectorRequestType = "Modulr"
 	V3UpdateConnectorRequestTypeMoneycorp     V3UpdateConnectorRequestType = "Moneycorp"
@@ -36,12 +39,15 @@ type V3UpdateConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3BinanceConfig       *V3BinanceConfig       `queryParam:"inline"`
+	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
 	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
+	V3KrakenConfig        *V3KrakenConfig        `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
@@ -88,6 +94,30 @@ func CreateV3UpdateConnectorRequestBankingcircle(bankingcircle V3BankingcircleCo
 	return V3UpdateConnectorRequest{
 		V3BankingcircleConfig: &bankingcircle,
 		Type:                  typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestBinance(binance V3BinanceConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeBinance
+
+	typStr := string(typ)
+	binance.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3BinanceConfig: &binance,
+		Type:            typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestBitstamp(bitstamp V3BitstampConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeBitstamp
+
+	typStr := string(typ)
+	bitstamp.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3BitstampConfig: &bitstamp,
+		Type:             typ,
 	}
 }
 
@@ -160,6 +190,18 @@ func CreateV3UpdateConnectorRequestIncrease(increase V3IncreaseConfig) V3UpdateC
 	return V3UpdateConnectorRequest{
 		V3IncreaseConfig: &increase,
 		Type:             typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestKraken(kraken V3KrakenConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeKraken
+
+	typStr := string(typ)
+	kraken.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3KrakenConfig: &kraken,
+		Type:           typ,
 	}
 }
 
@@ -310,6 +352,24 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3UpdateConnectorRequestTypeBankingcircle
 		return nil
+	case "Binance":
+		v3BinanceConfig := new(V3BinanceConfig)
+		if err := utils.UnmarshalJSON(data, &v3BinanceConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Binance) type V3BinanceConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3BinanceConfig = v3BinanceConfig
+		u.Type = V3UpdateConnectorRequestTypeBinance
+		return nil
+	case "Bitstamp":
+		v3BitstampConfig := new(V3BitstampConfig)
+		if err := utils.UnmarshalJSON(data, &v3BitstampConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Bitstamp) type V3BitstampConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3BitstampConfig = v3BitstampConfig
+		u.Type = V3UpdateConnectorRequestTypeBitstamp
+		return nil
 	case "Coinbaseprime":
 		v3CoinbaseprimeConfig := new(V3CoinbaseprimeConfig)
 		if err := utils.UnmarshalJSON(data, &v3CoinbaseprimeConfig, "", true, false); err != nil {
@@ -363,6 +423,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 
 		u.V3IncreaseConfig = v3IncreaseConfig
 		u.Type = V3UpdateConnectorRequestTypeIncrease
+		return nil
+	case "Kraken":
+		v3KrakenConfig := new(V3KrakenConfig)
+		if err := utils.UnmarshalJSON(data, &v3KrakenConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Kraken) type V3KrakenConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3KrakenConfig = v3KrakenConfig
+		u.Type = V3UpdateConnectorRequestTypeKraken
 		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
@@ -463,6 +532,14 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
 	}
 
+	if u.V3BinanceConfig != nil {
+		return utils.MarshalJSON(u.V3BinanceConfig, "", true)
+	}
+
+	if u.V3BitstampConfig != nil {
+		return utils.MarshalJSON(u.V3BitstampConfig, "", true)
+	}
+
 	if u.V3CoinbaseprimeConfig != nil {
 		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
 	}
@@ -485,6 +562,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3IncreaseConfig != nil {
 		return utils.MarshalJSON(u.V3IncreaseConfig, "", true)
+	}
+
+	if u.V3KrakenConfig != nil {
+		return utils.MarshalJSON(u.V3KrakenConfig, "", true)
 	}
 
 	if u.V3MangopayConfig != nil {

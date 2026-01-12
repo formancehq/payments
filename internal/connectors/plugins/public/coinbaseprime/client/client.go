@@ -2,6 +2,10 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/coinbase-samples/prime-sdk-go/balances"
@@ -38,11 +42,16 @@ type Client interface {
 	// Conversion operations
 	CreateConversion(ctx context.Context, req CreateConversionRequest) (*CreateConversionResponse, error)
 	GetConversion(ctx context.Context, conversionID string) (*Conversion, error)
+
+	// Market data operations
+	GetOrderBook(ctx context.Context, productID string, depth int) (*OrderBookResponse, error)
+	GetProducts(ctx context.Context) ([]Product, error)
 }
 
 type client struct {
 	restClient primeclient.RestClient
 	creds      *credentials.Credentials
+	httpClient *http.Client
 
 	portfolioService portfolios.PortfoliosService
 	walletsService   wallets.WalletsService
@@ -74,6 +83,7 @@ func New(
 	return &client{
 		restClient:       restClient,
 		creds:            creds,
+		httpClient:       httpClient,
 		portfolioService: portfolios.NewPortfoliosService(restClient),
 		walletsService:   wallets.NewWalletsService(restClient),
 		balancesService:  balances.NewBalancesService(restClient),
@@ -172,5 +182,113 @@ func (c *client) GetConversion(ctx context.Context, conversionID string) (*Conve
 	// Coinbase Prime conversions are tracked via transactions
 	// This would need custom implementation
 	return nil, nil
+}
+
+// GetOrderBook fetches the order book from Coinbase Exchange API (public endpoint)
+// The productID should be in the format like "BTC-USD"
+func (c *client) GetOrderBook(ctx context.Context, productID string, depth int) (*OrderBookResponse, error) {
+	// Use the public Coinbase Exchange API for order book data
+	// This is a public endpoint that doesn't require authentication
+	url := fmt.Sprintf("https://api.exchange.coinbase.com/products/%s/book?level=2", productID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+	}
+
+	// The Coinbase response format is slightly different, parse it
+	var rawResp struct {
+		Sequence int64      `json:"sequence"`
+		Bids     [][]string `json:"bids"` // [price, size, num_orders]
+		Asks     [][]string `json:"asks"` // [price, size, num_orders]
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&rawResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	// Convert to our format
+	orderBook := &OrderBookResponse{
+		ProductID: productID,
+		Sequence:  rawResp.Sequence,
+		Time:      time.Now().UTC(),
+		Bids:      make([]OrderBookEntry, 0, len(rawResp.Bids)),
+		Asks:      make([]OrderBookEntry, 0, len(rawResp.Asks)),
+	}
+
+	// Apply depth limit
+	bidLimit := len(rawResp.Bids)
+	askLimit := len(rawResp.Asks)
+	if depth > 0 {
+		if depth < bidLimit {
+			bidLimit = depth
+		}
+		if depth < askLimit {
+			askLimit = depth
+		}
+	}
+
+	for i := 0; i < bidLimit; i++ {
+		bid := rawResp.Bids[i]
+		if len(bid) >= 2 {
+			orderBook.Bids = append(orderBook.Bids, OrderBookEntry{
+				Price: bid[0],
+				Size:  bid[1],
+			})
+		}
+	}
+
+	for i := 0; i < askLimit; i++ {
+		ask := rawResp.Asks[i]
+		if len(ask) >= 2 {
+			orderBook.Asks = append(orderBook.Asks, OrderBookEntry{
+				Price: ask[0],
+				Size:  ask[1],
+			})
+		}
+	}
+
+	return orderBook, nil
+}
+
+// GetProducts fetches all tradable products from Coinbase Exchange API (public endpoint)
+func (c *client) GetProducts(ctx context.Context) ([]Product, error) {
+	url := "https://api.exchange.coinbase.com/products"
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+	}
+
+	var products []Product
+	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return products, nil
 }
 

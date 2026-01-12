@@ -47,6 +47,20 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBankingcircle() 
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBinance() *components.V3BinanceConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3BinanceConfig
+	}
+	return nil
+}
+
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBitstamp() *components.V3BitstampConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3BitstampConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestCoinbaseprime() *components.V3CoinbaseprimeConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3CoinbaseprimeConfig
@@ -85,6 +99,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestGeneric() *compo
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestIncrease() *components.V3IncreaseConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3IncreaseConfig
+	}
+	return nil
+}
+
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestKraken() *components.V3KrakenConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3KrakenConfig
 	}
 	return nil
 }

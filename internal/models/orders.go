@@ -52,6 +52,9 @@ type PSPOrder struct {
 	// Limit price for LIMIT orders (optional, using integer representation)
 	LimitPrice *big.Int
 
+	// Stop price for STOP_LIMIT orders (optional, using integer representation)
+	StopPrice *big.Int
+
 	// Time in force
 	TimeInForce TimeInForce
 
@@ -155,6 +158,9 @@ type Order struct {
 	// Limit price for LIMIT orders (optional)
 	LimitPrice *big.Int `json:"limitPrice,omitempty"`
 
+	// Stop price for STOP_LIMIT orders (optional)
+	StopPrice *big.Int `json:"stopPrice,omitempty"`
+
 	// Time in force
 	TimeInForce TimeInForce `json:"timeInForce"`
 
@@ -197,6 +203,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered"`
 		BaseQuantityFilled  *big.Int          `json:"baseQuantityFilled"`
 		LimitPrice          *big.Int          `json:"limitPrice,omitempty"`
+		StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 		TimeInForce         TimeInForce       `json:"timeInForce"`
 		ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
 		Fee                 *big.Int          `json:"fee,omitempty"`
@@ -219,6 +226,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		BaseQuantityOrdered: o.BaseQuantityOrdered,
 		BaseQuantityFilled:  o.BaseQuantityFilled,
 		LimitPrice:          o.LimitPrice,
+		StopPrice:           o.StopPrice,
 		TimeInForce:         o.TimeInForce,
 		ExpiresAt:           o.ExpiresAt,
 		Fee:                 o.Fee,
@@ -244,6 +252,7 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 		BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered"`
 		BaseQuantityFilled  *big.Int          `json:"baseQuantityFilled"`
 		LimitPrice          *big.Int          `json:"limitPrice,omitempty"`
+		StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 		TimeInForce         TimeInForce       `json:"timeInForce"`
 		ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
 		Fee                 *big.Int          `json:"fee,omitempty"`
@@ -280,6 +289,7 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 	o.BaseQuantityOrdered = aux.BaseQuantityOrdered
 	o.BaseQuantityFilled = aux.BaseQuantityFilled
 	o.LimitPrice = aux.LimitPrice
+	o.StopPrice = aux.StopPrice
 	o.TimeInForce = aux.TimeInForce
 	o.ExpiresAt = aux.ExpiresAt
 	o.Fee = aux.Fee
@@ -315,6 +325,7 @@ func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) 
 		BaseQuantityOrdered: from.BaseQuantityOrdered,
 		BaseQuantityFilled:  from.BaseQuantityFilled,
 		LimitPrice:          from.LimitPrice,
+		StopPrice:           from.StopPrice,
 		TimeInForce:         from.TimeInForce,
 		ExpiresAt:           from.ExpiresAt,
 		Fee:                 from.Fee,
@@ -532,6 +543,7 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered"`
 		BaseQuantityFilled  *big.Int          `json:"baseQuantityFilled"`
 		LimitPrice          *big.Int          `json:"limitPrice,omitempty"`
+		StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 		TimeInForce         TimeInForce       `json:"timeInForce"`
 		ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
 		Fee                 *big.Int          `json:"fee,omitempty"`
@@ -554,6 +566,7 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		BaseQuantityOrdered: oe.Order.BaseQuantityOrdered,
 		BaseQuantityFilled:  oe.Order.BaseQuantityFilled,
 		LimitPrice:          oe.Order.LimitPrice,
+		StopPrice:           oe.Order.StopPrice,
 		TimeInForce:         oe.Order.TimeInForce,
 		ExpiresAt:           oe.Order.ExpiresAt,
 		Fee:                 oe.Order.Fee,

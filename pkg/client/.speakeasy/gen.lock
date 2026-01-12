@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: db6aedc6d5bed250f91dca6a0a342b88
+  docChecksum: 890d737ddfa66089e6ba348cdbbaed96
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -122,6 +122,8 @@ generatedFiles:
   - /models/components/v3bankaccountrelatedaccount.go
   - /models/components/v3bankaccountscursorresponse.go
   - /models/components/v3bankingcircleconfig.go
+  - /models/components/v3binanceconfig.go
+  - /models/components/v3bitstampconfig.go
   - /models/components/v3coinbaseprimeconfig.go
   - /models/components/v3columnconfig.go
   - /models/components/v3connectionstatusenum.go
@@ -169,6 +171,7 @@ generatedFiles:
   - /models/components/v3installconnectorrequest.go
   - /models/components/v3installconnectorresponse.go
   - /models/components/v3instance.go
+  - /models/components/v3krakenconfig.go
   - /models/components/v3mangopayconfig.go
   - /models/components/v3modulrconfig.go
   - /models/components/v3moneycorpconfig.go
@@ -457,6 +460,8 @@ generatedFiles:
   - docs/models/components/v3bankaccountscursorresponse.md
   - docs/models/components/v3bankaccountscursorresponsecursor.md
   - docs/models/components/v3bankingcircleconfig.md
+  - docs/models/components/v3binanceconfig.md
+  - docs/models/components/v3bitstampconfig.md
   - docs/models/components/v3coinbaseprimeconfig.md
   - docs/models/components/v3columnconfig.md
   - docs/models/components/v3connectionstatusenum.md
@@ -511,6 +516,7 @@ generatedFiles:
   - docs/models/components/v3installconnectorrequest.md
   - docs/models/components/v3installconnectorresponse.md
   - docs/models/components/v3instance.md
+  - docs/models/components/v3krakenconfig.md
   - docs/models/components/v3mangopayconfig.md
   - docs/models/components/v3modulrconfig.md
   - docs/models/components/v3moneycorpconfig.md

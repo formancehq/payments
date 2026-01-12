@@ -579,4 +579,94 @@ func (i *impl) CreateConversion(ctx context.Context, req models.CreateConversion
 	return resp, nil
 }
 
+func (i *impl) GetOrderBook(ctx context.Context, req models.GetOrderBookRequest) (models.GetOrderBookResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.GetOrderBook", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).WithField("pair", req.Pair).Info("getting order book...")
+
+	resp, err := i.plugin.GetOrderBook(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("getting order book failed:", err)
+		otel.RecordError(span, err)
+		return models.GetOrderBookResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting order book succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) GetQuote(ctx context.Context, req models.GetQuoteRequest) (models.GetQuoteResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.GetQuote", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting quote...")
+
+	resp, err := i.plugin.GetQuote(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("getting quote failed:", err)
+		otel.RecordError(span, err)
+		return models.GetQuoteResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting quote succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) GetTradableAssets(ctx context.Context, req models.GetTradableAssetsRequest) (models.GetTradableAssetsResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.GetTradableAssets", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting tradable assets...")
+
+	resp, err := i.plugin.GetTradableAssets(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("getting tradable assets failed:", err)
+		otel.RecordError(span, err)
+		return models.GetTradableAssetsResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting tradable assets succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) GetTicker(ctx context.Context, req models.GetTickerRequest) (models.GetTickerResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.GetTicker", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()), attribute.String("pair", req.Pair))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting ticker...")
+
+	resp, err := i.plugin.GetTicker(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("getting ticker failed:", err)
+		otel.RecordError(span, err)
+		return models.GetTickerResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting ticker succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) GetOHLC(ctx context.Context, req models.GetOHLCRequest) (models.GetOHLCResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.GetOHLC", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()), attribute.String("pair", req.Pair), attribute.String("interval", req.Interval))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting OHLC data...")
+
+	resp, err := i.plugin.GetOHLC(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("getting OHLC data failed:", err)
+		otel.RecordError(span, err)
+		return models.GetOHLCResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("getting OHLC data succeeded!")
+
+	return resp, nil
+}
+
 var _ models.Plugin = &impl{}

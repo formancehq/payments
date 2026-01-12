@@ -13,6 +13,7 @@ const (
 	ORDER_TYPE_UNKNOWN OrderType = iota
 	ORDER_TYPE_MARKET
 	ORDER_TYPE_LIMIT
+	ORDER_TYPE_STOP_LIMIT
 )
 
 func (t OrderType) String() string {
@@ -21,6 +22,8 @@ func (t OrderType) String() string {
 		return "MARKET"
 	case ORDER_TYPE_LIMIT:
 		return "LIMIT"
+	case ORDER_TYPE_STOP_LIMIT:
+		return "STOP_LIMIT"
 	default:
 		return "UNKNOWN"
 	}
@@ -32,6 +35,8 @@ func OrderTypeFromString(s string) (OrderType, error) {
 		return ORDER_TYPE_MARKET, nil
 	case "LIMIT":
 		return ORDER_TYPE_LIMIT, nil
+	case "STOP_LIMIT":
+		return ORDER_TYPE_STOP_LIMIT, nil
 	default:
 		return ORDER_TYPE_UNKNOWN, fmt.Errorf("unknown order type: %s", s)
 	}

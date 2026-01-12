@@ -121,6 +121,10 @@ func (p *Plugin) createOrder(ctx context.Context, req models.CreateOrderRequest)
 		createReq.TimeInForce = "GTC"
 	case models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME:
 		createReq.TimeInForce = "GTD"
+		// Set expiration time for GTD orders
+		if order.ExpiresAt != nil {
+			createReq.ExpiryTime = order.ExpiresAt.Format(time.RFC3339)
+		}
 	case models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL:
 		createReq.TimeInForce = "IOC"
 	case models.TIME_IN_FORCE_FILL_OR_KILL:

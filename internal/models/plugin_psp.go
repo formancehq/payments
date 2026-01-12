@@ -24,6 +24,13 @@ type PSPPlugin interface {
 	CreateOrder(context.Context, CreateOrderRequest) (CreateOrderResponse, error)
 	CancelOrder(context.Context, CancelOrderRequest) (CancelOrderResponse, error)
 	CreateConversion(context.Context, CreateConversionRequest) (CreateConversionResponse, error)
+
+	// Market data methods
+	GetOrderBook(context.Context, GetOrderBookRequest) (GetOrderBookResponse, error)
+	GetQuote(context.Context, GetQuoteRequest) (GetQuoteResponse, error)
+	GetTradableAssets(context.Context, GetTradableAssetsRequest) (GetTradableAssetsResponse, error)
+	GetTicker(context.Context, GetTickerRequest) (GetTickerResponse, error)
+	GetOHLC(context.Context, GetOHLCRequest) (GetOHLCResponse, error)
 }
 
 type FetchNextAccountsRequest struct {
@@ -223,4 +230,53 @@ type CreateConversionResponse struct {
 	Conversion *PSPConversion
 	// Otherwise, return the conversion ID to be polled
 	PollingConversionID *string
+}
+
+// WebSocket-related types for real-time order updates
+
+// OrderUpdateHandler is a callback function that receives order updates from WebSocket
+type OrderUpdateHandler func(order PSPOrder)
+
+// WebSocketConfig contains configuration for WebSocket connections
+type WebSocketConfig struct {
+	// Whether to auto-reconnect on disconnection
+	AutoReconnect bool
+	// Maximum number of reconnect attempts (0 = unlimited)
+	MaxReconnectAttempts int
+	// Reconnect delay multiplier for exponential backoff
+	ReconnectBackoffMultiplier float64
+	// Initial reconnect delay
+	InitialReconnectDelay int64 // milliseconds
+	// Maximum reconnect delay
+	MaxReconnectDelay int64 // milliseconds
+}
+
+// DefaultWebSocketConfig returns sensible defaults for WebSocket configuration
+func DefaultWebSocketConfig() WebSocketConfig {
+	return WebSocketConfig{
+		AutoReconnect:              true,
+		MaxReconnectAttempts:       0, // unlimited
+		ReconnectBackoffMultiplier: 2.0,
+		InitialReconnectDelay:      1000,  // 1 second
+		MaxReconnectDelay:          60000, // 60 seconds
+	}
+}
+
+// StartOrderWebSocketRequest contains parameters for starting a WebSocket order stream
+type StartOrderWebSocketRequest struct {
+	Config  WebSocketConfig
+	Handler OrderUpdateHandler
+}
+
+// StartOrderWebSocketResponse contains the result of starting a WebSocket stream
+type StartOrderWebSocketResponse struct {
+	// A function to stop the WebSocket connection
+	StopFunc func()
+}
+
+// WebSocketPlugin interface for connectors that support WebSocket functionality
+type WebSocketPlugin interface {
+	// StartOrderWebSocket starts a WebSocket connection for real-time order updates
+	// Returns a stop function that can be called to close the connection
+	StartOrderWebSocket(ctx context.Context, req StartOrderWebSocketRequest) (StartOrderWebSocketResponse, error)
 }
