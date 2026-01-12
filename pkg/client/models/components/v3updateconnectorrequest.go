@@ -15,6 +15,7 @@ const (
 	V3UpdateConnectorRequestTypeAdyen         V3UpdateConnectorRequestType = "Adyen"
 	V3UpdateConnectorRequestTypeAtlar         V3UpdateConnectorRequestType = "Atlar"
 	V3UpdateConnectorRequestTypeBankingcircle V3UpdateConnectorRequestType = "Bankingcircle"
+	V3UpdateConnectorRequestTypeCoinbaseprime V3UpdateConnectorRequestType = "Coinbaseprime"
 	V3UpdateConnectorRequestTypeColumn        V3UpdateConnectorRequestType = "Column"
 	V3UpdateConnectorRequestTypeCurrencycloud V3UpdateConnectorRequestType = "Currencycloud"
 	V3UpdateConnectorRequestTypeDummypay      V3UpdateConnectorRequestType = "Dummypay"
@@ -35,6 +36,7 @@ type V3UpdateConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
@@ -85,6 +87,18 @@ func CreateV3UpdateConnectorRequestBankingcircle(bankingcircle V3BankingcircleCo
 
 	return V3UpdateConnectorRequest{
 		V3BankingcircleConfig: &bankingcircle,
+		Type:                  typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestCoinbaseprime(coinbaseprime V3CoinbaseprimeConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeCoinbaseprime
+
+	typStr := string(typ)
+	coinbaseprime.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3CoinbaseprimeConfig: &coinbaseprime,
 		Type:                  typ,
 	}
 }
@@ -296,6 +310,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3UpdateConnectorRequestTypeBankingcircle
 		return nil
+	case "Coinbaseprime":
+		v3CoinbaseprimeConfig := new(V3CoinbaseprimeConfig)
+		if err := utils.UnmarshalJSON(data, &v3CoinbaseprimeConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Coinbaseprime) type V3CoinbaseprimeConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3CoinbaseprimeConfig = v3CoinbaseprimeConfig
+		u.Type = V3UpdateConnectorRequestTypeCoinbaseprime
+		return nil
 	case "Column":
 		v3ColumnConfig := new(V3ColumnConfig)
 		if err := utils.UnmarshalJSON(data, &v3ColumnConfig, "", true, false); err != nil {
@@ -438,6 +461,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3BankingcircleConfig != nil {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
+	}
+
+	if u.V3CoinbaseprimeConfig != nil {
+		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
 	}
 
 	if u.V3ColumnConfig != nil {

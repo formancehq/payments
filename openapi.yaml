@@ -5767,6 +5767,7 @@ components:
           Adyen: '#/components/schemas/V3AdyenConfig'
           Atlar: '#/components/schemas/V3AtlarConfig'
           Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+          Coinbaseprime: '#/components/schemas/V3CoinbaseprimeConfig'
           Column: '#/components/schemas/V3ColumnConfig'
           Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
           Dummypay: '#/components/schemas/V3DummypayConfig'
@@ -5785,6 +5786,7 @@ components:
         - $ref: '#/components/schemas/V3AdyenConfig'
         - $ref: '#/components/schemas/V3AtlarConfig'
         - $ref: '#/components/schemas/V3BankingcircleConfig'
+        - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
         - $ref: '#/components/schemas/V3ColumnConfig'
         - $ref: '#/components/schemas/V3CurrencycloudConfig'
         - $ref: '#/components/schemas/V3DummypayConfig'
@@ -5891,6 +5893,42 @@ components:
         userCertificateKey:
           type: string
         username:
+          type: string
+    V3CoinbaseprimeConfig:
+      type: object
+      required:
+        - name
+        - accessKey
+        - passphrase
+        - signingKey
+        - portfolioId
+        - svcAccountId
+        - entityId
+      properties:
+        accessKey:
+          type: string
+        entityId:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+        passphrase:
+          type: string
+        pollingPeriod:
+          type: string
+          default: 30m
+        portfolioId:
+          type: string
+        provider:
+          type: string
+          default: Coinbaseprime
+        signingKey:
+          type: string
+        svcAccountId:
           type: string
     V3ColumnConfig:
       type: object

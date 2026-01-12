@@ -47,6 +47,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBankingcircl
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestCoinbaseprime() *components.V3CoinbaseprimeConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3CoinbaseprimeConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestColumn() *components.V3ColumnConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3ColumnConfig
