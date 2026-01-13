@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -925,4 +926,211 @@ func TestGetTransferStatus_ReadBodyError(t *testing.T) {
 
 	_, err := c.GetTransferStatus(context.Background(), "transfer_123")
 	require.Error(t, err)
+}
+
+// failingTransport is an http.RoundTripper that always returns an error
+type failingTransport struct{}
+
+func (f *failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, fmt.Errorf("network error: connection refused")
+}
+
+// TestCreatePayout_NetworkError tests payout creation when HTTP client fails
+func TestCreatePayout_NetworkError(t *testing.T) {
+	t.Parallel()
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	req := &PayoutRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"}
+	resp, err := c.CreatePayout(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to execute payout request")
+}
+
+// TestCreateTransfer_NetworkError tests transfer creation when HTTP client fails
+func TestCreateTransfer_NetworkError(t *testing.T) {
+	t.Parallel()
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	req := &TransferRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"}
+	resp, err := c.CreateTransfer(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to execute transfer request")
+}
+
+// TestCreateBankAccount_NetworkError tests bank account creation when HTTP client fails
+func TestCreateBankAccount_NetworkError(t *testing.T) {
+	t.Parallel()
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	req := &BankAccountRequest{Name: "Test Account"}
+	resp, err := c.CreateBankAccount(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to execute bank account request")
+}
+
+// TestGetPayoutStatus_NetworkError tests get payout status when HTTP client fails
+func TestGetPayoutStatus_NetworkError(t *testing.T) {
+	t.Parallel()
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	resp, err := c.GetPayoutStatus(context.Background(), "payout_123")
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to execute get payout status request")
+}
+
+// TestGetTransferStatus_NetworkError tests get transfer status when HTTP client fails
+func TestGetTransferStatus_NetworkError(t *testing.T) {
+	t.Parallel()
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	resp, err := c.GetTransferStatus(context.Background(), "transfer_123")
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to execute get transfer status request")
+}
+
+// errorReader is an io.ReadCloser that returns an error when reading
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	return 0, fmt.Errorf("read error: broken pipe")
+}
+
+func (e *errorReader) Close() error {
+	return nil
+}
+
+// errorBodyTransport returns a response with a body that fails to read
+type errorBodyTransport struct {
+	statusCode int
+}
+
+func (e *errorBodyTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: e.statusCode,
+		Body:       &errorReader{},
+		Header:     make(http.Header),
+	}, nil
+}
+
+// TestCreatePayout_ReadResponseError tests payout when reading response body fails
+func TestCreatePayout_ReadResponseError(t *testing.T) {
+	t.Parallel()
+
+	transport := &errorBodyTransport{statusCode: http.StatusOK}
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: transport}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	req := &PayoutRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"}
+	resp, err := c.CreatePayout(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to read payout response")
+}
+
+// TestCreateTransfer_ReadResponseError tests transfer when reading response body fails
+func TestCreateTransfer_ReadResponseError(t *testing.T) {
+	t.Parallel()
+
+	transport := &errorBodyTransport{statusCode: http.StatusOK}
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: transport}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	req := &TransferRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"}
+	resp, err := c.CreateTransfer(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to read transfer response")
+}
+
+// TestCreateBankAccount_ReadResponseError tests bank account when reading response body fails
+func TestCreateBankAccount_ReadResponseError(t *testing.T) {
+	t.Parallel()
+
+	transport := &errorBodyTransport{statusCode: http.StatusOK}
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: transport}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	req := &BankAccountRequest{Name: "Test Account"}
+	resp, err := c.CreateBankAccount(context.Background(), req)
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to read bank account response")
+}
+
+// TestGetPayoutStatus_ReadResponseError tests get payout status when reading response body fails
+func TestGetPayoutStatus_ReadResponseError(t *testing.T) {
+	t.Parallel()
+
+	transport := &errorBodyTransport{statusCode: http.StatusOK}
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: transport}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	resp, err := c.GetPayoutStatus(context.Background(), "payout_123")
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to read payout status response")
+}
+
+// TestGetTransferStatus_ReadResponseError tests get transfer status when reading response body fails
+func TestGetTransferStatus_ReadResponseError(t *testing.T) {
+	t.Parallel()
+
+	transport := &errorBodyTransport{statusCode: http.StatusOK}
+
+	configuration := genericclient.NewConfiguration()
+	configuration.HTTPClient = &http.Client{Transport: transport}
+	configuration.Servers[0].URL = "http://localhost:9999"
+
+	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+
+	resp, err := c.GetTransferStatus(context.Background(), "transfer_123")
+	require.Error(t, err)
+	require.Nil(t, resp)
+	require.Contains(t, err.Error(), "failed to read transfer status response")
 }
