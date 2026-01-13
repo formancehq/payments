@@ -11,10 +11,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type conversionsState struct {
-	LastSync time.Time `json:"last_sync"`
-}
-
 func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
 	// Bitstamp doesn't have a dedicated conversions endpoint
 	// Conversions are executed as market orders, so we return empty here

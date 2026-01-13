@@ -81,6 +81,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runFetchNextConversions,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunFetchExchangeData,
+			Func: w.runFetchExchangeData,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunListActiveSchedules,
 			Func: w.runListActiveSchedules,
 		}).

@@ -11,6 +11,7 @@ const (
 	TASK_CREATE_WEBHOOKS
 	TASK_FETCH_ORDERS
 	TASK_FETCH_CONVERSIONS
+	TASK_FETCH_EXCHANGE_DATA
 )
 
 type TaskTreeFetchOther struct{}
@@ -21,6 +22,7 @@ type TaskTreeFetchPayments struct{}
 type TaskTreeCreateWebhooks struct{}
 type TaskTreeFetchOrders struct{}
 type TaskTreeFetchConversions struct{}
+type TaskTreeFetchExchangeData struct{}
 
 type ConnectorTaskTree struct {
 	TaskType     TaskType
@@ -36,6 +38,7 @@ type ConnectorTaskTree struct {
 	TaskTreeCreateWebhooks        *TaskTreeCreateWebhooks
 	TaskTreeFetchOrders           *TaskTreeFetchOrders
 	TaskTreeFetchConversions      *TaskTreeFetchConversions
+	TaskTreeFetchExchangeData     *TaskTreeFetchExchangeData
 }
 
 type ConnectorTasksTree []ConnectorTaskTree

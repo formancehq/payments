@@ -19,6 +19,7 @@ const (
 	CAPABILITY_FETCH_OTHERS
 	CAPABILITY_FETCH_ORDERS
 	CAPABILITY_FETCH_CONVERSIONS
+	CAPABILITY_FETCH_EXCHANGE_DATA
 
 	// Webhooks capabilities indicates that the connector can create, manage and
 	// receive webhooks from the connector
@@ -69,6 +70,8 @@ func (t Capability) String() string {
 		return "FETCH_ORDERS"
 	case CAPABILITY_FETCH_CONVERSIONS:
 		return "FETCH_CONVERSIONS"
+	case CAPABILITY_FETCH_EXCHANGE_DATA:
+		return "FETCH_EXCHANGE_DATA"
 
 	case CAPABILITY_CREATE_WEBHOOKS:
 		return "CREATE_WEBHOOKS"
@@ -150,6 +153,8 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_FETCH_ORDERS
 	case "FETCH_CONVERSIONS":
 		*t = CAPABILITY_FETCH_CONVERSIONS
+	case "FETCH_EXCHANGE_DATA":
+		*t = CAPABILITY_FETCH_EXCHANGE_DATA
 
 	case "CREATE_WEBHOOKS":
 		*t = CAPABILITY_CREATE_WEBHOOKS

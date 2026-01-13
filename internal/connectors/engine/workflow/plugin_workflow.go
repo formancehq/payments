@@ -112,6 +112,17 @@ func (w Workflow) runNextTasksV3_1(
 			request = req
 			capability = models.CAPABILITY_FETCH_CONVERSIONS
 
+		case models.TASK_FETCH_EXCHANGE_DATA:
+			req := FetchExchangeData{
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
+			}
+
+			nextWorkflow = RunFetchExchangeData
+			request = req
+			capability = models.CAPABILITY_FETCH_EXCHANGE_DATA
+
 		default:
 			return fmt.Errorf("unknown task type: %v", task.TaskType)
 		}
