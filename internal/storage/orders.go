@@ -266,21 +266,20 @@ func (s *store) ordersQueryContext(qb query.Builder) (string, []any, error) {
 			if operator != "$match" {
 				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
+			return fmt.Sprintf("o.%s = ?", key), []any{value}, nil
 
 		case key == "base_quantity_ordered",
 			key == "base_quantity_filled",
 			key == "limit_price",
 			key == "fee":
-			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
+			return fmt.Sprintf("o.%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
 				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
-			key := "metadata"
-			return key + " @> ?", []any{map[string]any{
+			return "o.metadata @> ?", []any{map[string]any{
 				match[0][1]: value,
 			}}, nil
 		default:
