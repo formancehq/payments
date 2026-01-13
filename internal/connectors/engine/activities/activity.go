@@ -60,7 +60,7 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginCreateBankAccount,
 		}).
 		Append(temporalworker.Definition{
-			Name: "PluginCreateTransfer",
+			Name: "PluginCreateTransfert",
 			Func: a.PluginCreateTransfer,
 		}).
 		Append(temporalworker.Definition{
