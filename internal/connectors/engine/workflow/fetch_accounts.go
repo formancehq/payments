@@ -58,7 +58,7 @@ func (w Workflow) fetchAccounts(
 	hasMore := true
 	for hasMore {
 		accountsResponse, err := activities.PluginFetchNextAccounts(
-			fetchNextActivityRetryContext(ctx),
+			infiniteRetryWithLongTimeoutContext(ctx),
 			fetchNextAccount.ConnectorID,
 			fetchNextAccount.FromPayload.GetPayload(),
 			state.State,
