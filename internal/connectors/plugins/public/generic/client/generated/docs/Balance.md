@@ -1,72 +1,50 @@
 # Balance
 
+An account balance for a specific currency/asset.
+
 ## Properties
 
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**Amount** | **string** |  | 
-**Currency** | **string** |  | 
+| Name | Type | Description | Required |
+|------|------|-------------|----------|
+| **Amount** | **string** | Balance amount in minor units (integer string, e.g., "10000" for $100.00) | ✅ |
+| **Currency** | **string** | Asset in UMN format (e.g., "USD/2", "BTC/8", "EUR/2") | ✅ |
 
-## Methods
+## Example
 
-### NewBalance
+```json
+{
+  "amount": "1000000",
+  "currency": "USD/2"
+}
+```
 
-`func NewBalance(amount string, currency string, ) *Balance`
+This represents a balance of $10,000.00 USD.
 
-NewBalance instantiates a new Balance object
-This constructor will assign default values to properties that have it defined,
-and makes sure properties required by API are set, but the set of arguments
-will change when the set of required properties is changed
+## Multi-Currency Account Example
 
-### NewBalanceWithDefaults
+An account can have multiple balances in different currencies:
 
-`func NewBalanceWithDefaults() *Balance`
+```json
+{
+  "id": "bal_123",
+  "accountID": "acc_001",
+  "at": "2026-01-14T15:00:00Z",
+  "balances": [
+    { "amount": "1000000", "currency": "USD/2" },
+    { "amount": "500000", "currency": "EUR/2" },
+    { "amount": "10000000", "currency": "BTC/8" }
+  ]
+}
+```
 
-NewBalanceWithDefaults instantiates a new Balance object
-This constructor will only assign default values to properties that have it defined,
-but it doesn't guarantee that properties required by API are set
+## Amount Conversion
 
-### GetAmount
-
-`func (o *Balance) GetAmount() string`
-
-GetAmount returns the Amount field if non-nil, zero value otherwise.
-
-### GetAmountOk
-
-`func (o *Balance) GetAmountOk() (*string, bool)`
-
-GetAmountOk returns a tuple with the Amount field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetAmount
-
-`func (o *Balance) SetAmount(v string)`
-
-SetAmount sets Amount field to given value.
-
-
-### GetCurrency
-
-`func (o *Balance) GetCurrency() string`
-
-GetCurrency returns the Currency field if non-nil, zero value otherwise.
-
-### GetCurrencyOk
-
-`func (o *Balance) GetCurrencyOk() (*string, bool)`
-
-GetCurrencyOk returns a tuple with the Currency field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetCurrency
-
-`func (o *Balance) SetCurrency(v string)`
-
-SetCurrency sets Currency field to given value.
-
-
+| Currency | Amount String | Human Readable |
+|----------|---------------|----------------|
+| USD/2 | "10000" | $100.00 |
+| EUR/2 | "5000" | €50.00 |
+| BTC/8 | "100000000" | 1.00000000 BTC |
+| JPY/0 | "1000" | ¥1000 |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
 

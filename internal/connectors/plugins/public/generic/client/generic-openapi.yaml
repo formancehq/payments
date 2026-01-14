@@ -399,10 +399,17 @@ components:
 
     TransactionType:
       type: string
+      description: |
+        Payment/transaction type. Core types are mapped to Formance payment types:
+        - PAYIN: Incoming payment (maps to PAY-IN)
+        - PAYOUT: Outgoing payment to external account (maps to PAYOUT)
+        - TRANSFER: Internal transfer between accounts (maps to TRANSFER)
+        - OTHER: Any other transaction type (maps to OTHER)
       enum:
         - PAYIN
         - PAYOUT
         - TRANSFER
+        - OTHER
 
     TransactionStatus:
       type: string
