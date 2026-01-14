@@ -111,7 +111,7 @@ func fillPayments(
 		}
 
 		if payment.RelatedTransactionID != nil {
-			p.Reference = *payment.RelatedTransactionID
+			p.ParentReference = *payment.RelatedTransactionID
 		}
 
 		if payment.SourceAccountID != nil {

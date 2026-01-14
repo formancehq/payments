@@ -20,9 +20,10 @@ type TransactionType string
 
 // List of TransactionType
 const (
-	PAYIN TransactionType = "PAYIN"
-	PAYOUT TransactionType = "PAYOUT"
-	TRANSFER TransactionType = "TRANSFER"
+	PAYIN      TransactionType = "PAYIN"
+	PAYOUT     TransactionType = "PAYOUT"
+	TRANSFER   TransactionType = "TRANSFER"
+	TYPE_OTHER TransactionType = "OTHER"
 )
 
 // All allowed values of TransactionType enum
@@ -30,6 +31,7 @@ var AllowedTransactionTypeEnumValues = []TransactionType{
 	"PAYIN",
 	"PAYOUT",
 	"TRANSFER",
+	"OTHER",
 }
 
 func (v *TransactionType) UnmarshalJSON(src []byte) error {
@@ -110,4 +112,3 @@ func (v *NullableTransactionType) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-

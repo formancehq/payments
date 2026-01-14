@@ -193,6 +193,7 @@ func TestMatchPaymentType(t *testing.T) {
 		{"PAYIN", genericclient.PAYIN, models.PAYMENT_TYPE_PAYIN},
 		{"PAYOUT", genericclient.PAYOUT, models.PAYMENT_TYPE_PAYOUT},
 		{"TRANSFER", genericclient.TRANSFER, models.PAYMENT_TYPE_TRANSFER},
+		{"OTHER", genericclient.TYPE_OTHER, models.PAYMENT_TYPE_OTHER},
 		{"Unknown", genericclient.TransactionType("UNKNOWN"), models.PAYMENT_TYPE_OTHER},
 	}
 
@@ -267,8 +268,10 @@ func TestFillPayments_WithRelatedTransactionID(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, payments, 1)
 	require.Len(t, updatedAts, 1)
-	// When RelatedTransactionID is set, Reference should use it
-	require.Equal(t, relatedID, payments[0].Reference)
+	// Reference remains the transaction's own ID
+	require.Equal(t, "tx_1", payments[0].Reference)
+	// ParentReference is set to link this as an adjustment to the parent transaction
+	require.Equal(t, relatedID, payments[0].ParentReference)
 }
 
 func TestFillPayments_WithoutSourceOrDestination(t *testing.T) {
@@ -330,7 +333,7 @@ func TestFillPayments_SkipsOldPayments(t *testing.T) {
 			Id:        "tx_old",
 			CreatedAt: now.Add(-2 * time.Hour),
 			UpdatedAt: now.Add(-2 * time.Hour), // Before state's LastUpdatedAtFrom
-			Currency:  "EUR/2", // UMN format
+			Currency:  "EUR/2",                 // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
 			Amount:    "1000",
@@ -338,7 +341,7 @@ func TestFillPayments_SkipsOldPayments(t *testing.T) {
 		{
 			Id:        "tx_new",
 			CreatedAt: now,
-			UpdatedAt: now, // After state's LastUpdatedAtFrom
+			UpdatedAt: now,     // After state's LastUpdatedAtFrom
 			Currency:  "EUR/2", // UMN format
 			Type:      genericclient.PAYIN,
 			Status:    genericclient.SUCCEEDED,
