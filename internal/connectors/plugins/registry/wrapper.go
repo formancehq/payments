@@ -124,7 +124,14 @@ func (i *impl) FetchNextPayments(ctx context.Context, req models.FetchNextPaymen
 		return models.FetchNextPaymentsResponse{}, translateError(err)
 	}
 
-	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetched next payments succeeded!")
+	i.logger.WithFields(map[string]any{
+		"psp":            i.connectorID.Provider,
+		"name":           i.plugin.Name(),
+		"payments_count": len(resp.Payments),
+		"has_more":       resp.HasMore,
+		"state_in":       string(req.State),
+		"state_out":      string(resp.NewState),
+	}).Info("fetched next payments succeeded")
 
 	return resp, nil
 }

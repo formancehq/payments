@@ -4077,6 +4077,7 @@ components:
         - DISPUTE
         - DISPUTE_WON
         - DISPUTE_LOST
+        - PROCESSING
         - OTHER
     PaymentsErrorResponse:
       type: object
@@ -4865,6 +4866,7 @@ components:
       enum:
         - UNKNOWN
         - PENDING
+        - PROCESSING
         - SUCCEEDED
         - CANCELLED
         - FAILED
