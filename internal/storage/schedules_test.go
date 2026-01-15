@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -334,5 +335,177 @@ func TestSchedulesList(t *testing.T) {
 		require.Empty(t, cursor.Previous)
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Schedule{defaultSchedules[1]}, cursor.Data)
+	})
+}
+
+func TestSchedulesDeleteFromConnectorIDBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	t.Run("delete batch from unknown connector", func(t *testing.T) {
+		rowsAffected, err := store.SchedulesDeleteFromConnectorIDBatch(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete batch with no schedules", func(t *testing.T) {
+		rowsAffected, err := store.SchedulesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete single batch smaller than batch size", func(t *testing.T) {
+		for _, s := range defaultSchedules {
+			upsertSchedule(t, ctx, store, s)
+		}
+
+		rowsAffected, err := store.SchedulesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 3, rowsAffected)
+
+		// Verify all schedules were deleted
+		for _, s := range defaultSchedules {
+			_, err := store.SchedulesGet(ctx, s.ID, s.ConnectorID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete multiple batches", func(t *testing.T) {
+		// Create a connector with more schedules
+		connector2 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test2",
+				},
+				Name:      "test2",
+				Provider:  "test2",
+				CreatedAt: now.Add(-50 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector2)
+
+		// Create 5 schedules for this connector
+		schedules := make([]models.Schedule, 5)
+		for i := 0; i < 5; i++ {
+			schedules[i] = models.Schedule{
+				ID:          fmt.Sprintf("batch-test-%d", i),
+				ConnectorID: connector2.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+			}
+		}
+		for _, s := range schedules {
+			upsertSchedule(t, ctx, store, s)
+		}
+
+		// Delete in batches of 2
+		totalDeleted := 0
+		for {
+			rowsAffected, err := store.SchedulesDeleteFromConnectorIDBatch(ctx, connector2.ID, 2)
+			require.NoError(t, err)
+			if rowsAffected == 0 {
+				break
+			}
+			totalDeleted += rowsAffected
+		}
+
+		require.Equal(t, 5, totalDeleted)
+
+		// Verify all schedules were deleted
+		for _, s := range schedules {
+			_, err := store.SchedulesGet(ctx, s.ID, s.ConnectorID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete batch only affects specified connector", func(t *testing.T) {
+		// Create two connectors with schedules
+		connector3 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test3",
+				},
+				Name:      "test3",
+				Provider:  "test3",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector3)
+
+		connector4 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test4",
+				},
+				Name:      "test4",
+				Provider:  "test4",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector4)
+
+		// Create 2 schedules for connector3
+		schedules3 := []models.Schedule{
+			{
+				ID:          "isolation-test-1",
+				ConnectorID: connector3.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+			},
+			{
+				ID:          "isolation-test-2",
+				ConnectorID: connector3.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+			},
+		}
+		for _, s := range schedules3 {
+			upsertSchedule(t, ctx, store, s)
+		}
+
+		// Create 1 schedule for connector4
+		schedules4 := []models.Schedule{
+			{
+				ID:          "isolation-test-3",
+				ConnectorID: connector4.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+			},
+		}
+		for _, s := range schedules4 {
+			upsertSchedule(t, ctx, store, s)
+		}
+
+		// Delete from connector3
+		rowsAffected, err := store.SchedulesDeleteFromConnectorIDBatch(ctx, connector3.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 2, rowsAffected)
+
+		// Verify connector3 schedules are deleted
+		for _, s := range schedules3 {
+			_, err := store.SchedulesGet(ctx, s.ID, s.ConnectorID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+
+		// Verify connector4 schedule still exists
+		schedule, err := store.SchedulesGet(ctx, schedules4[0].ID, schedules4[0].ConnectorID)
+		require.NoError(t, err)
+		require.Equal(t, schedules4[0].ID, schedule.ID)
 	})
 }

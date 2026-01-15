@@ -41,6 +41,25 @@ func (s *store) SchedulesDeleteFromConnectorID(ctx context.Context, connectorID 
 	return e("failed to delete schedule", err)
 }
 
+// SchedulesDeleteFromConnectorIDBatch deletes a batch of schedules for a given connector ID
+// and returns the number of rows affected
+func (s *store) SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	result, err := s.db.NewDelete().
+		Model((*schedule)(nil)).
+		Where("(id, connector_id) IN (SELECT id, connector_id FROM schedules WHERE connector_id = ? LIMIT ?)", connectorID, batchSize).
+		Exec(ctx)
+	if err != nil {
+		return 0, e("failed to delete schedules batch", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, e("failed to get rows affected", err)
+	}
+
+	return int(rowsAffected), nil
+}
+
 func (s *store) SchedulesDelete(ctx context.Context, id string) error {
 	_, err := s.db.NewDelete().
 		Model((*schedule)(nil)).

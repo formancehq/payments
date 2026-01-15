@@ -68,6 +68,25 @@ func (s *store) InstancesDeleteFromConnectorID(ctx context.Context, connectorID 
 	return e("failed to delete instances", err)
 }
 
+// InstancesDeleteFromConnectorIDBatch deletes a batch of instances for a given connector ID
+// and returns the number of rows affected
+func (s *store) InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	result, err := s.db.NewDelete().
+		Model((*instance)(nil)).
+		Where("(id, schedule_id, connector_id) IN (SELECT id, schedule_id, connector_id FROM workflows_instances WHERE connector_id = ? LIMIT ?)", connectorID, batchSize).
+		Exec(ctx)
+	if err != nil {
+		return 0, e("failed to delete instances batch", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, e("failed to get rows affected", err)
+	}
+
+	return int(rowsAffected), nil
+}
+
 type InstanceQuery struct{}
 
 type ListInstancesQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]]

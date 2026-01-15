@@ -9,7 +9,7 @@ import (
 )
 
 func (a Activities) StoragePaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
-	const batchSize = 1
+	const batchSize = 1000
 	totalDeleted := 0
 
 	for {

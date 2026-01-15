@@ -140,16 +140,22 @@ func (w Workflow) uninstallConnector(
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		// TODO potentially lots of them, consider using batching
-		err := activities.StorageSchedulesDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
+		// Use heartbeat timeout to prevent timeout on large deletions with batching
+		err := activities.StorageSchedulesDeleteFromConnectorID(
+			infiniteRetryWithCustomStartToCloseAndHeartbeatContext(ctx, startToFinishTimeoutForLongRunningActivities, heartbeatTimeoutForLongRunningActivities),
+			uninstallConnector.ConnectorID,
+		)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		// TODO potentially lots of them, consider using batching
-		err := activities.StorageInstancesDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
+		// Use heartbeat timeout to prevent timeout on large deletions with batching
+		err := activities.StorageInstancesDelete(
+			infiniteRetryWithCustomStartToCloseAndHeartbeatContext(ctx, startToFinishTimeoutForLongRunningActivities, heartbeatTimeoutForLongRunningActivities),
+			uninstallConnector.ConnectorID,
+		)
 		errChan <- err
 	})
 
@@ -177,8 +183,11 @@ func (w Workflow) uninstallConnector(
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		// TODO potentially lots of them, consider using batching
-		err := activities.StorageAccountsDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
+		// Use heartbeat timeout to prevent timeout on large deletions with batching
+		err := activities.StorageAccountsDeleteFromConnectorID(
+			infiniteRetryWithCustomStartToCloseAndHeartbeatContext(ctx, startToFinishTimeoutForLongRunningActivities, heartbeatTimeoutForLongRunningActivities),
+			uninstallConnector.ConnectorID,
+		)
 		errChan <- err
 	})
 
