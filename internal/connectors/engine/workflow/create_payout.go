@@ -111,11 +111,6 @@ func (w Workflow) createPayout(
 		},
 	)
 
-	// Version 1: Added support for PollingPayoutID in connector responses
-	// Old behavior (DefaultVersion): Only handled Payment in response
-	// New behavior (Version 1): Handles both Payment and PollingPayoutID
-	_ = workflow.GetVersion(ctx, "create-payout-polling-support", workflow.DefaultVersion, 1)
-
 	switch errPlugin {
 	case nil:
 		if createPayoutResponse.Payment != nil {

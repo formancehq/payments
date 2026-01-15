@@ -160,7 +160,7 @@ var _ = Describe("Validator custom type checks", func() {
 				FieldName int `validate:"paymentInitiationType"`
 			}{FieldName: 34}),
 
-			// asset - now accepts any UMN format (CURRENCY or CURRENCY/PRECISION)
+			// asset - accepts any UMN format (CURRENCY or CURRENCY/PRECISION)
 			Entry("asset: invalid - negative precision", "asset", "StringFieldName", struct {
 				StringFieldName string `validate:"required,asset"`
 			}{StringFieldName: "USD/-1"}),
@@ -280,14 +280,12 @@ var _ = Describe("Validator custom type checks", func() {
 				AssetNullable: pointer.For("cad/2"),
 			})
 			Expect(err).To(BeNil())
-
 			// Non-ISO currencies (crypto)
 			_, err = validate.Validate(CustomStruct{
 				Asset:         "BTC/8",
 				AssetNullable: pointer.For("ETH/18"),
 			})
 			Expect(err).To(BeNil())
-
 			// Custom tokens without precision
 			_, err = validate.Validate(CustomStruct{
 				Asset:         "COIN",

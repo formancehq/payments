@@ -217,6 +217,7 @@ func TestMatchPaymentStatus(t *testing.T) {
 	}{
 		{"PENDING", genericclient.PENDING, models.PAYMENT_STATUS_PENDING},
 		{"PROCESSING", genericclient.PROCESSING, models.PAYMENT_STATUS_PROCESSING},
+		{"PROCESSED", genericclient.PROCESSED, models.PAYMENT_STATUS_SUCCEEDED}, // PROCESSED maps to SUCCEEDED
 		{"SUCCEEDED", genericclient.SUCCEEDED, models.PAYMENT_STATUS_SUCCEEDED},
 		{"FAILED", genericclient.FAILED, models.PAYMENT_STATUS_FAILED},
 		{"CANCELLED", genericclient.CANCELLED, models.PAYMENT_STATUS_CANCELLED},
