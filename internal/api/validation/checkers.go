@@ -140,9 +140,6 @@ func IsAsset(fl validator.FieldLevel) bool {
 	if err != nil {
 		return false
 	}
-
-	// Accept any UMN format: "CURRENCY/PRECISION" or "CURRENCY"
-	// Examples: "USD/2", "BTC/8", "ETH/18", "COIN", "JPY"
 	return isValidAssetUMN(str)
 }
 
@@ -152,25 +149,16 @@ func isValidAssetUMN(asset string) bool {
 	if asset == "" {
 		return false
 	}
-
 	parts := strings.Split(asset, "/")
-
 	switch len(parts) {
 	case 1:
-		// No precision (e.g., "COIN", "JPY") - just validate currency code exists
 		return len(parts[0]) > 0
-
 	case 2:
-		// With precision (e.g., "USD/2", "BTC/8")
 		if parts[0] == "" {
 			return false
 		}
 		precision, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return false
-		}
-		return precision >= 0
-
+		return err == nil && precision >= 0
 	default:
 		return false
 	}
