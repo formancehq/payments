@@ -68,6 +68,7 @@ type Storage interface {
 	PaymentsGetByReference(ctx context.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error)
 	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	PaymentsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error
 	PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error
 	PaymentsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error

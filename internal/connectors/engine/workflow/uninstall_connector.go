@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -60,6 +61,9 @@ func (w Workflow) uninstallConnector(
 	ctx workflow.Context,
 	uninstallConnector UninstallConnector,
 ) error {
+	const startToFinishTimeoutForLongRunningActivities = 1 * time.Hour
+	const heartbeatTimeoutForLongRunningActivities = 30 * time.Second
+
 	webhooksConfigs, err := activities.StorageWebhooksConfigsGet(
 		infiniteRetryContext(ctx),
 		uninstallConnector.ConnectorID,
@@ -181,8 +185,10 @@ func (w Workflow) uninstallConnector(
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		// TODO potentially lots of them, consider using batching
-		err := activities.StoragePaymentsDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StoragePaymentsDeleteFromConnectorID(
+			infiniteRetryWithCustomStartToCloseAndHeartbeatContext(ctx, startToFinishTimeoutForLongRunningActivities, heartbeatTimeoutForLongRunningActivities),
+			uninstallConnector.ConnectorID,
+		)
 		errChan <- err
 	})
 

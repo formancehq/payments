@@ -1335,6 +1335,21 @@ func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorIDAndPSUID(ctx, co
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorIDAndPSUID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorIDAndPSUID), ctx, connectorID, psuID)
 }
 
+// PaymentsDeleteFromConnectorIDBatch mocks base method.
+func (m *MockStorage) PaymentsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromConnectorIDBatch", ctx, connectorID, batchSize)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentsDeleteFromConnectorIDBatch indicates an expected call of PaymentsDeleteFromConnectorIDBatch.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorIDBatch(ctx, connectorID, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorIDBatch", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorIDBatch), ctx, connectorID, batchSize)
+}
+
 // PaymentsDeleteFromOpenBankingConnectionID mocks base method.
 func (m *MockStorage) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
 	m.ctrl.T.Helper()
