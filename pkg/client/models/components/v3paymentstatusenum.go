@@ -12,6 +12,7 @@ type V3PaymentStatusEnum string
 const (
 	V3PaymentStatusEnumUnknown           V3PaymentStatusEnum = "UNKNOWN"
 	V3PaymentStatusEnumPending           V3PaymentStatusEnum = "PENDING"
+	V3PaymentStatusEnumProcessing        V3PaymentStatusEnum = "PROCESSING"
 	V3PaymentStatusEnumSucceeded         V3PaymentStatusEnum = "SUCCEEDED"
 	V3PaymentStatusEnumCancelled         V3PaymentStatusEnum = "CANCELLED"
 	V3PaymentStatusEnumFailed            V3PaymentStatusEnum = "FAILED"
@@ -41,6 +42,8 @@ func (e *V3PaymentStatusEnum) UnmarshalJSON(data []byte) error {
 	case "UNKNOWN":
 		fallthrough
 	case "PENDING":
+		fallthrough
+	case "PROCESSING":
 		fallthrough
 	case "SUCCEEDED":
 		fallthrough
