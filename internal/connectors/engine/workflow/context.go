@@ -23,6 +23,7 @@ func infiniteRetryWithLongTimeoutContext(ctx workflow.Context) workflow.Context 
 		time.Duration(0),
 	)
 }
+
 func infiniteRetryWithCustomStartToCloseAndHeartbeatContext(ctx workflow.Context, startToCloseTimeout, heartbeatTimeout time.Duration) workflow.Context {
 	ao := workflow.ActivityOptions{
 		RetryPolicy: &temporal.RetryPolicy{

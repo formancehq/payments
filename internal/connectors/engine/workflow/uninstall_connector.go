@@ -122,91 +122,95 @@ func (w Workflow) uninstallConnector(
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		configs := models.ToPSPWebhookConfigs(webhooksConfigs)
 		defer wg.Done()
-		_, err = activities.PluginUninstallConnector(infiniteRetryContext(ctx), uninstallConnector.ConnectorID, configs)
+		_, err = activities.PluginUninstallConnector(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID, configs)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageEventsSentDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageEventsSentDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageSchedulesDeleteFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		// TODO potentially lots of them, consider using batching
+		err := activities.StorageSchedulesDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageInstancesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		// TODO potentially lots of them, consider using batching
+		err := activities.StorageInstancesDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageConnectortTasksTreeDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageConnectortTasksTreeDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageTasksDeleteFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageTasksDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageBankAccountsDeleteRelatedAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageBankAccountsDeleteRelatedAccounts(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageAccountsDeleteFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		// TODO potentially lots of them, consider using batching
+		err := activities.StorageAccountsDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StoragePaymentsDeleteFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		// TODO potentially lots of them, consider using batching
+		err := activities.StoragePaymentsDeleteFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageStatesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageStatesDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageWebhooksConfigsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageWebhooksConfigsDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageWebhooksDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageWebhooksDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StoragePoolsRemoveAccountsFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StoragePoolsRemoveAccountsFromConnectorID(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
