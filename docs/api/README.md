@@ -5139,6 +5139,7 @@ None ( Scopes: payments:read )
 |---|---|
 |*anonymous*|UNKNOWN|
 |*anonymous*|PENDING|
+|*anonymous*|PROCESSING|
 |*anonymous*|SUCCEEDED|
 |*anonymous*|CANCELLED|
 |*anonymous*|FAILED|
