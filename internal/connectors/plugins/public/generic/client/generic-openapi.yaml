@@ -417,6 +417,7 @@ components:
         Payment/transaction status. All Formance payment statuses are supported:
         - PENDING: Payment is awaiting processing
         - PROCESSING: Payment is being processed
+        - PROCESSED: Payment processed
         - SUCCEEDED: Payment completed successfully
         - FAILED: Payment failed
         - CANCELLED: Payment was cancelled
@@ -434,6 +435,7 @@ components:
       enum:
         - PENDING
         - PROCESSING
+        - PROCESSED
         - SUCCEEDED
         - FAILED
         - CANCELLED

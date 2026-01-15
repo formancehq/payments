@@ -22,6 +22,7 @@ type TransactionStatus string
 const (
 	PENDING          TransactionStatus = "PENDING"
 	PROCESSING       TransactionStatus = "PROCESSING"
+	PROCESSED        TransactionStatus = "PROCESSED"
 	SUCCEEDED        TransactionStatus = "SUCCEEDED"
 	FAILED           TransactionStatus = "FAILED"
 	CANCELLED        TransactionStatus = "CANCELLED"
@@ -42,6 +43,7 @@ const (
 var AllowedTransactionStatusEnumValues = []TransactionStatus{
 	"PENDING",
 	"PROCESSING",
+	"PROCESSED",
 	"SUCCEEDED",
 	"FAILED",
 	"CANCELLED",
