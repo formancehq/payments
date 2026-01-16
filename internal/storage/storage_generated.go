@@ -88,6 +88,21 @@ func (mr *MockStorageMockRecorder) AccountsDeleteFromConnectorIDAndPSUID(ctx, co
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromConnectorIDAndPSUID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromConnectorIDAndPSUID), ctx, connectorID, psuID)
 }
 
+// AccountsDeleteFromConnectorIDBatch mocks base method.
+func (m *MockStorage) AccountsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsDeleteFromConnectorIDBatch", ctx, connectorID, batchSize)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccountsDeleteFromConnectorIDBatch indicates an expected call of AccountsDeleteFromConnectorIDBatch.
+func (mr *MockStorageMockRecorder) AccountsDeleteFromConnectorIDBatch(ctx, connectorID, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromConnectorIDBatch", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromConnectorIDBatch), ctx, connectorID, batchSize)
+}
+
 // AccountsDeleteFromOpenBankingConnectionID mocks base method.
 func (m *MockStorage) AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
 	m.ctrl.T.Helper()
@@ -477,6 +492,21 @@ func (mr *MockStorageMockRecorder) EventsSentDeleteFromConnectorID(ctx, connecto
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventsSentDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).EventsSentDeleteFromConnectorID), ctx, connectorID)
 }
 
+// EventsSentDeleteFromConnectorIDBatch mocks base method.
+func (m *MockStorage) EventsSentDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EventsSentDeleteFromConnectorIDBatch", ctx, connectorID, batchSize)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EventsSentDeleteFromConnectorIDBatch indicates an expected call of EventsSentDeleteFromConnectorIDBatch.
+func (mr *MockStorageMockRecorder) EventsSentDeleteFromConnectorIDBatch(ctx, connectorID, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventsSentDeleteFromConnectorIDBatch", reflect.TypeOf((*MockStorage)(nil).EventsSentDeleteFromConnectorIDBatch), ctx, connectorID, batchSize)
+}
+
 // EventsSentExists mocks base method.
 func (m *MockStorage) EventsSentExists(ctx context.Context, id models.EventID) (bool, error) {
 	m.ctrl.T.Helper()
@@ -533,6 +563,21 @@ func (m *MockStorage) InstancesDeleteFromConnectorID(ctx context.Context, connec
 func (mr *MockStorageMockRecorder) InstancesDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).InstancesDeleteFromConnectorID), ctx, connectorID)
+}
+
+// InstancesDeleteFromConnectorIDBatch mocks base method.
+func (m *MockStorage) InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstancesDeleteFromConnectorIDBatch", ctx, connectorID, batchSize)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstancesDeleteFromConnectorIDBatch indicates an expected call of InstancesDeleteFromConnectorIDBatch.
+func (mr *MockStorageMockRecorder) InstancesDeleteFromConnectorIDBatch(ctx, connectorID, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesDeleteFromConnectorIDBatch", reflect.TypeOf((*MockStorage)(nil).InstancesDeleteFromConnectorIDBatch), ctx, connectorID, batchSize)
 }
 
 // InstancesGet mocks base method.
@@ -1335,6 +1380,21 @@ func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorIDAndPSUID(ctx, co
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorIDAndPSUID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorIDAndPSUID), ctx, connectorID, psuID)
 }
 
+// PaymentsDeleteFromConnectorIDBatch mocks base method.
+func (m *MockStorage) PaymentsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromConnectorIDBatch", ctx, connectorID, batchSize)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentsDeleteFromConnectorIDBatch indicates an expected call of PaymentsDeleteFromConnectorIDBatch.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorIDBatch(ctx, connectorID, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorIDBatch", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorIDBatch), ctx, connectorID, batchSize)
+}
+
 // PaymentsDeleteFromOpenBankingConnectionID mocks base method.
 func (m *MockStorage) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
 	m.ctrl.T.Helper()
@@ -1591,6 +1651,21 @@ func (m *MockStorage) SchedulesDeleteFromConnectorID(ctx context.Context, connec
 func (mr *MockStorageMockRecorder) SchedulesDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).SchedulesDeleteFromConnectorID), ctx, connectorID)
+}
+
+// SchedulesDeleteFromConnectorIDBatch mocks base method.
+func (m *MockStorage) SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesDeleteFromConnectorIDBatch", ctx, connectorID, batchSize)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SchedulesDeleteFromConnectorIDBatch indicates an expected call of SchedulesDeleteFromConnectorIDBatch.
+func (mr *MockStorageMockRecorder) SchedulesDeleteFromConnectorIDBatch(ctx, connectorID, batchSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesDeleteFromConnectorIDBatch", reflect.TypeOf((*MockStorage)(nil).SchedulesDeleteFromConnectorIDBatch), ctx, connectorID, batchSize)
 }
 
 // SchedulesGet mocks base method.

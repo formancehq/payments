@@ -58,7 +58,7 @@ func (w Workflow) fetchExternalAccounts(
 	hasMore := true
 	for hasMore {
 		externalAccountsResponse, err := activities.PluginFetchNextExternalAccounts(
-			fetchNextActivityRetryContext(ctx),
+			infiniteRetryWithLongTimeoutContext(ctx),
 			fetchNextExternalAccount.ConnectorID,
 			fetchNextExternalAccount.FromPayload.GetPayload(),
 			state.State,

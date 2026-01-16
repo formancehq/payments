@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageEventsSentDelete(ctx context.Context, connectorID models.ConnectorID) error {
-	return temporalStorageError(a.storage.EventsSentDeleteFromConnectorID(ctx, connectorID))
+	return a.batchDeleteWithHeartbeat(ctx, connectorID, a.storage.EventsSentDeleteFromConnectorIDBatch, "deleting events_sent")
 }
 
 var StorageEventsSentDeleteActivity = Activities{}.StorageEventsSentDelete

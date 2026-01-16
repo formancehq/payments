@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -833,5 +834,208 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts[2], cursor.Data[0])
+	})
+}
+func TestAccountsDeleteFromConnectorIDBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	t.Run("invalid batchSize zero", func(t *testing.T) {
+		_, err := store.AccountsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 0)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize 0")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("invalid batchSize negative", func(t *testing.T) {
+		_, err := store.AccountsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, -1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize -1")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("delete batch from unknown connector", func(t *testing.T) {
+		rowsAffected, err := store.AccountsDeleteFromConnectorIDBatch(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete batch with no accounts", func(t *testing.T) {
+		rowsAffected, err := store.AccountsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete single batch smaller than batch size", func(t *testing.T) {
+		upsertAccounts(t, ctx, store, defaultAccounts())
+
+		rowsAffected, err := store.AccountsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 3, rowsAffected)
+
+		// Verify all accounts were deleted
+		for _, a := range defaultAccounts() {
+			_, err := store.AccountsGet(ctx, a.ID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete multiple batches", func(t *testing.T) {
+		// Create a connector with more accounts
+		connector2 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test2",
+				},
+				Name:      "test2",
+				Provider:  "test2",
+				CreatedAt: now.Add(-50 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector2)
+
+		// Create 5 accounts for this connector
+		accounts := make([]models.Account, 5)
+		for i := 0; i < 5; i++ {
+			accounts[i] = models.Account{
+				ID: models.AccountID{
+					Reference:   fmt.Sprintf("batch-test-%d", i),
+					ConnectorID: connector2.ID,
+				},
+				ConnectorID: connector2.ID,
+				Reference:   fmt.Sprintf("batch-test-%d", i),
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Type:        models.ACCOUNT_TYPE_INTERNAL,
+				Raw:         []byte(`{}`),
+			}
+		}
+		upsertAccounts(t, ctx, store, accounts)
+
+		// Delete in batches of 2
+		totalDeleted := 0
+		for {
+			rowsAffected, err := store.AccountsDeleteFromConnectorIDBatch(ctx, connector2.ID, 2)
+			require.NoError(t, err)
+			if rowsAffected == 0 {
+				break
+			}
+			totalDeleted += rowsAffected
+		}
+
+		require.Equal(t, 5, totalDeleted)
+
+		// Verify all accounts were deleted
+		for _, a := range accounts {
+			_, err := store.AccountsGet(ctx, a.ID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete batch only affects specified connector", func(t *testing.T) {
+		// Create two connectors with accounts
+		connector3 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test3",
+				},
+				Name:      "test3",
+				Provider:  "test3",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector3)
+
+		connector4 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test4",
+				},
+				Name:      "test4",
+				Provider:  "test4",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector4)
+
+		// Create 2 accounts for connector3
+		accounts3 := []models.Account{
+			{
+				ID: models.AccountID{
+					Reference:   "isolation-test-1",
+					ConnectorID: connector3.ID,
+				},
+				ConnectorID: connector3.ID,
+				Reference:   "isolation-test-1",
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Type:        models.ACCOUNT_TYPE_INTERNAL,
+				Raw:         []byte(`{}`),
+			},
+			{
+				ID: models.AccountID{
+					Reference:   "isolation-test-2",
+					ConnectorID: connector3.ID,
+				},
+				ConnectorID: connector3.ID,
+				Reference:   "isolation-test-2",
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Type:        models.ACCOUNT_TYPE_INTERNAL,
+				Raw:         []byte(`{}`),
+			},
+		}
+		upsertAccounts(t, ctx, store, accounts3)
+
+		// Create 1 account for connector4
+		accounts4 := []models.Account{
+			{
+				ID: models.AccountID{
+					Reference:   "isolation-test-3",
+					ConnectorID: connector4.ID,
+				},
+				ConnectorID: connector4.ID,
+				Reference:   "isolation-test-3",
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Type:        models.ACCOUNT_TYPE_INTERNAL,
+				Raw:         []byte(`{}`),
+			},
+		}
+		upsertAccounts(t, ctx, store, accounts4)
+
+		// Delete from connector3
+		rowsAffected, err := store.AccountsDeleteFromConnectorIDBatch(ctx, connector3.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 2, rowsAffected)
+
+		// Verify connector3 accounts are deleted
+		for _, a := range accounts3 {
+			_, err := store.AccountsGet(ctx, a.ID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+
+		// Verify connector4 account still exists
+		account, err := store.AccountsGet(ctx, accounts4[0].ID)
+		require.NoError(t, err)
+		require.Equal(t, accounts4[0].ID, account.ID)
 	})
 }

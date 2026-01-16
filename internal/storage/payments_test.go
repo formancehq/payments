@@ -1057,6 +1057,277 @@ func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 	})
 }
 
+func TestPaymentsDeleteFromConnectorIDBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	t.Run("invalid batchSize zero", func(t *testing.T) {
+		_, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 0)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize 0")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("invalid batchSize negative", func(t *testing.T) {
+		_, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, -1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize -1")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("delete batch from unknown connector", func(t *testing.T) {
+		rowsAffected, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete batch with no payments", func(t *testing.T) {
+		rowsAffected, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete single batch smaller than batch size", func(t *testing.T) {
+		upsertPayments(t, ctx, store, defaultPayments())
+
+		rowsAffected, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 3, rowsAffected)
+
+		// Verify all payments were deleted
+		for _, p := range defaultPayments() {
+			_, err := store.PaymentsGet(ctx, p.ID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete multiple batches", func(t *testing.T) {
+		// Create a connector with more payments
+		connector2 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test2",
+				},
+				Name:      "test2",
+				Provider:  "test2",
+				CreatedAt: now.Add(-50 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector2)
+
+		// Create 5 payments for this connector
+		payments := make([]models.Payment, 5)
+		for i := 0; i < 5; i++ {
+			payments[i] = models.Payment{
+				ID: models.PaymentID{
+					PaymentReference: models.PaymentReference{
+						Reference: fmt.Sprintf("batch-test-%d", i),
+						Type:      models.PAYMENT_TYPE_TRANSFER,
+					},
+					ConnectorID: connector2.ID,
+				},
+				ConnectorID:   connector2.ID,
+				Reference:     fmt.Sprintf("batch-test-%d", i),
+				CreatedAt:     now.Add(-40 * time.Minute).UTC().Time,
+				Type:          models.PAYMENT_TYPE_TRANSFER,
+				InitialAmount: big.NewInt(int64(100 * (i + 1))),
+				Amount:        big.NewInt(int64(100 * (i + 1))),
+				Asset:         "USD/2",
+				Scheme:        models.PAYMENT_SCHEME_OTHER,
+				Adjustments: []models.PaymentAdjustment{
+					{
+						ID: models.PaymentAdjustmentID{
+							PaymentID: models.PaymentID{
+								PaymentReference: models.PaymentReference{
+									Reference: fmt.Sprintf("batch-test-%d", i),
+									Type:      models.PAYMENT_TYPE_TRANSFER,
+								},
+								ConnectorID: connector2.ID,
+							},
+							Reference: fmt.Sprintf("adj-%d", i),
+							CreatedAt: now.Add(-40 * time.Minute).UTC().Time,
+							Status:    models.PAYMENT_STATUS_SUCCEEDED,
+						},
+						Reference: fmt.Sprintf("adj-%d", i),
+						CreatedAt: now.Add(-40 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+						Amount:    big.NewInt(int64(100 * (i + 1))),
+						Asset:     pointer.For("USD/2"),
+						Raw:       []byte(`{}`),
+					},
+				},
+			}
+		}
+		upsertPayments(t, ctx, store, payments)
+
+		// Delete in batches of 2
+		totalDeleted := 0
+		for {
+			rowsAffected, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, connector2.ID, 2)
+			require.NoError(t, err)
+			if rowsAffected == 0 {
+				break
+			}
+			totalDeleted += rowsAffected
+		}
+
+		require.Equal(t, 5, totalDeleted)
+
+		// Verify all payments were deleted
+		for _, p := range payments {
+			_, err := store.PaymentsGet(ctx, p.ID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete batch only affects specified connector", func(t *testing.T) {
+		// Create two connectors with payments
+		connector3 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test3",
+				},
+				Name:      "test3",
+				Provider:  "test3",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector3)
+
+		connector4 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test4",
+				},
+				Name:      "test4",
+				Provider:  "test4",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector4)
+
+		// Create payments for both connectors
+		payment3 := models.Payment{
+			ID: models.PaymentID{
+				PaymentReference: models.PaymentReference{
+					Reference: "connector3-payment",
+					Type:      models.PAYMENT_TYPE_PAYIN,
+				},
+				ConnectorID: connector3.ID,
+			},
+			ConnectorID:   connector3.ID,
+			Reference:     "connector3-payment",
+			CreatedAt:     now.Add(-35 * time.Minute).UTC().Time,
+			Type:          models.PAYMENT_TYPE_PAYIN,
+			InitialAmount: big.NewInt(100),
+			Amount:        big.NewInt(100),
+			Asset:         "USD/2",
+			Scheme:        models.PAYMENT_SCHEME_OTHER,
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "connector3-payment",
+								Type:      models.PAYMENT_TYPE_PAYIN,
+							},
+							ConnectorID: connector3.ID,
+						},
+						Reference: "adj3",
+						CreatedAt: now.Add(-35 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					},
+					Reference: "adj3",
+					CreatedAt: now.Add(-35 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					Amount:    big.NewInt(100),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		payment4 := models.Payment{
+			ID: models.PaymentID{
+				PaymentReference: models.PaymentReference{
+					Reference: "connector4-payment",
+					Type:      models.PAYMENT_TYPE_PAYOUT,
+				},
+				ConnectorID: connector4.ID,
+			},
+			ConnectorID:   connector4.ID,
+			Reference:     "connector4-payment",
+			CreatedAt:     now.Add(-35 * time.Minute).UTC().Time,
+			Type:          models.PAYMENT_TYPE_PAYOUT,
+			InitialAmount: big.NewInt(200),
+			Amount:        big.NewInt(200),
+			Asset:         "EUR/2",
+			Scheme:        models.PAYMENT_SCHEME_A2A,
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: models.PaymentID{
+							PaymentReference: models.PaymentReference{
+								Reference: "connector4-payment",
+								Type:      models.PAYMENT_TYPE_PAYOUT,
+							},
+							ConnectorID: connector4.ID,
+						},
+						Reference: "adj4",
+						CreatedAt: now.Add(-35 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_PENDING,
+					},
+					Reference: "adj4",
+					CreatedAt: now.Add(-35 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_PENDING,
+					Amount:    big.NewInt(200),
+					Asset:     pointer.For("EUR/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		upsertPayments(t, ctx, store, []models.Payment{payment3, payment4})
+
+		// Delete batch from connector3 only
+		rowsAffected, err := store.PaymentsDeleteFromConnectorIDBatch(ctx, connector3.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 1, rowsAffected)
+
+		// Verify connector3 payment is deleted
+		_, err = store.PaymentsGet(ctx, payment3.ID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+
+		// Verify connector4 payment still exists
+		actual, err := store.PaymentsGet(ctx, payment4.ID)
+		require.NoError(t, err)
+		require.Equal(t, payment4.ID, actual.ID)
+	})
+}
+
 func TestPaymentsListSorting(t *testing.T) {
 	t.Parallel()
 

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -342,5 +343,231 @@ func TestInstancesList(t *testing.T) {
 		require.Empty(t, cursor.Previous)
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, defaultWorkflowInstances[1], cursor.Data[0])
+	})
+}
+
+func TestInstancesDeleteFromConnectorIDBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	for _, s := range defaultSchedules {
+		upsertSchedule(t, ctx, store, s)
+	}
+
+	t.Run("invalid batchSize zero", func(t *testing.T) {
+		_, err := store.InstancesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 0)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize 0")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("invalid batchSize negative", func(t *testing.T) {
+		_, err := store.InstancesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, -1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize -1")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("delete batch from unknown connector", func(t *testing.T) {
+		rowsAffected, err := store.InstancesDeleteFromConnectorIDBatch(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete batch with no instances", func(t *testing.T) {
+		rowsAffected, err := store.InstancesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete single batch smaller than batch size", func(t *testing.T) {
+		for _, i := range defaultWorkflowInstances {
+			upsertInstance(t, ctx, store, i)
+		}
+
+		rowsAffected, err := store.InstancesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 3, rowsAffected)
+
+		// Verify all instances were deleted
+		for _, i := range defaultWorkflowInstances {
+			_, err := store.InstancesGet(ctx, i.ID, i.ScheduleID, i.ConnectorID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete multiple batches", func(t *testing.T) {
+		// Create a connector with more instances
+		connector2 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test2",
+				},
+				Name:      "test2",
+				Provider:  "test2",
+				CreatedAt: now.Add(-50 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector2)
+
+		// Create a schedule for this connector
+		schedule2 := models.Schedule{
+			ID:          "schedule-test2",
+			ConnectorID: connector2.ID,
+			CreatedAt:   now.Add(-50 * time.Minute).UTC().Time,
+		}
+		upsertSchedule(t, ctx, store, schedule2)
+
+		// Create 5 instances for this connector
+		instances := make([]models.Instance, 5)
+		for i := 0; i < 5; i++ {
+			instances[i] = models.Instance{
+				ID:          fmt.Sprintf("batch-test-%d", i),
+				ScheduleID:  schedule2.ID,
+				ConnectorID: connector2.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				UpdatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Terminated:  false,
+			}
+		}
+		for _, i := range instances {
+			upsertInstance(t, ctx, store, i)
+		}
+
+		// Delete in batches of 2
+		totalDeleted := 0
+		for {
+			rowsAffected, err := store.InstancesDeleteFromConnectorIDBatch(ctx, connector2.ID, 2)
+			require.NoError(t, err)
+			if rowsAffected == 0 {
+				break
+			}
+			totalDeleted += rowsAffected
+		}
+
+		require.Equal(t, 5, totalDeleted)
+
+		// Verify all instances were deleted
+		for _, i := range instances {
+			_, err := store.InstancesGet(ctx, i.ID, i.ScheduleID, i.ConnectorID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete batch only affects specified connector", func(t *testing.T) {
+		// Create two connectors with instances
+		connector3 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test3",
+				},
+				Name:      "test3",
+				Provider:  "test3",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector3)
+
+		connector4 := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test4",
+				},
+				Name:      "test4",
+				Provider:  "test4",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			ScheduledForDeletion: false,
+			Config:               []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, connector4)
+
+		// Create schedules for both connectors
+		schedule3 := models.Schedule{
+			ID:          "schedule-test3",
+			ConnectorID: connector3.ID,
+			CreatedAt:   now.Add(-45 * time.Minute).UTC().Time,
+		}
+		upsertSchedule(t, ctx, store, schedule3)
+
+		schedule4 := models.Schedule{
+			ID:          "schedule-test4",
+			ConnectorID: connector4.ID,
+			CreatedAt:   now.Add(-45 * time.Minute).UTC().Time,
+		}
+		upsertSchedule(t, ctx, store, schedule4)
+
+		// Create 2 instances for connector3
+		instances3 := []models.Instance{
+			{
+				ID:          "isolation-test-1",
+				ScheduleID:  schedule3.ID,
+				ConnectorID: connector3.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				UpdatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Terminated:  false,
+			},
+			{
+				ID:          "isolation-test-2",
+				ScheduleID:  schedule3.ID,
+				ConnectorID: connector3.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				UpdatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Terminated:  false,
+			},
+		}
+		for _, i := range instances3 {
+			upsertInstance(t, ctx, store, i)
+		}
+
+		// Create 1 instance for connector4
+		instances4 := []models.Instance{
+			{
+				ID:          "isolation-test-3",
+				ScheduleID:  schedule4.ID,
+				ConnectorID: connector4.ID,
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				UpdatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Terminated:  false,
+			},
+		}
+		for _, i := range instances4 {
+			upsertInstance(t, ctx, store, i)
+		}
+
+		// Delete from connector3
+		rowsAffected, err := store.InstancesDeleteFromConnectorIDBatch(ctx, connector3.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 2, rowsAffected)
+
+		// Verify connector3 instances are deleted
+		for _, i := range instances3 {
+			_, err := store.InstancesGet(ctx, i.ID, i.ScheduleID, i.ConnectorID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+
+		// Verify connector4 instance still exists
+		instance, err := store.InstancesGet(ctx, instances4[0].ID, instances4[0].ScheduleID, instances4[0].ConnectorID)
+		require.NoError(t, err)
+		require.Equal(t, instances4[0].ID, instance.ID)
 	})
 }
