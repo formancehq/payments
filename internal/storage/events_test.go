@@ -205,3 +205,120 @@ func TestEventsSentDelete(t *testing.T) {
 		}
 	})
 }
+
+func TestEventsSentDeleteFromConnectorIDBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertConnector(t, ctx, store, defaultConnector2)
+
+	t.Run("invalid batchSize zero", func(t *testing.T) {
+		_, err := store.EventsSentDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 0)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize 0")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("invalid batchSize negative", func(t *testing.T) {
+		_, err := store.EventsSentDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, -1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize -1")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("delete batch from unknown connector", func(t *testing.T) {
+		rowsAffected, err := store.EventsSentDeleteFromConnectorIDBatch(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete batch with no events", func(t *testing.T) {
+		rowsAffected, err := store.EventsSentDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 0, rowsAffected)
+	})
+
+	t.Run("delete single batch smaller than batch size", func(t *testing.T) {
+		// Insert events for defaultConnector
+		events := []models.EventSent{
+			{
+				ID: models.EventID{
+					EventIdempotencyKey: "batch-test-1",
+					ConnectorID:         &defaultConnector.ID,
+				},
+				ConnectorID: &defaultConnector.ID,
+				SentAt:      now.UTC().Time,
+			},
+			{
+				ID: models.EventID{
+					EventIdempotencyKey: "batch-test-2",
+					ConnectorID:         &defaultConnector.ID,
+				},
+				ConnectorID: &defaultConnector.ID,
+				SentAt:      now.Add(-1 * time.Hour).UTC().Time,
+			},
+		}
+		upsertEventsSent(t, ctx, store, events)
+
+		rowsAffected, err := store.EventsSentDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 2, rowsAffected)
+
+		// Verify all events were deleted
+		for _, e := range events {
+			_, err := store.EventsSentGet(ctx, e.ID)
+			require.Error(t, err)
+			require.ErrorIs(t, err, ErrNotFound)
+		}
+	})
+
+	t.Run("delete batch only affects specified connector", func(t *testing.T) {
+		// Insert events for both connectors
+		eventsConnector1 := []models.EventSent{
+			{
+				ID: models.EventID{
+					EventIdempotencyKey: "isolation-test-1",
+					ConnectorID:         &defaultConnector.ID,
+				},
+				ConnectorID: &defaultConnector.ID,
+				SentAt:      now.UTC().Time,
+			},
+		}
+		eventsConnector2 := []models.EventSent{
+			{
+				ID: models.EventID{
+					EventIdempotencyKey: "isolation-test-2",
+					ConnectorID:         &defaultConnector2.ID,
+				},
+				ConnectorID: &defaultConnector2.ID,
+				SentAt:      now.UTC().Time,
+			},
+		}
+		upsertEventsSent(t, ctx, store, eventsConnector1)
+		upsertEventsSent(t, ctx, store, eventsConnector2)
+
+		// Delete from connector1
+		rowsAffected, err := store.EventsSentDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 10)
+		require.NoError(t, err)
+		require.Equal(t, 1, rowsAffected)
+
+		// Verify connector1 events are deleted
+		_, err = store.EventsSentGet(ctx, eventsConnector1[0].ID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+
+		// Verify connector2 events still exist
+		got, err := store.EventsSentGet(ctx, eventsConnector2[0].ID)
+		require.NoError(t, err)
+		require.Equal(t, eventsConnector2[0], *got)
+	})
+}

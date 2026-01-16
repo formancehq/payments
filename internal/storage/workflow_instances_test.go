@@ -358,6 +358,22 @@ func TestInstancesDeleteFromConnectorIDBatch(t *testing.T) {
 		upsertSchedule(t, ctx, store, s)
 	}
 
+	t.Run("invalid batchSize zero", func(t *testing.T) {
+		_, err := store.InstancesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, 0)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize 0")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
+	t.Run("invalid batchSize negative", func(t *testing.T) {
+		_, err := store.InstancesDeleteFromConnectorIDBatch(ctx, defaultConnector.ID, -1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "invalid batchSize -1")
+		require.Contains(t, err.Error(), defaultConnector.ID.String())
+	})
+
 	t.Run("delete batch from unknown connector", func(t *testing.T) {
 		rowsAffected, err := store.InstancesDeleteFromConnectorIDBatch(ctx, models.ConnectorID{
 			Reference: uuid.New(),

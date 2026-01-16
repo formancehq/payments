@@ -388,6 +388,10 @@ func (s *store) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID m
 // PaymentsDeleteFromConnectorIDBatch deletes a batch of payments for a given connector ID
 // and returns the number of rows affected
 func (s *store) PaymentsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	if batchSize <= 0 {
+		return 0, fmt.Errorf("invalid batchSize %d for connectorID %s: %w", batchSize, connectorID.String(), ErrValidation)
+	}
+
 	result, err := s.db.NewDelete().
 		Model((*payment)(nil)).
 		Where("id IN (SELECT id FROM payments WHERE connector_id = ? LIMIT ?)", connectorID, batchSize).

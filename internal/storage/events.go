@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
@@ -69,6 +70,10 @@ func (s *store) EventsSentDeleteFromConnectorID(ctx context.Context, connectorID
 // EventsSentDeleteFromConnectorIDBatch deletes a batch of events_sent for a given connector ID
 // and returns the number of rows affected
 func (s *store) EventsSentDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	if batchSize <= 0 {
+		return 0, fmt.Errorf("invalid batchSize %d for connectorID %s: %w", batchSize, connectorID.String(), ErrValidation)
+	}
+
 	result, err := s.db.NewDelete().
 		Model((*eventSent)(nil)).
 		Where("id IN (SELECT id FROM events_sent WHERE connector_id = ? LIMIT ?)", connectorID, batchSize).

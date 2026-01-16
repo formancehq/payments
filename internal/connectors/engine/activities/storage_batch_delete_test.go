@@ -106,6 +106,7 @@ var _ = Describe("Batch Delete Activities", func() {
 		Describe(tc.name, func() {
 			var (
 				act         activities.Activities
+				ctrl        *gomock.Controller
 				p           *connectors.MockManager
 				s           *storage.MockStorage
 				evts        *events.Events
@@ -116,7 +117,7 @@ var _ = Describe("Batch Delete Activities", func() {
 			)
 
 			BeforeEach(func() {
-				ctrl := gomock.NewController(GinkgoT())
+				ctrl = gomock.NewController(GinkgoT())
 				p = connectors.NewMockManager(ctrl)
 				s = storage.NewMockStorage(ctrl)
 				publisher = newTestPublisher()
@@ -132,6 +133,7 @@ var _ = Describe("Batch Delete Activities", func() {
 
 			AfterEach(func() {
 				publisher.Close()
+				ctrl.Finish()
 			})
 
 			// Helper to set up batch expectations in order

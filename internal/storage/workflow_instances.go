@@ -71,6 +71,10 @@ func (s *store) InstancesDeleteFromConnectorID(ctx context.Context, connectorID 
 // InstancesDeleteFromConnectorIDBatch deletes a batch of instances for a given connector ID
 // and returns the number of rows affected
 func (s *store) InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error) {
+	if batchSize <= 0 {
+		return 0, fmt.Errorf("invalid batchSize %d for connectorID %s: %w", batchSize, connectorID.String(), ErrValidation)
+	}
+
 	result, err := s.db.NewDelete().
 		Model((*instance)(nil)).
 		Where("(id, schedule_id, connector_id) IN (SELECT id, schedule_id, connector_id FROM workflows_instances WHERE connector_id = ? LIMIT ?)", connectorID, batchSize).
