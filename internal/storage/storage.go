@@ -61,6 +61,7 @@ type Storage interface {
 	EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error)
 	EventsSentExists(ctx context.Context, id models.EventID) (bool, error)
 	EventsSentDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	EventsSentDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 
 	// Payments
 	PaymentsUpsert(ctx context.Context, payments []models.Payment) error

@@ -133,7 +133,11 @@ func (w Workflow) uninstallConnector(
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageEventsSentDelete(infiniteRetryWithLongTimeoutContext(ctx), uninstallConnector.ConnectorID)
+		// Use heartbeat timeout to prevent timeout on large deletions with batching
+		err := activities.StorageEventsSentDelete(
+			infiniteRetryWithCustomStartToCloseAndHeartbeatContext(ctx, startToFinishTimeoutForLongRunningActivities, heartbeatTimeoutForLongRunningActivities),
+			uninstallConnector.ConnectorID,
+		)
 		errChan <- err
 	})
 
