@@ -138,13 +138,13 @@ var _ = Describe("Batch Delete Activities", func() {
 			setupBatchExpectations := func(returns []int, finalErr error) {
 				var prevCall *gomock.Call
 				for _, ret := range returns {
-					call := tc.expectBatchFn(s, connectorID, 1).Return(ret, nil)
+					call := tc.expectBatchFn(s, connectorID, 1000).Return(ret, nil)
 					if prevCall != nil {
 						call.After(prevCall)
 					}
 					prevCall = call
 				}
-				finalCall := tc.expectBatchFn(s, connectorID, 1).Return(0, finalErr)
+				finalCall := tc.expectBatchFn(s, connectorID, 1000).Return(0, finalErr)
 				if prevCall != nil {
 					finalCall.After(prevCall)
 				}
@@ -152,21 +152,21 @@ var _ = Describe("Batch Delete Activities", func() {
 
 			Context("when deleting "+tc.entityName+" in batches", func() {
 				It("deletes all "+tc.entityName+" successfully in multiple batches", func() {
-					setupBatchExpectations([]int{1, 1, 1}, nil)
+					setupBatchExpectations([]int{1000, 1000, 500}, nil)
 
 					err := tc.executeFunc(env, act, connectorID)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("deletes all "+tc.entityName+" in a single batch", func() {
-					setupBatchExpectations([]int{1}, nil)
+					setupBatchExpectations([]int{500}, nil)
 
 					err := tc.executeFunc(env, act, connectorID)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("handles empty result set (no "+tc.entityName+" to delete)", func() {
-					tc.expectBatchFn(s, connectorID, 1).Return(0, nil)
+					tc.expectBatchFn(s, connectorID, 1000).Return(0, nil)
 
 					err := tc.executeFunc(env, act, connectorID)
 					Expect(err).NotTo(HaveOccurred())
@@ -176,7 +176,7 @@ var _ = Describe("Batch Delete Activities", func() {
 			Context("when storage returns errors", func() {
 				It("returns error on first batch failure", func() {
 					storageErr := errors.New("database connection lost")
-					tc.expectBatchFn(s, connectorID, 1).Return(0, storageErr)
+					tc.expectBatchFn(s, connectorID, 1000).Return(0, storageErr)
 
 					err := tc.executeFunc(env, act, connectorID)
 					Expect(err).To(HaveOccurred())
@@ -186,8 +186,8 @@ var _ = Describe("Batch Delete Activities", func() {
 				It("returns error on subsequent batch failure", func() {
 					storageErr := errors.New("deadlock detected")
 					gomock.InOrder(
-						tc.expectBatchFn(s, connectorID, 1).Return(1, nil),
-						tc.expectBatchFn(s, connectorID, 1).Return(0, storageErr),
+						tc.expectBatchFn(s, connectorID, 1000).Return(1000, nil),
+						tc.expectBatchFn(s, connectorID, 1000).Return(0, storageErr),
 					)
 
 					err := tc.executeFunc(env, act, connectorID)
@@ -198,9 +198,9 @@ var _ = Describe("Batch Delete Activities", func() {
 				It("returns error after successful batches", func() {
 					storageErr := errors.New("transaction rollback")
 					gomock.InOrder(
-						tc.expectBatchFn(s, connectorID, 1).Return(1, nil),
-						tc.expectBatchFn(s, connectorID, 1).Return(1, nil),
-						tc.expectBatchFn(s, connectorID, 1).Return(0, storageErr),
+						tc.expectBatchFn(s, connectorID, 1000).Return(1000, nil),
+						tc.expectBatchFn(s, connectorID, 1000).Return(800, nil),
+						tc.expectBatchFn(s, connectorID, 1000).Return(0, storageErr),
 					)
 
 					err := tc.executeFunc(env, act, connectorID)
@@ -211,7 +211,7 @@ var _ = Describe("Batch Delete Activities", func() {
 
 			Context("when batching behavior", func() {
 				It("continues until batch returns 0 rows", func() {
-					setupBatchExpectations([]int{1, 1, 1, 1, 1}, nil)
+					setupBatchExpectations([]int{1000, 1000, 1000, 1000, 1000}, nil)
 
 					err := tc.executeFunc(env, act, connectorID)
 					Expect(err).NotTo(HaveOccurred())
@@ -222,7 +222,7 @@ var _ = Describe("Batch Delete Activities", func() {
 				It("passes the correct connector ID to storage", func() {
 					specificConnectorID := models.ConnectorID{Provider: "stripe", Reference: uuid.New()}
 
-					tc.expectBatchFn(s, specificConnectorID, 1).Return(0, nil)
+					tc.expectBatchFn(s, specificConnectorID, 1000).Return(0, nil)
 
 					err := tc.executeFunc(env, act, specificConnectorID)
 					Expect(err).NotTo(HaveOccurred())
