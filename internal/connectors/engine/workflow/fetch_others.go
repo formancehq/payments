@@ -57,7 +57,7 @@ func (w Workflow) fetchNextOthers(
 	hasMore := true
 	for hasMore {
 		othersResponse, err := activities.PluginFetchNextOthers(
-			fetchNextActivityRetryContext(ctx),
+			infiniteRetryWithLongTimeoutContext(ctx),
 			fetchNextOthers.ConnectorID,
 			fetchNextOthers.Name,
 			fetchNextOthers.FromPayload.GetPayload(),

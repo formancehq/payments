@@ -23,6 +23,7 @@ type Storage interface {
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
 	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	AccountsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	AccountsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error
 	AccountsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error
 	AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error
@@ -60,6 +61,7 @@ type Storage interface {
 	EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error)
 	EventsSentExists(ctx context.Context, id models.EventID) (bool, error)
 	EventsSentDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	EventsSentDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 
 	// Payments
 	PaymentsUpsert(ctx context.Context, payments []models.Payment) error
@@ -68,6 +70,7 @@ type Storage interface {
 	PaymentsGetByReference(ctx context.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error)
 	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	PaymentsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error
 	PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error
 	PaymentsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error
@@ -144,6 +147,7 @@ type Storage interface {
 	SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
 	SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error)
 	SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	SchedulesDelete(ctx context.Context, id string) error
 
 	// State
@@ -173,6 +177,7 @@ type Storage interface {
 	InstancesGet(ctx context.Context, id string, scheduleID string, connectorID models.ConnectorID) (*models.Instance, error)
 	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 
 	// Outbox Events
 	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error
