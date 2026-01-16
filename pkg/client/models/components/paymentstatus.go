@@ -11,6 +11,7 @@ type PaymentStatus string
 
 const (
 	PaymentStatusPending         PaymentStatus = "PENDING"
+	PaymentStatusProcessing      PaymentStatus = "PROCESSING"
 	PaymentStatusSucceeded       PaymentStatus = "SUCCEEDED"
 	PaymentStatusCancelled       PaymentStatus = "CANCELLED"
 	PaymentStatusFailed          PaymentStatus = "FAILED"
@@ -33,6 +34,8 @@ func (e *PaymentStatus) UnmarshalJSON(data []byte) error {
 	}
 	switch v {
 	case "PENDING":
+		fallthrough
+	case "PROCESSING":
 		fallthrough
 	case "SUCCEEDED":
 		fallthrough

@@ -110,6 +110,7 @@ func (w Workflow) createPayout(
 			PaymentInitiation: pspPI,
 		},
 	)
+
 	switch errPlugin {
 	case nil:
 		if createPayoutResponse.Payment != nil {
