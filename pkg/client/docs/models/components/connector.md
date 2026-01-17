@@ -16,3 +16,14 @@
 | `ConnectorAtlar`         | ATLAR                    |
 | `ConnectorAdyen`         | ADYEN                    |
 | `ConnectorGeneric`       | GENERIC                  |
+| `ConnectorBinance`       | BINANCE                  |
+| `ConnectorBitstamp`      | BITSTAMP                 |
+| `ConnectorCoinbaseprime` | COINBASEPRIME            |
+| `ConnectorColumn`        | COLUMN                   |
+| `ConnectorFireblocks`    | FIREBLOCKS               |
+| `ConnectorIncrease`      | INCREASE                 |
+| `ConnectorKraken`        | KRAKEN                   |
+| `ConnectorPlaid`         | PLAID                    |
+| `ConnectorPowens`        | POWENS                   |
+| `ConnectorQonto`         | QONTO                    |
+| `ConnectorTink`          | TINK                     |

@@ -40,6 +40,21 @@ func (m *MockPlugin) EXPECT() *MockPluginMockRecorder {
 	return m.recorder
 }
 
+// CancelOrder mocks base method.
+func (m *MockPlugin) CancelOrder(arg0 context.Context, arg1 CancelOrderRequest) (CancelOrderResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
+	ret0, _ := ret[0].(CancelOrderResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelOrder indicates an expected call of CancelOrder.
+func (mr *MockPluginMockRecorder) CancelOrder(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockPlugin)(nil).CancelOrder), arg0, arg1)
+}
+
 // CompleteUpdateUserLink mocks base method.
 func (m *MockPlugin) CompleteUpdateUserLink(arg0 context.Context, arg1 CompleteUpdateUserLinkRequest) (CompleteUpdateUserLinkResponse, error) {
 	m.ctrl.T.Helper()
@@ -97,6 +112,36 @@ func (m *MockPlugin) CreateBankAccount(arg0 context.Context, arg1 CreateBankAcco
 func (mr *MockPluginMockRecorder) CreateBankAccount(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBankAccount", reflect.TypeOf((*MockPlugin)(nil).CreateBankAccount), arg0, arg1)
+}
+
+// CreateConversion mocks base method.
+func (m *MockPlugin) CreateConversion(arg0 context.Context, arg1 CreateConversionRequest) (CreateConversionResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateConversion", arg0, arg1)
+	ret0, _ := ret[0].(CreateConversionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateConversion indicates an expected call of CreateConversion.
+func (mr *MockPluginMockRecorder) CreateConversion(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateConversion", reflect.TypeOf((*MockPlugin)(nil).CreateConversion), arg0, arg1)
+}
+
+// CreateOrder mocks base method.
+func (m *MockPlugin) CreateOrder(arg0 context.Context, arg1 CreateOrderRequest) (CreateOrderResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrder", arg0, arg1)
+	ret0, _ := ret[0].(CreateOrderResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateOrder indicates an expected call of CreateOrder.
+func (mr *MockPluginMockRecorder) CreateOrder(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPlugin)(nil).CreateOrder), arg0, arg1)
 }
 
 // CreatePayout mocks base method.
@@ -234,6 +279,21 @@ func (mr *MockPluginMockRecorder) FetchNextBalances(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextBalances", reflect.TypeOf((*MockPlugin)(nil).FetchNextBalances), arg0, arg1)
 }
 
+// FetchNextConversions mocks base method.
+func (m *MockPlugin) FetchNextConversions(arg0 context.Context, arg1 FetchNextConversionsRequest) (FetchNextConversionsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextConversions", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextConversionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextConversions indicates an expected call of FetchNextConversions.
+func (mr *MockPluginMockRecorder) FetchNextConversions(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextConversions", reflect.TypeOf((*MockPlugin)(nil).FetchNextConversions), arg0, arg1)
+}
+
 // FetchNextExternalAccounts mocks base method.
 func (m *MockPlugin) FetchNextExternalAccounts(arg0 context.Context, arg1 FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error) {
 	m.ctrl.T.Helper()
@@ -247,6 +307,21 @@ func (m *MockPlugin) FetchNextExternalAccounts(arg0 context.Context, arg1 FetchN
 func (mr *MockPluginMockRecorder) FetchNextExternalAccounts(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextExternalAccounts", reflect.TypeOf((*MockPlugin)(nil).FetchNextExternalAccounts), arg0, arg1)
+}
+
+// FetchNextOrders mocks base method.
+func (m *MockPlugin) FetchNextOrders(arg0 context.Context, arg1 FetchNextOrdersRequest) (FetchNextOrdersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextOrders", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextOrdersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextOrders indicates an expected call of FetchNextOrders.
+func (mr *MockPluginMockRecorder) FetchNextOrders(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextOrders", reflect.TypeOf((*MockPlugin)(nil).FetchNextOrders), arg0, arg1)
 }
 
 // FetchNextOthers mocks base method.
@@ -277,6 +352,81 @@ func (m *MockPlugin) FetchNextPayments(arg0 context.Context, arg1 FetchNextPayme
 func (mr *MockPluginMockRecorder) FetchNextPayments(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextPayments", reflect.TypeOf((*MockPlugin)(nil).FetchNextPayments), arg0, arg1)
+}
+
+// GetOHLC mocks base method.
+func (m *MockPlugin) GetOHLC(arg0 context.Context, arg1 GetOHLCRequest) (GetOHLCResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOHLC", arg0, arg1)
+	ret0, _ := ret[0].(GetOHLCResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOHLC indicates an expected call of GetOHLC.
+func (mr *MockPluginMockRecorder) GetOHLC(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOHLC", reflect.TypeOf((*MockPlugin)(nil).GetOHLC), arg0, arg1)
+}
+
+// GetOrderBook mocks base method.
+func (m *MockPlugin) GetOrderBook(arg0 context.Context, arg1 GetOrderBookRequest) (GetOrderBookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderBook", arg0, arg1)
+	ret0, _ := ret[0].(GetOrderBookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderBook indicates an expected call of GetOrderBook.
+func (mr *MockPluginMockRecorder) GetOrderBook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderBook", reflect.TypeOf((*MockPlugin)(nil).GetOrderBook), arg0, arg1)
+}
+
+// GetQuote mocks base method.
+func (m *MockPlugin) GetQuote(arg0 context.Context, arg1 GetQuoteRequest) (GetQuoteResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQuote", arg0, arg1)
+	ret0, _ := ret[0].(GetQuoteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetQuote indicates an expected call of GetQuote.
+func (mr *MockPluginMockRecorder) GetQuote(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuote", reflect.TypeOf((*MockPlugin)(nil).GetQuote), arg0, arg1)
+}
+
+// GetTicker mocks base method.
+func (m *MockPlugin) GetTicker(arg0 context.Context, arg1 GetTickerRequest) (GetTickerResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicker", arg0, arg1)
+	ret0, _ := ret[0].(GetTickerResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTicker indicates an expected call of GetTicker.
+func (mr *MockPluginMockRecorder) GetTicker(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicker", reflect.TypeOf((*MockPlugin)(nil).GetTicker), arg0, arg1)
+}
+
+// GetTradableAssets mocks base method.
+func (m *MockPlugin) GetTradableAssets(arg0 context.Context, arg1 GetTradableAssetsRequest) (GetTradableAssetsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTradableAssets", arg0, arg1)
+	ret0, _ := ret[0].(GetTradableAssetsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTradableAssets indicates an expected call of GetTradableAssets.
+func (mr *MockPluginMockRecorder) GetTradableAssets(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradableAssets", reflect.TypeOf((*MockPlugin)(nil).GetTradableAssets), arg0, arg1)
 }
 
 // Install mocks base method.

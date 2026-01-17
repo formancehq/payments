@@ -39,6 +39,11 @@ type Backend interface {
 	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
 	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
+	ConnectorsGetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error)
+	ConnectorsGetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error)
+	ConnectorsGetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error)
+	ConnectorsGetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error)
+	ConnectorsGetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error)
 
 	// Payments
 	PaymentsCreate(ctx context.Context, payment models.Payment) error
@@ -105,4 +110,15 @@ type Backend interface {
 
 	// Workflows Instances
 	WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
+
+	// Orders
+	OrdersCreate(ctx context.Context, order models.Order) error
+	OrdersList(ctx context.Context, query storage.ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error)
+	OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error)
+	OrdersCancel(ctx context.Context, id models.OrderID) error
+
+	// Conversions
+	ConversionsCreate(ctx context.Context, conversion models.Conversion) error
+	ConversionsList(ctx context.Context, query storage.ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error)
+	ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error)
 }

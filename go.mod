@@ -9,7 +9,9 @@ replace github.com/formancehq/payments/genericclient => ./internal/connectors/pl
 require (
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
+	github.com/binance/binance-connector-go v0.8.0
 	github.com/bombsimon/logrusr/v3 v3.1.0
+	github.com/coinbase-samples/prime-sdk-go v0.5.7
 	github.com/emvi/iso-639-1 v1.1.1
 	github.com/formancehq/go-libs/v3 v3.3.0
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
@@ -27,10 +29,12 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jackc/pgxlisten v0.0.0-20250802141604-12b92425684c
+	github.com/krakenfx/api-go/v2 v2.0.0
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.44.0
 	github.com/onsi/ginkgo/v2 v2.23.4
@@ -91,9 +95,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.3 // indirect
 	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/bitly/go-simplejson v0.5.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
+	github.com/coinbase-samples/core-go v0.2.1 // indirect
 	github.com/containerd/continuity v0.4.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
@@ -196,6 +202,7 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.5 // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect

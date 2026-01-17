@@ -15,11 +15,16 @@ const (
 	V3InstallConnectorRequestTypeAdyen         V3InstallConnectorRequestType = "Adyen"
 	V3InstallConnectorRequestTypeAtlar         V3InstallConnectorRequestType = "Atlar"
 	V3InstallConnectorRequestTypeBankingcircle V3InstallConnectorRequestType = "Bankingcircle"
+	V3InstallConnectorRequestTypeBinance       V3InstallConnectorRequestType = "Binance"
+	V3InstallConnectorRequestTypeBitstamp      V3InstallConnectorRequestType = "Bitstamp"
+	V3InstallConnectorRequestTypeCoinbaseprime V3InstallConnectorRequestType = "Coinbaseprime"
 	V3InstallConnectorRequestTypeColumn        V3InstallConnectorRequestType = "Column"
 	V3InstallConnectorRequestTypeCurrencycloud V3InstallConnectorRequestType = "Currencycloud"
 	V3InstallConnectorRequestTypeDummypay      V3InstallConnectorRequestType = "Dummypay"
+	V3InstallConnectorRequestTypeFireblocks    V3InstallConnectorRequestType = "Fireblocks"
 	V3InstallConnectorRequestTypeGeneric       V3InstallConnectorRequestType = "Generic"
 	V3InstallConnectorRequestTypeIncrease      V3InstallConnectorRequestType = "Increase"
+	V3InstallConnectorRequestTypeKraken        V3InstallConnectorRequestType = "Kraken"
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
 	V3InstallConnectorRequestTypeModulr        V3InstallConnectorRequestType = "Modulr"
 	V3InstallConnectorRequestTypeMoneycorp     V3InstallConnectorRequestType = "Moneycorp"
@@ -35,11 +40,16 @@ type V3InstallConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3BinanceConfig       *V3BinanceConfig       `queryParam:"inline"`
+	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
+	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
+	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
 	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
+	V3KrakenConfig        *V3KrakenConfig        `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
@@ -89,6 +99,42 @@ func CreateV3InstallConnectorRequestBankingcircle(bankingcircle V3BankingcircleC
 	}
 }
 
+func CreateV3InstallConnectorRequestBinance(binance V3BinanceConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeBinance
+
+	typStr := string(typ)
+	binance.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3BinanceConfig: &binance,
+		Type:            typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestBitstamp(bitstamp V3BitstampConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeBitstamp
+
+	typStr := string(typ)
+	bitstamp.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3BitstampConfig: &bitstamp,
+		Type:             typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestCoinbaseprime(coinbaseprime V3CoinbaseprimeConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeCoinbaseprime
+
+	typStr := string(typ)
+	coinbaseprime.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3CoinbaseprimeConfig: &coinbaseprime,
+		Type:                  typ,
+	}
+}
+
 func CreateV3InstallConnectorRequestColumn(column V3ColumnConfig) V3InstallConnectorRequest {
 	typ := V3InstallConnectorRequestTypeColumn
 
@@ -125,6 +171,18 @@ func CreateV3InstallConnectorRequestDummypay(dummypay V3DummypayConfig) V3Instal
 	}
 }
 
+func CreateV3InstallConnectorRequestFireblocks(fireblocks V3FireblocksConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeFireblocks
+
+	typStr := string(typ)
+	fireblocks.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3FireblocksConfig: &fireblocks,
+		Type:               typ,
+	}
+}
+
 func CreateV3InstallConnectorRequestGeneric(generic V3GenericConfig) V3InstallConnectorRequest {
 	typ := V3InstallConnectorRequestTypeGeneric
 
@@ -146,6 +204,18 @@ func CreateV3InstallConnectorRequestIncrease(increase V3IncreaseConfig) V3Instal
 	return V3InstallConnectorRequest{
 		V3IncreaseConfig: &increase,
 		Type:             typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestKraken(kraken V3KrakenConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeKraken
+
+	typStr := string(typ)
+	kraken.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3KrakenConfig: &kraken,
+		Type:           typ,
 	}
 }
 
@@ -296,6 +366,33 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3InstallConnectorRequestTypeBankingcircle
 		return nil
+	case "Binance":
+		v3BinanceConfig := new(V3BinanceConfig)
+		if err := utils.UnmarshalJSON(data, &v3BinanceConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Binance) type V3BinanceConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3BinanceConfig = v3BinanceConfig
+		u.Type = V3InstallConnectorRequestTypeBinance
+		return nil
+	case "Bitstamp":
+		v3BitstampConfig := new(V3BitstampConfig)
+		if err := utils.UnmarshalJSON(data, &v3BitstampConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Bitstamp) type V3BitstampConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3BitstampConfig = v3BitstampConfig
+		u.Type = V3InstallConnectorRequestTypeBitstamp
+		return nil
+	case "Coinbaseprime":
+		v3CoinbaseprimeConfig := new(V3CoinbaseprimeConfig)
+		if err := utils.UnmarshalJSON(data, &v3CoinbaseprimeConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Coinbaseprime) type V3CoinbaseprimeConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3CoinbaseprimeConfig = v3CoinbaseprimeConfig
+		u.Type = V3InstallConnectorRequestTypeCoinbaseprime
+		return nil
 	case "Column":
 		v3ColumnConfig := new(V3ColumnConfig)
 		if err := utils.UnmarshalJSON(data, &v3ColumnConfig, "", true, false); err != nil {
@@ -323,6 +420,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3DummypayConfig = v3DummypayConfig
 		u.Type = V3InstallConnectorRequestTypeDummypay
 		return nil
+	case "Fireblocks":
+		v3FireblocksConfig := new(V3FireblocksConfig)
+		if err := utils.UnmarshalJSON(data, &v3FireblocksConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Fireblocks) type V3FireblocksConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3FireblocksConfig = v3FireblocksConfig
+		u.Type = V3InstallConnectorRequestTypeFireblocks
+		return nil
 	case "Generic":
 		v3GenericConfig := new(V3GenericConfig)
 		if err := utils.UnmarshalJSON(data, &v3GenericConfig, "", true, false); err != nil {
@@ -340,6 +446,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 
 		u.V3IncreaseConfig = v3IncreaseConfig
 		u.Type = V3InstallConnectorRequestTypeIncrease
+		return nil
+	case "Kraken":
+		v3KrakenConfig := new(V3KrakenConfig)
+		if err := utils.UnmarshalJSON(data, &v3KrakenConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Kraken) type V3KrakenConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3KrakenConfig = v3KrakenConfig
+		u.Type = V3InstallConnectorRequestTypeKraken
 		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
@@ -440,6 +555,18 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
 	}
 
+	if u.V3BinanceConfig != nil {
+		return utils.MarshalJSON(u.V3BinanceConfig, "", true)
+	}
+
+	if u.V3BitstampConfig != nil {
+		return utils.MarshalJSON(u.V3BitstampConfig, "", true)
+	}
+
+	if u.V3CoinbaseprimeConfig != nil {
+		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
+	}
+
 	if u.V3ColumnConfig != nil {
 		return utils.MarshalJSON(u.V3ColumnConfig, "", true)
 	}
@@ -452,12 +579,20 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3DummypayConfig, "", true)
 	}
 
+	if u.V3FireblocksConfig != nil {
+		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
 	if u.V3GenericConfig != nil {
 		return utils.MarshalJSON(u.V3GenericConfig, "", true)
 	}
 
 	if u.V3IncreaseConfig != nil {
 		return utils.MarshalJSON(u.V3IncreaseConfig, "", true)
+	}
+
+	if u.V3KrakenConfig != nil {
+		return utils.MarshalJSON(u.V3KrakenConfig, "", true)
 	}
 
 	if u.V3MangopayConfig != nil {

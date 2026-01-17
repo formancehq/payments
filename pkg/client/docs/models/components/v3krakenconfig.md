@@ -1,0 +1,14 @@
+# V3KrakenConfig
+
+
+## Fields
+
+| Field                                                                   | Type                                                                    | Required                                                                | Description                                                             |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `Endpoint`                                                              | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |
+| `Name`                                                                  | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |
+| ~~`PageSize`~~                                                          | **int64*                                                                | :heavy_minus_sign:                                                      | : warning: ** DEPRECATED **: From v3.1, this parameter will be ignored. |
+| `PollingPeriod`                                                         | **string*                                                               | :heavy_minus_sign:                                                      | N/A                                                                     |
+| `PrivateKey`                                                            | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |
+| `Provider`                                                              | **string*                                                               | :heavy_minus_sign:                                                      | N/A                                                                     |
+| `PublicKey`                                                             | *string*                                                                | :heavy_check_mark:                                                      | N/A                                                                     |

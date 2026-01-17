@@ -831,6 +831,297 @@ components:
         - CAPTURE_FAILED
         - OTHER
 
+    # ORDERS
+    V3OrdersCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ''
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Order'
+
+    V3GetOrderResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Order'
+
+    V3Order:
+      type: object
+      required:
+        - id
+        - connectorID
+        - provider
+        - reference
+        - createdAt
+        - updatedAt
+        - direction
+        - sourceAsset
+        - targetAsset
+        - type
+        - status
+        - baseQuantityOrdered
+        - timeInForce
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+          format: byte
+        provider:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        direction:
+          $ref: '#/components/schemas/V3OrderDirectionEnum'
+        sourceAsset:
+          type: string
+        targetAsset:
+          type: string
+        type:
+          $ref: '#/components/schemas/V3OrderTypeEnum'
+        status:
+          $ref: '#/components/schemas/V3OrderStatusEnum'
+        baseQuantityOrdered:
+          type: integer
+          format: bigint
+        baseQuantityFilled:
+          type: integer
+          format: bigint
+          nullable: true
+        limitPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        stopPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        timeInForce:
+          $ref: '#/components/schemas/V3TimeInForceEnum'
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        fee:
+          type: integer
+          format: bigint
+          nullable: true
+        feeAsset:
+          type: string
+          nullable: true
+        averageFillPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        adjustments:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/V3OrderAdjustment'
+        error:
+          type: string
+          nullable: true
+
+    V3OrderAdjustment:
+      type: object
+      required:
+        - id
+        - reference
+        - createdAt
+        - status
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/V3OrderStatusEnum'
+        baseQuantityFilled:
+          type: integer
+          format: bigint
+          nullable: true
+        fee:
+          type: integer
+          format: bigint
+          nullable: true
+        feeAsset:
+          type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3OrderDirectionEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - BUY
+        - SELL
+
+    V3OrderTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - MARKET
+        - LIMIT
+        - STOP_LIMIT
+
+    V3OrderStatusEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - PENDING
+        - OPEN
+        - PARTIALLY_FILLED
+        - FILLED
+        - CANCELLED
+        - FAILED
+        - EXPIRED
+
+    V3TimeInForceEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - GOOD_UNTIL_CANCELLED
+        - GOOD_UNTIL_DATE_TIME
+        - IMMEDIATE_OR_CANCEL
+        - FILL_OR_KILL
+
+    # CONVERSIONS
+    V3ConversionsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ''
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Conversion'
+
+    V3GetConversionResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Conversion'
+
+    V3Conversion:
+      type: object
+      required:
+        - id
+        - connectorID
+        - provider
+        - reference
+        - createdAt
+        - updatedAt
+        - sourceAsset
+        - targetAsset
+        - sourceAmount
+        - status
+        - walletId
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+          format: byte
+        provider:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        sourceAsset:
+          type: string
+        targetAsset:
+          type: string
+        sourceAmount:
+          type: integer
+          format: bigint
+        targetAmount:
+          type: integer
+          format: bigint
+          nullable: true
+        status:
+          $ref: '#/components/schemas/V3ConversionStatusEnum'
+        walletId:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        error:
+          type: string
+          nullable: true
+
+    V3ConversionStatusEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - PENDING
+        - COMPLETED
+        - FAILED
+
     # PAYMENT INITIATIONS
     V3InitiatePaymentRequest:
       type: object
