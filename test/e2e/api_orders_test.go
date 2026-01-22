@@ -3,14 +3,12 @@
 package test_suite
 
 import (
-	"context"
 	"math/big"
 	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -334,27 +332,3 @@ var _ = Context("Payments API Orders", Serial, func() {
 		})
 	})
 })
-
-func createOrder(ctx context.Context, app *testserver.Server, connectorID string, reference string) (string, error) {
-	sendToExchange := false
-	createRequest := CreateOrderRequest{
-		Reference:           reference,
-		ConnectorID:         connectorID,
-		Direction:           "BUY",
-		SourceAsset:         "USD/2",
-		TargetAsset:         "BTC/8",
-		Type:                "LIMIT",
-		BaseQuantityOrdered: big.NewInt(100000000),
-		LimitPrice:          big.NewInt(5000000000000),
-		TimeInForce:         "GTC",
-		SkipValidation:      true,
-		SendToExchange:      &sendToExchange,
-	}
-
-	var createResponse CreateOrderResponse
-	err := app.Client().Do(ctx, http.MethodPost, "/v3/orders", createRequest, &createResponse)
-	if err != nil {
-		return "", err
-	}
-	return createResponse.Order.ID, nil
-}

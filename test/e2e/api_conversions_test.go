@@ -3,14 +3,12 @@
 package test_suite
 
 import (
-	"context"
 	"math/big"
 	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -256,21 +254,3 @@ var _ = Context("Payments API Conversions", Serial, func() {
 		})
 	})
 })
-
-func createConversion(ctx context.Context, app *testserver.Server, connectorID string, reference string, walletID string) (string, error) {
-	createRequest := CreateConversionRequest{
-		Reference:    reference,
-		ConnectorID:  connectorID,
-		SourceAsset:  "USD/2",
-		TargetAsset:  "BTC/8",
-		SourceAmount: big.NewInt(100000),
-		WalletID:     walletID,
-	}
-
-	var createResponse CreateConversionDirectResponse
-	err := app.Client().Do(ctx, http.MethodPost, "/v3/conversions", createRequest, &createResponse)
-	if err != nil {
-		return "", err
-	}
-	return createResponse.ID, nil
-}
