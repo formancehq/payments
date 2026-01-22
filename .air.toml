@@ -1,12 +1,12 @@
 root = "."
 testdata_dir = "testdata"
-tmp_dir = "tmp"
+tmp_dir = "/tmp/air"
 
 [build]
   args_bin = []
-  bin = "./tmp/main"
-  cmd = "go build -gcflags='all=-N -l' -o ./tmp/main . && chmod +x ./tmp/main"
-  full_bin = "dlv exec --headless --listen=:2345 --api-version=2 --accept-multiclient --continue ./tmp/main --"
+  bin = "/tmp/air/main"
+  cmd = "mkdir -p /tmp/air && go build -gcflags='all=-N -l' -o /tmp/air/main . && chmod +x /tmp/air/main"
+  full_bin = "dlv exec --headless --listen=:2345 --api-version=2 --accept-multiclient --continue /tmp/air/main --"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "docs", "openapi", "pkg/client"]
   exclude_file = []
