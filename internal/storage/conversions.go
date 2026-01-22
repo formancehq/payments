@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -34,6 +35,9 @@ type conversion struct {
 
 	// Optional fields with default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+
+	// Raw PSP response
+	Raw json.RawMessage `bun:"raw,type:json,notnull"`
 }
 
 func (s *store) ConversionsUpsert(ctx context.Context, conversions []models.Conversion) error {
@@ -223,6 +227,7 @@ func fromConversionModels(from models.Conversion) conversion {
 		Status:       from.Status,
 		WalletID:     from.WalletID,
 		Metadata:     from.Metadata,
+		Raw:          from.Raw,
 	}
 }
 
@@ -240,5 +245,6 @@ func toConversionModels(from conversion) models.Conversion {
 		Status:       from.Status,
 		WalletID:     from.WalletID,
 		Metadata:     from.Metadata,
+		Raw:          from.Raw,
 	}
 }

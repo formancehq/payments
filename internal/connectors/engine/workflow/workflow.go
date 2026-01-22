@@ -145,6 +145,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runPollTransfer,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunCreateOrder,
+			Func: w.runCreateOrder,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunPollOrder,
+			Func: w.runPollOrder,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunNextTasksV3_1,
 			Func: w.runNextTasksV3_1,
 		}).

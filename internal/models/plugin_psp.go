@@ -23,6 +23,7 @@ type PSPPlugin interface {
 	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
 	CreateOrder(context.Context, CreateOrderRequest) (CreateOrderResponse, error)
 	CancelOrder(context.Context, CancelOrderRequest) (CancelOrderResponse, error)
+	PollOrderStatus(context.Context, PollOrderStatusRequest) (PollOrderStatusResponse, error)
 	CreateConversion(context.Context, CreateConversionRequest) (CreateConversionResponse, error)
 
 	// Market data methods
@@ -205,6 +206,21 @@ type CancelOrderRequest struct {
 type CancelOrderResponse struct {
 	// Updated order after cancellation
 	Order PSPOrder
+}
+
+type PollOrderStatusRequest struct {
+	OrderID string
+}
+
+type PollOrderStatusResponse struct {
+	// If nil, the order is not yet in a final state and the function will be
+	// called again later
+	// If not nil, the order is in a final state and the workflow will be terminated
+	Order *PSPOrder
+
+	// If not nil, it means that the order failed, the order will be marked
+	// as failed and the workflow will be terminated
+	Error *string
 }
 
 // Conversion-related request/response types

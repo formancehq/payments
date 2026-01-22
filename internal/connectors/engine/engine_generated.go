@@ -113,6 +113,21 @@ func (mr *MockEngineMockRecorder) CreateFormancePaymentInitiation(ctx, paymentIn
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFormancePaymentInitiation", reflect.TypeOf((*MockEngine)(nil).CreateFormancePaymentInitiation), ctx, paymentInitiation, adj)
 }
 
+// CreateOrder mocks base method.
+func (m *MockEngine) CreateOrder(ctx context.Context, orderID models.OrderID, waitResult bool) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrder", ctx, orderID, waitResult)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateOrder indicates an expected call of CreateOrder.
+func (mr *MockEngineMockRecorder) CreateOrder(ctx, orderID, waitResult any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockEngine)(nil).CreateOrder), ctx, orderID, waitResult)
+}
+
 // CreatePaymentServiceUserLink mocks base method.
 func (m *MockEngine) CreatePaymentServiceUserLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
 	m.ctrl.T.Helper()

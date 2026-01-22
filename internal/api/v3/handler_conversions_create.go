@@ -50,6 +50,14 @@ func conversionsCreate(backend backend.Backend, validator *validation.Validator)
 		connectorID := models.MustConnectorIDFromString(req.ConnectorID)
 		now := time.Now().UTC()
 
+		// Marshal the request to store as raw data
+		raw, err := json.Marshal(req)
+		if err != nil {
+			otel.RecordError(span, err)
+			api.InternalServerError(w, r, err)
+			return
+		}
+
 		conversion := models.Conversion{
 			ID: models.ConversionID{
 				Reference:   req.Reference,
@@ -65,6 +73,7 @@ func conversionsCreate(backend backend.Backend, validator *validation.Validator)
 			Status:       models.CONVERSION_STATUS_PENDING,
 			WalletID:     req.WalletID,
 			Metadata:     req.Metadata,
+			Raw:          raw,
 		}
 
 		err = backend.ConversionsCreate(ctx, conversion)

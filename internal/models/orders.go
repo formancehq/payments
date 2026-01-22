@@ -301,6 +301,29 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ToPSPOrder converts an Order to a PSPOrder for sending to the plugin
+func ToPSPOrder(order *Order) PSPOrder {
+	return PSPOrder{
+		Reference:           order.Reference,
+		CreatedAt:           order.CreatedAt,
+		Direction:           order.Direction,
+		SourceAsset:         order.SourceAsset,
+		TargetAsset:         order.TargetAsset,
+		Type:                order.Type,
+		Status:              order.Status,
+		BaseQuantityOrdered: order.BaseQuantityOrdered,
+		BaseQuantityFilled:  order.BaseQuantityFilled,
+		LimitPrice:          order.LimitPrice,
+		StopPrice:           order.StopPrice,
+		TimeInForce:         order.TimeInForce,
+		ExpiresAt:           order.ExpiresAt,
+		Fee:                 order.Fee,
+		FeeAsset:            order.FeeAsset,
+		AverageFillPrice:    order.AverageFillPrice,
+		Metadata:            order.Metadata,
+	}
+}
+
 // FromPSPOrderToOrder converts a PSPOrder to an Order
 func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) {
 	if err := from.Validate(); err != nil {

@@ -536,6 +536,182 @@ paths:
         - Authorization:
             - payments:read
 
+  # MARKET DATA
+  /v3/connectors/{connectorID}/orderbook:
+    get:
+      tags:
+        - payments.v3
+      summary: Get order book for a trading pair
+      operationId: v3GetOrderBook
+      x-speakeasy-name-override: GetOrderBook
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - name: pair
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Trading pair (e.g., BTC/USD)
+        - name: depth
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: Number of price levels to return
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3OrderBookResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/quotes:
+    post:
+      tags:
+        - payments.v3
+      summary: Get a quote for a trade
+      operationId: v3GetQuote
+      x-speakeasy-name-override: GetQuote
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QuoteRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3QuoteResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/tradable-assets:
+    get:
+      tags:
+        - payments.v3
+      summary: Get tradable assets for a connector
+      operationId: v3GetTradableAssets
+      x-speakeasy-name-override: GetTradableAssets
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3TradableAssetsResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/ticker:
+    get:
+      tags:
+        - payments.v3
+      summary: Get ticker for a trading pair
+      operationId: v3GetTicker
+      x-speakeasy-name-override: GetTicker
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - name: pair
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Trading pair (e.g., BTC/USD)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3TickerResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/ohlc:
+    get:
+      tags:
+        - payments.v3
+      summary: Get OHLC (candlestick) data for a trading pair
+      operationId: v3GetOHLC
+      x-speakeasy-name-override: GetOHLC
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - name: pair
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Trading pair (e.g., BTC/USD)
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "1h"
+          description: Candlestick interval (e.g., 1m, 5m, 1h, 1d)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+          description: Number of candlesticks to return
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3OHLCResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
   # PAYMENTS
   /v3/payments:
     post:
@@ -683,6 +859,34 @@ paths:
       security:
         - Authorization:
             - payments:read
+    post:
+      tags:
+        - payments.v3
+      summary: Create a new order
+      operationId: v3CreateOrder
+      x-speakeasy-name-override: CreateOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreateOrderRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreateOrderResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
 
   /v3/orders/{orderID}:
     get:
@@ -709,6 +913,28 @@ paths:
       security:
         - Authorization:
             - payments:read
+
+  /v3/orders/{orderID}/cancel:
+    post:
+      tags:
+        - payments.v3
+      summary: Cancel an order
+      operationId: v3CancelOrder
+      x-speakeasy-name-override: CancelOrder
+      parameters:
+        - $ref: '#/components/parameters/V3OrderID'
+      responses:
+        "204":
+          description: Order cancelled successfully
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
 
   # CONVERSIONS
   /v3/conversions:
@@ -742,6 +968,34 @@ paths:
       security:
         - Authorization:
             - payments:read
+    post:
+      tags:
+        - payments.v3
+      summary: Create a new conversion
+      operationId: v3CreateConversion
+      x-speakeasy-name-override: CreateConversion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreateConversionRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3Conversion"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
 
   /v3/conversions/{conversionID}:
     get:

@@ -561,6 +561,24 @@ func (i *impl) CancelOrder(ctx context.Context, req models.CancelOrderRequest) (
 	return resp, nil
 }
 
+func (i *impl) PollOrderStatus(ctx context.Context, req models.PollOrderStatusRequest) (models.PollOrderStatusResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.PollOrderStatus", attribute.String("psp", i.connectorID.Provider), attribute.String("orderID", req.OrderID))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("polling order status...")
+
+	resp, err := i.plugin.PollOrderStatus(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("polling order status failed:", err)
+		otel.RecordError(span, err)
+		return models.PollOrderStatusResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("polling order status succeeded!")
+
+	return resp, nil
+}
+
 func (i *impl) CreateConversion(ctx context.Context, req models.CreateConversionRequest) (models.CreateConversionResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.CreateConversion", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
 	defer span.End()

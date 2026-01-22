@@ -431,17 +431,18 @@ func (mr *MockBackendMockRecorder) OrdersCancel(ctx, id any) *gomock.Call {
 }
 
 // OrdersCreate mocks base method.
-func (m *MockBackend) OrdersCreate(ctx context.Context, order models.Order) error {
+func (m *MockBackend) OrdersCreate(ctx context.Context, order models.Order, sendToExchange, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OrdersCreate", ctx, order)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "OrdersCreate", ctx, order, sendToExchange, waitResult)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // OrdersCreate indicates an expected call of OrdersCreate.
-func (mr *MockBackendMockRecorder) OrdersCreate(ctx, order any) *gomock.Call {
+func (mr *MockBackendMockRecorder) OrdersCreate(ctx, order, sendToExchange, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersCreate", reflect.TypeOf((*MockBackend)(nil).OrdersCreate), ctx, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersCreate", reflect.TypeOf((*MockBackend)(nil).OrdersCreate), ctx, order, sendToExchange, waitResult)
 }
 
 // OrdersGet mocks base method.

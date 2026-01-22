@@ -112,7 +112,7 @@ type Backend interface {
 	WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 
 	// Orders
-	OrdersCreate(ctx context.Context, order models.Order) error
+	OrdersCreate(ctx context.Context, order models.Order, sendToExchange bool, waitResult bool) (models.Task, error)
 	OrdersList(ctx context.Context, query storage.ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error)
 	OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error)
 	OrdersCancel(ctx context.Context, id models.OrderID) error

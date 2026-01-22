@@ -93,6 +93,9 @@ create table if not exists conversions (
     -- Optional fields with default
     metadata jsonb not null default '{}'::jsonb,
 
+    -- Raw PSP response
+    raw json not null,
+
     -- Primary key
     primary key (id)
 );

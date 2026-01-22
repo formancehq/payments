@@ -871,6 +871,103 @@ components:
         data:
           $ref: '#/components/schemas/V3Order'
 
+    V3CreateOrderRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - direction
+        - sourceAsset
+        - targetAsset
+        - type
+        - baseQuantityOrdered
+      properties:
+        reference:
+          type: string
+          minLength: 3
+          maxLength: 1000
+        connectorID:
+          type: string
+          format: byte
+        direction:
+          type: string
+          enum:
+            - BUY
+            - SELL
+        sourceAsset:
+          type: string
+        targetAsset:
+          type: string
+        type:
+          type: string
+          enum:
+            - MARKET
+            - LIMIT
+            - STOP_LIMIT
+        baseQuantityOrdered:
+          type: integer
+          format: bigint
+        limitPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        stopPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        timeInForce:
+          type: string
+          enum:
+            - GOOD_UNTIL_CANCELLED
+            - GOOD_UNTIL_DATE_TIME
+            - IMMEDIATE_OR_CANCEL
+            - FILL_OR_KILL
+            - GTC
+            - GTD
+            - IOC
+            - FOK
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        skipValidation:
+          type: boolean
+          default: false
+        sendToExchange:
+          type: boolean
+          default: true
+        waitResult:
+          type: boolean
+          default: false
+
+    V3CreateOrderResponse:
+      type: object
+      required:
+        - order
+      properties:
+        order:
+          $ref: '#/components/schemas/V3Order'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3OrderValidationWarning'
+        taskID:
+          type: string
+          nullable: true
+
+    V3OrderValidationWarning:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
     V3Order:
       type: object
       required:
@@ -1121,6 +1218,277 @@ components:
         - PENDING
         - COMPLETED
         - FAILED
+
+    V3CreateConversionRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - sourceAsset
+        - targetAsset
+        - sourceAmount
+        - walletId
+      properties:
+        reference:
+          type: string
+          minLength: 3
+          maxLength: 1000
+        connectorID:
+          type: string
+          format: byte
+        sourceAsset:
+          type: string
+        targetAsset:
+          type: string
+        sourceAmount:
+          type: integer
+          format: bigint
+        walletId:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    # MARKET DATA
+    V3OrderBookResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3OrderBook'
+
+    V3OrderBook:
+      type: object
+      required:
+        - pair
+        - bids
+        - asks
+      properties:
+        pair:
+          type: string
+        bids:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3OrderBookLevel'
+        asks:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3OrderBookLevel'
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+
+    V3OrderBookLevel:
+      type: object
+      required:
+        - price
+        - quantity
+      properties:
+        price:
+          type: integer
+          format: bigint
+        quantity:
+          type: integer
+          format: bigint
+
+    V3QuoteRequest:
+      type: object
+      required:
+        - baseAsset
+        - quoteAsset
+        - amount
+        - isBuy
+      properties:
+        baseAsset:
+          type: string
+        quoteAsset:
+          type: string
+        amount:
+          type: integer
+          format: bigint
+        isBuy:
+          type: boolean
+        includeFees:
+          type: boolean
+          default: false
+
+    V3QuoteResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Quote'
+
+    V3Quote:
+      type: object
+      required:
+        - baseAsset
+        - quoteAsset
+        - amount
+        - price
+        - quoteAmount
+        - isBuy
+      properties:
+        baseAsset:
+          type: string
+        quoteAsset:
+          type: string
+        amount:
+          type: integer
+          format: bigint
+        price:
+          type: integer
+          format: bigint
+        quoteAmount:
+          type: integer
+          format: bigint
+        fee:
+          type: integer
+          format: bigint
+          nullable: true
+        feeAsset:
+          type: string
+          nullable: true
+        isBuy:
+          type: boolean
+        validUntil:
+          type: string
+          format: date-time
+          nullable: true
+        exchangeRate:
+          type: string
+          nullable: true
+
+    V3TradableAssetsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3TradableAsset'
+
+    V3TradableAsset:
+      type: object
+      required:
+        - pair
+        - baseAsset
+        - quoteAsset
+      properties:
+        pair:
+          type: string
+        baseAsset:
+          type: string
+        quoteAsset:
+          type: string
+        status:
+          type: string
+          nullable: true
+        minOrderSize:
+          type: string
+          nullable: true
+        maxOrderSize:
+          type: string
+          nullable: true
+        pricePrecision:
+          type: integer
+          nullable: true
+        sizePrecision:
+          type: integer
+          nullable: true
+
+    V3TickerResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Ticker'
+
+    V3Ticker:
+      type: object
+      required:
+        - pair
+      properties:
+        pair:
+          type: string
+        lastPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        bidPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        askPrice:
+          type: integer
+          format: bigint
+          nullable: true
+        volume24h:
+          type: integer
+          format: bigint
+          nullable: true
+        high24h:
+          type: integer
+          format: bigint
+          nullable: true
+        low24h:
+          type: integer
+          format: bigint
+          nullable: true
+        priceChange24h:
+          type: integer
+          format: bigint
+          nullable: true
+        priceChangePct24h:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+
+    V3OHLCResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3OHLCCandle'
+
+    V3OHLCCandle:
+      type: object
+      required:
+        - timestamp
+        - open
+        - high
+        - low
+        - close
+        - volume
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        open:
+          type: integer
+          format: bigint
+        high:
+          type: integer
+          format: bigint
+        low:
+          type: integer
+          format: bigint
+        close:
+          type: integer
+          format: bigint
+        volume:
+          type: integer
+          format: bigint
 
     # PAYMENT INITIATIONS
     V3InitiatePaymentRequest:

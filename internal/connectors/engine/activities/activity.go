@@ -296,6 +296,26 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageOrdersUpsert,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageOrdersGet",
+			Func: a.StorageOrdersGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageOrdersUpdateStatus",
+			Func: a.StorageOrdersUpdateStatus,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCreateOrder",
+			Func: a.PluginCreateOrder,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginPollOrderStatus",
+			Func: a.PluginPollOrderStatus,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCancelOrder",
+			Func: a.PluginCancelOrder,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageConversionsUpsert",
 			Func: a.StorageConversionsUpsert,
 		}).

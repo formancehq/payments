@@ -118,6 +118,9 @@ type Conversion struct {
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
+
+	// Raw PSP response
+	Raw json.RawMessage `json:"raw"`
 }
 
 func (c *Conversion) IdempotencyKey() string {
@@ -225,6 +228,7 @@ func FromPSPConversionToConversion(from PSPConversion, connectorID ConnectorID) 
 		Status:       from.Status,
 		WalletID:     from.WalletID,
 		Metadata:     from.Metadata,
+		Raw:          from.Raw,
 	}, nil
 }
 

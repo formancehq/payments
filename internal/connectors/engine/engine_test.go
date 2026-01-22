@@ -1113,4 +1113,166 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
+	Context("get order book", func() {
+		var (
+			connectorID models.ConnectorID
+		)
+
+		BeforeEach(func() {
+			connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+		})
+
+		It("should return error when connector not found", func(ctx SpecContext) {
+			manager.EXPECT().Get(connectorID).Return(nil, connectors.ErrNotFound)
+			_, err := eng.GetOrderBook(ctx, connectorID, "BTC/USD", 10)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should return error when plugin GetOrderBook fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("plugin error")
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
+			plugin.EXPECT().GetOrderBook(gomock.Any(), gomock.AssignableToTypeOf(models.GetOrderBookRequest{})).Return(models.GetOrderBookResponse{}, expectedErr)
+			_, err := eng.GetOrderBook(ctx, connectorID, "BTC/USD", 10)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should successfully return order book", func(ctx SpecContext) {
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
+			expectedOrderBook := models.OrderBook{Pair: "BTC/USD"}
+			plugin.EXPECT().GetOrderBook(gomock.Any(), models.GetOrderBookRequest{Pair: "BTC/USD", Depth: 10}).Return(models.GetOrderBookResponse{OrderBook: expectedOrderBook}, nil)
+			orderBook, err := eng.GetOrderBook(ctx, connectorID, "BTC/USD", 10)
+			Expect(err).To(BeNil())
+			Expect(orderBook.Pair).To(Equal("BTC/USD"))
+		})
+	})
+
+	Context("get quote", func() {
+		var (
+			connectorID models.ConnectorID
+		)
+
+		BeforeEach(func() {
+			connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+		})
+
+		It("should return error when connector not found", func(ctx SpecContext) {
+			manager.EXPECT().Get(connectorID).Return(nil, connectors.ErrNotFound)
+			_, err := eng.GetQuote(ctx, connectorID, models.GetQuoteRequest{})
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should return error when plugin GetQuote fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("plugin error")
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
+			plugin.EXPECT().GetQuote(gomock.Any(), gomock.AssignableToTypeOf(models.GetQuoteRequest{})).Return(models.GetQuoteResponse{}, expectedErr)
+			_, err := eng.GetQuote(ctx, connectorID, models.GetQuoteRequest{SourceAsset: "BTC", TargetAsset: "USD"})
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should successfully return quote", func(ctx SpecContext) {
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
+			expectedQuote := models.Quote{SourceAsset: "BTC", TargetAsset: "USD"}
+			plugin.EXPECT().GetQuote(gomock.Any(), gomock.AssignableToTypeOf(models.GetQuoteRequest{})).Return(models.GetQuoteResponse{Quote: expectedQuote}, nil)
+			quote, err := eng.GetQuote(ctx, connectorID, models.GetQuoteRequest{SourceAsset: "BTC", TargetAsset: "USD"})
+			Expect(err).To(BeNil())
+			Expect(quote.SourceAsset).To(Equal("BTC"))
+			Expect(quote.TargetAsset).To(Equal("USD"))
+		})
+	})
+
+	Context("get tradable assets", func() {
+		var (
+			connectorID models.ConnectorID
+		)
+
+		BeforeEach(func() {
+			connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+		})
+
+		It("should return error when connector not found", func(ctx SpecContext) {
+			manager.EXPECT().Get(connectorID).Return(nil, connectors.ErrNotFound)
+			_, err := eng.GetTradableAssets(ctx, connectorID)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should return error when plugin GetTradableAssets fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("plugin error")
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
+			plugin.EXPECT().GetTradableAssets(gomock.Any(), gomock.AssignableToTypeOf(models.GetTradableAssetsRequest{})).Return(models.GetTradableAssetsResponse{}, expectedErr)
+			_, err := eng.GetTradableAssets(ctx, connectorID)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should successfully return tradable assets", func(ctx SpecContext) {
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
+			expectedAssets := []models.TradableAsset{{Pair: "BTC/USD"}, {Pair: "ETH/USD"}}
+			plugin.EXPECT().GetTradableAssets(gomock.Any(), gomock.AssignableToTypeOf(models.GetTradableAssetsRequest{})).Return(models.GetTradableAssetsResponse{Assets: expectedAssets}, nil)
+			assets, err := eng.GetTradableAssets(ctx, connectorID)
+			Expect(err).To(BeNil())
+			Expect(len(assets)).To(Equal(2))
+			Expect(assets[0].Pair).To(Equal("BTC/USD"))
+		})
+	})
+
+	Context("create order", func() {
+		var (
+			connectorID models.ConnectorID
+			orderID     models.OrderID
+		)
+
+		BeforeEach(func() {
+			connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+			orderID = models.OrderID{
+				Reference:   "test-order-123",
+				ConnectorID: connectorID,
+			}
+		})
+
+		It("should return error when storage fails to upsert task", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage error")
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(expectedErr)
+			_, err := eng.CreateOrder(ctx, orderID, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return error when workflow execution fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("workflow error")
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), workflow.RunCreateOrder, gomock.AssignableToTypeOf(workflow.CreateOrder{})).Return(nil, expectedErr)
+			_, err := eng.CreateOrder(ctx, orderID, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should successfully create order without waiting", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), workflow.RunCreateOrder, gomock.AssignableToTypeOf(workflow.CreateOrder{})).Return(wr, nil)
+			task, err := eng.CreateOrder(ctx, orderID, false)
+			Expect(err).To(BeNil())
+			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
+		})
+
+		It("should successfully create order and wait for result", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), workflow.RunCreateOrder, gomock.AssignableToTypeOf(workflow.CreateOrder{})).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(nil)
+			task, err := eng.CreateOrder(ctx, orderID, true)
+			Expect(err).To(BeNil())
+			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
+		})
+	})
 })

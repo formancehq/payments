@@ -32,6 +32,8 @@ type CreateOrderRequest struct {
 	ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
 	Metadata            map[string]string `json:"metadata"`
 	SkipValidation      bool              `json:"skipValidation,omitempty"` // Skip trading pair and order size validation
+	SendToExchange      *bool             `json:"sendToExchange,omitempty"` // Send order to exchange via workflow (default: true)
+	WaitResult          bool              `json:"waitResult,omitempty"`     // Wait for exchange response
 }
 
 // OrderValidationWarning represents a non-blocking validation warning
@@ -44,6 +46,7 @@ type OrderValidationWarning struct {
 type CreateOrderResponse struct {
 	Order    models.Order             `json:"order"`
 	Warnings []OrderValidationWarning `json:"warnings,omitempty"`
+	TaskID   *models.TaskID           `json:"taskID,omitempty"` // Task ID if order was sent to exchange
 }
 
 func ordersCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
@@ -183,18 +186,30 @@ func ordersCreate(backend backend.Backend, validator *validation.Validator) http
 			Raw:       raw,
 		})
 
-		err = backend.OrdersCreate(ctx, order)
+		// Determine if we should send to exchange (default: true)
+		sendToExchange := true
+		if req.SendToExchange != nil {
+			sendToExchange = *req.SendToExchange
+		}
+
+		task, err := backend.OrdersCreate(ctx, order, sendToExchange, req.WaitResult)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
 
-		// Return order with any validation warnings
+		// Return order with any validation warnings and task info
 		response := CreateOrderResponse{
 			Order:    order,
 			Warnings: warnings,
 		}
+
+		// If a task was created, add task ID to the response
+		if task.ID.Reference != "" {
+			response.TaskID = &task.ID
+		}
+
 		api.Created(w, response)
 	}
 }

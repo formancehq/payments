@@ -103,6 +103,10 @@ func (dp *basePlugin) CancelOrder(ctx context.Context, req models.CancelOrderReq
 	return models.CancelOrderResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) PollOrderStatus(ctx context.Context, req models.PollOrderStatusRequest) (models.PollOrderStatusResponse, error) {
+	return models.PollOrderStatusResponse{}, ErrNotImplemented
+}
+
 func (dp *basePlugin) CreateConversion(ctx context.Context, req models.CreateConversionRequest) (models.CreateConversionResponse, error) {
 	return models.CreateConversionResponse{}, ErrNotImplemented
 }
