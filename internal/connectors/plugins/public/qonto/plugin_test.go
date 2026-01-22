@@ -29,12 +29,17 @@ var _ = Describe("Qonto *Plugin", func() {
 		plg = &qonto.Plugin{
 			Plugin: plugins.NewBasePlugin(),
 		}
-		config = json.RawMessage(`{"clientID":"1234","apiKey":"abc123","endpoint":"example.com"}`)
+		config = json.RawMessage(`{"clientID":"1234","apiKey":"abc123","endpoint":"https://example.com"}`)
 	})
 
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
+			_, err := qonto.New("qonto", logger, config)
+			Expect(err.Error()).To(ContainSubstring("validation"))
+		})
+		It("reports validation errors on invalid endpoint URL", func(ctx SpecContext) {
+			config = json.RawMessage(`{"clientID":"1234","apiKey":"abc123","endpoint":"example.com"}`)
 			_, err := qonto.New("qonto", logger, config)
 			Expect(err.Error()).To(ContainSubstring("validation"))
 		})

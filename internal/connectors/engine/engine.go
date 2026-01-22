@@ -1631,14 +1631,14 @@ func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.Connecto
 }
 
 func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) error {
-	// Even if the connector is scheduled for deletion, we still need to register
-	// the plugin to be able to handle the uninstallation.
-	// It will be unregistered when the uninstallation is done in the workflow
-	// after the deletion of the connector entry in the database.
-
 	// skip strict polling period validation if installed by another instance
 	if _, _, err := e.connectors.Load(connector, false, false); err != nil {
-		return err
+		// We don't want to crash the server if the plugin registration fails,
+		// otherwise, the client will not be able to remove the failing
+		// connector from the database because of the crashes.
+		// We just log the error and continue.
+		e.logger.Errorf("failed to register plugin for connector %q: %s", connector.ID.String(), err.Error())
+		return nil
 	}
 
 	return nil
