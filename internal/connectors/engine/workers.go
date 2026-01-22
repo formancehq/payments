@@ -139,11 +139,6 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 }
 
 func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
-	// Even if the connector is scheduled for deletion, we still need to register
-	// the plugin to be able to handle the uninstallation.
-	// It will be unregistered when the uninstallation is done in the workflow
-	// after the deletion of the connector entry in the database.
-
 	// skip strict polling period validation if installed by another instance
 	_, _, err := w.connectors.Load(connector, false, false)
 	if err != nil {
@@ -155,6 +150,10 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 		return nil
 	}
 
+	// Even if the connector is scheduled for deletion, we still need to register
+	// the plugin to be able to handle the uninstallation.
+	// It will be unregistered when the uninstallation is done in the workflow
+	// after the deletion of the connector entry in the database.
 	if !connector.ScheduledForDeletion {
 		err = w.AddWorker(GetDefaultTaskQueue(w.stack))
 		if err != nil {
