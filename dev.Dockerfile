@@ -32,6 +32,9 @@ RUN chown -R appuser:appgroup /app
 # Create tmp directory and set permissions
 RUN mkdir -p /app/tmp && chown -R appuser:appgroup /app/tmp && chmod 755 /app/tmp
 
+# Create Go cache directory for appuser
+RUN mkdir -p /home/appuser/.cache/go-build && chown -R appuser:appgroup /home/appuser/.cache
+
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
 

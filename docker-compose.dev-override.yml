@@ -15,7 +15,8 @@ services:
     pull_policy: never
     command: go run . migrate up
     volumes:
-      - .:/app
+      - .:/app:delegated
+      - go-cache:/home/appuser/.cache/go-build
 
   payments:
     build:
@@ -23,13 +24,14 @@ services:
       dockerfile: dev.Dockerfile
     image: payments-dev:latest
     pull_policy: never
-    command: sh -c "mkdir -p /app/tmp && chmod 755 /app/tmp && air -c .air.toml -- server"
+    command: air -c .air.toml -- server
     ports:
       - "8080:8080"
       - "9090:9090"
       - "2345:2345"  # Delve debug port
     volumes:
-      - .:/app
+      - .:/app:delegated
+      - go-cache:/home/appuser/.cache/go-build
     environment:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
@@ -39,11 +41,15 @@ services:
       dockerfile: dev.Dockerfile
     image: payments-dev:latest
     pull_policy: never
-    command: sh -c "mkdir -p /app/tmp && chmod 755 /app/tmp && air -c .air.toml -- worker"
+    command: air -c .air.toml -- worker
     ports:
       - "9191:9090"
       - "2346:2345"  # Delve debug port for worker
     volumes:
-      - .:/app
+      - .:/app:delegated
+      - go-cache:/home/appuser/.cache/go-build
     environment:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
+
+volumes:
+  go-cache:
