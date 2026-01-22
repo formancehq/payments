@@ -106,6 +106,36 @@ var _ = Describe("Engine Tests", func() {
 			err := eng.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})
+
+		It("should continue when a connector fails to load", func(ctx SpecContext) {
+			conf := json.RawMessage(`{}`)
+			connectors := []models.Connector{
+				{
+					ConnectorBase: models.ConnectorBase{
+						ID: models.ConnectorID{Reference: uuid.New(), Provider: "test1"},
+					},
+					Config: conf,
+				},
+				{
+					ConnectorBase: models.ConnectorBase{
+						ID: models.ConnectorID{Reference: uuid.New(), Provider: "test2"},
+					},
+					Config: conf,
+				},
+			}
+			loadErr := fmt.Errorf("validation failed: invalid endpoint")
+
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
+
+			// First connector fails to load
+			manager.EXPECT().Load(connectors[0], false, false).Return("", nil, loadErr)
+			// Second connector loads successfully
+			manager.EXPECT().Load(connectors[1], false, false).Return("name", conf, nil)
+
+			err := eng.OnStart(ctx)
+			Expect(err).To(BeNil()) // Should NOT fail - this will fail initially, proving the bug
+		})
 	})
 
 	Context("installing a connector", func() {

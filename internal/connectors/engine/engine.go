@@ -1638,7 +1638,12 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 
 	// skip strict polling period validation if installed by another instance
 	if _, _, err := e.connectors.Load(connector, false, false); err != nil {
-		return err
+		// We don't want to crash the server if the plugin registration fails,
+		// otherwise, the client will not be able to remove the failing
+		// connector from the database because of the crashes.
+		// We just log the error and continue.
+		e.logger.Errorf("failed to register plugin for connector %q: %s", connector.ID.String(), err.Error())
+		return nil
 	}
 
 	return nil
