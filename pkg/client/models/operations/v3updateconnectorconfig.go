@@ -47,6 +47,27 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBankingcircl
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBinance() *components.V3BinanceConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3BinanceConfig
+	}
+	return nil
+}
+
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBitstamp() *components.V3BitstampConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3BitstampConfig
+	}
+	return nil
+}
+
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestCoinbaseprime() *components.V3CoinbaseprimeConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3CoinbaseprimeConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestColumn() *components.V3ColumnConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3ColumnConfig
@@ -68,6 +89,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestDummypay() *
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestFireblocks() *components.V3FireblocksConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3FireblocksConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestGeneric() *components.V3GenericConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3GenericConfig
@@ -78,6 +106,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestGeneric() *c
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestIncrease() *components.V3IncreaseConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3IncreaseConfig
+	}
+	return nil
+}
+
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestKraken() *components.V3KrakenConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3KrakenConfig
 	}
 	return nil
 }

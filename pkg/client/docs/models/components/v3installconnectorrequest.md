@@ -21,6 +21,24 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestAtlar(com
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3BinanceConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBinance(components.V3BinanceConfig{/* values here */})
+```
+
+### V3BitstampConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBitstamp(components.V3BitstampConfig{/* values here */})
+```
+
+### V3CoinbaseprimeConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestCoinbaseprime(components.V3CoinbaseprimeConfig{/* values here */})
+```
+
 ### V3ColumnConfig
 
 ```go
@@ -39,6 +57,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestCurrencyc
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestDummypay(components.V3DummypayConfig{/* values here */})
 ```
 
+### V3FireblocksConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestFireblocks(components.V3FireblocksConfig{/* values here */})
+```
+
 ### V3GenericConfig
 
 ```go
@@ -49,6 +73,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestGeneric(c
 
 ```go
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestIncrease(components.V3IncreaseConfig{/* values here */})
+```
+
+### V3KrakenConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestKraken(components.V3KrakenConfig{/* values here */})
 ```
 
 ### V3MangopayConfig

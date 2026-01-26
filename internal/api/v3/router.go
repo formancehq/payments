@@ -95,6 +95,13 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 						r.Get("/", schedulesGet(backend))
 						r.Get("/instances", workflowsInstancesList(backend))
 					})
+
+					// Market data endpoints
+					r.Get("/orderbook", connectorsOrderBook(backend))
+					r.Post("/quotes", connectorsQuote(backend))
+					r.Get("/tradable-assets", connectorsTradableAssets(backend))
+					r.Get("/ticker", connectorsTicker(backend))
+					r.Get("/ohlc", connectorsOHLC(backend))
 				})
 			})
 
@@ -102,6 +109,27 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 			r.Route("/tasks", func(r chi.Router) {
 				r.Route("/{taskID}", func(r chi.Router) {
 					r.Get("/", tasksGet(backend))
+				})
+			})
+
+			// Orders
+			r.Route("/orders", func(r chi.Router) {
+				r.Post("/", ordersCreate(backend, validator))
+				r.Get("/", ordersList(backend))
+
+				r.Route("/{orderID}", func(r chi.Router) {
+					r.Get("/", ordersGet(backend))
+					r.Post("/cancel", ordersCancel(backend))
+				})
+			})
+
+			// Conversions
+			r.Route("/conversions", func(r chi.Router) {
+				r.Post("/", conversionsCreate(backend, validator))
+				r.Get("/", conversionsList(backend))
+
+				r.Route("/{conversionID}", func(r chi.Router) {
+					r.Get("/", conversionsGet(backend))
 				})
 			})
 
@@ -208,4 +236,12 @@ func taskID(r *http.Request) string {
 
 func paymentInitiationID(r *http.Request) string {
 	return chi.URLParam(r, "paymentInitiationID")
+}
+
+func orderID(r *http.Request) string {
+	return chi.URLParam(r, "orderID")
+}
+
+func conversionID(r *http.Request) string {
+	return chi.URLParam(r, "conversionID")
 }

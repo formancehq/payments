@@ -62,6 +62,11 @@ type Engine interface {
 	// Reverse a payout on the given connector (PSP).
 	ReversePayout(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error)
 
+	// Create an order on the given connector (exchange).
+	// Order will be sent to the exchange via a Temporal workflow.
+	// TimeInForce determines retry behavior: FOK/IOC orders will NOT retry.
+	CreateOrder(ctx context.Context, orderID models.OrderID, waitResult bool) (models.Task, error)
+
 	// Create a user on the given connector (PSP).
 	ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error
 	// Delete a payment service user
@@ -96,6 +101,13 @@ type Engine interface {
 	OnStart(ctx context.Context) error
 	// Called when the engine is stopping, to stop all the connectors.
 	OnStop(ctx context.Context)
+
+	// Market data methods - real-time calls to the plugin
+	GetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error)
+	GetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error)
+	GetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error)
+	GetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error)
+	GetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error)
 }
 
 type engine struct {
@@ -771,6 +783,63 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
 			return models.Task{}, err
+		}
+	}
+
+	return task, nil
+}
+
+func (e *engine) CreateOrder(ctx context.Context, orderID models.OrderID, waitResult bool) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateOrder")
+	defer span.End()
+
+	// Use order reference in workflow ID for idempotency
+	id := models.TaskIDReference(fmt.Sprintf("create-order-%s", e.stack), orderID.ConnectorID, orderID.String())
+
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: orderID.ConnectorID,
+		},
+		ConnectorID: &orderID.ConnectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	run, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateOrder,
+		workflow.CreateOrder{
+			TaskID:      task.ID,
+			ConnectorID: orderID.ConnectorID,
+			OrderID:     orderID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	if waitResult {
+		if err := run.Get(ctx, nil); err != nil {
+			otel.RecordError(span, err)
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -1661,6 +1730,119 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 			ConnectorID: connector.ID,
 		},
 	)
+}
+
+func (e *engine) GetOrderBook(ctx context.Context, connectorID models.ConnectorID, pair string, depth int) (*models.OrderBook, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetOrderBook")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetOrderBook(ctx, models.GetOrderBookRequest{
+		Pair:  pair,
+		Depth: depth,
+	})
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.OrderBook, nil
+}
+
+func (e *engine) GetQuote(ctx context.Context, connectorID models.ConnectorID, req models.GetQuoteRequest) (*models.Quote, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetQuote")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetQuote(ctx, req)
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.Quote, nil
+}
+
+func (e *engine) GetTradableAssets(ctx context.Context, connectorID models.ConnectorID) ([]models.TradableAsset, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetTradableAssets")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetTradableAssets(ctx, models.GetTradableAssetsRequest{})
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return resp.Assets, nil
+}
+
+func (e *engine) GetTicker(ctx context.Context, connectorID models.ConnectorID, pair string) (*models.Ticker, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetTicker")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetTicker(ctx, models.GetTickerRequest{Pair: pair})
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.Ticker, nil
+}
+
+func (e *engine) GetOHLC(ctx context.Context, connectorID models.ConnectorID, req models.GetOHLCRequest) (*models.OHLCData, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.GetOHLC")
+	defer span.End()
+
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return nil, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return nil, err
+	}
+
+	resp, err := plugin.GetOHLC(ctx, req)
+	if err != nil {
+		otel.RecordError(span, err)
+		return nil, handlePluginErrors(err)
+	}
+
+	return &resp.Data, nil
 }
 
 var _ Engine = &engine{}

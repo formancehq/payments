@@ -2,12 +2,17 @@ package generic
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
+
+// Generic connector allows lower polling periods for dev/testing.
+// The actual minimum is enforced by the --connector-polling-period-minimum flag.
+const genericMinimumPollingPeriod = 1 * time.Second
 
 type Config struct {
 	APIKey        string                     `json:"apiKey" validate:"required"`
@@ -30,7 +35,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	pp, err := sharedconfig.NewPollingPeriod(
 		raw.PollingPeriod,
 		sharedconfig.DefaultPollingPeriod,
-		sharedconfig.MinimumPollingPeriod,
+		genericMinimumPollingPeriod, // Allow low polling for generic connector; real minimum enforced by manager
 	)
 	if err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())

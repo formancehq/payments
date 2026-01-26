@@ -11,8 +11,9 @@ import (
 func TestUnmarshalAndValidateConfig(t *testing.T) {
 	 t.Parallel()
 
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
+	 // Generic connector uses genericMinimumPollingPeriod (1s) instead of sharedconfig.MinimumPollingPeriod
+	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.DefaultPollingPeriod, genericMinimumPollingPeriod)
+	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.DefaultPollingPeriod, genericMinimumPollingPeriod)
 
 	 tests := []struct {
 		 name        string
@@ -51,6 +52,16 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 			 payload:     []byte(`{"apiKey":"sk_test","endpoint":"https://api.generic.example","pollingPeriod":"not-a-duration"}`),
 			 expected:    Config{},
 			 expectError: true,
+		 },
+		 {
+			 name:    "Low polling period allowed for generic connector",
+			 payload: []byte(`{"apiKey":"sk_test","endpoint":"https://api.generic.example","pollingPeriod":"30s"}`),
+			 expected: Config{
+				 APIKey:        "sk_test",
+				 Endpoint:      "https://api.generic.example",
+				 PollingPeriod: func() sharedconfig.PollingPeriod { pp, _ := sharedconfig.NewPollingPeriod("30s", sharedconfig.DefaultPollingPeriod, genericMinimumPollingPeriod); return pp }(),
+			 },
+			 expectError: false,
 		 },
 	 }
 

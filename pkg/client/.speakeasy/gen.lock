@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 596390772cf50a48e342b21cee1b696f
+  docChecksum: 2b73c53486cba32dc59679f3d7d072da
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -122,6 +122,9 @@ generatedFiles:
   - /models/components/v3bankaccountrelatedaccount.go
   - /models/components/v3bankaccountscursorresponse.go
   - /models/components/v3bankingcircleconfig.go
+  - /models/components/v3binanceconfig.go
+  - /models/components/v3bitstampconfig.go
+  - /models/components/v3coinbaseprimeconfig.go
   - /models/components/v3columnconfig.go
   - /models/components/v3connectionstatusenum.go
   - /models/components/v3connector.go
@@ -134,6 +137,9 @@ generatedFiles:
   - /models/components/v3connectorscursorresponse.go
   - /models/components/v3contactdetails.go
   - /models/components/v3contactdetailsrequest.go
+  - /models/components/v3conversion.go
+  - /models/components/v3conversionscursorresponse.go
+  - /models/components/v3conversionstatusenum.go
   - /models/components/v3createaccountrequest.go
   - /models/components/v3createaccountresponse.go
   - /models/components/v3createbankaccountrequest.go
@@ -149,6 +155,7 @@ generatedFiles:
   - /models/components/v3dummypayconfig.go
   - /models/components/v3errorresponse.go
   - /models/components/v3errorsenum.go
+  - /models/components/v3fireblocksconfig.go
   - /models/components/v3forwardbankaccountrequest.go
   - /models/components/v3forwardbankaccountresponse.go
   - /models/components/v3forwardpaymentserviceuserbankaccountrequest.go
@@ -157,6 +164,8 @@ generatedFiles:
   - /models/components/v3getaccountresponse.go
   - /models/components/v3getbankaccountresponse.go
   - /models/components/v3getconnectorconfigresponse.go
+  - /models/components/v3getconversionresponse.go
+  - /models/components/v3getorderresponse.go
   - /models/components/v3getpaymentinitiationresponse.go
   - /models/components/v3getpaymentresponse.go
   - /models/components/v3getpaymentserviceuserresponse.go
@@ -168,10 +177,17 @@ generatedFiles:
   - /models/components/v3installconnectorrequest.go
   - /models/components/v3installconnectorresponse.go
   - /models/components/v3instance.go
+  - /models/components/v3krakenconfig.go
   - /models/components/v3mangopayconfig.go
   - /models/components/v3modulrconfig.go
   - /models/components/v3moneycorpconfig.go
   - /models/components/v3openbankingconnectionattemptstatusenum.go
+  - /models/components/v3order.go
+  - /models/components/v3orderadjustment.go
+  - /models/components/v3orderdirectionenum.go
+  - /models/components/v3orderscursorresponse.go
+  - /models/components/v3orderstatusenum.go
+  - /models/components/v3ordertypeenum.go
   - /models/components/v3payment.go
   - /models/components/v3paymentadjustment.go
   - /models/components/v3paymentinitiation.go
@@ -213,6 +229,7 @@ generatedFiles:
   - /models/components/v3stripeconfig.go
   - /models/components/v3task.go
   - /models/components/v3taskstatusenum.go
+  - /models/components/v3timeinforceenum.go
   - /models/components/v3tinkconfig.go
   - /models/components/v3uninstallconnectorresponse.go
   - /models/components/v3updatebankaccountmetadatarequest.go
@@ -288,6 +305,8 @@ generatedFiles:
   - /models/operations/v3getbankaccount.go
   - /models/operations/v3getconnectorconfig.go
   - /models/operations/v3getconnectorschedule.go
+  - /models/operations/v3getconversion.go
+  - /models/operations/v3getorder.go
   - /models/operations/v3getpayment.go
   - /models/operations/v3getpaymentinitiation.go
   - /models/operations/v3getpaymentserviceuser.go
@@ -304,6 +323,8 @@ generatedFiles:
   - /models/operations/v3listconnectors.go
   - /models/operations/v3listconnectorscheduleinstances.go
   - /models/operations/v3listconnectorschedules.go
+  - /models/operations/v3listconversions.go
+  - /models/operations/v3listorders.go
   - /models/operations/v3listpaymentinitiationadjustments.go
   - /models/operations/v3listpaymentinitiationrelatedpayments.go
   - /models/operations/v3listpaymentinitiations.go
@@ -456,6 +477,9 @@ generatedFiles:
   - docs/models/components/v3bankaccountscursorresponse.md
   - docs/models/components/v3bankaccountscursorresponsecursor.md
   - docs/models/components/v3bankingcircleconfig.md
+  - docs/models/components/v3binanceconfig.md
+  - docs/models/components/v3bitstampconfig.md
+  - docs/models/components/v3coinbaseprimeconfig.md
   - docs/models/components/v3columnconfig.md
   - docs/models/components/v3connectionstatusenum.md
   - docs/models/components/v3connector.md
@@ -472,6 +496,10 @@ generatedFiles:
   - docs/models/components/v3connectorscursorresponsecursor.md
   - docs/models/components/v3contactdetails.md
   - docs/models/components/v3contactdetailsrequest.md
+  - docs/models/components/v3conversion.md
+  - docs/models/components/v3conversionscursorresponse.md
+  - docs/models/components/v3conversionscursorresponsecursor.md
+  - docs/models/components/v3conversionstatusenum.md
   - docs/models/components/v3createaccountrequest.md
   - docs/models/components/v3createaccountresponse.md
   - docs/models/components/v3createbankaccountrequest.md
@@ -487,6 +515,7 @@ generatedFiles:
   - docs/models/components/v3dummypayconfig.md
   - docs/models/components/v3errorresponse.md
   - docs/models/components/v3errorsenum.md
+  - docs/models/components/v3fireblocksconfig.md
   - docs/models/components/v3forwardbankaccountrequest.md
   - docs/models/components/v3forwardbankaccountresponse.md
   - docs/models/components/v3forwardbankaccountresponsedata.md
@@ -497,6 +526,8 @@ generatedFiles:
   - docs/models/components/v3getaccountresponse.md
   - docs/models/components/v3getbankaccountresponse.md
   - docs/models/components/v3getconnectorconfigresponse.md
+  - docs/models/components/v3getconversionresponse.md
+  - docs/models/components/v3getorderresponse.md
   - docs/models/components/v3getpaymentinitiationresponse.md
   - docs/models/components/v3getpaymentresponse.md
   - docs/models/components/v3getpaymentserviceuserresponse.md
@@ -509,10 +540,18 @@ generatedFiles:
   - docs/models/components/v3installconnectorrequest.md
   - docs/models/components/v3installconnectorresponse.md
   - docs/models/components/v3instance.md
+  - docs/models/components/v3krakenconfig.md
   - docs/models/components/v3mangopayconfig.md
   - docs/models/components/v3modulrconfig.md
   - docs/models/components/v3moneycorpconfig.md
   - docs/models/components/v3openbankingconnectionattemptstatusenum.md
+  - docs/models/components/v3order.md
+  - docs/models/components/v3orderadjustment.md
+  - docs/models/components/v3orderdirectionenum.md
+  - docs/models/components/v3orderscursorresponse.md
+  - docs/models/components/v3orderscursorresponsecursor.md
+  - docs/models/components/v3orderstatusenum.md
+  - docs/models/components/v3ordertypeenum.md
   - docs/models/components/v3payment.md
   - docs/models/components/v3paymentadjustment.md
   - docs/models/components/v3paymentadjustmentraw.md
@@ -568,6 +607,7 @@ generatedFiles:
   - docs/models/components/v3stripeconfig.md
   - docs/models/components/v3task.md
   - docs/models/components/v3taskstatusenum.md
+  - docs/models/components/v3timeinforceenum.md
   - docs/models/components/v3tinkconfig.md
   - docs/models/components/v3uninstallconnectorresponse.md
   - docs/models/components/v3uninstallconnectorresponsedata.md
@@ -699,6 +739,10 @@ generatedFiles:
   - docs/models/operations/v3getconnectorconfigresponse.md
   - docs/models/operations/v3getconnectorschedulerequest.md
   - docs/models/operations/v3getconnectorscheduleresponse.md
+  - docs/models/operations/v3getconversionrequest.md
+  - docs/models/operations/v3getconversionresponse.md
+  - docs/models/operations/v3getorderrequest.md
+  - docs/models/operations/v3getorderresponse.md
   - docs/models/operations/v3getpaymentinitiationrequest.md
   - docs/models/operations/v3getpaymentinitiationresponse.md
   - docs/models/operations/v3getpaymentrequest.md
@@ -730,6 +774,10 @@ generatedFiles:
   - docs/models/operations/v3listconnectorschedulesresponse.md
   - docs/models/operations/v3listconnectorsrequest.md
   - docs/models/operations/v3listconnectorsresponse.md
+  - docs/models/operations/v3listconversionsrequest.md
+  - docs/models/operations/v3listconversionsresponse.md
+  - docs/models/operations/v3listordersrequest.md
+  - docs/models/operations/v3listordersresponse.md
   - docs/models/operations/v3listpaymentinitiationadjustmentsrequest.md
   - docs/models/operations/v3listpaymentinitiationadjustmentsresponse.md
   - docs/models/operations/v3listpaymentinitiationrelatedpaymentsrequest.md
@@ -1882,6 +1930,48 @@ examples:
         path:
           poolID: "<id>"
       responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListOrders:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetOrder:
+    speakeasy-default-v3-get-order:
+      parameters:
+        path:
+          orderID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2026-07-25T03:55:28.354Z", "updatedAt": "2025-01-31T12:41:19.542Z", "direction": "BUY", "sourceAsset": "<value>", "targetAsset": "<value>", "type": "LIMIT", "status": "PENDING", "baseQuantityOrdered": 691479, "timeInForce": "GOOD_UNTIL_CANCELLED"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListConversions:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2026-05-06T22:18:06.194Z", "updatedAt": "2025-09-14T04:45:59.309Z", "sourceAsset": "<value>", "targetAsset": "<value>", "sourceAmount": 683178, "status": "PENDING", "walletId": "<id>"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetConversion:
+    speakeasy-default-v3-get-conversion:
+      parameters:
+        path:
+          conversionID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2024-03-23T20:18:04.407Z", "updatedAt": "2026-05-29T07:36:51.024Z", "sourceAsset": "<value>", "targetAsset": "<value>", "sourceAmount": 421979, "status": "PENDING", "walletId": "<id>"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0

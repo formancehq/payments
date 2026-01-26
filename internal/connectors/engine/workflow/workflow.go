@@ -73,6 +73,18 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runFetchNextPayments,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunFetchNextOrders,
+			Func: w.runFetchNextOrders,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunFetchNextConversions,
+			Func: w.runFetchNextConversions,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunFetchExchangeData,
+			Func: w.runFetchExchangeData,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunListActiveSchedules,
 			Func: w.runListActiveSchedules,
 		}).
@@ -131,6 +143,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunPollTransfer,
 			Func: w.runPollTransfer,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunCreateOrder,
+			Func: w.runCreateOrder,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunPollOrder,
+			Func: w.runPollOrder,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunNextTasksV3_1,
