@@ -84,6 +84,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		}),
 		health.Module(),
 		publish.FXModuleFromFlags(cmd, service.IsDebug(cmd)),
+		fx.Supply(connectionOptions),
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		profiling.FXModuleFromFlags(cmd),
