@@ -5,8 +5,6 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/storage"
-	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -65,7 +63,7 @@ func (w Workflow) uninstallConnector(
 		uninstallConnector.ConnectorID,
 	)
 	if err != nil {
-		if !errors.Is(err, storage.ErrNotFound) {
+		if !isStorageNotFoundError(err) {
 			return err
 		}
 

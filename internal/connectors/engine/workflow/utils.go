@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -139,7 +140,9 @@ func fillFormanceBankAccount(
 		true,
 	)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		// If bank account not found, that's fine - the account reference is a UUID
+		// but not a Formance bank account
+		if isStorageNotFoundError(err) {
 			return nil
 		}
 		return err
@@ -219,4 +222,18 @@ func craftUpdatedConnection(
 
 func (w Workflow) getDefaultTaskQueue() string {
 	return fmt.Sprintf("%s-default", w.stack)
+}
+
+// isStorageNotFoundError checks if an error is a storage "not found" error.
+// This handles both direct errors and temporal application errors (which lose
+// their original error type when serialized across the activity boundary).
+func isStorageNotFoundError(err error) bool {
+	if errors.Is(err, storage.ErrNotFound) {
+		return true
+	}
+	var appErr *temporal.ApplicationError
+	if errors.As(err, &appErr) && appErr.Type() == activities.ErrTypeStorage {
+		return errors.Is(appErr.Unwrap(), storage.ErrNotFound) || appErr.Message() == storage.ErrNotFound.Error()
+	}
+	return false
 }
