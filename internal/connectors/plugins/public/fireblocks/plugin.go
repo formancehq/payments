@@ -3,6 +3,8 @@ package fireblocks
 import (
 	"context"
 	"encoding/json"
+	"sync"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -12,6 +14,7 @@ import (
 )
 
 const ProviderName = "fireblocks"
+const assetRefreshInterval = 24 * time.Hour
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
@@ -25,9 +28,13 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	client        client.Client
-	config        Config
-	assetDecimals map[string]int
+	client client.Client
+	config Config
+
+	assetsMu        sync.RWMutex
+	assetsRefreshMu sync.Mutex
+	assetsLastSync  time.Time
+	assetDecimals   map[string]int
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -57,48 +64,9 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	assets, err := p.client.ListAssets(ctx)
-	if err != nil {
+	if err := p.loadAssets(ctx); err != nil {
 		return models.InstallResponse{}, err
 	}
-
-	p.assetDecimals = make(map[string]int, len(assets))
-	var skipped int
-	for _, asset := range assets {
-		if asset.LegacyID == "" {
-			skipped++
-			continue
-		}
-
-		var decimals int
-		var hasDecimals bool
-
-		if asset.Onchain != nil {
-			decimals = asset.Onchain.Decimals
-			hasDecimals = true
-		} else if asset.Decimals > 0 {
-			// For fiat assets without onchain data, use top-level decimals
-			// (must be > 0 to distinguish from unset)
-			decimals = asset.Decimals
-			hasDecimals = true
-		}
-
-		if !hasDecimals {
-			p.logger.Infof("skipping asset %q: no decimals information", asset.LegacyID)
-			skipped++
-			continue
-		}
-
-		if decimals < 0 {
-			p.logger.Infof("skipping asset %q: invalid decimals %d", asset.LegacyID, decimals)
-			skipped++
-			continue
-		}
-
-		p.assetDecimals[asset.LegacyID] = decimals
-	}
-
-	p.logger.Infof("loaded %d assets from Fireblocks (%d skipped)", len(p.assetDecimals), skipped)
 
 	return models.InstallResponse{
 		Workflow: workflow(),
@@ -120,12 +88,18 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
+	if err := p.ensureAssetsFresh(ctx); err != nil {
+		return models.FetchNextBalancesResponse{}, err
+	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureAssetsFresh(ctx); err != nil {
+		return models.FetchNextPaymentsResponse{}, err
 	}
 	return p.fetchNextPayments(ctx, req)
 }

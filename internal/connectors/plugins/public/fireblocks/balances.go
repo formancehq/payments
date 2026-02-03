@@ -30,9 +30,10 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}
 
 	now := time.Now()
+	assetDecimals := p.getAssetDecimals()
 	var balances []models.PSPBalance
 	for _, asset := range vaultAccount.Assets {
-		precision, err := currency.GetPrecision(p.assetDecimals, asset.ID)
+		precision, err := currency.GetPrecision(assetDecimals, asset.ID)
 		if err != nil {
 			p.logger.Infof("skipping balance for unknown asset %q on account %s", asset.ID, from.Reference)
 			continue
@@ -48,7 +49,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			AccountReference: from.Reference,
 			CreatedAt:        now,
 			Amount:           amount,
-			Asset:            currency.FormatAsset(p.assetDecimals, asset.ID),
+			Asset:            currency.FormatAsset(assetDecimals, asset.ID),
 		})
 	}
 

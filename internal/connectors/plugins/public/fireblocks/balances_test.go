@@ -3,6 +3,7 @@ package fireblocks
 import (
 	"encoding/json"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
@@ -23,9 +24,10 @@ var _ = Describe("Fireblocks Plugin Balances", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			client:        m,
-			assetDecimals: map[string]int{"USD": 2},
+			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client:         m,
+			assetDecimals:  map[string]int{"USD": 2},
+			assetsLastSync: time.Now(),
 		}
 	})
 

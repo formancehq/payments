@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -22,31 +23,45 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
+	// Fireblocks "after" expects a Unix ms timestamp and is exclusive ("created after").
 	transactions, err := p.client.ListTransactions(ctx, oldState.LastCreatedAt, int(req.PageSize))
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	payments := make([]models.PSPPayment, 0, len(transactions))
+	assetDecimals := p.getAssetDecimals()
 	newState := paymentsState{
 		LastCreatedAt: oldState.LastCreatedAt,
 		LastTxID:      oldState.LastTxID,
 	}
 
+	advanceState := func(tx client.Transaction) {
+		if tx.CreatedAt > newState.LastCreatedAt {
+			newState.LastCreatedAt = tx.CreatedAt
+			newState.LastTxID = tx.ID
+			return
+		}
+		if tx.CreatedAt == newState.LastCreatedAt {
+			newState.LastTxID = tx.ID
+		}
+	}
+
 	for _, tx := range transactions {
+		advanceState(tx)
+
 		// Deduplication: skip transactions we've already processed.
-		// We use ID comparison as a tiebreaker when timestamps match.
-		// Note: This assumes IDs are comparable strings; in the rare case of
-		// duplicate timestamps, we may reprocess a transaction (which is safe
-		// as processing is idempotent) rather than miss one.
+		// The Fireblocks API uses an "after" timestamp; we only drop the exact last
+		// transaction to guard against inclusive implementations without relying on
+		// ID ordering (IDs may be non-sequential).
 		if tx.CreatedAt < oldState.LastCreatedAt {
 			continue
 		}
-		if tx.CreatedAt == oldState.LastCreatedAt && tx.ID <= oldState.LastTxID {
+		if tx.CreatedAt == oldState.LastCreatedAt && tx.ID == oldState.LastTxID {
 			continue
 		}
 
-		precision, err := currency.GetPrecision(p.assetDecimals, tx.AssetID)
+		precision, err := currency.GetPrecision(assetDecimals, tx.AssetID)
 		if err != nil {
 			p.logger.Infof("skipping transaction %s: unknown asset %q", tx.ID, tx.AssetID)
 			continue
@@ -68,7 +83,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			CreatedAt: time.Unix(tx.CreatedAt/1000, (tx.CreatedAt%1000)*int64(time.Millisecond)),
 			Type:      matchPaymentType(tx.Operation),
 			Amount:    amount,
-			Asset:     currency.FormatAsset(p.assetDecimals, tx.AssetID),
+			Asset:     currency.FormatAsset(assetDecimals, tx.AssetID),
 			Scheme:    models.PAYMENT_SCHEME_OTHER,
 			Status:    matchPaymentStatus(tx.Status),
 			Raw:       raw,
@@ -95,8 +110,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 
 		payments = append(payments, payment)
-		newState.LastCreatedAt = tx.CreatedAt
-		newState.LastTxID = tx.ID
 	}
 
 	payload, err := json.Marshal(newState)

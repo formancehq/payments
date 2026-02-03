@@ -3,6 +3,7 @@ package fireblocks
 import (
 	"encoding/json"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
@@ -23,9 +24,10 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			client:        m,
-			assetDecimals: map[string]int{"BTC": 8, "USD": 2},
+			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client:         m,
+			assetDecimals:  map[string]int{"BTC": 8, "USD": 2},
+			assetsLastSync: time.Now(),
 		}
 	})
 
@@ -103,5 +105,34 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(err).To(BeNil())
 		Expect(newState.LastCreatedAt).To(Equal(int64(1001)))
 		Expect(newState.LastTxID).To(Equal("c"))
+	})
+
+	It("advances state even when transactions are skipped", func(ctx SpecContext) {
+		state, err := json.Marshal(paymentsState{LastCreatedAt: 2000, LastTxID: "z"})
+		Expect(err).To(BeNil())
+
+		m.EXPECT().ListTransactions(gomock.Any(), int64(2000), 1).Return([]client.Transaction{
+			{
+				ID:         "skipped",
+				AssetID:    "UNKNOWN",
+				AmountInfo: client.AmountInfo{Amount: "1"},
+				Operation:  "TRANSFER",
+				Status:     "COMPLETED",
+				CreatedAt:  2001,
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
+			State:    state,
+			PageSize: 1,
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(BeEmpty())
+
+		var newState paymentsState
+		err = json.Unmarshal(resp.NewState, &newState)
+		Expect(err).To(BeNil())
+		Expect(newState.LastCreatedAt).To(Equal(int64(2001)))
+		Expect(newState.LastTxID).To(Equal("skipped"))
 	})
 })

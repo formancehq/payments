@@ -8,8 +8,9 @@ import (
 )
 
 type Asset struct {
+	ID       string        `json:"id"`
 	LegacyID string        `json:"legacyId"`
-	Decimals int           `json:"decimals"` // For fiat assets
+	Decimals *int          `json:"decimals"` // For fiat assets (when provided)
 	Onchain  *AssetOnchain `json:"onchain"`  // For crypto assets
 }
 
