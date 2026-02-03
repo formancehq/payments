@@ -3,6 +3,7 @@ package fireblocks
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
@@ -93,12 +94,28 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			sourceRef := tx.Source.ID
 			payment.SourceAccountReference = &sourceRef
 		}
-		if tx.Destination.ID != "" {
+
+		metadata := map[string]string{}
+		if len(tx.Destinations) > 0 {
+			if len(tx.Destinations) == 1 && tx.Destinations[0].ID != "" {
+				destRef := tx.Destinations[0].ID
+				payment.DestinationAccountReference = &destRef
+			} else {
+				ids := make([]string, 0, len(tx.Destinations))
+				for _, dest := range tx.Destinations {
+					if dest.ID != "" {
+						ids = append(ids, dest.ID)
+					}
+				}
+				if len(ids) > 0 {
+					metadata["destinationIds"] = strings.Join(ids, ",")
+				}
+			}
+		} else if tx.Destination.ID != "" {
 			destRef := tx.Destination.ID
 			payment.DestinationAccountReference = &destRef
 		}
 
-		metadata := map[string]string{}
 		if tx.TxHash != "" {
 			metadata["txHash"] = tx.TxHash
 		}

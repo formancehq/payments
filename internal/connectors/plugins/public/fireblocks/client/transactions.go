@@ -7,18 +7,19 @@ import (
 )
 
 type Transaction struct {
-	ID          string       `json:"id"`
-	AssetID     string       `json:"assetId"`
-	Source      TransferPeer `json:"source"`
-	Destination TransferPeer `json:"destination"`
-	AmountInfo  AmountInfo   `json:"amountInfo"`
-	FeeInfo     FeeInfo      `json:"feeInfo"`
-	Operation   string       `json:"operation"`
-	Status      string       `json:"status"`
-	SubStatus   string       `json:"subStatus"`
-	TxHash      string       `json:"txHash"`
-	CreatedAt   int64        `json:"createdAt"`
-	LastUpdated int64        `json:"lastUpdated"`
+	ID           string         `json:"id"`
+	AssetID      string         `json:"assetId"`
+	Source       TransferPeer   `json:"source"`
+	Destination  TransferPeer   `json:"destination"`
+	Destinations []TransferPeer `json:"destinations"`
+	AmountInfo   AmountInfo     `json:"amountInfo"`
+	FeeInfo      FeeInfo        `json:"feeInfo"`
+	Operation    string         `json:"operation"`
+	Status       string         `json:"status"`
+	SubStatus    string         `json:"subStatus"`
+	TxHash       string         `json:"txHash"`
+	CreatedAt    int64          `json:"createdAt"`
+	LastUpdated  int64          `json:"lastUpdated"`
 }
 
 type TransferPeer struct {
