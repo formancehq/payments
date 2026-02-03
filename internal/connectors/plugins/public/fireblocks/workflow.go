@@ -19,7 +19,7 @@ func workflow() models.ConnectorTasksTree {
 		},
 		{
 			TaskType:     models.TASK_FETCH_PAYMENTS,
-			Name:         "fetch_transactions",
+			Name:         "fetch_payments",
 			Periodically: true,
 			NextTasks:    []models.ConnectorTaskTree{},
 		},
