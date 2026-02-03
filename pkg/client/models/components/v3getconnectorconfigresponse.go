@@ -37,6 +37,10 @@ func (o *V3GetConnectorConfigResponse) GetDataDummypay() *V3DummypayConfig {
 	return o.GetData().V3DummypayConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataFireblocks() *V3FireblocksConfig {
+	return o.GetData().V3FireblocksConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataGeneric() *V3GenericConfig {
 	return o.GetData().V3GenericConfig
 }

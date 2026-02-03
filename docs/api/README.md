@@ -6901,6 +6901,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3FireblocksConfig](#schemav3fireblocksconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3GenericConfig](#schemav3genericconfig)|false|none|none|
 
 xor
@@ -7162,6 +7168,38 @@ xor
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |updateLinkFlowError|boolean|false|none|none|
+
+<h2 id="tocS_V3FireblocksConfig">V3FireblocksConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3fireblocksconfig"></a>
+<a id="schema_V3FireblocksConfig"></a>
+<a id="tocSv3fireblocksconfig"></a>
+<a id="tocsv3fireblocksconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "baseURL": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "privateKey": "string",
+  "provider": "Fireblocks"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|baseURL|string|false|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|privateKey|string|true|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3GenericConfig">V3GenericConfig</h2>
 <!-- backwards compatibility -->

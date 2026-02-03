@@ -18,6 +18,7 @@ const (
 	V3InstallConnectorRequestTypeColumn        V3InstallConnectorRequestType = "Column"
 	V3InstallConnectorRequestTypeCurrencycloud V3InstallConnectorRequestType = "Currencycloud"
 	V3InstallConnectorRequestTypeDummypay      V3InstallConnectorRequestType = "Dummypay"
+	V3InstallConnectorRequestTypeFireblocks    V3InstallConnectorRequestType = "Fireblocks"
 	V3InstallConnectorRequestTypeGeneric       V3InstallConnectorRequestType = "Generic"
 	V3InstallConnectorRequestTypeIncrease      V3InstallConnectorRequestType = "Increase"
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
@@ -38,6 +39,7 @@ type V3InstallConnectorRequest struct {
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
+	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
 	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
@@ -122,6 +124,18 @@ func CreateV3InstallConnectorRequestDummypay(dummypay V3DummypayConfig) V3Instal
 	return V3InstallConnectorRequest{
 		V3DummypayConfig: &dummypay,
 		Type:             typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestFireblocks(fireblocks V3FireblocksConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeFireblocks
+
+	typStr := string(typ)
+	fireblocks.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3FireblocksConfig: &fireblocks,
+		Type:               typ,
 	}
 }
 
@@ -323,6 +337,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3DummypayConfig = v3DummypayConfig
 		u.Type = V3InstallConnectorRequestTypeDummypay
 		return nil
+	case "Fireblocks":
+		v3FireblocksConfig := new(V3FireblocksConfig)
+		if err := utils.UnmarshalJSON(data, &v3FireblocksConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Fireblocks) type V3FireblocksConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3FireblocksConfig = v3FireblocksConfig
+		u.Type = V3InstallConnectorRequestTypeFireblocks
+		return nil
 	case "Generic":
 		v3GenericConfig := new(V3GenericConfig)
 		if err := utils.UnmarshalJSON(data, &v3GenericConfig, "", true, false); err != nil {
@@ -450,6 +473,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3DummypayConfig != nil {
 		return utils.MarshalJSON(u.V3DummypayConfig, "", true)
+	}
+
+	if u.V3FireblocksConfig != nil {
+		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
 	}
 
 	if u.V3GenericConfig != nil {
