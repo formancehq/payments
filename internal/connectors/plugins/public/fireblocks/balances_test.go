@@ -16,18 +16,18 @@ var _ = Describe("Fireblocks Plugin Balances", func() {
 	var (
 		ctrl *gomock.Controller
 		m    *client.MockClient
-	plg  *Plugin
-)
+		plg  *Plugin
+	)
 
-BeforeEach(func() {
-	ctrl = gomock.NewController(GinkgoT())
-	m = client.NewMockClient(ctrl)
-	plg = &Plugin{
-		logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-		client:        m,
-		assetDecimals: map[string]int{"USD": 2},
-	}
-})
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{
+			logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client:        m,
+			assetDecimals: map[string]int{"USD": 2},
+		}
+	})
 
 	AfterEach(func() {
 		ctrl.Finish()

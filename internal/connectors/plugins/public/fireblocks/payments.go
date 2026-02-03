@@ -34,7 +34,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	for _, tx := range transactions {
-		// Skip already-seen transactions: same timestamp and already processed
+		// Deduplication: skip transactions we've already processed.
+		// We use ID comparison as a tiebreaker when timestamps match.
+		// Note: This assumes IDs are comparable strings; in the rare case of
+		// duplicate timestamps, we may reprocess a transaction (which is safe
+		// as processing is idempotent) rather than miss one.
 		if tx.CreatedAt < oldState.LastCreatedAt {
 			continue
 		}
