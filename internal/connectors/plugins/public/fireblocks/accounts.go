@@ -34,7 +34,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 		createdAt := time.Now()
 		if account.CreationDate > 0 {
-			createdAt = time.Unix(account.CreationDate/1000, (account.CreationDate%1000)*int64(time.Millisecond))
+			createdAt = time.UnixMilli(account.CreationDate)
 		}
 
 		accounts = append(accounts, models.PSPAccount{

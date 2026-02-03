@@ -64,13 +64,13 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 		precision, err := currency.GetPrecision(assetDecimals, tx.AssetID)
 		if err != nil {
-			p.logger.Infof("skipping transaction %s: unknown asset %q", tx.ID, tx.AssetID)
+			p.logger.Errorf("skipping transaction %s: unknown asset %q", tx.ID, tx.AssetID)
 			continue
 		}
 
 		amount, err := currency.GetAmountWithPrecisionFromString(tx.AmountInfo.Amount, precision)
 		if err != nil {
-			p.logger.Infof("skipping transaction %s: failed to parse amount %q for asset %q", tx.ID, tx.AmountInfo.Amount, tx.AssetID)
+			p.logger.Errorf("skipping transaction %s: failed to parse amount %q for asset %q", tx.ID, tx.AmountInfo.Amount, tx.AssetID)
 			continue
 		}
 
@@ -81,7 +81,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 		payment := models.PSPPayment{
 			Reference: tx.ID,
-			CreatedAt: time.Unix(tx.CreatedAt/1000, (tx.CreatedAt%1000)*int64(time.Millisecond)),
+			CreatedAt: time.UnixMilli(tx.CreatedAt),
 			Type:      matchPaymentType(tx.Operation),
 			Amount:    amount,
 			Asset:     currency.FormatAsset(assetDecimals, tx.AssetID),
