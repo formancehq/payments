@@ -100,18 +100,17 @@ var _ = Describe("Fireblocks Plugin", func() {
 
 		It("loads asset decimals and returns workflow", func(ctx SpecContext) {
 			m.EXPECT().ListAssets(gomock.Any()).Return([]client.Asset{
-				{LegacyID: "", Decimals: 2},
-				{LegacyID: "BTC", Onchain: &client.AssetOnchain{Decimals: 8}},
-				{LegacyID: "USD", Decimals: 2},
-				{LegacyID: "NO_DECIMALS"},
-				{LegacyID: "NEG", Onchain: &client.AssetOnchain{Decimals: -1}},
+				{LegacyID: "", Decimals: 2},                                        // skipped: empty ID
+				{LegacyID: "BTC_TEST", Onchain: &client.AssetOnchain{Decimals: 8}}, // included with underscore
+				{LegacyID: "USD", Decimals: 2},                                     // included
+				{LegacyID: "NEG", Onchain: &client.AssetOnchain{Decimals: -1}},     // skipped: negative decimals
 			}, nil)
 
 			res, err := plg.Install(ctx, models.InstallRequest{})
 			Expect(err).To(BeNil())
 			Expect(res.Workflow).To(Equal(workflow()))
 			Expect(plg.assetDecimals).To(HaveLen(2))
-			Expect(plg.assetDecimals["BTC"]).To(Equal(8))
+			Expect(plg.assetDecimals["BTC_TEST"]).To(Equal(8))
 			Expect(plg.assetDecimals["USD"]).To(Equal(2))
 		})
 	})
