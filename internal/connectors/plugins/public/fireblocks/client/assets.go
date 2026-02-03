@@ -33,9 +33,9 @@ func (c *client) ListAssets(ctx context.Context) ([]Asset, error) {
 	var cursor string
 
 	for {
-		endpoint := fmt.Sprintf("%s/v1/assets", c.baseURL)
+		endpoint := fmt.Sprintf("%s/v1/assets?pageSize=1000", c.baseURL)
 		if cursor != "" {
-			endpoint = fmt.Sprintf("%s?pageCursor=%s", endpoint, url.QueryEscape(cursor))
+			endpoint = fmt.Sprintf("%s&pageCursor=%s", endpoint, url.QueryEscape(cursor))
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
