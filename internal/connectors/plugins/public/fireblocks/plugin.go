@@ -76,7 +76,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		if asset.Onchain != nil {
 			decimals = asset.Onchain.Decimals
 			hasDecimals = true
-		} else if asset.Decimals > 0 {
+		} else if asset.Decimals >= 0 {
 			decimals = asset.Decimals
 			hasDecimals = true
 		}

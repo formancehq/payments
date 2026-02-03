@@ -95,7 +95,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	if err := validate.Struct(config); err != nil {
-		return config, err
+		return config, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
 
 	return config, config.validate()
