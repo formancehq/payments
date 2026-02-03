@@ -6,7 +6,7 @@ func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{
 		{
 			TaskType:     models.TASK_FETCH_ACCOUNTS,
-			Name:         "fetch_vault_accounts",
+			Name:         "fetch_accounts",
 			Periodically: true,
 			NextTasks: []models.ConnectorTaskTree{
 				{
