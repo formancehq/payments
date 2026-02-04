@@ -1,0 +1,401 @@
+/* ==========================================================================
+   TERMINAL THEME - Connector Workbench
+   All colors and theme values are defined here via CSS custom properties.
+   Edit these variables to change the entire look.
+   ========================================================================== */
+
+:root {
+  /* Background colors */
+  --term-bg: #0a0a0a;
+  --term-bg-panel: #111111;
+  --term-bg-elevated: #1a1a1a;
+  --term-bg-hover: #222222;
+  --term-bg-selected: #1a2a1a;
+  
+  /* Border colors */
+  --term-border: #333333;
+  --term-border-dim: #252525;
+  --term-border-accent: #3a5a3a;
+  
+  /* Text colors */
+  --term-text: #b0b0b0;
+  --term-text-bright: #e0e0e0;
+  --term-text-dim: #606060;
+  --term-text-muted: #505050;
+  
+  /* Accent colors - classic terminal green */
+  --term-green: #33ff33;
+  --term-green-dim: #22aa22;
+  --term-green-bg: rgba(51, 255, 51, 0.1);
+  
+  /* Status colors */
+  --term-red: #ff4444;
+  --term-red-dim: #aa2222;
+  --term-red-bg: rgba(255, 68, 68, 0.1);
+  
+  --term-yellow: #ffaa00;
+  --term-yellow-dim: #aa7700;
+  --term-yellow-bg: rgba(255, 170, 0, 0.1);
+  
+  --term-cyan: #00cccc;
+  --term-cyan-dim: #008888;
+  --term-cyan-bg: rgba(0, 204, 204, 0.1);
+  
+  --term-blue: #5588ff;
+  --term-blue-dim: #3366cc;
+  --term-blue-bg: rgba(85, 136, 255, 0.1);
+  
+  --term-magenta: #cc66ff;
+  --term-magenta-dim: #9944cc;
+  --term-magenta-bg: rgba(204, 102, 255, 0.1);
+  
+  /* Typography */
+  --term-font: 'SF Mono', 'Fira Code', 'Fira Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Monaco, 'Courier New', monospace;
+  --term-font-size: 13px;
+  --term-line-height: 1.5;
+  
+  /* Spacing */
+  --term-gap-xs: 4px;
+  --term-gap-sm: 8px;
+  --term-gap-md: 12px;
+  --term-gap-lg: 16px;
+  --term-gap-xl: 24px;
+  
+  /* Border radius - minimal for terminal look */
+  --term-radius-sm: 2px;
+  --term-radius: 3px;
+  --term-radius-lg: 4px;
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base styles */
+body {
+  font-family: var(--term-font);
+  font-size: var(--term-font-size);
+  line-height: var(--term-line-height);
+  background: var(--term-bg);
+  color: var(--term-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar - terminal style */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--term-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--term-border);
+  border-radius: var(--term-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--term-text-dim);
+}
+
+/* ==========================================================================
+   COMPONENTS
+   ========================================================================== */
+
+/* Card */
+.card {
+  background: var(--term-bg-panel);
+  border: 1px solid var(--term-border);
+  border-radius: var(--term-radius);
+  padding: var(--term-gap-lg);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--term-gap-md);
+  padding-bottom: var(--term-gap-md);
+  border-bottom: 1px solid var(--term-border-dim);
+}
+
+.card-title {
+  font-size: var(--term-font-size);
+  font-weight: 600;
+  color: var(--term-text-bright);
+  display: flex;
+  align-items: center;
+  gap: var(--term-gap-sm);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--term-radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-success {
+  background: var(--term-green-bg);
+  color: var(--term-green);
+  border: 1px solid var(--term-green-dim);
+}
+
+.badge-warning {
+  background: var(--term-yellow-bg);
+  color: var(--term-yellow);
+  border: 1px solid var(--term-yellow-dim);
+}
+
+.badge-danger {
+  background: var(--term-red-bg);
+  color: var(--term-red);
+  border: 1px solid var(--term-red-dim);
+}
+
+.badge-info {
+  background: var(--term-cyan-bg);
+  color: var(--term-cyan);
+  border: 1px solid var(--term-cyan-dim);
+}
+
+/* Buttons */
+button {
+  cursor: pointer;
+  font-family: var(--term-font);
+  font-size: 12px;
+  border: 1px solid var(--term-border);
+  border-radius: var(--term-radius-sm);
+  padding: 6px 12px;
+  font-weight: 500;
+  transition: all 0.1s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--term-green-bg);
+  color: var(--term-green);
+  border-color: var(--term-green-dim);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--term-green-dim);
+  color: var(--term-bg);
+}
+
+.btn-secondary {
+  background: var(--term-bg-elevated);
+  color: var(--term-text);
+  border-color: var(--term-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--term-bg-hover);
+  border-color: var(--term-text-dim);
+}
+
+.btn-danger {
+  background: var(--term-red-bg);
+  color: var(--term-red);
+  border-color: var(--term-red-dim);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--term-red-dim);
+  color: var(--term-bg);
+}
+
+.btn-small {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
+.btn-icon {
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Code/Pre */
+pre, code {
+  font-family: var(--term-font);
+  font-size: 12px;
+}
+
+pre {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border-dim);
+  border-radius: var(--term-radius-sm);
+  padding: var(--term-gap-md);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--term-text);
+}
+
+/* Text utilities */
+.text-muted {
+  color: var(--term-text-dim);
+}
+
+.text-success {
+  color: var(--term-green);
+}
+
+.text-danger {
+  color: var(--term-red);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: var(--term-gap-xl);
+  color: var(--term-text-dim);
+}
+
+.empty-state-icon {
+  font-size: 24px;
+  margin-bottom: var(--term-gap-sm);
+  color: var(--term-text-muted);
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: var(--term-gap-sm) var(--term-gap-md);
+  border-bottom: 1px solid var(--term-border-dim);
+}
+
+th {
+  font-weight: 600;
+  color: var(--term-text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+tbody tr:hover {
+  background: var(--term-bg-hover);
+}
+
+/* Mono text */
+.mono {
+  font-family: var(--term-font);
+  font-size: 12px;
+  color: var(--term-cyan);
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--term-border);
+  margin-bottom: var(--term-gap-lg);
+}
+
+.tab {
+  padding: var(--term-gap-sm) var(--term-gap-lg);
+  background: none;
+  color: var(--term-text-dim);
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  border-radius: var(--term-radius-sm) var(--term-radius-sm) 0 0;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.tab:hover {
+  color: var(--term-text);
+  background: var(--term-bg-elevated);
+}
+
+.tab.active {
+  color: var(--term-green);
+  background: var(--term-bg-panel);
+  border-color: var(--term-border);
+  border-bottom-color: var(--term-bg-panel);
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--term-border);
+  border-top-color: var(--term-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+  gap: var(--term-gap-lg);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1200px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* Selection highlight */
+::selection {
+  background: var(--term-green-dim);
+  color: var(--term-bg);
+}
