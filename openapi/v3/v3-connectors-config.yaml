@@ -219,7 +219,7 @@ components:
             properties:
                 apiKey:
                     type: string
-                baseURL:
+                endpoint:
                     type: string
                 name:
                     type: string

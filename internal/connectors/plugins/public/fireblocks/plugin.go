@@ -43,7 +43,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	c := client.New(ProviderName, config.APIKey, config.privateKey, config.BaseURL)
+	c := client.New(ProviderName, config.APIKey, config.privateKey, config.Endpoint)
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),

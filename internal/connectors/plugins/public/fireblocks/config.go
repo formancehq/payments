@@ -17,7 +17,7 @@ import (
 type Config struct {
 	APIKey        string                     `json:"apiKey" validate:"required"`
 	PrivateKey    string                     `json:"privateKey" validate:"required"`
-	BaseURL       string                     `json:"baseURL"`
+	Endpoint      string                     `json:"endpoint"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 
 	privateKey *rsa.PrivateKey `json:"-"`
@@ -25,7 +25,7 @@ type Config struct {
 
 const (
 	PAGE_SIZE      = 200
-	DefaultBaseURL = "https://api.fireblocks.io"
+	DefaultEndpoint = "https://api.fireblocks.io"
 )
 
 func (c *Config) validate() error {
@@ -59,8 +59,8 @@ func (c *Config) validate() error {
 
 	c.privateKey = privateKey
 
-	if c.BaseURL == "" {
-		c.BaseURL = DefaultBaseURL
+	if c.Endpoint == "" {
+		c.Endpoint = DefaultEndpoint
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {
 		APIKey        string `json:"apiKey"`
 		PrivateKey    string `json:"privateKey"`
-		BaseURL       string `json:"baseURL"`
+		Endpoint      string `json:"endpoint"`
 		PollingPeriod string `json:"pollingPeriod"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
@@ -89,7 +89,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	config := Config{
 		APIKey:        raw.APIKey,
 		PrivateKey:    raw.PrivateKey,
-		BaseURL:       raw.BaseURL,
+		Endpoint:      raw.Endpoint,
 		PollingPeriod: pp,
 	}
 

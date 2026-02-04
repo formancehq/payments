@@ -65,7 +65,7 @@ var _ = Describe("Fireblocks Plugin", func() {
 			Expect(err.Error()).To(ContainSubstring("invalid private key"))
 		})
 
-		It("defaults base URL when empty", func(ctx SpecContext) {
+		It("defaults endpoint when empty", func(ctx SpecContext) {
 			payload, err := json.Marshal(map[string]string{
 				"apiKey":     "test",
 				"privateKey": pemKey,
@@ -73,7 +73,7 @@ var _ = Describe("Fireblocks Plugin", func() {
 			Expect(err).To(BeNil())
 			config, err := unmarshalAndValidateConfig(payload)
 			Expect(err).To(BeNil())
-			Expect(config.BaseURL).To(Equal(DefaultBaseURL))
+			Expect(config.Endpoint).To(Equal(DefaultEndpoint))
 		})
 	})
 
