@@ -15,7 +15,6 @@ type Client interface {
 	ListAssets(ctx context.Context) ([]Asset, error)
 	GetVaultAccountsPaged(ctx context.Context, cursor string, limit int) (*VaultAccountsPagedResponse, error)
 	GetVaultAccount(ctx context.Context, vaultAccountID string) (*VaultAccount, error)
-	GetVaultAccountAsset(ctx context.Context, vaultAccountID, assetID string) (*VaultAsset, error)
 	ListTransactions(ctx context.Context, createdAfter int64, limit int) ([]Transaction, error)
 }
 

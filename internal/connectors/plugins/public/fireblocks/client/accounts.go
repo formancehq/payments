@@ -82,21 +82,3 @@ func (c *client) GetVaultAccount(ctx context.Context, vaultAccountID string) (*V
 
 	return &response, nil
 }
-
-func (c *client) GetVaultAccountAsset(ctx context.Context, vaultAccountID, assetID string) (*VaultAsset, error) {
-	endpoint := fmt.Sprintf("%s/v1/vault/accounts/%s/%s", c.baseURL, vaultAccountID, assetID)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	var response VaultAsset
-	var errResponse fireblocksError
-	_, err = c.httpClient.Do(ctx, req, &response, &errResponse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get vault account asset: %w", err)
-	}
-
-	return &response, nil
-}

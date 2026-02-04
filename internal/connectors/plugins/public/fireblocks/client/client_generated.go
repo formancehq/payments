@@ -55,21 +55,6 @@ func (mr *MockClientMockRecorder) GetVaultAccount(ctx, vaultAccountID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVaultAccount", reflect.TypeOf((*MockClient)(nil).GetVaultAccount), ctx, vaultAccountID)
 }
 
-// GetVaultAccountAsset mocks base method.
-func (m *MockClient) GetVaultAccountAsset(ctx context.Context, vaultAccountID, assetID string) (*VaultAsset, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVaultAccountAsset", ctx, vaultAccountID, assetID)
-	ret0, _ := ret[0].(*VaultAsset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVaultAccountAsset indicates an expected call of GetVaultAccountAsset.
-func (mr *MockClientMockRecorder) GetVaultAccountAsset(ctx, vaultAccountID, assetID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVaultAccountAsset", reflect.TypeOf((*MockClient)(nil).GetVaultAccountAsset), ctx, vaultAccountID, assetID)
-}
-
 // GetVaultAccountsPaged mocks base method.
 func (m *MockClient) GetVaultAccountsPaged(ctx context.Context, cursor string, limit int) (*VaultAccountsPagedResponse, error) {
 	m.ctrl.T.Helper()
