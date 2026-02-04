@@ -7179,7 +7179,7 @@ xor
 ```json
 {
   "apiKey": "string",
-  "baseURL": "string",
+  "endpoint": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
@@ -7194,7 +7194,7 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
-|baseURL|string|false|none|none|
+|endpoint|string|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

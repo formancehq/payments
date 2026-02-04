@@ -7,9 +7,9 @@ import (
 )
 
 type V3FireblocksConfig struct {
-	APIKey  string  `json:"apiKey"`
-	BaseURL *string `json:"baseURL,omitempty"`
-	Name    string  `json:"name"`
+	APIKey   string  `json:"apiKey"`
+	Endpoint *string `json:"endpoint,omitempty"`
+	Name     string  `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
@@ -35,11 +35,11 @@ func (o *V3FireblocksConfig) GetAPIKey() string {
 	return o.APIKey
 }
 
-func (o *V3FireblocksConfig) GetBaseURL() *string {
+func (o *V3FireblocksConfig) GetEndpoint() *string {
 	if o == nil {
 		return nil
 	}
-	return o.BaseURL
+	return o.Endpoint
 }
 
 func (o *V3FireblocksConfig) GetName() string {
