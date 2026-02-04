@@ -17,6 +17,7 @@ type Transaction struct {
 	Operation    string         `json:"operation"`
 	Status       string         `json:"status"`
 	SubStatus    string         `json:"subStatus"`
+	Note         string         `json:"note"`
 	TxHash       string         `json:"txHash"`
 	CreatedAt    int64          `json:"createdAt"`
 	LastUpdated  int64          `json:"lastUpdated"`

@@ -122,6 +122,12 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		if tx.FeeInfo.NetworkFee != "" {
 			metadata["networkFee"] = tx.FeeInfo.NetworkFee
 		}
+		if tx.Note != "" {
+			metadata["note"] = tx.Note
+		}
+		if tx.SubStatus != "" {
+			metadata["subStatus"] = tx.SubStatus
+		}
 		if len(metadata) > 0 {
 			payment.Metadata = metadata
 		}
