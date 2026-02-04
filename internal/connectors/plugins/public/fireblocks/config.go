@@ -43,7 +43,7 @@ func (c *Config) validate() error {
 		key, err2 := x509.ParsePKCS8PrivateKey(p.Bytes)
 		if err2 != nil {
 			return errorsutils.NewWrappedError(
-				fmt.Errorf("failed to parse private key: %w", err),
+				fmt.Errorf("failed to parse private key as PKCS1 (%w) or PKCS8 (%v)", err, err2),
 				models.ErrInvalidConfig,
 			)
 		}
