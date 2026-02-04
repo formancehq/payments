@@ -58,6 +58,9 @@ func NewRootCommand() *cobra.Command {
 	purge.Flags().String(StackFlag, "", "Stack name")
 	root.AddCommand(purge)
 
+	workbench := newWorkbench()
+	root.AddCommand(workbench)
+
 	return root
 }
 
