@@ -2,6 +2,7 @@ package workbench
 
 import (
 	"encoding/json"
+	"sort"
 	"sync"
 	"time"
 
@@ -86,7 +87,7 @@ func (s *MemoryStorage) StoreAccounts(accounts []models.PSPAccount) {
 	s.stats.LastUpdated = time.Now()
 }
 
-// GetAccounts returns all accounts.
+// GetAccounts returns all accounts sorted by creation time, then reference.
 func (s *MemoryStorage) GetAccounts() []models.PSPAccount {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -95,6 +96,12 @@ func (s *MemoryStorage) GetAccounts() []models.PSPAccount {
 	for _, acc := range s.accounts {
 		accounts = append(accounts, acc)
 	}
+	sort.Slice(accounts, func(i, j int) bool {
+		if !accounts[i].CreatedAt.Equal(accounts[j].CreatedAt) {
+			return accounts[i].CreatedAt.Before(accounts[j].CreatedAt)
+		}
+		return accounts[i].Reference < accounts[j].Reference
+	})
 	return accounts
 }
 
@@ -121,7 +128,7 @@ func (s *MemoryStorage) StoreExternalAccounts(accounts []models.PSPAccount) {
 	s.stats.LastUpdated = time.Now()
 }
 
-// GetExternalAccounts returns all external accounts.
+// GetExternalAccounts returns all external accounts sorted by creation time, then reference.
 func (s *MemoryStorage) GetExternalAccounts() []models.PSPAccount {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -130,6 +137,12 @@ func (s *MemoryStorage) GetExternalAccounts() []models.PSPAccount {
 	for _, acc := range s.externalAccounts {
 		accounts = append(accounts, acc)
 	}
+	sort.Slice(accounts, func(i, j int) bool {
+		if !accounts[i].CreatedAt.Equal(accounts[j].CreatedAt) {
+			return accounts[i].CreatedAt.Before(accounts[j].CreatedAt)
+		}
+		return accounts[i].Reference < accounts[j].Reference
+	})
 	return accounts
 }
 
@@ -147,7 +160,7 @@ func (s *MemoryStorage) StorePayments(payments []models.PSPPayment) {
 	s.stats.LastUpdated = time.Now()
 }
 
-// GetPayments returns all payments.
+// GetPayments returns all payments sorted by creation time, then reference.
 func (s *MemoryStorage) GetPayments() []models.PSPPayment {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -156,6 +169,12 @@ func (s *MemoryStorage) GetPayments() []models.PSPPayment {
 	for _, p := range s.payments {
 		payments = append(payments, p)
 	}
+	sort.Slice(payments, func(i, j int) bool {
+		if !payments[i].CreatedAt.Equal(payments[j].CreatedAt) {
+			return payments[i].CreatedAt.Before(payments[j].CreatedAt)
+		}
+		return payments[i].Reference < payments[j].Reference
+	})
 	return payments
 }
 
@@ -192,6 +211,15 @@ func (s *MemoryStorage) GetBalances() []models.PSPBalance {
 	for _, b := range s.balances {
 		balances = append(balances, b)
 	}
+	sort.Slice(balances, func(i, j int) bool {
+		if balances[i].AccountReference != balances[j].AccountReference {
+			return balances[i].AccountReference < balances[j].AccountReference
+		}
+		if !balances[i].CreatedAt.Equal(balances[j].CreatedAt) {
+			return balances[i].CreatedAt.Before(balances[j].CreatedAt)
+		}
+		return balances[i].Asset < balances[j].Asset
+	})
 	return balances
 }
 
@@ -206,6 +234,12 @@ func (s *MemoryStorage) GetBalancesForAccount(accountRef string) []models.PSPBal
 			balances = append(balances, b)
 		}
 	}
+	sort.Slice(balances, func(i, j int) bool {
+		if !balances[i].CreatedAt.Equal(balances[j].CreatedAt) {
+			return balances[i].CreatedAt.Before(balances[j].CreatedAt)
+		}
+		return balances[i].Asset < balances[j].Asset
+	})
 	return balances
 }
 

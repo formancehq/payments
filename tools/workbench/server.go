@@ -58,33 +58,100 @@ func (s *Server) Start() error {
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {
-		r.Get("/status", s.handleStatus)
-		r.Post("/install", s.handleInstall)
-		r.Post("/uninstall", s.handleUninstall)
-		r.Post("/reset", s.handleReset)
+		// Global status
+		r.Get("/status", s.handleGlobalStatus)
 
-		// Fetch operations
-		r.Post("/fetch/accounts", s.handleFetchAccounts)
-		r.Post("/fetch/payments", s.handleFetchPayments)
-		r.Post("/fetch/balances", s.handleFetchBalances)
-		r.Post("/fetch/all", s.handleFetchAll)
+		// Connector management
+		r.Get("/connectors/available", s.handleAvailableConnectors)
+		r.Get("/connectors", s.handleListConnectors)
+		r.Post("/connectors", s.handleCreateConnector)
 
-		// Write operations
-		r.Post("/transfer", s.handleCreateTransfer)
-		r.Post("/payout", s.handleCreatePayout)
+		// Connector-specific routes
+		r.Route("/connectors/{connectorID}", func(r chi.Router) {
+			r.Use(s.connectorCtx) // Middleware to load connector instance
 
-		// Data endpoints
-		r.Get("/data/accounts", s.handleGetAccounts)
-		r.Get("/data/payments", s.handleGetPayments)
-		r.Get("/data/balances", s.handleGetBalances)
-		r.Get("/data/external-accounts", s.handleGetExternalAccounts)
-		r.Get("/data/others", s.handleGetOthers)
-		r.Get("/data/states", s.handleGetStates)
-		r.Get("/data/tasks-tree", s.handleGetTasksTree)
-		r.Get("/data/export", s.handleExport)
-		r.Post("/data/import", s.handleImport)
+			r.Get("/", s.handleConnectorStatus)
+			r.Delete("/", s.handleDeleteConnector)
+			r.Post("/install", s.handleInstall)
+			r.Post("/uninstall", s.handleUninstall)
+			r.Post("/reset", s.handleReset)
 
-		// Debug endpoints
+			// Fetch operations
+			r.Post("/fetch/accounts", s.handleFetchAccounts)
+			r.Post("/fetch/payments", s.handleFetchPayments)
+			r.Post("/fetch/balances", s.handleFetchBalances)
+			r.Post("/fetch/external-accounts", s.handleFetchExternalAccounts)
+			r.Post("/fetch/all", s.handleFetchAll)
+
+			// Write operations
+			r.Post("/transfer", s.handleCreateTransfer)
+			r.Post("/payout", s.handleCreatePayout)
+
+			// Data endpoints
+			r.Get("/data/accounts", s.handleGetAccounts)
+			r.Get("/data/payments", s.handleGetPayments)
+			r.Get("/data/balances", s.handleGetBalances)
+			r.Get("/data/external-accounts", s.handleGetExternalAccounts)
+			r.Get("/data/others", s.handleGetOthers)
+			r.Get("/data/states", s.handleGetStates)
+			r.Get("/data/tasks-tree", s.handleGetTasksTree)
+			r.Get("/data/export", s.handleExport)
+			r.Post("/data/import", s.handleImport)
+
+			// Config endpoints
+			r.Get("/config", s.handleGetConfig)
+			r.Put("/config/page-size", s.handleSetPageSize)
+
+			// Introspection endpoints
+			r.Get("/introspect/info", s.handleIntrospectInfo)
+			r.Get("/introspect/files", s.handleIntrospectFiles)
+			r.Get("/introspect/file", s.handleIntrospectFile)
+			r.Get("/introspect/search", s.handleIntrospectSearch)
+
+			// Task tracking endpoints
+			r.Get("/tasks", s.handleGetTasks)
+			r.Get("/tasks/executions", s.handleGetTaskExecutions)
+			r.Post("/tasks/step", s.handleTaskStep)
+			r.Put("/tasks/step-mode", s.handleSetStepMode)
+			r.Post("/tasks/reset", s.handleResetTasks)
+
+			// Snapshot endpoints
+			r.Get("/snapshots", s.handleListSnapshots)
+			r.Get("/snapshots/stats", s.handleSnapshotStats)
+			r.Get("/snapshots/{id}", s.handleGetSnapshot)
+			r.Post("/snapshots", s.handleCreateSnapshot)
+			r.Post("/snapshots/from-capture/{id}", s.handleCreateSnapshotFromCapture)
+			r.Delete("/snapshots/{id}", s.handleDeleteSnapshot)
+			r.Delete("/snapshots", s.handleClearSnapshots)
+			r.Post("/snapshots/export", s.handleExportSnapshots)
+			r.Post("/snapshots/import", s.handleImportSnapshots)
+
+			// Test generation endpoints
+			r.Get("/tests/preview", s.handlePreviewTests)
+			r.Post("/tests/generate", s.handleGenerateTests)
+
+			// Schema inference endpoints
+			r.Get("/schemas", s.handleListSchemas)
+			r.Get("/schemas/stats", s.handleSchemaStats)
+			r.Get("/schemas/{operation}", s.handleGetSchema)
+			r.Post("/schemas/infer", s.handleInferSchema)
+			r.Post("/schemas/baselines", s.handleSaveSchemaBaseline)
+			r.Post("/schemas/baselines/all", s.handleSaveAllSchemaBaselines)
+			r.Get("/schemas/baselines", s.handleListSchemaBaselines)
+			r.Get("/schemas/compare/{operation}", s.handleCompareSchema)
+			r.Delete("/schemas", s.handleClearSchemas)
+
+			// Data baseline endpoints
+			r.Get("/baselines", s.handleListBaselines)
+			r.Get("/baselines/{id}", s.handleGetBaseline)
+			r.Post("/baselines", s.handleSaveBaseline)
+			r.Delete("/baselines/{id}", s.handleDeleteBaseline)
+			r.Get("/baselines/{id}/compare", s.handleCompareBaseline)
+			r.Get("/baselines/{id}/export", s.handleExportBaseline)
+			r.Post("/baselines/import", s.handleImportBaseline)
+		})
+
+		// Global debug endpoints (shared across all connectors)
 		r.Get("/debug/logs", s.handleDebugLogs)
 		r.Get("/debug/requests", s.handleDebugRequests)
 		r.Get("/debug/plugin-calls", s.handleDebugPluginCalls)
@@ -96,24 +163,7 @@ func (s *Server) Start() error {
 		r.Post("/debug/http-capture/enable", s.handleHTTPCaptureEnable)
 		r.Post("/debug/http-capture/disable", s.handleHTTPCaptureDisable)
 
-		// Config endpoints
-		r.Get("/config", s.handleGetConfig)
-		r.Put("/config/page-size", s.handleSetPageSize)
-
-		// Introspection endpoints
-		r.Get("/introspect/info", s.handleIntrospectInfo)
-		r.Get("/introspect/files", s.handleIntrospectFiles)
-		r.Get("/introspect/file", s.handleIntrospectFile)
-		r.Get("/introspect/search", s.handleIntrospectSearch)
-
-		// Task tracking endpoints
-		r.Get("/tasks", s.handleGetTasks)
-		r.Get("/tasks/executions", s.handleGetTaskExecutions)
-		r.Post("/tasks/step", s.handleTaskStep)
-		r.Put("/tasks/step-mode", s.handleSetStepMode)
-		r.Post("/tasks/reset", s.handleResetTasks)
-
-		// Replay endpoints
+		// Replay endpoints (global)
 		r.Get("/replay/history", s.handleReplayHistory)
 		r.Get("/replay/{id}", s.handleGetReplay)
 		r.Post("/replay", s.handleReplay)
@@ -122,41 +172,6 @@ func (s *Server) Start() error {
 		r.Post("/replay/dry-run", s.handleReplayDryRun)
 		r.Get("/replay/curl/{id}", s.handleReplayCurl)
 		r.Delete("/replay/history", s.handleClearReplayHistory)
-
-		// Snapshot endpoints
-		r.Get("/snapshots", s.handleListSnapshots)
-		r.Get("/snapshots/stats", s.handleSnapshotStats)
-		r.Get("/snapshots/{id}", s.handleGetSnapshot)
-		r.Post("/snapshots", s.handleCreateSnapshot)
-		r.Post("/snapshots/from-capture/{id}", s.handleCreateSnapshotFromCapture)
-		r.Delete("/snapshots/{id}", s.handleDeleteSnapshot)
-		r.Delete("/snapshots", s.handleClearSnapshots)
-		r.Post("/snapshots/export", s.handleExportSnapshots)
-		r.Post("/snapshots/import", s.handleImportSnapshots)
-
-		// Test generation endpoints
-		r.Get("/tests/preview", s.handlePreviewTests)
-		r.Post("/tests/generate", s.handleGenerateTests)
-
-		// Schema inference endpoints
-		r.Get("/schemas", s.handleListSchemas)
-		r.Get("/schemas/stats", s.handleSchemaStats)
-		r.Get("/schemas/{operation}", s.handleGetSchema)
-		r.Post("/schemas/infer", s.handleInferSchema)
-		r.Post("/schemas/baselines", s.handleSaveSchemaBaseline)
-		r.Post("/schemas/baselines/all", s.handleSaveAllSchemaBaselines)
-		r.Get("/schemas/baselines", s.handleListSchemaBaselines)
-		r.Get("/schemas/compare/{operation}", s.handleCompareSchema)
-		r.Delete("/schemas", s.handleClearSchemas)
-
-		// Data baseline endpoints
-		r.Get("/baselines", s.handleListBaselines)
-		r.Get("/baselines/{id}", s.handleGetBaseline)
-		r.Post("/baselines", s.handleSaveBaseline)
-		r.Delete("/baselines/{id}", s.handleDeleteBaseline)
-		r.Get("/baselines/{id}/compare", s.handleCompareBaseline)
-		r.Get("/baselines/{id}/export", s.handleExportBaseline)
-		r.Post("/baselines/import", s.handleImportBaseline)
 	})
 
 	// Serve embedded UI
@@ -166,10 +181,10 @@ func (s *Server) Start() error {
 		if err == nil {
 			// Serve static assets
 			fileServer := http.FileServer(http.FS(uiContent))
-			
+
 			// Handle /ui/assets/* for static files
 			r.Handle("/ui/assets/*", http.StripPrefix("/ui", fileServer))
-			
+
 			// Handle /ui and /ui/ to serve index.html
 			r.Get("/ui", func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, "/ui/", http.StatusMovedPermanently)
@@ -215,6 +230,38 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
+// === Context Key for Connector Instance ===
+
+type ctxKey string
+
+const connectorCtxKey ctxKey = "connector"
+
+// connectorCtx middleware loads the connector instance from URL param
+func (s *Server) connectorCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectorID := chi.URLParam(r, "connectorID")
+		if connectorID == "" {
+			s.errorResponse(w, http.StatusBadRequest, "connector ID is required")
+			return
+		}
+
+		conn := s.workbench.GetConnector(connectorID)
+		if conn == nil {
+			s.errorResponse(w, http.StatusNotFound, fmt.Sprintf("connector %s not found", connectorID))
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), connectorCtxKey, conn)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// getConnector retrieves the connector from request context
+func (s *Server) getConnector(r *http.Request) *ConnectorInstance {
+	conn, _ := r.Context().Value(connectorCtxKey).(*ConnectorInstance)
+	return conn
+}
+
 // === Helper functions ===
 
 func (s *Server) jsonResponse(w http.ResponseWriter, status int, data interface{}) {
@@ -227,30 +274,150 @@ func (s *Server) errorResponse(w http.ResponseWriter, status int, message string
 	s.jsonResponse(w, status, map[string]string{"error": message})
 }
 
-// === Status ===
+// === Global Status ===
 
-func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
-	storage := s.workbench.Storage()
-	debug := s.workbench.Debug()
-	engine := s.workbench.Engine()
+func (s *Server) handleGlobalStatus(w http.ResponseWriter, r *http.Request) {
+	connectors := s.workbench.ListConnectors()
+	debugStats := s.workbench.Debug().Stats()
 
-	stats := storage.GetStats()
-	debugStats := debug.Stats()
-	fetchStatus := engine.GetFetchStatus()
+	connectorSummaries := make([]map[string]interface{}, 0, len(connectors))
+	for _, conn := range connectors {
+		summary := map[string]interface{}{
+			"id":           conn.ID,
+			"provider":     conn.Provider,
+			"name":         conn.Name,
+			"connector_id": conn.ConnectorID.String(),
+			"installed":    conn.Installed,
+			"created_at":   conn.CreatedAt,
+		}
+		if conn.storage != nil {
+			stats := conn.storage.GetStats()
+			summary["accounts_count"] = stats.AccountsCount
+			summary["payments_count"] = stats.PaymentsCount
+			summary["balances_count"] = stats.BalancesCount
+		}
+		connectorSummaries = append(connectorSummaries, summary)
+	}
 
-	connectorID := s.workbench.ConnectorID()
 	status := map[string]interface{}{
-		"connector_id": connectorID.String(),
-		"provider":     s.workbench.Config().Provider,
-		"storage": map[string]interface{}{
+		"connectors_count": len(connectors),
+		"connectors":       connectorSummaries,
+		"debug":            debugStats,
+	}
+
+	s.jsonResponse(w, http.StatusOK, status)
+}
+
+// === Connector Management ===
+
+func (s *Server) handleAvailableConnectors(w http.ResponseWriter, r *http.Request) {
+	available := s.workbench.GetAvailableConnectors()
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"connectors": available,
+		"count":      len(available),
+	})
+}
+
+func (s *Server) handleListConnectors(w http.ResponseWriter, r *http.Request) {
+	connectors := s.workbench.ListConnectors()
+
+	result := make([]map[string]interface{}, 0, len(connectors))
+	for _, conn := range connectors {
+		item := map[string]interface{}{
+			"id":           conn.ID,
+			"provider":     conn.Provider,
+			"name":         conn.Name,
+			"connector_id": conn.ConnectorID.String(),
+			"installed":    conn.Installed,
+			"created_at":   conn.CreatedAt,
+		}
+		if conn.storage != nil {
+			stats := conn.storage.GetStats()
+			item["storage"] = map[string]interface{}{
+				"accounts_count":          stats.AccountsCount,
+				"payments_count":          stats.PaymentsCount,
+				"balances_count":          stats.BalancesCount,
+				"external_accounts_count": stats.ExternalAccountsCount,
+			}
+		}
+		result = append(result, item)
+	}
+
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"connectors": result,
+		"count":      len(result),
+	})
+}
+
+func (s *Server) handleCreateConnector(w http.ResponseWriter, r *http.Request) {
+	var req CreateConnectorRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.errorResponse(w, http.StatusBadRequest, "invalid request: "+err.Error())
+		return
+	}
+
+	conn, err := s.workbench.CreateConnector(r.Context(), req)
+	if err != nil {
+		s.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusCreated, map[string]interface{}{
+		"id":           conn.ID,
+		"provider":     conn.Provider,
+		"name":         conn.Name,
+		"connector_id": conn.ConnectorID.String(),
+		"installed":    conn.Installed,
+		"created_at":   conn.CreatedAt,
+	})
+}
+
+func (s *Server) handleDeleteConnector(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil {
+		return // Error already sent by middleware
+	}
+
+	if err := s.workbench.DeleteConnector(r.Context(), conn.ID); err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// === Connector Status ===
+
+func (s *Server) handleConnectorStatus(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil {
+		return
+	}
+
+	var fetchStatus interface{}
+	if conn.engine != nil {
+		fetchStatus = conn.engine.GetFetchStatus()
+	}
+
+	status := map[string]interface{}{
+		"id":           conn.ID,
+		"provider":     conn.Provider,
+		"name":         conn.Name,
+		"connector_id": conn.ConnectorID.String(),
+		"installed":    conn.Installed,
+		"created_at":   conn.CreatedAt,
+		"fetch_status": fetchStatus,
+	}
+
+	if conn.storage != nil {
+		stats := conn.storage.GetStats()
+		status["storage"] = map[string]interface{}{
 			"accounts_count":          stats.AccountsCount,
 			"payments_count":          stats.PaymentsCount,
 			"balances_count":          stats.BalancesCount,
 			"external_accounts_count": stats.ExternalAccountsCount,
 			"last_updated":            stats.LastUpdated,
-		},
-		"debug": debugStats,
-		"fetch_status": fetchStatus,
+		}
 	}
 
 	s.jsonResponse(w, http.StatusOK, status)
@@ -259,7 +426,12 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 // === Install/Uninstall ===
 
 func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
-	if err := s.workbench.Engine().Install(r.Context()); err != nil {
+	conn := s.getConnector(r)
+	if conn == nil {
+		return
+	}
+
+	if err := s.workbench.InstallConnector(r.Context(), conn.ID); err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -267,7 +439,12 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUninstall(w http.ResponseWriter, r *http.Request) {
-	if err := s.workbench.Engine().Uninstall(r.Context()); err != nil {
+	conn := s.getConnector(r)
+	if conn == nil {
+		return
+	}
+
+	if err := s.workbench.UninstallConnector(r.Context(), conn.ID); err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -275,9 +452,17 @@ func (s *Server) handleUninstall(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
-	s.workbench.Engine().ResetFetchState()
-	s.workbench.Storage().Clear()
-	s.workbench.Debug().Clear()
+	conn := s.getConnector(r)
+	if conn == nil {
+		return
+	}
+
+	if conn.engine != nil {
+		conn.engine.ResetFetchState()
+	}
+	if conn.storage != nil {
+		conn.storage.Clear()
+	}
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "reset"})
 }
 
@@ -288,12 +473,18 @@ type fetchRequest struct {
 }
 
 func (s *Server) handleFetchAccounts(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	var req fetchRequest
 	if r.Body != nil {
 		json.NewDecoder(r.Body).Decode(&req)
 	}
 
-	resp, err := s.workbench.Engine().FetchAccountsOnePage(r.Context(), req.FromPayload)
+	resp, err := conn.engine.FetchAccountsOnePage(r.Context(), req.FromPayload)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -307,12 +498,18 @@ func (s *Server) handleFetchAccounts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleFetchPayments(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	var req fetchRequest
 	if r.Body != nil {
 		json.NewDecoder(r.Body).Decode(&req)
 	}
 
-	resp, err := s.workbench.Engine().FetchPaymentsOnePage(r.Context(), req.FromPayload)
+	resp, err := conn.engine.FetchPaymentsOnePage(r.Context(), req.FromPayload)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -326,12 +523,18 @@ func (s *Server) handleFetchPayments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleFetchBalances(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	var req fetchRequest
 	if r.Body != nil {
 		json.NewDecoder(r.Body).Decode(&req)
 	}
 
-	resp, err := s.workbench.Engine().FetchBalancesOnePage(r.Context(), req.FromPayload)
+	resp, err := conn.engine.FetchBalancesOnePage(r.Context(), req.FromPayload)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -344,13 +547,44 @@ func (s *Server) handleFetchBalances(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleFetchAll(w http.ResponseWriter, r *http.Request) {
-	if err := s.workbench.Engine().RunOneCycle(r.Context()); err != nil {
+func (s *Server) handleFetchExternalAccounts(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	var req fetchRequest
+	if r.Body != nil {
+		json.NewDecoder(r.Body).Decode(&req)
+	}
+
+	resp, err := conn.engine.FetchExternalAccountsOnePage(r.Context(), req.FromPayload)
+	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	stats := s.workbench.Storage().GetStats()
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"external_accounts": resp.ExternalAccounts,
+		"has_more":          resp.HasMore,
+		"count":             len(resp.ExternalAccounts),
+	})
+}
+
+func (s *Server) handleFetchAll(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	if err := conn.engine.RunOneCycle(r.Context()); err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	stats := conn.storage.GetStats()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"status":   "complete",
 		"accounts": stats.AccountsCount,
@@ -362,64 +596,95 @@ func (s *Server) handleFetchAll(w http.ResponseWriter, r *http.Request) {
 // === Write Operations ===
 
 func (s *Server) handleCreateTransfer(w http.ResponseWriter, r *http.Request) {
-	// TODO: Parse transfer request from body
 	s.errorResponse(w, http.StatusNotImplemented, "transfer creation not yet implemented in workbench")
 }
 
 func (s *Server) handleCreatePayout(w http.ResponseWriter, r *http.Request) {
-	// TODO: Parse payout request from body
 	s.errorResponse(w, http.StatusNotImplemented, "payout creation not yet implemented in workbench")
 }
 
 // === Data Endpoints ===
 
 func (s *Server) handleGetAccounts(w http.ResponseWriter, r *http.Request) {
-	accounts := s.workbench.Storage().GetAccounts()
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	accounts := conn.storage.GetAccounts()
+	response := ToAccountResponses(accounts)
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"accounts": accounts,
-		"count":    len(accounts),
+		"accounts": response,
+		"count":    len(response),
 	})
 }
 
 func (s *Server) handleGetPayments(w http.ResponseWriter, r *http.Request) {
-	payments := s.workbench.Storage().GetPayments()
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	payments := conn.storage.GetPayments()
+	response := ToPaymentResponses(payments)
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"payments": payments,
-		"count":    len(payments),
+		"payments": response,
+		"count":    len(response),
 	})
 }
 
 func (s *Server) handleGetBalances(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	accountRef := r.URL.Query().Get("account")
-	var balances interface{}
+	var response []BalanceResponse
 
 	if accountRef != "" {
-		balances = s.workbench.Storage().GetBalancesForAccount(accountRef)
+		response = ToBalanceResponses(conn.storage.GetBalancesForAccount(accountRef))
 	} else {
-		balances = s.workbench.Storage().GetBalances()
+		response = ToBalanceResponses(conn.storage.GetBalances())
 	}
 
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"balances": balances,
+		"balances": response,
 	})
 }
 
 func (s *Server) handleGetExternalAccounts(w http.ResponseWriter, r *http.Request) {
-	accounts := s.workbench.Storage().GetExternalAccounts()
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	accounts := conn.storage.GetExternalAccounts()
+	response := ToAccountResponses(accounts)
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"external_accounts": accounts,
-		"count":             len(accounts),
+		"external_accounts": response,
+		"count":             len(response),
 	})
 }
 
 func (s *Server) handleGetOthers(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	name := r.URL.Query().Get("name")
 	var result interface{}
 
 	if name != "" {
-		result = s.workbench.Storage().GetOthers(name)
+		result = conn.storage.GetOthers(name)
 	} else {
-		result = s.workbench.Storage().GetAllOthers()
+		result = conn.storage.GetAllOthers()
 	}
 
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
@@ -428,28 +693,52 @@ func (s *Server) handleGetOthers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetStates(w http.ResponseWriter, r *http.Request) {
-	states := s.workbench.Storage().GetAllStates()
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	states := conn.storage.GetAllStates()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"states": states,
 	})
 }
 
 func (s *Server) handleGetTasksTree(w http.ResponseWriter, r *http.Request) {
-	tree := s.workbench.Storage().GetTasksTree()
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	tree := conn.storage.GetTasksTree()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"tasks_tree": tree,
 	})
 }
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
-	snapshot := s.workbench.Storage().Export()
-	
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	snapshot := conn.storage.Export()
+
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=workbench-export-%s.json", time.Now().Format("20060102-150405")))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=workbench-export-%s-%s.json", conn.ID, time.Now().Format("20060102-150405")))
 	json.NewEncoder(w).Encode(snapshot)
 }
 
 func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, "failed to read body")
@@ -462,11 +751,11 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.workbench.Storage().Import(snapshot)
+	conn.storage.Import(snapshot)
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "imported"})
 }
 
-// === Debug Endpoints ===
+// === Debug Endpoints (Global) ===
 
 func (s *Server) handleDebugLogs(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
@@ -564,17 +853,26 @@ func (s *Server) handleHTTPCaptureDisable(w http.ResponseWriter, r *http.Request
 // === Config Endpoints ===
 
 func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
-	connectorID := s.workbench.ConnectorID()
+	conn := s.getConnector(r)
+	if conn == nil {
+		return
+	}
+
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"provider":      s.workbench.Config().Provider,
-		"connector_id":  connectorID.String(),
-		"listen_addr":   s.workbench.Config().ListenAddr,
-		"auto_poll":     s.workbench.Config().AutoPoll,
-		"poll_interval": s.workbench.Config().PollInterval.String(),
+		"id":           conn.ID,
+		"provider":     conn.Provider,
+		"connector_id": conn.ConnectorID.String(),
+		"installed":    conn.Installed,
 	})
 }
 
 func (s *Server) handleSetPageSize(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
 	var req struct {
 		PageSize int `json:"page_size"`
 	}
@@ -588,20 +886,20 @@ func (s *Server) handleSetPageSize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.workbench.Engine().SetPageSize(req.PageSize)
+	conn.engine.SetPageSize(req.PageSize)
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{"page_size": req.PageSize})
 }
 
 // === Introspection Endpoints ===
 
 func (s *Server) handleIntrospectInfo(w http.ResponseWriter, r *http.Request) {
-	intro := s.workbench.Introspector()
-	if intro == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "introspector not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.introspector == nil {
+		s.errorResponse(w, http.StatusBadRequest, "introspector not available")
 		return
 	}
 
-	info, err := intro.GetInfo()
+	info, err := conn.introspector.GetInfo()
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -611,13 +909,13 @@ func (s *Server) handleIntrospectInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleIntrospectFiles(w http.ResponseWriter, r *http.Request) {
-	intro := s.workbench.Introspector()
-	if intro == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "introspector not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.introspector == nil {
+		s.errorResponse(w, http.StatusBadRequest, "introspector not available")
 		return
 	}
 
-	files, err := intro.GetFileTree()
+	files, err := conn.introspector.GetFileTree()
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -627,9 +925,9 @@ func (s *Server) handleIntrospectFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleIntrospectFile(w http.ResponseWriter, r *http.Request) {
-	intro := s.workbench.Introspector()
-	if intro == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "introspector not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.introspector == nil {
+		s.errorResponse(w, http.StatusBadRequest, "introspector not available")
 		return
 	}
 
@@ -639,7 +937,7 @@ func (s *Server) handleIntrospectFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, err := intro.GetFile(path)
+	file, err := conn.introspector.GetFile(path)
 	if err != nil {
 		s.errorResponse(w, http.StatusNotFound, err.Error())
 		return
@@ -649,9 +947,9 @@ func (s *Server) handleIntrospectFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleIntrospectSearch(w http.ResponseWriter, r *http.Request) {
-	intro := s.workbench.Introspector()
-	if intro == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "introspector not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.introspector == nil {
+		s.errorResponse(w, http.StatusBadRequest, "introspector not available")
 		return
 	}
 
@@ -661,7 +959,7 @@ func (s *Server) handleIntrospectSearch(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	results, err := intro.SearchCode(query)
+	results, err := conn.introspector.SearchCode(query)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -677,21 +975,23 @@ func (s *Server) handleIntrospectSearch(w http.ResponseWriter, r *http.Request) 
 // === Task Tracking Endpoints ===
 
 func (s *Server) handleGetTasks(w http.ResponseWriter, r *http.Request) {
-	tasks := s.workbench.Tasks()
-	if tasks == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "task tracker not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.tasks == nil {
+		s.errorResponse(w, http.StatusBadRequest, "task tracker not available")
 		return
 	}
 
-	summary := tasks.GetSummary()
-	summary.IsRunning = s.workbench.Engine().IsRunning()
+	summary := conn.tasks.GetSummary()
+	if conn.engine != nil {
+		summary.IsRunning = conn.engine.IsRunning()
+	}
 	s.jsonResponse(w, http.StatusOK, summary)
 }
 
 func (s *Server) handleGetTaskExecutions(w http.ResponseWriter, r *http.Request) {
-	tasks := s.workbench.Tasks()
-	if tasks == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "task tracker not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.tasks == nil {
+		s.errorResponse(w, http.StatusBadRequest, "task tracker not available")
 		return
 	}
 
@@ -703,7 +1003,7 @@ func (s *Server) handleGetTaskExecutions(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	executions := tasks.GetExecutions(limit)
+	executions := conn.tasks.GetExecutions(limit)
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"executions": executions,
 		"count":      len(executions),
@@ -711,20 +1011,20 @@ func (s *Server) handleGetTaskExecutions(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleTaskStep(w http.ResponseWriter, r *http.Request) {
-	tasks := s.workbench.Tasks()
-	if tasks == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "task tracker not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.tasks == nil {
+		s.errorResponse(w, http.StatusBadRequest, "task tracker not available")
 		return
 	}
 
-	tasks.Step()
+	conn.tasks.Step()
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "stepped"})
 }
 
 func (s *Server) handleSetStepMode(w http.ResponseWriter, r *http.Request) {
-	tasks := s.workbench.Tasks()
-	if tasks == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "task tracker not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.tasks == nil {
+		s.errorResponse(w, http.StatusBadRequest, "task tracker not available")
 		return
 	}
 
@@ -736,18 +1036,18 @@ func (s *Server) handleSetStepMode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks.SetStepMode(req.Enabled)
+	conn.tasks.SetStepMode(req.Enabled)
 	s.jsonResponse(w, http.StatusOK, map[string]bool{"step_mode": req.Enabled})
 }
 
 func (s *Server) handleResetTasks(w http.ResponseWriter, r *http.Request) {
-	tasks := s.workbench.Tasks()
-	if tasks == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "task tracker not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.tasks == nil {
+		s.errorResponse(w, http.StatusBadRequest, "task tracker not available")
 		return
 	}
 
-	tasks.Reset()
+	conn.tasks.Reset()
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "reset"})
 }
 
@@ -890,7 +1190,7 @@ func (s *Server) handleReplayCurl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := chi.URLParam(r, "id")
-	
+
 	// Try to find in captured requests
 	captured := debug.GetHTTPRequestByID(id)
 	if captured != nil {
@@ -930,9 +1230,9 @@ func (s *Server) handleClearReplayHistory(w http.ResponseWriter, r *http.Request
 // === Snapshot Endpoints ===
 
 func (s *Server) handleListSnapshots(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
@@ -943,7 +1243,7 @@ func (s *Server) handleListSnapshots(w http.ResponseWriter, r *http.Request) {
 		tags = strings.Split(tagsParam, ",")
 	}
 
-	list := snapshots.List(operation, tags)
+	list := conn.snapshots.List(operation, tags)
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"snapshots": list,
 		"count":     len(list),
@@ -951,25 +1251,25 @@ func (s *Server) handleListSnapshots(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSnapshotStats(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
-	stats := snapshots.Stats()
+	stats := conn.snapshots.Stats()
 	s.jsonResponse(w, http.StatusOK, stats)
 }
 
 func (s *Server) handleGetSnapshot(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
-	snapshot := snapshots.Get(id)
+	snapshot := conn.snapshots.Get(id)
 	if snapshot == nil {
 		s.errorResponse(w, http.StatusNotFound, "snapshot not found")
 		return
@@ -979,9 +1279,9 @@ func (s *Server) handleGetSnapshot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateSnapshot(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
@@ -991,7 +1291,7 @@ func (s *Server) handleCreateSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := snapshots.Save(&snapshot); err != nil {
+	if err := conn.snapshots.Save(&snapshot); err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -1000,9 +1300,9 @@ func (s *Server) handleCreateSnapshot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateSnapshotFromCapture(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
@@ -1028,7 +1328,7 @@ func (s *Server) handleCreateSnapshotFromCapture(w http.ResponseWriter, r *http.
 		return
 	}
 
-	snapshot, err := snapshots.SaveFromCapture(captureID, req.Name, req.Operation, req.Description, req.Tags)
+	snapshot, err := conn.snapshots.SaveFromCapture(captureID, req.Name, req.Operation, req.Description, req.Tags)
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -1038,14 +1338,14 @@ func (s *Server) handleCreateSnapshotFromCapture(w http.ResponseWriter, r *http.
 }
 
 func (s *Server) handleDeleteSnapshot(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
-	if err := snapshots.Delete(id); err != nil {
+	if err := conn.snapshots.Delete(id); err != nil {
 		s.errorResponse(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -1054,20 +1354,20 @@ func (s *Server) handleDeleteSnapshot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleClearSnapshots(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
-	snapshots.Clear()
+	conn.snapshots.Clear()
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "cleared"})
 }
 
 func (s *Server) handleExportSnapshots(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
@@ -1084,7 +1384,7 @@ func (s *Server) handleExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := snapshots.ExportToDir(req.Directory); err != nil {
+	if err := conn.snapshots.ExportToDir(req.Directory); err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -1096,9 +1396,9 @@ func (s *Server) handleExportSnapshots(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleImportSnapshots(w http.ResponseWriter, r *http.Request) {
-	snapshots := s.workbench.Snapshots()
-	if snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "snapshots not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "snapshots not available")
 		return
 	}
 
@@ -1115,7 +1415,7 @@ func (s *Server) handleImportSnapshots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := snapshots.ImportFromDir(req.Directory)
+	count, err := conn.snapshots.ImportFromDir(req.Directory)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1130,13 +1430,13 @@ func (s *Server) handleImportSnapshots(w http.ResponseWriter, r *http.Request) {
 // === Test Generation Endpoints ===
 
 func (s *Server) handlePreviewTests(w http.ResponseWriter, r *http.Request) {
-	testGen := s.workbench.TestGenerator()
-	if testGen == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "test generator not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.testGen == nil {
+		s.errorResponse(w, http.StatusBadRequest, "test generator not available")
 		return
 	}
 
-	result, err := testGen.PreviewTest()
+	result, err := conn.testGen.PreviewTest()
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -1146,10 +1446,9 @@ func (s *Server) handlePreviewTests(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGenerateTests(w http.ResponseWriter, r *http.Request) {
-	testGen := s.workbench.TestGenerator()
-	snapshots := s.workbench.Snapshots()
-	if testGen == nil || snapshots == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "test generator not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.testGen == nil || conn.snapshots == nil {
+		s.errorResponse(w, http.StatusBadRequest, "test generator not available")
 		return
 	}
 
@@ -1161,7 +1460,7 @@ func (s *Server) handleGenerateTests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := testGen.Generate()
+	result, err := conn.testGen.Generate()
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -1179,200 +1478,16 @@ func (s *Server) handleGenerateTests(w http.ResponseWriter, r *http.Request) {
 	s.jsonResponse(w, http.StatusOK, result)
 }
 
-// === Fallback UI ===
-
-func (s *Server) handleUIFallback(w http.ResponseWriter, r *http.Request) {
-	html := `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connector Workbench</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        h1 { color: #58a6ff; margin-bottom: 20px; }
-        h2 { color: #8b949e; font-size: 14px; text-transform: uppercase; margin: 20px 0 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; }
-        .card-title { color: #58a6ff; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
-        .stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #21262d; }
-        .stat:last-child { border-bottom: none; }
-        .stat-label { color: #8b949e; }
-        .stat-value { color: #c9d1d9; font-weight: 500; }
-        .btn { background: #238636; border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
-        .btn:hover { background: #2ea043; }
-        .btn-secondary { background: #21262d; border: 1px solid #30363d; }
-        .btn-secondary:hover { background: #30363d; }
-        .btn-danger { background: #da3633; }
-        .btn-danger:hover { background: #f85149; }
-        .actions { margin: 20px 0; }
-        pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 12px; max-height: 400px; overflow-y: auto; }
-        .logs { font-family: monospace; font-size: 11px; }
-        .log-entry { padding: 4px 0; border-bottom: 1px solid #21262d; }
-        .log-time { color: #8b949e; }
-        .log-type { padding: 2px 6px; border-radius: 3px; font-size: 10px; margin: 0 8px; }
-        .log-type-log { background: #238636; }
-        .log-type-error { background: #da3633; }
-        .log-type-plugin_call { background: #1f6feb; }
-        .log-type-state_change { background: #a371f7; }
-        #status { margin-top: 10px; padding: 10px; background: #21262d; border-radius: 6px; }
-        .refresh-hint { color: #8b949e; font-size: 12px; margin-top: 10px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🔧 Connector Workbench</h1>
-        
-        <div class="actions">
-            <button class="btn" onclick="fetchAll()">▶️ Run Full Cycle</button>
-            <button class="btn btn-secondary" onclick="fetchAccounts()">Fetch Accounts</button>
-            <button class="btn btn-secondary" onclick="fetchPayments()">Fetch Payments</button>
-            <button class="btn btn-secondary" onclick="fetchBalances()">Fetch Balances</button>
-            <button class="btn btn-danger" onclick="reset()">🔄 Reset</button>
-        </div>
-        
-        <div id="status"></div>
-
-        <h2>Data</h2>
-        <div class="grid">
-            <div class="card">
-                <div class="card-title">Accounts</div>
-                <div id="accounts-data">Loading...</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Payments</div>
-                <div id="payments-data">Loading...</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Balances</div>
-                <div id="balances-data">Loading...</div>
-            </div>
-        </div>
-
-        <h2>Debug Logs</h2>
-        <div class="card">
-            <div class="card-title">Recent Activity</div>
-            <div id="logs" class="logs">Loading...</div>
-        </div>
-
-        <h2>Plugin Calls</h2>
-        <div class="card">
-            <pre id="plugin-calls">Loading...</pre>
-        </div>
-
-        <p class="refresh-hint">Data refreshes every 2 seconds</p>
-    </div>
-
-    <script>
-        const API = '/api';
-
-        async function fetchJSON(url, opts = {}) {
-            const res = await fetch(API + url, opts);
-            return res.json();
-        }
-
-        async function fetchAll() {
-            updateStatus('Running full fetch cycle...');
-            const res = await fetchJSON('/fetch/all', { method: 'POST' });
-            updateStatus('Cycle complete: ' + JSON.stringify(res));
-            refresh();
-        }
-
-        async function fetchAccounts() {
-            updateStatus('Fetching accounts...');
-            const res = await fetchJSON('/fetch/accounts', { method: 'POST' });
-            updateStatus('Fetched ' + res.count + ' accounts (has_more: ' + res.has_more + ')');
-            refresh();
-        }
-
-        async function fetchPayments() {
-            updateStatus('Fetching payments...');
-            const res = await fetchJSON('/fetch/payments', { method: 'POST' });
-            updateStatus('Fetched ' + res.count + ' payments (has_more: ' + res.has_more + ')');
-            refresh();
-        }
-
-        async function fetchBalances() {
-            updateStatus('Fetching balances...');
-            const res = await fetchJSON('/fetch/balances', { method: 'POST' });
-            updateStatus('Fetched ' + res.count + ' balances (has_more: ' + res.has_more + ')');
-            refresh();
-        }
-
-        async function reset() {
-            if (confirm('Reset all data and state?')) {
-                await fetchJSON('/reset', { method: 'POST' });
-                updateStatus('Reset complete');
-                refresh();
-            }
-        }
-
-        function updateStatus(msg) {
-            document.getElementById('status').textContent = msg;
-        }
-
-        async function refresh() {
-            // Accounts
-            const accounts = await fetchJSON('/data/accounts');
-            document.getElementById('accounts-data').innerHTML = 
-                '<div class="stat"><span class="stat-label">Count</span><span class="stat-value">' + accounts.count + '</span></div>' +
-                (accounts.accounts.slice(0, 5).map(a => 
-                    '<div class="stat"><span class="stat-label">' + a.reference + '</span><span class="stat-value">' + (a.name || '-') + '</span></div>'
-                ).join(''));
-
-            // Payments
-            const payments = await fetchJSON('/data/payments');
-            document.getElementById('payments-data').innerHTML = 
-                '<div class="stat"><span class="stat-label">Count</span><span class="stat-value">' + payments.count + '</span></div>' +
-                (payments.payments.slice(0, 5).map(p => 
-                    '<div class="stat"><span class="stat-label">' + p.reference + '</span><span class="stat-value">' + p.amount + ' ' + p.asset + '</span></div>'
-                ).join(''));
-
-            // Balances
-            const balances = await fetchJSON('/data/balances');
-            const balancesList = balances.balances || [];
-            document.getElementById('balances-data').innerHTML = 
-                '<div class="stat"><span class="stat-label">Count</span><span class="stat-value">' + balancesList.length + '</span></div>' +
-                (balancesList.slice(0, 5).map(b => 
-                    '<div class="stat"><span class="stat-label">' + b.account_reference + '</span><span class="stat-value">' + b.amount + ' ' + b.asset + '</span></div>'
-                ).join(''));
-
-            // Logs
-            const logs = await fetchJSON('/debug/logs?limit=20');
-            document.getElementById('logs').innerHTML = logs.entries.map(e => 
-                '<div class="log-entry"><span class="log-time">' + new Date(e.timestamp).toLocaleTimeString() + '</span>' +
-                '<span class="log-type log-type-' + e.type + '">' + e.type + '</span>' +
-                '<span>' + (e.operation || '') + ' ' + (e.message || '') + (e.error ? ' ERROR: ' + e.error : '') + '</span></div>'
-            ).join('');
-
-            // Plugin calls
-            const calls = await fetchJSON('/debug/plugin-calls?limit=10');
-            document.getElementById('plugin-calls').textContent = JSON.stringify(calls.plugin_calls, null, 2);
-        }
-
-        // Initial load
-        refresh();
-        // Auto-refresh
-        setInterval(refresh, 2000);
-    </script>
-</body>
-</html>`
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
-}
-
 // === Schema Inference Endpoints ===
 
 func (s *Server) handleListSchemas(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
-	list := schemas.ListSchemas()
+	list := conn.schemas.ListSchemas()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"schemas": list,
 		"count":   len(list),
@@ -1380,25 +1495,25 @@ func (s *Server) handleListSchemas(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSchemaStats(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
-	stats := schemas.Stats()
+	stats := conn.schemas.Stats()
 	s.jsonResponse(w, http.StatusOK, stats)
 }
 
 func (s *Server) handleGetSchema(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
 	operation := chi.URLParam(r, "operation")
-	schema := schemas.GetSchema(operation)
+	schema := conn.schemas.GetSchema(operation)
 	if schema == nil {
 		s.errorResponse(w, http.StatusNotFound, "schema not found")
 		return
@@ -1408,9 +1523,9 @@ func (s *Server) handleGetSchema(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleInferSchema(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
@@ -1425,7 +1540,7 @@ func (s *Server) handleInferSchema(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	schema, err := schemas.InferFromJSON(req.Operation, req.Endpoint, req.Method, req.Data)
+	schema, err := conn.schemas.InferFromJSON(req.Operation, req.Endpoint, req.Method, req.Data)
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -1435,9 +1550,9 @@ func (s *Server) handleInferSchema(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSaveSchemaBaseline(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
@@ -1449,7 +1564,7 @@ func (s *Server) handleSaveSchemaBaseline(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := schemas.SaveBaseline(req.Operation); err != nil {
+	if err := conn.schemas.SaveBaseline(req.Operation); err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -1458,13 +1573,13 @@ func (s *Server) handleSaveSchemaBaseline(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) handleSaveAllSchemaBaselines(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
-	count := schemas.SaveAllBaselines()
+	count := conn.schemas.SaveAllBaselines()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"status": "saved",
 		"count":  count,
@@ -1472,13 +1587,13 @@ func (s *Server) handleSaveAllSchemaBaselines(w http.ResponseWriter, r *http.Req
 }
 
 func (s *Server) handleListSchemaBaselines(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
-	list := schemas.ListBaselines()
+	list := conn.schemas.ListBaselines()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"baselines": list,
 		"count":     len(list),
@@ -1486,14 +1601,14 @@ func (s *Server) handleListSchemaBaselines(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *Server) handleCompareSchema(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
 	operation := chi.URLParam(r, "operation")
-	diff, err := schemas.CompareWithBaseline(operation)
+	diff, err := conn.schemas.CompareWithBaseline(operation)
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -1503,26 +1618,26 @@ func (s *Server) handleCompareSchema(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleClearSchemas(w http.ResponseWriter, r *http.Request) {
-	schemas := s.workbench.Schemas()
-	if schemas == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "schema manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.schemas == nil {
+		s.errorResponse(w, http.StatusBadRequest, "schema manager not available")
 		return
 	}
 
-	schemas.Clear()
+	conn.schemas.Clear()
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "cleared"})
 }
 
 // === Data Baseline Endpoints ===
 
 func (s *Server) handleListBaselines(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
-	list := baselines.ListBaselines()
+	list := conn.baselines.ListBaselines()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"baselines": list,
 		"count":     len(list),
@@ -1530,14 +1645,14 @@ func (s *Server) handleListBaselines(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetBaseline(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
-	baseline := baselines.GetBaseline(id)
+	baseline := conn.baselines.GetBaseline(id)
 	if baseline == nil {
 		s.errorResponse(w, http.StatusNotFound, "baseline not found")
 		return
@@ -1547,9 +1662,9 @@ func (s *Server) handleGetBaseline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSaveBaseline(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
@@ -1565,7 +1680,7 @@ func (s *Server) handleSaveBaseline(w http.ResponseWriter, r *http.Request) {
 		req.Name = fmt.Sprintf("baseline-%s", time.Now().Format("2006-01-02-15-04"))
 	}
 
-	baseline, err := baselines.SaveBaseline(req.Name)
+	baseline, err := conn.baselines.SaveBaseline(req.Name)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1575,14 +1690,14 @@ func (s *Server) handleSaveBaseline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteBaseline(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
-	if err := baselines.DeleteBaseline(id); err != nil {
+	if err := conn.baselines.DeleteBaseline(id); err != nil {
 		s.errorResponse(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -1591,14 +1706,14 @@ func (s *Server) handleDeleteBaseline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCompareBaseline(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
-	diff, err := baselines.CompareWithCurrent(id)
+	diff, err := conn.baselines.CompareWithCurrent(id)
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -1608,14 +1723,14 @@ func (s *Server) handleCompareBaseline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleExportBaseline(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
 	id := chi.URLParam(r, "id")
-	data, err := baselines.Export(id)
+	data, err := conn.baselines.Export(id)
 	if err != nil {
 		s.errorResponse(w, http.StatusNotFound, err.Error())
 		return
@@ -1627,9 +1742,9 @@ func (s *Server) handleExportBaseline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleImportBaseline(w http.ResponseWriter, r *http.Request) {
-	baselines := s.workbench.Baselines()
-	if baselines == nil {
-		s.errorResponse(w, http.StatusInternalServerError, "baseline manager not available")
+	conn := s.getConnector(r)
+	if conn == nil || conn.baselines == nil {
+		s.errorResponse(w, http.StatusBadRequest, "baseline manager not available")
 		return
 	}
 
@@ -1639,13 +1754,43 @@ func (s *Server) handleImportBaseline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseline, err := baselines.Import(data)
+	baseline, err := conn.baselines.Import(data)
 	if err != nil {
 		s.errorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	s.jsonResponse(w, http.StatusCreated, baseline)
+}
+
+// === Fallback UI ===
+
+func (s *Server) handleUIFallback(w http.ResponseWriter, r *http.Request) {
+	html := `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connector Workbench</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 40px; }
+        h1 { color: #58a6ff; margin-bottom: 20px; }
+        p { margin-bottom: 10px; color: #8b949e; }
+        a { color: #58a6ff; }
+        code { background: #161b22; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Connector Workbench (Multi-Connector)</h1>
+    <p>The full UI is not embedded. Build it with:</p>
+    <p><code>cd tools/workbench/ui && npm install && npm run build</code></p>
+    <p>API available at <a href="/api/status">/api/status</a></p>
+    <p>Available connectors at <a href="/api/connectors/available">/api/connectors/available</a></p>
+</body>
+</html>`
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(html))
 }
 
 // writeGeneratedFiles writes generated test files to the specified directory.

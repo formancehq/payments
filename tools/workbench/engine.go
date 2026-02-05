@@ -14,6 +14,30 @@ import (
 // DefaultPageSize is the default page size for fetching.
 const DefaultPageSize = 25
 
+// extractPayloadKey extracts a short identifier from a JSON payload for use as a state key.
+// It tries to use the "Reference" field if present, otherwise uses a truncated version.
+func extractPayloadKey(payload json.RawMessage) string {
+	if len(payload) == 0 {
+		return ""
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(payload, &data); err == nil {
+		if ref, ok := data["Reference"].(string); ok && ref != "" {
+			// Use just the reference, truncate if too long
+			if len(ref) > 30 {
+				return ref[:30]
+			}
+			return ref
+		}
+	}
+	// Fallback: use truncated payload
+	s := string(payload)
+	if len(s) > 20 {
+		return s[:20] + "..."
+	}
+	return s
+}
+
 // Engine is a lightweight execution engine that replaces Temporal workflows
 // with direct function calls for local development.
 type Engine struct {
@@ -376,6 +400,13 @@ func (e *Engine) executeFetchPaymentsTask(ctx context.Context, task models.Conne
 
 	e.debug.Log("fetch_payments", fmt.Sprintf("Fetched %d payments", totalFetched))
 
+	// Save state for UI display
+	stateKey := "payments"
+	if payloadKey := extractPayloadKey(fromPayload); payloadKey != "" {
+		stateKey = fmt.Sprintf("payments:%s", payloadKey)
+	}
+	e.storage.SaveState(stateKey, state)
+
 	return nil
 }
 
@@ -446,6 +477,13 @@ func (e *Engine) executeFetchBalancesTask(ctx context.Context, task models.Conne
 
 	e.debug.Log("fetch_balances", fmt.Sprintf("Fetched %d balances", totalFetched))
 
+	// Save state for UI display
+	stateKey := "balances"
+	if payloadKey := extractPayloadKey(fromPayload); payloadKey != "" {
+		stateKey = fmt.Sprintf("balances:%s", payloadKey)
+	}
+	e.storage.SaveState(stateKey, state)
+
 	return nil
 }
 
@@ -515,6 +553,13 @@ func (e *Engine) executeFetchExternalAccountsTask(ctx context.Context, task mode
 	}
 
 	e.debug.Log("fetch_external_accounts", fmt.Sprintf("Fetched %d external accounts", totalFetched))
+
+	// Save state for UI display
+	stateKey := "external_accounts"
+	if payloadKey := extractPayloadKey(fromPayload); payloadKey != "" {
+		stateKey = fmt.Sprintf("external_accounts:%s", payloadKey)
+	}
+	e.storage.SaveState(stateKey, state)
 
 	return nil
 }
@@ -602,6 +647,13 @@ func (e *Engine) executeFetchOthersTask(ctx context.Context, task models.Connect
 	}
 
 	e.debug.Log("fetch_others", fmt.Sprintf("Fetched %d others (%s)", totalFetched, name))
+
+	// Save state for UI display
+	stateKey := fmt.Sprintf("others:%s", name)
+	if payloadKey := extractPayloadKey(fromPayload); payloadKey != "" {
+		stateKey = fmt.Sprintf("others:%s:%s", name, payloadKey)
+	}
+	e.storage.SaveState(stateKey, state)
 
 	return nil
 }
@@ -810,6 +862,59 @@ func (e *Engine) FetchBalancesOnePage(ctx context.Context, fromPayload json.RawM
 
 	if len(resp.Balances) > 0 {
 		e.storage.StoreBalances(resp.Balances)
+	}
+
+	return &resp, nil
+}
+
+// FetchExternalAccountsOnePage fetches one page of external accounts.
+func (e *Engine) FetchExternalAccountsOnePage(ctx context.Context, fromPayload json.RawMessage) (*models.FetchNextExternalAccountsResponse, error) {
+	key := string(fromPayload)
+	if key == "" {
+		key = "_root"
+	}
+
+	e.mu.Lock()
+	state, ok := e.externalAccountsState[key]
+	if !ok {
+		state = &fetchState{HasMore: true}
+		e.externalAccountsState[key] = state
+	}
+	currentState := state.State
+	e.mu.Unlock()
+
+	if !state.HasMore {
+		return &models.FetchNextExternalAccountsResponse{HasMore: false}, nil
+	}
+
+	callID := e.debug.LogPluginCall("FetchNextExternalAccounts", models.FetchNextExternalAccountsRequest{
+		FromPayload: fromPayload,
+		State:       currentState,
+		PageSize:    e.pageSize,
+	})
+	start := time.Now()
+
+	resp, err := e.plugin.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{
+		FromPayload: fromPayload,
+		State:       currentState,
+		PageSize:    e.pageSize,
+	})
+
+	e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+	if err != nil {
+		return nil, err
+	}
+
+	e.mu.Lock()
+	state.State = resp.NewState
+	state.HasMore = resp.HasMore
+	state.PagesFetched++
+	state.TotalItems += len(resp.ExternalAccounts)
+	e.mu.Unlock()
+
+	if len(resp.ExternalAccounts) > 0 {
+		e.storage.StoreExternalAccounts(resp.ExternalAccounts)
 	}
 
 	return &resp, nil
