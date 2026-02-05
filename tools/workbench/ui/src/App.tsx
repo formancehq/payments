@@ -1,75 +1,379 @@
-import { useState, useEffect, useCallback } from 'react';
-import api, { Status, Account, Payment, Balance, DebugEntry, PluginCall, HTTPRequest, ConnectorInfo, FileNode, SourceFile, SearchResult, TaskTreeSummary, TaskNodeSummary, TaskExecution, Snapshot, SnapshotStats, GenerateResult, InferredSchema, SchemaDiff, DataBaseline, BaselineDiff } from './api';
+import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
+import { 
+  globalApi, 
+  connectorApi, 
+  setSelectedConnector,
+  type GlobalStatus, 
+  type ConnectorSummary, 
+  type ConnectorStatus,
+  type AvailableConnector,
+  type Account, 
+  type Payment, 
+  type Balance, 
+  type DebugEntry, 
+  type PluginCall, 
+  type HTTPRequest, 
+  type ConnectorInfo, 
+  type FileNode, 
+  type SourceFile, 
+  type SearchResult, 
+  type TaskTreeSummary, 
+  type TaskNodeSummary, 
+  type TaskExecution, 
+  type Snapshot, 
+  type SnapshotStats, 
+  type GenerateResult, 
+  type InferredSchema, 
+  type SchemaDiff, 
+  type DataBaseline, 
+  type BaselineDiff 
+} from './api';
 import './App.css';
+
+// =============================================================================
+// UTILITY COMPONENTS & HELPERS
+// =============================================================================
+
+// Format relative time (e.g., "5 min ago")
+function formatRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now.getTime() - then.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 5) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return then.toLocaleDateString();
+}
+
+// Tooltip component
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  return (
+    <span className="tooltip-wrapper">
+      {children}
+      <span className="tooltip-text">{text}</span>
+    </span>
+  );
+}
+
+// Copy button component
+function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  return (
+    <button 
+      className={`btn-copy ${copied ? 'copied' : ''}`} 
+      onClick={handleCopy}
+      title={label}
+    >
+      {copied ? 'Copied!' : 'Copy'}
+    </button>
+  );
+}
+
+// Confirmation Modal
+interface ConfirmModalProps {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'warning' | 'default';
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function ConfirmModal({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', variant = 'default', onConfirm, onCancel }: ConfirmModalProps) {
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Enter') onConfirm();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onConfirm, onCancel]);
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal modal-confirm" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{title}</h3>
+        </div>
+        <div className="modal-body">
+          <p>{message}</p>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onCancel}>
+            {cancelText}
+          </button>
+          <button className={`btn-${variant === 'danger' ? 'danger' : 'primary'}`} onClick={onConfirm} autoFocus>
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Skeleton loader
+function Skeleton({ rows = 3, type = 'list' }: { rows?: number; type?: 'list' | 'card' | 'table' }) {
+  if (type === 'card') {
+    return (
+      <div className="skeleton-card">
+        <div className="skeleton-line skeleton-title" />
+        <div className="skeleton-line" />
+        <div className="skeleton-line skeleton-short" />
+      </div>
+    );
+  }
+  if (type === 'table') {
+    return (
+      <div className="skeleton-table">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="skeleton-row">
+            <div className="skeleton-cell" />
+            <div className="skeleton-cell" />
+            <div className="skeleton-cell skeleton-short" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="skeleton-list">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="skeleton-line" style={{ width: `${70 + Math.random() * 30}%` }} />
+      ))}
+    </div>
+  );
+}
+
+// Progress bar component
+function ProgressBar({ current, total, label }: { current: number; total: number; label?: string }) {
+  const percent = total > 0 ? Math.min(100, (current / total) * 100) : 0;
+  return (
+    <div className="progress-bar-container">
+      {label && <span className="progress-label">{label}</span>}
+      <div className="progress-bar">
+        <div className="progress-fill" style={{ width: `${percent}%` }} />
+      </div>
+      <span className="progress-text">{current}/{total}</span>
+    </div>
+  );
+}
+
+// Context for the selected connector
+interface ConnectorContextType {
+  connectorId: string | null;
+  connectorStatus: ConnectorStatus | null;
+  setConnectorId: (id: string | null) => void;
+  refreshConnectorStatus: () => Promise<void>;
+}
+
+const ConnectorContext = createContext<ConnectorContextType>({
+  connectorId: null,
+  connectorStatus: null,
+  setConnectorId: () => {},
+  refreshConnectorStatus: async () => {},
+});
+
+const useConnector = () => useContext(ConnectorContext);
 
 type Tab = 'dashboard' | 'accounts' | 'payments' | 'balances' | 'tasks' | 'debug' | 'snapshots' | 'analysis' | 'code' | 'state';
 
 function App() {
+  const [selectedConnectorId, setSelectedConnectorId] = useState<string | null>(null);
+  const [connectorStatus, setConnectorStatus] = useState<ConnectorStatus | null>(null);
+  const [globalStatus, setGlobalStatus] = useState<GlobalStatus | null>(null);
+  const [connectors, setConnectors] = useState<ConnectorSummary[]>([]);
+  const [availableConnectors, setAvailableConnectors] = useState<AvailableConnector[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Data
+  // Data (connector-specific)
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
+  const [states, setStates] = useState<Record<string, unknown>>({});
+  const [tasksTree, setTasksTree] = useState<unknown>(null);
+  
+  // Debug data (global)
   const [debugLogs, setDebugLogs] = useState<DebugEntry[]>([]);
   const [pluginCalls, setPluginCalls] = useState<PluginCall[]>([]);
   const [httpRequests, setHttpRequests] = useState<HTTPRequest[]>([]);
   const [httpCaptureEnabled, setHttpCaptureEnabled] = useState(true);
-  const [states, setStates] = useState<Record<string, unknown>>({});
-  const [tasksTree, setTasksTree] = useState<unknown>(null);
   
   // Snapshot modal state
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [snapshotCaptureId, setSnapshotCaptureId] = useState<string | null>(null);
 
-  const refreshStatus = useCallback(async () => {
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    variant?: 'danger' | 'warning' | 'default';
+    onConfirm: () => void;
+  } | null>(null);
+
+  // Keyboard shortcuts
+  const tabs: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
+  
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + number for tab switching
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const tabIndex = parseInt(e.key) - 1;
+        if (tabIndex < tabs.length) {
+          const targetTab = tabs[tabIndex];
+          // Only switch to connector tabs if a connector is selected
+          if (targetTab === 'dashboard' || targetTab === 'debug' || selectedConnectorId) {
+            setTab(targetTab);
+          }
+        }
+      }
+      // Ctrl/Cmd + N for new connector
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        setShowCreateModal(true);
+      }
+      // Escape to close modals
+      if (e.key === 'Escape') {
+        if (showCreateModal) setShowCreateModal(false);
+        if (showSnapshotModal) {
+          setShowSnapshotModal(false);
+          setSnapshotCaptureId(null);
+        }
+        if (confirmModal) setConfirmModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedConnectorId, showCreateModal, showSnapshotModal, confirmModal, tabs]);
+
+  // Update selected connector in api module
+  useEffect(() => {
+    setSelectedConnector(selectedConnectorId);
+  }, [selectedConnectorId]);
+
+  const refreshGlobalStatus = useCallback(async () => {
     try {
-      const s = await api.getStatus();
-      setStatus(s);
+      const [status, connectorsList, available] = await Promise.all([
+        globalApi.getStatus(),
+        globalApi.listConnectors(),
+        globalApi.getAvailableConnectors(),
+      ]);
+      setGlobalStatus(status);
+      setConnectors(connectorsList.connectors || []);
+      setAvailableConnectors(available.connectors || []);
+      setInitialLoading(false);
     } catch (e) {
-      console.error('Failed to fetch status:', e);
+      console.error('Failed to fetch global status:', e);
+      setInitialLoading(false);
     }
   }, []);
 
-  const refreshData = useCallback(async () => {
+  const refreshConnectorStatus = useCallback(async () => {
+    if (!selectedConnectorId) {
+      setConnectorStatus(null);
+      return;
+    }
     try {
-      const [acc, pay, bal, logs, calls, httpReqs, httpStatus, st, tree] = await Promise.all([
+      const api = connectorApi(selectedConnectorId);
+      const status = await api.getStatus();
+      setConnectorStatus(status);
+    } catch (e) {
+      console.error('Failed to fetch connector status:', e);
+    }
+  }, [selectedConnectorId]);
+
+  const refreshConnectorData = useCallback(async () => {
+    if (!selectedConnectorId) {
+      setAccounts([]);
+      setPayments([]);
+      setBalances([]);
+      setStates({});
+      setTasksTree(null);
+      return;
+    }
+    try {
+      const api = connectorApi(selectedConnectorId);
+      const [acc, pay, bal, st, tree] = await Promise.all([
         api.getAccounts(),
         api.getPayments(),
         api.getBalances(),
-        api.getDebugLogs(100),
-        api.getPluginCalls(50),
-        api.getHTTPRequests(50),
-        api.getHTTPCaptureStatus(),
         api.getStates(),
         api.getTasksTree(),
       ]);
       setAccounts(acc.accounts || []);
       setPayments(pay.payments || []);
       setBalances(bal.balances || []);
+      setStates(st.states || {});
+      setTasksTree(tree.tasks_tree);
+    } catch (e) {
+      console.error('Failed to refresh connector data:', e);
+    }
+  }, [selectedConnectorId]);
+
+  const refreshDebugData = useCallback(async () => {
+    try {
+      const [logs, calls, httpReqs, httpStatus] = await Promise.all([
+        globalApi.getDebugLogs(100),
+        globalApi.getPluginCalls(50),
+        globalApi.getHTTPRequests(50),
+        globalApi.getHTTPCaptureStatus(),
+      ]);
       setDebugLogs(logs.entries || []);
       setPluginCalls(calls.plugin_calls || []);
       setHttpRequests(httpReqs.requests || []);
       setHttpCaptureEnabled(httpStatus.enabled);
-      setStates(st.states || {});
-      setTasksTree(tree.tasks_tree);
     } catch (e) {
-      console.error('Failed to refresh data:', e);
+      console.error('Failed to refresh debug data:', e);
     }
   }, []);
 
   useEffect(() => {
-    refreshStatus();
-    refreshData();
+    refreshGlobalStatus();
+    refreshDebugData();
     const interval = setInterval(() => {
-      refreshStatus();
-      refreshData();
-    }, 2000);
+      refreshGlobalStatus();
+      refreshDebugData();
+    }, 3000);
     return () => clearInterval(interval);
-  }, [refreshStatus, refreshData]);
+  }, [refreshGlobalStatus, refreshDebugData]);
+
+  useEffect(() => {
+    refreshConnectorStatus();
+    refreshConnectorData();
+    if (selectedConnectorId) {
+      const interval = setInterval(() => {
+        refreshConnectorStatus();
+        refreshConnectorData();
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedConnectorId, refreshConnectorStatus, refreshConnectorData]);
 
   const runAction = async (action: () => Promise<unknown>, successMsg?: string) => {
     setLoading(true);
@@ -77,8 +381,9 @@ function App() {
     try {
       await action();
       if (successMsg) setError(null);
-      await refreshStatus();
-      await refreshData();
+      await refreshConnectorStatus();
+      await refreshConnectorData();
+      await refreshGlobalStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -86,225 +391,593 @@ function App() {
     }
   };
 
+  const handleCreateConnector = async (provider: string, name: string, config: Record<string, unknown>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await globalApi.createConnector({ provider, name, config });
+      await refreshGlobalStatus();
+      setSelectedConnectorId(result.id);
+      setShowCreateModal(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create connector');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteConnector = (id: string) => {
+    const connector = connectors.find(c => c.id === id);
+    setConfirmModal({
+      title: 'Delete Connector',
+      message: `Are you sure you want to delete "${connector?.name || connector?.provider || id.slice(0, 8)}"? This action cannot be undone.`,
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setLoading(true);
+        setError(null);
+        try {
+          await connectorApi(id).delete();
+          if (selectedConnectorId === id) {
+            setSelectedConnectorId(null);
+          }
+          await refreshGlobalStatus();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Failed to delete connector');
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const contextValue: ConnectorContextType = {
+    connectorId: selectedConnectorId,
+    connectorStatus,
+    setConnectorId: setSelectedConnectorId,
+    refreshConnectorStatus,
+  };
+
   return (
-    <div className="app">
-      <header className="header">
-        <div className="header-left">
-          <h1>CONNECTOR WORKBENCH</h1>
-          {status && (
-            <span className="provider-badge">{status.provider}</span>
-          )}
-        </div>
-        <div className="header-right">
-          {status && (
-            <code className="connector-id">{status.connector_id}</code>
-          )}
-        </div>
-      </header>
+    <ConnectorContext.Provider value={contextValue}>
+      <div className="app">
+        <header className="header">
+          <div className="header-left">
+            <h1>CONNECTOR WORKBENCH</h1>
+            <div className="connector-selector">
+              <select 
+                value={selectedConnectorId || ''} 
+                onChange={(e) => setSelectedConnectorId(e.target.value || null)}
+              >
+                <option value="">-- Select Connector --</option>
+                {connectors.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.provider}: {c.name || c.id.slice(0, 8)}
+                    {c.installed ? ' [installed]' : ''}
+                  </option>
+                ))}
+              </select>
+              <Tooltip text="Create new connector instance (Ctrl+N)">
+                <button className="btn-primary btn-small" onClick={() => setShowCreateModal(true)}>
+                  + New
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+          <div className="header-right">
+            <div className="global-stats">
+              <span className="stat">{connectors.length} connectors</span>
+              {globalStatus && (
+                <>
+                  <span className="stat">{globalStatus.debug.total_http_requests} requests</span>
+                  {globalStatus.debug.error_count > 0 && (
+                    <span className="stat error">{globalStatus.debug.error_count} errors</span>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </header>
 
-      <nav className="tabs">
-        <button className={`tab ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
-          Dashboard
-        </button>
-        <button className={`tab ${tab === 'accounts' ? 'active' : ''}`} onClick={() => setTab('accounts')}>
-          Accounts {accounts.length > 0 && <span className="tab-count">{accounts.length}</span>}
-        </button>
-        <button className={`tab ${tab === 'payments' ? 'active' : ''}`} onClick={() => setTab('payments')}>
-          Payments {payments.length > 0 && <span className="tab-count">{payments.length}</span>}
-        </button>
-        <button className={`tab ${tab === 'balances' ? 'active' : ''}`} onClick={() => setTab('balances')}>
-          Balances {balances.length > 0 && <span className="tab-count">{balances.length}</span>}
-        </button>
-        <button className={`tab ${tab === 'tasks' ? 'active' : ''}`} onClick={() => setTab('tasks')}>
-          Tasks
-        </button>
-        <button className={`tab ${tab === 'debug' ? 'active' : ''}`} onClick={() => setTab('debug')}>
-          Debug {status && status.debug.error_count > 0 && (
-            <span className="tab-count error">{status.debug.error_count}</span>
+        {selectedConnectorId && connectorStatus && (
+          <div className="connector-header">
+            <span className="provider-badge">{connectorStatus.provider}</span>
+            <Tooltip text="Click to copy">
+              <code className="connector-id clickable" onClick={() => navigator.clipboard.writeText(connectorStatus.connector_id)}>
+                {connectorStatus.connector_id}
+              </code>
+            </Tooltip>
+            <span className={`status-badge ${connectorStatus.installed ? 'installed' : 'not-installed'}`}>
+              {connectorStatus.installed ? 'INSTALLED' : 'NOT INSTALLED'}
+            </span>
+            <div className="connector-actions">
+              {!connectorStatus.installed && (
+                <Tooltip text="Install the connector to enable data fetching">
+                  <button 
+                    className="btn-primary btn-small" 
+                    onClick={() => runAction(() => connectorApi(selectedConnectorId).install())}
+                    disabled={loading}
+                  >
+                    {loading ? <span className="spinner" /> : 'Install'}
+                  </button>
+                </Tooltip>
+              )}
+              {connectorStatus.installed && (
+                <Tooltip text="Uninstall but keep configuration">
+                  <button 
+                    className="btn-secondary btn-small" 
+                    onClick={() => runAction(() => connectorApi(selectedConnectorId).uninstall())}
+                    disabled={loading}
+                  >
+                    {loading ? <span className="spinner" /> : 'Uninstall'}
+                  </button>
+                </Tooltip>
+              )}
+              <Tooltip text="Permanently delete this connector">
+                <button 
+                  className="btn-danger btn-small" 
+                  onClick={() => handleDeleteConnector(selectedConnectorId)}
+                  disabled={loading}
+                >
+                  Delete
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+
+        <nav className="tabs">
+          <Tooltip text="Ctrl+1">
+            <button className={`tab ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
+              Dashboard
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+2">
+            <button className={`tab ${tab === 'accounts' ? 'active' : ''}`} onClick={() => setTab('accounts')} disabled={!selectedConnectorId}>
+              Accounts {accounts.length > 0 && <span className="tab-count">{accounts.length}</span>}
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+3">
+            <button className={`tab ${tab === 'payments' ? 'active' : ''}`} onClick={() => setTab('payments')} disabled={!selectedConnectorId}>
+              Payments {payments.length > 0 && <span className="tab-count">{payments.length}</span>}
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+4">
+            <button className={`tab ${tab === 'balances' ? 'active' : ''}`} onClick={() => setTab('balances')} disabled={!selectedConnectorId}>
+              Balances {balances.length > 0 && <span className="tab-count">{balances.length}</span>}
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+5">
+            <button className={`tab ${tab === 'tasks' ? 'active' : ''}`} onClick={() => setTab('tasks')} disabled={!selectedConnectorId}>
+              Tasks
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+6">
+            <button className={`tab ${tab === 'debug' ? 'active' : ''}`} onClick={() => setTab('debug')}>
+              Debug {globalStatus && globalStatus.debug.error_count > 0 && (
+                <span className="tab-count error">{globalStatus.debug.error_count}</span>
+              )}
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+7">
+            <button className={`tab ${tab === 'snapshots' ? 'active' : ''}`} onClick={() => setTab('snapshots')} disabled={!selectedConnectorId}>
+              Snapshots
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+8">
+            <button className={`tab ${tab === 'analysis' ? 'active' : ''}`} onClick={() => setTab('analysis')} disabled={!selectedConnectorId}>
+              Analysis
+            </button>
+          </Tooltip>
+          <Tooltip text="Ctrl+9">
+            <button className={`tab ${tab === 'code' ? 'active' : ''}`} onClick={() => setTab('code')} disabled={!selectedConnectorId}>
+              Code
+            </button>
+          </Tooltip>
+          <button className={`tab ${tab === 'state' ? 'active' : ''}`} onClick={() => setTab('state')} disabled={!selectedConnectorId}>
+            State
+          </button>
+        </nav>
+
+        {error && (
+          <div className="error-banner">
+            <span>{error}</span>
+            <button onClick={() => setError(null)}>×</button>
+          </div>
+        )}
+
+        <main className="main">
+          {initialLoading ? (
+            <div className="loading-container">
+              <Skeleton rows={4} type="card" />
+              <Skeleton rows={4} type="card" />
+            </div>
+          ) : !selectedConnectorId && tab !== 'debug' ? (
+            <NoConnectorView 
+              connectors={connectors}
+              availableConnectors={availableConnectors}
+              onSelect={setSelectedConnectorId}
+              onCreate={() => setShowCreateModal(true)}
+              onDelete={handleDeleteConnector}
+            />
+          ) : (
+            <>
+              {tab === 'dashboard' && selectedConnectorId && (
+                <DashboardTab
+                  status={connectorStatus}
+                  loading={loading}
+                  onFetchAccounts={() => runAction(() => connectorApi(selectedConnectorId).fetchAccounts())}
+                  onFetchPayments={() => runAction(() => connectorApi(selectedConnectorId).fetchPayments())}
+                  onFetchBalances={() => runAction(() => connectorApi(selectedConnectorId).fetchBalances())}
+                  onFetchExternalAccounts={() => runAction(() => connectorApi(selectedConnectorId).fetchExternalAccounts())}
+                  onFetchAll={() => runAction(() => connectorApi(selectedConnectorId).fetchAll())}
+                  onReset={() => runAction(() => connectorApi(selectedConnectorId).reset())}
+                />
+              )}
+              {tab === 'accounts' && (
+                <AccountsTab 
+                  accounts={accounts} 
+                  onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchAccounts()) : undefined}
+                />
+              )}
+              {tab === 'payments' && (
+                <PaymentsTab 
+                  payments={payments}
+                  onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchPayments()) : undefined}
+                />
+              )}
+              {tab === 'balances' && (
+                <BalancesTab 
+                  balances={balances}
+                  onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchBalances()) : undefined}
+                />
+              )}
+              {tab === 'tasks' && <TasksTab />}
+              {tab === 'debug' && (
+                <DebugTab 
+                  logs={debugLogs} 
+                  pluginCalls={pluginCalls}
+                  httpRequests={httpRequests}
+                  httpCaptureEnabled={httpCaptureEnabled}
+                  onClear={() => runAction(() => globalApi.clearDebug())}
+                  onToggleCapture={() => runAction(async () => {
+                    if (httpCaptureEnabled) {
+                      await globalApi.disableHTTPCapture();
+                    } else {
+                      await globalApi.enableHTTPCapture();
+                    }
+                  })}
+                  onSaveSnapshot={selectedConnectorId ? (captureId) => {
+                    setSnapshotCaptureId(captureId);
+                    setShowSnapshotModal(true);
+                  } : undefined}
+                />
+              )}
+              {tab === 'snapshots' && <SnapshotsTab />}
+              {tab === 'analysis' && <AnalysisTab />}
+              {tab === 'code' && <CodeTab />}
+              {tab === 'state' && <StateTab states={states} tasksTree={tasksTree} />}
+            </>
           )}
-        </button>
-        <button className={`tab ${tab === 'snapshots' ? 'active' : ''}`} onClick={() => setTab('snapshots')}>
-          Snapshots
-        </button>
-        <button className={`tab ${tab === 'analysis' ? 'active' : ''}`} onClick={() => setTab('analysis')}>
-          Analysis
-        </button>
-        <button className={`tab ${tab === 'code' ? 'active' : ''}`} onClick={() => setTab('code')}>
-          Code
-        </button>
-        <button className={`tab ${tab === 'state' ? 'active' : ''}`} onClick={() => setTab('state')}>
-          State
-        </button>
-      </nav>
+        </main>
 
-      {error && (
-        <div className="error-banner">
-          <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
-        </div>
-      )}
-
-      <main className="main">
-        {tab === 'dashboard' && (
-          <DashboardTab
-            status={status}
-            loading={loading}
-            onFetchAccounts={() => runAction(() => api.fetchAccounts())}
-            onFetchPayments={() => runAction(() => api.fetchPayments())}
-            onFetchBalances={() => runAction(() => api.fetchBalances())}
-            onFetchAll={() => runAction(() => api.fetchAll())}
-            onReset={() => runAction(() => api.reset())}
+        {showCreateModal && (
+          <CreateConnectorModal
+            availableConnectors={availableConnectors}
+            onClose={() => setShowCreateModal(false)}
+            onCreate={handleCreateConnector}
           />
         )}
-        {tab === 'accounts' && <AccountsTab accounts={accounts} />}
-        {tab === 'payments' && <PaymentsTab payments={payments} />}
-        {tab === 'balances' && <BalancesTab balances={balances} />}
-        {tab === 'tasks' && <TasksTab />}
-        {tab === 'debug' && (
-          <DebugTab 
-            logs={debugLogs} 
-            pluginCalls={pluginCalls}
-            httpRequests={httpRequests}
-            httpCaptureEnabled={httpCaptureEnabled}
-            onClear={() => runAction(() => api.clearDebug())}
-            onToggleCapture={() => runAction(async () => {
-              if (httpCaptureEnabled) {
-                await api.disableHTTPCapture();
-              } else {
-                await api.enableHTTPCapture();
-              }
-            })}
-            onSaveSnapshot={(captureId) => {
-              setSnapshotCaptureId(captureId);
-              setShowSnapshotModal(true);
+
+        {showSnapshotModal && snapshotCaptureId && selectedConnectorId && (
+          <SaveSnapshotModal
+            connectorId={selectedConnectorId}
+            captureId={snapshotCaptureId}
+            onClose={() => {
+              setShowSnapshotModal(false);
+              setSnapshotCaptureId(null);
+            }}
+            onSaved={() => {
+              setShowSnapshotModal(false);
+              setSnapshotCaptureId(null);
+              setTab('snapshots');
             }}
           />
         )}
-        {tab === 'snapshots' && <SnapshotsTab />}
-        {tab === 'analysis' && <AnalysisTab />}
-        {tab === 'code' && <CodeTab />}
-        {tab === 'state' && <StateTab states={states} tasksTree={tasksTree} />}
-      </main>
 
-      {showSnapshotModal && snapshotCaptureId && (
-        <SaveSnapshotModal
-          captureId={snapshotCaptureId}
-          onClose={() => {
-            setShowSnapshotModal(false);
-            setSnapshotCaptureId(null);
-          }}
-          onSaved={() => {
-            setShowSnapshotModal(false);
-            setSnapshotCaptureId(null);
-            setTab('snapshots');
-          }}
-        />
+        {confirmModal && (
+          <ConfirmModal
+            title={confirmModal.title}
+            message={confirmModal.message}
+            variant={confirmModal.variant}
+            confirmText="Delete"
+            onConfirm={confirmModal.onConfirm}
+            onCancel={() => setConfirmModal(null)}
+          />
+        )}
+      </div>
+    </ConnectorContext.Provider>
+  );
+}
+
+// No Connector Selected View
+interface NoConnectorViewProps {
+  connectors: ConnectorSummary[];
+  availableConnectors: AvailableConnector[];
+  onSelect: (id: string) => void;
+  onCreate: () => void;
+  onDelete: (id: string) => void;
+}
+
+function NoConnectorView({ connectors, availableConnectors, onSelect, onCreate, onDelete }: NoConnectorViewProps) {
+  return (
+    <div className="no-connector-view">
+      <div className="no-connector-header">
+        <h2>Connector Instances</h2>
+        <button className="btn-primary" onClick={onCreate}>
+          + Create New Connector
+        </button>
+      </div>
+
+      {connectors.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">[C]</div>
+          <p>No connector instances yet</p>
+          <p className="text-muted">Create a new connector to get started</p>
+          <button className="btn-primary" onClick={onCreate} style={{ marginTop: '16px' }}>
+            + Create Your First Connector
+          </button>
+        </div>
+      ) : (
+        <div className="connectors-grid">
+          {connectors.map((c) => (
+            <div key={c.id} className="connector-card" onClick={() => onSelect(c.id)}>
+              <div className="connector-card-header">
+                <span className="provider-badge">{c.provider}</span>
+                <span className={`status-badge ${c.installed ? 'installed' : 'not-installed'}`}>
+                  {c.installed ? 'INSTALLED' : 'NOT INSTALLED'}
+                </span>
+              </div>
+              <div className="connector-card-body">
+                <div className="connector-name">{c.name || c.id.slice(0, 8)}</div>
+                <code className="connector-id-small">{c.connector_id}</code>
+              </div>
+              <div className="connector-card-stats">
+                {c.accounts_count !== undefined && <span>{c.accounts_count} accounts</span>}
+                {c.payments_count !== undefined && <span>{c.payments_count} payments</span>}
+                {c.balances_count !== undefined && <span>{c.balances_count} balances</span>}
+              </div>
+              <div className="connector-card-footer">
+                <Tooltip text={new Date(c.created_at).toLocaleString()}>
+                  <span className="connector-date">{formatRelativeTime(c.created_at)}</span>
+                </Tooltip>
+                <button 
+                  className="btn-danger btn-small"
+                  onClick={(e) => { e.stopPropagation(); onDelete(c.id); }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+
+      <div className="available-connectors">
+        <h3>Available Connector Types ({availableConnectors.length})</h3>
+        <div className="available-list">
+          {availableConnectors.map((c) => (
+            <div key={c.provider} className="available-item">
+              <span className="available-provider">{c.provider}</span>
+              <span className={`available-type ${c.plugin_type === 1 ? 'type-openbanking' : 'type-psp'}`}>
+                {formatPluginType(c.plugin_type)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Create Connector Modal
+interface CreateConnectorModalProps {
+  availableConnectors: AvailableConnector[];
+  onClose: () => void;
+  onCreate: (provider: string, name: string, config: Record<string, unknown>) => Promise<void>;
+}
+
+function CreateConnectorModal({ availableConnectors, onClose, onCreate }: CreateConnectorModalProps) {
+  const [selectedProvider, setSelectedProvider] = useState('');
+  const [name, setName] = useState('');
+  const [config, setConfig] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedConnector = availableConnectors.find(c => c.provider === selectedProvider);
+
+  const handleProviderChange = (provider: string) => {
+    setSelectedProvider(provider);
+    setConfig({});
+  };
+
+  const handleConfigChange = (key: string, value: string) => {
+    setConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedProvider) {
+      setError('Please select a connector type');
+      return;
+    }
+    
+    // Check required fields
+    if (selectedConnector) {
+      for (const [key, param] of Object.entries(selectedConnector.config)) {
+        if (param.required && !config[key]) {
+          setError(`${key} is required`);
+          return;
+        }
+      }
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      await onCreate(selectedProvider, name, config);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create connector');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal-large" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Create New Connector</h3>
+          <button className="btn-icon" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          {error && <div className="alert alert-danger">{error}</div>}
+          
+          <div className="form-group">
+            <label>Connector Type *</label>
+            <div className="connector-type-grid">
+              {availableConnectors.map(c => (
+                <div 
+                  key={c.provider} 
+                  className={`connector-type-tile ${selectedProvider === c.provider ? 'selected' : ''}`}
+                  onClick={() => handleProviderChange(c.provider)}
+                >
+                  <span className="tile-provider">{c.provider}</span>
+                  <span className={`tile-type ${c.plugin_type === 1 ? 'type-openbanking' : 'type-psp'}`}>
+                    {formatPluginType(c.plugin_type)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {selectedProvider && (
+            <div className="form-group">
+              <label>Instance Name (optional)</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g., my-stripe-sandbox"
+              />
+            </div>
+          )}
+
+          {selectedConnector && (
+            <div className="config-section">
+              <h4>Configuration</h4>
+              {Object.entries(selectedConnector.config).map(([key, param]) => (
+                <div key={key} className="form-group">
+                  <label>
+                    {key}
+                    {param.required && <span className="required">*</span>}
+                    <span className="config-type">({param.dataType})</span>
+                  </label>
+                  {param.dataType === 'boolean' ? (
+                    <select 
+                      value={config[key] || param.defaultValue || ''} 
+                      onChange={e => handleConfigChange(key, e.target.value)}
+                    >
+                      <option value="">Select...</option>
+                      <option value="true">true</option>
+                      <option value="false">false</option>
+                    </select>
+                  ) : (
+                    <input
+                      type={param.dataType === 'password' ? 'password' : 'text'}
+                      value={config[key] || ''}
+                      onChange={e => handleConfigChange(key, e.target.value)}
+                      placeholder={param.defaultValue || ''}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </button>
+          <button className="btn-primary" onClick={handleSubmit} disabled={loading || !selectedProvider}>
+            {loading ? <span className="spinner" /> : 'Create Connector'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
 // Dashboard Tab
 interface DashboardTabProps {
-  status: Status | null;
+  status: ConnectorStatus | null;
   loading: boolean;
   onFetchAccounts: () => void;
   onFetchPayments: () => void;
   onFetchBalances: () => void;
+  onFetchExternalAccounts: () => void;
   onFetchAll: () => void;
   onReset: () => void;
 }
 
-function DashboardTab({ status, loading, onFetchAccounts, onFetchPayments, onFetchBalances, onFetchAll, onReset }: DashboardTabProps) {
+function DashboardTab({ status, loading, onFetchAccounts, onFetchPayments, onFetchBalances, onFetchExternalAccounts, onFetchAll, onReset }: DashboardTabProps) {
   return (
     <div className="dashboard">
       <section className="actions-section">
         <h2>Actions</h2>
         <div className="actions-grid">
-          <button className="btn-primary btn-large" onClick={onFetchAll} disabled={loading}>
-            {loading ? <span className="spinner" /> : '[>]'} RUN FULL CYCLE
-          </button>
-          <button className="btn-secondary" onClick={onFetchAccounts} disabled={loading}>
-            FETCH ACCOUNTS
-          </button>
-          <button className="btn-secondary" onClick={onFetchPayments} disabled={loading}>
-            FETCH PAYMENTS
-          </button>
-          <button className="btn-secondary" onClick={onFetchBalances} disabled={loading}>
-            FETCH BALANCES
-          </button>
-          <button className="btn-danger" onClick={onReset} disabled={loading}>
-            [x] RESET ALL
-          </button>
+          <Tooltip text="Fetch all data types in sequence">
+            <button className="btn-primary btn-large" onClick={onFetchAll} disabled={loading}>
+              {loading ? <span className="spinner" /> : '>'} Run Full Cycle
+            </button>
+          </Tooltip>
+          <Tooltip text="Fetch account data from the provider">
+            <button className="btn-secondary" onClick={onFetchAccounts} disabled={loading}>
+              Fetch Accounts
+            </button>
+          </Tooltip>
+          <Tooltip text="Fetch payment transactions">
+            <button className="btn-secondary" onClick={onFetchPayments} disabled={loading}>
+              Fetch Payments
+            </button>
+          </Tooltip>
+          <Tooltip text="Fetch current balances">
+            <button className="btn-secondary" onClick={onFetchBalances} disabled={loading}>
+              Fetch Balances
+            </button>
+          </Tooltip>
+          <Tooltip text="Fetch external/counterparty accounts">
+            <button className="btn-secondary" onClick={onFetchExternalAccounts} disabled={loading}>
+              Fetch Ext. Accounts
+            </button>
+          </Tooltip>
+          <Tooltip text="Clear all fetched data and reset state">
+            <button className="btn-danger" onClick={onReset} disabled={loading}>
+              Reset All
+            </button>
+          </Tooltip>
         </div>
       </section>
 
       <section className="stats-section">
         <h2>Storage</h2>
         <div className="grid grid-4">
-          <StatCard label="Accounts" value={status?.storage.accounts_count ?? 0} icon="[A]" />
-          <StatCard label="Payments" value={status?.storage.payments_count ?? 0} icon="[P]" />
-          <StatCard label="Balances" value={status?.storage.balances_count ?? 0} icon="[$]" />
-          <StatCard label="External Accounts" value={status?.storage.external_accounts_count ?? 0} icon="[E]" />
+          <StatCard label="Accounts" value={status?.storage?.accounts_count ?? 0} icon="[A]" />
+          <StatCard label="Payments" value={status?.storage?.payments_count ?? 0} icon="[P]" />
+          <StatCard label="Balances" value={status?.storage?.balances_count ?? 0} icon="[$]" />
+          <StatCard label="External Accounts" value={status?.storage?.external_accounts_count ?? 0} icon="[E]" />
         </div>
       </section>
 
-      <section className="stats-section">
-        <h2>Fetch Status</h2>
-        <div className="grid grid-3">
-          <FetchStatusCard
-            label="Accounts"
-            status={status?.fetch_status.accounts}
-          />
-          <div className="card">
-            <div className="card-title">Payments</div>
-            {status?.fetch_status.payments && Object.keys(status.fetch_status.payments).length > 0 ? (
-              Object.entries(status.fetch_status.payments).map(([key, val]) => (
-                <div key={key} className="fetch-status-item">
-                  <span className="mono truncate">{key === '_root' ? 'Root' : key}</span>
-                  <span>{val.total_items} items</span>
-                  <span className={val.has_more ? 'badge badge-info' : 'badge badge-success'}>
-                    {val.has_more ? 'More' : 'Done'}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="text-muted">Not started</div>
-            )}
-          </div>
-          <div className="card">
-            <div className="card-title">Balances</div>
-            {status?.fetch_status.balances && Object.keys(status.fetch_status.balances).length > 0 ? (
-              Object.entries(status.fetch_status.balances).map(([key, val]) => (
-                <div key={key} className="fetch-status-item">
-                  <span className="mono truncate">{key === '_root' ? 'Root' : key}</span>
-                  <span>{val.total_items} items</span>
-                  <span className={val.has_more ? 'badge badge-info' : 'badge badge-success'}>
-                    {val.has_more ? 'More' : 'Done'}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="text-muted">Not started</div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="stats-section">
-        <h2>Debug Stats</h2>
-        <div className="grid grid-4">
-          <StatCard label="Total Entries" value={status?.debug.total_entries ?? 0} icon="[#]" />
-          <StatCard label="Plugin Calls" value={status?.debug.total_plugin_calls ?? 0} icon="[>]" />
-          <StatCard label="HTTP Requests" value={status?.debug.total_http_requests ?? 0} icon="[~]" />
-          <StatCard 
-            label="Errors" 
-            value={status?.debug.error_count ?? 0} 
-            icon="[!]"
-            variant={status?.debug.error_count ? 'danger' : undefined}
-          />
-        </div>
-      </section>
     </div>
   );
 }
@@ -321,44 +994,53 @@ function StatCard({ label, value, icon, variant }: { label: string; value: numbe
   );
 }
 
-function FetchStatusCard({ label, status }: { label: string; status?: { has_more: boolean; pages_fetched: number; total_items: number } }) {
-  return (
-    <div className="card">
-      <div className="card-title">{label}</div>
-      {status ? (
-        <>
-          <div className="fetch-status-item">
-            <span>Pages fetched</span>
-            <span className="mono">{status.pages_fetched}</span>
-          </div>
-          <div className="fetch-status-item">
-            <span>Total items</span>
-            <span className="mono">{status.total_items}</span>
-          </div>
-          <div className="fetch-status-item">
-            <span>Status</span>
-            <span className={status.has_more ? 'badge badge-info' : 'badge badge-success'}>
-              {status.has_more ? 'More available' : 'Complete'}
-            </span>
-          </div>
-        </>
-      ) : (
-        <div className="text-muted">Not started</div>
-      )}
-    </div>
-  );
-}
 
 // Accounts Tab
-function AccountsTab({ accounts }: { accounts: Account[] }) {
+interface AccountsTabProps {
+  accounts: Account[];
+  onFetch?: () => void;
+}
+
+function AccountsTab({ accounts, onFetch }: AccountsTabProps) {
   const [selected, setSelected] = useState<Account | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const listRef = useRef<HTMLTableSectionElement>(null);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (accounts.length === 0) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const newIndex = Math.min(selectedIndex + 1, accounts.length - 1);
+        setSelectedIndex(newIndex);
+        setSelected(accounts[newIndex]);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const newIndex = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(newIndex);
+        setSelected(accounts[newIndex]);
+      } else if (e.key === 'Escape') {
+        setSelected(null);
+        setSelectedIndex(-1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [accounts, selectedIndex]);
 
   if (accounts.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">[A]</div>
         <p>No accounts fetched yet</p>
-        <p className="text-muted">Use "Fetch Accounts" to get started</p>
+        <p className="text-muted">Fetch accounts from the connected provider</p>
+        {onFetch && (
+          <button className="btn-primary" onClick={onFetch} style={{ marginTop: '16px' }}>
+            Fetch Accounts
+          </button>
+        )}
       </div>
     );
   }
@@ -375,17 +1057,21 @@ function AccountsTab({ accounts }: { accounts: Account[] }) {
               <th>Created</th>
             </tr>
           </thead>
-          <tbody>
-            {accounts.map((acc) => (
+          <tbody ref={listRef}>
+            {accounts.map((acc, index) => (
               <tr 
                 key={acc.reference} 
-                onClick={() => setSelected(acc)}
-                className={selected?.reference === acc.reference ? 'selected' : ''}
+                onClick={() => { setSelected(acc); setSelectedIndex(index); }}
+                className={selectedIndex === index ? 'selected' : ''}
               >
                 <td className="mono">{acc.reference}</td>
                 <td>{acc.name || '-'}</td>
                 <td>{acc.default_asset || '-'}</td>
-                <td>{new Date(acc.created_at).toLocaleString()}</td>
+                <td>
+                  <Tooltip text={new Date(acc.created_at).toLocaleString()}>
+                    <span>{formatRelativeTime(acc.created_at)}</span>
+                  </Tooltip>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -396,9 +1082,12 @@ function AccountsTab({ accounts }: { accounts: Account[] }) {
           <div className="card">
             <div className="card-header">
               <div className="card-title">Account Details</div>
-              <button className="btn-secondary btn-small" onClick={() => setSelected(null)}>×</button>
+              <div className="card-actions">
+                <CopyButton text={JSON.stringify(selected, null, 2)} label="Copy JSON" />
+                <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
+              </div>
             </div>
-            <pre>{JSON.stringify(selected, null, 2)}</pre>
+            <pre className="json-view">{JSON.stringify(selected, null, 2)}</pre>
           </div>
         </div>
       )}
@@ -407,15 +1096,50 @@ function AccountsTab({ accounts }: { accounts: Account[] }) {
 }
 
 // Payments Tab
-function PaymentsTab({ payments }: { payments: Payment[] }) {
+interface PaymentsTabProps {
+  payments: Payment[];
+  onFetch?: () => void;
+}
+
+function PaymentsTab({ payments, onFetch }: PaymentsTabProps) {
   const [selected, setSelected] = useState<Payment | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (payments.length === 0) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const newIndex = Math.min(selectedIndex + 1, payments.length - 1);
+        setSelectedIndex(newIndex);
+        setSelected(payments[newIndex]);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const newIndex = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(newIndex);
+        setSelected(payments[newIndex]);
+      } else if (e.key === 'Escape') {
+        setSelected(null);
+        setSelectedIndex(-1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [payments, selectedIndex]);
 
   if (payments.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">[P]</div>
         <p>No payments fetched yet</p>
-        <p className="text-muted">Use "Fetch Payments" to get started</p>
+        <p className="text-muted">Fetch payment transactions from the provider</p>
+        {onFetch && (
+          <button className="btn-primary" onClick={onFetch} style={{ marginTop: '16px' }}>
+            Fetch Payments
+          </button>
+        )}
       </div>
     );
   }
@@ -434,13 +1158,13 @@ function PaymentsTab({ payments }: { payments: Payment[] }) {
             </tr>
           </thead>
           <tbody>
-            {payments.map((pay) => (
+            {payments.map((pay, index) => (
               <tr 
                 key={pay.reference}
-                onClick={() => setSelected(pay)}
-                className={selected?.reference === pay.reference ? 'selected' : ''}
+                onClick={() => { setSelected(pay); setSelectedIndex(index); }}
+                className={selectedIndex === index ? 'selected' : ''}
               >
-                <td className="mono truncate">{pay.reference}</td>
+                <td className="mono">{pay.reference}</td>
                 <td><span className="badge badge-info">{pay.type}</span></td>
                 <td>
                   <span className={`badge ${
@@ -451,7 +1175,11 @@ function PaymentsTab({ payments }: { payments: Payment[] }) {
                   </span>
                 </td>
                 <td className="mono">{pay.amount} {pay.asset}</td>
-                <td>{new Date(pay.created_at).toLocaleString()}</td>
+                <td>
+                  <Tooltip text={new Date(pay.created_at).toLocaleString()}>
+                    <span>{formatRelativeTime(pay.created_at)}</span>
+                  </Tooltip>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -462,9 +1190,12 @@ function PaymentsTab({ payments }: { payments: Payment[] }) {
           <div className="card">
             <div className="card-header">
               <div className="card-title">Payment Details</div>
-              <button className="btn-secondary btn-small" onClick={() => setSelected(null)}>×</button>
+              <div className="card-actions">
+                <CopyButton text={JSON.stringify(selected, null, 2)} label="Copy JSON" />
+                <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
+              </div>
             </div>
-            <pre>{JSON.stringify(selected, null, 2)}</pre>
+            <pre className="json-view">{JSON.stringify(selected, null, 2)}</pre>
           </div>
         </div>
       )}
@@ -473,39 +1204,100 @@ function PaymentsTab({ payments }: { payments: Payment[] }) {
 }
 
 // Balances Tab
-function BalancesTab({ balances }: { balances: Balance[] }) {
+interface BalancesTabProps {
+  balances: Balance[];
+  onFetch?: () => void;
+}
+
+function BalancesTab({ balances, onFetch }: BalancesTabProps) {
+  const [selected, setSelected] = useState<Balance | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (balances.length === 0) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const newIndex = Math.min(selectedIndex + 1, balances.length - 1);
+        setSelectedIndex(newIndex);
+        setSelected(balances[newIndex]);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const newIndex = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(newIndex);
+        setSelected(balances[newIndex]);
+      } else if (e.key === 'Escape') {
+        setSelected(null);
+        setSelectedIndex(-1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [balances, selectedIndex]);
+
   if (balances.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon">[$]</div>
         <p>No balances fetched yet</p>
-        <p className="text-muted">Use "Fetch Balances" to get started</p>
+        <p className="text-muted">Fetch current balances from the provider</p>
+        {onFetch && (
+          <button className="btn-primary" onClick={onFetch} style={{ marginTop: '16px' }}>
+            Fetch Balances
+          </button>
+        )}
       </div>
     );
   }
 
   return (
     <div className="data-tab">
-      <table>
-        <thead>
-          <tr>
-            <th>Account</th>
-            <th>Asset</th>
-            <th>Amount</th>
-            <th>As Of</th>
-          </tr>
-        </thead>
-        <tbody>
-          {balances.map((bal, i) => (
-            <tr key={i}>
-              <td className="mono">{bal.account_reference}</td>
-              <td>{bal.asset}</td>
-              <td className="mono">{bal.amount}</td>
-              <td>{new Date(bal.created_at).toLocaleString()}</td>
+      <div className="data-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Asset</th>
+              <th>Amount</th>
+              <th>As Of</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {balances.map((bal, index) => (
+              <tr 
+                key={index}
+                onClick={() => { setSelected(bal); setSelectedIndex(index); }}
+                className={selectedIndex === index ? 'selected' : ''}
+              >
+                <td className="mono">{bal.account_reference}</td>
+                <td>{bal.asset}</td>
+                <td className="mono">{bal.amount}</td>
+                <td>
+                  <Tooltip text={new Date(bal.created_at).toLocaleString()}>
+                    <span>{formatRelativeTime(bal.created_at)}</span>
+                  </Tooltip>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {selected && (
+        <div className="data-detail">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Balance Details</div>
+              <div className="card-actions">
+                <CopyButton text={JSON.stringify(selected, null, 2)} label="Copy JSON" />
+                <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
+              </div>
+            </div>
+            <pre className="json-view">{JSON.stringify(selected, null, 2)}</pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -525,6 +1317,7 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
   const [view, setView] = useState<'logs' | 'calls' | 'http'>('http');
   const [selectedCall, setSelectedCall] = useState<PluginCall | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<HTTPRequest | null>(null);
+  const [selectedLog, setSelectedLog] = useState<DebugEntry | null>(null);
 
   return (
     <div className="debug-tab">
@@ -541,19 +1334,23 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
           </button>
         </div>
         <div className="debug-actions">
-          <button 
-            className={`btn-small ${httpCaptureEnabled ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={onToggleCapture}
-          >
-            {httpCaptureEnabled ? '[*] CAPTURE ON' : '[ ] CAPTURE OFF'}
-          </button>
-          <button className="btn-secondary btn-small" onClick={onClear}>CLEAR ALL</button>
+          <Tooltip text={httpCaptureEnabled ? 'Stop capturing HTTP requests' : 'Start capturing HTTP requests'}>
+            <button 
+              className={`btn-small ${httpCaptureEnabled ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={onToggleCapture}
+            >
+              {httpCaptureEnabled ? '● Capture On' : '○ Capture Off'}
+            </button>
+          </Tooltip>
+          <Tooltip text="Clear all debug logs, calls, and requests">
+            <button className="btn-secondary btn-small" onClick={onClear}>Clear All</button>
+          </Tooltip>
         </div>
       </div>
 
       {view === 'http' && (
         <div className="http-requests">
-          <div className="requests-list">
+          <div className={`requests-list ${!selectedRequest ? 'expanded' : ''}`}>
             {httpRequests.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">[~]</div>
@@ -598,20 +1395,28 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
                   </div>
                   <div className="card-actions">
                     {onSaveSnapshot && (
-                      <button 
-                        className="btn-primary btn-small" 
-                        onClick={() => onSaveSnapshot(selectedRequest.id)}
-                      >
-                        [+] SAVE SNAPSHOT
-                      </button>
+                      <Tooltip text="Save this request/response as a test snapshot">
+                        <button 
+                          className="btn-primary btn-small" 
+                          onClick={() => onSaveSnapshot(selectedRequest.id)}
+                        >
+                          + Save Snapshot
+                        </button>
+                      </Tooltip>
                     )}
-                    <button className="btn-secondary btn-small" onClick={() => setSelectedRequest(null)}>×</button>
+                    <button className="btn-icon" onClick={() => setSelectedRequest(null)} title="Close (Esc)">×</button>
                   </div>
                 </div>
                 
-                <div className="request-url-full">{selectedRequest.url}</div>
+                <div className="request-url-full">
+                  <span>{selectedRequest.url}</span>
+                  <CopyButton text={selectedRequest.url} label="Copy URL" />
+                </div>
                 <div className="request-timing">
-                  {new Date(selectedRequest.timestamp).toLocaleTimeString()} · {(selectedRequest.duration / 1000000).toFixed(2)}ms
+                  <Tooltip text={new Date(selectedRequest.timestamp).toLocaleString()}>
+                    <span>{formatRelativeTime(selectedRequest.timestamp)}</span>
+                  </Tooltip>
+                  {' · '}{(selectedRequest.duration / 1000000).toFixed(2)}ms
                 </div>
 
                 {selectedRequest.error && (
@@ -651,28 +1456,79 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
       )}
 
       {view === 'logs' && (
-        <div className="log-list">
-          {logs.length === 0 ? (
-            <div className="empty-state">
-              <p className="text-muted">No logs yet</p>
-            </div>
-          ) : (
-            logs.map((log) => (
-              <div key={log.id} className={`log-entry log-${log.type}`}>
-                <span className="log-time">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                <span className={`log-type badge badge-${
-                  log.type === 'error' ? 'danger' :
-                  log.type === 'plugin_call' ? 'info' :
-                  log.type === 'state_change' ? 'warning' : 'success'
-                }`}>
-                  {log.type}
-                </span>
-                <span className="log-operation">{log.operation}</span>
-                {log.message && <span className="log-message">{log.message}</span>}
-                {log.error && <span className="log-error text-danger">{log.error}</span>}
-                {log.duration && <span className="log-duration">{log.duration}ns</span>}
+        <div className="logs-panel">
+          <div className="log-list">
+            {logs.length === 0 ? (
+              <div className="empty-state">
+                <p className="text-muted">No logs yet</p>
               </div>
-            ))
+            ) : (
+              logs.map((log) => (
+                <div 
+                  key={log.id} 
+                  className={`log-entry log-${log.type} ${selectedLog?.id === log.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedLog(log)}
+                >
+                  <span className="log-time">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                  <span className={`log-type badge badge-${
+                    log.type === 'error' ? 'danger' :
+                    log.type === 'plugin_call' ? 'info' :
+                    log.type === 'state_change' ? 'warning' : 'success'
+                  }`}>
+                    {log.type}
+                  </span>
+                  <span className="log-operation">{log.operation}</span>
+                  {log.message && <span className="log-message">{log.message}</span>}
+                  {log.error && <span className="log-error text-danger">{log.error}</span>}
+                  {log.duration && <span className="log-duration">{log.duration}ns</span>}
+                </div>
+              ))
+            )}
+          </div>
+          {selectedLog && (
+            <div className="log-detail">
+              <div className="card">
+                <div className="card-header">
+                  <div className="card-title">
+                    <span className={`badge badge-${
+                      selectedLog.type === 'error' ? 'danger' :
+                      selectedLog.type === 'plugin_call' ? 'info' :
+                      selectedLog.type === 'state_change' ? 'warning' : 'success'
+                    }`}>
+                      {selectedLog.type}
+                    </span>
+                    {selectedLog.operation}
+                  </div>
+                  <button className="btn-icon" onClick={() => setSelectedLog(null)} title="Close (Esc)">×</button>
+                </div>
+                
+                <div className="log-detail-meta">
+                  <div><strong>Time:</strong> {new Date(selectedLog.timestamp).toLocaleString()}</div>
+                  {selectedLog.duration && <div><strong>Duration:</strong> {(selectedLog.duration / 1000000).toFixed(2)}ms</div>}
+                </div>
+
+                {selectedLog.message && (
+                  <>
+                    <h4>Message</h4>
+                    <pre>{selectedLog.message}</pre>
+                  </>
+                )}
+
+                {selectedLog.error && (
+                  <>
+                    <h4>Error</h4>
+                    <pre className="text-danger">{selectedLog.error}</pre>
+                  </>
+                )}
+
+                {selectedLog.data !== undefined && selectedLog.data !== null && (
+                  <>
+                    <h4>Data</h4>
+                    <pre>{JSON.stringify(selectedLog.data, null, 2)}</pre>
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -706,7 +1562,10 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
               <div className="card">
                 <div className="card-header">
                   <div className="card-title">{selectedCall.method}</div>
-                  <button className="btn-secondary btn-small" onClick={() => setSelectedCall(null)}>×</button>
+                  <div className="card-actions">
+                    <CopyButton text={JSON.stringify({ input: selectedCall.input, output: selectedCall.output }, null, 2)} label="Copy" />
+                    <button className="btn-icon" onClick={() => setSelectedCall(null)} title="Close (Esc)">×</button>
+                  </div>
                 </div>
                 <h4>Input</h4>
                 <pre>{JSON.stringify(selectedCall.input, null, 2)}</pre>
@@ -743,12 +1602,13 @@ function formatBody(body: string): string {
 
 // Save Snapshot Modal
 interface SaveSnapshotModalProps {
+  connectorId: string;
   captureId: string;
   onClose: () => void;
   onSaved: () => void;
 }
 
-function SaveSnapshotModal({ captureId, onClose, onSaved }: SaveSnapshotModalProps) {
+function SaveSnapshotModal({ connectorId, captureId, onClose, onSaved }: SaveSnapshotModalProps) {
   const [name, setName] = useState('');
   const [operation, setOperation] = useState('');
   const [description, setDescription] = useState('');
@@ -769,7 +1629,7 @@ function SaveSnapshotModal({ captureId, onClose, onSaved }: SaveSnapshotModalPro
     setLoading(true);
     setError(null);
     try {
-      await api.createSnapshotFromCapture(captureId, {
+      await connectorApi(connectorId).createSnapshotFromCapture(captureId, {
         name: name.trim(),
         operation: operation.trim(),
         description: description.trim() || undefined,
@@ -854,6 +1714,7 @@ function SaveSnapshotModal({ captureId, onClose, onSaved }: SaveSnapshotModalPro
 
 // Code Tab
 function CodeTab() {
+  const { connectorId } = useConnector();
   const [info, setInfo] = useState<ConnectorInfo | null>(null);
   const [files, setFiles] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<SourceFile | null>(null);
@@ -864,11 +1725,15 @@ function CodeTab() {
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadInfo();
-  }, []);
+    if (connectorId) {
+      loadInfo();
+    }
+  }, [connectorId]);
 
   const loadInfo = async () => {
+    if (!connectorId) return;
     try {
+      const api = connectorApi(connectorId);
       const [infoRes, filesRes] = await Promise.all([
         api.getConnectorInfo(),
         api.getFileTree(),
@@ -881,9 +1746,10 @@ function CodeTab() {
   };
 
   const loadFile = async (path: string) => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      const file = await api.getFile(path);
+      const file = await connectorApi(connectorId).getFile(path);
       setSelectedFile(file);
     } catch (e) {
       console.error('Failed to load file:', e);
@@ -893,10 +1759,10 @@ function CodeTab() {
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !connectorId) return;
     setLoading(true);
     try {
-      const res = await api.searchCode(searchQuery);
+      const res = await connectorApi(connectorId).searchCode(searchQuery);
       setSearchResults(res.results || []);
       setView('search');
     } catch (e) {
@@ -1118,12 +1984,17 @@ function addLineNumbers(content: string): string {
 
 // Tasks Tab
 function TasksTab() {
+  const { connectorId } = useConnector();
   const [taskData, setTaskData] = useState<TaskTreeSummary | null>(null);
   const [executions, setExecutions] = useState<TaskExecution[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskNodeSummary | null>(null);
+  const [selectedExecution, setSelectedExecution] = useState<TaskExecution | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!connectorId) return;
     try {
+      const api = connectorApi(connectorId);
       const [tasks, execs] = await Promise.all([
         api.getTasks(),
         api.getTaskExecutions(30),
@@ -1133,7 +2004,7 @@ function TasksTab() {
     } catch (e) {
       console.error('Failed to load tasks:', e);
     }
-  }, []);
+  }, [connectorId]);
 
   useEffect(() => {
     refresh();
@@ -1142,19 +2013,20 @@ function TasksTab() {
   }, [refresh]);
 
   const handleStep = async () => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      await api.stepTask();
+      await connectorApi(connectorId).stepTask();
     } finally {
       setLoading(false);
     }
   };
 
   const toggleStepMode = async () => {
-    if (!taskData) return;
+    if (!taskData || !connectorId) return;
     setLoading(true);
     try {
-      await api.setStepMode(!taskData.step_mode);
+      await connectorApi(connectorId).setStepMode(!taskData.step_mode);
       refresh();
     } finally {
       setLoading(false);
@@ -1162,9 +2034,10 @@ function TasksTab() {
   };
 
   const handleReset = async () => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      await api.resetTasks();
+      await connectorApi(connectorId).resetTasks();
       refresh();
     } finally {
       setLoading(false);
@@ -1188,9 +2061,14 @@ function TasksTab() {
       skipped: '⊘',
     };
 
+    const isSelected = selectedTask?.id === node.id;
+
     return (
       <div key={node.id} className="task-node" style={{ marginLeft: depth * 20 }}>
-        <div className={`task-node-header task-${node.status}`}>
+        <div 
+          className={`task-node-header task-${node.status} ${isSelected ? 'selected' : ''}`}
+          onClick={() => { setSelectedTask(node); setSelectedExecution(null); }}
+        >
           <span className="task-status-icon" style={{ color: statusColors[node.status] }}>
             {node.status === 'running' ? <span className="spinner" /> : statusIcons[node.status]}
           </span>
@@ -1221,32 +2099,45 @@ function TasksTab() {
     <div className="tasks-tab">
       <div className="tasks-header">
         <div className="tasks-controls">
-          <button 
-            className={`btn-small ${taskData?.step_mode ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={toggleStepMode}
-            disabled={loading}
-          >
-            {taskData?.step_mode ? '[||] STEP MODE ON' : '[>] STEP MODE OFF'}
-          </button>
-          {taskData?.step_mode && (
+          <Tooltip text="Pause execution between each task step">
             <button 
-              className="btn-primary btn-small"
-              onClick={handleStep}
-              disabled={loading || !taskData?.is_running}
+              className={`btn-small ${taskData?.step_mode ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={toggleStepMode}
+              disabled={loading}
             >
-              {'[>>]'} NEXT STEP
+              {taskData?.step_mode ? '|| Step Mode On' : '> Step Mode Off'}
             </button>
+          </Tooltip>
+          {taskData?.step_mode && (
+            <Tooltip text="Execute the next task step">
+              <button 
+                className="btn-primary btn-small"
+                onClick={handleStep}
+                disabled={loading || !taskData?.is_running}
+              >
+                {'>>'} Next Step
+              </button>
+            </Tooltip>
           )}
-          <button 
-            className="btn-secondary btn-small"
-            onClick={handleReset}
-            disabled={loading}
-          >
-            [x] RESET
-          </button>
+          <Tooltip text="Reset all tasks and execution history">
+            <button 
+              className="btn-secondary btn-small"
+              onClick={handleReset}
+              disabled={loading}
+            >
+              Reset
+            </button>
+          </Tooltip>
         </div>
         {taskData && (
           <div className="tasks-stats">
+            {taskData.is_running && (
+              <ProgressBar 
+                current={taskData.stats.success_count} 
+                total={taskData.stats.total_executions || taskData.stats.success_count + 1} 
+                label="Progress"
+              />
+            )}
             <span className="stat">
               <strong>{taskData.stats.total_executions}</strong> executions
             </span>
@@ -1296,7 +2187,11 @@ function TasksTab() {
               </div>
             ) : (
               executions.map((exec) => (
-                <div key={exec.id} className={`execution-item exec-${exec.status}`}>
+                <div 
+                  key={exec.id} 
+                  className={`execution-item exec-${exec.status} ${selectedExecution?.id === exec.id ? 'selected' : ''}`}
+                  onClick={() => { setSelectedExecution(exec); setSelectedTask(null); }}
+                >
                   <div className="execution-header">
                     <span className={`execution-status status-${exec.status}`}>
                       {exec.status === 'completed' ? '✓' : exec.status === 'failed' ? '✗' : '○'}
@@ -1304,7 +2199,7 @@ function TasksTab() {
                     <span className="execution-page">Page {exec.page_number}</span>
                     <span className="execution-items">{exec.items_count} items</span>
                     <span className="execution-duration">{(exec.duration / 1000000).toFixed(0)}ms</span>
-                    {exec.has_more && <span className="execution-more">more →</span>}
+                    {exec.has_more && <span className="text-muted">has_more: true</span>}
                   </div>
                   <div className="execution-time">
                     {new Date(exec.started_at).toLocaleTimeString()}
@@ -1315,9 +2210,145 @@ function TasksTab() {
             )}
           </div>
         </div>
+
+        {/* Detail Panel */}
+        {(selectedTask || selectedExecution) && (
+          <div className="tasks-detail-panel">
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">
+                  {selectedTask ? 'Task Details' : 'Execution Details'}
+                </div>
+                <div className="card-actions">
+                  <CopyButton 
+                    text={JSON.stringify(selectedTask || selectedExecution, null, 2)} 
+                    label="Copy JSON" 
+                  />
+                  <button 
+                    className="btn-icon" 
+                    onClick={() => { setSelectedTask(null); setSelectedExecution(null); }} 
+                    title="Close (Esc)"
+                  >×</button>
+                </div>
+              </div>
+              {selectedTask && (
+                <div className="detail-content">
+                  <div className="detail-row">
+                    <span className="detail-label">ID</span>
+                    <span className="detail-value mono">{selectedTask.id}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Type</span>
+                    <span className="detail-value">{formatTaskType(selectedTask.type)}</span>
+                  </div>
+                  {selectedTask.name && (
+                    <div className="detail-row">
+                      <span className="detail-label">Name</span>
+                      <span className="detail-value">{selectedTask.name}</span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span className="detail-label">Status</span>
+                    <span className={`detail-value status-${selectedTask.status}`}>{selectedTask.status}</span>
+                  </div>
+                  {selectedTask.duration && (
+                    <div className="detail-row">
+                      <span className="detail-label">Duration</span>
+                      <span className="detail-value">{selectedTask.duration}</span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span className="detail-label">Items</span>
+                    <span className="detail-value">{selectedTask.items_count}</span>
+                  </div>
+                  {selectedTask.child_count > 0 && (
+                    <div className="detail-row">
+                      <span className="detail-label">Child Tasks</span>
+                      <span className="detail-value">{selectedTask.child_count}</span>
+                    </div>
+                  )}
+                  {selectedTask.last_exec_time && (
+                    <div className="detail-row">
+                      <span className="detail-label">Last Execution</span>
+                      <span className="detail-value">{selectedTask.last_exec_time}</span>
+                    </div>
+                  )}
+                  {selectedTask.error && (
+                    <div className="detail-row detail-error">
+                      <span className="detail-label">Error</span>
+                      <span className="detail-value">{selectedTask.error}</span>
+                    </div>
+                  )}
+                  {selectedTask.from_payload !== undefined && selectedTask.from_payload !== null && (
+                    <div className="detail-payload">
+                      <div className="detail-payload-header">Trigger Payload</div>
+                      <pre className="json-view">{JSON.stringify(selectedTask.from_payload, null, 2)}</pre>
+                    </div>
+                  )}
+                </div>
+              )}
+              {selectedExecution && (
+                <div className="detail-content">
+                  <div className="detail-row">
+                    <span className="detail-label">ID</span>
+                    <span className="detail-value mono">{selectedExecution.id}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Status</span>
+                    <span className={`detail-value status-${selectedExecution.status}`}>{selectedExecution.status}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Page</span>
+                    <span className="detail-value">{selectedExecution.page_number}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Items</span>
+                    <span className="detail-value">{selectedExecution.items_count}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Has More</span>
+                    <span className="detail-value">{selectedExecution.has_more ? 'Yes' : 'No'}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Duration</span>
+                    <span className="detail-value">{(selectedExecution.duration / 1000000).toFixed(2)}ms</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Started</span>
+                    <span className="detail-value">{new Date(selectedExecution.started_at).toLocaleString()}</span>
+                  </div>
+                  {selectedExecution.completed_at && (
+                    <div className="detail-row">
+                      <span className="detail-label">Completed</span>
+                      <span className="detail-value">{new Date(selectedExecution.completed_at).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {selectedExecution.error && (
+                    <div className="detail-row detail-error">
+                      <span className="detail-label">Error</span>
+                      <span className="detail-value">{selectedExecution.error}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function formatPluginType(pluginType: number | string): string {
+  const types: Record<number, string> = {
+    0: 'PSP',
+    1: 'Open Banking',
+    2: 'Both',
+  };
+  if (typeof pluginType === 'number') {
+    return types[pluginType] || `Type ${pluginType}`;
+  }
+  return String(pluginType);
 }
 
 function formatTaskType(type: string): string {
@@ -1345,15 +2376,19 @@ function formatTaskType(type: string): string {
 
 // Snapshots Tab
 function SnapshotsTab() {
+  const { connectorId } = useConnector();
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [stats, setStats] = useState<SnapshotStats | null>(null);
   const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
   const [showTestPreview, setShowTestPreview] = useState(false);
   const [testPreview, setTestPreview] = useState<GenerateResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!connectorId) return;
     try {
+      const api = connectorApi(connectorId);
       const [snapshotData, statsData] = await Promise.all([
         api.listSnapshots(),
         api.getSnapshotStats(),
@@ -1363,30 +2398,39 @@ function SnapshotsTab() {
     } catch (e) {
       console.error('Failed to load snapshots:', e);
     }
-  }, []);
+  }, [connectorId]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this snapshot?')) return;
-    setLoading(true);
-    try {
-      await api.deleteSnapshot(id);
-      refresh();
-      if (selectedSnapshot?.id === id) {
-        setSelectedSnapshot(null);
+  const handleDelete = (id: string) => {
+    if (!connectorId) return;
+    const snapshot = snapshots.find(s => s.id === id);
+    setConfirmAction({
+      title: 'Delete Snapshot',
+      message: `Delete snapshot "${snapshot?.name || id}"? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setLoading(true);
+        try {
+          await connectorApi(connectorId).deleteSnapshot(id);
+          refresh();
+          if (selectedSnapshot?.id === id) {
+            setSelectedSnapshot(null);
+          }
+        } finally {
+          setLoading(false);
+        }
       }
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handlePreviewTests = async () => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      const preview = await api.previewTests();
+      const preview = await connectorApi(connectorId).previewTests();
       setTestPreview(preview);
       setShowTestPreview(true);
     } catch (e: unknown) {
@@ -1397,10 +2441,11 @@ function SnapshotsTab() {
   };
 
   const handleGenerateTests = async () => {
+    if (!connectorId) return;
     const outputDir = prompt('Output directory (leave empty to preview only):');
     setLoading(true);
     try {
-      const result = await api.generateTests(outputDir || undefined);
+      const result = await connectorApi(connectorId).generateTests(outputDir || undefined);
       setTestPreview(result);
       setShowTestPreview(true);
       if (outputDir) {
@@ -1413,43 +2458,56 @@ function SnapshotsTab() {
     }
   };
 
-  const handleClearAll = async () => {
-    if (!confirm('Delete all snapshots?')) return;
-    setLoading(true);
-    try {
-      await api.clearSnapshots();
-      refresh();
-      setSelectedSnapshot(null);
-    } finally {
-      setLoading(false);
-    }
+  const handleClearAll = () => {
+    if (!connectorId) return;
+    setConfirmAction({
+      title: 'Clear All Snapshots',
+      message: `Delete all ${snapshots.length} snapshots? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setLoading(true);
+        try {
+          await connectorApi(connectorId).clearSnapshots();
+          refresh();
+          setSelectedSnapshot(null);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   return (
     <div className="snapshots-tab">
       <div className="snapshots-header">
         <div className="snapshots-controls">
-          <button 
-            className="btn-primary btn-small" 
-            onClick={handlePreviewTests}
-            disabled={loading || snapshots.length === 0}
-          >
-            [?] PREVIEW TESTS
-          </button>
-          <button 
-            className="btn-primary btn-small" 
-            onClick={handleGenerateTests}
-            disabled={loading || snapshots.length === 0}
-          >
-            [!] GENERATE TESTS
-          </button>
-          <button 
-            className="btn-secondary btn-small" 
-            onClick={handleClearAll}
-            disabled={loading || snapshots.length === 0}
-          >
-            [x] CLEAR ALL
-          </button>
+          <Tooltip text="Preview generated test code without saving">
+            <button 
+              className="btn-secondary btn-small" 
+              onClick={handlePreviewTests}
+              disabled={loading || snapshots.length === 0}
+            >
+              Preview Tests
+            </button>
+          </Tooltip>
+          <Tooltip text="Generate and save test files to disk">
+            <button 
+              className="btn-primary btn-small" 
+              onClick={handleGenerateTests}
+              disabled={loading || snapshots.length === 0}
+            >
+              Generate Tests
+            </button>
+          </Tooltip>
+          <Tooltip text="Delete all saved snapshots">
+            <button 
+              className="btn-danger btn-small" 
+              onClick={handleClearAll}
+              disabled={loading || snapshots.length === 0}
+            >
+              Clear All
+            </button>
+          </Tooltip>
         </div>
         {stats && (
           <div className="snapshots-stats">
@@ -1499,7 +2557,7 @@ function SnapshotsTab() {
               <div className="empty-state">
                 <div className="empty-state-icon">[S]</div>
                 <p className="text-muted">No snapshots saved yet</p>
-                <p className="text-muted">Go to Debug {'->'} HTTP Traffic and click "Save Snapshot" on a request</p>
+                <p className="text-muted">Go to Debug → HTTP Traffic and click "Save Snapshot" on a request</p>
               </div>
             ) : (
               snapshots.map((snap) => (
@@ -1515,7 +2573,7 @@ function SnapshotsTab() {
                       onClick={(e) => { e.stopPropagation(); handleDelete(snap.id); }}
                       title="Delete"
                     >
-                      [x]
+                      ×
                     </button>
                   </div>
                   <div className="snapshot-meta">
@@ -1572,12 +2630,24 @@ function SnapshotsTab() {
           </div>
         )}
       </div>
+
+      {confirmAction && (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          variant="danger"
+          confirmText="Delete"
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   );
 }
 
 // Analysis Tab - Schema Inference & Baseline Comparison
 function AnalysisTab() {
+  const { connectorId } = useConnector();
   const [view, setView] = useState<'schemas' | 'baselines'>('schemas');
   const [schemas, setSchemas] = useState<InferredSchema[]>([]);
   const [schemaBaselines, setSchemaBaselines] = useState<InferredSchema[]>([]);
@@ -1589,9 +2659,12 @@ function AnalysisTab() {
   const [baselineDiff, setBaselineDiff] = useState<BaselineDiff | null>(null);
   
   const [loading, setLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const refreshSchemas = useCallback(async () => {
+    if (!connectorId) return;
     try {
+      const api = connectorApi(connectorId);
       const [schemaData, baselineData] = await Promise.all([
         api.listSchemas(),
         api.listSchemaBaselines(),
@@ -1601,16 +2674,17 @@ function AnalysisTab() {
     } catch (e) {
       console.error('Failed to load schemas:', e);
     }
-  }, []);
+  }, [connectorId]);
 
   const refreshBaselines = useCallback(async () => {
+    if (!connectorId) return;
     try {
-      const data = await api.listBaselines();
+      const data = await connectorApi(connectorId).listBaselines();
       setBaselines(data.baselines || []);
     } catch (e) {
       console.error('Failed to load baselines:', e);
     }
-  }, []);
+  }, [connectorId]);
 
   useEffect(() => {
     refreshSchemas();
@@ -1618,9 +2692,10 @@ function AnalysisTab() {
   }, [refreshSchemas, refreshBaselines]);
 
   const handleSaveSchemaBaselines = async () => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      await api.saveAllSchemaBaselines();
+      await connectorApi(connectorId).saveAllSchemaBaselines();
       await refreshSchemas();
       alert('Schema baselines saved!');
     } finally {
@@ -1629,9 +2704,10 @@ function AnalysisTab() {
   };
 
   const handleCompareSchema = async (operation: string) => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      const diff = await api.compareSchema(operation);
+      const diff = await connectorApi(connectorId).compareSchema(operation);
       setSchemaDiff(diff);
     } catch (e: unknown) {
       alert('Error: ' + (e instanceof Error ? e.message : String(e)));
@@ -1641,10 +2717,11 @@ function AnalysisTab() {
   };
 
   const handleSaveBaseline = async () => {
+    if (!connectorId) return;
     const name = prompt('Baseline name (optional):');
     setLoading(true);
     try {
-      await api.saveBaseline(name || undefined);
+      await connectorApi(connectorId).saveBaseline(name || undefined);
       await refreshBaselines();
     } finally {
       setLoading(false);
@@ -1652,9 +2729,10 @@ function AnalysisTab() {
   };
 
   const handleCompareBaseline = async (id: string) => {
+    if (!connectorId) return;
     setLoading(true);
     try {
-      const diff = await api.compareBaseline(id);
+      const diff = await connectorApi(connectorId).compareBaseline(id);
       setBaselineDiff(diff);
     } catch (e: unknown) {
       alert('Error: ' + (e instanceof Error ? e.message : String(e)));
@@ -1663,19 +2741,27 @@ function AnalysisTab() {
     }
   };
 
-  const handleDeleteBaseline = async (id: string) => {
-    if (!confirm('Delete this baseline?')) return;
-    setLoading(true);
-    try {
-      await api.deleteBaseline(id);
-      await refreshBaselines();
-      if (selectedBaseline?.id === id) {
-        setSelectedBaseline(null);
-        setBaselineDiff(null);
+  const handleDeleteBaseline = (id: string) => {
+    if (!connectorId) return;
+    const baseline = baselines.find(b => b.id === id);
+    setConfirmAction({
+      title: 'Delete Baseline',
+      message: `Delete baseline "${baseline?.name || id}"? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmAction(null);
+        setLoading(true);
+        try {
+          await connectorApi(connectorId).deleteBaseline(id);
+          await refreshBaselines();
+          if (selectedBaseline?.id === id) {
+            setSelectedBaseline(null);
+            setBaselineDiff(null);
+          }
+        } finally {
+          setLoading(false);
+        }
       }
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const renderFieldSchema = (field: InferredSchema['root'], depth = 0): JSX.Element => {
@@ -1719,13 +2805,15 @@ function AnalysisTab() {
       {view === 'schemas' && (
         <div className="schemas-view">
           <div className="schemas-actions">
-            <button 
-              className="btn-primary btn-small" 
-              onClick={handleSaveSchemaBaselines}
-              disabled={loading || schemas.length === 0}
-            >
-              [+] SAVE ALL AS BASELINES
-            </button>
+            <Tooltip text="Save current schemas as reference baselines for future comparison">
+              <button 
+                className="btn-primary btn-small" 
+                onClick={handleSaveSchemaBaselines}
+                disabled={loading || schemas.length === 0}
+              >
+                + Save All as Baselines
+              </button>
+            </Tooltip>
             <span className="text-muted">
               {schemaBaselines.length} baselines saved
             </span>
@@ -1847,13 +2935,15 @@ function AnalysisTab() {
       {view === 'baselines' && (
         <div className="baselines-view">
           <div className="baselines-actions">
-            <button 
-              className="btn-primary btn-small" 
-              onClick={handleSaveBaseline}
-              disabled={loading}
-            >
-              [+] SAVE CURRENT AS BASELINE
-            </button>
+            <Tooltip text="Save current data state as a baseline for future comparison">
+              <button 
+                className="btn-primary btn-small" 
+                onClick={handleSaveBaseline}
+                disabled={loading}
+              >
+                + Save Current as Baseline
+              </button>
+            </Tooltip>
           </div>
 
           <div className="baselines-content">
@@ -1877,8 +2967,9 @@ function AnalysisTab() {
                         <button 
                           className="btn-icon"
                           onClick={(e) => { e.stopPropagation(); handleDeleteBaseline(baseline.id); }}
+                          title="Delete"
                         >
-                          [x]
+                          ×
                         </button>
                       </div>
                       <div className="baseline-meta">
@@ -1937,6 +3028,17 @@ function AnalysisTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmAction && (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          variant="danger"
+          confirmText="Delete"
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
       )}
     </div>
   );

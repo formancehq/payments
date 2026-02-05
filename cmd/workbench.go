@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -17,13 +16,11 @@ import (
 )
 
 const (
-	workbenchProviderFlag    = "provider"
-	workbenchConfigFlag      = "config"
-	workbenchConfigFileFlag  = "config-file"
-	workbenchListenFlag      = "listen"
-	workbenchAutoPollFlag    = "auto-poll"
-	workbenchPollIntervalFlag = "poll-interval"
-	workbenchPageSizeFlag    = "page-size"
+	workbenchProviderFlag   = "provider"
+	workbenchConfigFlag     = "config"
+	workbenchConfigFileFlag = "config-file"
+	workbenchListenFlag     = "listen"
+	workbenchPageSizeFlag   = "page-size"
 )
 
 func newWorkbench() *cobra.Command {
@@ -36,20 +33,21 @@ PostgreSQL, or other heavy infrastructure.
 
 Features:
   - In-memory storage (no database required)
+  - Multi-connector support - create multiple instances from the UI
   - Step-by-step execution of connector operations
   - HTTP API for triggering operations
   - Web UI for debugging and inspection
   - No Docker required
 
 Examples:
-  # Run workbench with inline config
+  # Run workbench without any connector (create from UI)
+  payments workbench
+
+  # Run workbench with a pre-configured connector
   payments workbench --provider=stripe --config='{"apiKey":"sk_test_..."}'
 
   # Run workbench with config file
   payments workbench --provider=wise --config-file=./wise-config.json
-
-  # Run with auto-polling enabled
-  payments workbench --provider=stripe --config-file=./config.json --auto-poll --poll-interval=30s
 
   # List available providers
   payments workbench --list-providers`,
@@ -60,8 +58,6 @@ Examples:
 	cmd.Flags().StringP(workbenchConfigFlag, "c", "", "Connector configuration as JSON string")
 	cmd.Flags().StringP(workbenchConfigFileFlag, "f", "", "Path to connector configuration JSON file")
 	cmd.Flags().String(workbenchListenFlag, "127.0.0.1:8080", "HTTP server listen address")
-	cmd.Flags().Bool(workbenchAutoPollFlag, false, "Enable automatic polling")
-	cmd.Flags().Duration(workbenchPollIntervalFlag, 30*time.Second, "Polling interval when auto-poll is enabled")
 	cmd.Flags().Int(workbenchPageSizeFlag, 25, "Page size for fetch operations")
 	cmd.Flags().Bool("list-providers", false, "List available connector providers")
 
@@ -75,40 +71,36 @@ func runWorkbench(cmd *cobra.Command, args []string) error {
 		return printProviders()
 	}
 
-	// Get provider
+	// Get optional provider and config for initial connector
 	provider, _ := cmd.Flags().GetString(workbenchProviderFlag)
-	if provider == "" {
-		return fmt.Errorf("provider is required (use --provider or -p)")
-	}
-	provider = strings.ToLower(provider)
-
-	// Get config
 	configJSON, _ := cmd.Flags().GetString(workbenchConfigFlag)
 	configFile, _ := cmd.Flags().GetString(workbenchConfigFileFlag)
 
 	var connectorConfig json.RawMessage
-	if configFile != "" {
-		data, err := os.ReadFile(configFile)
-		if err != nil {
-			return fmt.Errorf("failed to read config file: %w", err)
-		}
-		connectorConfig = data
-	} else if configJSON != "" {
-		connectorConfig = json.RawMessage(configJSON)
-	} else {
-		return fmt.Errorf("connector config is required (use --config or --config-file)")
-	}
+	if provider != "" {
+		provider = strings.ToLower(provider)
 
-	// Validate JSON
-	var validateJSON map[string]interface{}
-	if err := json.Unmarshal(connectorConfig, &validateJSON); err != nil {
-		return fmt.Errorf("invalid config JSON: %w", err)
+		if configFile != "" {
+			data, err := os.ReadFile(configFile)
+			if err != nil {
+				return fmt.Errorf("failed to read config file: %w", err)
+			}
+			connectorConfig = data
+		} else if configJSON != "" {
+			connectorConfig = json.RawMessage(configJSON)
+		} else {
+			return fmt.Errorf("connector config is required when provider is specified (use --config or --config-file)")
+		}
+
+		// Validate JSON
+		var validateJSON map[string]interface{}
+		if err := json.Unmarshal(connectorConfig, &validateJSON); err != nil {
+			return fmt.Errorf("invalid config JSON: %w", err)
+		}
 	}
 
 	// Get other flags
 	listenAddr, _ := cmd.Flags().GetString(workbenchListenFlag)
-	autoPoll, _ := cmd.Flags().GetBool(workbenchAutoPollFlag)
-	pollInterval, _ := cmd.Flags().GetDuration(workbenchPollIntervalFlag)
 	pageSize, _ := cmd.Flags().GetInt(workbenchPageSizeFlag)
 
 	// Create logger
@@ -116,12 +108,9 @@ func runWorkbench(cmd *cobra.Command, args []string) error {
 
 	// Create workbench config
 	cfg := workbench.Config{
-		Provider:        provider,
-		ConnectorConfig: connectorConfig,
 		ListenAddr:      listenAddr,
 		EnableUI:        true,
-		AutoPoll:        autoPoll,
-		PollInterval:    pollInterval,
+		DefaultPageSize: pageSize,
 	}
 
 	// Create workbench
@@ -129,9 +118,6 @@ func runWorkbench(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create workbench: %w", err)
 	}
-
-	// Set page size
-	wb.Engine().SetPageSize(pageSize)
 
 	// Handle signals
 	ctx, cancel := context.WithCancel(context.Background())
@@ -150,6 +136,27 @@ func runWorkbench(cmd *cobra.Command, args []string) error {
 	// Start workbench
 	if err := wb.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start workbench: %w", err)
+	}
+
+	// If provider was specified, create and install a connector
+	if provider != "" {
+		conn, err := wb.CreateConnector(ctx, workbench.CreateConnectorRequest{
+			Provider: provider,
+			Name:     "default",
+			Config:   connectorConfig,
+		})
+		if err != nil {
+			logger.Error(fmt.Sprintf("Failed to create connector: %v", err))
+		} else {
+			logger.Info(fmt.Sprintf("Created connector instance: %s", conn.ID))
+
+			// Install the connector
+			if err := wb.InstallConnector(ctx, conn.ID); err != nil {
+				logger.Error(fmt.Sprintf("Failed to install connector: %v", err))
+			} else {
+				logger.Info("Connector installed successfully")
+			}
+		}
 	}
 
 	// Wait for shutdown

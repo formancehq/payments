@@ -425,6 +425,7 @@ type TaskNodeSummary struct {
 	Children     []*TaskNodeSummary `json:"children,omitempty"`
 	ChildCount   int                `json:"child_count"`
 	LastExecTime string             `json:"last_exec_time,omitempty"`
+	FromPayload  json.RawMessage    `json:"from_payload,omitempty"`
 }
 
 // GetSummary returns a summary of the task tree.
@@ -456,13 +457,14 @@ func (t *TaskTracker) summarizeNodes(nodes []*TaskNode) []*TaskNodeSummary {
 
 func (t *TaskTracker) summarizeNode(node *TaskNode) *TaskNodeSummary {
 	s := &TaskNodeSummary{
-		ID:         node.ID,
-		Type:       node.Type,
-		Name:       node.Name,
-		Status:     node.Status,
-		ItemsCount: node.ItemsCount,
-		Error:      node.Error,
-		ChildCount: len(node.Children),
+		ID:          node.ID,
+		Type:        node.Type,
+		Name:        node.Name,
+		Status:      node.Status,
+		ItemsCount:  node.ItemsCount,
+		Error:       node.Error,
+		ChildCount:  len(node.Children),
+		FromPayload: node.FromPayload,
 	}
 
 	if node.Duration > 0 {

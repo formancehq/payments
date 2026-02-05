@@ -25,7 +25,13 @@ type Introspector struct {
 func NewIntrospector(provider string, connectorID models.ConnectorID) *Introspector {
 	// Try to find the connector source directory
 	// Look in common locations relative to working directory
+	// Check both new location (pkg/connectors/) and old location (internal/connectors/plugins/public/)
 	possiblePaths := []string{
+		// New location (pkg/connectors/)
+		filepath.Join("pkg", "connectors", provider),
+		filepath.Join("..", "pkg", "connectors", provider),
+		filepath.Join("..", "..", "pkg", "connectors", provider),
+		// Old location (internal/connectors/plugins/public/)
 		filepath.Join("internal", "connectors", "plugins", "public", provider),
 		filepath.Join("..", "internal", "connectors", "plugins", "public", provider),
 		filepath.Join("..", "..", "internal", "connectors", "plugins", "public", provider),
