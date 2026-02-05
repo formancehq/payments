@@ -39,6 +39,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestCurrencyclo
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestDummypay(components.V3DummypayConfig{/* values here */})
 ```
 
+### V3FireblocksConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestFireblocks(components.V3FireblocksConfig{/* values here */})
+```
+
 ### V3GenericConfig
 
 ```go

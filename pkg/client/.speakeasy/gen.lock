@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 596390772cf50a48e342b21cee1b696f
+  docChecksum: c276cf2acde95613b23d39b2bb8225cc
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -149,6 +149,7 @@ generatedFiles:
   - /models/components/v3dummypayconfig.go
   - /models/components/v3errorresponse.go
   - /models/components/v3errorsenum.go
+  - /models/components/v3fireblocksconfig.go
   - /models/components/v3forwardbankaccountrequest.go
   - /models/components/v3forwardbankaccountresponse.go
   - /models/components/v3forwardpaymentserviceuserbankaccountrequest.go
@@ -487,6 +488,7 @@ generatedFiles:
   - docs/models/components/v3dummypayconfig.md
   - docs/models/components/v3errorresponse.md
   - docs/models/components/v3errorsenum.md
+  - docs/models/components/v3fireblocksconfig.md
   - docs/models/components/v3forwardbankaccountrequest.md
   - docs/models/components/v3forwardbankaccountresponse.md
   - docs/models/components/v3forwardbankaccountresponsedata.md
