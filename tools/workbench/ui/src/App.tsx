@@ -1017,6 +1017,14 @@ function CreateConnectorModal({ availableConnectors, onClose, onCreate }: Create
                       <option value="true">true</option>
                       <option value="false">false</option>
                     </select>
+                  ) : key.toLowerCase().includes('privatekey') || key.toLowerCase().includes('certificate') || key.toLowerCase().includes('pem') ? (
+                    <textarea
+                      value={config[key] || ''}
+                      onChange={e => handleConfigChange(key, e.target.value)}
+                      placeholder={param.defaultValue || 'Paste PEM content here...'}
+                      rows={6}
+                      className="config-textarea"
+                    />
                   ) : (
                     <input
                       type={param.dataType === 'password' ? 'password' : 'text'}
