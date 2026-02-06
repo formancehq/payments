@@ -1,84 +1,21 @@
+// Package metrics re-exports pkg/connector/metrics for internal use.
 package metrics
 
 import (
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
+	"github.com/formancehq/payments/pkg/connector/metrics"
 )
 
-var registry MetricsRegistry
+// MetricsRegistry provides access to connector metrics.
+type MetricsRegistry = metrics.MetricsRegistry
 
-func GetMetricsRegistry() MetricsRegistry {
-	if registry == nil {
-		registry = NewNoOpMetricsRegistry()
-	}
+// NoopMetricsRegistry is a no-op implementation of MetricsRegistry.
+type NoopMetricsRegistry = metrics.NoopMetricsRegistry
 
-	return registry
-}
+// GetMetricsRegistry returns the global metrics registry.
+var GetMetricsRegistry = metrics.GetMetricsRegistry
 
-type MetricsRegistry interface {
-	ConnectorPSPCalls() metric.Int64Counter
-	ConnectorPSPCallLatencies() metric.Int64Histogram
-}
+// RegisterMetricsRegistry creates and registers a new metrics registry.
+var RegisterMetricsRegistry = metrics.RegisterMetricsRegistry
 
-type metricsRegistry struct {
-	connectorPSPCalls         metric.Int64Counter
-	connectorPSPCallLatencies metric.Int64Histogram
-}
-
-func RegisterMetricsRegistry(meterProvider metric.MeterProvider) (MetricsRegistry, error) {
-	meter := meterProvider.Meter("payments")
-
-	connectorPSPCalls, err := meter.Int64Counter(
-		"payments_connectors_psp_calls",
-		metric.WithUnit("1"),
-		metric.WithDescription("payments connectors psp calls"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	connectorPSPCallLatencies, err := meter.Int64Histogram(
-		"payments_connectors_psp_calls_latencies",
-		metric.WithUnit("ms"),
-		metric.WithDescription("payments connectors psp calls latencies"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	registry = &metricsRegistry{
-		connectorPSPCalls:         connectorPSPCalls,
-		connectorPSPCallLatencies: connectorPSPCallLatencies,
-	}
-
-	return registry, nil
-}
-
-func (m *metricsRegistry) ConnectorPSPCalls() metric.Int64Counter {
-	return m.connectorPSPCalls
-}
-
-func (m *metricsRegistry) ConnectorPSPCallLatencies() metric.Int64Histogram {
-	return m.connectorPSPCallLatencies
-}
-
-type NoopMetricsRegistry struct{}
-
-func NewNoOpMetricsRegistry() *NoopMetricsRegistry {
-	return &NoopMetricsRegistry{}
-}
-
-func (m *NoopMetricsRegistry) ConnectorPSPCalls() metric.Int64Counter {
-	counter, _ := noop.NewMeterProvider().Meter("payments").Int64Counter("payments_connectors_psp_calls")
-	return counter
-}
-
-func (m *NoopMetricsRegistry) ConnectorPSPCallLatencies() metric.Int64Histogram {
-	histogram, _ := noop.NewMeterProvider().Meter("payments").Int64Histogram("payments_connectors_psp_calls_latencies")
-	return histogram
-}
-
-var (
-	_ MetricsRegistry = (*metricsRegistry)(nil)
-	_ MetricsRegistry = (*NoopMetricsRegistry)(nil)
-)
+// NewNoOpMetricsRegistry creates a new no-op metrics registry.
+var NewNoOpMetricsRegistry = metrics.NewNoOpMetricsRegistry

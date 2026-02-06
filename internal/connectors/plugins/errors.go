@@ -1,13 +1,15 @@
 package plugins
 
 import (
-	"errors"
+	"github.com/formancehq/payments/pkg/connector"
 )
 
+// Error aliases for backward compatibility.
+// The canonical definitions now live in pkg/connector.
 var (
-	ErrNotImplemented       = errors.New("not implemented")
-	ErrNotYetInstalled      = errors.New("not yet installed")
-	ErrInvalidClientRequest = errors.New("invalid client request")
-	ErrUpstreamRatelimit    = errors.New("rate limited by upstream server")
-	ErrCurrencyNotSupported = errors.New("currency not supported")
+	ErrNotImplemented       = connector.ErrNotImplemented
+	ErrNotYetInstalled      = connector.ErrNotYetInstalled
+	ErrInvalidClientRequest = connector.ErrInvalidClientRequest
+	ErrUpstreamRatelimit    = connector.ErrUpstreamRatelimit
+	ErrCurrencyNotSupported = connector.ErrCurrencyNotSupported
 )

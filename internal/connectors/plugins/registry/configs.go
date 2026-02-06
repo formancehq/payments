@@ -1,33 +1,22 @@
 package registry
 
-type Type string
+import (
+	pkgregistry "github.com/formancehq/payments/pkg/registry"
+)
+
+// Type aliases for backward compatibility.
+// These delegate to pkg/registry where the canonical types now live.
+type Type = pkgregistry.Type
 
 const (
-	TypeLongString      Type = "long string"
-	TypeString          Type = "string"
-	TypeDurationNs      Type = "duration ns"
-	TypeUnsignedInteger Type = "unsigned integer"
-	TypeBoolean         Type = "boolean"
+	TypeLongString      = pkgregistry.TypeLongString
+	TypeString          = pkgregistry.TypeString
+	TypeDurationNs      = pkgregistry.TypeDurationNs
+	TypeUnsignedInteger = pkgregistry.TypeUnsignedInteger
+	TypeBoolean         = pkgregistry.TypeBoolean
 )
 
-type Configs map[string]Config
-type Config map[string]Parameter
-type Parameter struct {
-	DataType     Type   `json:"dataType"`
-	Required     bool   `json:"required"`
-	DefaultValue string `json:"defaultValue"`
-}
-
-var (
-	defaultParameters = map[string]Parameter{
-		"pollingPeriod": {
-			DataType:     TypeDurationNs,
-			Required:     false,
-			DefaultValue: "30m",
-		},
-		"name": {
-			DataType: TypeString,
-			Required: true,
-		},
-	}
-)
+// Configs, Config, and Parameter are aliases to pkg/registry types.
+type Configs = pkgregistry.Configs
+type Config = pkgregistry.Config
+type Parameter = pkgregistry.Parameter

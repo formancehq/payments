@@ -2,42 +2,24 @@ package registry
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-	"log"
-	"reflect"
-	"regexp"
-	"strings"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	pkgregistry "github.com/formancehq/payments/pkg/registry"
 )
 
-const DummyPSPName = "dummypay"
+// DummyPSPName is an alias to pkg/registry for backward compatibility.
+const DummyPSPName = pkgregistry.DummyPSPName
 
-type PluginCreateFunction func(
-	models.ConnectorID,
-	string,
-	logging.Logger,
-	json.RawMessage,
-) (models.Plugin, error)
+// PluginCreateFunction is an alias to pkg/registry for backward compatibility.
+type PluginCreateFunction = pkgregistry.PluginCreateFunction
 
-type PluginInformation struct {
-	pluginType   models.PluginType
-	capabilities []models.Capability
-	createFunc   PluginCreateFunction
-	config       Config
-	pageSize     uint64
-}
+// ErrPluginNotFound is an alias to pkg/registry for backward compatibility.
+var ErrPluginNotFound = pkgregistry.ErrPluginNotFound
 
-var (
-	pluginsRegistry map[string]PluginInformation = make(map[string]PluginInformation)
-
-	ErrPluginNotFound = errors.New("plugin not found")
-
-	checkRequired = regexp.MustCompile("required")
-)
-
+// RegisterPlugin delegates to pkg/registry.RegisterPlugin.
+// This allows connectors to use either import path.
 func RegisterPlugin(
 	provider string,
 	pluginType models.PluginType,
@@ -46,133 +28,68 @@ func RegisterPlugin(
 	conf any,
 	pageSize uint64,
 ) {
-	pluginsRegistry[provider] = PluginInformation{
-		pluginType:   pluginType,
-		capabilities: capabilities,
-		createFunc:   createFunc,
-		config:       setupConfig(conf),
-		pageSize:     pageSize,
+	// Convert models types to connector types (they're the same underlying types)
+	connectorCaps := make([]connector.Capability, len(capabilities))
+	for i, c := range capabilities {
+		connectorCaps[i] = connector.Capability(c)
 	}
+
+	pkgregistry.RegisterPlugin(provider, connector.PluginType(pluginType), createFunc, connectorCaps, conf, pageSize)
 }
 
-func setupConfig(conf any) Config {
-	config := make(Config)
-	for paramName, param := range defaultParameters {
-		if _, ok := config[paramName]; !ok {
-			config[paramName] = param
-		}
-	}
-
-	val := reflect.ValueOf(conf)
-	if val.Kind() == reflect.Invalid {
-		log.Panicf("RegisterPlugin config cannot be nil")
-	}
-	if val.Kind() != reflect.Struct {
-		log.Panicf("RegisterPlugin config must be a struct, got %v", val.Kind())
-	}
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Type().Field(i)
-		if !field.IsExported() {
-			continue
-		}
-
-		validatorTag := field.Tag.Get("validate")
-
-		jsonTag := field.Tag.Get("json")
-		fieldName := strings.Split(jsonTag, ",")[0]
-
-		if fieldName == "" || fieldName == "-" {
-			continue
-		}
-
-		vt := field.Type
-		var dataType Type
-		switch vt.Kind() {
-		case reflect.String:
-			dataType = TypeString
-		case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			dataType = TypeUnsignedInteger
-		case reflect.Int64:
-			if field.Type.Name() == "Duration" {
-				dataType = TypeDurationNs
-				break
-			}
-			fallthrough
-		case reflect.Bool:
-			dataType = TypeBoolean
-		default:
-			log.Panicf("unhandled type for field %q: %q", val.Type().Field(i).Name, field.Type.Name())
-		}
-
-		config[fieldName] = Parameter{
-			DataType: dataType,
-			Required: checkRequired.MatchString(validatorTag),
-		}
-	}
-	return config
-}
-
+// GetPlugin retrieves a plugin from the registry, creates it, and wraps it with OTel tracing.
 func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
-	provider = strings.ToLower(provider)
-	info, ok := pluginsRegistry[provider]
-	if !ok {
-		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
+	createFunc, _, err := pkgregistry.GetPluginFactory(provider)
+	if err != nil {
+		return nil, err
 	}
 
-	p, err := info.createFunc(connectorID, connectorName, logger, rawConfig)
+	p, err := createFunc(connector.ConnectorID(connectorID), connectorName, logger, rawConfig)
 	if err != nil {
 		return nil, translateError(err)
 	}
 
+	// Wrap with OTel tracing (internal only)
 	return New(connectorID, logger, p), nil
 }
 
+// GetPluginType delegates to pkg/registry.
 func GetPluginType(provider string) (models.PluginType, error) {
-	provider = strings.ToLower(provider)
-	info, ok := pluginsRegistry[provider]
-	if !ok {
-		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
-	}
-
-	return info.pluginType, nil
+	pt, err := pkgregistry.GetPluginType(provider)
+	return models.PluginType(pt), err
 }
 
+// GetCapabilities delegates to pkg/registry.
 func GetCapabilities(provider string) ([]models.Capability, error) {
-	provider = strings.ToLower(provider)
-	info, ok := pluginsRegistry[provider]
-	if !ok {
-		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
+	caps, err := pkgregistry.GetCapabilities(provider)
+	if err != nil {
+		return nil, err
 	}
-
-	return info.capabilities, nil
+	// Convert connector.Capability to models.Capability
+	result := make([]models.Capability, len(caps))
+	for i, c := range caps {
+		result[i] = models.Capability(c)
+	}
+	return result, nil
 }
 
+// GetConfigs delegates to pkg/registry.
 func GetConfigs(debug bool) Configs {
-	confs := make(Configs)
-	for key, info := range pluginsRegistry {
-		// hide dummy PSP outside of debug mode
-		if !debug && key == DummyPSPName {
-			continue
-		}
-		confs[key] = info.config
+	pkgConfigs := pkgregistry.GetConfigs(debug)
+	result := make(Configs)
+	for k, v := range pkgConfigs {
+		result[k] = Config(v)
 	}
-	return confs
+	return result
 }
 
+// GetConfig delegates to pkg/registry.
 func GetConfig(provider string) (Config, error) {
-	provider = strings.ToLower(provider)
-	info, ok := pluginsRegistry[provider]
-	if !ok {
-		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
-	}
-	return info.config, nil
+	cfg, err := pkgregistry.GetConfig(provider)
+	return Config(cfg), err
 }
 
+// GetPageSize delegates to pkg/registry.
 func GetPageSize(provider string) (uint64, error) {
-	provider = strings.ToLower(provider)
-	info, ok := pluginsRegistry[provider]
-	if !ok {
-		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
-	}
-	return info.pageSize, nil
+	return pkgregistry.GetPageSize(provider)
 }

@@ -1,72 +1,23 @@
 package metrics
 
 import (
-	"context"
-	"net/http"
-	"time"
-
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"github.com/formancehq/payments/pkg/connector/metrics"
 )
 
-type MetricOpContextKey string
+// MetricOpContextKey is the type for the metric operation context key.
+type MetricOpContextKey = metrics.MetricOpContextKey
 
-const MetricOperationContextKey MetricOpContextKey = "_metric_operation_context_key"
+// MetricOperationContextKey is the context key used to store the operation name for metrics.
+const MetricOperationContextKey = metrics.MetricOperationContextKey
 
-func OperationContext(ctx context.Context, operation string) context.Context {
-	return context.WithValue(ctx, MetricOperationContextKey, operation)
-}
+// OperationContext returns a new context with the operation name set for metrics.
+var OperationContext = metrics.OperationContext
 
-type TransportOpts struct {
-	Transport                http.RoundTripper
-	CommonMetricAttributesFn func() []attribute.KeyValue
-}
+// TransportOpts holds options for creating a metrics transport.
+type TransportOpts = metrics.TransportOpts
 
-type Transport struct {
-	connectorName          string
-	parent                 http.RoundTripper
-	commonMetricAttributes []attribute.KeyValue
-}
+// Transport is an http.RoundTripper that records metrics for each request.
+type Transport = metrics.Transport
 
-func NewTransport(connectorName string, opts TransportOpts) http.RoundTripper {
-	if opts.Transport == nil {
-		opts.Transport = http.DefaultTransport
-	}
-
-	if opts.CommonMetricAttributesFn == nil {
-		opts.CommonMetricAttributesFn = func() []attribute.KeyValue { return []attribute.KeyValue{} }
-	}
-
-	return &Transport{
-		connectorName:          connectorName,
-		parent:                 opts.Transport,
-		commonMetricAttributes: opts.CommonMetricAttributesFn(),
-	}
-}
-
-func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	start := time.Now()
-	res, err := r.parent.RoundTrip(req)
-	registry := GetMetricsRegistry()
-
-	attrs := r.commonMetricAttributes
-	attrs = append(attrs, attribute.String("connector", r.connectorName))
-	attrs = append(attrs, attribute.String("endpoint", req.URL.Path))
-	if val := req.Context().Value(MetricOperationContextKey); val != nil {
-		if name, ok := val.(string); ok {
-			attrs = append(attrs, attribute.String("operation", name))
-		}
-	}
-
-	if res != nil {
-		attrs = append(attrs, attribute.Int("status", res.StatusCode))
-	} else {
-		// if request could not be executed
-		attrs = append(attrs, attribute.Int("status", 0))
-	}
-	opts := metric.WithAttributes(attrs...)
-
-	registry.ConnectorPSPCalls().Add(req.Context(), 1, opts)
-	registry.ConnectorPSPCallLatencies().Record(req.Context(), time.Since(start).Milliseconds(), opts)
-	return res, err
-}
+// NewTransport creates a new metrics transport for the given connector.
+var NewTransport = metrics.NewTransport
