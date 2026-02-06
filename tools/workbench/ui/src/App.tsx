@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
+import { Routes, Route, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { 
   globalApi, 
   connectorApi, 
@@ -85,6 +87,91 @@ function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) 
     >
       {copied ? 'Copied!' : 'Copy'}
     </button>
+  );
+}
+
+// Custom syntax theme with dark emerald background
+const codeTheme: { [key: string]: React.CSSProperties } = {
+  'code[class*="language-"]': {
+    color: '#e6edf3',
+    background: 'none',
+    fontFamily: 'var(--term-font)',
+    fontSize: '13px',
+    textAlign: 'left',
+    whiteSpace: 'pre',
+    wordSpacing: 'normal',
+    wordBreak: 'normal',
+    wordWrap: 'normal',
+    lineHeight: '1.6',
+  },
+  'pre[class*="language-"]': {
+    color: '#e6edf3',
+    background: 'transparent',
+    fontFamily: 'var(--term-font)',
+    fontSize: '13px',
+    textAlign: 'left',
+    whiteSpace: 'pre',
+    wordSpacing: 'normal',
+    wordBreak: 'normal',
+    wordWrap: 'normal',
+    lineHeight: '1.6',
+    padding: '12px',
+    margin: '0',
+    overflow: 'auto',
+    borderRadius: '0',
+  },
+  'comment': { color: '#6e8a82' },
+  'prolog': { color: '#6e8a82' },
+  'doctype': { color: '#6e8a82' },
+  'cdata': { color: '#6e8a82' },
+  'punctuation': { color: '#7daa9c' },
+  'property': { color: '#55d799' },
+  'tag': { color: '#55d799' },
+  'boolean': { color: '#79c0ff' },
+  'number': { color: '#79c0ff' },
+  'constant': { color: '#79c0ff' },
+  'symbol': { color: '#79c0ff' },
+  'deleted': { color: '#ffa198' },
+  'selector': { color: '#55d799' },
+  'attr-name': { color: '#55d799' },
+  'string': { color: '#a5d6ff' },
+  'char': { color: '#a5d6ff' },
+  'builtin': { color: '#ffa657' },
+  'inserted': { color: '#55d799' },
+  'operator': { color: '#ff7b72' },
+  'entity': { color: '#ffa657', cursor: 'help' },
+  'url': { color: '#a5d6ff' },
+  'variable': { color: '#ffa657' },
+  'atrule': { color: '#79c0ff' },
+  'attr-value': { color: '#a5d6ff' },
+  'function': { color: '#d2a8ff' },
+  'class-name': { color: '#ffa657' },
+  'keyword': { color: '#ff7b72' },
+  'regex': { color: '#a5d6ff' },
+  'important': { color: '#ff7b72', fontWeight: 'bold' },
+  'bold': { fontWeight: 'bold' },
+  'italic': { fontStyle: 'italic' },
+};
+
+// Syntax-highlighted code block
+function CodeBlock({ children, language = 'json' }: { children: string; language?: string }) {
+  return (
+    <SyntaxHighlighter 
+      language={language} 
+      style={codeTheme}
+      customStyle={{
+        margin: 0,
+        padding: '12px',
+        background: 'transparent',
+        borderRadius: '0',
+        fontSize: '13px',
+        lineHeight: '1.6',
+        overflow: 'auto',
+      }}
+      wrapLongLines={true}
+    >
+      {children}
+    </SyntaxHighlighter>
   );
 }
 
@@ -198,15 +285,44 @@ const useConnector = () => useContext(ConnectorContext);
 
 type Tab = 'dashboard' | 'accounts' | 'payments' | 'balances' | 'tasks' | 'debug' | 'snapshots' | 'analysis' | 'code' | 'state';
 
+const VALID_TABS: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
+
+function isValidTab(tab: string | undefined): tab is Tab {
+  return tab !== undefined && VALID_TABS.includes(tab as Tab);
+}
+
+// Root App component that sets up routes
 function App() {
-  const [selectedConnectorId, setSelectedConnectorId] = useState<string | null>(null);
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/debug" element={<AppContent />} />
+      <Route path="/c/:connectorId" element={<AppContent />} />
+      <Route path="/c/:connectorId/:tab" element={<AppContent />} />
+      <Route path="/c/:connectorId/:tab/:itemId" element={<AppContent />} />
+      <Route path="*" element={<AppContent />} />
+    </Routes>
+  );
+}
+
+// Main app content with routing
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { connectorId: urlConnectorId, tab: urlTab } = useParams<{ connectorId?: string; tab?: string }>();
+  
+  // Derive navigation state from URL
+  const selectedConnectorId = urlConnectorId || null;
+  // Handle /debug route specially
+  const isDebugRoute = location.pathname === '/debug' || location.pathname.startsWith('/debug');
+  const tab: Tab = isDebugRoute ? 'debug' : (isValidTab(urlTab) ? urlTab : 'dashboard');
+
   const [connectorStatus, setConnectorStatus] = useState<ConnectorStatus | null>(null);
   const [globalStatus, setGlobalStatus] = useState<GlobalStatus | null>(null);
   const [connectors, setConnectors] = useState<ConnectorSummary[]>([]);
   const [availableConnectors, setAvailableConnectors] = useState<AvailableConnector[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
-  const [tab, setTab] = useState<Tab>('dashboard');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -237,19 +353,19 @@ function App() {
   } | null>(null);
 
   // Keyboard shortcuts
-  const tabs: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
-  
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl/Cmd + number for tab switching
       if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         const tabIndex = parseInt(e.key) - 1;
-        if (tabIndex < tabs.length) {
-          const targetTab = tabs[tabIndex];
+        if (tabIndex < VALID_TABS.length) {
+          const targetTab = VALID_TABS[tabIndex];
           // Only switch to connector tabs if a connector is selected
-          if (targetTab === 'dashboard' || targetTab === 'debug' || selectedConnectorId) {
-            setTab(targetTab);
+          if (targetTab === 'debug') {
+            navigate(selectedConnectorId ? `/c/${selectedConnectorId}/debug` : '/debug');
+          } else if (selectedConnectorId) {
+            navigate(`/c/${selectedConnectorId}/${targetTab}`);
           }
         }
       }
@@ -270,7 +386,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedConnectorId, showCreateModal, showSnapshotModal, confirmModal, tabs]);
+  }, [selectedConnectorId, showCreateModal, showSnapshotModal, confirmModal, navigate]);
 
   // Update selected connector in api module
   useEffect(() => {
@@ -397,10 +513,10 @@ function App() {
     try {
       const result = await globalApi.createConnector({ provider, name, config });
       await refreshGlobalStatus();
-      setSelectedConnectorId(result.id);
       setShowCreateModal(false);
+      navigate(`/c/${result.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create connector');
+      setError(e instanceof Error ? e.message : 'Failed to instantiate connector');
     } finally {
       setLoading(false);
     }
@@ -419,7 +535,7 @@ function App() {
         try {
           await connectorApi(id).delete();
           if (selectedConnectorId === id) {
-            setSelectedConnectorId(null);
+            navigate('/');
           }
           await refreshGlobalStatus();
         } catch (e) {
@@ -434,51 +550,58 @@ function App() {
   const contextValue: ConnectorContextType = {
     connectorId: selectedConnectorId,
     connectorStatus,
-    setConnectorId: setSelectedConnectorId,
+    setConnectorId: (id: string | null) => {
+      if (id) {
+        navigate(`/c/${id}`);
+      } else {
+        navigate('/');
+      }
+    },
     refreshConnectorStatus,
+  };
+
+  // Get initials from provider name for sidebar icons
+  const getProviderInitials = (provider: string) => {
+    return provider.slice(0, 2).toUpperCase();
   };
 
   return (
     <ConnectorContext.Provider value={contextValue}>
       <div className="app">
-        <header className="header">
-          <div className="header-left">
-            <h1>CONNECTOR WORKBENCH</h1>
-            <div className="connector-selector">
-              <select 
-                value={selectedConnectorId || ''} 
-                onChange={(e) => setSelectedConnectorId(e.target.value || null)}
+        <aside className="connector-sidebar">
+          <div className="sidebar-header">
+            <Tooltip text="Home - View all connectors">
+              <Link 
+                to="/"
+                className={`sidebar-logo ${!selectedConnectorId ? 'active' : ''}`}
               >
-                <option value="">-- Select Connector --</option>
-                {connectors.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.provider}: {c.name || c.id.slice(0, 8)}
-                    {c.installed ? ' [installed]' : ''}
-                  </option>
-                ))}
-              </select>
-              <Tooltip text="Create new connector instance (Ctrl+N)">
-                <button className="btn-primary btn-small" onClick={() => setShowCreateModal(true)}>
-                  + New
-                </button>
+                CW
+              </Link>
+            </Tooltip>
+          </div>
+          <div className="sidebar-connectors">
+            {connectors.map((c) => (
+              <Tooltip key={c.id} text={`${c.provider}: ${c.name || c.id.slice(0, 8)}${c.installed ? ' [installed]' : ''}`}>
+                <Link
+                  to={`/c/${c.id}`}
+                  className={`sidebar-connector ${selectedConnectorId === c.id ? 'active' : ''} ${c.installed ? 'installed' : ''}`}
+                >
+                  <span className="connector-initials">{getProviderInitials(c.provider)}</span>
+                  {!c.installed && <span className="connector-uninstalled-dot" />}
+                </Link>
               </Tooltip>
-            </div>
+            ))}
           </div>
-          <div className="header-right">
-            <div className="global-stats">
-              <span className="stat">{connectors.length} connectors</span>
-              {globalStatus && (
-                <>
-                  <span className="stat">{globalStatus.debug.total_http_requests} requests</span>
-                  {globalStatus.debug.error_count > 0 && (
-                    <span className="stat error">{globalStatus.debug.error_count} errors</span>
-                  )}
-                </>
-              )}
-            </div>
+          <div className="sidebar-footer">
+            <Tooltip text="Instantiate new connector (Ctrl+N)">
+              <button className="sidebar-add" onClick={() => setShowCreateModal(true)}>
+                +
+              </button>
+            </Tooltip>
           </div>
-        </header>
+        </aside>
 
+        <div className="main-content">
         {selectedConnectorId && connectorStatus && (
           <div className="connector-header">
             <span className="provider-badge">{connectorStatus.provider}</span>
@@ -526,58 +649,60 @@ function App() {
           </div>
         )}
 
-        <nav className="tabs">
-          <Tooltip text="Ctrl+1">
-            <button className={`tab ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
-              Dashboard
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+2">
-            <button className={`tab ${tab === 'accounts' ? 'active' : ''}`} onClick={() => setTab('accounts')} disabled={!selectedConnectorId}>
-              Accounts {accounts.length > 0 && <span className="tab-count">{accounts.length}</span>}
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+3">
-            <button className={`tab ${tab === 'payments' ? 'active' : ''}`} onClick={() => setTab('payments')} disabled={!selectedConnectorId}>
-              Payments {payments.length > 0 && <span className="tab-count">{payments.length}</span>}
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+4">
-            <button className={`tab ${tab === 'balances' ? 'active' : ''}`} onClick={() => setTab('balances')} disabled={!selectedConnectorId}>
-              Balances {balances.length > 0 && <span className="tab-count">{balances.length}</span>}
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+5">
-            <button className={`tab ${tab === 'tasks' ? 'active' : ''}`} onClick={() => setTab('tasks')} disabled={!selectedConnectorId}>
-              Tasks
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+6">
-            <button className={`tab ${tab === 'debug' ? 'active' : ''}`} onClick={() => setTab('debug')}>
-              Debug {globalStatus && globalStatus.debug.error_count > 0 && (
-                <span className="tab-count error">{globalStatus.debug.error_count}</span>
-              )}
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+7">
-            <button className={`tab ${tab === 'snapshots' ? 'active' : ''}`} onClick={() => setTab('snapshots')} disabled={!selectedConnectorId}>
-              Snapshots
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+8">
-            <button className={`tab ${tab === 'analysis' ? 'active' : ''}`} onClick={() => setTab('analysis')} disabled={!selectedConnectorId}>
-              Analysis
-            </button>
-          </Tooltip>
-          <Tooltip text="Ctrl+9">
-            <button className={`tab ${tab === 'code' ? 'active' : ''}`} onClick={() => setTab('code')} disabled={!selectedConnectorId}>
-              Code
-            </button>
-          </Tooltip>
-          <button className={`tab ${tab === 'state' ? 'active' : ''}`} onClick={() => setTab('state')} disabled={!selectedConnectorId}>
-            State
-          </button>
-        </nav>
+        {selectedConnectorId && (
+          <nav className="tabs">
+            <Tooltip text="Ctrl+1">
+              <Link to={`/c/${selectedConnectorId}/dashboard`} className={`tab ${tab === 'dashboard' ? 'active' : ''}`}>
+                Dashboard
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+2">
+              <Link to={`/c/${selectedConnectorId}/accounts`} className={`tab ${tab === 'accounts' ? 'active' : ''}`}>
+                Accounts {accounts.length > 0 && <span className="tab-count">{accounts.length}</span>}
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+3">
+              <Link to={`/c/${selectedConnectorId}/payments`} className={`tab ${tab === 'payments' ? 'active' : ''}`}>
+                Payments {payments.length > 0 && <span className="tab-count">{payments.length}</span>}
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+4">
+              <Link to={`/c/${selectedConnectorId}/balances`} className={`tab ${tab === 'balances' ? 'active' : ''}`}>
+                Balances {balances.length > 0 && <span className="tab-count">{balances.length}</span>}
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+5">
+              <Link to={`/c/${selectedConnectorId}/tasks`} className={`tab ${tab === 'tasks' ? 'active' : ''}`}>
+                Tasks
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+6">
+              <Link to={`/c/${selectedConnectorId}/debug`} className={`tab ${tab === 'debug' ? 'active' : ''}`}>
+                Debug {globalStatus && globalStatus.debug.error_count > 0 && (
+                  <span className="tab-count error">{globalStatus.debug.error_count}</span>
+                )}
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+7">
+              <Link to={`/c/${selectedConnectorId}/snapshots`} className={`tab ${tab === 'snapshots' ? 'active' : ''}`}>
+                Snapshots
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+8">
+              <Link to={`/c/${selectedConnectorId}/analysis`} className={`tab ${tab === 'analysis' ? 'active' : ''}`}>
+                Analysis
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+9">
+              <Link to={`/c/${selectedConnectorId}/code`} className={`tab ${tab === 'code' ? 'active' : ''}`}>
+                Code
+              </Link>
+            </Tooltip>
+            <Link to={`/c/${selectedConnectorId}/state`} className={`tab ${tab === 'state' ? 'active' : ''}`}>
+              State
+            </Link>
+          </nav>
+        )}
 
         {error && (
           <div className="error-banner">
@@ -592,11 +717,11 @@ function App() {
               <Skeleton rows={4} type="card" />
               <Skeleton rows={4} type="card" />
             </div>
-          ) : !selectedConnectorId && tab !== 'debug' ? (
+          ) : !selectedConnectorId && !isDebugRoute ? (
             <NoConnectorView 
               connectors={connectors}
               availableConnectors={availableConnectors}
-              onSelect={setSelectedConnectorId}
+              onSelect={(id) => navigate(`/c/${id}`)}
               onCreate={() => setShowCreateModal(true)}
               onDelete={handleDeleteConnector}
             />
@@ -680,7 +805,7 @@ function App() {
             onSaved={() => {
               setShowSnapshotModal(false);
               setSnapshotCaptureId(null);
-              setTab('snapshots');
+              navigate(`/c/${selectedConnectorId}/snapshots`);
             }}
           />
         )}
@@ -695,6 +820,7 @@ function App() {
             onCancel={() => setConfirmModal(null)}
           />
         )}
+        </div>{/* end main-content */}
       </div>
     </ConnectorContext.Provider>
   );
@@ -715,7 +841,7 @@ function NoConnectorView({ connectors, availableConnectors, onSelect, onCreate, 
       <div className="no-connector-header">
         <h2>Connector Instances</h2>
         <button className="btn-primary" onClick={onCreate}>
-          + Create New Connector
+          + Instantiate New Connector
         </button>
       </div>
 
@@ -723,9 +849,9 @@ function NoConnectorView({ connectors, availableConnectors, onSelect, onCreate, 
         <div className="empty-state">
           <div className="empty-state-icon">[C]</div>
           <p>No connector instances yet</p>
-          <p className="text-muted">Create a new connector to get started</p>
+          <p className="text-muted">Instantiate a connector to get started</p>
           <button className="btn-primary" onClick={onCreate} style={{ marginTop: '16px' }}>
-            + Create Your First Connector
+            + Instantiate Your First Connector
           </button>
         </div>
       ) : (
@@ -826,7 +952,7 @@ function CreateConnectorModal({ availableConnectors, onClose, onCreate }: Create
     try {
       await onCreate(selectedProvider, name, config);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create connector');
+      setError(e instanceof Error ? e.message : 'Failed to instantiate connector');
     } finally {
       setLoading(false);
     }
@@ -836,7 +962,7 @@ function CreateConnectorModal({ availableConnectors, onClose, onCreate }: Create
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-large" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Create New Connector</h3>
+          <h3>Instantiate Connector</h3>
           <button className="btn-icon" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -909,7 +1035,7 @@ function CreateConnectorModal({ availableConnectors, onClose, onCreate }: Create
             Cancel
           </button>
           <button className="btn-primary" onClick={handleSubmit} disabled={loading || !selectedProvider}>
-            {loading ? <span className="spinner" /> : 'Create Connector'}
+            {loading ? <span className="spinner" /> : 'Instantiate'}
           </button>
         </div>
       </div>
@@ -1087,7 +1213,7 @@ function AccountsTab({ accounts, onFetch }: AccountsTabProps) {
                 <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
               </div>
             </div>
-            <pre className="json-view">{JSON.stringify(selected, null, 2)}</pre>
+            <CodeBlock>{JSON.stringify(selected, null, 2)}</CodeBlock>
           </div>
         </div>
       )}
@@ -1195,7 +1321,7 @@ function PaymentsTab({ payments, onFetch }: PaymentsTabProps) {
                 <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
               </div>
             </div>
-            <pre className="json-view">{JSON.stringify(selected, null, 2)}</pre>
+            <CodeBlock>{JSON.stringify(selected, null, 2)}</CodeBlock>
           </div>
         </div>
       )}
@@ -1294,7 +1420,7 @@ function BalancesTab({ balances, onFetch }: BalancesTabProps) {
                 <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
               </div>
             </div>
-            <pre className="json-view">{JSON.stringify(selected, null, 2)}</pre>
+            <CodeBlock>{JSON.stringify(selected, null, 2)}</CodeBlock>
           </div>
         </div>
       )}
@@ -1427,26 +1553,26 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
                 )}
 
                 <h4>Request Headers</h4>
-                <pre>{JSON.stringify(selectedRequest.request_headers, null, 2)}</pre>
+                <CodeBlock>{JSON.stringify(selectedRequest.request_headers, null, 2)}</CodeBlock>
 
                 {selectedRequest.request_body && (
                   <>
                     <h4>Request Body</h4>
-                    <pre>{formatBody(selectedRequest.request_body)}</pre>
+                    <CodeBlock>{formatBody(selectedRequest.request_body)}</CodeBlock>
                   </>
                 )}
 
                 {selectedRequest.response_headers && (
                   <>
                     <h4>Response Headers</h4>
-                    <pre>{JSON.stringify(selectedRequest.response_headers, null, 2)}</pre>
+                    <CodeBlock>{JSON.stringify(selectedRequest.response_headers, null, 2)}</CodeBlock>
                   </>
                 )}
 
                 {selectedRequest.response_body && (
                   <>
                     <h4>Response Body</h4>
-                    <pre>{formatBody(selectedRequest.response_body)}</pre>
+                    <CodeBlock>{formatBody(selectedRequest.response_body)}</CodeBlock>
                   </>
                 )}
               </div>
@@ -1524,7 +1650,7 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
                 {selectedLog.data !== undefined && selectedLog.data !== null && (
                   <>
                     <h4>Data</h4>
-                    <pre>{JSON.stringify(selectedLog.data, null, 2)}</pre>
+                    <CodeBlock>{JSON.stringify(selectedLog.data, null, 2)}</CodeBlock>
                   </>
                 )}
               </div>
@@ -1568,11 +1694,11 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
                   </div>
                 </div>
                 <h4>Input</h4>
-                <pre>{JSON.stringify(selectedCall.input, null, 2)}</pre>
+                <CodeBlock>{JSON.stringify(selectedCall.input, null, 2)}</CodeBlock>
                 {selectedCall.output !== undefined && selectedCall.output !== null && (
                   <>
                     <h4>Output</h4>
-                    <pre>{JSON.stringify(selectedCall.output, null, 2)}</pre>
+                    <CodeBlock>{JSON.stringify(selectedCall.output, null, 2)}</CodeBlock>
                   </>
                 )}
                 {selectedCall.error && (
@@ -2282,7 +2408,7 @@ function TasksTab() {
                   {selectedTask.from_payload !== undefined && selectedTask.from_payload !== null && (
                     <div className="detail-payload">
                       <div className="detail-payload-header">Trigger Payload</div>
-                      <pre className="json-view">{JSON.stringify(selectedTask.from_payload, null, 2)}</pre>
+                      <CodeBlock>{JSON.stringify(selectedTask.from_payload, null, 2)}</CodeBlock>
                     </div>
                   )}
                 </div>
@@ -2618,13 +2744,13 @@ function SnapshotsTab() {
               {selectedSnapshot.request.body && (
                 <>
                   <h5>Request Body</h5>
-                  <pre className="code-block">{formatBody(selectedSnapshot.request.body)}</pre>
+                  <CodeBlock>{formatBody(selectedSnapshot.request.body)}</CodeBlock>
                 </>
               )}
 
               <h4>Response ({selectedSnapshot.response.status_code})</h4>
               {selectedSnapshot.response.body && (
-                <pre className="code-block">{formatBody(selectedSnapshot.response.body)}</pre>
+                <CodeBlock>{formatBody(selectedSnapshot.response.body)}</CodeBlock>
               )}
             </div>
           </div>
@@ -3097,12 +3223,25 @@ function renderDataDiff(name: string, diff: BaselineDiff['accounts']): JSX.Eleme
 // State Tab
 function StateTab({ states, tasksTree }: { states: Record<string, unknown>; tasksTree: unknown }) {
   const [view, setView] = useState<'states' | 'tree'>('states');
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [filter, setFilter] = useState('');
+  const [hideNull, setHideNull] = useState(false);
+
+  const stateEntries = Object.entries(states);
+  const filteredEntries = stateEntries.filter(([key, value]) => {
+    const matchesFilter = key.toLowerCase().includes(filter.toLowerCase());
+    const matchesNull = hideNull ? value !== null : true;
+    return matchesFilter && matchesNull;
+  });
+
+  const selectedValue = selectedKey ? states[selectedKey] : null;
+  const nullCount = stateEntries.filter(([, v]) => v === null).length;
 
   return (
     <div className="state-tab">
       <div className="tabs">
         <button className={`tab ${view === 'states' ? 'active' : ''}`} onClick={() => setView('states')}>
-          Fetch States
+          Fetch States ({stateEntries.length})
         </button>
         <button className={`tab ${view === 'tree' ? 'active' : ''}`} onClick={() => setView('tree')}>
           Tasks Tree
@@ -3110,26 +3249,76 @@ function StateTab({ states, tasksTree }: { states: Record<string, unknown>; task
       </div>
 
       {view === 'states' && (
-        <div className="states-list">
-          {Object.keys(states).length === 0 ? (
-            <div className="empty-state">
-              <p className="text-muted">No state saved yet</p>
+        <div className="state-content">
+          <div className="state-list-panel">
+            <div className="state-list-header">
+              <input
+                type="text"
+                placeholder="Filter states..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="state-filter"
+              />
+              {nullCount > 0 && (
+                <label className="state-hide-null">
+                  <input
+                    type="checkbox"
+                    checked={hideNull}
+                    onChange={(e) => setHideNull(e.target.checked)}
+                  />
+                  Hide null ({nullCount})
+                </label>
+              )}
             </div>
-          ) : (
-            Object.entries(states).map(([key, value]) => (
-              <div key={key} className="card state-card">
-                <div className="card-title mono">{key}</div>
-                <pre>{JSON.stringify(value, null, 2)}</pre>
+            <div className="state-list">
+              {filteredEntries.length === 0 ? (
+                <div className="empty-state">
+                  <p className="text-muted">
+                    {stateEntries.length === 0 ? 'No state saved yet' : 'No matching states'}
+                  </p>
+                </div>
+              ) : (
+                filteredEntries.map(([key, value]) => (
+                  <div
+                    key={key}
+                    className={`state-item ${selectedKey === key ? 'selected' : ''} ${value === null ? 'is-null' : ''}`}
+                    onClick={() => setSelectedKey(key)}
+                  >
+                    <span className="state-key">{key}</span>
+                    {value === null && <span className="state-null-badge">null</span>}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="state-detail-panel">
+            {selectedKey ? (
+              <div className="card">
+                <div className="card-header">
+                  <div className="card-title mono">{selectedKey}</div>
+                  <CopyButton text={JSON.stringify(selectedValue, null, 2)} label="Copy" />
+                </div>
+                <CodeBlock>{JSON.stringify(selectedValue, null, 2)}</CodeBlock>
               </div>
-            ))
-          )}
+            ) : (
+              <div className="empty-state">
+                <p className="text-muted">Select a state to view details</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {view === 'tree' && (
         <div className="tasks-tree">
           {tasksTree !== null && tasksTree !== undefined ? (
-            <pre>{JSON.stringify(tasksTree, null, 2)}</pre>
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">Tasks Tree</div>
+                <CopyButton text={JSON.stringify(tasksTree, null, 2)} label="Copy" />
+              </div>
+              <CodeBlock>{JSON.stringify(tasksTree, null, 2)}</CodeBlock>
+            </div>
           ) : (
             <div className="empty-state">
               <p className="text-muted">No tasks tree available</p>

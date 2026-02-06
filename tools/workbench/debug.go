@@ -2,6 +2,7 @@ package workbench
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -87,7 +88,7 @@ func NewDebugStore(maxEntries int) *DebugStore {
 // nextID generates the next unique ID.
 func (d *DebugStore) nextID() string {
 	d.idCounter++
-	return time.Now().Format("20060102-150405") + "-" + string(rune('A'+d.idCounter%26))
+	return fmt.Sprintf("%s-%d", time.Now().Format("20060102-150405"), d.idCounter)
 }
 
 // Log adds a log entry.
