@@ -7,7 +7,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
@@ -18,6 +20,7 @@ import (
 type Client interface {
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error)
+	GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error)
 	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
 }
 
@@ -82,9 +85,9 @@ func (c *client) signRequest(req *http.Request, body string) error {
 }
 
 func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
-	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/wallets?limit=%d&sort_direction=ASC", c.baseURL, c.portfolioID, pageSize)
-	if cursor != "" {
-		endpoint += fmt.Sprintf("&cursor=%s", cursor)
+	endpoint, err := c.buildPortfolioEndpoint("wallets", cursor, pageSize)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -107,9 +110,9 @@ func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*
 }
 
 func (c *client) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
-	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/balances?limit=%d&sort_direction=ASC", c.baseURL, c.portfolioID, pageSize)
-	if cursor != "" {
-		endpoint += fmt.Sprintf("&cursor=%s", cursor)
+	endpoint, err := c.buildPortfolioEndpoint("balances", cursor, pageSize)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -131,10 +134,32 @@ func (c *client) GetBalances(ctx context.Context, cursor string, pageSize int) (
 	return &response, nil
 }
 
+func (c *client) GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error) {
+	symbol = strings.TrimSpace(symbol)
+	if symbol == "" {
+		return nil, fmt.Errorf("missing symbol for balances filtering")
+	}
+
+	response, err := c.GetBalances(ctx, cursor, pageSize)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := response.Balances[:0]
+	for _, balance := range response.Balances {
+		if strings.EqualFold(balance.Symbol, symbol) {
+			filtered = append(filtered, balance)
+		}
+	}
+	response.Balances = filtered
+
+	return response, nil
+}
+
 func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
-	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/transactions?limit=%d&sort_direction=ASC", c.baseURL, c.portfolioID, pageSize)
-	if cursor != "" {
-		endpoint += fmt.Sprintf("&cursor=%s", cursor)
+	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize)
+	if err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -154,6 +179,23 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 	}
 
 	return &response, nil
+}
+
+func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (string, error) {
+	endpoint, err := url.Parse(fmt.Sprintf("%s/v1/portfolios/%s/%s", c.baseURL, c.portfolioID, resource))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse endpoint: %w", err)
+	}
+
+	query := endpoint.Query()
+	query.Set("limit", strconv.Itoa(pageSize))
+	query.Set("sort_direction", "ASC")
+	if cursor != "" {
+		query.Set("cursor", cursor)
+	}
+
+	endpoint.RawQuery = query.Encode()
+	return endpoint.String(), nil
 }
 
 // Wallet represents a Coinbase Prime wallet.

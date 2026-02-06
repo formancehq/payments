@@ -55,6 +55,21 @@ func (mr *MockClientMockRecorder) GetBalances(ctx, cursor, pageSize any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalances", reflect.TypeOf((*MockClient)(nil).GetBalances), ctx, cursor, pageSize)
 }
 
+// GetBalancesForSymbol mocks base method.
+func (m *MockClient) GetBalancesForSymbol(ctx context.Context, symbol, cursor string, pageSize int) (*BalancesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBalancesForSymbol", ctx, symbol, cursor, pageSize)
+	ret0, _ := ret[0].(*BalancesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBalancesForSymbol indicates an expected call of GetBalancesForSymbol.
+func (mr *MockClientMockRecorder) GetBalancesForSymbol(ctx, symbol, cursor, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalancesForSymbol", reflect.TypeOf((*MockClient)(nil).GetBalancesForSymbol), ctx, symbol, cursor, pageSize)
+}
+
 // GetTransactions mocks base method.
 func (m *MockClient) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
 	m.ctrl.T.Helper()

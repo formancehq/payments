@@ -46,18 +46,18 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 
 			sampleTransactions = []client.Transaction{
 				{
-					ID:          "tx1",
-					WalletID:    "wallet1",
-					PortfolioID: "portfolio1",
-					Type:        "DEPOSIT",
-					Status:      "TRANSACTION_COMPLETED",
-					Symbol:      "BTC",
-					Amount:      "1.5",
-					Fees:        "0.001",
-					FeeSymbol:   "BTC",
-					CreatedAt:   now.Add(-2 * time.Hour),
-					CompletedAt: &completedAt,
-					Network:     "bitcoin",
+					ID:            "tx1",
+					WalletID:      "wallet1",
+					PortfolioID:   "portfolio1",
+					Type:          "DEPOSIT",
+					Status:        "TRANSACTION_COMPLETED",
+					Symbol:        "BTC",
+					Amount:        "1.5",
+					Fees:          "0.001",
+					FeeSymbol:     "BTC",
+					CreatedAt:     now.Add(-2 * time.Hour),
+					CompletedAt:   &completedAt,
+					Network:       "bitcoin",
 					BlockchainIDs: []string{"0xabc123"},
 				},
 				{
@@ -72,17 +72,27 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 					TransferTo:  "external-bank",
 				},
 				{
-					ID:          "tx3",
-					WalletID:    "wallet3",
-					PortfolioID: "portfolio1",
-					Type:        "INTERNAL_TRANSFER",
-					Status:      "TRANSACTION_COMPLETED",
-					Symbol:      "USDC",
-					Amount:      "100.00",
-					CreatedAt:   now,
-					CompletedAt: &completedAt,
+					ID:           "tx3",
+					WalletID:     "wallet3",
+					PortfolioID:  "portfolio1",
+					Type:         "INTERNAL_TRANSFER",
+					Status:       "TRANSACTION_COMPLETED",
+					Symbol:       "USDC",
+					Amount:       "100.00",
+					CreatedAt:    now,
+					CompletedAt:  &completedAt,
 					TransferFrom: "wallet-a",
 					TransferTo:   "wallet-b",
+				},
+				{
+					ID:          "tx4",
+					WalletID:    "wallet4",
+					PortfolioID: "portfolio1",
+					Type:        "DEPOSIT",
+					Status:      "TRANSACTION_PENDING",
+					Symbol:      "ETH",
+					Amount:      "1.000000000000000001",
+					CreatedAt:   now,
 				},
 			}
 		})
@@ -123,7 +133,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(3))
+			Expect(resp.Payments).To(HaveLen(4))
 			Expect(resp.HasMore).To(BeTrue())
 
 			// Verify first payment (BTC deposit - completed)
@@ -133,6 +143,9 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[0].Asset).To(Equal("BTC/8"))
 			// 1.5 BTC = 150000000 (1.5 * 10^8)
 			Expect(resp.Payments[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
+			Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
+			Expect(resp.Payments[0].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("wallet1"))
 			Expect(resp.Payments[0].Metadata["wallet_id"]).To(Equal("wallet1"))
 			Expect(resp.Payments[0].Metadata["portfolio_id"]).To(Equal("portfolio1"))
 			Expect(resp.Payments[0].Metadata["network"]).To(Equal("bitcoin"))
@@ -146,6 +159,9 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[1].Asset).To(Equal("USD/2"))
 			// 500.00 USD = 50000 (500.00 * 10^2)
 			Expect(resp.Payments[1].Amount.Cmp(big.NewInt(50000))).To(Equal(0))
+			Expect(resp.Payments[1].SourceAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[1].SourceAccountReference).To(Equal("wallet2"))
+			Expect(resp.Payments[1].DestinationAccountReference).To(BeNil())
 			Expect(resp.Payments[1].Metadata["transfer_to"]).To(Equal("external-bank"))
 
 			// Verify third payment (USDC internal transfer - completed)
@@ -155,8 +171,20 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[2].Asset).To(Equal("USDC/6"))
 			// 100.00 USDC = 100000000 (100.00 * 10^6)
 			Expect(resp.Payments[2].Amount.Cmp(big.NewInt(100000000))).To(Equal(0))
+			Expect(resp.Payments[2].SourceAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[2].SourceAccountReference).To(Equal("wallet-a"))
+			Expect(resp.Payments[2].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[2].DestinationAccountReference).To(Equal("wallet-b"))
 			Expect(resp.Payments[2].Metadata["transfer_from"]).To(Equal("wallet-a"))
 			Expect(resp.Payments[2].Metadata["transfer_to"]).To(Equal("wallet-b"))
+
+			// Verify fourth payment (ETH deposit - pending, 18 decimals)
+			Expect(resp.Payments[3].Reference).To(Equal("tx4"))
+			Expect(resp.Payments[3].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			Expect(resp.Payments[3].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+			Expect(resp.Payments[3].Asset).To(Equal("ETH/18"))
+			// 1.000000000000000001 ETH = 1000000000000000001 (1.000000000000000001 * 10^18)
+			Expect(resp.Payments[3].Amount.Cmp(big.NewInt(1000000000000000001))).To(Equal(0))
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
