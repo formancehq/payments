@@ -5,31 +5,31 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
 )
 
 type accountsState struct {
 	NextCursor string `json:"nextCursor"`
 }
 
-func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+func (p *Plugin) fetchNextAccounts(ctx context.Context, req connector.FetchNextAccountsRequest) (connector.FetchNextAccountsResponse, error) {
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return connector.FetchNextAccountsResponse{}, err
 		}
 	}
 
 	resp, err := p.client.GetVaultAccountsPaged(ctx, oldState.NextCursor, int(req.PageSize))
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return connector.FetchNextAccountsResponse{}, err
 	}
 
-	accounts := make([]models.PSPAccount, 0, len(resp.Accounts))
+	accounts := make([]connector.PSPAccount, 0, len(resp.Accounts))
 	for _, account := range resp.Accounts {
 		raw, err := json.Marshal(account)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return connector.FetchNextAccountsResponse{}, err
 		}
 
 		createdAt := time.Now()
@@ -37,7 +37,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			createdAt = time.UnixMilli(account.CreationDate)
 		}
 
-		accounts = append(accounts, models.PSPAccount{
+		accounts = append(accounts, connector.PSPAccount{
 			Reference: account.ID,
 			CreatedAt: createdAt,
 			Name:      &account.Name,
@@ -51,12 +51,12 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return connector.FetchNextAccountsResponse{}, err
 	}
 
 	hasMore := resp.Paging.After != ""
 
-	return models.FetchNextAccountsResponse{
+	return connector.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
 		HasMore:  hasMore,

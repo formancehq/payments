@@ -9,9 +9,8 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/fireblocks/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -88,7 +87,7 @@ var _ = Describe("Fireblocks Plugin", func() {
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{
-				Plugin: plugins.NewBasePlugin(),
+				Plugin: connector.NewBasePlugin(),
 				client: m,
 				logger: logger,
 			}
@@ -110,7 +109,7 @@ var _ = Describe("Fireblocks Plugin", func() {
 				{LegacyID: "NEG", Onchain: &client.AssetOnchain{Decimals: -1}},     // skipped: negative decimals
 			}, nil)
 
-			res, err := plg.Install(ctx, models.InstallRequest{})
+			res, err := plg.Install(ctx, connector.InstallRequest{})
 			Expect(err).To(BeNil())
 			Expect(res.Workflow).To(Equal(workflow()))
 			Expect(plg.assetDecimals).To(HaveLen(4))

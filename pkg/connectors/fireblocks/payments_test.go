@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/fireblocks/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -74,7 +74,7 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 			},
 		}, nil)
 
-		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
+		resp, err := plg.FetchNextPayments(ctx, connector.FetchNextPaymentsRequest{
 			State:    state,
 			PageSize: 3,
 		})
@@ -86,8 +86,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(first.Reference).To(Equal("b"))
 		Expect(first.Amount).To(Equal(big.NewInt(100000000)))
 		Expect(first.Asset).To(Equal("BTC/8"))
-		Expect(first.Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
-		Expect(first.Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
+		Expect(first.Type).To(Equal(connector.PAYMENT_TYPE_TRANSFER))
+		Expect(first.Status).To(Equal(connector.PAYMENT_STATUS_SUCCEEDED))
 		Expect(*first.SourceAccountReference).To(Equal("src"))
 		Expect(*first.DestinationAccountReference).To(Equal("dst"))
 		Expect(first.Metadata["txHash"]).To(Equal("hash"))
@@ -97,8 +97,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(second.Reference).To(Equal("c"))
 		Expect(second.Amount).To(Equal(big.NewInt(1050)))
 		Expect(second.Asset).To(Equal("USD/2"))
-		Expect(second.Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
-		Expect(second.Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+		Expect(second.Type).To(Equal(connector.PAYMENT_TYPE_PAYOUT))
+		Expect(second.Status).To(Equal(connector.PAYMENT_STATUS_PENDING))
 
 		var newState paymentsState
 		err = json.Unmarshal(resp.NewState, &newState)
@@ -122,7 +122,7 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 			},
 		}, nil)
 
-		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
+		resp, err := plg.FetchNextPayments(ctx, connector.FetchNextPaymentsRequest{
 			State:    state,
 			PageSize: 1,
 		})

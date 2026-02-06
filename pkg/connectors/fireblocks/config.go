@@ -7,18 +7,16 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/connector"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
 
 type Config struct {
-	APIKey        string                     `json:"apiKey" validate:"required"`
-	PrivateKey    string                     `json:"privateKey" validate:"required"`
-	Endpoint      string                     `json:"endpoint"`
-	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
+	APIKey        string                  `json:"apiKey" validate:"required"`
+	PrivateKey    string                  `json:"privateKey" validate:"required"`
+	Endpoint      string                  `json:"endpoint"`
+	PollingPeriod connector.PollingPeriod `json:"pollingPeriod"`
 
 	privateKey *rsa.PrivateKey `json:"-"`
 }
@@ -31,9 +29,9 @@ const (
 func (c *Config) validate() error {
 	p, _ := pem.Decode([]byte(c.PrivateKey))
 	if p == nil {
-		return errorsutils.NewWrappedError(
+		return connector.NewWrappedError(
 			fmt.Errorf("invalid private key PEM in config"),
-			models.ErrInvalidConfig,
+			connector.ErrInvalidConfig,
 		)
 	}
 
@@ -42,16 +40,16 @@ func (c *Config) validate() error {
 		// Try PKCS8 format
 		key, err2 := x509.ParsePKCS8PrivateKey(p.Bytes)
 		if err2 != nil {
-			return errorsutils.NewWrappedError(
+			return connector.NewWrappedError(
 				fmt.Errorf("failed to parse private key as PKCS1 (%w) or PKCS8 (%v)", err, err2),
-				models.ErrInvalidConfig,
+				connector.ErrInvalidConfig,
 			)
 		}
 		rsaKey, ok := key.(*rsa.PrivateKey)
 		if !ok {
-			return errorsutils.NewWrappedError(
+			return connector.NewWrappedError(
 				fmt.Errorf("private key is not RSA"),
-				models.ErrInvalidConfig,
+				connector.ErrInvalidConfig,
 			)
 		}
 		privateKey = rsaKey
@@ -74,16 +72,16 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		PollingPeriod string `json:"pollingPeriod"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
+		return Config{}, errors.Wrap(connector.ErrInvalidConfig, err.Error())
 	}
 
-	pp, err := sharedconfig.NewPollingPeriod(
+	pp, err := connector.NewPollingPeriod(
 		raw.PollingPeriod,
-		sharedconfig.DefaultPollingPeriod,
-		sharedconfig.MinimumPollingPeriod,
+		connector.DefaultPollingPeriod,
+		connector.MinimumPollingPeriod,
 	)
 	if err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
+		return Config{}, errors.Wrap(connector.ErrInvalidConfig, err.Error())
 	}
 
 	config := Config{
@@ -95,7 +93,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	if err := validate.Struct(config); err != nil {
-		return config, errors.Wrap(models.ErrInvalidConfig, err.Error())
+		return config, errors.Wrap(connector.ErrInvalidConfig, err.Error())
 	}
 
 	return config, config.validate()

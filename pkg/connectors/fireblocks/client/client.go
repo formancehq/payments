@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/connector/httpwrapper"
+	"github.com/formancehq/payments/pkg/connector/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 

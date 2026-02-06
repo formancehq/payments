@@ -7,31 +7,30 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/connector"
 )
 
-func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var from models.PSPAccount
+func (p *Plugin) fetchNextBalances(ctx context.Context, req connector.FetchNextBalancesRequest) (connector.FetchNextBalancesResponse, error) {
+	var from connector.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errorsutils.NewWrappedError(
+		return connector.FetchNextBalancesResponse{}, connector.NewWrappedError(
 			fmt.Errorf("from payload is required"),
-			models.ErrInvalidRequest,
+			connector.ErrInvalidRequest,
 		)
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return connector.FetchNextBalancesResponse{}, err
 	}
 
 	// Fetch fresh balance data from the API
 	vaultAccount, err := p.client.GetVaultAccount(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to get vault account %s: %w", from.Reference, err)
+		return connector.FetchNextBalancesResponse{}, fmt.Errorf("failed to get vault account %s: %w", from.Reference, err)
 	}
 
 	now := time.Now()
 	assetDecimals := p.getAssetDecimals()
-	var balances []models.PSPBalance
+	var balances []connector.PSPBalance
 	for _, asset := range vaultAccount.Assets {
 		precision, err := currency.GetPrecision(assetDecimals, asset.ID)
 		if err != nil {
@@ -45,7 +44,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			continue
 		}
 
-		balances = append(balances, models.PSPBalance{
+		balances = append(balances, connector.PSPBalance{
 			AccountReference: from.Reference,
 			CreatedAt:        now,
 			Amount:           amount,
@@ -53,7 +52,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		})
 	}
 
-	return models.FetchNextBalancesResponse{
+	return connector.FetchNextBalancesResponse{
 		Balances: balances,
 		HasMore:  false,
 	}, nil

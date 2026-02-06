@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/fireblocks/client"
 )
 
 type paymentsState struct {
@@ -16,21 +16,21 @@ type paymentsState struct {
 	LastTxID      string `json:"lastTxId"`
 }
 
-func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+func (p *Plugin) fetchNextPayments(ctx context.Context, req connector.FetchNextPaymentsRequest) (connector.FetchNextPaymentsResponse, error) {
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return connector.FetchNextPaymentsResponse{}, err
 		}
 	}
 
 	// Fireblocks "after" expects a Unix ms timestamp and is exclusive ("created after").
 	transactions, err := p.client.ListTransactions(ctx, oldState.LastCreatedAt, int(req.PageSize))
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return connector.FetchNextPaymentsResponse{}, err
 	}
 
-	payments := make([]models.PSPPayment, 0, len(transactions))
+	payments := make([]connector.PSPPayment, 0, len(transactions))
 	assetDecimals := p.getAssetDecimals()
 	newState := paymentsState{
 		LastCreatedAt: oldState.LastCreatedAt,
@@ -76,16 +76,16 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 		raw, err := json.Marshal(tx)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return connector.FetchNextPaymentsResponse{}, err
 		}
 
-		payment := models.PSPPayment{
+		payment := connector.PSPPayment{
 			Reference: tx.ID,
 			CreatedAt: time.UnixMilli(tx.CreatedAt),
 			Type:      matchPaymentType(tx.Operation),
 			Amount:    amount,
 			Asset:     currency.FormatAsset(assetDecimals, tx.AssetID),
-			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Scheme:    connector.PAYMENT_SCHEME_OTHER,
 			Status:    matchPaymentStatus(tx.Status),
 			Raw:       raw,
 		}
@@ -137,45 +137,45 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return connector.FetchNextPaymentsResponse{}, err
 	}
 
 	hasMore := len(transactions) == int(req.PageSize)
 
-	return models.FetchNextPaymentsResponse{
+	return connector.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
 }
 
-func matchPaymentType(operation string) models.PaymentType {
+func matchPaymentType(operation string) connector.PaymentType {
 	switch operation {
 	case "TRANSFER", "INTERNAL_TRANSFER":
-		return models.PAYMENT_TYPE_TRANSFER
+		return connector.PAYMENT_TYPE_TRANSFER
 	case "DEPOSIT":
-		return models.PAYMENT_TYPE_PAYIN
+		return connector.PAYMENT_TYPE_PAYIN
 	case "WITHDRAW":
-		return models.PAYMENT_TYPE_PAYOUT
+		return connector.PAYMENT_TYPE_PAYOUT
 	default:
-		return models.PAYMENT_TYPE_OTHER
+		return connector.PAYMENT_TYPE_OTHER
 	}
 }
 
-func matchPaymentStatus(status string) models.PaymentStatus {
+func matchPaymentStatus(status string) connector.PaymentStatus {
 	switch status {
 	case "COMPLETED":
-		return models.PAYMENT_STATUS_SUCCEEDED
+		return connector.PAYMENT_STATUS_SUCCEEDED
 	case "SUBMITTED", "PENDING_AML_SCREENING", "PENDING_ENRICHMENT",
 		"PENDING_AUTHORIZATION", "QUEUED", "PENDING_SIGNATURE",
 		"PENDING_3RD_PARTY_MANUAL_APPROVAL", "PENDING_3RD_PARTY",
 		"CONFIRMING", "BROADCASTING":
-		return models.PAYMENT_STATUS_PENDING
+		return connector.PAYMENT_STATUS_PENDING
 	case "CANCELLING", "CANCELLED":
-		return models.PAYMENT_STATUS_CANCELLED
+		return connector.PAYMENT_STATUS_CANCELLED
 	case "FAILED", "BLOCKED", "REJECTED":
-		return models.PAYMENT_STATUS_FAILED
+		return connector.PAYMENT_STATUS_FAILED
 	default:
-		return models.PAYMENT_STATUS_OTHER
+		return connector.PAYMENT_STATUS_OTHER
 	}
 }

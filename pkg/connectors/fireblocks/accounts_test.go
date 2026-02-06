@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/fireblocks/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -49,7 +49,7 @@ var _ = Describe("Fireblocks Plugin Accounts", func() {
 			Paging: client.Paging{After: "next"},
 		}, nil)
 
-		resp, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{
+		resp, err := plg.FetchNextAccounts(ctx, connector.FetchNextAccountsRequest{
 			State:    state,
 			PageSize: 2,
 		})
