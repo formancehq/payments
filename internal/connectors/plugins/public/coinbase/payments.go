@@ -54,7 +54,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 }
 
 func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
-	precision, ok := supportedCurrenciesWithDecimal[tx.Symbol]
+	asset, precision, ok := resolveAssetAndPrecision(tx.Symbol)
 	if !ok {
 		return nil, nil
 	}
@@ -71,8 +71,6 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse amount: %w", err)
 	}
-
-	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, tx.Symbol)
 
 	metadata := map[string]string{
 		"transaction_type": tx.Type,
@@ -118,7 +116,50 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 		Raw:       raw,
 	}
 
+	sourceAccountReference, destinationAccountReference := resolveAccountReferences(tx)
+	payment.SourceAccountReference = sourceAccountReference
+	payment.DestinationAccountReference = destinationAccountReference
+
 	return &payment, nil
+}
+
+func resolveAssetAndPrecision(symbol string) (string, int, bool) {
+	precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, symbol)
+	if err != nil {
+		return "", 0, false
+	}
+
+	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, symbol)
+	return asset, precision, true
+}
+
+func resolveAccountReferences(tx client.Transaction) (*string, *string) {
+	var sourceAccountReference *string
+	var destinationAccountReference *string
+
+	switch strings.ToUpper(tx.Type) {
+	case "DEPOSIT":
+		if tx.WalletID != "" {
+			walletID := tx.WalletID
+			destinationAccountReference = &walletID
+		}
+	case "WITHDRAWAL":
+		if tx.WalletID != "" {
+			walletID := tx.WalletID
+			sourceAccountReference = &walletID
+		}
+	case "INTERNAL_TRANSFER":
+		if tx.TransferFrom != "" {
+			transferFrom := tx.TransferFrom
+			sourceAccountReference = &transferFrom
+		}
+		if tx.TransferTo != "" {
+			transferTo := tx.TransferTo
+			destinationAccountReference = &transferTo
+		}
+	}
+
+	return sourceAccountReference, destinationAccountReference
 }
 
 func transactionTypeToPaymentType(txType string) models.PaymentType {

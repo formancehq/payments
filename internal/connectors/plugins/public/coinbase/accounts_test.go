@@ -107,6 +107,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 
 			// Verify BTC wallet
 			Expect(resp.Accounts[0].Reference).To(Equal("wallet1"))
+			Expect(resp.Accounts[0].CreatedAt).To(Equal(sampleWallets[0].CreatedAt))
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 			Expect(*resp.Accounts[0].Name).To(Equal("BTC Trading Wallet"))
 			Expect(resp.Accounts[0].Metadata["wallet_type"]).To(Equal("TRADING"))
@@ -114,10 +115,12 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 
 			// Verify USD wallet
 			Expect(resp.Accounts[1].Reference).To(Equal("wallet2"))
+			Expect(resp.Accounts[1].CreatedAt).To(Equal(sampleWallets[1].CreatedAt))
 			Expect(*resp.Accounts[1].DefaultAsset).To(Equal("USD/2"))
 
 			// Verify ETH wallet
 			Expect(resp.Accounts[2].Reference).To(Equal("wallet3"))
+			Expect(resp.Accounts[2].CreatedAt).To(Equal(sampleWallets[2].CreatedAt))
 			Expect(*resp.Accounts[2].DefaultAsset).To(Equal("ETH/18"))
 			Expect(resp.Accounts[2].Metadata["wallet_type"]).To(Equal("VAULT"))
 		})

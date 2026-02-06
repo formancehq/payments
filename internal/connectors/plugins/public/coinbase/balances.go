@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
@@ -19,13 +20,16 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	response, err := p.client.GetBalances(ctx, "", PAGE_SIZE)
+	walletSymbol, err := walletSymbolFromAccount(from)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	// Prime balances are at portfolio level. We filter by the wallet's symbol
-	// to maintain per-wallet balance coherence.
+	response, err := p.client.GetBalancesForSymbol(ctx, walletSymbol, "", PAGE_SIZE)
+	if err != nil {
+		return models.FetchNextBalancesResponse{}, err
+	}
+
 	var balances []models.PSPBalance
 	for _, bal := range response.Balances {
 		precision, ok := supportedCurrenciesWithDecimal[bal.Symbol]
@@ -52,4 +56,26 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		Balances: balances,
 		HasMore:  false,
 	}, nil
+}
+
+func walletSymbolFromAccount(from models.PSPAccount) (string, error) {
+	if symbol := strings.TrimSpace(from.Metadata["symbol"]); symbol != "" {
+		return strings.ToUpper(symbol), nil
+	}
+
+	if len(from.Raw) > 0 {
+		var wallet struct {
+			Symbol string `json:"symbol"`
+		}
+
+		if err := json.Unmarshal(from.Raw, &wallet); err != nil {
+			return "", fmt.Errorf("failed to parse wallet raw payload: %w", err)
+		}
+
+		if symbol := strings.TrimSpace(wallet.Symbol); symbol != "" {
+			return strings.ToUpper(symbol), nil
+		}
+	}
+
+	return "", fmt.Errorf("missing wallet symbol in from payload")
 }
