@@ -6883,6 +6883,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3CoinbaseConfig](#schemav3coinbaseconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3ColumnConfig](#schemav3columnconfig)|false|none|none|
 
 xor
@@ -7074,6 +7080,38 @@ xor
 |userCertificate|string|true|none|none|
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
+
+<h2 id="tocS_V3CoinbaseConfig">V3CoinbaseConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3coinbaseconfig"></a>
+<a id="schema_V3CoinbaseConfig"></a>
+<a id="tocSv3coinbaseconfig"></a>
+<a id="tocsv3coinbaseconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "apiSecret": "string",
+  "name": "string",
+  "pageSize": 25,
+  "passphrase": "string",
+  "pollingPeriod": "30m",
+  "provider": "Coinbase"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|apiSecret|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|passphrase|string|true|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3ColumnConfig">V3ColumnConfig</h2>
 <!-- backwards compatibility -->
