@@ -143,6 +143,16 @@ export interface HTTPRequest {
   error?: string;
 }
 
+// Generic server types
+export interface GenericServerStatus {
+  enabled: boolean;
+  connector_id: string;
+  connector_provider?: string;
+  connector_installed?: boolean;
+  has_api_key: boolean;
+  endpoint: string;
+}
+
 // Global API functions (no connector context needed)
 export const globalApi = {
   // Global status
@@ -160,6 +170,16 @@ export const globalApi = {
     fetchJSON<ConnectorSummary>('/connectors', {
       method: 'POST',
       body: JSON.stringify(req),
+    }),
+  
+  // Generic server
+  getGenericServerStatus: () =>
+    fetchJSON<GenericServerStatus>('/generic-server/status'),
+  
+  setGenericServerConnector: (connectorId: string, apiKey?: string) =>
+    fetchJSON<GenericServerStatus>('/generic-server/connector', {
+      method: 'POST',
+      body: JSON.stringify({ connector_id: connectorId, api_key: apiKey || '' }),
     }),
   
   // Debug (global)
@@ -653,6 +673,8 @@ export const api = {
   enableHTTPCapture: globalApi.enableHTTPCapture,
   disableHTTPCapture: globalApi.disableHTTPCapture,
   clearDebug: globalApi.clearDebug,
+  getGenericServerStatus: globalApi.getGenericServerStatus,
+  setGenericServerConnector: globalApi.setGenericServerConnector,
   
   // Connector-specific operations (require selectedConnectorId)
   getConnectorStatus: () => {

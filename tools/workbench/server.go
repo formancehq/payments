@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/formancehq/payments/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -172,6 +173,20 @@ func (s *Server) Start() error {
 		r.Post("/replay/dry-run", s.handleReplayDryRun)
 		r.Get("/replay/curl/{id}", s.handleReplayCurl)
 		r.Delete("/replay/history", s.handleClearReplayHistory)
+
+		// Generic server configuration
+		r.Get("/generic-server/status", s.handleGenericServerStatus)
+		r.Post("/generic-server/connector", s.handleSetGenericConnector)
+	})
+
+	// Generic connector server (for remote integration testing)
+	// Exposes the standard generic connector API so staging services can connect
+	r.Route("/generic", func(r chi.Router) {
+		r.Use(s.genericServerMiddleware)
+		r.Get("/accounts", s.handleGenericAccounts)
+		r.Get("/accounts/{accountId}/balances", s.handleGenericBalances)
+		r.Get("/beneficiaries", s.handleGenericBeneficiaries)
+		r.Get("/transactions", s.handleGenericTransactions)
 	})
 
 	// Serve embedded UI
@@ -1821,4 +1836,307 @@ func writeGeneratedFiles(outputDir string, result *GenerateResult) error {
 	}
 
 	return nil
+}
+
+// === Generic Connector Server ===
+// These handlers expose the standard generic connector API so remote services
+// can connect to locally-running connectors for integration testing.
+
+type genericConnectorCtxKey struct{}
+
+// genericServerMiddleware validates API key and loads the configured connector.
+func (s *Server) genericServerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, apiKey := s.workbench.GetGenericServerConnector()
+		if conn == nil {
+			s.genericError(w, http.StatusServiceUnavailable, "Generic server not configured", "No connector is configured for the generic server. Use the API to set one.")
+			return
+		}
+
+		if !conn.Installed {
+			s.genericError(w, http.StatusServiceUnavailable, "Connector not installed", "The configured connector is not installed.")
+			return
+		}
+
+		// Validate API key if configured
+		if apiKey != "" {
+			authHeader := r.Header.Get("Authorization")
+			providedKey := ""
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				providedKey = strings.TrimPrefix(authHeader, "Bearer ")
+			} else {
+				// Also check X-API-Key header
+				providedKey = r.Header.Get("X-API-Key")
+			}
+			if providedKey != apiKey {
+				s.genericError(w, http.StatusUnauthorized, "Unauthorized", "Invalid or missing API key")
+				return
+			}
+		}
+
+		// Add connector to context
+		ctx := context.WithValue(r.Context(), genericConnectorCtxKey{}, conn)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) getGenericConnector(r *http.Request) *ConnectorInstance {
+	conn, _ := r.Context().Value(genericConnectorCtxKey{}).(*ConnectorInstance)
+	return conn
+}
+
+func (s *Server) genericError(w http.ResponseWriter, status int, title, detail string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{
+		"Title":  title,
+		"Detail": detail,
+	})
+}
+
+// handleGenericServerStatus returns the generic server configuration.
+func (s *Server) handleGenericServerStatus(w http.ResponseWriter, r *http.Request) {
+	s.jsonResponse(w, http.StatusOK, s.workbench.GetGenericServerStatus())
+}
+
+// handleSetGenericConnector sets the connector for the generic server.
+func (s *Server) handleSetGenericConnector(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ConnectorID string `json:"connector_id"`
+		APIKey      string `json:"api_key"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.errorResponse(w, http.StatusBadRequest, "invalid request: "+err.Error())
+		return
+	}
+
+	if err := s.workbench.SetGenericServerConnector(req.ConnectorID, req.APIKey); err != nil {
+		s.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, s.workbench.GetGenericServerStatus())
+}
+
+// handleGenericAccounts handles GET /generic/accounts
+func (s *Server) handleGenericAccounts(w http.ResponseWriter, r *http.Request) {
+	conn := s.getGenericConnector(r)
+	if conn == nil {
+		return // Error already sent by middleware
+	}
+
+	// Parse query params
+	createdAtFrom := r.URL.Query().Get("createdAtFrom")
+
+	// Return cached accounts from storage
+	storedAccounts := conn.storage.GetAccounts()
+
+	// Transform to generic format
+	accounts := make([]map[string]interface{}, 0, len(storedAccounts))
+	for _, acc := range storedAccounts {
+		// Filter by createdAtFrom if specified
+		if createdAtFrom != "" {
+			if fromTime, err := time.Parse(time.RFC3339, createdAtFrom); err == nil {
+				if acc.CreatedAt.Before(fromTime) {
+					continue
+				}
+			}
+		}
+
+		account := map[string]interface{}{
+			"id":        acc.Reference,
+			"createdAt": acc.CreatedAt.Format(time.RFC3339),
+		}
+		if acc.Name != nil {
+			account["accountName"] = *acc.Name
+		} else {
+			account["accountName"] = acc.Reference
+		}
+		if len(acc.Metadata) > 0 {
+			account["metadata"] = acc.Metadata
+		}
+		accounts = append(accounts, account)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(accounts)
+}
+
+// handleGenericBalances handles GET /generic/accounts/{accountId}/balances
+func (s *Server) handleGenericBalances(w http.ResponseWriter, r *http.Request) {
+	conn := s.getGenericConnector(r)
+	if conn == nil {
+		return
+	}
+
+	accountID := chi.URLParam(r, "accountId")
+	if accountID == "" {
+		s.genericError(w, http.StatusBadRequest, "Missing account ID", "accountId path parameter is required")
+		return
+	}
+
+	// Return cached balances from storage
+	storedBalances := conn.storage.GetBalancesForAccount(accountID)
+
+	// Transform to generic format
+	balances := make([]map[string]interface{}, 0, len(storedBalances))
+	var latestTime time.Time
+	for _, bal := range storedBalances {
+		balances = append(balances, map[string]interface{}{
+			"amount":   bal.Amount.String(),
+			"currency": bal.Asset,
+		})
+		if bal.CreatedAt.After(latestTime) {
+			latestTime = bal.CreatedAt
+		}
+	}
+
+	// Use latest balance time, or now if no balances
+	if latestTime.IsZero() {
+		latestTime = time.Now()
+	}
+
+	result := map[string]interface{}{
+		"id":        accountID + "-balance",
+		"accountID": accountID,
+		"at":        latestTime.Format(time.RFC3339),
+		"balances":  balances,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+// handleGenericBeneficiaries handles GET /generic/beneficiaries
+func (s *Server) handleGenericBeneficiaries(w http.ResponseWriter, r *http.Request) {
+	conn := s.getGenericConnector(r)
+	if conn == nil {
+		return
+	}
+
+	// Parse query params
+	createdAtFrom := r.URL.Query().Get("createdAtFrom")
+
+	// Return cached external accounts from storage
+	storedExternalAccounts := conn.storage.GetExternalAccounts()
+
+	// Transform to generic format
+	beneficiaries := make([]map[string]interface{}, 0, len(storedExternalAccounts))
+	for _, ext := range storedExternalAccounts {
+		if createdAtFrom != "" {
+			if fromTime, err := time.Parse(time.RFC3339, createdAtFrom); err == nil {
+				if ext.CreatedAt.Before(fromTime) {
+					continue
+				}
+			}
+		}
+
+		beneficiary := map[string]interface{}{
+			"id":        ext.Reference,
+			"createdAt": ext.CreatedAt.Format(time.RFC3339),
+		}
+		if ext.Name != nil {
+			beneficiary["ownerName"] = *ext.Name
+		} else {
+			beneficiary["ownerName"] = ext.Reference
+		}
+		if len(ext.Metadata) > 0 {
+			beneficiary["metadata"] = ext.Metadata
+		}
+		beneficiaries = append(beneficiaries, beneficiary)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(beneficiaries)
+}
+
+// handleGenericTransactions handles GET /generic/transactions
+func (s *Server) handleGenericTransactions(w http.ResponseWriter, r *http.Request) {
+	conn := s.getGenericConnector(r)
+	if conn == nil {
+		return
+	}
+
+	// Parse query params
+	updatedAtFrom := r.URL.Query().Get("updatedAtFrom")
+
+	// Return cached payments from storage
+	storedPayments := conn.storage.GetPayments()
+
+	// Transform to generic format
+	transactions := make([]map[string]interface{}, 0, len(storedPayments))
+	for _, pmt := range storedPayments {
+		if updatedAtFrom != "" {
+			if fromTime, err := time.Parse(time.RFC3339, updatedAtFrom); err == nil {
+				if pmt.CreatedAt.Before(fromTime) {
+					continue
+				}
+			}
+		}
+
+		tx := map[string]interface{}{
+			"id":        pmt.Reference,
+			"createdAt": pmt.CreatedAt.Format(time.RFC3339),
+			"updatedAt": pmt.CreatedAt.Format(time.RFC3339), // Use createdAt as updatedAt if not available
+			"currency":  pmt.Asset,
+			"amount":    pmt.Amount.String(),
+			"type":      mapPaymentTypeToGeneric(pmt.Type),
+			"status":    mapPaymentStatusToGeneric(pmt.Status),
+		}
+
+		if pmt.Scheme != models.PAYMENT_SCHEME_UNKNOWN {
+			tx["scheme"] = pmt.Scheme.String()
+		}
+		if pmt.SourceAccountReference != nil {
+			tx["sourceAccountID"] = *pmt.SourceAccountReference
+		}
+		if pmt.DestinationAccountReference != nil {
+			tx["destinationAccountID"] = *pmt.DestinationAccountReference
+		}
+		if len(pmt.Metadata) > 0 {
+			tx["metadata"] = pmt.Metadata
+		}
+
+		transactions = append(transactions, tx)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(transactions)
+}
+
+func parseIntParam(r *http.Request, name string, defaultVal int) int {
+	val := r.URL.Query().Get(name)
+	if val == "" {
+		return defaultVal
+	}
+	if i, err := strconv.Atoi(val); err == nil && i > 0 {
+		return i
+	}
+	return defaultVal
+}
+
+func mapPaymentTypeToGeneric(t models.PaymentType) string {
+	switch t {
+	case models.PAYMENT_TYPE_PAYIN:
+		return "PAYIN"
+	case models.PAYMENT_TYPE_PAYOUT:
+		return "PAYOUT"
+	case models.PAYMENT_TYPE_TRANSFER:
+		return "TRANSFER"
+	default:
+		return "TRANSFER"
+	}
+}
+
+func mapPaymentStatusToGeneric(s models.PaymentStatus) string {
+	switch s {
+	case models.PAYMENT_STATUS_PENDING:
+		return "PENDING"
+	case models.PAYMENT_STATUS_SUCCEEDED:
+		return "SUCCEEDED"
+	case models.PAYMENT_STATUS_FAILED, models.PAYMENT_STATUS_CANCELLED:
+		return "FAILED"
+	default:
+		return "PENDING"
+	}
 }
