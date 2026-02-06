@@ -130,7 +130,7 @@ func runWorkbench(cmd *cobra.Command, args []string) error {
 		<-sigChan
 		fmt.Println("\nShutting down...")
 		cancel()
-		wb.Stop(context.Background())
+		_ = wb.Stop(context.Background())
 	}()
 
 	// Start workbench
