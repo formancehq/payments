@@ -11,6 +11,7 @@ vendor
 /.cloud/helm/charts/
 coverage.out
 dist/
+!tools/workbench/ui/dist/.gitkeep
 .env
 payments
 tools/compile-configs/compile-configs
