@@ -93,6 +93,10 @@ type Workbench struct {
 	connectors map[string]*ConnectorInstance
 	connMu     sync.RWMutex
 
+	// Generic server configuration (for remote integration testing)
+	genericConnectorID string
+	genericAPIKey      string
+
 	// Lifecycle
 	mu       sync.RWMutex
 	running  bool
@@ -365,6 +369,55 @@ func (w *Workbench) ListConnectors() []*ConnectorInstance {
 		result = append(result, conn)
 	}
 	return result
+}
+
+// SetGenericServerConnector sets the connector to use for the generic server API.
+func (w *Workbench) SetGenericServerConnector(connectorID string, apiKey string) error {
+	w.connMu.Lock()
+	defer w.connMu.Unlock()
+
+	if connectorID != "" {
+		if _, ok := w.connectors[connectorID]; !ok {
+			return fmt.Errorf("connector %s not found", connectorID)
+		}
+	}
+
+	w.genericConnectorID = connectorID
+	w.genericAPIKey = apiKey
+	return nil
+}
+
+// GetGenericServerConnector returns the connector configured for the generic server.
+func (w *Workbench) GetGenericServerConnector() (*ConnectorInstance, string) {
+	w.connMu.RLock()
+	defer w.connMu.RUnlock()
+
+	if w.genericConnectorID == "" {
+		return nil, ""
+	}
+	return w.connectors[w.genericConnectorID], w.genericAPIKey
+}
+
+// GetGenericServerStatus returns the generic server configuration status.
+func (w *Workbench) GetGenericServerStatus() map[string]interface{} {
+	w.connMu.RLock()
+	defer w.connMu.RUnlock()
+
+	status := map[string]interface{}{
+		"enabled":      w.genericConnectorID != "",
+		"connector_id": w.genericConnectorID,
+		"has_api_key":  w.genericAPIKey != "",
+		"endpoint":     fmt.Sprintf("http://%s/generic", w.config.ListenAddr),
+	}
+
+	if w.genericConnectorID != "" {
+		if conn, ok := w.connectors[w.genericConnectorID]; ok {
+			status["connector_provider"] = conn.Provider
+			status["connector_installed"] = conn.Installed
+		}
+	}
+
+	return status
 }
 
 // AvailableConnector represents an available connector type.

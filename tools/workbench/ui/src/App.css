@@ -3188,3 +3188,48 @@ tbody tr:focus-visible,
   white-space: pre;
   resize: vertical;
 }
+
+/* Generic Server Panel */
+.generic-server-panel {
+  padding: var(--term-gap-lg);
+  max-width: 700px;
+}
+
+.generic-server-panel .card-body {
+  padding: var(--term-gap-lg);
+}
+
+.generic-server-panel .form-actions {
+  display: flex;
+  gap: var(--term-gap-md);
+}
+
+.generic-server-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.generic-server-panel li {
+  padding: var(--term-gap-xs) 0;
+  font-family: var(--term-font);
+}
+
+.generic-server-panel li code {
+  background: var(--term-bg);
+  padding: 2px 6px;
+  border-radius: var(--term-radius-sm);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--term-text-muted);
+}
+
+.status-dot.active {
+  background: var(--term-green);
+  box-shadow: 0 0 4px var(--term-green);
+}

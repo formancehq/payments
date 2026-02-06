@@ -28,7 +28,8 @@ import {
   type InferredSchema, 
   type SchemaDiff, 
   type DataBaseline, 
-  type BaselineDiff 
+  type BaselineDiff,
+  type GenericServerStatus
 } from './api';
 import './App.css';
 
@@ -340,6 +341,9 @@ function AppContent() {
   const [httpRequests, setHttpRequests] = useState<HTTPRequest[]>([]);
   const [httpCaptureEnabled, setHttpCaptureEnabled] = useState(true);
   
+  // Generic server state
+  const [genericServerStatus, setGenericServerStatus] = useState<GenericServerStatus | null>(null);
+  
   // Snapshot modal state
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [snapshotCaptureId, setSnapshotCaptureId] = useState<string | null>(null);
@@ -395,14 +399,16 @@ function AppContent() {
 
   const refreshGlobalStatus = useCallback(async () => {
     try {
-      const [status, connectorsList, available] = await Promise.all([
+      const [status, connectorsList, available, genericStatus] = await Promise.all([
         globalApi.getStatus(),
         globalApi.listConnectors(),
         globalApi.getAvailableConnectors(),
+        globalApi.getGenericServerStatus(),
       ]);
       setGlobalStatus(status);
       setConnectors(connectorsList.connectors || []);
       setAvailableConnectors(available.connectors || []);
+      setGenericServerStatus(genericStatus);
       setInitialLoading(false);
     } catch (e) {
       console.error('Failed to fetch global status:', e);
@@ -776,6 +782,16 @@ function AppContent() {
                     setSnapshotCaptureId(captureId);
                     setShowSnapshotModal(true);
                   } : undefined}
+                  genericServerStatus={genericServerStatus}
+                  connectors={connectors}
+                  onSetGenericConnector={async (connectorId: string, apiKey?: string) => {
+                    try {
+                      const newStatus = await globalApi.setGenericServerConnector(connectorId, apiKey);
+                      setGenericServerStatus(newStatus);
+                    } catch (e) {
+                      console.error('Failed to set generic connector:', e);
+                    }
+                  }}
                 />
               )}
               {tab === 'snapshots' && <SnapshotsTab />}
@@ -1445,13 +1461,25 @@ interface DebugTabProps {
   onClear: () => void;
   onToggleCapture: () => void;
   onSaveSnapshot?: (captureId: string) => void;
+  genericServerStatus?: GenericServerStatus | null;
+  connectors?: ConnectorSummary[];
+  onSetGenericConnector?: (connectorId: string, apiKey?: string) => void;
 }
 
-function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear, onToggleCapture, onSaveSnapshot }: DebugTabProps) {
-  const [view, setView] = useState<'logs' | 'calls' | 'http'>('http');
+function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear, onToggleCapture, onSaveSnapshot, genericServerStatus, connectors, onSetGenericConnector }: DebugTabProps) {
+  const [view, setView] = useState<'logs' | 'calls' | 'http' | 'generic'>('http');
   const [selectedCall, setSelectedCall] = useState<PluginCall | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<HTTPRequest | null>(null);
   const [selectedLog, setSelectedLog] = useState<DebugEntry | null>(null);
+  const [genericApiKey, setGenericApiKey] = useState('');
+  const [selectedGenericConnector, setSelectedGenericConnector] = useState<string>('');
+
+  // Initialize selected connector from status
+  useEffect(() => {
+    if (genericServerStatus?.connector_id) {
+      setSelectedGenericConnector(genericServerStatus.connector_id);
+    }
+  }, [genericServerStatus?.connector_id]);
 
   return (
     <div className="debug-tab">
@@ -1465,6 +1493,9 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
           </button>
           <button className={`tab ${view === 'logs' ? 'active' : ''}`} onClick={() => setView('logs')}>
             Logs ({logs.length})
+          </button>
+          <button className={`tab ${view === 'generic' ? 'active' : ''}`} onClick={() => setView('generic')}>
+            Generic Server {genericServerStatus?.enabled && <span className="status-dot active" />}
           </button>
         </div>
         <div className="debug-actions">
@@ -1718,6 +1749,125 @@ function DebugTab({ logs, pluginCalls, httpRequests, httpCaptureEnabled, onClear
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {view === 'generic' && (
+        <div className="generic-server-panel">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Generic Connector Server</div>
+            </div>
+            <div className="card-body">
+              <p className="text-muted" style={{ marginBottom: '16px' }}>
+                Expose a connector via the generic connector REST API for remote integration testing.
+                Staging services can install a "generic connector" pointing to this workbench endpoint.
+              </p>
+
+              <div className="form-group">
+                <label>Connector</label>
+                <select 
+                  value={selectedGenericConnector}
+                  onChange={(e) => setSelectedGenericConnector(e.target.value)}
+                >
+                  <option value="">-- Select a connector --</option>
+                  {connectors?.filter(c => c.installed).map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.provider} - {c.name || c.id}
+                    </option>
+                  ))}
+                </select>
+                {connectors && !connectors.some(c => c.installed) && (
+                  <p className="text-muted" style={{ marginTop: '8px', fontSize: '12px' }}>
+                    No installed connectors. Install a connector first.
+                  </p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>API Key (optional)</label>
+                <input 
+                  type="text"
+                  value={genericApiKey}
+                  onChange={(e) => setGenericApiKey(e.target.value)}
+                  placeholder="Leave empty for no authentication"
+                />
+                <p className="text-muted" style={{ marginTop: '4px', fontSize: '12px' }}>
+                  If set, requests must include <code>Authorization: Bearer &lt;key&gt;</code> or <code>X-API-Key</code> header
+                </p>
+              </div>
+
+              <div className="form-actions" style={{ marginTop: '16px' }}>
+                <button 
+                  className="btn-primary"
+                  onClick={() => onSetGenericConnector?.(selectedGenericConnector, genericApiKey)}
+                  disabled={!selectedGenericConnector}
+                >
+                  {genericServerStatus?.enabled ? 'Update Configuration' : 'Enable Generic Server'}
+                </button>
+                {genericServerStatus?.enabled && (
+                  <button 
+                    className="btn-secondary"
+                    onClick={() => {
+                      onSetGenericConnector?.('', '');
+                      setSelectedGenericConnector('');
+                      setGenericApiKey('');
+                    }}
+                  >
+                    Disable
+                  </button>
+                )}
+              </div>
+
+              {genericServerStatus?.enabled && (
+                <div className="generic-status" style={{ marginTop: '24px', padding: '16px', background: 'var(--panel-bg)', borderRadius: '8px' }}>
+                  <h4 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="status-dot active" style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }} />
+                    Server Active
+                  </h4>
+                  <div className="status-grid" style={{ display: 'grid', gap: '8px' }}>
+                    <div className="status-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span className="text-muted">Endpoint:</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <code>{genericServerStatus.endpoint}</code>
+                        <CopyButton text={genericServerStatus.endpoint} label="Copy" />
+                      </span>
+                    </div>
+                    <div className="status-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span className="text-muted">Provider:</span>
+                      <span className="provider-badge">{genericServerStatus.connector_provider}</span>
+                    </div>
+                    <div className="status-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span className="text-muted">Authentication:</span>
+                      <span>{genericServerStatus.has_api_key ? 'API Key Required' : 'None'}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '16px' }}>
+                    <h5 style={{ marginBottom: '8px' }}>Available Endpoints:</h5>
+                    <ul style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <li><code>GET {genericServerStatus.endpoint}/accounts</code> - List accounts</li>
+                      <li><code>GET {genericServerStatus.endpoint}/accounts/:id/balances</code> - Get account balances</li>
+                      <li><code>GET {genericServerStatus.endpoint}/beneficiaries</code> - List beneficiaries</li>
+                      <li><code>GET {genericServerStatus.endpoint}/transactions</code> - List transactions</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginTop: '16px' }}>
+                    <h5 style={{ marginBottom: '8px' }}>Generic Connector Config:</h5>
+                    <p className="text-muted" style={{ fontSize: '12px', marginBottom: '8px' }}>
+                      Use these settings when installing a generic connector on staging:
+                    </p>
+                    <CodeBlock language="json">{JSON.stringify({
+                      endpoint: genericServerStatus.endpoint,
+                      apiKey: genericServerStatus.has_api_key ? '<your-api-key>' : '',
+                      pollingPeriod: '30s'
+                    }, null, 2)}</CodeBlock>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
