@@ -7096,6 +7096,7 @@ xor
   "pageSize": 25,
   "passphrase": "string",
   "pollingPeriod": "30m",
+  "portfolioId": "string",
   "provider": "Coinbase"
 }
 
@@ -7111,6 +7112,7 @@ xor
 |pageSize|integer|false|none|none|
 |passphrase|string|true|none|none|
 |pollingPeriod|string|false|none|none|
+|portfolioId|string|true|none|none|
 |provider|string|false|none|none|
 
 <h2 id="tocS_V3ColumnConfig">V3ColumnConfig</h2>

@@ -22,7 +22,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with valid configuration", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test-key","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","pollingPeriod":"45m"}`)
+			payload = json.RawMessage(`{"apiKey":"test-key","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123","pollingPeriod":"45m"}`)
 		})
 
 		It("should successfully unmarshal and validate", func() {
@@ -30,18 +30,20 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 			Expect(config.APIKey).To(Equal("test-key"))
 			Expect(config.APISecret).To(Equal("dGVzdC1zZWNyZXQ="))
 			Expect(config.Passphrase).To(Equal("test-pass"))
+			Expect(config.PortfolioID).To(Equal("portfolio-123"))
 			Expect(config.PollingPeriod.Duration()).To(Equal(45 * time.Minute))
 		})
 	})
 
 	Context("with valid configuration and default polling period", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test-key","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass"}`)
+			payload = json.RawMessage(`{"apiKey":"test-key","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should use default polling period", func() {
 			Expect(err).To(BeNil())
 			Expect(config.APIKey).To(Equal("test-key"))
+			Expect(config.PortfolioID).To(Equal("portfolio-123"))
 			// Default polling period should be applied
 			Expect(config.PollingPeriod.Duration()).ToNot(Equal(0))
 		})
@@ -49,7 +51,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with missing apiKey", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiSecret":"test","passphrase":"test"}`)
+			payload = json.RawMessage(`{"apiSecret":"test","passphrase":"test","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should return a validation error", func() {
@@ -60,7 +62,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with missing apiSecret", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test","passphrase":"test"}`)
+			payload = json.RawMessage(`{"apiKey":"test","passphrase":"test","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should return a validation error", func() {
@@ -71,12 +73,23 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with missing passphrase", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"test"}`)
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"test","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should return a validation error", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Passphrase"))
+		})
+	})
+
+	Context("with missing portfolioId", func() {
+		BeforeEach(func() {
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"test","passphrase":"test"}`)
+		})
+
+		It("should return a validation error", func() {
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("PortfolioID"))
 		})
 	})
 

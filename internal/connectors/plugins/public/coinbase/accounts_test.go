@@ -2,6 +2,7 @@ package coinbase
 
 import (
 	"errors"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbase/client"
@@ -32,46 +33,46 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 	})
 
 	Context("fetching next accounts", func() {
-		var sampleAccounts []client.Account
+		var (
+			now            time.Time
+			sampleWallets  []client.Wallet
+		)
 
 		BeforeEach(func() {
-			sampleAccounts = []client.Account{
+			now = time.Now().UTC()
+
+			sampleWallets = []client.Wallet{
 				{
-					ID:             "acc1",
-					Currency:       "BTC",
-					Balance:        "1.5",
-					Available:      "1.0",
-					Hold:           "0.5",
-					ProfileID:      "profile1",
-					TradingEnabled: true,
+					ID:        "wallet1",
+					Name:      "BTC Trading Wallet",
+					Symbol:    "BTC",
+					Type:      "TRADING",
+					CreatedAt: now.Add(-48 * time.Hour),
 				},
 				{
-					ID:             "acc2",
-					Currency:       "USD",
-					Balance:        "1000.00",
-					Available:      "900.00",
-					Hold:           "100.00",
-					ProfileID:      "profile1",
-					TradingEnabled: true,
+					ID:        "wallet2",
+					Name:      "USD Wallet",
+					Symbol:    "USD",
+					Type:      "TRADING",
+					CreatedAt: now.Add(-24 * time.Hour),
 				},
 				{
-					ID:             "acc3",
-					Currency:       "ETH",
-					Balance:        "10.5",
-					Available:      "10.0",
-					Hold:           "0.5",
-					ProfileID:      "profile1",
-					TradingEnabled: false,
+					ID:        "wallet3",
+					Name:      "ETH Vault",
+					Symbol:    "ETH",
+					Type:      "VAULT",
+					CreatedAt: now,
 				},
 			}
 		})
 
-		It("should return an error - get accounts error", func(ctx SpecContext) {
+		It("should return an error - get wallets error", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State: []byte(`{}`),
+				State:    []byte(`{}`),
+				PageSize: 10,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -82,69 +83,99 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
-		It("should fetch accounts successfully", func(ctx SpecContext) {
+		It("should fetch wallets successfully", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State: []byte(`{}`),
+				State:    []byte(`{}`),
+				PageSize: 10,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
-				sampleAccounts,
+			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+				&client.WalletsResponse{
+					Wallets: sampleWallets,
+					Pagination: client.Pagination{
+						NextCursor: "cursor123",
+						HasNext:    true,
+					},
+				},
 				nil,
 			)
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Accounts).To(HaveLen(3))
-			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.HasMore).To(BeTrue())
 
-			// Verify BTC account has correct default asset (8 decimals)
+			// Verify BTC wallet
+			Expect(resp.Accounts[0].Reference).To(Equal("wallet1"))
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
-			Expect(*resp.Accounts[0].Name).To(Equal("BTC Wallet"))
+			Expect(*resp.Accounts[0].Name).To(Equal("BTC Trading Wallet"))
+			Expect(resp.Accounts[0].Metadata["wallet_type"]).To(Equal("TRADING"))
+			Expect(resp.Accounts[0].Metadata["symbol"]).To(Equal("BTC"))
 
-			// Verify USD account has correct default asset (2 decimals)
+			// Verify USD wallet
+			Expect(resp.Accounts[1].Reference).To(Equal("wallet2"))
 			Expect(*resp.Accounts[1].DefaultAsset).To(Equal("USD/2"))
-			Expect(*resp.Accounts[1].Name).To(Equal("USD Wallet"))
 
-			// Verify ETH account has correct default asset (18 decimals)
+			// Verify ETH wallet
+			Expect(resp.Accounts[2].Reference).To(Equal("wallet3"))
 			Expect(*resp.Accounts[2].DefaultAsset).To(Equal("ETH/18"))
+			Expect(resp.Accounts[2].Metadata["wallet_type"]).To(Equal("VAULT"))
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State: []byte(`{}`),
+				State:    []byte(`{}`),
+				PageSize: 10,
 			}
 
-			unsupportedAccounts := []client.Account{
+			unsupportedWallets := []client.Wallet{
 				{
-					ID:       "acc1",
-					Currency: "UNKNOWN_CURRENCY",
-					Balance:  "100",
+					ID:        "wallet1",
+					Name:      "Unknown Wallet",
+					Symbol:    "UNKNOWN_CURRENCY",
+					Type:      "TRADING",
+					CreatedAt: now,
 				},
 				{
-					ID:       "acc2",
-					Currency: "BTC",
-					Balance:  "1.0",
+					ID:        "wallet2",
+					Name:      "BTC Wallet",
+					Symbol:    "BTC",
+					Type:      "TRADING",
+					CreatedAt: now,
 				},
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
-				unsupportedAccounts,
+			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+				&client.WalletsResponse{
+					Wallets: unsupportedWallets,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
 				nil,
 			)
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
-			// Only BTC account should be returned
 			Expect(resp.Accounts).To(HaveLen(1))
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 		})
 
-		It("should not fetch again when already fetched", func(ctx SpecContext) {
+		It("should use cursor for pagination", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State: []byte(`{"fetched": true}`),
+				State:    []byte(`{"cursor": "existing-cursor"}`),
+				PageSize: 10,
 			}
 
-			// No mock expectation - GetAccounts should not be called
+			m.EXPECT().GetWallets(gomock.Any(), "existing-cursor", 10).Return(
+				&client.WalletsResponse{
+					Wallets: []client.Wallet{},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())

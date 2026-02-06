@@ -14,6 +14,7 @@ type V3CoinbaseConfig struct {
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	Passphrase    string  `json:"passphrase"`
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
+	PortfolioID   string  `json:"portfolioId"`
 	Provider      *string `default:"Coinbase" json:"provider"`
 }
 
@@ -68,6 +69,13 @@ func (o *V3CoinbaseConfig) GetPollingPeriod() *string {
 		return nil
 	}
 	return o.PollingPeriod
+}
+
+func (o *V3CoinbaseConfig) GetPortfolioID() string {
+	if o == nil {
+		return ""
+	}
+	return o.PortfolioID
 }
 
 func (o *V3CoinbaseConfig) GetProvider() *string {

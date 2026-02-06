@@ -35,55 +35,65 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 
 	Context("fetching next payments", func() {
 		var (
-			now             time.Time
-			completedAt     time.Time
-			sampleTransfers []client.Transfer
+			now                time.Time
+			completedAt        time.Time
+			sampleTransactions []client.Transaction
 		)
 
 		BeforeEach(func() {
 			now = time.Now().UTC()
 			completedAt = now.Add(-time.Hour)
 
-			sampleTransfers = []client.Transfer{
+			sampleTransactions = []client.Transaction{
 				{
-					ID:          "transfer1",
-					Type:        "deposit",
+					ID:          "tx1",
+					WalletID:    "wallet1",
+					PortfolioID: "portfolio1",
+					Type:        "DEPOSIT",
+					Status:      "TRANSACTION_COMPLETED",
+					Symbol:      "BTC",
+					Amount:      "1.5",
+					Fees:        "0.001",
+					FeeSymbol:   "BTC",
 					CreatedAt:   now.Add(-2 * time.Hour),
 					CompletedAt: &completedAt,
-					Amount:      "1.5",
-					Currency:    "BTC",
-					Details: client.TransferDetails{
-						CryptoTransactionHash: "0xabc123",
-						CryptoAddress:         "bc1qxyz",
-					},
+					Network:     "bitcoin",
+					BlockchainIDs: []string{"0xabc123"},
 				},
 				{
-					ID:        "transfer2",
-					Type:      "withdraw",
-					CreatedAt: now.Add(-time.Hour),
-					Amount:    "-500.00",
-					Currency:  "USD",
-					Details: client.TransferDetails{
-						SentToAddress: "bank-account-123",
-					},
+					ID:          "tx2",
+					WalletID:    "wallet2",
+					PortfolioID: "portfolio1",
+					Type:        "WITHDRAWAL",
+					Status:      "TRANSACTION_PENDING",
+					Symbol:      "USD",
+					Amount:      "500.00",
+					CreatedAt:   now.Add(-time.Hour),
+					TransferTo:  "external-bank",
 				},
 				{
-					ID:        "transfer3",
-					Type:      "internal_deposit",
-					CreatedAt: now,
-					Amount:    "100.00",
-					Currency:  "USDC",
+					ID:          "tx3",
+					WalletID:    "wallet3",
+					PortfolioID: "portfolio1",
+					Type:        "INTERNAL_TRANSFER",
+					Status:      "TRANSACTION_COMPLETED",
+					Symbol:      "USDC",
+					Amount:      "100.00",
+					CreatedAt:   now,
+					CompletedAt: &completedAt,
+					TransferFrom: "wallet-a",
+					TransferTo:   "wallet-b",
 				},
 			}
 		})
 
-		It("should return an error - get transfers error", func(ctx SpecContext) {
+		It("should return an error - get transactions error", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransfers(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -100,11 +110,13 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransfers(gomock.Any(), "", 10).Return(
-				&client.TransfersResponse{
-					Transfers:  sampleTransfers,
-					NextCursor: "cursor123",
-					HasMore:    true,
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: sampleTransactions,
+					Pagination: client.Pagination{
+						NextCursor: "cursor123",
+						HasNext:    true,
+					},
 				},
 				nil,
 			)
@@ -114,29 +126,37 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(3))
 			Expect(resp.HasMore).To(BeTrue())
 
-			// Verify first payment (BTC deposit)
-			Expect(resp.Payments[0].Reference).To(Equal("transfer1"))
+			// Verify first payment (BTC deposit - completed)
+			Expect(resp.Payments[0].Reference).To(Equal("tx1"))
 			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 			Expect(resp.Payments[0].Asset).To(Equal("BTC/8"))
 			// 1.5 BTC = 150000000 (1.5 * 10^8)
 			Expect(resp.Payments[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
-			Expect(resp.Payments[0].Metadata["crypto_transaction_hash"]).To(Equal("0xabc123"))
+			Expect(resp.Payments[0].Metadata["wallet_id"]).To(Equal("wallet1"))
+			Expect(resp.Payments[0].Metadata["portfolio_id"]).To(Equal("portfolio1"))
+			Expect(resp.Payments[0].Metadata["network"]).To(Equal("bitcoin"))
+			Expect(resp.Payments[0].Metadata["blockchain_ids"]).To(Equal("0xabc123"))
+			Expect(resp.Payments[0].Metadata["fees"]).To(Equal("0.001"))
 
-			// Verify second payment (USD withdrawal)
-			Expect(resp.Payments[1].Reference).To(Equal("transfer2"))
+			// Verify second payment (USD withdrawal - pending)
+			Expect(resp.Payments[1].Reference).To(Equal("tx2"))
 			Expect(resp.Payments[1].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 			Expect(resp.Payments[1].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
 			Expect(resp.Payments[1].Asset).To(Equal("USD/2"))
-			// 500.00 USD = 50000 (500.00 * 10^2), negative sign removed
+			// 500.00 USD = 50000 (500.00 * 10^2)
 			Expect(resp.Payments[1].Amount.Cmp(big.NewInt(50000))).To(Equal(0))
+			Expect(resp.Payments[1].Metadata["transfer_to"]).To(Equal("external-bank"))
 
-			// Verify third payment (USDC internal deposit)
-			Expect(resp.Payments[2].Reference).To(Equal("transfer3"))
-			Expect(resp.Payments[2].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			// Verify third payment (USDC internal transfer - completed)
+			Expect(resp.Payments[2].Reference).To(Equal("tx3"))
+			Expect(resp.Payments[2].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
+			Expect(resp.Payments[2].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 			Expect(resp.Payments[2].Asset).To(Equal("USDC/6"))
 			// 100.00 USDC = 100000000 (100.00 * 10^6)
 			Expect(resp.Payments[2].Amount.Cmp(big.NewInt(100000000))).To(Equal(0))
+			Expect(resp.Payments[2].Metadata["transfer_from"]).To(Equal("wallet-a"))
+			Expect(resp.Payments[2].Metadata["transfer_to"]).To(Equal("wallet-b"))
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
@@ -145,62 +165,64 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 				PageSize: 10,
 			}
 
-			unsupportedTransfers := []client.Transfer{
+			unsupportedTransactions := []client.Transaction{
 				{
-					ID:        "transfer1",
-					Type:      "deposit",
+					ID:        "tx1",
+					Type:      "DEPOSIT",
+					Status:    "TRANSACTION_COMPLETED",
 					CreatedAt: now,
 					Amount:    "100",
-					Currency:  "UNKNOWN_CURRENCY",
+					Symbol:    "UNKNOWN_CURRENCY",
 				},
 				{
-					ID:        "transfer2",
-					Type:      "deposit",
+					ID:        "tx2",
+					Type:      "DEPOSIT",
+					Status:    "TRANSACTION_COMPLETED",
 					CreatedAt: now,
 					Amount:    "1.0",
-					Currency:  "BTC",
+					Symbol:    "BTC",
 				},
 			}
 
-			m.EXPECT().GetTransfers(gomock.Any(), "", 10).Return(
-				&client.TransfersResponse{
-					Transfers:  unsupportedTransfers,
-					NextCursor: "",
-					HasMore:    false,
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: unsupportedTransactions,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
 				},
 				nil,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			// Only BTC transfer should be returned
 			Expect(resp.Payments).To(HaveLen(1))
-			Expect(resp.Payments[0].Reference).To(Equal("transfer2"))
+			Expect(resp.Payments[0].Reference).To(Equal("tx2"))
 		})
 
-		It("should handle cancelled transfers", func(ctx SpecContext) {
+		It("should handle failed transactions", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
 
-			cancelledAt := now.Add(-time.Hour)
-			cancelledTransfers := []client.Transfer{
+			failedTransactions := []client.Transaction{
 				{
-					ID:         "transfer1",
-					Type:       "withdraw",
-					CreatedAt:  now.Add(-2 * time.Hour),
-					CanceledAt: &cancelledAt,
-					Amount:     "100.00",
-					Currency:   "USD",
+					ID:        "tx1",
+					Type:      "WITHDRAWAL",
+					Status:    "TRANSACTION_FAILED",
+					CreatedAt: now,
+					Amount:    "100.00",
+					Symbol:    "USD",
 				},
 			}
 
-			m.EXPECT().GetTransfers(gomock.Any(), "", 10).Return(
-				&client.TransfersResponse{
-					Transfers:  cancelledTransfers,
-					NextCursor: "",
-					HasMore:    false,
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: failedTransactions,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
 				},
 				nil,
 			)
@@ -208,7 +230,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
-			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_CANCELLED))
+			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_FAILED))
 		})
 
 		It("should use cursor for pagination", func(ctx SpecContext) {
@@ -217,11 +239,12 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransfers(gomock.Any(), "existing-cursor", 10).Return(
-				&client.TransfersResponse{
-					Transfers:  []client.Transfer{},
-					NextCursor: "",
-					HasMore:    false,
+			m.EXPECT().GetTransactions(gomock.Any(), "existing-cursor", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
 				},
 				nil,
 			)

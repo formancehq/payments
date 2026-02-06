@@ -19,40 +19,33 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	// Coinbase Exchange accounts already contain balance info
-	// We need to fetch the account again to get the latest balance
-	rawAccounts, err := p.client.GetAccounts(ctx)
+	response, err := p.client.GetBalances(ctx, "", PAGE_SIZE)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
+	// Prime balances are at portfolio level. We filter by the wallet's symbol
+	// to maintain per-wallet balance coherence.
 	var balances []models.PSPBalance
-	for _, acc := range rawAccounts {
-		if acc.ID != from.Reference {
+	for _, bal := range response.Balances {
+		precision, ok := supportedCurrenciesWithDecimal[bal.Symbol]
+		if !ok {
 			continue
 		}
 
-		precision, ok := supportedCurrenciesWithDecimal[acc.Currency]
-		if !ok {
-			// Skip unsupported currencies
-			break
-		}
-
-		balance, err := currency.GetAmountWithPrecisionFromString(acc.Balance, precision)
+		amount, err := currency.GetAmountWithPrecisionFromString(bal.Amount, precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for account %s: %w", acc.ID, err)
+			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", bal.Symbol, err)
 		}
 
-		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, acc.Currency)
+		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, bal.Symbol)
 
 		balances = append(balances, models.PSPBalance{
-			AccountReference: acc.ID,
+			AccountReference: from.Reference,
 			Asset:            asset,
-			Amount:           balance,
+			Amount:           amount,
 			CreatedAt:        time.Now().UTC(),
 		})
-
-		break
 	}
 
 	return models.FetchNextBalancesResponse{

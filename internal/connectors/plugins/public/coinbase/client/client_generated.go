@@ -40,32 +40,47 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// GetAccounts mocks base method.
-func (m *MockClient) GetAccounts(ctx context.Context) ([]Account, error) {
+// GetBalances mocks base method.
+func (m *MockClient) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccounts", ctx)
-	ret0, _ := ret[0].([]Account)
+	ret := m.ctrl.Call(m, "GetBalances", ctx, cursor, pageSize)
+	ret0, _ := ret[0].(*BalancesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAccounts indicates an expected call of GetAccounts.
-func (mr *MockClientMockRecorder) GetAccounts(ctx any) *gomock.Call {
+// GetBalances indicates an expected call of GetBalances.
+func (mr *MockClientMockRecorder) GetBalances(ctx, cursor, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccounts", reflect.TypeOf((*MockClient)(nil).GetAccounts), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalances", reflect.TypeOf((*MockClient)(nil).GetBalances), ctx, cursor, pageSize)
 }
 
-// GetTransfers mocks base method.
-func (m *MockClient) GetTransfers(ctx context.Context, cursor string, pageSize int) (*TransfersResponse, error) {
+// GetTransactions mocks base method.
+func (m *MockClient) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransfers", ctx, cursor, pageSize)
-	ret0, _ := ret[0].(*TransfersResponse)
+	ret := m.ctrl.Call(m, "GetTransactions", ctx, cursor, pageSize)
+	ret0, _ := ret[0].(*TransactionsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTransfers indicates an expected call of GetTransfers.
-func (mr *MockClientMockRecorder) GetTransfers(ctx, cursor, pageSize any) *gomock.Call {
+// GetTransactions indicates an expected call of GetTransactions.
+func (mr *MockClientMockRecorder) GetTransactions(ctx, cursor, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransfers", reflect.TypeOf((*MockClient)(nil).GetTransfers), ctx, cursor, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, cursor, pageSize)
+}
+
+// GetWallets mocks base method.
+func (m *MockClient) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWallets", ctx, cursor, pageSize)
+	ret0, _ := ret[0].(*WalletsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWallets indicates an expected call of GetWallets.
+func (mr *MockClientMockRecorder) GetWallets(ctx, cursor, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWallets", reflect.TypeOf((*MockClient)(nil).GetWallets), ctx, cursor, pageSize)
 }

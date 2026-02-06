@@ -23,25 +23,24 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	response, err := p.client.GetTransfers(ctx, oldState.Cursor, req.PageSize)
+	response, err := p.client.GetTransactions(ctx, oldState.Cursor, req.PageSize)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	payments := make([]models.PSPPayment, 0, len(response.Transfers))
-	for _, transfer := range response.Transfers {
-		payment, err := transferToPayment(transfer)
+	payments := make([]models.PSPPayment, 0, len(response.Transactions))
+	for _, tx := range response.Transactions {
+		payment, err := transactionToPayment(tx)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to convert transfer %s: %w", transfer.ID, err)
+			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to convert transaction %s: %w", tx.ID, err)
 		}
 		if payment == nil {
-			// Skip unsupported currencies
 			continue
 		}
 		payments = append(payments, *payment)
 	}
 
-	newState := paymentsState{Cursor: response.NextCursor}
+	newState := paymentsState{Cursor: response.Pagination.NextCursor}
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
@@ -50,65 +49,66 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return models.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
-		HasMore:  response.HasMore,
+		HasMore:  response.Pagination.HasNext,
 	}, nil
 }
 
-func transferToPayment(transfer client.Transfer) (*models.PSPPayment, error) {
-	precision, ok := supportedCurrenciesWithDecimal[transfer.Currency]
+func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
+	precision, ok := supportedCurrenciesWithDecimal[tx.Symbol]
 	if !ok {
-		// Skip unsupported currencies
 		return nil, nil
 	}
 
-	raw, err := json.Marshal(transfer)
+	raw, err := json.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	paymentType := transferTypeToPaymentType(transfer.Type)
-	status := transferToStatus(transfer)
+	paymentType := transactionTypeToPaymentType(tx.Type)
+	status := transactionStatusToPaymentStatus(tx.Status)
 
-	// Remove negative sign if present (for withdrawals)
-	amountStr := strings.TrimPrefix(transfer.Amount, "-")
-
-	amount, err := currency.GetAmountWithPrecisionFromString(amountStr, precision)
+	amount, err := currency.GetAmountWithPrecisionFromString(tx.Amount, precision)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse amount: %w", err)
 	}
 
-	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, transfer.Currency)
+	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, tx.Symbol)
 
 	metadata := map[string]string{
-		"transfer_type": transfer.Type,
+		"transaction_type": tx.Type,
 	}
 
-	// Add debugging fields for transfer details
-	if transfer.Details.CoinbaseAccountID != "" {
-		metadata["coinbase_account_id"] = transfer.Details.CoinbaseAccountID
+	if tx.WalletID != "" {
+		metadata["wallet_id"] = tx.WalletID
 	}
-	if transfer.Details.CoinbaseTransactionID != "" {
-		metadata["coinbase_transaction_id"] = transfer.Details.CoinbaseTransactionID
+	if tx.PortfolioID != "" {
+		metadata["portfolio_id"] = tx.PortfolioID
 	}
-	if transfer.Details.CoinbasePaymentMethodID != "" {
-		metadata["coinbase_payment_method_id"] = transfer.Details.CoinbasePaymentMethodID
+	if tx.TransferFrom != "" {
+		metadata["transfer_from"] = tx.TransferFrom
 	}
-	if transfer.Details.CryptoTransactionHash != "" {
-		metadata["crypto_transaction_hash"] = transfer.Details.CryptoTransactionHash
+	if tx.TransferTo != "" {
+		metadata["transfer_to"] = tx.TransferTo
 	}
-	if transfer.Details.CryptoAddress != "" {
-		metadata["crypto_address"] = transfer.Details.CryptoAddress
+	if tx.Network != "" {
+		metadata["network"] = tx.Network
 	}
-	if transfer.Details.DestinationTag != "" {
-		metadata["destination_tag"] = transfer.Details.DestinationTag
+	if tx.Fees != "" {
+		metadata["fees"] = tx.Fees
 	}
-	if transfer.Details.SentToAddress != "" {
-		metadata["sent_to_address"] = transfer.Details.SentToAddress
+	if tx.FeeSymbol != "" {
+		metadata["fee_symbol"] = tx.FeeSymbol
+	}
+	if tx.NetworkFees != "" {
+		metadata["network_fees"] = tx.NetworkFees
+	}
+	if len(tx.BlockchainIDs) > 0 {
+		metadata["blockchain_ids"] = strings.Join(tx.BlockchainIDs, ",")
 	}
 
 	payment := models.PSPPayment{
-		Reference: transfer.ID,
-		CreatedAt: transfer.CreatedAt,
+		Reference: tx.ID,
+		CreatedAt: tx.CreatedAt,
 		Type:      paymentType,
 		Amount:    amount,
 		Asset:     asset,
@@ -121,26 +121,26 @@ func transferToPayment(transfer client.Transfer) (*models.PSPPayment, error) {
 	return &payment, nil
 }
 
-func transferTypeToPaymentType(transferType string) models.PaymentType {
-	switch strings.ToLower(transferType) {
-	case "deposit", "internal_deposit":
+func transactionTypeToPaymentType(txType string) models.PaymentType {
+	switch strings.ToUpper(txType) {
+	case "DEPOSIT":
 		return models.PAYMENT_TYPE_PAYIN
-	case "withdraw", "internal_withdraw":
+	case "WITHDRAWAL":
 		return models.PAYMENT_TYPE_PAYOUT
+	case "INTERNAL_TRANSFER":
+		return models.PAYMENT_TYPE_TRANSFER
 	default:
 		return models.PAYMENT_TYPE_TRANSFER
 	}
 }
 
-func transferToStatus(transfer client.Transfer) models.PaymentStatus {
-	if transfer.CanceledAt != nil {
-		return models.PAYMENT_STATUS_CANCELLED
-	}
-	if transfer.CompletedAt != nil {
+func transactionStatusToPaymentStatus(status string) models.PaymentStatus {
+	switch strings.ToUpper(status) {
+	case "TRANSACTION_COMPLETED":
 		return models.PAYMENT_STATUS_SUCCEEDED
-	}
-	if transfer.ProcessedAt != nil {
+	case "TRANSACTION_FAILED":
+		return models.PAYMENT_STATUS_FAILED
+	default:
 		return models.PAYMENT_STATUS_PENDING
 	}
-	return models.PAYMENT_STATUS_PENDING
 }

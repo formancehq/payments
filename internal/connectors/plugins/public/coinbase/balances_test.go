@@ -34,27 +34,23 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 	})
 
 	Context("fetching next balances", func() {
-		var sampleAccounts []client.Account
+		var sampleBalances []client.Balance
 
 		BeforeEach(func() {
-			sampleAccounts = []client.Account{
+			sampleBalances = []client.Balance{
 				{
-					ID:             "acc1",
-					Currency:       "BTC",
-					Balance:        "1.5",
-					Available:      "1.0",
-					Hold:           "0.5",
-					ProfileID:      "profile1",
-					TradingEnabled: true,
+					Symbol:             "BTC",
+					Amount:             "1.5",
+					Holds:              "0.5",
+					WithdrawableAmount: "1.0",
+					FiatAmount:         "75000.00",
 				},
 				{
-					ID:             "acc2",
-					Currency:       "USD",
-					Balance:        "1000.50",
-					Available:      "900.00",
-					Hold:           "100.50",
-					ProfileID:      "profile1",
-					TradingEnabled: true,
+					Symbol:             "USD",
+					Amount:             "1000.50",
+					Holds:              "100.50",
+					WithdrawableAmount: "900.00",
+					FiatAmount:         "1000.50",
 				},
 			}
 		})
@@ -70,13 +66,13 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 
-		It("should return an error - get accounts error", func(ctx SpecContext) {
-			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "acc1"})
+		It("should return an error - get balances error", func(ctx SpecContext) {
+			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "wallet1"})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
+			m.EXPECT().GetBalances(gomock.Any(), "", PAGE_SIZE).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -87,64 +83,57 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 
-		It("should fetch BTC balance with correct precision", func(ctx SpecContext) {
-			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "acc1"})
+		It("should fetch balances with correct precision", func(ctx SpecContext) {
+			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "wallet1"})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
-				sampleAccounts,
+			m.EXPECT().GetBalances(gomock.Any(), "", PAGE_SIZE).Return(
+				&client.BalancesResponse{
+					Balances: sampleBalances,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
 				nil,
 			)
 
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(HaveLen(1))
+			Expect(resp.Balances).To(HaveLen(2))
 			Expect(resp.HasMore).To(BeFalse())
 
 			// BTC has 8 decimals, so 1.5 BTC = 150000000 (1.5 * 10^8)
 			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
 			Expect(resp.Balances[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
-			Expect(resp.Balances[0].AccountReference).To(Equal("acc1"))
-		})
-
-		It("should fetch USD balance with correct precision", func(ctx SpecContext) {
-			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "acc2"})
-			req := models.FetchNextBalancesRequest{
-				FromPayload: fromPayload,
-			}
-
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
-				sampleAccounts,
-				nil,
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(HaveLen(1))
+			Expect(resp.Balances[0].AccountReference).To(Equal("wallet1"))
 
 			// USD has 2 decimals, so 1000.50 USD = 100050 (1000.50 * 10^2)
-			Expect(resp.Balances[0].Asset).To(Equal("USD/2"))
-			Expect(resp.Balances[0].Amount.Cmp(big.NewInt(100050))).To(Equal(0))
+			Expect(resp.Balances[1].Asset).To(Equal("USD/2"))
+			Expect(resp.Balances[1].Amount.Cmp(big.NewInt(100050))).To(Equal(0))
 		})
 
-		It("should return empty balances for unsupported currency", func(ctx SpecContext) {
-			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "acc-unknown"})
+		It("should return empty balances for unsupported currencies", func(ctx SpecContext) {
+			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "wallet-unknown"})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 			}
 
-			unsupportedAccounts := []client.Account{
+			unsupportedBalances := []client.Balance{
 				{
-					ID:       "acc-unknown",
-					Currency: "UNKNOWN_CURRENCY",
-					Balance:  "100",
+					Symbol: "UNKNOWN_CURRENCY",
+					Amount: "100",
 				},
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
-				unsupportedAccounts,
+			m.EXPECT().GetBalances(gomock.Any(), "", PAGE_SIZE).Return(
+				&client.BalancesResponse{
+					Balances: unsupportedBalances,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
 				nil,
 			)
 
@@ -153,14 +142,19 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			Expect(resp.Balances).To(HaveLen(0))
 		})
 
-		It("should return empty balances for non-existent account", func(ctx SpecContext) {
-			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "non-existent"})
+		It("should return empty balances when no balances exist", func(ctx SpecContext) {
+			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "wallet1"})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any()).Return(
-				sampleAccounts,
+			m.EXPECT().GetBalances(gomock.Any(), "", PAGE_SIZE).Return(
+				&client.BalancesResponse{
+					Balances: []client.Balance{},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
 				nil,
 			)
 
