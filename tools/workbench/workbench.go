@@ -22,7 +22,6 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
-	pkgregistry "github.com/formancehq/payments/pkg/registry"
 	"github.com/google/uuid"
 )
 
@@ -422,18 +421,18 @@ func (w *Workbench) GetGenericServerStatus() map[string]interface{} {
 
 // AvailableConnector represents an available connector type.
 type AvailableConnector struct {
-	Provider   string                       `json:"provider"`
-	Config     pkgregistry.Config           `json:"config"`
-	PluginType models.PluginType            `json:"plugin_type"`
+	Provider   string             `json:"provider"`
+	Config     registry.Config    `json:"config"`
+	PluginType models.PluginType  `json:"plugin_type"`
 }
 
 // GetAvailableConnectors returns all available connector types from the registry.
 func (w *Workbench) GetAvailableConnectors() []AvailableConnector {
-	configs := pkgregistry.GetConfigs(w.config.DebugMode)
+	configs := registry.GetConfigs(w.config.DebugMode)
 	result := make([]AvailableConnector, 0, len(configs))
 
 	for provider, config := range configs {
-		pluginType, _ := pkgregistry.GetPluginType(provider)
+		pluginType, _ := registry.GetPluginType(provider)
 		result = append(result, AvailableConnector{
 			Provider:   provider,
 			Config:     config,

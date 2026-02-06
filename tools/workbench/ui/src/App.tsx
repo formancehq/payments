@@ -344,6 +344,22 @@ function AppContent() {
   // Generic server state
   const [genericServerStatus, setGenericServerStatus] = useState<GenericServerStatus | null>(null);
   
+  // Theme state
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    // Check localStorage or system preference
+    const saved = localStorage.getItem('workbench-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('workbench-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  
   // Snapshot modal state
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [snapshotCaptureId, setSnapshotCaptureId] = useState<string | null>(null);
@@ -599,6 +615,11 @@ function AppContent() {
             ))}
           </div>
           <div className="sidebar-footer">
+            <Tooltip text={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <button className="sidebar-theme" onClick={toggleTheme}>
+                {theme === 'dark' ? '☀' : '☾'}
+              </button>
+            </Tooltip>
             <Tooltip text="Instantiate new connector (Ctrl+N)">
               <button className="sidebar-add" onClick={() => setShowCreateModal(true)}>
                 +
