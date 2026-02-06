@@ -4,6 +4,7 @@ import (
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/adyen"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/atlar"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/bankingcircle"
+    _ "github.com/formancehq/payments/internal/connectors/plugins/public/coinbase"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/column"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"

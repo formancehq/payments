@@ -21,6 +21,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigAtlar(components.V3AtlarC
 v3ConnectorConfig := components.CreateV3ConnectorConfigBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3CoinbaseConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigCoinbase(components.V3CoinbaseConfig{/* values here */})
+```
+
 ### V3ColumnConfig
 
 ```go

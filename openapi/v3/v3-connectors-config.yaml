@@ -7,6 +7,7 @@ components:
                     Adyen: '#/components/schemas/V3AdyenConfig'
                     Atlar: '#/components/schemas/V3AtlarConfig'
                     Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+                    Coinbase: '#/components/schemas/V3CoinbaseConfig'
                     Column: '#/components/schemas/V3ColumnConfig'
                     Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
                     Dummypay: '#/components/schemas/V3DummypayConfig'
@@ -26,6 +27,7 @@ components:
                 - $ref: '#/components/schemas/V3AdyenConfig'
                 - $ref: '#/components/schemas/V3AtlarConfig'
                 - $ref: '#/components/schemas/V3BankingcircleConfig'
+                - $ref: '#/components/schemas/V3CoinbaseConfig'
                 - $ref: '#/components/schemas/V3ColumnConfig'
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
@@ -134,6 +136,33 @@ components:
                     type: string
                 username:
                     type: string
+        V3CoinbaseConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - apiSecret
+                - passphrase
+            properties:
+                apiKey:
+                    type: string
+                apiSecret:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+                passphrase:
+                    type: string
+                pollingPeriod:
+                    type: string
+                    default: 30m
+                provider:
+                    type: string
+                    default: Coinbase
         V3ColumnConfig:
             type: object
             required:
