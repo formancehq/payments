@@ -13,6 +13,7 @@ type Config struct {
 	APIKey        string                     `json:"apiKey" validate:"required"`
 	APISecret     string                     `json:"apiSecret" validate:"required"`
 	Passphrase    string                     `json:"passphrase" validate:"required"`
+	PortfolioID   string                     `json:"portfolioId" validate:"required"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
@@ -23,6 +24,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		APIKey        string `json:"apiKey"`
 		APISecret     string `json:"apiSecret"`
 		Passphrase    string `json:"passphrase"`
+		PortfolioID   string `json:"portfolioId"`
 		PollingPeriod string `json:"pollingPeriod"`
 	}
 
@@ -43,6 +45,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		APIKey:        raw.APIKey,
 		APISecret:     raw.APISecret,
 		Passphrase:    raw.Passphrase,
+		PortfolioID:   raw.PortfolioID,
 		PollingPeriod: pp,
 	}
 

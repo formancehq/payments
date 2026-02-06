@@ -143,6 +143,7 @@ components:
                 - apiKey
                 - apiSecret
                 - passphrase
+                - portfolioId
             properties:
                 apiKey:
                     type: string
@@ -160,6 +161,8 @@ components:
                 pollingPeriod:
                     type: string
                     default: 30m
+                portfolioId:
+                    type: string
                 provider:
                     type: string
                     default: Coinbase

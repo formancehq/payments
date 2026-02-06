@@ -16,30 +16,33 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
-	GetAccounts(ctx context.Context) ([]Account, error)
-	GetTransfers(ctx context.Context, cursor string, pageSize int) (*TransfersResponse, error)
+	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
+	GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error)
+	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
 }
 
-const defaultBaseURL = "https://api.exchange.coinbase.com"
+const defaultBaseURL = "https://api.prime.coinbase.com"
 
 type client struct {
-	httpClient httpwrapper.Client
-	baseURL    string
-	apiKey     string
-	apiSecret  string
-	passphrase string
+	httpClient  httpwrapper.Client
+	baseURL     string
+	apiKey      string
+	apiSecret   string
+	passphrase  string
+	portfolioID string
 }
 
-func New(connectorName, apiKey, apiSecret, passphrase string) Client {
-	return NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, defaultBaseURL)
+func New(connectorName, apiKey, apiSecret, passphrase, portfolioID string) Client {
+	return NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, portfolioID, defaultBaseURL)
 }
 
-func NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, baseURL string) Client {
+func NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, portfolioID, baseURL string) Client {
 	c := &client{
-		baseURL:    baseURL,
-		apiKey:     apiKey,
-		apiSecret:  apiSecret,
-		passphrase: passphrase,
+		baseURL:     baseURL,
+		apiKey:      apiKey,
+		apiSecret:   apiSecret,
+		passphrase:  passphrase,
+		portfolioID: portfolioID,
 	}
 
 	config := &httpwrapper.Config{
@@ -69,41 +72,19 @@ func (c *client) signRequest(req *http.Request, body string) error {
 	h.Write([]byte(message))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
-	req.Header.Set("CB-ACCESS-KEY", c.apiKey)
-	req.Header.Set("CB-ACCESS-SIGN", signature)
-	req.Header.Set("CB-ACCESS-TIMESTAMP", timestamp)
-	req.Header.Set("CB-ACCESS-PASSPHRASE", c.passphrase)
+	req.Header.Set("X-CB-ACCESS-KEY", c.apiKey)
+	req.Header.Set("X-CB-ACCESS-SIGNATURE", signature)
+	req.Header.Set("X-CB-ACCESS-TIMESTAMP", timestamp)
+	req.Header.Set("X-CB-ACCESS-PASSPHRASE", c.passphrase)
 	req.Header.Set("Content-Type", "application/json")
 
 	return nil
 }
 
-func (c *client) GetAccounts(ctx context.Context) ([]Account, error) {
-	endpoint := fmt.Sprintf("%s/accounts", c.baseURL)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	if err := c.signRequest(req, ""); err != nil {
-		return nil, err
-	}
-
-	var accounts []Account
-	var errorResponse ErrorResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &accounts, &errorResponse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get accounts (status %d): %w", statusCode, err)
-	}
-
-	return accounts, nil
-}
-
-func (c *client) GetTransfers(ctx context.Context, cursor string, pageSize int) (*TransfersResponse, error) {
-	endpoint := fmt.Sprintf("%s/transfers?limit=%d", c.baseURL, pageSize)
+func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
+	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/wallets?limit=%d&sort_direction=ASC", c.baseURL, c.portfolioID, pageSize)
 	if cursor != "" {
-		endpoint += fmt.Sprintf("&after=%s", cursor)
+		endpoint += fmt.Sprintf("&cursor=%s", cursor)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -115,66 +96,127 @@ func (c *client) GetTransfers(ctx context.Context, cursor string, pageSize int) 
 		return nil, err
 	}
 
-	var transfers []Transfer
+	var response WalletsResponse
 	var errorResponse ErrorResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &transfers, &errorResponse)
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transfers (status %d): %w", statusCode, err)
+		return nil, fmt.Errorf("failed to get wallets (status %d): %w", statusCode, err)
 	}
 
-	var nextCursor string
-	if len(transfers) > 0 {
-		nextCursor = transfers[len(transfers)-1].ID
+	return &response, nil
+}
+
+func (c *client) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
+	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/balances?limit=%d&sort_direction=ASC", c.baseURL, c.portfolioID, pageSize)
+	if cursor != "" {
+		endpoint += fmt.Sprintf("&cursor=%s", cursor)
 	}
 
-	return &TransfersResponse{
-		Transfers:  transfers,
-		NextCursor: nextCursor,
-		HasMore:    len(transfers) == pageSize,
-	}, nil
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response BalancesResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balances (status %d): %w", statusCode, err)
+	}
+
+	return &response, nil
 }
 
-// Account represents a Coinbase Exchange account (wallet).
-type Account struct {
-	ID             string `json:"id"`
-	Currency       string `json:"currency"`
-	Balance        string `json:"balance"`
-	Available      string `json:"available"`
-	Hold           string `json:"hold"`
-	ProfileID      string `json:"profile_id"`
-	TradingEnabled bool   `json:"trading_enabled"`
+func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
+	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/transactions?limit=%d&sort_direction=ASC", c.baseURL, c.portfolioID, pageSize)
+	if cursor != "" {
+		endpoint += fmt.Sprintf("&cursor=%s", cursor)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response TransactionsResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions (status %d): %w", statusCode, err)
+	}
+
+	return &response, nil
 }
 
-// Transfer represents a deposit or withdrawal.
-type Transfer struct {
-	ID          string     `json:"id"`
-	Type        string     `json:"type"` // deposit, withdraw, internal_deposit, internal_withdraw
-	CreatedAt   time.Time  `json:"created_at"`
-	CompletedAt *time.Time `json:"completed_at"`
-	CanceledAt  *time.Time `json:"canceled_at"`
-	ProcessedAt *time.Time `json:"processed_at"`
-	Amount      string     `json:"amount"`
-	Currency    string     `json:"currency"`
-	UserNonce   *string    `json:"user_nonce"`
-	Details     TransferDetails `json:"details"`
+// Wallet represents a Coinbase Prime wallet.
+type Wallet struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Symbol    string    `json:"symbol"`
+	Type      string    `json:"type"` // TRADING, VAULT, ONCHAIN
+	CreatedAt time.Time `json:"created_at"`
 }
 
-// TransferDetails contains additional transfer metadata.
-type TransferDetails struct {
-	CoinbaseAccountID       string `json:"coinbase_account_id,omitempty"`
-	CoinbaseTransactionID   string `json:"coinbase_transaction_id,omitempty"`
-	CoinbasePaymentMethodID string `json:"coinbase_payment_method_id,omitempty"`
-	DestinationTag          string `json:"destination_tag,omitempty"`
-	CryptoAddress           string `json:"crypto_address,omitempty"`
-	CryptoTransactionHash   string `json:"crypto_transaction_hash,omitempty"`
-	SentToAddress           string `json:"sent_to_address,omitempty"`
+// Balance represents a Coinbase Prime portfolio balance.
+type Balance struct {
+	Symbol             string `json:"symbol"`
+	Amount             string `json:"amount"`
+	Holds              string `json:"holds"`
+	WithdrawableAmount string `json:"withdrawable_amount"`
+	FiatAmount         string `json:"fiat_amount"`
 }
 
-// TransfersResponse wraps transfers with pagination info.
-type TransfersResponse struct {
-	Transfers  []Transfer
-	NextCursor string
-	HasMore    bool
+// Transaction represents a Coinbase Prime transaction.
+type Transaction struct {
+	ID            string     `json:"id"`
+	WalletID      string     `json:"wallet_id"`
+	PortfolioID   string     `json:"portfolio_id"`
+	Type          string     `json:"type"`   // DEPOSIT, WITHDRAWAL, INTERNAL_TRANSFER, ...
+	Status        string     `json:"status"` // TRANSACTION_PENDING, TRANSACTION_COMPLETED, TRANSACTION_FAILED
+	Symbol        string     `json:"symbol"`
+	Amount        string     `json:"amount"`
+	Fees          string     `json:"fees"`
+	FeeSymbol     string     `json:"fee_symbol"`
+	CreatedAt     time.Time  `json:"created_at"`
+	CompletedAt   *time.Time `json:"completed_at"`
+	TransferFrom  string     `json:"transfer_from"`
+	TransferTo    string     `json:"transfer_to"`
+	NetworkFees   string     `json:"network_fees"`
+	Network       string     `json:"network"`
+	BlockchainIDs []string   `json:"blockchain_ids"`
+}
+
+// Pagination represents cursor-based pagination from Coinbase Prime.
+type Pagination struct {
+	NextCursor    string `json:"next_cursor"`
+	SortDirection string `json:"sort_direction"`
+	HasNext       bool   `json:"has_next"`
+}
+
+// WalletsResponse wraps wallets with pagination.
+type WalletsResponse struct {
+	Wallets    []Wallet   `json:"wallets"`
+	Pagination Pagination `json:"pagination"`
+}
+
+// BalancesResponse wraps balances with pagination.
+type BalancesResponse struct {
+	Balances   []Balance  `json:"balances"`
+	Pagination Pagination `json:"pagination"`
+}
+
+// TransactionsResponse wraps transactions with pagination.
+type TransactionsResponse struct {
+	Transactions []Transaction `json:"transactions"`
+	Pagination   Pagination    `json:"pagination"`
 }
 
 // ErrorResponse represents an API error.
