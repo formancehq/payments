@@ -252,6 +252,13 @@ func (e *Engine) executeFetchAccountsTask(ctx context.Context, task models.Conne
 	pageNum := 0
 
 	for hasMore {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		pageNum++
 		
 		// Start task tracking
@@ -342,6 +349,13 @@ func (e *Engine) executeFetchPaymentsTask(ctx context.Context, task models.Conne
 	pageNum := 0
 
 	for hasMore {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		pageNum++
 
 		// Start task tracking
@@ -419,6 +433,13 @@ func (e *Engine) executeFetchBalancesTask(ctx context.Context, task models.Conne
 	pageNum := 0
 
 	for hasMore {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		pageNum++
 
 		// Start task tracking
@@ -496,6 +517,13 @@ func (e *Engine) executeFetchExternalAccountsTask(ctx context.Context, task mode
 	pageNum := 0
 
 	for hasMore {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		pageNum++
 
 		// Start task tracking
@@ -578,6 +606,13 @@ func (e *Engine) executeFetchOthersTask(ctx context.Context, task models.Connect
 	pageNum := 0
 
 	for hasMore {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		pageNum++
 
 		// Start task tracking

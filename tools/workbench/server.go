@@ -1842,9 +1842,8 @@ func writeGeneratedFiles(outputDir string, result *GenerateResult) error {
 // These handlers expose the standard generic connector API so remote services
 // can connect to locally-running connectors for integration testing.
 
-type genericConnectorCtxKey struct{}
-
-// genericServerMiddleware validates API key and loads the configured connector.
+// genericServerMiddleware validates API key for the generic server.
+// Handlers get the connector directly from the workbench for clearer data flow.
 func (s *Server) genericServerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, apiKey := s.workbench.GetGenericServerConnector()
@@ -1874,14 +1873,14 @@ func (s *Server) genericServerMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		// Add connector to context
-		ctx := context.WithValue(r.Context(), genericConnectorCtxKey{}, conn)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(w, r)
 	})
 }
 
-func (s *Server) getGenericConnector(r *http.Request) *ConnectorInstance {
-	conn, _ := r.Context().Value(genericConnectorCtxKey{}).(*ConnectorInstance)
+// getGenericConnector returns the configured generic connector directly from the workbench.
+// This avoids storing connector references in context, providing clearer data flow.
+func (s *Server) getGenericConnector() *ConnectorInstance {
+	conn, _ := s.workbench.GetGenericServerConnector()
 	return conn
 }
 
@@ -1920,7 +1919,7 @@ func (s *Server) handleSetGenericConnector(w http.ResponseWriter, r *http.Reques
 
 // handleGenericAccounts handles GET /generic/accounts
 func (s *Server) handleGenericAccounts(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return // Error already sent by middleware
 	}
@@ -1964,7 +1963,7 @@ func (s *Server) handleGenericAccounts(w http.ResponseWriter, r *http.Request) {
 
 // handleGenericBalances handles GET /generic/accounts/{accountId}/balances
 func (s *Server) handleGenericBalances(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return
 	}
@@ -2009,7 +2008,7 @@ func (s *Server) handleGenericBalances(w http.ResponseWriter, r *http.Request) {
 
 // handleGenericBeneficiaries handles GET /generic/beneficiaries
 func (s *Server) handleGenericBeneficiaries(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return
 	}
@@ -2052,7 +2051,7 @@ func (s *Server) handleGenericBeneficiaries(w http.ResponseWriter, r *http.Reque
 
 // handleGenericTransactions handles GET /generic/transactions
 func (s *Server) handleGenericTransactions(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return
 	}
