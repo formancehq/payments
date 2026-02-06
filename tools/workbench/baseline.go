@@ -229,8 +229,17 @@ func (m *BaselineManager) compareAccounts(baseline, current []models.PSPAccount)
 func (m *BaselineManager) compareAccount(base, curr models.PSPAccount) []Change {
 	var changes []Change
 
-	if base.DefaultAsset != curr.DefaultAsset {
-		changes = append(changes, Change{Field: "default_asset", OldValue: base.DefaultAsset, NewValue: curr.DefaultAsset})
+	// Compare DefaultAsset by value, not pointer address
+	if (base.DefaultAsset == nil) != (curr.DefaultAsset == nil) ||
+		(base.DefaultAsset != nil && curr.DefaultAsset != nil && *base.DefaultAsset != *curr.DefaultAsset) {
+		var oldVal, newVal interface{}
+		if base.DefaultAsset != nil {
+			oldVal = *base.DefaultAsset
+		}
+		if curr.DefaultAsset != nil {
+			newVal = *curr.DefaultAsset
+		}
+		changes = append(changes, Change{Field: "default_asset", OldValue: oldVal, NewValue: newVal})
 	}
 	if (base.Name == nil) != (curr.Name == nil) || (base.Name != nil && curr.Name != nil && *base.Name != *curr.Name) {
 		var oldVal, newVal interface{}

@@ -255,7 +255,8 @@ func (i *Introspector) GetFile(relPath string) (*SourceFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !strings.HasPrefix(fullPath, i.basePath) {
+	// Use path separator suffix to prevent sibling directory bypass (e.g., ../stripe-extra/)
+	if fullPath != i.basePath && !strings.HasPrefix(fullPath, i.basePath+string(filepath.Separator)) {
 		return nil, fmt.Errorf("invalid path")
 	}
 
