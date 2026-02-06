@@ -571,7 +571,7 @@ func (s *Server) handleFetchExternalAccounts(w http.ResponseWriter, r *http.Requ
 
 	var req fetchRequest
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
 	resp, err := conn.engine.FetchExternalAccountsOnePage(r.Context(), req.FromPayload)
