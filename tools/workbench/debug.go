@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -37,7 +38,7 @@ type DebugStore struct {
 	mu         sync.RWMutex
 	entries    []DebugEntry
 	maxEntries int
-	idCounter  int64
+	idCounter  atomic.Int64
 
 	// HTTP request/response tracking
 	httpRequests []HTTPRequestEntry
@@ -87,8 +88,8 @@ func NewDebugStore(maxEntries int) *DebugStore {
 
 // nextID generates the next unique ID.
 func (d *DebugStore) nextID() string {
-	d.idCounter++
-	return fmt.Sprintf("%s-%d", time.Now().Format("20060102-150405"), d.idCounter)
+	id := d.idCounter.Add(1)
+	return fmt.Sprintf("%s-%d", time.Now().Format("20060102-150405"), id)
 }
 
 // Log adds a log entry.
