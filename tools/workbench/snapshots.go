@@ -283,7 +283,7 @@ func (m *SnapshotManager) ImportFromDir(dir string) (int, error) {
 			continue
 		}
 
-		m.Save(&snapshot)
+		_ = m.Save(&snapshot)
 		count++
 	}
 

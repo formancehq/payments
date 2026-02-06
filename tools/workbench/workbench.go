@@ -25,9 +25,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Global debug transport for HTTP interception
-var globalDebugTransport *DebugTransport
-
 // Config holds the workbench configuration.
 type Config struct {
 	// ListenAddr is the HTTP server listen address
@@ -117,7 +114,6 @@ func New(cfg Config, logger logging.Logger) (*Workbench, error) {
 
 	// Install HTTP debug transport
 	w.transport, w.originalTransport = InstallGlobalTransport(w.debug)
-	globalDebugTransport = w.transport
 	logger.Info("HTTP debug transport installed - all outbound HTTP traffic will be captured")
 
 	// Create HTTP server

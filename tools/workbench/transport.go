@@ -129,7 +129,7 @@ func (t *DebugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if strings.Contains(contentType, "application/json") && entry.ResponseBody != "" {
 			// Extract operation from URL path
 			operation := extractOperationFromURL(req.URL.Path)
-			t.Schemas.InferFromJSON(operation, req.URL.Path, req.Method, []byte(entry.ResponseBody))
+			_, _ = t.Schemas.InferFromJSON(operation, req.URL.Path, req.Method, []byte(entry.ResponseBody))
 		}
 	}
 

@@ -237,7 +237,7 @@ func (e *Engine) executeTask(ctx context.Context, task models.ConnectorTaskTree,
 	case models.TASK_CREATE_WEBHOOKS:
 		return e.executeCreateWebhooksTask(ctx, task, fromPayload)
 	default:
-		e.debug.Log("task", fmt.Sprintf("Unknown task type: %s", task.TaskType))
+		e.debug.Log("task", fmt.Sprintf("Unknown task type: %v", task.TaskType))
 		return nil
 	}
 }
