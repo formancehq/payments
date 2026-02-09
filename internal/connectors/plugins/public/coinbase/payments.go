@@ -82,11 +82,11 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 	if tx.PortfolioID != "" {
 		metadata["portfolio_id"] = tx.PortfolioID
 	}
-	if tx.TransferFrom != "" {
-		metadata["transfer_from"] = tx.TransferFrom
+	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" {
+		metadata["transfer_from"] = tx.TransferFrom.Value
 	}
-	if tx.TransferTo != "" {
-		metadata["transfer_to"] = tx.TransferTo
+	if tx.TransferTo != nil && tx.TransferTo.Value != "" {
+		metadata["transfer_to"] = tx.TransferTo.Value
 	}
 	if tx.Network != "" {
 		metadata["network"] = tx.Network
@@ -134,54 +134,65 @@ func resolveAssetAndPrecision(symbol string) (string, int, bool) {
 }
 
 func resolveAccountReferences(tx client.Transaction) (*string, *string) {
-	var sourceAccountReference *string
-	var destinationAccountReference *string
+	var source, dest *string
 
-	switch strings.ToUpper(tx.Type) {
-	case "DEPOSIT":
-		if tx.WalletID != "" {
-			walletID := tx.WalletID
-			destinationAccountReference = &walletID
-		}
-	case "WITHDRAWAL":
-		if tx.WalletID != "" {
-			walletID := tx.WalletID
-			sourceAccountReference = &walletID
-		}
-	case "INTERNAL_TRANSFER":
-		if tx.TransferFrom != "" {
-			transferFrom := tx.TransferFrom
-			sourceAccountReference = &transferFrom
-		}
-		if tx.TransferTo != "" {
-			transferTo := tx.TransferTo
-			destinationAccountReference = &transferTo
+	// Use transfer_from/transfer_to when available (all tx types can have them)
+	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" {
+		v := tx.TransferFrom.Value
+		source = &v
+	}
+	if tx.TransferTo != nil && tx.TransferTo.Value != "" {
+		v := tx.TransferTo.Value
+		dest = &v
+	}
+
+	// Fallback to walletID based on payment direction
+	if tx.WalletID != "" {
+		switch transactionTypeToPaymentType(tx.Type) {
+		case models.PAYMENT_TYPE_PAYIN:
+			if dest == nil {
+				v := tx.WalletID
+				dest = &v
+			}
+		case models.PAYMENT_TYPE_PAYOUT:
+			if source == nil {
+				v := tx.WalletID
+				source = &v
+			}
 		}
 	}
 
-	return sourceAccountReference, destinationAccountReference
+	return source, dest
 }
 
 func transactionTypeToPaymentType(txType string) models.PaymentType {
 	switch strings.ToUpper(txType) {
-	case "DEPOSIT":
+	case "DEPOSIT", "INTERNAL_DEPOSIT", "SWEEP_DEPOSIT", "PROXY_DEPOSIT",
+		"COINBASE_DEPOSIT", "COINBASE_REFUND", "REWARD",
+		"DEPOSIT_ADJUSTMENT", "CLAIM_REWARDS":
 		return models.PAYMENT_TYPE_PAYIN
-	case "WITHDRAWAL":
+	case "WITHDRAWAL", "INTERNAL_WITHDRAWAL", "SWEEP_WITHDRAWAL",
+		"PROXY_WITHDRAWAL", "BILLING_WITHDRAWAL", "WITHDRAWAL_ADJUSTMENT":
 		return models.PAYMENT_TYPE_PAYOUT
-	case "INTERNAL_TRANSFER":
+	case "CONVERSION":
 		return models.PAYMENT_TYPE_TRANSFER
 	default:
-		return models.PAYMENT_TYPE_TRANSFER
+		return models.PAYMENT_TYPE_OTHER
 	}
 }
 
 func transactionStatusToPaymentStatus(status string) models.PaymentStatus {
 	switch strings.ToUpper(status) {
-	case "TRANSACTION_COMPLETED":
+	case "TRANSACTION_DONE", "TRANSACTION_IMPORTED":
 		return models.PAYMENT_STATUS_SUCCEEDED
-	case "TRANSACTION_FAILED":
+	case "TRANSACTION_FAILED", "TRANSACTION_CANCELLED", "TRANSACTION_REJECTED", "TRANSACTION_EXPIRED":
 		return models.PAYMENT_STATUS_FAILED
 	default:
+		// Covers: TRANSACTION_CREATED, TRANSACTION_REQUESTED, TRANSACTION_APPROVED,
+		// TRANSACTION_GASSING, TRANSACTION_GASSED, TRANSACTION_PROVISIONED,
+		// TRANSACTION_PLANNED, TRANSACTION_PROCESSING, TRANSACTION_RESTORED,
+		// TRANSACTION_IMPORT_PENDING, TRANSACTION_DELAYED, TRANSACTION_RETRIED,
+		// TRANSACTION_BROADCASTING, TRANSACTION_CONSTRUCTED, OTHER_TRANSACTION_STATUS
 		return models.PAYMENT_STATUS_PENDING
 	}
 }

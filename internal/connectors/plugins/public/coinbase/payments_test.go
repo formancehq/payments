@@ -46,17 +46,25 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 
 			sampleTransactions = []client.Transaction{
 				{
-					ID:            "tx1",
-					WalletID:      "wallet1",
-					PortfolioID:   "portfolio1",
-					Type:          "DEPOSIT",
-					Status:        "TRANSACTION_COMPLETED",
-					Symbol:        "BTC",
-					Amount:        "1.5",
-					Fees:          "0.001",
-					FeeSymbol:     "BTC",
-					CreatedAt:     now.Add(-2 * time.Hour),
-					CompletedAt:   &completedAt,
+					ID:          "tx1",
+					WalletID:    "wallet1",
+					PortfolioID: "portfolio1",
+					Type:        "DEPOSIT",
+					Status:      "TRANSACTION_DONE",
+					Symbol:      "BTC",
+					Amount:      "1.5",
+					Fees:        "0.001",
+					FeeSymbol:   "BTC",
+					CreatedAt:   now.Add(-2 * time.Hour),
+					CompletedAt: &completedAt,
+					TransferFrom: &client.TransferEndpoint{
+						Type:  "PAYMENT_METHOD",
+						Value: "pm-123",
+					},
+					TransferTo: &client.TransferEndpoint{
+						Type:  "WALLET",
+						Value: "wallet1",
+					},
 					Network:       "bitcoin",
 					BlockchainIDs: []string{"0xabc123"},
 				},
@@ -69,27 +77,40 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 					Symbol:      "USD",
 					Amount:      "500.00",
 					CreatedAt:   now.Add(-time.Hour),
-					TransferTo:  "external-bank",
+					TransferFrom: &client.TransferEndpoint{
+						Type:  "WALLET",
+						Value: "wallet2",
+					},
+					TransferTo: &client.TransferEndpoint{
+						Type:  "PAYMENT_METHOD",
+						Value: "external-bank",
+					},
 				},
 				{
-					ID:           "tx3",
-					WalletID:     "wallet3",
-					PortfolioID:  "portfolio1",
-					Type:         "INTERNAL_TRANSFER",
-					Status:       "TRANSACTION_COMPLETED",
-					Symbol:       "USDC",
-					Amount:       "100.00",
-					CreatedAt:    now,
-					CompletedAt:  &completedAt,
-					TransferFrom: "wallet-a",
-					TransferTo:   "wallet-b",
+					ID:          "tx3",
+					WalletID:    "wallet3",
+					PortfolioID: "portfolio1",
+					Type:        "CONVERSION",
+					Status:      "TRANSACTION_DONE",
+					Symbol:      "USDC",
+					Amount:      "100.00",
+					CreatedAt:   now,
+					CompletedAt: &completedAt,
+					TransferFrom: &client.TransferEndpoint{
+						Type:  "WALLET",
+						Value: "wallet-a",
+					},
+					TransferTo: &client.TransferEndpoint{
+						Type:  "WALLET",
+						Value: "wallet-b",
+					},
 				},
 				{
 					ID:          "tx4",
 					WalletID:    "wallet4",
 					PortfolioID: "portfolio1",
 					Type:        "DEPOSIT",
-					Status:      "TRANSACTION_PENDING",
+					Status:      "TRANSACTION_IMPORT_PENDING",
 					Symbol:      "ETH",
 					Amount:      "1.000000000000000001",
 					CreatedAt:   now,
@@ -136,14 +157,15 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(4))
 			Expect(resp.HasMore).To(BeTrue())
 
-			// Verify first payment (BTC deposit - completed)
+			// Verify first payment (BTC deposit - completed, with transfer endpoints)
 			Expect(resp.Payments[0].Reference).To(Equal("tx1"))
 			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 			Expect(resp.Payments[0].Asset).To(Equal("BTC/8"))
 			// 1.5 BTC = 150000000 (1.5 * 10^8)
 			Expect(resp.Payments[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
-			Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
+			Expect(resp.Payments[0].SourceAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[0].SourceAccountReference).To(Equal("pm-123"))
 			Expect(resp.Payments[0].DestinationAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("wallet1"))
 			Expect(resp.Payments[0].Metadata["wallet_id"]).To(Equal("wallet1"))
@@ -152,7 +174,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[0].Metadata["blockchain_ids"]).To(Equal("0xabc123"))
 			Expect(resp.Payments[0].Metadata["fees"]).To(Equal("0.001"))
 
-			// Verify second payment (USD withdrawal - pending)
+			// Verify second payment (USD withdrawal - pending, with transfer endpoints)
 			Expect(resp.Payments[1].Reference).To(Equal("tx2"))
 			Expect(resp.Payments[1].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 			Expect(resp.Payments[1].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
@@ -161,10 +183,12 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[1].Amount.Cmp(big.NewInt(50000))).To(Equal(0))
 			Expect(resp.Payments[1].SourceAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[1].SourceAccountReference).To(Equal("wallet2"))
-			Expect(resp.Payments[1].DestinationAccountReference).To(BeNil())
+			Expect(resp.Payments[1].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[1].DestinationAccountReference).To(Equal("external-bank"))
+			Expect(resp.Payments[1].Metadata["transfer_from"]).To(Equal("wallet2"))
 			Expect(resp.Payments[1].Metadata["transfer_to"]).To(Equal("external-bank"))
 
-			// Verify third payment (USDC internal transfer - completed)
+			// Verify third payment (USDC conversion - completed)
 			Expect(resp.Payments[2].Reference).To(Equal("tx3"))
 			Expect(resp.Payments[2].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 			Expect(resp.Payments[2].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
@@ -178,13 +202,16 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[2].Metadata["transfer_from"]).To(Equal("wallet-a"))
 			Expect(resp.Payments[2].Metadata["transfer_to"]).To(Equal("wallet-b"))
 
-			// Verify fourth payment (ETH deposit - pending, 18 decimals)
+			// Verify fourth payment (ETH deposit - pending, 18 decimals, walletID fallback)
 			Expect(resp.Payments[3].Reference).To(Equal("tx4"))
 			Expect(resp.Payments[3].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(resp.Payments[3].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
 			Expect(resp.Payments[3].Asset).To(Equal("ETH/18"))
 			// 1.000000000000000001 ETH = 1000000000000000001 (1.000000000000000001 * 10^18)
 			Expect(resp.Payments[3].Amount.Cmp(big.NewInt(1000000000000000001))).To(Equal(0))
+			Expect(resp.Payments[3].SourceAccountReference).To(BeNil())
+			Expect(resp.Payments[3].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[3].DestinationAccountReference).To(Equal("wallet4"))
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
@@ -197,7 +224,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 				{
 					ID:        "tx1",
 					Type:      "DEPOSIT",
-					Status:    "TRANSACTION_COMPLETED",
+					Status:    "TRANSACTION_DONE",
 					CreatedAt: now,
 					Amount:    "100",
 					Symbol:    "UNKNOWN_CURRENCY",
@@ -205,7 +232,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 				{
 					ID:        "tx2",
 					Type:      "DEPOSIT",
-					Status:    "TRANSACTION_COMPLETED",
+					Status:    "TRANSACTION_DONE",
 					CreatedAt: now,
 					Amount:    "1.0",
 					Symbol:    "BTC",

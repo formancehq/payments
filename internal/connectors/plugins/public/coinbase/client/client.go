@@ -62,16 +62,8 @@ func (c *client) signRequest(req *http.Request, body string) error {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
 	message := timestamp + req.Method + req.URL.Path + body
-	if req.URL.RawQuery != "" {
-		message = timestamp + req.Method + req.URL.Path + "?" + req.URL.RawQuery + body
-	}
 
-	secret, err := base64.StdEncoding.DecodeString(c.apiSecret)
-	if err != nil {
-		return fmt.Errorf("failed to decode API secret: %w", err)
-	}
-
-	h := hmac.New(sha256.New, secret)
+	h := hmac.New(sha256.New, []byte(c.apiSecret))
 	h.Write([]byte(message))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
@@ -216,24 +208,32 @@ type Balance struct {
 	FiatAmount         string `json:"fiat_amount"`
 }
 
+// TransferEndpoint represents a source or destination in a Coinbase Prime transaction.
+type TransferEndpoint struct {
+	Type              string `json:"type"`  // WALLET, PAYMENT_METHOD, ...
+	Value             string `json:"value"` // wallet ID or payment method ID
+	Address           string `json:"address"`
+	AccountIdentifier string `json:"account_identifier"`
+}
+
 // Transaction represents a Coinbase Prime transaction.
 type Transaction struct {
-	ID            string     `json:"id"`
-	WalletID      string     `json:"wallet_id"`
-	PortfolioID   string     `json:"portfolio_id"`
-	Type          string     `json:"type"`   // DEPOSIT, WITHDRAWAL, INTERNAL_TRANSFER, ...
-	Status        string     `json:"status"` // TRANSACTION_PENDING, TRANSACTION_COMPLETED, TRANSACTION_FAILED
-	Symbol        string     `json:"symbol"`
-	Amount        string     `json:"amount"`
-	Fees          string     `json:"fees"`
-	FeeSymbol     string     `json:"fee_symbol"`
-	CreatedAt     time.Time  `json:"created_at"`
-	CompletedAt   *time.Time `json:"completed_at"`
-	TransferFrom  string     `json:"transfer_from"`
-	TransferTo    string     `json:"transfer_to"`
-	NetworkFees   string     `json:"network_fees"`
-	Network       string     `json:"network"`
-	BlockchainIDs []string   `json:"blockchain_ids"`
+	ID            string            `json:"id"`
+	WalletID      string            `json:"wallet_id"`
+	PortfolioID   string            `json:"portfolio_id"`
+	Type          string            `json:"type"`   // DEPOSIT, WITHDRAWAL, INTERNAL_TRANSFER, CONVERSION, ...
+	Status        string            `json:"status"` // TRANSACTION_PENDING, TRANSACTION_DONE, TRANSACTION_IMPORT_PENDING, ...
+	Symbol        string            `json:"symbol"`
+	Amount        string            `json:"amount"`
+	Fees          string            `json:"fees"`
+	FeeSymbol     string            `json:"fee_symbol"`
+	CreatedAt     time.Time         `json:"created_at"`
+	CompletedAt   *time.Time        `json:"completed_at"`
+	TransferFrom  *TransferEndpoint `json:"transfer_from"`
+	TransferTo    *TransferEndpoint `json:"transfer_to"`
+	NetworkFees   string            `json:"network_fees"`
+	Network       string            `json:"network"`
+	BlockchainIDs []string          `json:"blockchain_ids"`
 }
 
 // Pagination represents cursor-based pagination from Coinbase Prime.
