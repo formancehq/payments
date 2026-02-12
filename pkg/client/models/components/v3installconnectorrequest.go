@@ -39,7 +39,6 @@ type V3InstallConnectorRequest struct {
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
-	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
 	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
@@ -51,6 +50,7 @@ type V3InstallConnectorRequest struct {
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
+	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 
 	Type V3InstallConnectorRequestType
 }
@@ -475,10 +475,6 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3DummypayConfig, "", true)
 	}
 
-	if u.V3FireblocksConfig != nil {
-		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
-	}
-
 	if u.V3GenericConfig != nil {
 		return utils.MarshalJSON(u.V3GenericConfig, "", true)
 	}
@@ -521,6 +517,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3WiseConfig != nil {
 		return utils.MarshalJSON(u.V3WiseConfig, "", true)
+	}
+
+	if u.V3FireblocksConfig != nil {
+		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
 	}
 
 	return nil, errors.New("could not marshal union type V3InstallConnectorRequest: all fields are null")

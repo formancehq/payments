@@ -6901,12 +6901,6 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[V3FireblocksConfig](#schemav3fireblocksconfig)|false|none|none|
-
-xor
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
 |*anonymous*|[V3GenericConfig](#schemav3genericconfig)|false|none|none|
 
 xor
@@ -6968,6 +6962,12 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |*anonymous*|[V3WiseConfig](#schemav3wiseconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3FireblocksConfig](#schemav3fireblocksconfig)|false|none|none|
 
 <h2 id="tocS_V3AdyenConfig">V3AdyenConfig</h2>
 <!-- backwards compatibility -->
