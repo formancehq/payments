@@ -51,7 +51,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with missing apiKey", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiSecret":"test","passphrase":"test","portfolioId":"portfolio-123"}`)
+			payload = json.RawMessage(`{"apiSecret":"dGVzdA==","passphrase":"test","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should return a validation error", func() {
@@ -73,7 +73,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with missing passphrase", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"test","portfolioId":"portfolio-123"}`)
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"dGVzdA==","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should return a validation error", func() {
@@ -84,12 +84,23 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with missing portfolioId", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"test","passphrase":"test"}`)
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"dGVzdA==","passphrase":"test"}`)
 		})
 
 		It("should return a validation error", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("PortfolioID"))
+		})
+	})
+
+	Context("with non-base64 apiSecret", func() {
+		BeforeEach(func() {
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"not-valid-base64!!!","passphrase":"test","portfolioId":"portfolio-123"}`)
+		})
+
+		It("should return a validation error for APISecret", func() {
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("APISecret"))
 		})
 	})
 

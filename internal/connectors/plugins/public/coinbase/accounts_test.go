@@ -164,6 +164,38 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 		})
 
+		It("should accept lowercase symbols", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			lowercaseWallets := []client.Wallet{
+				{
+					ID:        "wallet1",
+					Name:      "btc wallet",
+					Symbol:    "btc",
+					Type:      "TRADING",
+					CreatedAt: now,
+				},
+			}
+
+			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+				&client.WalletsResponse{
+					Wallets: lowercaseWallets,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Accounts).To(HaveLen(1))
+			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
+		})
+
 		It("should use cursor for pagination", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
 				State:    []byte(`{"cursor": "existing-cursor"}`),

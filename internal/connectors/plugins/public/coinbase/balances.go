@@ -25,11 +25,12 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	response, err := p.client.GetBalancesForSymbol(ctx, walletSymbol, "", PAGE_SIZE)
+	response, err := p.client.GetBalancesForSymbol(ctx, walletSymbol, "", req.PageSize)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
+	now := time.Now().UTC()
 	var balances []models.PSPBalance
 	for _, bal := range response.Balances {
 		precision, ok := supportedCurrenciesWithDecimal[bal.Symbol]
@@ -48,7 +49,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			AccountReference: from.Reference,
 			Asset:            asset,
 			Amount:           amount,
-			CreatedAt:        time.Now().UTC(),
+			CreatedAt:        now,
 		})
 	}
 

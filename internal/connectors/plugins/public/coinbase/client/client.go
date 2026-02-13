@@ -14,6 +14,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -50,7 +51,7 @@ func NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, portfolioID, b
 
 	config := &httpwrapper.Config{
 		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
-			Transport: http.DefaultTransport,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		}),
 	}
 	c.httpClient = httpwrapper.NewClient(config)
@@ -61,9 +62,13 @@ func NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, portfolioID, b
 func (c *client) signRequest(req *http.Request, body string) error {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-	message := timestamp + req.Method + req.URL.Path + body
+	message := timestamp + req.Method + req.URL.RequestURI() + body
 
-	h := hmac.New(sha256.New, []byte(c.apiSecret))
+	secretBytes, err := base64.StdEncoding.DecodeString(c.apiSecret)
+	if err != nil {
+		return fmt.Errorf("failed to decode API secret: %w", err)
+	}
+	h := hmac.New(sha256.New, secretBytes)
 	h.Write([]byte(message))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
@@ -95,7 +100,7 @@ func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*
 	var errorResponse ErrorResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get wallets (status %d): %w", statusCode, err)
+		return nil, fmt.Errorf("failed to get wallets (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
 	}
 
 	return &response, nil
@@ -120,7 +125,7 @@ func (c *client) GetBalances(ctx context.Context, cursor string, pageSize int) (
 	var errorResponse ErrorResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get balances (status %d): %w", statusCode, err)
+		return nil, fmt.Errorf("failed to get balances (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
 	}
 
 	return &response, nil
@@ -132,20 +137,29 @@ func (c *client) GetBalancesForSymbol(ctx context.Context, symbol string, cursor
 		return nil, fmt.Errorf("missing symbol for balances filtering")
 	}
 
-	response, err := c.GetBalances(ctx, cursor, pageSize)
-	if err != nil {
-		return nil, err
-	}
+	var allFiltered []Balance
+	currentCursor := cursor
 
-	filtered := response.Balances[:0]
-	for _, balance := range response.Balances {
-		if strings.EqualFold(balance.Symbol, symbol) {
-			filtered = append(filtered, balance)
+	for {
+		response, err := c.GetBalances(ctx, currentCursor, pageSize)
+		if err != nil {
+			return nil, err
 		}
-	}
-	response.Balances = filtered
 
-	return response, nil
+		for _, balance := range response.Balances {
+			if strings.EqualFold(balance.Symbol, symbol) {
+				allFiltered = append(allFiltered, balance)
+			}
+		}
+
+		if !response.Pagination.HasNext {
+			return &BalancesResponse{
+				Balances:   allFiltered,
+				Pagination: response.Pagination,
+			}, nil
+		}
+		currentCursor = response.Pagination.NextCursor
+	}
 }
 
 func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
@@ -167,7 +181,7 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 	var errorResponse ErrorResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transactions (status %d): %w", statusCode, err)
+		return nil, fmt.Errorf("failed to get transactions (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
 	}
 
 	return &response, nil

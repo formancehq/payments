@@ -124,6 +124,7 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 }
 
 func resolveAssetAndPrecision(symbol string) (string, int, bool) {
+	symbol = strings.ToUpper(strings.TrimSpace(symbol))
 	precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, symbol)
 	if err != nil {
 		return "", 0, false
@@ -167,14 +168,14 @@ func resolveAccountReferences(tx client.Transaction) (*string, *string) {
 
 func transactionTypeToPaymentType(txType string) models.PaymentType {
 	switch strings.ToUpper(txType) {
-	case "DEPOSIT", "INTERNAL_DEPOSIT", "SWEEP_DEPOSIT", "PROXY_DEPOSIT",
+	case "DEPOSIT", "SWEEP_DEPOSIT", "PROXY_DEPOSIT",
 		"COINBASE_DEPOSIT", "COINBASE_REFUND", "REWARD",
 		"DEPOSIT_ADJUSTMENT", "CLAIM_REWARDS":
 		return models.PAYMENT_TYPE_PAYIN
-	case "WITHDRAWAL", "INTERNAL_WITHDRAWAL", "SWEEP_WITHDRAWAL",
+	case "WITHDRAWAL", "SWEEP_WITHDRAWAL",
 		"PROXY_WITHDRAWAL", "BILLING_WITHDRAWAL", "WITHDRAWAL_ADJUSTMENT":
 		return models.PAYMENT_TYPE_PAYOUT
-	case "CONVERSION":
+	case "CONVERSION", "INTERNAL_DEPOSIT", "INTERNAL_WITHDRAWAL":
 		return models.PAYMENT_TYPE_TRANSFER
 	default:
 		return models.PAYMENT_TYPE_OTHER

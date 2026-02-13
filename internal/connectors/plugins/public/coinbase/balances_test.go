@@ -75,9 +75,10 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
+				PageSize:    10,
 			}
 
-			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", PAGE_SIZE).Return(
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -97,9 +98,10 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
+				PageSize:    10,
 			}
 
-			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", PAGE_SIZE).Return(
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
 				&client.BalancesResponse{
 					Balances: []client.Balance{
 						sampleBalances[0],
@@ -131,9 +133,10 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
+				PageSize:    10,
 			}
 
-			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "ETH", "", PAGE_SIZE).Return(
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "ETH", "", 10).Return(
 				&client.BalancesResponse{
 					Balances: []client.Balance{
 						{
@@ -163,9 +166,10 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
+				PageSize:    10,
 			}
 
-			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "USD", "", PAGE_SIZE).Return(
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "USD", "", 10).Return(
 				&client.BalancesResponse{
 					Balances: []client.Balance{
 						sampleBalances[1],
@@ -207,6 +211,7 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
+				PageSize:    10,
 			}
 
 			unsupportedBalances := []client.Balance{
@@ -216,7 +221,7 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 				},
 			}
 
-			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "UNKNOWN_CURRENCY", "", PAGE_SIZE).Return(
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "UNKNOWN_CURRENCY", "", 10).Return(
 				&client.BalancesResponse{
 					Balances: unsupportedBalances,
 					Pagination: client.Pagination{
@@ -240,9 +245,10 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			})
 			req := models.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
+				PageSize:    10,
 			}
 
-			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", PAGE_SIZE).Return(
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
 				&client.BalancesResponse{
 					Balances: []client.Balance{},
 					Pagination: client.Pagination{

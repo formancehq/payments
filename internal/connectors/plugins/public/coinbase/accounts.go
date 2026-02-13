@@ -3,6 +3,7 @@ package coinbase
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
@@ -27,7 +28,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, len(response.Wallets))
 	for _, wallet := range response.Wallets {
-		_, ok := supportedCurrenciesWithDecimal[wallet.Symbol]
+		_, ok := supportedCurrenciesWithDecimal[strings.ToUpper(wallet.Symbol)]
 		if !ok {
 			continue
 		}
@@ -37,7 +38,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		defaultAsset := currency.FormatAsset(supportedCurrenciesWithDecimal, wallet.Symbol)
+		defaultAsset := currency.FormatAsset(supportedCurrenciesWithDecimal, strings.ToUpper(wallet.Symbol))
 
 		accounts = append(accounts, models.PSPAccount{
 			Reference:    wallet.ID,

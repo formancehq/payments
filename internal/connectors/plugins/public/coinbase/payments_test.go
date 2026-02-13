@@ -288,6 +288,39 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_FAILED))
 		})
 
+		It("should accept lowercase symbols", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			lowercaseTransactions := []client.Transaction{
+				{
+					ID:        "tx-lower",
+					Type:      "DEPOSIT",
+					Status:    "TRANSACTION_DONE",
+					CreatedAt: now,
+					Amount:    "1.0",
+					Symbol:    "btc",
+				},
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: lowercaseTransactions,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Asset).To(Equal("BTC/8"))
+		})
+
 		It("should use cursor for pagination", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{"cursor": "existing-cursor"}`),
