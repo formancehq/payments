@@ -728,7 +728,7 @@ func setupV3PoolAccounts(
 			Reference:   reference,
 		}
 
-		MustOutbox(ctx, app, events.EventTypeSavedAccounts, WithPayloadSubset(msg))
+		MustEventuallyOutbox(ctx, app, events.EventTypeSavedAccounts, WithPayloadSubset(msg))
 		accountIDs = append(accountIDs, accountID)
 	}
 	return accountIDs
