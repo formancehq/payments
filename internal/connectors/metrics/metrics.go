@@ -1,13 +1,27 @@
 package metrics
 
 import (
+	"sync"
+
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
-var registry MetricsRegistry
+var (
+	registry   MetricsRegistry
+	registryMu sync.RWMutex
+)
 
 func GetMetricsRegistry() MetricsRegistry {
+	registryMu.RLock()
+	currentRegistry := registry
+	registryMu.RUnlock()
+	if currentRegistry != nil {
+		return currentRegistry
+	}
+
+	registryMu.Lock()
+	defer registryMu.Unlock()
 	if registry == nil {
 		registry = NewNoOpMetricsRegistry()
 	}
@@ -46,12 +60,16 @@ func RegisterMetricsRegistry(meterProvider metric.MeterProvider) (MetricsRegistr
 		return nil, err
 	}
 
-	registry = &metricsRegistry{
+	currentRegistry := &metricsRegistry{
 		connectorPSPCalls:         connectorPSPCalls,
 		connectorPSPCallLatencies: connectorPSPCallLatencies,
 	}
 
-	return registry, nil
+	registryMu.Lock()
+	registry = currentRegistry
+	registryMu.Unlock()
+
+	return currentRegistry, nil
 }
 
 func (m *metricsRegistry) ConnectorPSPCalls() metric.Int64Counter {
