@@ -14,15 +14,8 @@ import (
 type TokenBalance struct {
 	MonitorID string    `json:"monitorId"`
 	Asset     string    `json:"asset"`
-	Amount    string    `json:"amount"`
+	Amount    *big.Int  `json:"amount"`
 	FetchedAt time.Time `json:"fetchedAt"`
-}
-
-// ParseAmount parses the string amount into a *big.Int.
-func (b *TokenBalance) ParseAmount() (*big.Int, bool) {
-	amount := new(big.Int)
-	_, ok := amount.SetString(b.Amount, 10)
-	return amount, ok
 }
 
 func (c *client) GetBalances(ctx context.Context) ([]*TokenBalance, error) {

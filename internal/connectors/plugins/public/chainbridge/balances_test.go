@@ -41,25 +41,25 @@ var _ = Describe("ChainBridge Plugin Balances", func() {
 				{
 					MonitorID: "mon_1",
 					Asset:     "ETH/18",
-					Amount:    "1000000000000000000",
+					Amount:    big.NewInt(1000000000000000000),
 					FetchedAt: now,
 				},
 				{
 					MonitorID: "mon_1",
 					Asset:     "USDC/6",
-					Amount:    "5000000",
+					Amount:    big.NewInt(5000000),
 					FetchedAt: now,
 				},
 				{
 					MonitorID: "mon_2",
 					Asset:     "invalid asset!",
-					Amount:    "100",
+					Amount:    big.NewInt(100),
 					FetchedAt: now,
 				},
 				{
 					MonitorID: "mon_2",
 					Asset:     "BTC/8",
-					Amount:    "50000000",
+					Amount:    big.NewInt(50000000),
 					FetchedAt: now,
 				},
 			}
