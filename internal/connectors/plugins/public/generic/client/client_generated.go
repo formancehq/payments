@@ -42,21 +42,6 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// CreateBankAccount mocks base method.
-func (m *MockClient) CreateBankAccount(ctx context.Context, request *BankAccountRequest) (*BankAccountResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateBankAccount", ctx, request)
-	ret0, _ := ret[0].(*BankAccountResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateBankAccount indicates an expected call of CreateBankAccount.
-func (mr *MockClientMockRecorder) CreateBankAccount(ctx, request any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBankAccount", reflect.TypeOf((*MockClient)(nil).CreateBankAccount), ctx, request)
-}
-
 // CreatePayout mocks base method.
 func (m *MockClient) CreatePayout(ctx context.Context, request *PayoutRequest) (*PayoutResponse, error) {
 	m.ctrl.T.Helper()
@@ -100,36 +85,6 @@ func (m *MockClient) GetBalances(ctx context.Context, accountID string) (*generi
 func (mr *MockClientMockRecorder) GetBalances(ctx, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalances", reflect.TypeOf((*MockClient)(nil).GetBalances), ctx, accountID)
-}
-
-// GetPayoutStatus mocks base method.
-func (m *MockClient) GetPayoutStatus(ctx context.Context, payoutId string) (*PayoutResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPayoutStatus", ctx, payoutId)
-	ret0, _ := ret[0].(*PayoutResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPayoutStatus indicates an expected call of GetPayoutStatus.
-func (mr *MockClientMockRecorder) GetPayoutStatus(ctx, payoutId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPayoutStatus", reflect.TypeOf((*MockClient)(nil).GetPayoutStatus), ctx, payoutId)
-}
-
-// GetTransferStatus mocks base method.
-func (m *MockClient) GetTransferStatus(ctx context.Context, transferId string) (*TransferResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransferStatus", ctx, transferId)
-	ret0, _ := ret[0].(*TransferResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTransferStatus indicates an expected call of GetTransferStatus.
-func (mr *MockClientMockRecorder) GetTransferStatus(ctx, transferId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransferStatus", reflect.TypeOf((*MockClient)(nil).GetTransferStatus), ctx, transferId)
 }
 
 // ListAccounts mocks base method.

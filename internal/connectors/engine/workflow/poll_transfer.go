@@ -60,8 +60,6 @@ func (w Workflow) pollTransfer(
 
 	paymentID := ""
 	var piErr error
-	isFinal := false
-
 	switch {
 	case pollTransferStatusResponse.Payment == nil && pollTransferStatusResponse.Error == nil:
 		// payment not yet available and no error, waiting for the next polling
@@ -87,22 +85,14 @@ func (w Workflow) pollTransfer(
 		}
 
 		paymentID = payment.ID.String()
-		isFinal = isPaymentStatusFinal(payment.Status)
 
 	case pollTransferStatusResponse.Error != nil:
 		// Means that the payment initiation failed, and we need to register
 		// the error in the task as well as stopping the schedule polling.
 		piErr = fmt.Errorf("%s", *pollTransferStatusResponse.Error)
-		isFinal = true
 	}
 
-	// Only delete the schedule if the status is final (not PENDING/PROCESSING)
-	if !isFinal {
-		// Intermediate status - continue polling
-		return "", nil
-	}
-
-	// Final status - delete the related schedule
+	// everything is done, delete the related schedule
 	if err := activities.TemporalScheduleDelete(
 		infiniteRetryContext(ctx),
 		pollTransfer.ScheduleID,

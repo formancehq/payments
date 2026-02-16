@@ -19,10 +19,7 @@ type Client interface {
 	ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error)
 	ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error)
 	CreatePayout(ctx context.Context, request *PayoutRequest) (*PayoutResponse, error)
-	GetPayoutStatus(ctx context.Context, payoutId string) (*PayoutResponse, error)
 	CreateTransfer(ctx context.Context, request *TransferRequest) (*TransferResponse, error)
-	GetTransferStatus(ctx context.Context, transferId string) (*TransferResponse, error)
-	CreateBankAccount(ctx context.Context, request *BankAccountRequest) (*BankAccountResponse, error)
 }
 
 type apiTransport struct {

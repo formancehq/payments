@@ -7,7 +7,6 @@
 | -------------------------------------- | -------------------------------------- |
 | `V3PaymentStatusEnumUnknown`           | UNKNOWN                                |
 | `V3PaymentStatusEnumPending`           | PENDING                                |
-| `V3PaymentStatusEnumProcessing`        | PROCESSING                             |
 | `V3PaymentStatusEnumSucceeded`         | SUCCEEDED                              |
 | `V3PaymentStatusEnumCancelled`         | CANCELLED                              |
 | `V3PaymentStatusEnumFailed`            | FAILED                                 |

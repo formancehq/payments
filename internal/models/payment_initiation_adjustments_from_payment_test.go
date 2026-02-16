@@ -42,13 +42,8 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 			expectNil:     true,
 		},
 		{
-			name:           "PAYMENT_STATUS_PENDING maps to PENDING",
+			name:           "PAYMENT_STATUS_PENDING maps to PROCESSING",
 			paymentStatus:  models.PAYMENT_STATUS_PENDING,
-			expectedStatus: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PENDING,
-		},
-		{
-			name:           "PAYMENT_STATUS_PROCESSING maps to PROCESSING",
-			paymentStatus:  models.PAYMENT_STATUS_PROCESSING,
 			expectedStatus: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 		},
 		{

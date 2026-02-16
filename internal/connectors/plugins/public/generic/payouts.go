@@ -17,7 +17,6 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.PSPPayment{}, err
 	}
 
-	// Validate asset format (e.g., "USD/2", "BTC/8", "COIN", "JPY")
 	if _, _, err := parseAssetUMN(pi.Asset); err != nil {
 		return models.PSPPayment{}, errorsutils.NewWrappedError(
 			fmt.Errorf("failed to parse asset %s: %w", pi.Asset, err),
@@ -25,11 +24,10 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		)
 	}
 
-	// All amounts are integers (minor units) - pass through directly
 	req := &client.PayoutRequest{
 		IdempotencyKey:       pi.Reference,
 		Amount:               pi.Amount.String(),
-		Currency:             pi.Asset, // Pass full UMN in currency field: "USD/2", "BTC/8"
+		Currency:             pi.Asset,
 		SourceAccountId:      pi.SourceAccount.Reference,
 		DestinationAccountId: pi.DestinationAccount.Reference,
 		Description:          &pi.Description,
@@ -41,16 +39,6 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.PSPPayment{}, err
 	}
 
-	return payoutResponseToPayment(resp)
-}
-
-func (p *Plugin) pollPayoutStatus(ctx context.Context, payoutID string) (models.PSPPayment, error) {
-	resp, err := p.client.GetPayoutStatus(ctx, payoutID)
-	if err != nil {
-		return models.PSPPayment{}, err
-	}
-
-	// PSP returns asset in UMN format - use directly
 	return payoutResponseToPayment(resp)
 }
 
@@ -87,7 +75,6 @@ func (p *Plugin) validatePayoutRequest(pi models.PSPPaymentInitiation) error {
 }
 
 func payoutResponseToPayment(resp *client.PayoutResponse) (models.PSPPayment, error) {
-	// All amounts are integers (minor units) - no decimal conversion
 	var amount big.Int
 	_, ok := amount.SetString(resp.Amount, 10)
 	if !ok {
@@ -110,7 +97,7 @@ func payoutResponseToPayment(resp *client.PayoutResponse) (models.PSPPayment, er
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_PAYOUT,
 		Amount:                      &amount,
-		Asset:                       resp.Currency, // UMN format from PSP via currency field: "USD/2", "BTC/8"
+		Asset:                       resp.Currency,
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		Status:                      mapStringToPaymentStatus(resp.Status),
 		SourceAccountReference:      &resp.SourceAccountId,
@@ -121,14 +108,11 @@ func payoutResponseToPayment(resp *client.PayoutResponse) (models.PSPPayment, er
 }
 
 // mapStringToPaymentStatus maps a string status from the external API to the internal PaymentStatus.
-// This is used for payout and transfer responses where the status comes as a string.
-// Supports all Formance payment statuses for maximum flexibility.
+// Statuses are mapped to known Formance payment statuses. Unknown statuses default to OTHER.
 func mapStringToPaymentStatus(status string) models.PaymentStatus {
 	switch status {
 	case "PENDING":
 		return models.PAYMENT_STATUS_PENDING
-	case "PROCESSING":
-		return models.PAYMENT_STATUS_PROCESSING
 	case "SUCCEEDED":
 		return models.PAYMENT_STATUS_SUCCEEDED
 	case "FAILED":

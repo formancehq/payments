@@ -6,7 +6,6 @@
 | Name                           | Value                          |
 | ------------------------------ | ------------------------------ |
 | `PaymentStatusPending`         | PENDING                        |
-| `PaymentStatusProcessing`      | PROCESSING                     |
 | `PaymentStatusSucceeded`       | SUCCEEDED                      |
 | `PaymentStatusCancelled`       | CANCELLED                      |
 | `PaymentStatusFailed`          | FAILED                         |

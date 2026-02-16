@@ -150,11 +150,6 @@ func matchPaymentStatus(
 	switch status {
 	case genericclient.PENDING:
 		return models.PAYMENT_STATUS_PENDING
-	case genericclient.PROCESSING:
-		return models.PAYMENT_STATUS_PROCESSING
-	case genericclient.PROCESSED:
-		// PROCESSED maps to SUCCEEDED - payment has been processed successfully
-		return models.PAYMENT_STATUS_SUCCEEDED
 	case genericclient.SUCCEEDED:
 		return models.PAYMENT_STATUS_SUCCEEDED
 	case genericclient.FAILED:

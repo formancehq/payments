@@ -2,9 +2,8 @@ package validation
 
 import (
 	"regexp"
-	"strconv"
-	"strings"
 
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
@@ -140,28 +139,12 @@ func IsAsset(fl validator.FieldLevel) bool {
 	if err != nil {
 		return false
 	}
-	return isValidAssetUMN(str)
-}
 
-// isValidAssetUMN validates an asset in UMN format.
-// Accepts: "USD/2", "BTC/8", "COIN", "JPY" (with or without precision)
-func isValidAssetUMN(asset string) bool {
-	if asset == "" {
+	_, _, err = currency.GetCurrencyAndPrecisionFromAsset(currency.ISO4217Currencies, str)
+	if err != nil { //nolint:gosimple
 		return false
 	}
-	parts := strings.Split(asset, "/")
-	switch len(parts) {
-	case 1:
-		return len(parts[0]) > 0
-	case 2:
-		if parts[0] == "" {
-			return false
-		}
-		precision, err := strconv.Atoi(parts[1])
-		return err == nil && precision >= 0
-	default:
-		return false
-	}
+	return true
 }
 
 func IsPhoneNumber(fl validator.FieldLevel) bool {

@@ -78,18 +78,6 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /payouts/{payoutId}:
-    get:
-      summary: Get payout status
-      operationId: getPayoutStatus
-      parameters:
-        - $ref: '#/components/parameters/PayoutId'
-      responses:
-        200:
-          $ref: '#/components/responses/PayoutResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
   /transfers:
     post:
       summary: Create transfer
@@ -109,54 +97,12 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /transfers/{transferId}:
-    get:
-      summary: Get transfer status
-      operationId: getTransferStatus
-      parameters:
-        - $ref: '#/components/parameters/TransferId'
-      responses:
-        200:
-          $ref: '#/components/responses/TransferResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /bank-accounts:
-    post:
-      summary: Create bank account
-      description: |
-        Create an external bank account (beneficiary/counterparty) that can be used as a destination for payouts.
-      operationId: createBankAccount
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BankAccountRequest'
-      responses:
-        201:
-          $ref: '#/components/responses/BankAccountResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
 # ---------------------- COMPONENTS ----------------------
 components:
   # ---------------------- PARAMETERS ----------------------
   parameters:
     AccountId:
       name: accountId
-      in: path
-      required: true
-      schema:
-        type: string
-    PayoutId:
-      name: payoutId
-      in: path
-      required: true
-      schema:
-        type: string
-    TransferId:
-      name: transferId
       in: path
       required: true
       schema:
@@ -262,13 +208,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Transfer'
-
-    BankAccountResponse:
-      description: Bank account response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BankAccount'
 
   # ---------------------- SCHEMAS ----------------------
   schemas:
@@ -414,10 +353,8 @@ components:
     TransactionStatus:
       type: string
       description: |
-        Payment/transaction status. All Formance payment statuses are supported:
+        Payment/transaction status. Mapped to Formance payment statuses:
         - PENDING: Payment is awaiting processing
-        - PROCESSING: Payment is being processed
-        - PROCESSED: Payment processed
         - SUCCEEDED: Payment completed successfully
         - FAILED: Payment failed
         - CANCELLED: Payment was cancelled
@@ -434,8 +371,6 @@ components:
         - OTHER: Other/unknown status
       enum:
         - PENDING
-        - PROCESSING
-        - PROCESSED
         - SUCCEEDED
         - FAILED
         - CANCELLED
@@ -465,10 +400,10 @@ components:
           description: Unique identifier for the payout request
         amount:
           type: string
-          description: Payout amount
+          description: Payout amount in minor units (integer string)
         currency:
           type: string
-          description: Currency code (ISO 4217)
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
         sourceAccountId:
           type: string
           description: Source account identifier
@@ -501,10 +436,10 @@ components:
           description: Unique identifier for the payout request
         amount:
           type: string
-          description: Payout amount
+          description: Payout amount in minor units (integer string)
         currency:
           type: string
-          description: Currency code (ISO 4217)
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
         sourceAccountId:
           type: string
           description: Source account identifier
@@ -541,10 +476,10 @@ components:
             Used for idempotency - if a transfer with this key already exists, return the existing transfer.
         amount:
           type: string
-          description: Transfer amount (decimal string, e.g. "100.00")
+          description: Transfer amount in minor units (integer string)
         currency:
           type: string
-          description: Currency code (ISO 4217)
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
         sourceAccountId:
           type: string
           description: Source account identifier (internal account)
@@ -577,10 +512,10 @@ components:
           description: Client-provided unique identifier for this transfer request
         amount:
           type: string
-          description: Transfer amount
+          description: Transfer amount in minor units (integer string)
         currency:
           type: string
-          description: Currency code (ISO 4217)
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
         sourceAccountId:
           type: string
           description: Source account identifier
@@ -596,60 +531,6 @@ components:
           type: string
           format: date-time
         updatedAt:
-          type: string
-          format: date-time
-        metadata:
-          $ref: '#/components/schemas/Metadata'
-
-    BankAccountRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          description: Account holder name
-        accountNumber:
-          type: string
-          description: Bank account number
-        iban:
-          type: string
-          description: International Bank Account Number
-        swiftBicCode:
-          type: string
-          description: SWIFT/BIC code of the bank
-        country:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-        metadata:
-          $ref: '#/components/schemas/Metadata'
-
-    BankAccount:
-      type: object
-      required:
-        - id
-        - name
-        - createdAt
-      properties:
-        id:
-          type: string
-          description: PSP-generated unique bank account identifier
-        name:
-          type: string
-          description: Account holder name
-        accountNumber:
-          type: string
-          description: Bank account number
-        iban:
-          type: string
-          description: International Bank Account Number
-        swiftBicCode:
-          type: string
-          description: SWIFT/BIC code of the bank
-        country:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-        createdAt:
           type: string
           format: date-time
         metadata:

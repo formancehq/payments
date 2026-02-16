@@ -104,16 +104,6 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 		return models.CreatePayoutResponse{}, err
 	}
 
-	// If the payment status is pending or processing, return BOTH Payment AND PollingPayoutID:
-	// - Payment: creates the payment record with current status
-	// - PollingPayoutID: sets up Temporal schedule to poll for status updates
-	if payment.Status == models.PAYMENT_STATUS_PENDING || payment.Status == models.PAYMENT_STATUS_PROCESSING {
-		return models.CreatePayoutResponse{
-			Payment:         &payment,
-			PollingPayoutID: &payment.Reference,
-		}, nil
-	}
-
 	return models.CreatePayoutResponse{
 		Payment: &payment,
 	}, nil
@@ -121,23 +111,6 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 
 func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
 	return models.ReversePayoutResponse{}, fmt.Errorf("payout reversal not supported by generic connector")
-}
-
-func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
-	if p.client == nil {
-		return models.PollPayoutStatusResponse{}, plugins.ErrNotYetInstalled
-	}
-
-	payment, err := p.pollPayoutStatus(ctx, req.PayoutID)
-	if err != nil {
-		return models.PollPayoutStatusResponse{}, err
-	}
-
-	// Always return the payment so the workflow can update the record.
-	// The workflow checks isPaymentStatusFinal to continue polling for PENDING/PROCESSING.
-	return models.PollPayoutStatusResponse{
-		Payment: &payment,
-	}, nil
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
@@ -150,16 +123,6 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 		return models.CreateTransferResponse{}, err
 	}
 
-	// If the payment status is pending or processing, return BOTH Payment AND PollingTransferID:
-	// - Payment: creates the payment record with current status
-	// - PollingTransferID: sets up Temporal schedule to poll for status updates
-	if payment.Status == models.PAYMENT_STATUS_PENDING || payment.Status == models.PAYMENT_STATUS_PROCESSING {
-		return models.CreateTransferResponse{
-			Payment:           &payment,
-			PollingTransferID: &payment.Reference,
-		}, nil
-	}
-
 	return models.CreateTransferResponse{
 		Payment: &payment,
 	}, nil
@@ -167,31 +130,6 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
 	return models.ReverseTransferResponse{}, fmt.Errorf("transfer reversal not supported by generic connector")
-}
-
-func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
-	if p.client == nil {
-		return models.PollTransferStatusResponse{}, plugins.ErrNotYetInstalled
-	}
-
-	payment, err := p.pollTransferStatus(ctx, req.TransferID)
-	if err != nil {
-		return models.PollTransferStatusResponse{}, err
-	}
-
-	// Always return the payment so the workflow can update the record.
-	// The workflow checks isPaymentStatusFinal to continue polling for PENDING/PROCESSING.
-	return models.PollTransferStatusResponse{
-		Payment: &payment,
-	}, nil
-}
-
-func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	if p.client == nil {
-		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
-	}
-
-	return p.createBankAccount(ctx, req.BankAccount)
 }
 
 var _ models.Plugin = &Plugin{}

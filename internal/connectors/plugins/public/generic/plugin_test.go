@@ -68,8 +68,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in accounts_test.go
 	})
 
 	Context("fetch next balances", func() {
@@ -78,8 +76,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in balances_test.go
 	})
 
 	Context("fetch next external accounts", func() {
@@ -88,8 +84,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in external_accounts_test.go
 	})
 
 	Context("fetch next payments", func() {
@@ -98,8 +92,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in payments_test.go
 	})
 
 	Context("fetch next others", func() {
@@ -111,10 +103,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("create bank account", func() {
-		It("should fail when called before install", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreateBankAccountRequest{}
 			_, err := plg.CreateBankAccount(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
@@ -136,10 +128,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("poll transfer status", func() {
-		It("should fail when called before install", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.PollTransferStatusRequest{}
 			_, err := plg.PollTransferStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
@@ -161,10 +153,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("poll payout status", func() {
-		It("should fail because not yet installed", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.PollPayoutStatusRequest{}
 			_, err := plg.PollPayoutStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 

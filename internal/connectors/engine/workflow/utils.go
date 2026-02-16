@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -140,9 +139,7 @@ func fillFormanceBankAccount(
 		true,
 	)
 	if err != nil {
-		// If bank account not found, that's fine - the account reference is a UUID
-		// but not a Formance bank account
-		if isStorageNotFoundError(err) {
+		if errors.Is(err, storage.ErrNotFound) {
 			return nil
 		}
 		return err
@@ -164,9 +161,7 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 		models.PAYMENT_STATUS_FAILED,
 		models.PAYMENT_STATUS_EXPIRED:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
-	case models.PAYMENT_STATUS_PENDING:
-		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PENDING
-	case models.PAYMENT_STATUS_PROCESSING,
+	case models.PAYMENT_STATUS_PENDING,
 		models.PAYMENT_STATUS_AUTHORISATION:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING
 	case models.PAYMENT_STATUS_REFUNDED:
@@ -175,20 +170,6 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
 	default:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
-	}
-}
-
-// isPaymentStatusFinal returns true if the payment status is final and polling should stop.
-// Intermediate statuses (PENDING, PROCESSING) return false to continue polling.
-func isPaymentStatusFinal(status models.PaymentStatus) bool {
-	switch status {
-	case models.PAYMENT_STATUS_PENDING,
-		models.PAYMENT_STATUS_PROCESSING,
-		models.PAYMENT_STATUS_AUTHORISATION:
-		return false
-	default:
-		// All other statuses are considered final
-		return true
 	}
 }
 
@@ -222,18 +203,4 @@ func craftUpdatedConnection(
 
 func (w Workflow) getDefaultTaskQueue() string {
 	return fmt.Sprintf("%s-default", w.stack)
-}
-
-// isStorageNotFoundError checks if an error is a storage "not found" error.
-// This handles both direct errors and temporal application errors (which lose
-// their original error type when serialized across the activity boundary).
-func isStorageNotFoundError(err error) bool {
-	if errors.Is(err, storage.ErrNotFound) {
-		return true
-	}
-	var appErr *temporal.ApplicationError
-	if errors.As(err, &appErr) && appErr.Type() == activities.ErrTypeStorage {
-		return errors.Is(appErr.Unwrap(), storage.ErrNotFound) || appErr.Message() == storage.ErrNotFound.Error()
-	}
-	return false
 }

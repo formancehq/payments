@@ -12,7 +12,6 @@ type PaymentStatus int
 const (
 	PAYMENT_STATUS_UNKNOWN PaymentStatus = iota
 	PAYMENT_STATUS_PENDING
-	PAYMENT_STATUS_PROCESSING // PSP is actively processing the payment
 	PAYMENT_STATUS_SUCCEEDED
 	PAYMENT_STATUS_CANCELLED
 	PAYMENT_STATUS_FAILED
@@ -36,8 +35,6 @@ func (t PaymentStatus) String() string {
 		return "UNKNOWN"
 	case PAYMENT_STATUS_PENDING:
 		return "PENDING"
-	case PAYMENT_STATUS_PROCESSING:
-		return "PROCESSING"
 	case PAYMENT_STATUS_SUCCEEDED:
 		return "SUCCEEDED"
 	case PAYMENT_STATUS_CANCELLED:
@@ -79,8 +76,6 @@ func PaymentStatusFromString(value string) (PaymentStatus, error) {
 	switch value {
 	case "PENDING":
 		return PAYMENT_STATUS_PENDING, nil
-	case "PROCESSING":
-		return PAYMENT_STATUS_PROCESSING, nil
 	case "SUCCEEDED":
 		return PAYMENT_STATUS_SUCCEEDED, nil
 	case "CANCELLED":
