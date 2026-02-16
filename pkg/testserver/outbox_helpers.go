@@ -15,7 +15,10 @@ import (
 // or the timeout expires. It checks outbox rows regardless of status to avoid
 // races with the outbox publisher moving events from pending to processed.
 func AwaitOutboxEvent(ctx context.Context, s *Server, outboxEventType string, timeout, interval time.Duration, matchers ...PayloadMatcher) error {
-	start := time.Now()
+	start := time.Now().UTC()
+	// Use a bounded lookback to include events produced just before polling starts
+	// while still avoiding very old stale matches.
+	since := start.Add(-timeout)
 	deadline := start.Add(timeout)
 
 	for {
@@ -23,7 +26,7 @@ func AwaitOutboxEvent(ctx context.Context, s *Server, outboxEventType string, ti
 			return errors.New("timeout waiting for outbox event of type " + outboxEventType)
 		}
 
-		found, err := findMatchingOutboxEvent(ctx, s, outboxEventType, start, false, matchers...)
+		found, err := findMatchingOutboxEvent(ctx, s, outboxEventType, since, false, matchers...)
 		if err != nil {
 			return err
 		}
