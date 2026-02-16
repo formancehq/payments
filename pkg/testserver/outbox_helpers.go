@@ -15,14 +15,15 @@ import (
 // or the timeout expires. It checks outbox rows regardless of status to avoid
 // races with the outbox publisher moving events from pending to processed.
 func AwaitOutboxEvent(ctx context.Context, s *Server, outboxEventType string, timeout, interval time.Duration, matchers ...PayloadMatcher) error {
-	deadline := time.Now().Add(timeout)
+	start := time.Now()
+	deadline := start.Add(timeout)
 
 	for {
 		if time.Now().After(deadline) {
 			return errors.New("timeout waiting for outbox event of type " + outboxEventType)
 		}
 
-		found, err := findMatchingOutboxEvent(ctx, s, outboxEventType, false, matchers...)
+		found, err := findMatchingOutboxEvent(ctx, s, outboxEventType, start, false, matchers...)
 		if err != nil {
 			return err
 		}
@@ -46,7 +47,7 @@ func EventuallyOutbox(ctx context.Context, s *Server, outboxEventType string, ma
 
 // findMatchingOutboxEvent queries the DB for outbox events of the given type
 // and applies matchers to the payload.
-func findMatchingOutboxEvent(ctx context.Context, s *Server, outboxEventType string, onlyPending bool, matchers ...PayloadMatcher) (bool, error) {
+func findMatchingOutboxEvent(ctx context.Context, s *Server, outboxEventType string, since time.Time, onlyPending bool, matchers ...PayloadMatcher) (bool, error) {
 	db, err := s.Database()
 	if err != nil {
 		return false, err
@@ -62,6 +63,9 @@ func findMatchingOutboxEvent(ctx context.Context, s *Server, outboxEventType str
 	query := db.NewSelect().
 		TableExpr("outbox_events").
 		Where("event_type = ?", outboxEventType)
+	if !since.IsZero() {
+		query = query.Where("created_at >= ?", since)
+	}
 	if onlyPending {
 		query = query.Where("status = ?", "pending")
 	}
@@ -94,7 +98,7 @@ func MustEventuallyOutbox(ctx context.Context, s *Server, outboxEventType string
 }
 
 func MustOutbox(ctx context.Context, s *Server, outboxEventType string, matchers ...PayloadMatcher) {
-	success, err := findMatchingOutboxEvent(ctx, s, outboxEventType, true, matchers...)
+	success, err := findMatchingOutboxEvent(ctx, s, outboxEventType, time.Time{}, true, matchers...)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(success).To(gomega.BeTrue())
 }

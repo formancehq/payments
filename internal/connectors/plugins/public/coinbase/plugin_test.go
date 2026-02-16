@@ -32,24 +32,28 @@ var _ = Describe("Coinbase Plugin", func() {
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiSecret": "dGVzdA==", "passphrase": "test", "portfolioId": "portfolio-123"}`)
 			_, err := New("coinbase", logger, config)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - apiSecret", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "passphrase": "test", "portfolioId": "portfolio-123"}`)
 			_, err := New("coinbase", logger, config)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("APISecret"))
 		})
 
 		It("should report errors in config - passphrase", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "portfolioId": "portfolio-123"}`)
 			_, err := New("coinbase", logger, config)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Passphrase"))
 		})
 
 		It("should report errors in config - portfolioId", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "passphrase": "test"}`)
 			_, err := New("coinbase", logger, config)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("PortfolioID"))
 		})
 

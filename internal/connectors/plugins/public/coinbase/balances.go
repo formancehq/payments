@@ -33,17 +33,19 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	now := time.Now().UTC()
 	var balances []models.PSPBalance
 	for _, bal := range response.Balances {
-		precision, ok := supportedCurrenciesWithDecimal[bal.Symbol]
+		symbol := strings.ToUpper(strings.TrimSpace(bal.Symbol))
+
+		precision, ok := supportedCurrenciesWithDecimal[symbol]
 		if !ok {
 			continue
 		}
 
 		amount, err := currency.GetAmountWithPrecisionFromString(bal.Amount, precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", bal.Symbol, err)
+			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 		}
 
-		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, bal.Symbol)
+		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, symbol)
 
 		balances = append(balances, models.PSPBalance{
 			AccountReference: from.Reference,

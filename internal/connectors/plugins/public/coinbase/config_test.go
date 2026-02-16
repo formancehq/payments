@@ -10,6 +10,8 @@ import (
 )
 
 var _ = Describe("unmarshalAndValidateConfig", func() {
+	const apiKeyPlaceholder = "coinbase-api-key-placeholder"
+
 	var (
 		payload json.RawMessage
 		config  Config
@@ -22,12 +24,12 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with valid configuration", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test-key","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123","pollingPeriod":"45m"}`)
+			payload = json.RawMessage(`{"apiKey":"coinbase-api-key-placeholder","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123","pollingPeriod":"45m"}`)
 		})
 
 		It("should successfully unmarshal and validate", func() {
 			Expect(err).To(BeNil())
-			Expect(config.APIKey).To(Equal("test-key"))
+			Expect(config.APIKey).To(Equal(apiKeyPlaceholder))
 			Expect(config.APISecret).To(Equal("dGVzdC1zZWNyZXQ="))
 			Expect(config.Passphrase).To(Equal("test-pass"))
 			Expect(config.PortfolioID).To(Equal("portfolio-123"))
@@ -37,12 +39,12 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with valid configuration and default polling period", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test-key","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123"}`)
+			payload = json.RawMessage(`{"apiKey":"coinbase-api-key-placeholder","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should use default polling period", func() {
 			Expect(err).To(BeNil())
-			Expect(config.APIKey).To(Equal("test-key"))
+			Expect(config.APIKey).To(Equal(apiKeyPlaceholder))
 			Expect(config.PortfolioID).To(Equal("portfolio-123"))
 			// Default polling period should be applied
 			Expect(config.PollingPeriod.Duration()).ToNot(Equal(0))

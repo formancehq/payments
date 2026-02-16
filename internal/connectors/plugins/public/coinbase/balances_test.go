@@ -124,6 +124,40 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			Expect(resp.Balances[0].AccountReference).To(Equal("wallet1"))
 		})
 
+		It("should normalize lowercase balance symbols from API", func(ctx SpecContext) {
+			fromPayload, _ := json.Marshal(models.PSPAccount{
+				Reference: "wallet1",
+				Metadata: map[string]string{
+					"symbol": "BTC",
+				},
+			})
+			req := models.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
+				&client.BalancesResponse{
+					Balances: []client.Balance{
+						{
+							Symbol: "btc",
+							Amount: "1.5",
+						},
+					},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(1))
+			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
+			Expect(resp.Balances[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
+		})
+
 		It("should parse amount with currency-specific decimals", func(ctx SpecContext) {
 			fromPayload, _ := json.Marshal(models.PSPAccount{
 				Reference: "wallet-eth",
