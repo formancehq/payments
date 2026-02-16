@@ -16,8 +16,8 @@ type TransferRequest struct {
 	IdempotencyKey       string            `json:"idempotencyKey"`
 	Amount               string            `json:"amount"`
 	Currency             string            `json:"currency"`
-	SourceAccountId      string            `json:"sourceAccountId"`
-	DestinationAccountId string            `json:"destinationAccountId"`
+	SourceAccountID      string            `json:"sourceAccountId"`
+	DestinationAccountID string            `json:"destinationAccountId"`
 	Description          *string           `json:"description,omitempty"`
 	Metadata             map[string]string `json:"metadata,omitempty"`
 }
@@ -27,8 +27,8 @@ type TransferResponse struct {
 	IdempotencyKey       string            `json:"idempotencyKey"`
 	Amount               string            `json:"amount"`
 	Currency             string            `json:"currency"`
-	SourceAccountId      string            `json:"sourceAccountId"`
-	DestinationAccountId string            `json:"destinationAccountId"`
+	SourceAccountID      string            `json:"sourceAccountId"`
+	DestinationAccountID string            `json:"destinationAccountId"`
 	Description          *string           `json:"description,omitempty"`
 	Status               string            `json:"status"`
 	CreatedAt            string            `json:"createdAt"`

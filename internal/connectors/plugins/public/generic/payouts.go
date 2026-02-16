@@ -28,8 +28,8 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		IdempotencyKey:       pi.Reference,
 		Amount:               pi.Amount.String(),
 		Currency:             pi.Asset,
-		SourceAccountId:      pi.SourceAccount.Reference,
-		DestinationAccountId: pi.DestinationAccount.Reference,
+		SourceAccountID:      pi.SourceAccount.Reference,
+		DestinationAccountID: pi.DestinationAccount.Reference,
 		Description:          &pi.Description,
 		Metadata:             pi.Metadata,
 	}
@@ -100,8 +100,8 @@ func payoutResponseToPayment(resp *client.PayoutResponse) (models.PSPPayment, er
 		Asset:                       resp.Currency,
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		Status:                      mapStringToPaymentStatus(resp.Status),
-		SourceAccountReference:      &resp.SourceAccountId,
-		DestinationAccountReference: &resp.DestinationAccountId,
+		SourceAccountReference:      &resp.SourceAccountID,
+		DestinationAccountReference: &resp.DestinationAccountID,
 		Metadata:                    resp.Metadata,
 		Raw:                         raw,
 	}, nil

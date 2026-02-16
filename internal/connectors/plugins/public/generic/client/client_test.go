@@ -35,8 +35,8 @@ func TestCreatePayout_Success(t *testing.T) {
 		IdempotencyKey:       "ref_123",
 		Amount:               "10000",
 		Currency:             "USD/2",
-		SourceAccountId:      "src_acc",
-		DestinationAccountId: "dst_acc",
+		SourceAccountID:      "src_acc",
+		DestinationAccountID: "dst_acc",
 		Status:               "PENDING",
 		CreatedAt:            now,
 	}
@@ -64,8 +64,8 @@ func TestCreatePayout_Success(t *testing.T) {
 		IdempotencyKey:       "ref_123",
 		Amount:               "10000",
 		Currency:             "USD/2",
-		SourceAccountId:      "src_acc",
-		DestinationAccountId: "dst_acc",
+		SourceAccountID:      "src_acc",
+		DestinationAccountID: "dst_acc",
 	})
 	require.NoError(t, err)
 	require.Equal(t, expectedResp.Id, resp.Id)
@@ -142,8 +142,8 @@ func TestCreateTransfer_Success(t *testing.T) {
 		IdempotencyKey:       "ref_456",
 		Amount:               "50000",
 		Currency:             "EUR/2",
-		SourceAccountId:      "src_acc",
-		DestinationAccountId: "dst_acc",
+		SourceAccountID:      "src_acc",
+		DestinationAccountID: "dst_acc",
 		Status:               "PENDING",
 		CreatedAt:            now,
 	}
@@ -172,8 +172,8 @@ func TestCreateTransfer_Success(t *testing.T) {
 		IdempotencyKey:       "ref_456",
 		Amount:               "50000",
 		Currency:             "EUR/2",
-		SourceAccountId:      "src_acc",
-		DestinationAccountId: "dst_acc",
+		SourceAccountID:      "src_acc",
+		DestinationAccountID: "dst_acc",
 		Description:          &desc,
 	})
 	require.NoError(t, err)
