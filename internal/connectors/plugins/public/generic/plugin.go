@@ -3,7 +3,6 @@ package generic
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -109,9 +108,6 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 	}, nil
 }
 
-func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
-	return models.ReversePayoutResponse{}, fmt.Errorf("payout reversal not supported by generic connector")
-}
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
@@ -128,8 +124,5 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	}, nil
 }
 
-func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	return models.ReverseTransferResponse{}, fmt.Errorf("transfer reversal not supported by generic connector")
-}
 
 var _ models.Plugin = &Plugin{}

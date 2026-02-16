@@ -111,6 +111,31 @@ func TestParseAssetUMN(t *testing.T) {
 			expectError:   true,
 			errorContains: "invalid asset format",
 		},
+		// Lowercase / mixed-case currency codes must be rejected
+		{
+			name:          "lowercase currency with precision",
+			asset:         "usd/2",
+			expectError:   true,
+			errorContains: "must be uppercase",
+		},
+		{
+			name:          "mixed-case currency with precision",
+			asset:         "Usd/2",
+			expectError:   true,
+			errorContains: "must be uppercase",
+		},
+		{
+			name:          "lowercase currency without precision",
+			asset:         "usd",
+			expectError:   true,
+			errorContains: "must be uppercase",
+		},
+		{
+			name:          "mixed-case currency without precision",
+			asset:         "Btc",
+			expectError:   true,
+			errorContains: "must be uppercase",
+		},
 	}
 
 	for _, tc := range tests {

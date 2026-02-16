@@ -119,11 +119,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("reverse transfer", func() {
-		It("should fail because not supported", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.ReverseTransferRequest{}
 			_, err := plg.ReverseTransfer(ctx, req)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("transfer reversal not supported"))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
@@ -144,11 +143,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("reverse payout", func() {
-		It("should fail because not supported", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.ReversePayoutRequest{}
 			_, err := plg.ReversePayout(ctx, req)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("payout reversal not supported"))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
