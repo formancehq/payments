@@ -2,12 +2,11 @@
 
 ## Enum
 
-Payment/transaction status. All Formance payment statuses are supported.
+Payment/transaction status. Mapped to Formance payment statuses.
 
 | Value | Description |
 |-------|-------------|
 | `PENDING` | Payment is awaiting processing |
-| `PROCESSING` | Payment is being processed |
 | `SUCCEEDED` | Payment completed successfully |
 | `FAILED` | Payment failed |
 | `CANCELLED` | Payment was cancelled |
@@ -24,4 +23,3 @@ Payment/transaction status. All Formance payment statuses are supported.
 | `OTHER` | Other/unknown status |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-

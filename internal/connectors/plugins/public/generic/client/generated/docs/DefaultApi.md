@@ -9,10 +9,7 @@ Method | HTTP request | Description
 [**GetBeneficiaries**](DefaultApi.md#GetBeneficiaries) | **Get** /beneficiaries | Get all beneficiaries
 [**GetTransactions**](DefaultApi.md#GetTransactions) | **Get** /transactions | Get all transactions
 [**CreatePayout**](DefaultApi.md#CreatePayout) | **Post** /payouts | Create payout
-[**GetPayoutStatus**](DefaultApi.md#GetPayoutStatus) | **Get** /payouts/{payoutId} | Get payout status
 [**CreateTransfer**](DefaultApi.md#CreateTransfer) | **Post** /transfers | Create transfer
-[**GetTransferStatus**](DefaultApi.md#GetTransferStatus) | **Get** /transfers/{transferId} | Get transfer status
-[**CreateBankAccount**](DefaultApi.md#CreateBankAccount) | **Post** /bank-accounts | Create bank account
 
 
 
@@ -194,30 +191,6 @@ func main() {
 [[Back to README]](../README.md)
 
 
-## GetPayoutStatus
-
-> Payout GetPayoutStatus(ctx, payoutId).Execute()
-
-Get payout status
-
-Retrieve the current status of a payout. Used for polling until the payout reaches a final status.
-
-### Path Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**payoutId** | **string** | The payout ID returned from CreatePayout | 
-
-### Return type
-
-[**Payout**](Payout.md)
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
 ## CreateTransfer
 
 > Transfer CreateTransfer(ctx).TransferRequest(transferRequest).Execute()
@@ -274,83 +247,3 @@ func main() {
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
 [[Back to README]](../README.md)
-
-
-## GetTransferStatus
-
-> Transfer GetTransferStatus(ctx, transferId).Execute()
-
-Get transfer status
-
-Retrieve the current status of a transfer. Used for polling until the transfer reaches a final status.
-
-### Path Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**transferId** | **string** | The transfer ID returned from CreateTransfer | 
-
-### Return type
-
-[**Transfer**](Transfer.md)
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## CreateBankAccount
-
-> BankAccount CreateBankAccount(ctx).BankAccountRequest(bankAccountRequest).Execute()
-
-Create bank account
-
-Create an external bank account (beneficiary/counterparty) that can be used as a destination for payouts.
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "github.com/formancehq/payments/genericclient"
-)
-
-func main() {
-    bankAccountRequest := *openapiclient.NewBankAccountRequest("John Doe")
-    bankAccountRequest.SetIban("DE89370400440532013000")
-    bankAccountRequest.SetSwiftBicCode("COBADEFFXXX")
-    bankAccountRequest.SetCountry("DE")
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.DefaultApi.CreateBankAccount(context.Background()).BankAccountRequest(bankAccountRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `DefaultApi.CreateBankAccount``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    fmt.Fprintf(os.Stdout, "Response from `DefaultApi.CreateBankAccount`: %v\n", resp)
-}
-```
-
-### Request Body
-
-[**BankAccountRequest**](BankAccountRequest.md)
-
-### Return type
-
-[**BankAccount**](BankAccount.md)
-
-### HTTP request headers
-
-- **Content-Type**: application/json
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-

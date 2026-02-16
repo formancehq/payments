@@ -6,14 +6,14 @@ Response model for an internal transfer between accounts.
 
 | Name | Type | Description | Required |
 |------|------|-------------|----------|
-| **Id** | **string** | PSP-generated unique transfer identifier | ✅ |
-| **IdempotencyKey** | **string** | Client-provided unique identifier for the transfer request | ✅ |
-| **Amount** | **string** | Transfer amount in minor units (integer string) | ✅ |
-| **Currency** | **string** | Asset in UMN format (e.g., "USD/2", "BTC/8") | ✅ |
-| **SourceAccountId** | **string** | Source account identifier | ✅ |
-| **DestinationAccountId** | **string** | Destination account identifier | ✅ |
-| **Status** | [**TransactionStatus**](TransactionStatus.md) | Current transfer status | ✅ |
-| **CreatedAt** | **time.Time** | Transfer creation timestamp | ✅ |
+| **Id** | **string** | PSP-generated unique transfer identifier | Yes |
+| **IdempotencyKey** | **string** | Client-provided unique identifier for the transfer request | Yes |
+| **Amount** | **string** | Transfer amount in minor units (integer string) | Yes |
+| **Currency** | **string** | Asset in UMN format (e.g., "USD/2", "BTC/8") | Yes |
+| **SourceAccountId** | **string** | Source account identifier | Yes |
+| **DestinationAccountId** | **string** | Destination account identifier | Yes |
+| **Status** | [**TransactionStatus**](TransactionStatus.md) | Current transfer status | Yes |
+| **CreatedAt** | **time.Time** | Transfer creation timestamp | Yes |
 | **UpdatedAt** | Pointer to **time.Time** | Last update timestamp | |
 | **Description** | Pointer to **string** | Transfer description | |
 | **Metadata** | Pointer to **map[string]string** | Additional metadata | |
@@ -38,12 +38,4 @@ Response model for an internal transfer between accounts.
 }
 ```
 
-## Status Lifecycle
-
-```
-PENDING → PROCESSING → SUCCEEDED
-                    ↘ FAILED
-```
-
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
