@@ -72,37 +72,7 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 		return nil, fmt.Errorf("failed to parse amount: %w", err)
 	}
 
-	metadata := map[string]string{
-		"transaction_type": tx.Type,
-	}
-
-	if tx.WalletID != "" {
-		metadata["wallet_id"] = tx.WalletID
-	}
-	if tx.PortfolioID != "" {
-		metadata["portfolio_id"] = tx.PortfolioID
-	}
-	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" {
-		metadata["transfer_from"] = tx.TransferFrom.Value
-	}
-	if tx.TransferTo != nil && tx.TransferTo.Value != "" {
-		metadata["transfer_to"] = tx.TransferTo.Value
-	}
-	if tx.Network != "" {
-		metadata["network"] = tx.Network
-	}
-	if tx.Fees != "" {
-		metadata["fees"] = tx.Fees
-	}
-	if tx.FeeSymbol != "" {
-		metadata["fee_symbol"] = tx.FeeSymbol
-	}
-	if tx.NetworkFees != "" {
-		metadata["network_fees"] = tx.NetworkFees
-	}
-	if len(tx.BlockchainIDs) > 0 {
-		metadata["blockchain_ids"] = strings.Join(tx.BlockchainIDs, ",")
-	}
+	metadata := make(map[string]string)
 
 	payment := models.PSPPayment{
 		Reference: tx.ID,
@@ -186,14 +156,15 @@ func transactionStatusToPaymentStatus(status string) models.PaymentStatus {
 	switch strings.ToUpper(status) {
 	case "TRANSACTION_DONE", "TRANSACTION_IMPORTED":
 		return models.PAYMENT_STATUS_SUCCEEDED
-	case "TRANSACTION_FAILED", "TRANSACTION_CANCELLED", "TRANSACTION_REJECTED", "TRANSACTION_EXPIRED":
+	case "TRANSACTION_CANCELLED":
+		return models.PAYMENT_STATUS_CANCELLED
+	case "TRANSACTION_EXPIRED":
+		return models.PAYMENT_STATUS_EXPIRED
+	case "TRANSACTION_FAILED", "TRANSACTION_REJECTED":
 		return models.PAYMENT_STATUS_FAILED
+	case "TRANSACTION_RETRIED":
+		return models.PAYMENT_STATUS_OTHER
 	default:
-		// Covers: TRANSACTION_CREATED, TRANSACTION_REQUESTED, TRANSACTION_APPROVED,
-		// TRANSACTION_GASSING, TRANSACTION_GASSED, TRANSACTION_PROVISIONED,
-		// TRANSACTION_PLANNED, TRANSACTION_PROCESSING, TRANSACTION_RESTORED,
-		// TRANSACTION_IMPORT_PENDING, TRANSACTION_DELAYED, TRANSACTION_RETRIED,
-		// TRANSACTION_BROADCASTING, TRANSACTION_CONSTRUCTED, OTHER_TRANSACTION_STATUS
 		return models.PAYMENT_STATUS_PENDING
 	}
 }

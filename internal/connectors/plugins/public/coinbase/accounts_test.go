@@ -111,7 +111,6 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 			Expect(*resp.Accounts[0].Name).To(Equal("BTC Trading Wallet"))
 			Expect(resp.Accounts[0].Metadata["wallet_type"]).To(Equal("TRADING"))
-			Expect(resp.Accounts[0].Metadata["symbol"]).To(Equal("BTC"))
 
 			// Verify USD wallet
 			Expect(resp.Accounts[1].Reference).To(Equal("wallet2"))

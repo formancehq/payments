@@ -168,11 +168,6 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(*resp.Payments[0].SourceAccountReference).To(Equal("pm-123"))
 			Expect(resp.Payments[0].DestinationAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("wallet1"))
-			Expect(resp.Payments[0].Metadata["wallet_id"]).To(Equal("wallet1"))
-			Expect(resp.Payments[0].Metadata["portfolio_id"]).To(Equal("portfolio1"))
-			Expect(resp.Payments[0].Metadata["network"]).To(Equal("bitcoin"))
-			Expect(resp.Payments[0].Metadata["blockchain_ids"]).To(Equal("0xabc123"))
-			Expect(resp.Payments[0].Metadata["fees"]).To(Equal("0.001"))
 
 			// Verify second payment (USD withdrawal - pending, with transfer endpoints)
 			Expect(resp.Payments[1].Reference).To(Equal("tx2"))
@@ -185,8 +180,6 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(*resp.Payments[1].SourceAccountReference).To(Equal("wallet2"))
 			Expect(resp.Payments[1].DestinationAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[1].DestinationAccountReference).To(Equal("external-bank"))
-			Expect(resp.Payments[1].Metadata["transfer_from"]).To(Equal("wallet2"))
-			Expect(resp.Payments[1].Metadata["transfer_to"]).To(Equal("external-bank"))
 
 			// Verify third payment (USDC conversion - completed)
 			Expect(resp.Payments[2].Reference).To(Equal("tx3"))
@@ -199,8 +192,6 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(*resp.Payments[2].SourceAccountReference).To(Equal("wallet-a"))
 			Expect(resp.Payments[2].DestinationAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[2].DestinationAccountReference).To(Equal("wallet-b"))
-			Expect(resp.Payments[2].Metadata["transfer_from"]).To(Equal("wallet-a"))
-			Expect(resp.Payments[2].Metadata["transfer_to"]).To(Equal("wallet-b"))
 
 			// Verify fourth payment (ETH deposit - pending, 18 decimals, walletID fallback)
 			Expect(resp.Payments[3].Reference).To(Equal("tx4"))
@@ -286,6 +277,93 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_FAILED))
+		})
+
+		It("should handle cancelled transactions", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-cancelled",
+							Type:      "WITHDRAWAL",
+							Status:    "TRANSACTION_CANCELLED",
+							CreatedAt: now,
+							Amount:    "100.00",
+							Symbol:    "USD",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_CANCELLED))
+		})
+
+		It("should handle expired transactions", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-expired",
+							Type:      "DEPOSIT",
+							Status:    "TRANSACTION_EXPIRED",
+							CreatedAt: now,
+							Amount:    "50.00",
+							Symbol:    "USD",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_EXPIRED))
+		})
+
+		It("should handle retried transactions", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-retried",
+							Type:      "WITHDRAWAL",
+							Status:    "TRANSACTION_RETRIED",
+							CreatedAt: now,
+							Amount:    "25.00",
+							Symbol:    "USD",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Status).To(BeNumerically("==", models.PAYMENT_STATUS_OTHER))
 		})
 
 		It("should accept lowercase symbols", func(ctx SpecContext) {

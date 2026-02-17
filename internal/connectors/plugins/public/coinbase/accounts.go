@@ -47,7 +47,6 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			DefaultAsset: &defaultAsset,
 			Metadata: map[string]string{
 				"wallet_type": wallet.Type,
-				"symbol":      wallet.Symbol,
 			},
 			Raw: raw,
 		})

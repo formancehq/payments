@@ -62,23 +62,14 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 }
 
 func walletSymbolFromAccount(from models.PSPAccount) (string, error) {
-	if symbol := strings.TrimSpace(from.Metadata["symbol"]); symbol != "" {
-		return strings.ToUpper(symbol), nil
+	if from.DefaultAsset == nil {
+		return "", fmt.Errorf("missing default asset in from payload")
 	}
 
-	if len(from.Raw) > 0 {
-		var wallet struct {
-			Symbol string `json:"symbol"`
-		}
-
-		if err := json.Unmarshal(from.Raw, &wallet); err != nil {
-			return "", fmt.Errorf("failed to parse wallet raw payload: %w", err)
-		}
-
-		if symbol := strings.TrimSpace(wallet.Symbol); symbol != "" {
-			return strings.ToUpper(symbol), nil
-		}
+	symbol, _, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, *from.DefaultAsset)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse default asset %q: %w", *from.DefaultAsset, err)
 	}
 
-	return "", fmt.Errorf("missing wallet symbol in from payload")
+	return symbol, nil
 }
