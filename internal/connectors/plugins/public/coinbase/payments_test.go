@@ -337,7 +337,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_EXPIRED))
 		})
 
-		It("should handle retried transactions", func(ctx SpecContext) {
+		It("should handle retried transactions as unknown", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -363,7 +363,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
-			Expect(resp.Payments[0].Status).To(BeNumerically("==", models.PAYMENT_STATUS_OTHER))
+			Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_UNKNOWN))
 		})
 
 		It("should accept lowercase symbols", func(ctx SpecContext) {
