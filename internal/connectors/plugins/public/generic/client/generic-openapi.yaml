@@ -62,6 +62,41 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /payouts:
+    post:
+      summary: Create payout
+      operationId: createPayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+      responses:
+        201:
+          $ref: '#/components/responses/PayoutResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /transfers:
+    post:
+      summary: Create transfer
+      description: |
+        Create an internal transfer between two accounts.
+        The idempotencyKey should be used to prevent duplicate transfers on retries.
+      operationId: createTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        201:
+          $ref: '#/components/responses/TransferResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
 # ---------------------- COMPONENTS ----------------------
 components:
   # ---------------------- PARAMETERS ----------------------
@@ -160,6 +195,20 @@ components:
             items:
               $ref: '#/components/schemas/Transaction'
 
+    PayoutResponse:
+      description: Payout response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Payout'
+
+    TransferResponse:
+      description: Transfer response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Transfer'
+
   # ---------------------- SCHEMAS ----------------------
   schemas:
     Error:
@@ -218,8 +267,10 @@ components:
       properties:
         amount:
           type: string
+          description: Amount in minor units (integer string)
         currency:
           type: string
+          description: Asset in UMN format with optional precision (e.g., "USD/2", "BTC/8", "COIN", "JPY")
 
     Beneficiary:
       type: object
@@ -262,6 +313,7 @@ components:
           format: date-time
         currency:
           type: string
+          description: Asset in UMN format with optional precision (e.g., "USD/2", "BTC/8", "COIN", "JPY")
         scheme: 
           type: string
         type:
@@ -270,6 +322,7 @@ components:
           $ref: '#/components/schemas/TransactionStatus'
         amount:
           type: string
+          description: Amount in minor units (integer string)
         sourceAccountID:
           type: string
         destinationAccountID:
@@ -285,14 +338,200 @@ components:
 
     TransactionType:
       type: string
+      description: |
+        Payment/transaction type. Core types are mapped to Formance payment types:
+        - PAYIN: Incoming payment (maps to PAY-IN)
+        - PAYOUT: Outgoing payment to external account (maps to PAYOUT)
+        - TRANSFER: Internal transfer between accounts (maps to TRANSFER)
+        - OTHER: Any other transaction type (maps to OTHER)
       enum:
         - PAYIN
         - PAYOUT
         - TRANSFER
+        - OTHER
 
     TransactionStatus:
       type: string
+      description: |
+        Payment/transaction status. Mapped to Formance payment statuses:
+        - PENDING: Payment is awaiting processing
+        - SUCCEEDED: Payment completed successfully
+        - FAILED: Payment failed
+        - CANCELLED: Payment was cancelled
+        - EXPIRED: Payment expired
+        - REFUNDED: Payment was refunded
+        - REFUNDED_FAILURE: Refund attempt failed
+        - REFUND_REVERSED: Refund was reversed
+        - DISPUTE: Payment is under dispute
+        - DISPUTE_WON: Dispute resolved in merchant's favor
+        - DISPUTE_LOST: Dispute resolved against merchant
+        - AUTHORISATION: Payment authorized but not captured
+        - CAPTURE: Payment captured
+        - CAPTURE_FAILED: Capture attempt failed
+        - OTHER: Other/unknown status
       enum:
         - PENDING
         - SUCCEEDED
         - FAILED
+        - CANCELLED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - REFUND_REVERSED
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - AUTHORISATION
+        - CAPTURE
+        - CAPTURE_FAILED
+        - OTHER
+
+    PayoutRequest:
+      type: object
+      required:
+        - idempotencyKey
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+      properties:
+        idempotencyKey:
+          type: string
+          description: Unique identifier for the payout request
+        amount:
+          type: string
+          description: Payout amount in minor units (integer string)
+        currency:
+          type: string
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
+        sourceAccountId:
+          type: string
+          description: Source account identifier
+        destinationAccountId:
+          type: string
+          description: Destination account identifier
+        description:
+          type: string
+          description: Payout description
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    Payout:
+      type: object
+      required:
+        - id
+        - idempotencyKey
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Payout identifier
+        idempotencyKey:
+          type: string
+          description: Unique identifier for the payout request
+        amount:
+          type: string
+          description: Payout amount in minor units (integer string)
+        currency:
+          type: string
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
+        sourceAccountId:
+          type: string
+          description: Source account identifier
+        destinationAccountId:
+          type: string
+          description: Destination account identifier
+        description:
+          type: string
+          description: Payout description
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    TransferRequest:
+      type: object
+      required:
+        - idempotencyKey
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+      properties:
+        idempotencyKey:
+          type: string
+          description: |
+            Client-provided unique identifier for this transfer request.
+            Used for idempotency - if a transfer with this key already exists, return the existing transfer.
+        amount:
+          type: string
+          description: Transfer amount in minor units (integer string)
+        currency:
+          type: string
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
+        sourceAccountId:
+          type: string
+          description: Source account identifier (internal account)
+        destinationAccountId:
+          type: string
+          description: Destination account identifier (internal account)
+        description:
+          type: string
+          description: Transfer description/memo
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    Transfer:
+      type: object
+      required:
+        - id
+        - idempotencyKey
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: PSP-generated unique transfer identifier
+        idempotencyKey:
+          type: string
+          description: Client-provided unique identifier for this transfer request
+        amount:
+          type: string
+          description: Transfer amount in minor units (integer string)
+        currency:
+          type: string
+          description: Asset in UMN format (e.g., "USD/2", "BTC/8")
+        sourceAccountId:
+          type: string
+          description: Source account identifier
+        destinationAccountId:
+          type: string
+          description: Destination account identifier
+        description:
+          type: string
+          description: Transfer description
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        metadata:
+          $ref: '#/components/schemas/Metadata'

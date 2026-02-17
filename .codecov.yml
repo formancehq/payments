@@ -21,5 +21,6 @@ ignore:
   - "internal/connectors/plugins/public/moneycorp/client/client_generated.go"
   - "internal/connectors/plugins/public/stripe/client/client_generated.go"
   - "internal/connectors/plugins/public/wise/client/client_generated.go"
+  - "internal/connectors/plugins/public/generic/client/client_generated.go"
   - "internal/models/plugin_generated.go"
   - "internal/api/backend/backend_generated.go"

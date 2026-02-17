@@ -42,6 +42,36 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
+// CreatePayout mocks base method.
+func (m *MockClient) CreatePayout(ctx context.Context, request *PayoutRequest) (*PayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePayout", ctx, request)
+	ret0, _ := ret[0].(*PayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePayout indicates an expected call of CreatePayout.
+func (mr *MockClientMockRecorder) CreatePayout(ctx, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockClient)(nil).CreatePayout), ctx, request)
+}
+
+// CreateTransfer mocks base method.
+func (m *MockClient) CreateTransfer(ctx context.Context, request *TransferRequest) (*TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTransfer", ctx, request)
+	ret0, _ := ret[0].(*TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTransfer indicates an expected call of CreateTransfer.
+func (mr *MockClientMockRecorder) CreateTransfer(ctx, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockClient)(nil).CreateTransfer), ctx, request)
+}
+
 // GetBalances mocks base method.
 func (m *MockClient) GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error) {
 	m.ctrl.T.Helper()
