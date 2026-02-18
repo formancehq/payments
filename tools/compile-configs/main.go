@@ -17,25 +17,29 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type pathList []string
+
+func (p *pathList) String() string { return fmt.Sprintf("%v", *p) }
+func (p *pathList) Set(value string) error {
+	*p = append(*p, value)
+	return nil
+}
+
 var (
-	path           = flag.String("path", "./", "Path to the directory")
+	paths          pathList
 	outputFilename = flag.String("output", "v3-connectors-config.yaml", "Name of the output file to write")
 )
 
 func main() {
+	flag.Var(&paths, "path", "Path to a plugins directory (can be specified multiple times)")
 	flag.Parse()
-	if *path == "" {
-		log.Fatal("path flag is required")
+	if len(paths) == 0 {
+		log.Fatal("at least one --path flag is required")
 	}
 	if *outputFilename == "" {
 		log.Fatal("output flag is required")
 	}
 	caser := cases.Title(language.English)
-
-	entries, err := os.ReadDir(*path)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	output := V3ConnectorConfigYaml{
 		Components: Components{
@@ -53,26 +57,33 @@ func main() {
 	oneOf := []OneOf{}
 	mapping := map[string]string{}
 	configs := map[string]V3Config{}
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-
-		configName := "V3" + caser.String(e.Name()) + "Config"
-
-		config, err := readConfig(e.Name(), caser.String(e.Name()))
+	for _, p := range paths {
+		entries, err := os.ReadDir(p)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		mapping[caser.String(e.Name())] = "#/components/schemas/" + configName
-		oneOf = append(oneOf, OneOf{
-			Ref: map[string]string{
-				"$ref": "#/components/schemas/" + configName,
-			},
-		})
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
 
-		configs[configName] = config
+			configName := "V3" + caser.String(e.Name()) + "Config"
+
+			config, err := readConfig(p, e.Name(), caser.String(e.Name()))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			mapping[caser.String(e.Name())] = "#/components/schemas/" + configName
+			oneOf = append(oneOf, OneOf{
+				Ref: map[string]string{
+					"$ref": "#/components/schemas/" + configName,
+				},
+			})
+
+			configs[configName] = config
+		}
 	}
 
 	output.Components.Schemas.V3Configs = configs
@@ -96,15 +107,15 @@ func main() {
 	}
 }
 
-func readConfig(name string, caserName string) (V3Config, error) {
+func readConfig(basePath string, name string, caserName string) (V3Config, error) {
 	defaultPollingPeriod := "30m"
 
 	// Verify the opened file is within the intended directory
-	absPath, err := filepath.Abs(*path)
+	absPath, err := filepath.Abs(basePath)
 	if err != nil {
 		return V3Config{}, err
 	}
-	absFile, err := filepath.Abs(filepath.Join(*path, name, "config.go"))
+	absFile, err := filepath.Abs(filepath.Join(basePath, name, "config.go"))
 	if err != nil {
 		return V3Config{}, err
 	}
@@ -113,7 +124,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 	}
 
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, filepath.Join(*path, name, "config.go"), nil, 0)
+	f, err := parser.ParseFile(fset, filepath.Join(basePath, name, "config.go"), nil, 0)
 	if err != nil {
 		return V3Config{}, err
 	}

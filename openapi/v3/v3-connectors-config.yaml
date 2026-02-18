@@ -29,7 +29,6 @@ components:
                 - $ref: '#/components/schemas/V3ColumnConfig'
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
-                - $ref: '#/components/schemas/V3FireblocksConfig'
                 - $ref: '#/components/schemas/V3GenericConfig'
                 - $ref: '#/components/schemas/V3IncreaseConfig'
                 - $ref: '#/components/schemas/V3MangopayConfig'
@@ -41,6 +40,7 @@ components:
                 - $ref: '#/components/schemas/V3StripeConfig'
                 - $ref: '#/components/schemas/V3TinkConfig'
                 - $ref: '#/components/schemas/V3WiseConfig'
+                - $ref: '#/components/schemas/V3FireblocksConfig'
         V3AdyenConfig:
             type: object
             required:

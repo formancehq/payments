@@ -18,4 +18,5 @@ func printVersion(cmd *cobra.Command, args []string) {
 	log.Printf("Version: %s \n", Version)
 	log.Printf("Date: %s \n", BuildDate)
 	log.Printf("Commit: %s \n", Commit)
+	log.Printf("Edition: %s \n", Edition)
 }

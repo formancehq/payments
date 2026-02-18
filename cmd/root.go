@@ -12,6 +12,7 @@ var (
 	Version     = "develop"
 	BuildDate   = "-"
 	Commit      = "-"
+	Edition     = "community"
 )
 
 const (

@@ -33,7 +33,8 @@ type PluginInformation struct {
 var (
 	pluginsRegistry map[string]PluginInformation = make(map[string]PluginInformation)
 
-	ErrPluginNotFound = errors.New("plugin not found")
+	ErrPluginNotFound              = errors.New("plugin not found")
+	ErrPluginEnterpriseOnly        = errors.New("plugin requires Enterprise Edition")
 
 	checkRequired = regexp.MustCompile("required")
 )
@@ -116,6 +117,9 @@ func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider s
 	provider = strings.ToLower(provider)
 	info, ok := pluginsRegistry[provider]
 	if !ok {
+		if _, enterprise := EnterpriseOnlyPlugins[provider]; enterprise {
+			return nil, fmt.Errorf("%s: %w", provider, ErrPluginEnterpriseOnly)
+		}
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 
