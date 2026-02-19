@@ -62,13 +62,13 @@ func NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, portfolioID, b
 func (c *client) signRequest(req *http.Request, body string) error {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-	message := timestamp + req.Method + req.URL.RequestURI() + body
+	// Coinbase Prime signature must include only the path (no query params).
+	// See: https://docs.cdp.coinbase.com/prime/rest-api/requests
+	message := timestamp + req.Method + req.URL.Path + body
 
-	secretBytes, err := base64.StdEncoding.DecodeString(c.apiSecret)
-	if err != nil {
-		return fmt.Errorf("failed to decode API secret: %w", err)
-	}
-	h := hmac.New(sha256.New, secretBytes)
+	// Coinbase Prime expects the signing key to be used as raw string bytes
+	// for the HMAC computation, NOT base64-decoded.
+	h := hmac.New(sha256.New, []byte(c.apiSecret))
 	h.Write([]byte(message))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 

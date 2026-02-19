@@ -11,7 +11,7 @@ import (
 
 type Config struct {
 	APIKey        string                     `json:"apiKey" validate:"required"`
-	APISecret     string                     `json:"apiSecret" validate:"required,base64"`
+	APISecret     string                     `json:"apiSecret" validate:"required"`
 	Passphrase    string                     `json:"passphrase" validate:"required"`
 	PortfolioID   string                     `json:"portfolioId" validate:"required"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`

@@ -95,14 +95,13 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 		})
 	})
 
-	Context("with non-base64 apiSecret", func() {
+	Context("with non-standard base64 apiSecret (Coinbase Prime format)", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"not-valid-base64!!!","passphrase":"test","portfolioId":"portfolio-123"}`)
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"fAkEsEcReT4qM=xYzAbCdEfGhIjKlMnOp==","passphrase":"test","portfolioId":"portfolio-123"}`)
 		})
 
-		It("should return a validation error for APISecret", func() {
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("APISecret"))
+		It("should accept secrets with padding in the middle", func() {
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
