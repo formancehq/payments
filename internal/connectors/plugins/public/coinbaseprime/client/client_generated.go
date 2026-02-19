@@ -40,6 +40,21 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
+// GetPortfolios mocks base method.
+func (m *MockClient) GetPortfolios(ctx context.Context) (*PortfoliosResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPortfolios", ctx)
+	ret0, _ := ret[0].(*PortfoliosResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPortfolios indicates an expected call of GetPortfolios.
+func (mr *MockClientMockRecorder) GetPortfolios(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPortfolios", reflect.TypeOf((*MockClient)(nil).GetPortfolios), ctx)
+}
+
 // GetBalances mocks base method.
 func (m *MockClient) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
 	m.ctrl.T.Helper()

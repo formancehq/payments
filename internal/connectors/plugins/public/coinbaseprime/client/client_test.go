@@ -11,11 +11,11 @@ import (
 	"testing"
 )
 
-func TestSignRequestBase64DecodesSecret(t *testing.T) {
+func TestSignRequestUsesRawStringSecret(t *testing.T) {
 	t.Parallel()
 
-	// Known base64-encoded secret
-	secret := base64.StdEncoding.EncodeToString([]byte("my-secret-key"))
+	// Coinbase Prime signing keys are used as raw string bytes, not base64-decoded.
+	secret := "/NqFL5Fk4qM=VcrLVCGIyOY7vHX0qhpt/S37bXN/b2FH00OLxkk/uDoKT1yK/r0r7vq2k79B/ef9RRamuBloSKuiYjxuzyZ6Rg=="
 
 	var capturedHeaders http.Header
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,10 +42,10 @@ func TestSignRequestBase64DecodesSecret(t *testing.T) {
 		t.Fatal("expected X-CB-ACCESS-TIMESTAMP header to be set")
 	}
 
-	// Verify the signature was computed with the decoded secret bytes
-	message := timestamp + "GET" + "/v1/portfolios/portfolio-123/wallets?limit=10&sort_direction=ASC"
-	secretBytes, _ := base64.StdEncoding.DecodeString(secret)
-	h := hmac.New(sha256.New, secretBytes)
+	// Verify the signature was computed with the raw string bytes (not base64-decoded)
+	// and uses only the path (no query params).
+	message := timestamp + "GET" + "/v1/portfolios/portfolio-123/wallets"
+	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(message))
 	expectedSig := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
@@ -54,10 +54,10 @@ func TestSignRequestBase64DecodesSecret(t *testing.T) {
 	}
 }
 
-func TestSignRequestIncludesQueryParams(t *testing.T) {
+func TestSignRequestExcludesQueryParams(t *testing.T) {
 	t.Parallel()
 
-	secret := base64.StdEncoding.EncodeToString([]byte("test-secret"))
+	secret := "test-signing-key"
 
 	var capturedHeaders http.Header
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -77,34 +77,49 @@ func TestSignRequestIncludesQueryParams(t *testing.T) {
 	sig := capturedHeaders.Get("X-CB-ACCESS-SIGNATURE")
 	timestamp := capturedHeaders.Get("X-CB-ACCESS-TIMESTAMP")
 
-	// The message should include query params via RequestURI()
-	message := timestamp + "GET" + "/v1/portfolios/portfolio-123/balances?cursor=cursor-abc&limit=50&sort_direction=ASC"
-	secretBytes, _ := base64.StdEncoding.DecodeString(secret)
-	h := hmac.New(sha256.New, secretBytes)
+	// The signature message must use only the path, NOT query params.
+	message := timestamp + "GET" + "/v1/portfolios/portfolio-123/balances"
+	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(message))
 	expectedSig := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	if sig != expectedSig {
-		t.Fatalf("signature mismatch (query params not included?): got %q, want %q", sig, expectedSig)
+		t.Fatalf("signature mismatch (query params should NOT be included): got %q, want %q", sig, expectedSig)
 	}
 }
 
-func TestSignRequestRejectsInvalidBase64Secret(t *testing.T) {
+func TestSignRequestSetsAllRequiredHeaders(t *testing.T) {
 	t.Parallel()
 
+	var capturedHeaders http.Header
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fatal("request should not have been sent")
+		capturedHeaders = r.Header
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"wallets":[],"pagination":{"next_cursor":"","sort_direction":"ASC","has_next":false}}`))
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbaseprime", "api-key", "not-valid-base64!!!", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "my-access-key", "my-signing-key", "my-passphrase", "portfolio-123", server.URL)
 
 	_, err := c.GetWallets(context.Background(), "", 10)
-	if err == nil {
-		t.Fatal("expected an error for invalid base64 secret")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "failed to decode API secret") {
-		t.Fatalf("unexpected error message: %v", err)
+
+	if got := capturedHeaders.Get("X-CB-ACCESS-KEY"); got != "my-access-key" {
+		t.Fatalf("expected X-CB-ACCESS-KEY to be %q, got %q", "my-access-key", got)
+	}
+	if got := capturedHeaders.Get("X-CB-ACCESS-PASSPHRASE"); got != "my-passphrase" {
+		t.Fatalf("expected X-CB-ACCESS-PASSPHRASE to be %q, got %q", "my-passphrase", got)
+	}
+	if capturedHeaders.Get("X-CB-ACCESS-SIGNATURE") == "" {
+		t.Fatal("expected X-CB-ACCESS-SIGNATURE header to be set")
+	}
+	if capturedHeaders.Get("X-CB-ACCESS-TIMESTAMP") == "" {
+		t.Fatal("expected X-CB-ACCESS-TIMESTAMP header to be set")
+	}
+	if got := capturedHeaders.Get("Content-Type"); got != "application/json" {
+		t.Fatalf("expected Content-Type to be application/json, got %q", got)
 	}
 }
 
@@ -127,7 +142,7 @@ func TestGetBalancesForSymbolFiltersCaseInsensitive(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", server.URL)
 
 	response, err := c.GetBalancesForSymbol(context.Background(), "btc", "", 100)
 	if err != nil {
@@ -146,7 +161,7 @@ func TestGetBalancesForSymbolFiltersCaseInsensitive(t *testing.T) {
 func TestGetBalancesForSymbolRequiresSymbol(t *testing.T) {
 	t.Parallel()
 
-	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", "http://localhost")
+	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", "http://localhost")
 
 	_, err := c.GetBalancesForSymbol(context.Background(), "   ", "", 100)
 	if err == nil {
@@ -196,7 +211,7 @@ func TestPortfolioEndpointsEncodeCursor(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", portfolioID, server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", portfolioID, server.URL)
 
 	if _, err := c.GetWallets(context.Background(), cursor, pageSize); err != nil {
 		t.Fatalf("GetWallets failed: %v", err)
@@ -238,7 +253,7 @@ func TestGetBalancesForSymbolMultiPage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", server.URL)
 
 	response, err := c.GetBalancesForSymbol(context.Background(), "btc", "", 100)
 	if err != nil {
@@ -285,7 +300,7 @@ func TestGetBalancesForSymbolAggregatesAcrossPages(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", server.URL)
 
 	response, err := c.GetBalancesForSymbol(context.Background(), "BTC", "", 100)
 	if err != nil {

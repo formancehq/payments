@@ -19,6 +19,7 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
+	GetPortfolios(ctx context.Context) (*PortfoliosResponse, error)
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error)
 	GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error)
@@ -62,13 +63,13 @@ func NewWithBaseURL(connectorName, apiKey, apiSecret, passphrase, portfolioID, b
 func (c *client) signRequest(req *http.Request, body string) error {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-	message := timestamp + req.Method + req.URL.RequestURI() + body
+	// Coinbase Prime signature must include only the path (no query params).
+	// See: https://docs.cdp.coinbase.com/prime/rest-api/requests
+	message := timestamp + req.Method + req.URL.Path + body
 
-	secretBytes, err := base64.StdEncoding.DecodeString(c.apiSecret)
-	if err != nil {
-		return fmt.Errorf("failed to decode API secret: %w", err)
-	}
-	h := hmac.New(sha256.New, secretBytes)
+	// Coinbase Prime expects the signing key to be used as raw string bytes
+	// for the HMAC computation, NOT base64-decoded.
+	h := hmac.New(sha256.New, []byte(c.apiSecret))
 	h.Write([]byte(message))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
@@ -79,6 +80,28 @@ func (c *client) signRequest(req *http.Request, body string) error {
 	req.Header.Set("Content-Type", "application/json")
 
 	return nil
+}
+
+func (c *client) GetPortfolios(ctx context.Context) (*PortfoliosResponse, error) {
+	endpoint := fmt.Sprintf("%s/v1/portfolios", c.baseURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response PortfoliosResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get portfolios (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
+	}
+
+	return &response, nil
 }
 
 func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
@@ -202,6 +225,20 @@ func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (
 
 	endpoint.RawQuery = query.Encode()
 	return endpoint.String(), nil
+}
+
+// Portfolio represents a Coinbase Prime portfolio.
+type Portfolio struct {
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	EntityID       string    `json:"entity_id"`
+	OrganizationID string    `json:"organization_id"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+// PortfoliosResponse wraps portfolios from the list endpoint.
+type PortfoliosResponse struct {
+	Portfolios []Portfolio `json:"portfolios"`
 }
 
 // Wallet represents a Coinbase Prime wallet.
