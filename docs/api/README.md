@@ -6883,6 +6883,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3ColumnConfig](#schemav3columnconfig)|false|none|none|
 
 xor
@@ -7074,6 +7080,40 @@ xor
 |userCertificate|string|true|none|none|
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
+
+<h2 id="tocS_V3CoinbaseprimeConfig">V3CoinbaseprimeConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3coinbaseprimeconfig"></a>
+<a id="schema_V3CoinbaseprimeConfig"></a>
+<a id="tocSv3coinbaseprimeconfig"></a>
+<a id="tocsv3coinbaseprimeconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "apiSecret": "string",
+  "name": "string",
+  "pageSize": 25,
+  "passphrase": "string",
+  "pollingPeriod": "30m",
+  "portfolioId": "string",
+  "provider": "Coinbaseprime"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|apiSecret|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|passphrase|string|true|none|none|
+|pollingPeriod|string|false|none|none|
+|portfolioId|string|true|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3ColumnConfig">V3ColumnConfig</h2>
 <!-- backwards compatibility -->

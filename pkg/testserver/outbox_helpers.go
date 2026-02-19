@@ -12,16 +12,21 @@ import (
 
 // AwaitOutboxEvent polls the database outbox_events table until it finds
 // an event with the given outbox event type matching all provided payload matchers,
-// or the timeout expires. It checks only pending outbox events.
+// or the timeout expires. It checks outbox rows regardless of status to avoid
+// races with the outbox publisher moving events from pending to processed.
 func AwaitOutboxEvent(ctx context.Context, s *Server, outboxEventType string, timeout, interval time.Duration, matchers ...PayloadMatcher) error {
-	deadline := time.Now().Add(timeout)
+	start := time.Now().UTC()
+	// Use a bounded lookback to include events produced just before polling starts
+	// while still avoiding very old stale matches.
+	since := start.Add(-timeout)
+	deadline := start.Add(timeout)
 
 	for {
 		if time.Now().After(deadline) {
 			return errors.New("timeout waiting for outbox event of type " + outboxEventType)
 		}
 
-		found, err := findMatchingOutboxEvent(ctx, s, outboxEventType, matchers...)
+		found, err := findMatchingOutboxEvent(ctx, s, outboxEventType, since, false, matchers...)
 		if err != nil {
 			return err
 		}
@@ -43,9 +48,9 @@ func EventuallyOutbox(ctx context.Context, s *Server, outboxEventType string, ma
 	return AwaitOutboxEvent(ctx, s, outboxEventType, 5*time.Second, 50*time.Millisecond, matchers...)
 }
 
-// findMatchingOutboxEvent queries the DB for pending outbox events of the given type
+// findMatchingOutboxEvent queries the DB for outbox events of the given type
 // and applies matchers to the payload.
-func findMatchingOutboxEvent(ctx context.Context, s *Server, outboxEventType string, matchers ...PayloadMatcher) (bool, error) {
+func findMatchingOutboxEvent(ctx context.Context, s *Server, outboxEventType string, since time.Time, onlyPending bool, matchers ...PayloadMatcher) (bool, error) {
 	db, err := s.Database()
 	if err != nil {
 		return false, err
@@ -53,19 +58,23 @@ func findMatchingOutboxEvent(ctx context.Context, s *Server, outboxEventType str
 	defer func(db *bun.DB) { _ = db.Close() }(db)
 
 	type outboxRow struct {
-		EventType string          `bun:"event_type"`
 		Payload   json.RawMessage `bun:"payload"`
-		Status    string          `bun:"status"`
 		CreatedAt time.Time       `bun:"created_at"`
 	}
 
 	var rows []outboxRow
-	err = db.NewSelect().
+	query := db.NewSelect().
 		TableExpr("outbox_events").
-		Where("event_type = ?", outboxEventType).
-		Where("status = ?", "pending").
+		Where("event_type = ?", outboxEventType)
+	if !since.IsZero() {
+		query = query.Where("created_at >= ?", since)
+	}
+	if onlyPending {
+		query = query.Where("status = ?", "pending")
+	}
+	err = query.
 		Order("created_at DESC").
-		Limit(50).
+		Limit(200).
 		Scan(ctx, &rows)
 	if err != nil {
 		return false, err
@@ -92,7 +101,7 @@ func MustEventuallyOutbox(ctx context.Context, s *Server, outboxEventType string
 }
 
 func MustOutbox(ctx context.Context, s *Server, outboxEventType string, matchers ...PayloadMatcher) {
-	success, err := findMatchingOutboxEvent(ctx, s, outboxEventType, matchers...)
+	success, err := findMatchingOutboxEvent(ctx, s, outboxEventType, time.Time{}, true, matchers...)
 	gomega.Expect(err).To(gomega.BeNil())
 	gomega.Expect(success).To(gomega.BeTrue())
 }

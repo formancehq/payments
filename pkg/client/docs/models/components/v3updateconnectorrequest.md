@@ -21,6 +21,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestAtlar(compo
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3CoinbaseprimeConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestCoinbaseprime(components.V3CoinbaseprimeConfig{/* values here */})
+```
+
 ### V3ColumnConfig
 
 ```go
