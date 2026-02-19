@@ -97,7 +97,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with non-standard base64 apiSecret (Coinbase Prime format)", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"/NqFL5Fk4qM=oWgWLK5tib6H0RCUcndurw==","passphrase":"test","portfolioId":"portfolio-123"}`)
+			payload = json.RawMessage(`{"apiKey":"test","apiSecret":"fAkEsEcReT4qM=xYzAbCdEfGhIjKlMnOp==","passphrase":"test","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should accept secrets with padding in the middle", func() {

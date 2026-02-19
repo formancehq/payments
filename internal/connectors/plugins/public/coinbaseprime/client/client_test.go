@@ -15,7 +15,8 @@ func TestSignRequestUsesRawStringSecret(t *testing.T) {
 	t.Parallel()
 
 	// Coinbase Prime signing keys are used as raw string bytes, not base64-decoded.
-	secret := "/NqFL5Fk4qM=VcrLVCGIyOY7vHX0qhpt/S37bXN/b2FH00OLxkk/uDoKT1yK/r0r7vq2k79B/ef9RRamuBloSKuiYjxuzyZ6Rg=="
+	// This is a fake key that mimics the Coinbase Prime format (with = in the middle).
+	secret := "fAkEsEcReT4qM=xYzAbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/abcd=="
 
 	var capturedHeaders http.Header
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
