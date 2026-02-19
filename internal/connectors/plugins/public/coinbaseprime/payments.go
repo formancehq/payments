@@ -1,4 +1,4 @@
-package coinbase
+package coinbaseprime
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbase/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 )
 

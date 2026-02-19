@@ -15,7 +15,7 @@ const (
 	V3InstallConnectorRequestTypeAdyen         V3InstallConnectorRequestType = "Adyen"
 	V3InstallConnectorRequestTypeAtlar         V3InstallConnectorRequestType = "Atlar"
 	V3InstallConnectorRequestTypeBankingcircle V3InstallConnectorRequestType = "Bankingcircle"
-	V3InstallConnectorRequestTypeCoinbase      V3InstallConnectorRequestType = "Coinbase"
+	V3InstallConnectorRequestTypeCoinbaseprime V3InstallConnectorRequestType = "Coinbaseprime"
 	V3InstallConnectorRequestTypeColumn        V3InstallConnectorRequestType = "Column"
 	V3InstallConnectorRequestTypeCurrencycloud V3InstallConnectorRequestType = "Currencycloud"
 	V3InstallConnectorRequestTypeDummypay      V3InstallConnectorRequestType = "Dummypay"
@@ -37,7 +37,7 @@ type V3InstallConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
-	V3CoinbaseConfig      *V3CoinbaseConfig      `queryParam:"inline"`
+	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
@@ -93,15 +93,15 @@ func CreateV3InstallConnectorRequestBankingcircle(bankingcircle V3BankingcircleC
 	}
 }
 
-func CreateV3InstallConnectorRequestCoinbase(coinbase V3CoinbaseConfig) V3InstallConnectorRequest {
-	typ := V3InstallConnectorRequestTypeCoinbase
+func CreateV3InstallConnectorRequestCoinbaseprime(coinbaseprime V3CoinbaseprimeConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeCoinbaseprime
 
 	typStr := string(typ)
-	coinbase.Provider = &typStr
+	coinbaseprime.Provider = &typStr
 
 	return V3InstallConnectorRequest{
-		V3CoinbaseConfig: &coinbase,
-		Type:             typ,
+		V3CoinbaseprimeConfig: &coinbaseprime,
+		Type:                  typ,
 	}
 }
 
@@ -324,14 +324,14 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3InstallConnectorRequestTypeBankingcircle
 		return nil
-	case "Coinbase":
-		v3CoinbaseConfig := new(V3CoinbaseConfig)
-		if err := utils.UnmarshalJSON(data, &v3CoinbaseConfig, "", true, false); err != nil {
-			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Coinbase) type V3CoinbaseConfig within V3InstallConnectorRequest: %w", string(data), err)
+	case "Coinbaseprime":
+		v3CoinbaseprimeConfig := new(V3CoinbaseprimeConfig)
+		if err := utils.UnmarshalJSON(data, &v3CoinbaseprimeConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Coinbaseprime) type V3CoinbaseprimeConfig within V3InstallConnectorRequest: %w", string(data), err)
 		}
 
-		u.V3CoinbaseConfig = v3CoinbaseConfig
-		u.Type = V3InstallConnectorRequestTypeCoinbase
+		u.V3CoinbaseprimeConfig = v3CoinbaseprimeConfig
+		u.Type = V3InstallConnectorRequestTypeCoinbaseprime
 		return nil
 	case "Column":
 		v3ColumnConfig := new(V3ColumnConfig)
@@ -486,8 +486,8 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
 	}
 
-	if u.V3CoinbaseConfig != nil {
-		return utils.MarshalJSON(u.V3CoinbaseConfig, "", true)
+	if u.V3CoinbaseprimeConfig != nil {
+		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
 	}
 
 	if u.V3ColumnConfig != nil {

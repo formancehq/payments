@@ -1,4 +1,4 @@
-package coinbase
+package coinbaseprime
 
 import (
 	"encoding/json"
@@ -31,35 +31,35 @@ var _ = Describe("Coinbase Plugin", func() {
 	Context("install", func() {
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiSecret": "dGVzdA==", "passphrase": "test", "portfolioId": "portfolio-123"}`)
-			_, err := New("coinbase", logger, config)
+			_, err := New("coinbaseprime", logger, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - apiSecret", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "passphrase": "test", "portfolioId": "portfolio-123"}`)
-			_, err := New("coinbase", logger, config)
+			_, err := New("coinbaseprime", logger, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("APISecret"))
 		})
 
 		It("should report errors in config - passphrase", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "portfolioId": "portfolio-123"}`)
-			_, err := New("coinbase", logger, config)
+			_, err := New("coinbaseprime", logger, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Passphrase"))
 		})
 
 		It("should report errors in config - portfolioId", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "passphrase": "test"}`)
-			_, err := New("coinbase", logger, config)
+			_, err := New("coinbaseprime", logger, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("PortfolioID"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "passphrase": "test", "portfolioId": "portfolio-123"}`)
-			p, err := New("coinbase", logger, config)
+			p, err := New("coinbaseprime", logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := p.Install(ctx, req)

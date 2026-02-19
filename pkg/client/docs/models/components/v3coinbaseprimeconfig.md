@@ -1,4 +1,4 @@
-# V3CoinbaseConfig
+# V3CoinbaseprimeConfig
 
 
 ## Fields

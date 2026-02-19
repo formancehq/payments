@@ -1,4 +1,4 @@
-package coinbase
+package coinbaseprime
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbase/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

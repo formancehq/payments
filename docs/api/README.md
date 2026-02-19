@@ -6883,7 +6883,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[V3CoinbaseConfig](#schemav3coinbaseconfig)|false|none|none|
+|*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
 
 xor
 
@@ -7081,12 +7081,12 @@ xor
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
 
-<h2 id="tocS_V3CoinbaseConfig">V3CoinbaseConfig</h2>
+<h2 id="tocS_V3CoinbaseprimeConfig">V3CoinbaseprimeConfig</h2>
 <!-- backwards compatibility -->
-<a id="schemav3coinbaseconfig"></a>
-<a id="schema_V3CoinbaseConfig"></a>
-<a id="tocSv3coinbaseconfig"></a>
-<a id="tocsv3coinbaseconfig"></a>
+<a id="schemav3coinbaseprimeconfig"></a>
+<a id="schema_V3CoinbaseprimeConfig"></a>
+<a id="tocSv3coinbaseprimeconfig"></a>
+<a id="tocsv3coinbaseprimeconfig"></a>
 
 ```json
 {
@@ -7097,7 +7097,7 @@ xor
   "passphrase": "string",
   "pollingPeriod": "30m",
   "portfolioId": "string",
-  "provider": "Coinbase"
+  "provider": "Coinbaseprime"
 }
 
 ```

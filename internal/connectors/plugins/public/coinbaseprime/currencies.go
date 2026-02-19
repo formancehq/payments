@@ -1,4 +1,4 @@
-package coinbase
+package coinbaseprime
 
 import "github.com/formancehq/go-libs/v3/currency"
 

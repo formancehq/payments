@@ -1,4 +1,4 @@
-package coinbase
+package coinbaseprime
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbase/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "coinbase"
+const ProviderName = "coinbaseprime"
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {

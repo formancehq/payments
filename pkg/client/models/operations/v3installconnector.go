@@ -47,9 +47,9 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBankingcircle() 
 	return nil
 }
 
-func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestCoinbase() *components.V3CoinbaseConfig {
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestCoinbaseprime() *components.V3CoinbaseprimeConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
-		return v.V3CoinbaseConfig
+		return v.V3CoinbaseprimeConfig
 	}
 	return nil
 }

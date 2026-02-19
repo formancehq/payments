@@ -7,7 +7,7 @@ components:
                     Adyen: '#/components/schemas/V3AdyenConfig'
                     Atlar: '#/components/schemas/V3AtlarConfig'
                     Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
-                    Coinbase: '#/components/schemas/V3CoinbaseConfig'
+                    Coinbaseprime: '#/components/schemas/V3CoinbaseprimeConfig'
                     Column: '#/components/schemas/V3ColumnConfig'
                     Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
                     Dummypay: '#/components/schemas/V3DummypayConfig'
@@ -27,7 +27,7 @@ components:
                 - $ref: '#/components/schemas/V3AdyenConfig'
                 - $ref: '#/components/schemas/V3AtlarConfig'
                 - $ref: '#/components/schemas/V3BankingcircleConfig'
-                - $ref: '#/components/schemas/V3CoinbaseConfig'
+                - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
                 - $ref: '#/components/schemas/V3ColumnConfig'
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
@@ -136,7 +136,7 @@ components:
                     type: string
                 username:
                     type: string
-        V3CoinbaseConfig:
+        V3CoinbaseprimeConfig:
             type: object
             required:
                 - name
@@ -165,7 +165,7 @@ components:
                     type: string
                 provider:
                     type: string
-                    default: Coinbase
+                    default: Coinbaseprime
         V3ColumnConfig:
             type: object
             required:

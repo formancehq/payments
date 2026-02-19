@@ -21,10 +21,10 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestAtlar(com
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
-### V3CoinbaseConfig
+### V3CoinbaseprimeConfig
 
 ```go
-v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestCoinbase(components.V3CoinbaseConfig{/* values here */})
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestCoinbaseprime(components.V3CoinbaseprimeConfig{/* values here */})
 ```
 
 ### V3ColumnConfig

@@ -25,7 +25,7 @@ func TestSignRequestBase64DecodesSecret(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", secret, "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", secret, "passphrase", "portfolio-123", server.URL)
 
 	_, err := c.GetWallets(context.Background(), "", 10)
 	if err != nil {
@@ -67,7 +67,7 @@ func TestSignRequestIncludesQueryParams(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", secret, "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", secret, "passphrase", "portfolio-123", server.URL)
 
 	_, err := c.GetBalances(context.Background(), "cursor-abc", 50)
 	if err != nil {
@@ -97,7 +97,7 @@ func TestSignRequestRejectsInvalidBase64Secret(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", "not-valid-base64!!!", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "not-valid-base64!!!", "passphrase", "portfolio-123", server.URL)
 
 	_, err := c.GetWallets(context.Background(), "", 10)
 	if err == nil {
@@ -127,7 +127,7 @@ func TestGetBalancesForSymbolFiltersCaseInsensitive(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
 
 	response, err := c.GetBalancesForSymbol(context.Background(), "btc", "", 100)
 	if err != nil {
@@ -146,7 +146,7 @@ func TestGetBalancesForSymbolFiltersCaseInsensitive(t *testing.T) {
 func TestGetBalancesForSymbolRequiresSymbol(t *testing.T) {
 	t.Parallel()
 
-	c := NewWithBaseURL("coinbase", "api-key", "dGVzdA==", "passphrase", "portfolio-123", "http://localhost")
+	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", "http://localhost")
 
 	_, err := c.GetBalancesForSymbol(context.Background(), "   ", "", 100)
 	if err == nil {
@@ -196,7 +196,7 @@ func TestPortfolioEndpointsEncodeCursor(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", "dGVzdA==", "passphrase", portfolioID, server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", portfolioID, server.URL)
 
 	if _, err := c.GetWallets(context.Background(), cursor, pageSize); err != nil {
 		t.Fatalf("GetWallets failed: %v", err)
@@ -238,7 +238,7 @@ func TestGetBalancesForSymbolMultiPage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
 
 	response, err := c.GetBalancesForSymbol(context.Background(), "btc", "", 100)
 	if err != nil {
@@ -285,7 +285,7 @@ func TestGetBalancesForSymbolAggregatesAcrossPages(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewWithBaseURL("coinbase", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
+	c := NewWithBaseURL("coinbaseprime", "api-key", "dGVzdA==", "passphrase", "portfolio-123", server.URL)
 
 	response, err := c.GetBalancesForSymbol(context.Background(), "BTC", "", 100)
 	if err != nil {

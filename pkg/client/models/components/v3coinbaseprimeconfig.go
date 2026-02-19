@@ -6,7 +6,7 @@ import (
 	"github.com/formancehq/payments/pkg/client/internal/utils"
 )
 
-type V3CoinbaseConfig struct {
+type V3CoinbaseprimeConfig struct {
 	APIKey    string `json:"apiKey"`
 	APISecret string `json:"apiSecret"`
 	Name      string `json:"name"`
@@ -15,70 +15,70 @@ type V3CoinbaseConfig struct {
 	Passphrase    string  `json:"passphrase"`
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
 	PortfolioID   string  `json:"portfolioId"`
-	Provider      *string `default:"Coinbase" json:"provider"`
+	Provider      *string `default:"Coinbaseprime" json:"provider"`
 }
 
-func (v V3CoinbaseConfig) MarshalJSON() ([]byte, error) {
+func (v V3CoinbaseprimeConfig) MarshalJSON() ([]byte, error) {
 	return utils.MarshalJSON(v, "", false)
 }
 
-func (v *V3CoinbaseConfig) UnmarshalJSON(data []byte) error {
+func (v *V3CoinbaseprimeConfig) UnmarshalJSON(data []byte) error {
 	if err := utils.UnmarshalJSON(data, &v, "", false, false); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *V3CoinbaseConfig) GetAPIKey() string {
+func (o *V3CoinbaseprimeConfig) GetAPIKey() string {
 	if o == nil {
 		return ""
 	}
 	return o.APIKey
 }
 
-func (o *V3CoinbaseConfig) GetAPISecret() string {
+func (o *V3CoinbaseprimeConfig) GetAPISecret() string {
 	if o == nil {
 		return ""
 	}
 	return o.APISecret
 }
 
-func (o *V3CoinbaseConfig) GetName() string {
+func (o *V3CoinbaseprimeConfig) GetName() string {
 	if o == nil {
 		return ""
 	}
 	return o.Name
 }
 
-func (o *V3CoinbaseConfig) GetPageSize() *int64 {
+func (o *V3CoinbaseprimeConfig) GetPageSize() *int64 {
 	if o == nil {
 		return nil
 	}
 	return o.PageSize
 }
 
-func (o *V3CoinbaseConfig) GetPassphrase() string {
+func (o *V3CoinbaseprimeConfig) GetPassphrase() string {
 	if o == nil {
 		return ""
 	}
 	return o.Passphrase
 }
 
-func (o *V3CoinbaseConfig) GetPollingPeriod() *string {
+func (o *V3CoinbaseprimeConfig) GetPollingPeriod() *string {
 	if o == nil {
 		return nil
 	}
 	return o.PollingPeriod
 }
 
-func (o *V3CoinbaseConfig) GetPortfolioID() string {
+func (o *V3CoinbaseprimeConfig) GetPortfolioID() string {
 	if o == nil {
 		return ""
 	}
 	return o.PortfolioID
 }
 
-func (o *V3CoinbaseConfig) GetProvider() *string {
+func (o *V3CoinbaseprimeConfig) GetProvider() *string {
 	if o == nil {
 		return nil
 	}

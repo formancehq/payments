@@ -1,4 +1,4 @@
-package coinbase
+package coinbaseprime
 
 import (
 	"context"
