@@ -16,6 +16,7 @@ import (
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
@@ -76,6 +77,13 @@ func (s *Server) Start() error {
 			r.Post("/install", s.handleInstall)
 			r.Post("/uninstall", s.handleUninstall)
 			r.Post("/reset", s.handleReset)
+
+			// Open banking operations
+			r.Post("/ob/create-user", s.handleOBCreateUser)
+			r.Post("/ob/create-link", s.handleOBCreateUserLink)
+			r.Post("/ob/complete-link", s.handleOBCompleteUserLink)
+			r.Get("/ob/connections", s.handleOBListConnections)
+			r.Delete("/ob/connections/{connectionID}", s.handleOBDeleteConnection)
 
 			// Fetch operations
 			r.Post("/fetch/accounts", s.handleFetchAccounts)
@@ -484,7 +492,28 @@ func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
 // === Fetch Operations ===
 
 type fetchRequest struct {
-	FromPayload json.RawMessage `json:"from_payload,omitempty"`
+	FromPayload  json.RawMessage `json:"from_payload,omitempty"`
+	ConnectionID *string         `json:"connection_id,omitempty"`
+	InnerPayload json.RawMessage `json:"inner_payload,omitempty"`
+}
+
+// resolveFromPayload resolves the from_payload for a fetch request.
+// If connection_id is set and from_payload is empty, it builds an
+// OpenBankingForwardedUserFromPayload from the stored connection.
+func (s *Server) resolveFromPayload(conn *ConnectorInstance, req *fetchRequest) (json.RawMessage, error) {
+	if len(req.FromPayload) > 0 {
+		return req.FromPayload, nil
+	}
+	if req.ConnectionID == nil {
+		return nil, nil
+	}
+
+	obConn, ok := conn.storage.GetOBConnection(*req.ConnectionID)
+	if !ok {
+		return nil, fmt.Errorf("open banking connection %q not found", *req.ConnectionID)
+	}
+
+	return BuildOBFromPayload(obConn, conn.ConnectorID, req.InnerPayload)
 }
 
 func (s *Server) handleFetchAccounts(w http.ResponseWriter, r *http.Request) {
@@ -499,7 +528,13 @@ func (s *Server) handleFetchAccounts(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
-	resp, err := conn.engine.FetchAccountsOnePage(r.Context(), req.FromPayload)
+	fromPayload, err := s.resolveFromPayload(conn, &req)
+	if err != nil {
+		s.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := conn.engine.FetchAccountsOnePage(r.Context(), fromPayload)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -524,7 +559,13 @@ func (s *Server) handleFetchPayments(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
-	resp, err := conn.engine.FetchPaymentsOnePage(r.Context(), req.FromPayload)
+	fromPayload, err := s.resolveFromPayload(conn, &req)
+	if err != nil {
+		s.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := conn.engine.FetchPaymentsOnePage(r.Context(), fromPayload)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -549,7 +590,13 @@ func (s *Server) handleFetchBalances(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
-	resp, err := conn.engine.FetchBalancesOnePage(r.Context(), req.FromPayload)
+	fromPayload, err := s.resolveFromPayload(conn, &req)
+	if err != nil {
+		s.errorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := conn.engine.FetchBalancesOnePage(r.Context(), fromPayload)
 	if err != nil {
 		s.errorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1776,6 +1823,170 @@ func (s *Server) handleImportBaseline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.jsonResponse(w, http.StatusCreated, baseline)
+}
+
+// === Open Banking Endpoints ===
+
+func (s *Server) handleOBCreateUser(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	resp, psuID, err := conn.engine.CreateUser(r.Context())
+	if err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	result := map[string]interface{}{
+		"psu_id": psuID.String(),
+	}
+	if resp.PSPUserID != nil {
+		result["psp_user_id"] = *resp.PSPUserID
+	}
+	if resp.PermanentToken != nil {
+		result["permanent_token"] = resp.PermanentToken
+	}
+	if resp.Metadata != nil {
+		result["metadata"] = resp.Metadata
+	}
+
+	s.jsonResponse(w, http.StatusOK, result)
+}
+
+func (s *Server) handleOBCreateUserLink(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	var req struct {
+		PSUID string `json:"psu_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.errorResponse(w, http.StatusBadRequest, "invalid request: "+err.Error())
+		return
+	}
+
+	psuID, err := uuid.Parse(req.PSUID)
+	if err != nil {
+		s.errorResponse(w, http.StatusBadRequest, "invalid psu_id: "+err.Error())
+		return
+	}
+
+	resp, err := conn.engine.CreateUserLink(r.Context(), psuID)
+	if err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	result := map[string]interface{}{
+		"link": resp.Link,
+	}
+	if resp.TemporaryLinkToken != nil {
+		result["temporary_token"] = resp.TemporaryLinkToken
+	}
+
+	s.jsonResponse(w, http.StatusOK, result)
+}
+
+func (s *Server) handleOBCompleteUserLink(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	var req struct {
+		PSUID       string              `json:"psu_id"`
+		QueryValues map[string][]string `json:"query_values,omitempty"`
+		Headers     map[string][]string `json:"headers,omitempty"`
+		Body        string              `json:"body,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.errorResponse(w, http.StatusBadRequest, "invalid request: "+err.Error())
+		return
+	}
+
+	psuID, err := uuid.Parse(req.PSUID)
+	if err != nil {
+		s.errorResponse(w, http.StatusBadRequest, "invalid psu_id: "+err.Error())
+		return
+	}
+
+	resp, err := conn.engine.CompleteUserLink(r.Context(), psuID, req.QueryValues, req.Headers, []byte(req.Body))
+	if err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if resp.Error != nil {
+		s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"error": resp.Error.Error,
+		})
+		return
+	}
+
+	if resp.Success != nil {
+		// Store connections
+		var stored []StoredOBConnection
+		for _, pspConn := range resp.Success.Connections {
+			sc := StoredOBConnection{
+				ConnectionID: pspConn.ConnectionID,
+				ConnectorID:  conn.ConnectorID,
+				PSUID:        psuID,
+				AccessToken:  pspConn.AccessToken,
+				Metadata:     pspConn.Metadata,
+				CreatedAt:    pspConn.CreatedAt,
+			}
+			conn.storage.StoreOBConnection(sc)
+			stored = append(stored, sc)
+		}
+
+		s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"connections": stored,
+			"count":       len(stored),
+		})
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"connections": []StoredOBConnection{},
+		"count":       0,
+	})
+}
+
+func (s *Server) handleOBListConnections(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	conns := conn.storage.GetOBConnections()
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"connections": conns,
+		"count":       len(conns),
+	})
+}
+
+func (s *Server) handleOBDeleteConnection(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	connectionID := chi.URLParam(r, "connectionID")
+	if !conn.storage.DeleteOBConnection(connectionID) {
+		s.errorResponse(w, http.StatusNotFound, fmt.Sprintf("connection %s not found", connectionID))
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
 // === Fallback UI ===
