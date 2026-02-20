@@ -27,9 +27,11 @@ import {
   type GenerateResult, 
   type InferredSchema, 
   type SchemaDiff, 
-  type DataBaseline, 
+  type DataBaseline,
   type BaselineDiff,
-  type GenericServerStatus
+  type GenericServerStatus,
+  type OBConnection,
+  type OBCreateUserResponse,
 } from './api';
 import './App.css';
 
@@ -284,9 +286,9 @@ const ConnectorContext = createContext<ConnectorContextType>({
 
 const useConnector = () => useContext(ConnectorContext);
 
-type Tab = 'dashboard' | 'accounts' | 'payments' | 'balances' | 'tasks' | 'debug' | 'snapshots' | 'analysis' | 'code' | 'state';
+type Tab = 'dashboard' | 'accounts' | 'payments' | 'balances' | 'banking' | 'tasks' | 'debug' | 'snapshots' | 'analysis' | 'code' | 'state';
 
-const VALID_TABS: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
+const VALID_TABS: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'banking', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
 
 function isValidTab(tab: string | undefined): tab is Tab {
   return tab !== undefined && VALID_TABS.includes(tab as Tab);
@@ -698,6 +700,9 @@ function AppContent() {
                 Balances {balances.length > 0 && <span className="tab-count">{balances.length}</span>}
               </Link>
             </Tooltip>
+            <Link to={`/c/${selectedConnectorId}/banking`} className={`tab ${tab === 'banking' ? 'active' : ''}`}>
+              Open Banking
+            </Link>
             <Tooltip text="Ctrl+5">
               <Link to={`/c/${selectedConnectorId}/tasks`} className={`tab ${tab === 'tasks' ? 'active' : ''}`}>
                 Tasks
@@ -784,6 +789,7 @@ function AppContent() {
                   onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchBalances()) : undefined}
                 />
               )}
+              {tab === 'banking' && selectedConnectorId && <BankingTab connectorId={selectedConnectorId} />}
               {tab === 'tasks' && <TasksTab />}
               {tab === 'debug' && (
                 <DebugTab 
@@ -1469,6 +1475,388 @@ function BalancesTab({ balances, onFetch }: BalancesTabProps) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Open Banking Tab
+function BankingTab({ connectorId }: { connectorId: string }) {
+  const api = connectorApi(connectorId);
+  const [connections, setConnections] = useState<OBConnection[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [psuId, setPsuId] = useState<string | null>(null);
+  const [userMeta, setUserMeta] = useState<OBCreateUserResponse | null>(null);
+  const [linkInfo, setLinkInfo] = useState<string | null>(null);
+
+  // Complete-link form state
+  const [completePsuId, setCompletePsuId] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+  const [enrollmentId, setEnrollmentId] = useState('');
+  const [extraParams, setExtraParams] = useState('');
+
+  // Fetch form state
+  const [fetchConnectionId, setFetchConnectionId] = useState('');
+  const [fetchInnerPayload, setFetchInnerPayload] = useState('');
+  const [fetchType, setFetchType] = useState<'accounts' | 'payments' | 'balances'>('accounts');
+  const [fetchResult, setFetchResult] = useState<unknown>(null);
+
+  const refreshConnections = useCallback(async () => {
+    try {
+      const resp = await api.obListConnections();
+      setConnections(resp.connections || []);
+    } catch {
+      // ignore
+    }
+  }, [connectorId]);
+
+  useEffect(() => { refreshConnections(); }, [refreshConnections]);
+
+  const handleCreateUser = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await api.obCreateUser();
+      setPsuId(resp.psu_id);
+      setUserMeta(resp);
+      setCompletePsuId(resp.psu_id);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateLink = async () => {
+    if (!psuId) { setError('Create a user first'); return; }
+    setLoading(true);
+    setError(null);
+    setLinkInfo(null);
+    try {
+      const resp = await api.obCreateUserLink(psuId);
+      setLinkInfo(resp.link);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteLink = async () => {
+    if (!completePsuId) { setError('PSU ID is required'); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      const qv: Record<string, string[]> = {};
+      if (accessToken) qv['access_token'] = [accessToken];
+      if (enrollmentId) qv['enrollment_id'] = [enrollmentId];
+      // Parse extra params: "key=val,key2=val2"
+      if (extraParams) {
+        for (const pair of extraParams.split(',')) {
+          const [k, v] = pair.split('=').map(s => s.trim());
+          if (k && v) qv[k] = [v];
+        }
+      }
+      const resp = await api.obCompleteUserLink(completePsuId, qv);
+      if (resp.error) {
+        setError(resp.error);
+      } else {
+        await refreshConnections();
+        if (resp.connections && resp.connections.length > 0) {
+          setFetchConnectionId(resp.connections[0].connection_id);
+        }
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteConnection = async (connectionId: string) => {
+    try {
+      await api.obDeleteConnection(connectionId);
+      await refreshConnections();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleFetch = async () => {
+    if (!fetchConnectionId) { setError('Select a connection first'); return; }
+    setLoading(true);
+    setError(null);
+    setFetchResult(null);
+    try {
+      const inner = fetchInnerPayload || undefined;
+      if (fetchType === 'accounts') {
+        const resp = await api.fetchAccounts(undefined, fetchConnectionId, inner);
+        setFetchResult(resp);
+      } else if (fetchType === 'payments') {
+        const resp = await api.fetchPayments(undefined, fetchConnectionId, inner);
+        setFetchResult(resp);
+      } else {
+        const resp = await api.fetchBalances(undefined, fetchConnectionId, inner);
+        setFetchResult(resp);
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="banking-tab">
+      {error && (
+        <div className="error-banner" style={{ marginBottom: 16 }}>
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>×</button>
+        </div>
+      )}
+
+      <div className="banking-columns">
+        {/* Left column: Enrollment flow */}
+        <div className="banking-column">
+          <section>
+            <h2>Enrollment</h2>
+
+            <div className="banking-step">
+              <div className="step-header">
+                <span className="step-number">1</span>
+                <span className="step-title">Create User</span>
+              </div>
+              <button className="btn-primary" onClick={handleCreateUser} disabled={loading}>
+                {loading ? <span className="spinner" /> : null} Create User
+              </button>
+              {psuId && (
+                <div className="banking-result">
+                  <label>PSU ID</label>
+                  <code className="banking-code">{psuId}</code>
+                  {userMeta?.psp_user_id && (
+                    <>
+                      <label>Provider User ID</label>
+                      <code className="banking-code">{userMeta.psp_user_id}</code>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="banking-step">
+              <div className="step-header">
+                <span className="step-number">2</span>
+                <span className="step-title">Get Auth Link</span>
+              </div>
+              <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
+                Get the provider&apos;s authentication link or widget config to send the user to.
+              </p>
+              <button className="btn-primary" onClick={handleCreateLink} disabled={loading || !psuId}>
+                Get Link
+              </button>
+              {linkInfo && (
+                <div className="banking-result">
+                  <label>Link / Config</label>
+                  {(() => {
+                    // Try to detect if it's a URL or JSON config
+                    try {
+                      const parsed = JSON.parse(linkInfo);
+                      return (
+                        <>
+                          <p className="text-muted" style={{ fontSize: 11 }}>
+                            This provider uses a client-side widget. Initialize it with this config:
+                          </p>
+                          <pre className="banking-json">{JSON.stringify(parsed, null, 2)}</pre>
+                        </>
+                      );
+                    } catch {
+                      // It's a URL
+                      if (linkInfo.startsWith('http')) {
+                        return (
+                          <>
+                            <p className="text-muted" style={{ fontSize: 11 }}>
+                              Redirect the user to this URL to authenticate:
+                            </p>
+                            <a href={linkInfo} target="_blank" rel="noopener noreferrer" className="banking-link">
+                              {linkInfo}
+                            </a>
+                          </>
+                        );
+                      }
+                      return <code className="banking-code">{linkInfo}</code>;
+                    }
+                  })()}
+                </div>
+              )}
+            </div>
+
+            <div className="banking-step">
+              <div className="step-header">
+                <span className="step-number">3</span>
+                <span className="step-title">Complete Link</span>
+              </div>
+              <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
+                After the user completes auth (or for sandbox testing, enter tokens directly).
+              </p>
+              <div className="banking-form">
+                <div className="form-field">
+                  <label>PSU ID</label>
+                  <input
+                    type="text"
+                    value={completePsuId}
+                    onChange={e => setCompletePsuId(e.target.value)}
+                    placeholder="uuid from step 1"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Access Token</label>
+                  <input
+                    type="text"
+                    value={accessToken}
+                    onChange={e => setAccessToken(e.target.value)}
+                    placeholder="e.g. test_token_xxx"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Enrollment ID</label>
+                  <input
+                    type="text"
+                    value={enrollmentId}
+                    onChange={e => setEnrollmentId(e.target.value)}
+                    placeholder="e.g. enr_xxx"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Extra Params <span className="text-muted">(key=val,key2=val2)</span></label>
+                  <input
+                    type="text"
+                    value={extraParams}
+                    onChange={e => setExtraParams(e.target.value)}
+                    placeholder="optional extra query params"
+                  />
+                </div>
+                <button className="btn-primary" onClick={handleCompleteLink} disabled={loading || !completePsuId}>
+                  Complete Link
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2>Fetch via Connection</h2>
+            <div className="banking-form">
+              <div className="form-field">
+                <label>Connection</label>
+                <select value={fetchConnectionId} onChange={e => setFetchConnectionId(e.target.value)}>
+                  <option value="">Select connection...</option>
+                  {connections.map(c => (
+                    <option key={c.connection_id} value={c.connection_id}>
+                      {c.connection_id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Data Type</label>
+                <select value={fetchType} onChange={e => setFetchType(e.target.value as 'accounts' | 'payments' | 'balances')}>
+                  <option value="accounts">Accounts</option>
+                  <option value="payments">Payments</option>
+                  <option value="balances">Balances</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Inner Payload <span className="text-muted">(optional, e.g. account ID for payments)</span></label>
+                <input
+                  type="text"
+                  value={fetchInnerPayload}
+                  onChange={e => setFetchInnerPayload(e.target.value)}
+                  placeholder="e.g. acc_xxx"
+                />
+              </div>
+              <button className="btn-primary" onClick={handleFetch} disabled={loading || !fetchConnectionId}>
+                Fetch
+              </button>
+            </div>
+            {fetchResult && (
+              <div className="banking-result">
+                <label>Result</label>
+                <pre className="banking-json">{JSON.stringify(fetchResult, null, 2)}</pre>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Right column: Connections */}
+        <div className="banking-column">
+          <section>
+            <h2>Connections ({connections.length})</h2>
+            {connections.length === 0 ? (
+              <div className="empty-state-small">
+                <p className="text-muted">No connections yet. Complete the enrollment flow to create one.</p>
+              </div>
+            ) : (
+              <div className="banking-connections">
+                {connections.map(conn => (
+                  <div key={conn.connection_id} className="banking-connection-card">
+                    <div className="connection-header">
+                      <code className="connection-id">{conn.connection_id}</code>
+                      <button
+                        className="btn-icon btn-danger-subtle"
+                        onClick={() => handleDeleteConnection(conn.connection_id)}
+                        title="Delete connection"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="connection-details">
+                      <div className="connection-field">
+                        <span className="field-label">PSU</span>
+                        <code>{conn.psu_id.substring(0, 8)}...</code>
+                      </div>
+                      {conn.access_token && (
+                        <div className="connection-field">
+                          <span className="field-label">Token</span>
+                          <code>{conn.access_token.token.substring(0, 20)}...</code>
+                        </div>
+                      )}
+                      <div className="connection-field">
+                        <span className="field-label">Created</span>
+                        <span>{new Date(conn.created_at).toLocaleString()}</span>
+                      </div>
+                      {conn.metadata && Object.keys(conn.metadata).length > 0 && (
+                        <div className="connection-field">
+                          <span className="field-label">Metadata</span>
+                          <code>{JSON.stringify(conn.metadata)}</code>
+                        </div>
+                      )}
+                    </div>
+                    <div className="connection-actions">
+                      <button
+                        className="btn-secondary btn-small"
+                        onClick={() => {
+                          setFetchConnectionId(conn.connection_id);
+                          setFetchType('accounts');
+                        }}
+                      >
+                        Fetch Accounts
+                      </button>
+                      <button
+                        className="btn-secondary btn-small"
+                        onClick={() => {
+                          setFetchConnectionId(conn.connection_id);
+                          setFetchType('payments');
+                        }}
+                      >
+                        Fetch Payments
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
