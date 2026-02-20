@@ -5,9 +5,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/coinbaseprime/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -24,7 +23,7 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			Plugin: plugins.NewBasePlugin(),
+			Plugin: connector.NewBasePlugin(),
 			client: m,
 		}
 	})
@@ -56,23 +55,23 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 		})
 
 		It("should return an error - missing from payload", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: nil,
 			}
 
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("missing from payload"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+			Expect(resp).To(Equal(connector.FetchNextBalancesResponse{}))
 		})
 
 		It("should return an error - get balances error", func(ctx SpecContext) {
 			btcAsset := "BTC/8"
-			fromPayload, _ := json.Marshal(models.PSPAccount{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
 				Reference:    "wallet1",
 				DefaultAsset: &btcAsset,
 			})
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 				PageSize:    10,
 			}
@@ -85,16 +84,16 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+			Expect(resp).To(Equal(connector.FetchNextBalancesResponse{}))
 		})
 
 		It("should fetch balances with correct precision", func(ctx SpecContext) {
 			btcAsset := "BTC/8"
-			fromPayload, _ := json.Marshal(models.PSPAccount{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
 				Reference:    "wallet1",
 				DefaultAsset: &btcAsset,
 			})
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 				PageSize:    10,
 			}
@@ -124,11 +123,11 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 
 		It("should normalize lowercase balance symbols from API", func(ctx SpecContext) {
 			btcAsset := "BTC/8"
-			fromPayload, _ := json.Marshal(models.PSPAccount{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
 				Reference:    "wallet1",
 				DefaultAsset: &btcAsset,
 			})
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 				PageSize:    10,
 			}
@@ -157,11 +156,11 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 
 		It("should parse amount with currency-specific decimals", func(ctx SpecContext) {
 			ethAsset := "ETH/18"
-			fromPayload, _ := json.Marshal(models.PSPAccount{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
 				Reference:    "wallet-eth",
 				DefaultAsset: &ethAsset,
 			})
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 				PageSize:    10,
 			}
@@ -190,24 +189,24 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 		})
 
 		It("should return an error when default asset is missing", func(ctx SpecContext) {
-			fromPayload, _ := json.Marshal(models.PSPAccount{Reference: "wallet1"})
-			req := models.FetchNextBalancesRequest{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{Reference: "wallet1"})
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 			}
 
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("missing default asset"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+			Expect(resp).To(Equal(connector.FetchNextBalancesResponse{}))
 		})
 
 		It("should return empty balances for unsupported currencies", func(ctx SpecContext) {
 			btcAsset := "BTC/8"
-			fromPayload, _ := json.Marshal(models.PSPAccount{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
 				Reference:    "wallet-btc",
 				DefaultAsset: &btcAsset,
 			})
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 				PageSize:    10,
 			}
@@ -236,11 +235,11 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 
 		It("should return empty balances when no balances exist", func(ctx SpecContext) {
 			btcAsset := "BTC/8"
-			fromPayload, _ := json.Marshal(models.PSPAccount{
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
 				Reference:    "wallet1",
 				DefaultAsset: &btcAsset,
 			})
-			req := models.FetchNextBalancesRequest{
+			req := connector.FetchNextBalancesRequest{
 				FromPayload: fromPayload,
 				PageSize:    10,
 			}

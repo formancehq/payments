@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -24,7 +23,7 @@ var _ = Describe("Coinbase Plugin", func() {
 
 	BeforeEach(func() {
 		plg = &Plugin{
-			Plugin: plugins.NewBasePlugin(),
+			Plugin: connector.NewBasePlugin(),
 		}
 	})
 
@@ -61,7 +60,7 @@ var _ = Describe("Coinbase Plugin", func() {
 			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "passphrase": "test", "portfolioId": "portfolio-123"}`)
 			p, err := New("coinbaseprime", logger, config)
 			Expect(err).To(BeNil())
-			req := models.InstallRequest{}
+			req := connector.InstallRequest{}
 			res, err := p.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
@@ -71,122 +70,122 @@ var _ = Describe("Coinbase Plugin", func() {
 
 	Context("uninstall", func() {
 		It("should return valid uninstall response", func(ctx SpecContext) {
-			req := models.UninstallRequest{ConnectorID: "test"}
+			req := connector.UninstallRequest{ConnectorID: "test"}
 			resp, err := plg.Uninstall(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp).To(Equal(models.UninstallResponse{}))
+			Expect(resp).To(Equal(connector.UninstallResponse{}))
 		})
 	})
 
 	Context("fetch next accounts", func() {
 		It("should fail when called before install", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{State: json.RawMessage(`{}`)}
+			req := connector.FetchNextAccountsRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextAccounts(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(connector.ErrNotYetInstalled))
 		})
 	})
 
 	Context("fetch next balances", func() {
 		It("should fail when called before install", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{State: json.RawMessage(`{}`)}
+			req := connector.FetchNextBalancesRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(connector.ErrNotYetInstalled))
 		})
 	})
 
 	Context("fetch next payments", func() {
 		It("should fail when called before install", func(ctx SpecContext) {
-			req := models.FetchNextPaymentsRequest{State: json.RawMessage(`{}`)}
+			req := connector.FetchNextPaymentsRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextPayments(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(connector.ErrNotYetInstalled))
 		})
 	})
 
 	Context("fetch next others", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.FetchNextOthersRequest{State: json.RawMessage(`{}`)}
+			req := connector.FetchNextOthersRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextOthers(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("fetch next external accounts", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.FetchNextExternalAccountsRequest{State: json.RawMessage(`{}`)}
+			req := connector.FetchNextExternalAccountsRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextExternalAccounts(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("create bank account", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.CreateBankAccountRequest{}
+			req := connector.CreateBankAccountRequest{}
 			_, err := plg.CreateBankAccount(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("create transfer", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.CreateTransferRequest{}
+			req := connector.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("reverse transfer", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.ReverseTransferRequest{}
+			req := connector.ReverseTransferRequest{}
 			_, err := plg.ReverseTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("poll transfer status", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.PollTransferStatusRequest{}
+			req := connector.PollTransferStatusRequest{}
 			_, err := plg.PollTransferStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("create payout", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{}
+			req := connector.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("reverse payout", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.ReversePayoutRequest{}
+			req := connector.ReversePayoutRequest{}
 			_, err := plg.ReversePayout(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("poll payout status", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.PollPayoutStatusRequest{}
+			req := connector.PollPayoutStatusRequest{}
 			_, err := plg.PollPayoutStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("create webhooks", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.CreateWebhooksRequest{}
+			req := connector.CreateWebhooksRequest{}
 			_, err := plg.CreateWebhooks(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 
 	Context("translate webhook", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{}
+			req := connector.TranslateWebhookRequest{}
 			_, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(connector.ErrNotImplemented))
 		})
 	})
 })

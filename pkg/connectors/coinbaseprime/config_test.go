@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -112,7 +112,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 		It("should return an unmarshalling error wrapped as invalid config", func() {
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(models.ErrInvalidConfig.Error()))
+			Expect(err.Error()).To(ContainSubstring(connector.ErrInvalidConfig.Error()))
 		})
 	})
 

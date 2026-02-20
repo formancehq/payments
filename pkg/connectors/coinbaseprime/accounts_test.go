@@ -4,9 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/coinbaseprime/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -23,7 +22,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			Plugin: plugins.NewBasePlugin(),
+			Plugin: connector.NewBasePlugin(),
 			client: m,
 		}
 	})
@@ -67,7 +66,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 		})
 
 		It("should return an error - get wallets error", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{
+			req := connector.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
@@ -80,11 +79,11 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+			Expect(resp).To(Equal(connector.FetchNextAccountsResponse{}))
 		})
 
 		It("should fetch wallets successfully", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{
+			req := connector.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
@@ -125,7 +124,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{
+			req := connector.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
@@ -164,7 +163,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 		})
 
 		It("should accept lowercase symbols", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{
+			req := connector.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
@@ -196,7 +195,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 		})
 
 		It("should use cursor for pagination", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{
+			req := connector.FetchNextAccountsRequest{
 				State:    []byte(`{"cursor": "existing-cursor"}`),
 				PageSize: 10,
 			}

@@ -3,18 +3,17 @@ package coinbaseprime
 import (
 	"encoding/json"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
 
 type Config struct {
-	APIKey        string                     `json:"apiKey" validate:"required"`
-	APISecret     string                     `json:"apiSecret" validate:"required"`
-	Passphrase    string                     `json:"passphrase" validate:"required"`
-	PortfolioID   string                     `json:"portfolioId" validate:"required"`
-	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
+	APIKey        string                  `json:"apiKey" validate:"required"`
+	APISecret     string                  `json:"apiSecret" validate:"required"`
+	Passphrase    string                  `json:"passphrase" validate:"required"`
+	PortfolioID   string                  `json:"portfolioId" validate:"required"`
+	PollingPeriod connector.PollingPeriod `json:"pollingPeriod"`
 }
 
 const PAGE_SIZE = 100
@@ -29,16 +28,16 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	}
 
 	if err := json.Unmarshal(payload, &raw); err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
+		return Config{}, errors.Wrap(connector.ErrInvalidConfig, err.Error())
 	}
 
-	pp, err := sharedconfig.NewPollingPeriod(
+	pp, err := connector.NewPollingPeriod(
 		raw.PollingPeriod,
-		sharedconfig.DefaultPollingPeriod,
-		sharedconfig.MinimumPollingPeriod,
+		connector.DefaultPollingPeriod,
+		connector.MinimumPollingPeriod,
 	)
 	if err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
+		return Config{}, errors.Wrap(connector.ErrInvalidConfig, err.Error())
 	}
 
 	config := Config{
@@ -51,7 +50,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	if err := validate.Struct(config); err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
+		return Config{}, errors.Wrap(connector.ErrInvalidConfig, err.Error())
 	}
 
 	return config, nil

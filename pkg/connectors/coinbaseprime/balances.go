@@ -8,30 +8,30 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/connector"
 )
 
-func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var from models.PSPAccount
+func (p *Plugin) fetchNextBalances(ctx context.Context, req connector.FetchNextBalancesRequest) (connector.FetchNextBalancesResponse, error) {
+	var from connector.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, fmt.Errorf("missing from payload when fetching balances")
+		return connector.FetchNextBalancesResponse{}, fmt.Errorf("missing from payload when fetching balances")
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return connector.FetchNextBalancesResponse{}, err
 	}
 
 	walletSymbol, err := walletSymbolFromAccount(from)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return connector.FetchNextBalancesResponse{}, err
 	}
 
 	response, err := p.client.GetBalancesForSymbol(ctx, walletSymbol, "", req.PageSize)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return connector.FetchNextBalancesResponse{}, err
 	}
 
 	now := time.Now().UTC()
-	var balances []models.PSPBalance
+	var balances []connector.PSPBalance
 	for _, bal := range response.Balances {
 		symbol := strings.ToUpper(strings.TrimSpace(bal.Symbol))
 
@@ -42,12 +42,12 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 		amount, err := currency.GetAmountWithPrecisionFromString(bal.Amount, precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
+			return connector.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 		}
 
 		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, symbol)
 
-		balances = append(balances, models.PSPBalance{
+		balances = append(balances, connector.PSPBalance{
 			AccountReference: from.Reference,
 			Asset:            asset,
 			Amount:           amount,
@@ -55,13 +55,13 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		})
 	}
 
-	return models.FetchNextBalancesResponse{
+	return connector.FetchNextBalancesResponse{
 		Balances: balances,
 		HasMore:  false,
 	}, nil
 }
 
-func walletSymbolFromAccount(from models.PSPAccount) (string, error) {
+func walletSymbolFromAccount(from connector.PSPAccount) (string, error) {
 	if from.DefaultAsset == nil {
 		return "", fmt.Errorf("missing default asset in from payload")
 	}
