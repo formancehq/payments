@@ -7,7 +7,7 @@ type wrappedError struct {
 }
 
 // NewWrappedError creates a new error that wraps the cause error with the new error.
-// It should be use when you want to have the end cause of an error and not all
+// It should be used when you want to have the end cause of an error and not all
 // the stack trace, for example when you want to store the transfer/payout creation
 // error.
 func NewWrappedError(cause error, newError error) error {

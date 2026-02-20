@@ -1,37 +1,23 @@
 package sharedconfig
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/formancehq/payments/pkg/connector"
 )
+
+// Polling period aliases for backward compatibility.
+// The canonical implementations now live in pkg/connector.
 
 const (
-	MinimumPollingPeriod = 20 * time.Minute
-	DefaultPollingPeriod = 30 * time.Minute
+	MinimumPollingPeriod = connector.MinimumPollingPeriod
+	DefaultPollingPeriod = connector.DefaultPollingPeriod
 )
 
-type PollingPeriod time.Duration
+// PollingPeriod is an alias to pkg/connector.PollingPeriod.
+type PollingPeriod = connector.PollingPeriod
 
-func (p PollingPeriod) Duration() time.Duration { return time.Duration(p) }
-
-func (p PollingPeriod) MarshalJSON() ([]byte, error) {
-	return json.Marshal(time.Duration(p).String())
-}
-
-// Helper to construct the value while applying min/default.
+// NewPollingPeriod is an alias to pkg/connector.NewPollingPeriod.
 func NewPollingPeriod(raw string, def, min time.Duration) (PollingPeriod, error) {
-	if raw == "" {
-		if def < min {
-			return PollingPeriod(min), nil
-		}
-		return PollingPeriod(def), nil
-	}
-	v, err := time.ParseDuration(raw)
-	if err != nil {
-		return 0, err
-	}
-	if v < min {
-		v = min
-	}
-	return PollingPeriod(v), nil
+	return connector.NewPollingPeriod(raw, def, min)
 }

@@ -1,0 +1,723 @@
+package column
+
+import (
+	"fmt"
+	"math/big"
+
+	"github.com/formancehq/payments/pkg/connectors/column/client"
+	"github.com/formancehq/payments/pkg/connector"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
+)
+
+var _ = Describe("Column Plugin Payouts", func() {
+	var (
+		ctrl           *gomock.Controller
+		mockHTTPClient *client.MockHTTPClient
+		plg            connector.Plugin
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(mockHTTPClient)
+		plg = &Plugin{client: c}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Context("Perform Payout Requests", func() {
+		It("should return an error when amount is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrMissingAmount.Error()))
+		})
+
+		It("should return an error when sourceAccount is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrMissingSourceAccount.Error()))
+		})
+
+		It("should return an error when sourceAccount reference is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount:        big.NewInt(100),
+					SourceAccount: &connector.PSPAccount{},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrSourceAccountReferenceRequired.Error()))
+		})
+
+		It("should return an error when destinationAccount is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrMissingDestinationAccount.Error()))
+		})
+
+		It("should return an error when destinationAccount reference is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &connector.PSPAccount{},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrMissingDestinationAccountReference.Error()))
+		})
+
+		It("should return an error when metadata is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrMissingMetadata.Error()))
+		})
+
+		It("should return an error when payout type is missing", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+					Metadata: map[string]string{},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("validation error occurred for field metadata: required field metadata must be provided"))
+		})
+
+		It("should return an error when payout type is invalid", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: connector.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &connector.PSPAccount{
+						Reference: "test-ref",
+					},
+					Metadata: map[string]string{
+						client.ColumnPayoutTypeMetadataKey: "invalid-type",
+					},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrInvalidMetadataPayoutType.Error()))
+		})
+
+		Context("Wire/Realtime/International-Wire Payout Validation", func() {
+
+			It("should return an error when asset is missing", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "wire",
+						},
+					},
+				}
+				_, err := plg.CreatePayout(ctx, req)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring(ErrMissingAsset.Error()))
+			})
+
+			It("should return an error when parsing invalid createdAt timestamp", func(ctx SpecContext) {
+
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "wire",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.WirePayoutResponse{
+					CreatedAt:     "invalid-timestamp",
+					ID:            "test-id",
+					Amount:        100,
+					CurrencyCode:  "USD",
+					BankAccountID: "test-bank",
+					Description:   "test description",
+					UpdatedAt:     "2021-01-01T00:00:00Z",
+				})
+
+				res, err := plg.CreatePayout(ctx, req)
+				Expect(err).ToNot(BeNil())
+				Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+				Expect(err.Error()).To(ContainSubstring("parsing time \"invalid-timestamp\" as"))
+			})
+
+		})
+
+		Context("HTTP Request Creation Errors", func() {
+			var (
+				plg connector.Plugin
+			)
+			BeforeEach(func() {
+				c := client.New("test", "aseplye", "https://test.com")
+				c.SetHttpClient(mockHTTPClient)
+				plg = &Plugin{client: c}
+			})
+
+			It("should return an error when creating ACH payout request fails", func(ctx SpecContext) {
+
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey:      "ach",
+							client.ColumnAmountConditionMetadataKey: "test-condition",
+						},
+						Description: "test description",
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					500,
+					fmt.Errorf("mock request creation error"),
+				)
+
+				res, err := plg.CreatePayout(ctx, req)
+				Expect(err).ToNot(BeNil())
+				Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+				Expect(err.Error()).To(ContainSubstring("mock request creation error"))
+			})
+
+			It("should return an error when creating wire payout request fails", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "wire",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					500,
+					fmt.Errorf("mock request creation error"),
+				)
+
+				res, err := plg.CreatePayout(ctx, req)
+				Expect(err).ToNot(BeNil())
+				Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+				Expect(err.Error()).To(ContainSubstring("mock request creation error"))
+			})
+
+			It("should return an error when creating international-wire payout request fails", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "international-wire",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					500,
+					fmt.Errorf("mock request creation error"),
+				)
+
+				res, err := plg.CreatePayout(ctx, req)
+				Expect(err).ToNot(BeNil())
+				Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+				Expect(err.Error()).To(ContainSubstring("mock request creation error"))
+			})
+
+			It("should return an error when creating realtime payout request fails", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "realtime",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					500,
+					fmt.Errorf("mock request creation error"),
+				)
+
+				res, err := plg.CreatePayout(ctx, req)
+				Expect(err).ToNot(BeNil())
+				Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+				Expect(err.Error()).To(ContainSubstring("mock request creation error"))
+			})
+
+			Context("Invalid URL Errors", func() {
+				var (
+					plg connector.Plugin
+				)
+
+				BeforeEach(func() {
+					c := client.New("test", "aseplye", "http://invalid:port")
+					c.SetHttpClient(mockHTTPClient)
+					plg = &Plugin{client: c}
+				})
+
+				It("should return an error when ACH payout URL is invalid", func(ctx SpecContext) {
+
+					req := connector.CreatePayoutRequest{
+						PaymentInitiation: connector.PSPPaymentInitiation{
+							Amount: big.NewInt(100),
+							Asset:  "USD/2",
+							SourceAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							DestinationAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							Metadata: map[string]string{
+								client.ColumnPayoutTypeMetadataKey:      "ach",
+								client.ColumnAmountConditionMetadataKey: "test-condition",
+							},
+							Description: "test-description",
+						},
+					}
+
+					res, err := plg.CreatePayout(ctx, req)
+					Expect(err).ToNot(BeNil())
+					Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+					Expect(err.Error()).To(ContainSubstring("failed to create request"))
+				})
+
+				It("should return an error when wire payout URL is invalid", func(ctx SpecContext) {
+					req := connector.CreatePayoutRequest{
+						PaymentInitiation: connector.PSPPaymentInitiation{
+							Amount: big.NewInt(100),
+							Asset:  "USD/2",
+							SourceAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							DestinationAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							Metadata: map[string]string{
+								client.ColumnPayoutTypeMetadataKey: "wire",
+							},
+						},
+					}
+
+					res, err := plg.CreatePayout(ctx, req)
+					Expect(err).ToNot(BeNil())
+					Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+					Expect(err.Error()).To(ContainSubstring("failed to create request"))
+				})
+
+				It("should return an error when international wire payout URL is invalid", func(ctx SpecContext) {
+					req := connector.CreatePayoutRequest{
+						PaymentInitiation: connector.PSPPaymentInitiation{
+							Amount: big.NewInt(100),
+							Asset:  "USD/2",
+							SourceAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							DestinationAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							Metadata: map[string]string{
+								client.ColumnPayoutTypeMetadataKey: "international-wire",
+							},
+						},
+					}
+
+					res, err := plg.CreatePayout(ctx, req)
+					Expect(err).ToNot(BeNil())
+					Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+					Expect(err.Error()).To(ContainSubstring("failed to create request"))
+				})
+
+				It("should return an error when realtime payout URL is invalid", func(ctx SpecContext) {
+					req := connector.CreatePayoutRequest{
+						PaymentInitiation: connector.PSPPaymentInitiation{
+							Amount: big.NewInt(100),
+							Asset:  "USD/2",
+							SourceAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							DestinationAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							Metadata: map[string]string{
+								client.ColumnPayoutTypeMetadataKey: "realtime",
+							},
+						},
+					}
+
+					res, err := plg.CreatePayout(ctx, req)
+					Expect(err).ToNot(BeNil())
+					Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+					Expect(err.Error()).To(ContainSubstring("failed to create request"))
+				})
+
+				It("should return an error when asset is invalid", func(ctx SpecContext) {
+					req := connector.CreatePayoutRequest{
+						PaymentInitiation: connector.PSPPaymentInitiation{
+							Amount: big.NewInt(100),
+							Asset:  "INVALID/2",
+							SourceAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							DestinationAccount: &connector.PSPAccount{
+								Reference: "test-ref",
+							},
+							Metadata: map[string]string{
+								client.ColumnPayoutTypeMetadataKey: "wire",
+							},
+						},
+					}
+
+					res, err := plg.CreatePayout(ctx, req)
+					Expect(err).ToNot(BeNil())
+					Expect(res).To(Equal(connector.CreatePayoutResponse{}))
+					Expect(err.Error()).To(ContainSubstring("failed to get currency and precision from asset"))
+				})
+
+			})
+		})
+
+		Context("Payout to Payment Transformation", func() {
+			It("should create a payment from a wire payout response", func(ctx SpecContext) {
+
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "wire",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.WirePayoutResponse{
+					CreatedAt:     "2021-01-01T00:00:00Z",
+					ID:            "test-id",
+					Amount:        100,
+					CurrencyCode:  "USD",
+					BankAccountID: "test-bank",
+					Description:   "test description",
+					UpdatedAt:     "2021-01-01T00:00:00Z",
+				})
+
+				resp, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(resp.Payment.Reference).To(Equal("test-id"))
+				Expect(resp.Payment.Amount).To(Equal(big.NewInt(100)))
+				Expect(resp.Payment.Asset).To(Equal("USD/2"))
+
+			})
+
+			It("should create a payment from an ACH payout response", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey:      "ach",
+							client.ColumnAmountConditionMetadataKey: "test-condition",
+						},
+						Description: "test-description",
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.ACHPayoutResponse{
+					ID:            "test-id",
+					CreatedAt:     "2021-01-01T00:00:00Z",
+					UpdatedAt:     "2021-01-01T00:00:00Z",
+					Status:        "completed",
+					Amount:        100,
+					CurrencyCode:  "USD",
+					BankAccountID: "test-bank",
+					Description:   "test description",
+				})
+
+				resp, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(resp.Payment.Reference).To(Equal("test-id"))
+				Expect(resp.Payment.Amount).To(Equal(big.NewInt(100)))
+
+			})
+
+			It("should create a payment from an international wire payout response", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "international-wire",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.InternationalWirePayoutResponse{
+					CreatedAt:     "2021-01-01T00:00:00Z",
+					ID:            "test-id",
+					Amount:        100,
+					CurrencyCode:  "USD",
+					BankAccountID: "test-bank",
+					Description:   "test description",
+					UpdatedAt:     "2021-01-01T00:00:00Z",
+				})
+
+				resp, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(resp.Payment.Reference).To(Equal("test-id"))
+				Expect(resp.Payment.Amount).To(Equal(big.NewInt(100)))
+				Expect(resp.Payment.Asset).To(Equal("USD/2"))
+			})
+
+			It("should create a payment from a realtime payout response", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "realtime",
+						},
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.RealtimeTransferResponse{
+					ID:            "test-id",
+					Amount:        100,
+					CurrencyCode:  "USD",
+					BankAccountID: "test-bank",
+					Description:   "test description",
+					InitiatedAt:   "2021-01-01T00:00:00Z",
+					IsOnUs:        true,
+					IsIncoming:    false,
+					Status:        "completed",
+				})
+
+				resp, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(resp.Payment.Reference).To(Equal("test-id"))
+				Expect(resp.Payment.Amount).To(Equal(big.NewInt(100)))
+				Expect(resp.Payment.Asset).To(Equal("USD/2"))
+			})
+		})
+	})
+
+	Context("mapTransactionStatus", func() {
+		var (
+			p Plugin
+		)
+
+		It("should map status values correctly", func() {
+			testCases := []struct {
+				status         string
+				expectedStatus connector.PaymentStatus
+			}{
+				{"submitted", connector.PAYMENT_STATUS_PENDING},
+				{"pending_submission", connector.PAYMENT_STATUS_PENDING},
+				{"initiated", connector.PAYMENT_STATUS_PENDING},
+				{"pending_deposit", connector.PAYMENT_STATUS_PENDING},
+				{"pending_first_return", connector.PAYMENT_STATUS_PENDING},
+				{"pending_reclear", connector.PAYMENT_STATUS_PENDING},
+				{"pending_return", connector.PAYMENT_STATUS_PENDING},
+				{"pending_second_return", connector.PAYMENT_STATUS_PENDING},
+				{"pending_stop", connector.PAYMENT_STATUS_PENDING},
+				{"pending_user_initiated_return", connector.PAYMENT_STATUS_PENDING},
+				{"scheduled", connector.PAYMENT_STATUS_PENDING},
+				{"pending", connector.PAYMENT_STATUS_PENDING},
+				{"completed", connector.PAYMENT_STATUS_SUCCEEDED},
+				{"deposited", connector.PAYMENT_STATUS_SUCCEEDED},
+				{"recleared", connector.PAYMENT_STATUS_SUCCEEDED},
+				{"settled", connector.PAYMENT_STATUS_SUCCEEDED},
+				{"accepted", connector.PAYMENT_STATUS_SUCCEEDED},
+				{"canceled", connector.PAYMENT_STATUS_CANCELLED},
+				{"stopped", connector.PAYMENT_STATUS_CANCELLED},
+				{"blocked", connector.PAYMENT_STATUS_CANCELLED},
+				{"failed", connector.PAYMENT_STATUS_FAILED},
+				{"rejected", connector.PAYMENT_STATUS_FAILED},
+				{"returned", connector.PAYMENT_STATUS_REFUNDED},
+				{"user_initiated_returned", connector.PAYMENT_STATUS_REFUNDED},
+				{"return_contested", connector.PAYMENT_STATUS_REFUND_REVERSED},
+				{"return_dishonored", connector.PAYMENT_STATUS_REFUND_REVERSED},
+				{"user_initiated_return_dishonored", connector.PAYMENT_STATUS_REFUND_REVERSED},
+				{"first_return", connector.PAYMENT_STATUS_REFUNDED_FAILURE},
+				{"second_return", connector.PAYMENT_STATUS_REFUNDED_FAILURE},
+				{"user_initiated_return_submitted", connector.PAYMENT_STATUS_REFUNDED_FAILURE},
+				{"manual_review", connector.PAYMENT_STATUS_AUTHORISATION},
+				{"manual_review_approved", connector.PAYMENT_STATUS_AUTHORISATION},
+				{"hold", connector.PAYMENT_STATUS_CAPTURE},
+				{"unknown", connector.PAYMENT_STATUS_UNKNOWN},
+			}
+
+			for _, tc := range testCases {
+				result := p.mapTransactionStatus(tc.status)
+				Expect(result).To(Equal(tc.expectedStatus), "Status %s should map to %s", tc.status, tc.expectedStatus)
+			}
+		})
+	})
+})

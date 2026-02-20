@@ -1,16 +1,8 @@
 package httpwrapper
 
 import (
-	"net/http"
-	"time"
-
-	"golang.org/x/oauth2/clientcredentials"
+	"github.com/formancehq/payments/pkg/connector/httpwrapper"
 )
 
-type Config struct {
-	HttpErrorCheckerFn func(code int) error
-
-	Timeout     time.Duration
-	Transport   http.RoundTripper
-	OAuthConfig *clientcredentials.Config
-}
+// Config holds the configuration for an HTTP client wrapper.
+type Config = httpwrapper.Config

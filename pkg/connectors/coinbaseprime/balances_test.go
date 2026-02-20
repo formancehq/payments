@@ -1,0 +1,262 @@
+package coinbaseprime
+
+import (
+	"encoding/json"
+	"errors"
+	"math/big"
+
+	"github.com/formancehq/payments/pkg/connector"
+	"github.com/formancehq/payments/pkg/connectors/coinbaseprime/client"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
+)
+
+var _ = Describe("Coinbase Plugin Balances", func() {
+	var (
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{
+			Plugin: connector.NewBasePlugin(),
+			client: m,
+		}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Context("fetching next balances", func() {
+		var sampleBalances []client.Balance
+
+		BeforeEach(func() {
+			sampleBalances = []client.Balance{
+				{
+					Symbol:             "BTC",
+					Amount:             "1.5",
+					Holds:              "0.5",
+					WithdrawableAmount: "1.0",
+					FiatAmount:         "75000.00",
+				},
+				{
+					Symbol:             "USD",
+					Amount:             "1000.50",
+					Holds:              "100.50",
+					WithdrawableAmount: "900.00",
+					FiatAmount:         "1000.50",
+				},
+			}
+		})
+
+		It("should return an error - missing from payload", func(ctx SpecContext) {
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: nil,
+			}
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("missing from payload"))
+			Expect(resp).To(Equal(connector.FetchNextBalancesResponse{}))
+		})
+
+		It("should return an error - get balances error", func(ctx SpecContext) {
+			btcAsset := "BTC/8"
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
+				Reference:    "wallet1",
+				DefaultAsset: &btcAsset,
+			})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
+				nil,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(connector.FetchNextBalancesResponse{}))
+		})
+
+		It("should fetch balances with correct precision", func(ctx SpecContext) {
+			btcAsset := "BTC/8"
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
+				Reference:    "wallet1",
+				DefaultAsset: &btcAsset,
+			})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
+				&client.BalancesResponse{
+					Balances: []client.Balance{
+						sampleBalances[0],
+					},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(1))
+			Expect(resp.HasMore).To(BeFalse())
+
+			// BTC has 8 decimals, so 1.5 BTC = 150000000 (1.5 * 10^8)
+			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
+			Expect(resp.Balances[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
+			Expect(resp.Balances[0].AccountReference).To(Equal("wallet1"))
+		})
+
+		It("should normalize lowercase balance symbols from API", func(ctx SpecContext) {
+			btcAsset := "BTC/8"
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
+				Reference:    "wallet1",
+				DefaultAsset: &btcAsset,
+			})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
+				&client.BalancesResponse{
+					Balances: []client.Balance{
+						{
+							Symbol: "btc",
+							Amount: "1.5",
+						},
+					},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(1))
+			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
+			Expect(resp.Balances[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
+		})
+
+		It("should parse amount with currency-specific decimals", func(ctx SpecContext) {
+			ethAsset := "ETH/18"
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
+				Reference:    "wallet-eth",
+				DefaultAsset: &ethAsset,
+			})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "ETH", "", 10).Return(
+				&client.BalancesResponse{
+					Balances: []client.Balance{
+						{
+							Symbol: "ETH",
+							Amount: "0.000000000000000001",
+						},
+					},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(1))
+
+			Expect(resp.Balances[0].Asset).To(Equal("ETH/18"))
+			Expect(resp.Balances[0].Amount.Cmp(big.NewInt(1))).To(Equal(0))
+		})
+
+		It("should return an error when default asset is missing", func(ctx SpecContext) {
+			fromPayload, _ := json.Marshal(connector.PSPAccount{Reference: "wallet1"})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+			}
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("missing default asset"))
+			Expect(resp).To(Equal(connector.FetchNextBalancesResponse{}))
+		})
+
+		It("should return empty balances for unsupported currencies", func(ctx SpecContext) {
+			btcAsset := "BTC/8"
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
+				Reference:    "wallet-btc",
+				DefaultAsset: &btcAsset,
+			})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			unsupportedBalances := []client.Balance{
+				{
+					Symbol: "UNKNOWN_CURRENCY",
+					Amount: "100",
+				},
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
+				&client.BalancesResponse{
+					Balances: unsupportedBalances,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(0))
+		})
+
+		It("should return empty balances when no balances exist", func(ctx SpecContext) {
+			btcAsset := "BTC/8"
+			fromPayload, _ := json.Marshal(connector.PSPAccount{
+				Reference:    "wallet1",
+				DefaultAsset: &btcAsset,
+			})
+			req := connector.FetchNextBalancesRequest{
+				FromPayload: fromPayload,
+				PageSize:    10,
+			}
+
+			m.EXPECT().GetBalancesForSymbol(gomock.Any(), "BTC", "", 10).Return(
+				&client.BalancesResponse{
+					Balances: []client.Balance{},
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(0))
+		})
+	})
+})
