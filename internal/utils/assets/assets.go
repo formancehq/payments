@@ -6,7 +6,8 @@ import (
 
 // Pattern allows uppercase letters, digits, and underscores for asset identifiers
 // (underscores are common in crypto assets like BTC_TEST, ETH_TEST5, etc.)
-const Pattern = `[A-Z][A-Z0-9_]{0,16}(\/\d{1,6})?`
+// (Hyphen "-" has been found in some crypto like ETH-AETH_SEPOLIA)
+const Pattern = `[A-Z][A-Z0-9_-]{0,16}(\/\d{1,6})?`
 
 var Regexp = regexp.MustCompile("^" + Pattern + "$")
 
