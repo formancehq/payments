@@ -248,7 +248,7 @@ func (m *SchemaManager) SaveBaseline(operation string) error {
 	// Deep copy the schema
 	data, _ := json.Marshal(schema)
 	var baseline InferredSchema
-	json.Unmarshal(data, &baseline)
+	_ = json.Unmarshal(data, &baseline)
 	baseline.ID = fmt.Sprintf("baseline-%s-%d", operation, time.Now().UnixNano())
 
 	m.baselines[operation] = &baseline
@@ -264,7 +264,7 @@ func (m *SchemaManager) SaveAllBaselines() int {
 	for op, schema := range m.schemas {
 		data, _ := json.Marshal(schema)
 		var baseline InferredSchema
-		json.Unmarshal(data, &baseline)
+		_ = json.Unmarshal(data, &baseline)
 		baseline.ID = fmt.Sprintf("baseline-%s-%d", op, time.Now().UnixNano())
 		m.baselines[op] = &baseline
 		count++

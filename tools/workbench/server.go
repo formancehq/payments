@@ -211,7 +211,7 @@ func (s *Server) Start() error {
 					return
 				}
 				w.Header().Set("Content-Type", "text/html")
-				w.Write(indexHTML)
+				_, _ = w.Write(indexHTML)
 			})
 		}
 
@@ -282,7 +282,7 @@ func (s *Server) getConnector(r *http.Request) *ConnectorInstance {
 func (s *Server) jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func (s *Server) errorResponse(w http.ResponseWriter, status int, message string) {
@@ -496,7 +496,7 @@ func (s *Server) handleFetchAccounts(w http.ResponseWriter, r *http.Request) {
 
 	var req fetchRequest
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
 	resp, err := conn.engine.FetchAccountsOnePage(r.Context(), req.FromPayload)
@@ -521,7 +521,7 @@ func (s *Server) handleFetchPayments(w http.ResponseWriter, r *http.Request) {
 
 	var req fetchRequest
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
 	resp, err := conn.engine.FetchPaymentsOnePage(r.Context(), req.FromPayload)
@@ -546,7 +546,7 @@ func (s *Server) handleFetchBalances(w http.ResponseWriter, r *http.Request) {
 
 	var req fetchRequest
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
 	resp, err := conn.engine.FetchBalancesOnePage(r.Context(), req.FromPayload)
@@ -571,7 +571,7 @@ func (s *Server) handleFetchExternalAccounts(w http.ResponseWriter, r *http.Requ
 
 	var req fetchRequest
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 	}
 
 	resp, err := conn.engine.FetchExternalAccountsOnePage(r.Context(), req.FromPayload)
@@ -744,7 +744,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=workbench-export-%s-%s.json", conn.ID, time.Now().Format("20060102-150405")))
-	json.NewEncoder(w).Encode(snapshot)
+	_ = json.NewEncoder(w).Encode(snapshot)
 }
 
 func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
@@ -1753,7 +1753,7 @@ func (s *Server) handleExportBaseline(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.json", id))
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handleImportBaseline(w http.ResponseWriter, r *http.Request) {
@@ -1805,7 +1805,7 @@ func (s *Server) handleUIFallback(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>`
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
+	_, _ = w.Write([]byte(html))
 }
 
 // writeGeneratedFiles writes generated test files to the specified directory.
@@ -1842,9 +1842,8 @@ func writeGeneratedFiles(outputDir string, result *GenerateResult) error {
 // These handlers expose the standard generic connector API so remote services
 // can connect to locally-running connectors for integration testing.
 
-type genericConnectorCtxKey struct{}
-
-// genericServerMiddleware validates API key and loads the configured connector.
+// genericServerMiddleware validates API key for the generic server.
+// Handlers get the connector directly from the workbench for clearer data flow.
 func (s *Server) genericServerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, apiKey := s.workbench.GetGenericServerConnector()
@@ -1874,21 +1873,21 @@ func (s *Server) genericServerMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		// Add connector to context
-		ctx := context.WithValue(r.Context(), genericConnectorCtxKey{}, conn)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(w, r)
 	})
 }
 
-func (s *Server) getGenericConnector(r *http.Request) *ConnectorInstance {
-	conn, _ := r.Context().Value(genericConnectorCtxKey{}).(*ConnectorInstance)
+// getGenericConnector returns the configured generic connector directly from the workbench.
+// This avoids storing connector references in context, providing clearer data flow.
+func (s *Server) getGenericConnector() *ConnectorInstance {
+	conn, _ := s.workbench.GetGenericServerConnector()
 	return conn
 }
 
 func (s *Server) genericError(w http.ResponseWriter, status int, title, detail string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{
+	_ = json.NewEncoder(w).Encode(map[string]string{
 		"Title":  title,
 		"Detail": detail,
 	})
@@ -1920,7 +1919,7 @@ func (s *Server) handleSetGenericConnector(w http.ResponseWriter, r *http.Reques
 
 // handleGenericAccounts handles GET /generic/accounts
 func (s *Server) handleGenericAccounts(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return // Error already sent by middleware
 	}
@@ -1959,12 +1958,12 @@ func (s *Server) handleGenericAccounts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(accounts)
+	_ = json.NewEncoder(w).Encode(accounts)
 }
 
 // handleGenericBalances handles GET /generic/accounts/{accountId}/balances
 func (s *Server) handleGenericBalances(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return
 	}
@@ -2004,12 +2003,12 @@ func (s *Server) handleGenericBalances(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 // handleGenericBeneficiaries handles GET /generic/beneficiaries
 func (s *Server) handleGenericBeneficiaries(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return
 	}
@@ -2047,12 +2046,12 @@ func (s *Server) handleGenericBeneficiaries(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(beneficiaries)
+	_ = json.NewEncoder(w).Encode(beneficiaries)
 }
 
 // handleGenericTransactions handles GET /generic/transactions
 func (s *Server) handleGenericTransactions(w http.ResponseWriter, r *http.Request) {
-	conn := s.getGenericConnector(r)
+	conn := s.getGenericConnector()
 	if conn == nil {
 		return
 	}
@@ -2101,18 +2100,7 @@ func (s *Server) handleGenericTransactions(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(transactions)
-}
-
-func parseIntParam(r *http.Request, name string, defaultVal int) int {
-	val := r.URL.Query().Get(name)
-	if val == "" {
-		return defaultVal
-	}
-	if i, err := strconv.Atoi(val); err == nil && i > 0 {
-		return i
-	}
-	return defaultVal
+	_ = json.NewEncoder(w).Encode(transactions)
 }
 
 func mapPaymentTypeToGeneric(t models.PaymentType) string {

@@ -402,7 +402,7 @@ func (m *BaselineManager) generateSummary(diff *BaselineDiff) string {
 	if len(parts) == 0 {
 		return "No changes detected"
 	}
-	return fmt.Sprintf("%s", join(parts, " | "))
+	return join(parts, " | ")
 }
 
 func join(parts []string, sep string) string {

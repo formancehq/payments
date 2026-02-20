@@ -82,7 +82,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req connector.FetchNextP
 		payment := connector.PSPPayment{
 			Reference: tx.ID,
 			CreatedAt: time.UnixMilli(tx.CreatedAt),
-			Type:      matchPaymentType(tx.Operation),
+			Type:      matchPaymentType(tx),
 			Amount:    amount,
 			Asset:     currency.FormatAsset(assetDecimals, tx.AssetID),
 			Scheme:    connector.PAYMENT_SCHEME_OTHER,
@@ -149,14 +149,39 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req connector.FetchNextP
 	}, nil
 }
 
-func matchPaymentType(operation string) connector.PaymentType {
-	switch operation {
+// isExternalPeerType returns true for peer types representing endpoints
+// outside the user's Fireblocks workspace.
+func isExternalPeerType(peerType string) bool {
+	switch peerType {
+	case "EXTERNAL_WALLET", "ONE_TIME_ADDRESS", "UNKNOWN",
+		"NETWORK_CONNECTION", "FIAT_ACCOUNT", "END_USER_WALLET":
+		return true
+	default:
+		return false
+	}
+}
+
+// resolveDestinationType returns the peer type of the effective destination.
+func resolveDestinationType(tx client.Transaction) string {
+	if len(tx.Destinations) > 0 {
+		return tx.Destinations[0].Type
+	}
+	return tx.Destination.Type
+}
+
+func matchPaymentType(tx client.Transaction) connector.PaymentType {
+	switch tx.Operation {
 	case "TRANSFER", "INTERNAL_TRANSFER":
-		return connector.PAYMENT_TYPE_TRANSFER
-	case "DEPOSIT":
-		return connector.PAYMENT_TYPE_PAYIN
-	case "WITHDRAW":
-		return connector.PAYMENT_TYPE_PAYOUT
+		srcExternal := isExternalPeerType(tx.Source.Type)
+		dstExternal := isExternalPeerType(resolveDestinationType(tx))
+		switch {
+		case srcExternal && !dstExternal:
+			return connector.PAYMENT_TYPE_PAYIN
+		case !srcExternal && dstExternal:
+			return connector.PAYMENT_TYPE_PAYOUT
+		default:
+			return connector.PAYMENT_TYPE_TRANSFER
+		}
 	default:
 		return connector.PAYMENT_TYPE_OTHER
 	}

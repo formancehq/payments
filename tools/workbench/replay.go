@@ -127,7 +127,7 @@ func (r *Replayer) Replay(ctx context.Context, req ReplayRequest) (*ReplayRespon
 		r.addToHistory(*response)
 		return response, nil // Return response with error, not error
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	// Capture response
 	response.StatusCode = httpResp.StatusCode

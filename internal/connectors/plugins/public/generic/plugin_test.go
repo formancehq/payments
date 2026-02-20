@@ -68,8 +68,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in accounts_test.go
 	})
 
 	Context("fetch next balances", func() {
@@ -78,8 +76,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in balances_test.go
 	})
 
 	Context("fetch next external accounts", func() {
@@ -88,8 +84,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in external_accounts_test.go
 	})
 
 	Context("fetch next payments", func() {
@@ -98,8 +92,6 @@ var _ = Describe("Generic Plugin", func() {
 			_, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-
-		// Other tests will be in payments_test.go
 	})
 
 	Context("fetch next others", func() {
@@ -119,10 +111,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("create transfer", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
@@ -143,10 +135,10 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("create payout", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail because not yet installed", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 

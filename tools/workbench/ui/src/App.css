@@ -23,7 +23,7 @@
   white-space: nowrap;
   z-index: 1000;
   border: 1px solid var(--term-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--term-shadow);
   transition: opacity 0.15s, visibility 0.15s;
   pointer-events: none;
 }
@@ -394,7 +394,30 @@ tbody tr:focus-visible,
   border-top: 1px solid var(--term-border);
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--term-gap-sm);
+}
+
+.sidebar-theme {
+  width: 44px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--term-border);
+  border-radius: var(--term-radius);
+  display: flex;
+  align-items: center;
   justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--term-text-dim);
+  transition: all 0.15s ease;
+}
+
+.sidebar-theme:hover {
+  border-color: var(--term-yellow);
+  color: var(--term-yellow);
+  background: var(--term-yellow-bg);
 }
 
 .sidebar-add {

@@ -398,7 +398,7 @@ func (i *Introspector) findImplementedMethods() []MethodInfo {
 	}
 
 	// Scan all Go files for method implementations
-	filepath.Walk(i.basePath, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(i.basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".go") {
 			return nil
 		}
@@ -461,7 +461,7 @@ func (i *Introspector) SearchCode(pattern string) ([]SearchResult, error) {
 	pattern = strings.ToLower(pattern)
 	var results []SearchResult
 
-	filepath.Walk(i.basePath, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(i.basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
 		}

@@ -93,4 +93,36 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return p.fetchNextPayments(ctx, req)
 }
 
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	if p.client == nil {
+		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createPayout(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreatePayoutResponse{}, err
+	}
+
+	return models.CreatePayoutResponse{
+		Payment: &payment,
+	}, nil
+}
+
+
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	if p.client == nil {
+		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	return models.CreateTransferResponse{
+		Payment: &payment,
+	}, nil
+}
+
+
 var _ models.Plugin = &Plugin{}

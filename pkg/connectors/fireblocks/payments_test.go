@@ -55,9 +55,10 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 				Operation:  "TRANSFER",
 				Status:     "COMPLETED",
 				CreatedAt:  1000,
-				Source:     client.TransferPeer{ID: "src"},
+				Source:     client.TransferPeer{ID: "src", Type: "VAULT_ACCOUNT"},
 				Destination: client.TransferPeer{
-					ID: "dst",
+					ID:   "dst",
+					Type: "VAULT_ACCOUNT",
 				},
 				TxHash: "hash",
 				FeeInfo: client.FeeInfo{
@@ -68,9 +69,11 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 				ID:         "c",
 				AssetID:    "USD",
 				AmountInfo: client.AmountInfo{Amount: "10.50"},
-				Operation:  "WITHDRAW",
+				Operation:  "TRANSFER",
 				Status:     "PENDING_SIGNATURE",
 				CreatedAt:  1001,
+				Source:      client.TransferPeer{Type: "VAULT_ACCOUNT"},
+				Destination: client.TransferPeer{Type: "EXTERNAL_WALLET"},
 			},
 		}, nil)
 
@@ -105,6 +108,107 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(err).To(BeNil())
 		Expect(newState.LastCreatedAt).To(Equal(int64(1001)))
 		Expect(newState.LastTxID).To(Equal("c"))
+	})
+
+	It("classifies PAY-IN when source is external", func(ctx SpecContext) {
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:          "payin-1",
+				AssetID:     "BTC",
+				AmountInfo:  client.AmountInfo{Amount: "0.5"},
+				Operation:   "TRANSFER",
+				Status:      "COMPLETED",
+				CreatedAt:   3000,
+				Source:      client.TransferPeer{ID: "ext-1", Type: "EXTERNAL_WALLET"},
+				Destination: client.TransferPeer{ID: "vault-1", Type: "VAULT_ACCOUNT"},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+	})
+
+	It("classifies PAY-OUT when destination is external", func(ctx SpecContext) {
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:          "payout-1",
+				AssetID:     "BTC",
+				AmountInfo:  client.AmountInfo{Amount: "0.5"},
+				Operation:   "TRANSFER",
+				Status:      "COMPLETED",
+				CreatedAt:   3001,
+				Source:      client.TransferPeer{ID: "vault-1", Type: "VAULT_ACCOUNT"},
+				Destination: client.TransferPeer{ID: "ext-1", Type: "EXTERNAL_WALLET"},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+	})
+
+	It("classifies OTHER for non-transfer operations", func(ctx SpecContext) {
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:         "mint-1",
+				AssetID:    "BTC",
+				AmountInfo: client.AmountInfo{Amount: "1"},
+				Operation:  "MINT",
+				Status:     "COMPLETED",
+				CreatedAt:  4000,
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Type).To(Equal(models.PaymentType(models.PAYMENT_TYPE_OTHER)))
+	})
+
+	It("uses first Destinations element for multi-destination transfers", func(ctx SpecContext) {
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:         "multi-1",
+				AssetID:    "BTC",
+				AmountInfo: client.AmountInfo{Amount: "2"},
+				Operation:  "TRANSFER",
+				Status:     "COMPLETED",
+				CreatedAt:  5000,
+				Source:     client.TransferPeer{ID: "vault-1", Type: "VAULT_ACCOUNT"},
+				Destinations: []client.TransferPeer{
+					{ID: "ext-1", Type: "EXTERNAL_WALLET"},
+					{ID: "vault-2", Type: "VAULT_ACCOUNT"},
+				},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+	})
+
+	It("classifies PAY-IN for FIAT_ACCOUNT source", func(ctx SpecContext) {
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:          "fiat-1",
+				AssetID:     "USD",
+				AmountInfo:  client.AmountInfo{Amount: "100"},
+				Operation:   "TRANSFER",
+				Status:      "COMPLETED",
+				CreatedAt:   6000,
+				Source:      client.TransferPeer{ID: "fiat-acc", Type: "FIAT_ACCOUNT"},
+				Destination: client.TransferPeer{ID: "vault-1", Type: "VAULT_ACCOUNT"},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 	})
 
 	It("advances state even when transactions are skipped", func(ctx SpecContext) {

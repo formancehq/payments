@@ -20,9 +20,21 @@ type TransactionStatus string
 
 // List of TransactionStatus
 const (
-	PENDING TransactionStatus = "PENDING"
-	SUCCEEDED TransactionStatus = "SUCCEEDED"
-	FAILED TransactionStatus = "FAILED"
+	PENDING          TransactionStatus = "PENDING"
+	SUCCEEDED        TransactionStatus = "SUCCEEDED"
+	FAILED           TransactionStatus = "FAILED"
+	CANCELLED        TransactionStatus = "CANCELLED"
+	EXPIRED          TransactionStatus = "EXPIRED"
+	REFUNDED         TransactionStatus = "REFUNDED"
+	REFUNDED_FAILURE TransactionStatus = "REFUNDED_FAILURE"
+	REFUND_REVERSED  TransactionStatus = "REFUND_REVERSED"
+	DISPUTE          TransactionStatus = "DISPUTE"
+	DISPUTE_WON      TransactionStatus = "DISPUTE_WON"
+	DISPUTE_LOST     TransactionStatus = "DISPUTE_LOST"
+	AUTHORISATION    TransactionStatus = "AUTHORISATION"
+	CAPTURE          TransactionStatus = "CAPTURE"
+	CAPTURE_FAILED   TransactionStatus = "CAPTURE_FAILED"
+	OTHER            TransactionStatus = "OTHER"
 )
 
 // All allowed values of TransactionStatus enum
@@ -30,6 +42,18 @@ var AllowedTransactionStatusEnumValues = []TransactionStatus{
 	"PENDING",
 	"SUCCEEDED",
 	"FAILED",
+	"CANCELLED",
+	"EXPIRED",
+	"REFUNDED",
+	"REFUNDED_FAILURE",
+	"REFUND_REVERSED",
+	"DISPUTE",
+	"DISPUTE_WON",
+	"DISPUTE_LOST",
+	"AUTHORISATION",
+	"CAPTURE",
+	"CAPTURE_FAILED",
+	"OTHER",
 }
 
 func (v *TransactionStatus) UnmarshalJSON(src []byte) error {

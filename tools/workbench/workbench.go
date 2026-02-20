@@ -26,8 +26,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Global debug transport for HTTP interception
-var globalDebugTransport *DebugTransport
 
 // Config holds the workbench configuration.
 type Config struct {
@@ -118,7 +116,6 @@ func New(cfg Config, logger logging.Logger) (*Workbench, error) {
 
 	// Install HTTP debug transport
 	w.transport, w.originalTransport = InstallGlobalTransport(w.debug)
-	globalDebugTransport = w.transport
 	logger.Info("HTTP debug transport installed - all outbound HTTP traffic will be captured")
 
 	// Create HTTP server
@@ -422,9 +419,9 @@ func (w *Workbench) GetGenericServerStatus() map[string]interface{} {
 
 // AvailableConnector represents an available connector type.
 type AvailableConnector struct {
-	Provider   string                       `json:"provider"`
-	Config     pkgregistry.Config           `json:"config"`
-	PluginType models.PluginType            `json:"plugin_type"`
+	Provider   string             `json:"provider"`
+	Config     pkgregistry.Config `json:"config"`
+	PluginType models.PluginType  `json:"plugin_type"`
 }
 
 // GetAvailableConnectors returns all available connector types from the registry.

@@ -88,7 +88,7 @@ func (t *DebugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Body != nil && req.Body != http.NoBody {
 		bodyBytes, err := io.ReadAll(req.Body)
 		if err == nil {
-			req.Body.Close()
+			_ = req.Body.Close()
 			// Restore the body for the actual request
 			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 			entry.RequestBody = t.truncateBody(bodyBytes)
@@ -114,7 +114,7 @@ func (t *DebugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if resp.Body != nil {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			// Restore the body for the caller
 			resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 			entry.ResponseBody = t.truncateBody(bodyBytes)
@@ -129,7 +129,7 @@ func (t *DebugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if strings.Contains(contentType, "application/json") && entry.ResponseBody != "" {
 			// Extract operation from URL path
 			operation := extractOperationFromURL(req.URL.Path)
-			t.Schemas.InferFromJSON(operation, req.URL.Path, req.Method, []byte(entry.ResponseBody))
+			_, _ = t.Schemas.InferFromJSON(operation, req.URL.Path, req.Method, []byte(entry.ResponseBody))
 		}
 	}
 
@@ -172,7 +172,8 @@ func looksLikeID(s string) bool {
 	// Check if it's all hex characters (with optional dashes for UUIDs)
 	allHex := true
 	for _, c := range s {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '-' || c == '_') {
+		isHexDigit := (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+		if !isHexDigit && c != '-' && c != '_' {
 			allHex = false
 			break
 		}
