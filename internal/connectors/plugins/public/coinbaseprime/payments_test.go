@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
@@ -26,6 +27,16 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 			client: m,
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			currencies: map[string]int{
+				"USD":  2,
+				"EUR":  2,
+				"GBP":  2,
+				"BTC":  8,
+				"ETH":  18,
+				"USDC": 6,
+				"SOL":  9,
+			},
 		}
 	})
 
@@ -58,12 +69,14 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 					CreatedAt:   now.Add(-2 * time.Hour),
 					CompletedAt: &completedAt,
 					TransferFrom: &client.TransferEndpoint{
-						Type:  "PAYMENT_METHOD",
-						Value: "pm-123",
+						Type:    "PAYMENT_METHOD",
+						Value:   "pm-123",
+						Address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
 					},
 					TransferTo: &client.TransferEndpoint{
-						Type:  "WALLET",
-						Value: "wallet1",
+						Type:    "WALLET",
+						Value:   "wallet1",
+						Address: "bc1q...",
 					},
 					Network:       "bitcoin",
 					BlockchainIDs: []string{"0xabc123"},
@@ -419,6 +432,157 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(0))
 			Expect(resp.HasMore).To(BeFalse())
+		})
+
+		It("should populate metadata correctly", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: sampleTransactions[:1],
+					Pagination:   client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+
+			md := resp.Payments[0].Metadata
+			Expect(md["wallet_id"]).To(Equal("wallet1"))
+			Expect(md["portfolio_id"]).To(Equal("portfolio1"))
+			Expect(md["type"]).To(Equal("DEPOSIT"))
+			Expect(md["status"]).To(Equal("TRANSACTION_DONE"))
+			Expect(md["fees"]).To(Equal("0.001"))
+			Expect(md["fee_symbol"]).To(Equal("BTC"))
+			Expect(md["network"]).To(Equal("bitcoin"))
+			Expect(md["blockchain_ids"]).To(Equal("0xabc123"))
+			Expect(md).To(HaveKey("completed_at"))
+			Expect(md["source_address"]).To(Equal("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"))
+			Expect(md["deposit_address"]).To(Equal("bc1q..."))
+		})
+
+		It("should handle STAKE as payin", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-stake",
+							Type:      "STAKE",
+							Status:    "TRANSACTION_DONE",
+							CreatedAt: now,
+							Amount:    "10.0",
+							Symbol:    "ETH",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+		})
+
+		It("should handle UNSTAKE as payout", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-unstake",
+							Type:      "UNSTAKE",
+							Status:    "TRANSACTION_DONE",
+							CreatedAt: now,
+							Amount:    "5.0",
+							Symbol:    "ETH",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+		})
+
+		It("should handle DELEGATION as transfer", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-delegation",
+							Type:      "DELEGATION",
+							Status:    "TRANSACTION_DONE",
+							CreatedAt: now,
+							Amount:    "100.0",
+							Symbol:    "SOL",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
+		})
+
+		It("should use dynamic currencies for previously unknown assets", func(ctx SpecContext) {
+			// Add a dynamic currency that wouldn't be in the old static list
+			plg.currencies["NEWTOKEN"] = 12
+
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:        "tx-new",
+							Type:      "DEPOSIT",
+							Status:    "TRANSACTION_DONE",
+							CreatedAt: now,
+							Amount:    "100.5",
+							Symbol:    "NEWTOKEN",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Asset).To(Equal("NEWTOKEN/12"))
 		})
 	})
 })

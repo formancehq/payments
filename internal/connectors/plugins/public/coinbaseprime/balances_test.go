@@ -26,6 +26,14 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 			client: m,
+			currencies: map[string]int{
+				"USD":  2,
+				"EUR":  2,
+				"GBP":  2,
+				"BTC":  8,
+				"ETH":  18,
+				"USDC": 6,
+			},
 		}
 	})
 

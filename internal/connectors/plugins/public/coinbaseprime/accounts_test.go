@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
@@ -25,6 +26,15 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 			client: m,
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			currencies: map[string]int{
+				"USD":  2,
+				"EUR":  2,
+				"GBP":  2,
+				"BTC":  8,
+				"ETH":  18,
+				"USDC": 6,
+			},
 		}
 	})
 
@@ -34,8 +44,8 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 
 	Context("fetching next accounts", func() {
 		var (
-			now            time.Time
-			sampleWallets  []client.Wallet
+			now           time.Time
+			sampleWallets []client.Wallet
 		)
 
 		BeforeEach(func() {

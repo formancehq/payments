@@ -20,7 +20,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	walletSymbol, err := walletSymbolFromAccount(from)
+	walletSymbol, err := p.walletSymbolFromAccount(from)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
@@ -35,7 +35,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	for _, bal := range response.Balances {
 		symbol := strings.ToUpper(strings.TrimSpace(bal.Symbol))
 
-		precision, ok := supportedCurrenciesWithDecimal[symbol]
+		precision, ok := p.currencies[symbol]
 		if !ok {
 			continue
 		}
@@ -45,7 +45,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 		}
 
-		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, symbol)
+		asset := currency.FormatAsset(p.currencies, symbol)
 
 		balances = append(balances, models.PSPBalance{
 			AccountReference: from.Reference,
@@ -61,12 +61,12 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}, nil
 }
 
-func walletSymbolFromAccount(from models.PSPAccount) (string, error) {
+func (p *Plugin) walletSymbolFromAccount(from models.PSPAccount) (string, error) {
 	if from.DefaultAsset == nil {
 		return "", fmt.Errorf("missing default asset in from payload")
 	}
 
-	symbol, _, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, *from.DefaultAsset)
+	symbol, _, err := currency.GetCurrencyAndPrecisionFromAsset(p.currencies, *from.DefaultAsset)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse default asset %q: %w", *from.DefaultAsset, err)
 	}
