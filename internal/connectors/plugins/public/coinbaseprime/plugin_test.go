@@ -2,6 +2,7 @@ package coinbaseprime
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -122,7 +123,7 @@ var _ = Describe("Coinbase Plugin", func() {
 
 			m.EXPECT().GetPortfolio(gomock.Any()).Return(
 				nil,
-				json.Unmarshal([]byte("invalid"), nil),
+				fmt.Errorf("invalid response"),
 			)
 
 			req := models.InstallRequest{}
