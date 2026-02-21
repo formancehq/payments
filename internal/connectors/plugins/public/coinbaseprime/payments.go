@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
@@ -30,7 +31,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	payments := make([]models.PSPPayment, 0, len(response.Transactions))
 	for _, tx := range response.Transactions {
-		payment, err := transactionToPayment(tx)
+		payment, err := p.transactionToPayment(tx)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to convert transaction %s: %w", tx.ID, err)
 		}
@@ -53,9 +54,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
-func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
-	asset, precision, ok := resolveAssetAndPrecision(tx.Symbol)
+func (p *Plugin) transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
+	asset, precision, ok := p.resolveAssetAndPrecision(tx.Symbol)
 	if !ok {
+		p.logger.Infof("skipping transaction %s: unsupported currency %q", tx.ID, tx.Symbol)
 		return nil, nil
 	}
 
@@ -72,7 +74,7 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 		return nil, fmt.Errorf("failed to parse amount: %w", err)
 	}
 
-	metadata := make(map[string]string)
+	metadata := buildTransactionMetadata(tx)
 
 	payment := models.PSPPayment{
 		Reference: tx.ID,
@@ -93,15 +95,80 @@ func transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
 	return &payment, nil
 }
 
-func resolveAssetAndPrecision(symbol string) (string, int, bool) {
+func (p *Plugin) resolveAssetAndPrecision(symbol string) (string, int, bool) {
 	symbol = strings.ToUpper(strings.TrimSpace(symbol))
-	precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, symbol)
+	precision, err := currency.GetPrecision(p.currencies, symbol)
 	if err != nil {
 		return "", 0, false
 	}
 
-	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, symbol)
+	asset := currency.FormatAsset(p.currencies, symbol)
 	return asset, precision, true
+}
+
+func buildTransactionMetadata(tx client.Transaction) map[string]string {
+	metadata := make(map[string]string)
+
+	// Core identifiers
+	if tx.WalletID != "" {
+		metadata["wallet_id"] = tx.WalletID
+	}
+	if tx.PortfolioID != "" {
+		metadata["portfolio_id"] = tx.PortfolioID
+	}
+	metadata["type"] = tx.Type
+	metadata["status"] = tx.Status
+
+	// Fees
+	if tx.Fees != "" && tx.Fees != "0" {
+		metadata["fees"] = tx.Fees
+	}
+	if tx.FeeSymbol != "" {
+		metadata["fee_symbol"] = tx.FeeSymbol
+	}
+	if tx.NetworkFees != "" && tx.NetworkFees != "0" {
+		metadata["network_fees"] = tx.NetworkFees
+	}
+
+	// Network & blockchain
+	if tx.Network != "" {
+		metadata["network"] = tx.Network
+	}
+	if len(tx.BlockchainIDs) > 0 {
+		metadata["blockchain_ids"] = strings.Join(tx.BlockchainIDs, ",")
+	}
+
+	// Timestamps
+	if tx.CompletedAt != nil {
+		metadata["completed_at"] = tx.CompletedAt.Format(time.RFC3339)
+	}
+
+	// Addresses
+	sourceAddress := ""
+	if tx.TransferFrom != nil && tx.TransferFrom.Address != "" {
+		sourceAddress = tx.TransferFrom.Address
+	} else if tx.SourceAddress != "" {
+		sourceAddress = tx.SourceAddress
+	}
+	if sourceAddress != "" {
+		metadata["source_address"] = sourceAddress
+	}
+
+	depositAddress := ""
+	if tx.TransferTo != nil && tx.TransferTo.Address != "" {
+		depositAddress = tx.TransferTo.Address
+	} else if tx.DepositAddress != "" {
+		depositAddress = tx.DepositAddress
+	}
+	if depositAddress != "" {
+		metadata["deposit_address"] = depositAddress
+	}
+
+	if tx.ExternalTxID != "" {
+		metadata["external_tx_id"] = tx.ExternalTxID
+	}
+
+	return metadata
 }
 
 func resolveAccountReferences(tx client.Transaction) (*string, *string) {
@@ -140,12 +207,15 @@ func transactionTypeToPaymentType(txType string) models.PaymentType {
 	switch strings.ToUpper(txType) {
 	case "DEPOSIT", "SWEEP_DEPOSIT", "PROXY_DEPOSIT",
 		"COINBASE_DEPOSIT", "COINBASE_REFUND", "REWARD",
-		"DEPOSIT_ADJUSTMENT", "CLAIM_REWARDS":
+		"DEPOSIT_ADJUSTMENT", "CLAIM_REWARDS",
+		"STAKE", "PORTFOLIO_STAKE":
 		return models.PAYMENT_TYPE_PAYIN
 	case "WITHDRAWAL", "SWEEP_WITHDRAWAL",
-		"PROXY_WITHDRAWAL", "BILLING_WITHDRAWAL", "WITHDRAWAL_ADJUSTMENT":
+		"PROXY_WITHDRAWAL", "BILLING_WITHDRAWAL", "WITHDRAWAL_ADJUSTMENT",
+		"UNSTAKE", "PORTFOLIO_UNSTAKE":
 		return models.PAYMENT_TYPE_PAYOUT
-	case "CONVERSION", "INTERNAL_DEPOSIT", "INTERNAL_WITHDRAWAL":
+	case "CONVERSION", "INTERNAL_DEPOSIT", "INTERNAL_WITHDRAWAL",
+		"DELEGATION", "UNDELEGATION":
 		return models.PAYMENT_TYPE_TRANSFER
 	default:
 		return models.PAYMENT_TYPE_OTHER
