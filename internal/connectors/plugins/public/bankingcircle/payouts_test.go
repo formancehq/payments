@@ -229,6 +229,78 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
+		It("should forward metadata", func(ctx SpecContext) {
+			copyPI := samplePSPPaymentInitiation
+			copyPI.Metadata = map[string]string{
+				client.BankingCircleChargeBearerMetadataKey:    "OUR",
+				client.BankingCircleClearingNetworkMetadataKey: "SEPAINST",
+			}
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: copyPI,
+			}
+
+			pr := client.PaymentResponse{
+				PaymentID: "p1",
+			}
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
+				Return(&client.Account{
+					AccountIdentifiers: []client.AccountIdentifier{{
+						Account:              "123456789",
+						FinancialInstitution: "test",
+						Country:              "US",
+					}},
+				}, nil)
+
+			m.EXPECT().InitiateTransferOrPayouts(gomock.Any(), &client.PaymentRequest{
+				IdempotencyKey:         samplePSPPaymentInitiation.Reference,
+				RequestedExecutionDate: samplePSPPaymentInitiation.CreatedAt,
+				DebtorAccount: client.PaymentAccount{
+					Account:              "123456789",
+					FinancialInstitution: "test",
+					Country:              "US",
+				},
+				DebtorReference:    samplePSPPaymentInitiation.Description,
+				CurrencyOfTransfer: "EUR",
+				Amount: client.Amount{
+					Currency: "EUR",
+					Amount:   "1.00",
+				},
+				ChargeBearer: "OUR",
+				CreditorAccount: &client.PaymentAccount{
+					Account:              "acc",
+					FinancialInstitution: "bic",
+					Country:              "US",
+				},
+				CreditorName:    "acc2",
+				ClearingNetwork: "SEPAINST",
+			}).Return(&pr, nil)
+
+			paymentResponse := client.Payment{
+				PaymentID:                    "p1",
+				TransactionReference:         "transaction-p1",
+				Status:                       "Processed",
+				Classification:               "Outgoing",
+				ProcessedTimestamp:           now.UTC(),
+				LatestStatusChangedTimestamp: now.UTC(),
+				DebtorInformation: client.DebtorInformation{
+					AccountID: "123",
+				},
+				Transfer: client.Transfer{
+					Amount: client.Amount{
+						Currency: "EUR",
+						Amount:   "1.00",
+					},
+				},
+				CreditorInformation: client.CreditorInformation{
+					AccountID: "321",
+				},
+			}
+			m.EXPECT().GetPayment(gomock.Any(), "p1").Return(&paymentResponse, nil)
+
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
 		It("should be ok", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
