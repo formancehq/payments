@@ -923,7 +923,8 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(storage.ErrNotFound))
+			Expect(err).To(MatchError(ContainSubstring("payment service user has not been forwarded to connector")))
+			Expect(err).To(MatchError(ContainSubstring("Please forward the payment service user to the connector before creating a link")))
 		})
 
 		It("should return error when connection attempt upsert fails", func(ctx SpecContext) {
@@ -1051,7 +1052,8 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(storage.ErrNotFound))
+			Expect(err).To(MatchError(ContainSubstring("payment service user has not been forwarded to connector")))
+			Expect(err).To(MatchError(ContainSubstring("Please forward the payment service user to the connector before updating a link")))
 		})
 
 		It("should return error when connection not found", func(ctx SpecContext) {
