@@ -110,21 +110,21 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	if p.client == nil {
+	if p.client == nil || len(p.currencies) == 0 {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	if p.client == nil {
+	if p.client == nil || len(p.currencies) == 0 {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	if p.client == nil {
+	if p.client == nil || len(p.currencies) == 0 {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
