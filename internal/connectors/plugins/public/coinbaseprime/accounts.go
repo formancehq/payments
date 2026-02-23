@@ -28,8 +28,10 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, len(response.Wallets))
 	for _, wallet := range response.Wallets {
-		_, ok := supportedCurrenciesWithDecimal[strings.ToUpper(wallet.Symbol)]
+		symbol := strings.ToUpper(strings.TrimSpace(wallet.Symbol))
+		_, ok := p.currencies[symbol]
 		if !ok {
+			p.logger.Infof("skipping wallet %s: unsupported currency %q", wallet.ID, wallet.Symbol)
 			continue
 		}
 
@@ -38,7 +40,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		defaultAsset := currency.FormatAsset(supportedCurrenciesWithDecimal, strings.ToUpper(wallet.Symbol))
+		defaultAsset := currency.FormatAsset(p.currencies, symbol)
 
 		accounts = append(accounts, models.PSPAccount{
 			Reference:    wallet.ID,
