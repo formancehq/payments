@@ -15,7 +15,7 @@ sources:
     COPY go.* .
     COPY --dir cmd pkg internal tools ee .
     COPY main.go .
-    COPY main_ee.go .
+    COPY ee.go .
     SAVE ARTIFACT /src
 
 compile-plugins:
