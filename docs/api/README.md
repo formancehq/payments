@@ -6883,12 +6883,6 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
-
-xor
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
 |*anonymous*|[V3ColumnConfig](#schemav3columnconfig)|false|none|none|
 
 xor
@@ -6968,6 +6962,12 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |*anonymous*|[V3WiseConfig](#schemav3wiseconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
 
 xor
 

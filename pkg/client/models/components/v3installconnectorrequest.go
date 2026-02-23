@@ -37,7 +37,6 @@ type V3InstallConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
-	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
@@ -52,6 +51,7 @@ type V3InstallConnectorRequest struct {
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
+	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 
 	Type V3InstallConnectorRequestType
@@ -486,10 +486,6 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
 	}
 
-	if u.V3CoinbaseprimeConfig != nil {
-		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
-	}
-
 	if u.V3ColumnConfig != nil {
 		return utils.MarshalJSON(u.V3ColumnConfig, "", true)
 	}
@@ -544,6 +540,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3WiseConfig != nil {
 		return utils.MarshalJSON(u.V3WiseConfig, "", true)
+	}
+
+	if u.V3CoinbaseprimeConfig != nil {
+		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
 	}
 
 	if u.V3FireblocksConfig != nil {
