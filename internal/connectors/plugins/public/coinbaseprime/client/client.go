@@ -19,6 +19,8 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
+	GetPortfolio(ctx context.Context) (*PortfolioResponse, error)
+	GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error)
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error)
 	GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error)
@@ -79,6 +81,50 @@ func (c *client) signRequest(req *http.Request, body string) error {
 	req.Header.Set("Content-Type", "application/json")
 
 	return nil
+}
+
+func (c *client) GetPortfolio(ctx context.Context) (*PortfolioResponse, error) {
+	endpoint := fmt.Sprintf("%s/v1/portfolios/%s", c.baseURL, c.portfolioID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response PortfolioResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get portfolio (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
+	}
+
+	return &response, nil
+}
+
+func (c *client) GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error) {
+	endpoint := fmt.Sprintf("%s/v1/entities/%s/assets", c.baseURL, entityID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response AssetsResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get assets (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
+	}
+
+	return &response, nil
 }
 
 func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
@@ -204,6 +250,32 @@ func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (
 	return endpoint.String(), nil
 }
 
+// Portfolio represents a Coinbase Prime portfolio.
+type Portfolio struct {
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	EntityID       string `json:"entity_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+// PortfolioResponse wraps a portfolio.
+type PortfolioResponse struct {
+	Portfolio Portfolio `json:"portfolio"`
+}
+
+// Asset represents a Coinbase Prime asset with its decimal precision.
+type Asset struct {
+	Name             string `json:"name"`
+	Symbol           string `json:"symbol"`
+	DecimalPrecision string `json:"decimal_precision"`
+	TradingSupported bool   `json:"trading_supported"`
+}
+
+// AssetsResponse wraps assets.
+type AssetsResponse struct {
+	Assets []Asset `json:"assets"`
+}
+
 // Wallet represents a Coinbase Prime wallet.
 type Wallet struct {
 	ID        string    `json:"id"`
@@ -245,9 +317,13 @@ type Transaction struct {
 	CompletedAt   *time.Time        `json:"completed_at"`
 	TransferFrom  *TransferEndpoint `json:"transfer_from"`
 	TransferTo    *TransferEndpoint `json:"transfer_to"`
-	NetworkFees   string            `json:"network_fees"`
-	Network       string            `json:"network"`
-	BlockchainIDs []string          `json:"blockchain_ids"`
+	NetworkFees    string            `json:"network_fees"`
+	Network        string            `json:"network"`
+	BlockchainIDs  []string          `json:"blockchain_ids"`
+	DepositAddress string            `json:"deposit_address"`
+	SourceAddress  string            `json:"source_address"`
+	ExternalTxID   string            `json:"external_tx_id"`
+	TransactionID  string            `json:"transaction_id"`
 }
 
 // Pagination represents cursor-based pagination from Coinbase Prime.

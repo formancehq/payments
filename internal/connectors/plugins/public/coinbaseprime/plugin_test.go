@@ -2,13 +2,16 @@ package coinbaseprime
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPlugin(t *testing.T) {
@@ -58,14 +61,75 @@ var _ = Describe("Coinbase Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			config := json.RawMessage(`{"apiKey": "test", "apiSecret": "dGVzdA==", "passphrase": "test", "portfolioId": "portfolio-123"}`)
-			p, err := New("coinbaseprime", logger, config)
-			Expect(err).To(BeNil())
+			ctrl := gomock.NewController(GinkgoT())
+			defer ctrl.Finish()
+
+			m := client.NewMockClient(ctrl)
+			p := &Plugin{
+				Plugin: plugins.NewBasePlugin(),
+				client: m,
+				logger: logger,
+			}
+
+			m.EXPECT().GetPortfolio(gomock.Any()).Return(
+				&client.PortfolioResponse{
+					Portfolio: client.Portfolio{
+						ID:       "portfolio-123",
+						EntityID: "entity-456",
+					},
+				},
+				nil,
+			)
+
+			m.EXPECT().GetAssets(gomock.Any(), "entity-456").Return(
+				&client.AssetsResponse{
+					Assets: []client.Asset{
+						{Symbol: "BTC", DecimalPrecision: "8"},
+						{Symbol: "ETH", DecimalPrecision: "18"},
+						{Symbol: "USDC", DecimalPrecision: "6"},
+					},
+				},
+				nil,
+			)
+
 			req := models.InstallRequest{}
 			res, err := p.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
+
+			// Verify currencies were loaded
+			Expect(p.currencies).To(HaveKey("BTC"))
+			Expect(p.currencies["BTC"]).To(Equal(8))
+			Expect(p.currencies).To(HaveKey("ETH"))
+			Expect(p.currencies["ETH"]).To(Equal(18))
+			Expect(p.currencies).To(HaveKey("USDC"))
+			Expect(p.currencies["USDC"]).To(Equal(6))
+			// Fiat fallback should also be present
+			Expect(p.currencies).To(HaveKey("USD"))
+			Expect(p.currencies["USD"]).To(Equal(2))
+		})
+
+		It("should return error when portfolio fetch fails", func(ctx SpecContext) {
+			ctrl := gomock.NewController(GinkgoT())
+			defer ctrl.Finish()
+
+			m := client.NewMockClient(ctrl)
+			p := &Plugin{
+				Plugin: plugins.NewBasePlugin(),
+				client: m,
+				logger: logger,
+			}
+
+			m.EXPECT().GetPortfolio(gomock.Any()).Return(
+				nil,
+				fmt.Errorf("invalid response"),
+			)
+
+			req := models.InstallRequest{}
+			_, err := p.Install(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("loading currencies"))
 		})
 	})
 

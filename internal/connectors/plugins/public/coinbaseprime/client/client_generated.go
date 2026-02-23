@@ -40,6 +40,21 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
+// GetAssets mocks base method.
+func (m *MockClient) GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssets", ctx, entityID)
+	ret0, _ := ret[0].(*AssetsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssets indicates an expected call of GetAssets.
+func (mr *MockClientMockRecorder) GetAssets(ctx, entityID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssets", reflect.TypeOf((*MockClient)(nil).GetAssets), ctx, entityID)
+}
+
 // GetBalances mocks base method.
 func (m *MockClient) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
 	m.ctrl.T.Helper()
@@ -68,6 +83,21 @@ func (m *MockClient) GetBalancesForSymbol(ctx context.Context, symbol, cursor st
 func (mr *MockClientMockRecorder) GetBalancesForSymbol(ctx, symbol, cursor, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalancesForSymbol", reflect.TypeOf((*MockClient)(nil).GetBalancesForSymbol), ctx, symbol, cursor, pageSize)
+}
+
+// GetPortfolio mocks base method.
+func (m *MockClient) GetPortfolio(ctx context.Context) (*PortfolioResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPortfolio", ctx)
+	ret0, _ := ret[0].(*PortfolioResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPortfolio indicates an expected call of GetPortfolio.
+func (mr *MockClientMockRecorder) GetPortfolio(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPortfolio", reflect.TypeOf((*MockClient)(nil).GetPortfolio), ctx)
 }
 
 // GetTransactions mocks base method.
