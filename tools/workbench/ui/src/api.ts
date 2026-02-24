@@ -143,6 +143,29 @@ export interface HTTPRequest {
   error?: string;
 }
 
+// Open Banking types
+export interface OBConnection {
+  connection_id: string;
+  connector_id: unknown;
+  psu_id: string;
+  access_token?: { token: string; expiresAt: string };
+  metadata?: Record<string, string>;
+  created_at: string;
+}
+
+export interface OBCreateUserResponse {
+  psu_id: string;
+  psp_user_id?: string;
+  permanent_token?: { token: string; expiresAt: string };
+  metadata?: Record<string, string>;
+}
+
+export interface OBCompleteUserLinkResponse {
+  connections?: OBConnection[];
+  count?: number;
+  error?: string;
+}
+
 // Generic server types
 export interface GenericServerStatus {
   enabled: boolean;
@@ -221,23 +244,45 @@ export function connectorApi(connectorId: string) {
     delete: () => fetchJSON<{ status: string }>(`${prefix}/`, { method: 'DELETE' }),
     reset: () => fetchJSON<{ status: string }>(`${prefix}/reset`, { method: 'POST' }),
     
-    // Fetch operations
-    fetchAccounts: (fromPayload?: unknown) => 
+    // Open Banking operations
+    obCreateUser: () =>
+      fetchJSON<OBCreateUserResponse>(`${prefix}/ob/create-user`, { method: 'POST' }),
+
+    obCreateUserLink: (psuId: string) =>
+      fetchJSON<{ link: string; temporary_token?: unknown }>(`${prefix}/ob/create-link`, {
+        method: 'POST',
+        body: JSON.stringify({ psu_id: psuId }),
+      }),
+
+    obCompleteUserLink: (psuId: string, queryValues: Record<string, string[]>, headers?: Record<string, string[]>, body?: string) =>
+      fetchJSON<OBCompleteUserLinkResponse>(`${prefix}/ob/complete-link`, {
+        method: 'POST',
+        body: JSON.stringify({ psu_id: psuId, query_values: queryValues, headers, body }),
+      }),
+
+    obListConnections: () =>
+      fetchJSON<{ connections: OBConnection[]; count: number }>(`${prefix}/ob/connections`),
+
+    obDeleteConnection: (connectionId: string) =>
+      fetchJSON<{ status: string }>(`${prefix}/ob/connections/${connectionId}`, { method: 'DELETE' }),
+
+    // Fetch operations (with OB connection_id support)
+    fetchAccounts: (fromPayload?: unknown, connectionId?: string, innerPayload?: unknown) =>
       fetchJSON<{ accounts: Account[]; has_more: boolean; count: number }>(
-        `${prefix}/fetch/accounts`, 
-        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload }) }
+        `${prefix}/fetch/accounts`,
+        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload, connection_id: connectionId, inner_payload: innerPayload }) }
       ),
     
-    fetchPayments: (fromPayload?: unknown) =>
+    fetchPayments: (fromPayload?: unknown, connectionId?: string, innerPayload?: unknown) =>
       fetchJSON<{ payments: Payment[]; has_more: boolean; count: number }>(
         `${prefix}/fetch/payments`,
-        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload }) }
+        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload, connection_id: connectionId, inner_payload: innerPayload }) }
       ),
-    
-    fetchBalances: (fromPayload?: unknown) =>
+
+    fetchBalances: (fromPayload?: unknown, connectionId?: string, innerPayload?: unknown) =>
       fetchJSON<{ balances: Balance[]; has_more: boolean; count: number }>(
         `${prefix}/fetch/balances`,
-        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload }) }
+        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload, connection_id: connectionId, inner_payload: innerPayload }) }
       ),
     
     fetchExternalAccounts: (fromPayload?: unknown) =>

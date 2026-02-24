@@ -9,6 +9,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 )
 
 // DefaultPageSize is the default page size for fetching.
@@ -1063,4 +1064,141 @@ func (e *Engine) GetFetchStatus() FetchStatus {
 	}
 
 	return status
+}
+
+// === Open Banking Operations ===
+
+// CreateUser calls the plugin's CreateUser method with a synthetic PSU.
+func (e *Engine) CreateUser(ctx context.Context) (*models.CreateUserResponse, uuid.UUID, error) {
+	psuID := uuid.New()
+	psu := &models.PSPPaymentServiceUser{
+		ID:        psuID,
+		Name:      fmt.Sprintf("workbench-user-%s", psuID.String()[:8]),
+		CreatedAt: time.Now(),
+	}
+
+	e.debug.Log("ob_create_user", fmt.Sprintf("Creating user with PSU ID: %s", psuID))
+
+	callID := e.debug.LogPluginCall("CreateUser", models.CreateUserRequest{
+		PaymentServiceUser: psu,
+	})
+	start := time.Now()
+
+	resp, err := e.plugin.CreateUser(ctx, models.CreateUserRequest{
+		PaymentServiceUser: psu,
+	})
+
+	e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+	if err != nil {
+		e.debug.LogError("ob_create_user", err)
+		return nil, uuid.Nil, fmt.Errorf("create user failed: %w", err)
+	}
+
+	e.debug.Log("ob_create_user", fmt.Sprintf("User created, PSU ID: %s", psuID))
+	return &resp, psuID, nil
+}
+
+// CreateUserLink calls the plugin's CreateUserLink method.
+func (e *Engine) CreateUserLink(ctx context.Context, psuID uuid.UUID) (*models.CreateUserLinkResponse, error) {
+	forwardedUser := &models.OpenBankingForwardedUser{
+		PsuID:       psuID,
+		ConnectorID: e.connectorID,
+	}
+
+	psu := &models.PSPPaymentServiceUser{
+		ID:        psuID,
+		Name:      fmt.Sprintf("workbench-user-%s", psuID.String()[:8]),
+		CreatedAt: time.Now(),
+	}
+
+	req := models.CreateUserLinkRequest{
+		AttemptID:                uuid.New().String(),
+		PaymentServiceUser:       psu,
+		OpenBankingForwardedUser: forwardedUser,
+		WebhookBaseURL:           "http://localhost:8080/webhooks",
+	}
+
+	e.debug.Log("ob_create_link", fmt.Sprintf("Creating user link for PSU: %s", psuID))
+
+	callID := e.debug.LogPluginCall("CreateUserLink", req)
+	start := time.Now()
+
+	resp, err := e.plugin.CreateUserLink(ctx, req)
+
+	e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+	if err != nil {
+		e.debug.LogError("ob_create_link", err)
+		return nil, fmt.Errorf("create user link failed: %w", err)
+	}
+
+	e.debug.Log("ob_create_link", fmt.Sprintf("Link created: %s", resp.Link))
+	return &resp, nil
+}
+
+// CompleteUserLink calls the plugin's CompleteUserLink method.
+func (e *Engine) CompleteUserLink(ctx context.Context, psuID uuid.UUID, queryValues map[string][]string, headers map[string][]string, body []byte) (*models.CompleteUserLinkResponse, error) {
+	req := models.CompleteUserLinkRequest{
+		HTTPCallInformation: models.HTTPCallInformation{
+			QueryValues: queryValues,
+			Headers:     headers,
+			Body:        body,
+		},
+		RelatedAttempt: &models.OpenBankingConnectionAttempt{
+			ID:          uuid.New(),
+			PsuID:       psuID,
+			ConnectorID: e.connectorID,
+			CreatedAt:   time.Now(),
+		},
+	}
+
+	e.debug.Log("ob_complete_link", fmt.Sprintf("Completing user link for PSU: %s", psuID))
+
+	callID := e.debug.LogPluginCall("CompleteUserLink", req)
+	start := time.Now()
+
+	resp, err := e.plugin.CompleteUserLink(ctx, req)
+
+	e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+	if err != nil {
+		e.debug.LogError("ob_complete_link", err)
+		return nil, fmt.Errorf("complete user link failed: %w", err)
+	}
+
+	if resp.Error != nil {
+		e.debug.LogError("ob_complete_link", fmt.Errorf("provider error: %s", resp.Error.Error))
+		return &resp, nil
+	}
+
+	if resp.Success != nil {
+		e.debug.Log("ob_complete_link", fmt.Sprintf("Link completed with %d connections", len(resp.Success.Connections)))
+	}
+
+	return &resp, nil
+}
+
+// BuildOBFromPayload constructs an OpenBankingForwardedUserFromPayload from a stored connection.
+func BuildOBFromPayload(conn StoredOBConnection, connectorID models.ConnectorID, innerPayload json.RawMessage) (json.RawMessage, error) {
+	obPayload := models.OpenBankingForwardedUserFromPayload{
+		PSUID: conn.PSUID,
+		OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
+			PsuID:       conn.PSUID,
+			ConnectorID: connectorID,
+			AccessToken: conn.AccessToken,
+			Metadata:    conn.Metadata,
+		},
+		OpenBankingConnection: &models.OpenBankingConnection{
+			ConnectionID: conn.ConnectionID,
+			ConnectorID:  connectorID,
+			CreatedAt:    conn.CreatedAt,
+			Status:       models.ConnectionStatusActive,
+			AccessToken:  conn.AccessToken,
+			Metadata:     conn.Metadata,
+		},
+		FromPayload: innerPayload,
+	}
+
+	return json.Marshal(obPayload)
 }

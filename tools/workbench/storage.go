@@ -7,7 +7,18 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 )
+
+// StoredOBConnection represents an open banking connection stored in the workbench.
+type StoredOBConnection struct {
+	ConnectionID string             `json:"connection_id"`
+	ConnectorID  models.ConnectorID `json:"connector_id"`
+	PSUID        uuid.UUID          `json:"psu_id"`
+	AccessToken  *models.Token      `json:"access_token,omitempty"`
+	Metadata     map[string]string  `json:"metadata,omitempty"`
+	CreatedAt    time.Time          `json:"created_at"`
+}
 
 // MemoryStorage provides an in-memory implementation of storage for the workbench.
 // It stores only the data needed for connector development and testing.
@@ -22,6 +33,9 @@ type MemoryStorage struct {
 	
 	// External accounts (beneficiaries, etc.)
 	externalAccounts map[string]models.PSPAccount
+
+	// Open banking connections
+	obConnections map[string]StoredOBConnection
 
 	// State management
 	states map[string]json.RawMessage
@@ -53,6 +67,7 @@ func NewMemoryStorage() *MemoryStorage {
 		balances:         make(map[string]models.PSPBalance),
 		others:           make(map[string][]models.PSPOther),
 		externalAccounts: make(map[string]models.PSPAccount),
+		obConnections:    make(map[string]StoredOBConnection),
 		states:           make(map[string]json.RawMessage),
 	}
 }
@@ -67,6 +82,7 @@ func (s *MemoryStorage) Clear() {
 	s.balances = make(map[string]models.PSPBalance)
 	s.others = make(map[string][]models.PSPOther)
 	s.externalAccounts = make(map[string]models.PSPAccount)
+	s.obConnections = make(map[string]StoredOBConnection)
 	s.states = make(map[string]json.RawMessage)
 	s.tasksTree = nil
 	s.webhookConfigs = nil
@@ -274,6 +290,52 @@ func (s *MemoryStorage) GetAllOthers() map[string][]models.PSPOther {
 	return result
 }
 
+// === Open Banking Connections ===
+
+// StoreOBConnection stores an open banking connection.
+func (s *MemoryStorage) StoreOBConnection(conn StoredOBConnection) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.obConnections[conn.ConnectionID] = conn
+}
+
+// GetOBConnection returns a specific open banking connection.
+func (s *MemoryStorage) GetOBConnection(connectionID string) (StoredOBConnection, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	conn, ok := s.obConnections[connectionID]
+	return conn, ok
+}
+
+// GetOBConnections returns all open banking connections.
+func (s *MemoryStorage) GetOBConnections() []StoredOBConnection {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	conns := make([]StoredOBConnection, 0, len(s.obConnections))
+	for _, c := range s.obConnections {
+		conns = append(conns, c)
+	}
+	sort.Slice(conns, func(i, j int) bool {
+		return conns[i].CreatedAt.Before(conns[j].CreatedAt)
+	})
+	return conns
+}
+
+// DeleteOBConnection deletes an open banking connection.
+func (s *MemoryStorage) DeleteOBConnection(connectionID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, ok := s.obConnections[connectionID]
+	if ok {
+		delete(s.obConnections, connectionID)
+	}
+	return ok
+}
+
 // === State Management ===
 
 // SaveState saves state for a given key.
@@ -370,15 +432,16 @@ func (s *MemoryStorage) GetStats() StorageStats {
 
 // StorageSnapshot represents a snapshot of all storage data.
 type StorageSnapshot struct {
-	Accounts         map[string]models.PSPAccount   `json:"accounts"`
-	Payments         map[string]models.PSPPayment   `json:"payments"`
-	Balances         map[string]models.PSPBalance   `json:"balances"`
-	ExternalAccounts map[string]models.PSPAccount   `json:"external_accounts"`
-	Others           map[string][]models.PSPOther   `json:"others"`
-	States           map[string]json.RawMessage     `json:"states"`
-	TasksTree        *models.ConnectorTasksTree     `json:"tasks_tree,omitempty"`
-	WebhookConfigs   []models.PSPWebhookConfig      `json:"webhook_configs,omitempty"`
-	ExportedAt       time.Time                      `json:"exported_at"`
+	Accounts         map[string]models.PSPAccount      `json:"accounts"`
+	Payments         map[string]models.PSPPayment      `json:"payments"`
+	Balances         map[string]models.PSPBalance      `json:"balances"`
+	ExternalAccounts map[string]models.PSPAccount      `json:"external_accounts"`
+	Others           map[string][]models.PSPOther      `json:"others"`
+	OBConnections    map[string]StoredOBConnection      `json:"ob_connections,omitempty"`
+	States           map[string]json.RawMessage        `json:"states"`
+	TasksTree        *models.ConnectorTasksTree        `json:"tasks_tree,omitempty"`
+	WebhookConfigs   []models.PSPWebhookConfig         `json:"webhook_configs,omitempty"`
+	ExportedAt       time.Time                         `json:"exported_at"`
 }
 
 // Export exports all storage data as a snapshot.
@@ -392,6 +455,7 @@ func (s *MemoryStorage) Export() StorageSnapshot {
 		Balances:         s.balances,
 		ExternalAccounts: s.externalAccounts,
 		Others:           s.others,
+		OBConnections:    s.obConnections,
 		States:           s.states,
 		TasksTree:        s.tasksTree,
 		WebhookConfigs:   s.webhookConfigs,
@@ -421,6 +485,9 @@ func (s *MemoryStorage) Import(snapshot StorageSnapshot) {
 	}
 	if snapshot.States != nil {
 		s.states = snapshot.States
+	}
+	if snapshot.OBConnections != nil {
+		s.obConnections = snapshot.OBConnections
 	}
 	s.tasksTree = snapshot.TasksTree
 	s.webhookConfigs = snapshot.WebhookConfigs
