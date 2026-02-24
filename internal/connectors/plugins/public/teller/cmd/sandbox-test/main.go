@@ -1,12 +1,19 @@
 //go:build ignore
 
 // Quick sandbox test for the Teller connector.
-// Run: go run ./internal/connectors/plugins/public/teller/cmd/sandbox-test/
+// Run: go run ./internal/connectors/plugins/public/teller/cmd/sandbox-test/main.go
 //
 // This starts a local server that:
-// 1. Serves a page with the Teller Connect widget (sandbox mode)
+// 1. Serves a page with the Teller Connect widget (sandbox mode) (by default on http://localhost:9876)
 // 2. After enrollment, captures the access token
 // 3. Tests the Teller API endpoints via our client
+//
+// If you want to test the actual plugin, still use this endpoint after doing the usual connector install, PSU creation
+// PSU forward and PSU link creation. Take note of the attemptID.
+// As the link is not a real link, use the enrollment ID generated here to manually create the link:
+// In addition, we need the state, which is can be generated like so:
+// `echo '{"attemptId": "<attemptId>"}' | base64`
+// <paymentURL>/v3/connectors/open-banking/<connectorID>/?state=<state>&access_token=<accessToken>&enrollment_id=<enrollmentID>
 package main
 
 import (
