@@ -37,11 +37,9 @@ type V3ConnectorConfig struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
-	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
-	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
 	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
@@ -53,6 +51,8 @@ type V3ConnectorConfig struct {
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
+	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
+	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 
 	Type V3ConnectorConfigType
 }
@@ -486,10 +486,6 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
 	}
 
-	if u.V3CoinbaseprimeConfig != nil {
-		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
-	}
-
 	if u.V3ColumnConfig != nil {
 		return utils.MarshalJSON(u.V3ColumnConfig, "", true)
 	}
@@ -500,10 +496,6 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3DummypayConfig != nil {
 		return utils.MarshalJSON(u.V3DummypayConfig, "", true)
-	}
-
-	if u.V3FireblocksConfig != nil {
-		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
 	}
 
 	if u.V3GenericConfig != nil {
@@ -548,6 +540,14 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3WiseConfig != nil {
 		return utils.MarshalJSON(u.V3WiseConfig, "", true)
+	}
+
+	if u.V3CoinbaseprimeConfig != nil {
+		return utils.MarshalJSON(u.V3CoinbaseprimeConfig, "", true)
+	}
+
+	if u.V3FireblocksConfig != nil {
+		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
 	}
 
 	return nil, errors.New("could not marshal union type V3ConnectorConfig: all fields are null")
