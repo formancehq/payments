@@ -20,7 +20,7 @@ type V3Conversion struct {
 	SourceAmount *big.Int               `json:"sourceAmount"`
 	TargetAmount *big.Int               `json:"targetAmount,omitempty"`
 	Status       V3ConversionStatusEnum `json:"status"`
-	WalletID     string                 `json:"walletId"`
+	WalletID     *string                `json:"walletID,omitempty"`
 	Metadata     map[string]string      `json:"metadata,omitempty"`
 	Error        *string                `json:"error,omitempty"`
 }
@@ -113,9 +113,9 @@ func (o *V3Conversion) GetStatus() V3ConversionStatusEnum {
 	return o.Status
 }
 
-func (o *V3Conversion) GetWalletID() string {
+func (o *V3Conversion) GetWalletID() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.WalletID
 }
