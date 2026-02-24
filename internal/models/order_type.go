@@ -58,7 +58,11 @@ func (t *OrderType) UnmarshalJSON(data []byte) error {
 }
 
 func (t OrderType) Value() (driver.Value, error) {
-	return t.String(), nil
+	res := t.String()
+	if res == "UNKNOWN" {
+		return nil, fmt.Errorf("unknown order type")
+	}
+	return res, nil
 }
 
 func (t *OrderType) Scan(value interface{}) error {

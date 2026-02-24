@@ -419,6 +419,7 @@ func (oa OrderAdjustment) MarshalJSON() ([]byte, error) {
 		Fee                *big.Int          `json:"fee,omitempty"`
 		FeeAsset           *string           `json:"feeAsset,omitempty"`
 		Metadata           map[string]string `json:"metadata"`
+		Raw                json.RawMessage   `json:"raw"`
 	}{
 		ID:                 oa.ID.String(),
 		Reference:          oa.Reference,
@@ -428,6 +429,7 @@ func (oa OrderAdjustment) MarshalJSON() ([]byte, error) {
 		Fee:                oa.Fee,
 		FeeAsset:           oa.FeeAsset,
 		Metadata:           oa.Metadata,
+		Raw:                oa.Raw,
 	})
 }
 
@@ -441,6 +443,7 @@ func (oa *OrderAdjustment) UnmarshalJSON(data []byte) error {
 		Fee                *big.Int          `json:"fee,omitempty"`
 		FeeAsset           *string           `json:"feeAsset,omitempty"`
 		Metadata           map[string]string `json:"metadata"`
+		Raw                json.RawMessage   `json:"raw"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -460,6 +463,7 @@ func (oa *OrderAdjustment) UnmarshalJSON(data []byte) error {
 	oa.Fee = aux.Fee
 	oa.FeeAsset = aux.FeeAsset
 	oa.Metadata = aux.Metadata
+	oa.Raw = aux.Raw
 
 	return nil
 }
@@ -573,6 +577,7 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		FeeAsset            *string           `json:"feeAsset,omitempty"`
 		AverageFillPrice    *big.Int          `json:"averageFillPrice,omitempty"`
 		Metadata            map[string]string `json:"metadata"`
+		Adjustments         []OrderAdjustment `json:"adjustments"`
 		Error               *string           `json:"error,omitempty"`
 	}{
 		ID:                  oe.Order.ID.String(),
@@ -596,6 +601,7 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		FeeAsset:            oe.Order.FeeAsset,
 		AverageFillPrice:    oe.Order.AverageFillPrice,
 		Metadata:            oe.Order.Metadata,
+		Adjustments:         oe.Order.Adjustments,
 		Error: func() *string {
 			if oe.Error == nil {
 				return nil
