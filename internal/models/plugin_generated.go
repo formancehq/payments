@@ -219,6 +219,21 @@ func (mr *MockPluginMockRecorder) FetchNextAccounts(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextAccounts", reflect.TypeOf((*MockPlugin)(nil).FetchNextAccounts), arg0, arg1)
 }
 
+// FetchNextConversions mocks base method.
+func (m *MockPlugin) FetchNextConversions(arg0 context.Context, arg1 FetchNextConversionsRequest) (FetchNextConversionsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextConversions", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextConversionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextConversions indicates an expected call of FetchNextConversions.
+func (mr *MockPluginMockRecorder) FetchNextConversions(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextConversions", reflect.TypeOf((*MockPlugin)(nil).FetchNextConversions), arg0, arg1)
+}
+
 // FetchNextBalances mocks base method.
 func (m *MockPlugin) FetchNextBalances(arg0 context.Context, arg1 FetchNextBalancesRequest) (FetchNextBalancesResponse, error) {
 	m.ctrl.T.Helper()
@@ -262,6 +277,21 @@ func (m *MockPlugin) FetchNextOthers(arg0 context.Context, arg1 FetchNextOthersR
 func (mr *MockPluginMockRecorder) FetchNextOthers(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextOthers", reflect.TypeOf((*MockPlugin)(nil).FetchNextOthers), arg0, arg1)
+}
+
+// FetchNextOrders mocks base method.
+func (m *MockPlugin) FetchNextOrders(arg0 context.Context, arg1 FetchNextOrdersRequest) (FetchNextOrdersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextOrders", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextOrdersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextOrders indicates an expected call of FetchNextOrders.
+func (mr *MockPluginMockRecorder) FetchNextOrders(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextOrders", reflect.TypeOf((*MockPlugin)(nil).FetchNextOrders), arg0, arg1)
 }
 
 // FetchNextPayments mocks base method.
