@@ -58,7 +58,11 @@ func (s *ConversionStatus) UnmarshalJSON(data []byte) error {
 }
 
 func (s ConversionStatus) Value() (driver.Value, error) {
-	return s.String(), nil
+	res := s.String()
+	if res == "UNKNOWN" {
+		return nil, fmt.Errorf("unknown conversion status")
+	}
+	return res, nil
 }
 
 func (s *ConversionStatus) Scan(value interface{}) error {

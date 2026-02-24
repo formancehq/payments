@@ -14,8 +14,7 @@ import (
 )
 
 type ordersState struct {
-	Cursor   string    `json:"cursor"`
-	LastDate time.Time `json:"last_date"`
+	Cursor string `json:"cursor"`
 }
 
 func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
@@ -32,27 +31,19 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}
 
 	pspOrders := make([]models.PSPOrder, 0, len(ordersResp.Orders))
-	var lastDate time.Time
 	for _, order := range ordersResp.Orders {
 		pspOrder, err := p.clientOrderToPSPOrder(order)
 		if err != nil {
-			p.logger.Errorf("failed to convert order %s: %v", order.ID, err)
-			continue
+			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to convert order %s: %w", order.ID, err)
 		}
 		pspOrders = append(pspOrders, pspOrder)
-
-		orderCreatedAt, _ := time.Parse(time.RFC3339, order.CreatedAt)
-		if orderCreatedAt.After(lastDate) {
-			lastDate = orderCreatedAt
-		}
 	}
 
 	newCursor := ordersResp.Pagination.NextCursor
 	hasMore := ordersResp.Pagination.HasNext
 
 	newState := ordersState{
-		Cursor:   newCursor,
-		LastDate: lastDate,
+		Cursor: newCursor,
 	}
 
 	stateBytes, err := json.Marshal(newState)
@@ -68,26 +59,48 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 }
 
 func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, error) {
-	raw, _ := json.Marshal(order)
+	raw, err := json.Marshal(order)
+	if err != nil {
+		return models.PSPOrder{}, fmt.Errorf("failed to marshal order raw: %w", err)
+	}
 
-	// Parse product ID to get source/target assets (e.g., "BTC-USD" -> "BTC", "USD")
+	// Parse product ID to get base/quote assets (e.g., "BTC-USD" -> base="BTC", quote="USD")
 	parts := strings.Split(order.ProductID, "-")
 	if len(parts) != 2 {
 		return models.PSPOrder{}, fmt.Errorf("invalid product ID: %s", order.ProductID)
 	}
-	sourceAsset := parts[0]
-	targetAsset := parts[1]
+	baseSymbol := parts[0]
+	quoteSymbol := parts[1]
 
-	// Map direction
+	// Resolve assets with proper formatting (e.g., "BTC" -> "BTC/8")
+	baseAsset, _, baseOk := p.resolveAssetAndPrecision(baseSymbol)
+	if !baseOk {
+		return models.PSPOrder{}, fmt.Errorf("unsupported base asset: %s", baseSymbol)
+	}
+	quoteAsset, _, quoteOk := p.resolveAssetAndPrecision(quoteSymbol)
+	if !quoteOk {
+		return models.PSPOrder{}, fmt.Errorf("unsupported quote asset: %s", quoteSymbol)
+	}
+
+	// Map direction and determine source/target based on trade direction
+	// BUY BTC-USD: source=USD (what you spend), target=BTC (what you receive)
+	// SELL BTC-USD: source=BTC (what you spend), target=USD (what you receive)
 	direction := models.ORDER_DIRECTION_BUY
+	sourceAsset := quoteAsset
+	targetAsset := baseAsset
 	if strings.ToUpper(order.Side) == "SELL" {
 		direction = models.ORDER_DIRECTION_SELL
+		sourceAsset = baseAsset
+		targetAsset = quoteAsset
 	}
 
 	// Map order type
 	orderType := models.ORDER_TYPE_MARKET
-	if strings.ToUpper(order.Type) == "LIMIT" {
+	switch strings.ToUpper(order.Type) {
+	case "LIMIT":
 		orderType = models.ORDER_TYPE_LIMIT
+	case "STOP_LIMIT":
+		orderType = models.ORDER_TYPE_STOP_LIMIT
 	}
 
 	// Map status
@@ -106,39 +119,39 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		timeInForce = models.TIME_IN_FORCE_FILL_OR_KILL
 	}
 
-	// Parse quantities
-	baseQuantityOrdered, err := p.parseOrderQuantity(order.BaseQuantity, sourceAsset)
+	// Parse quantities using base asset precision
+	baseQuantityOrdered, err := p.parseOrderQuantity(order.BaseQuantity, baseSymbol)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse base quantity: %w", err)
 	}
 
-	baseQuantityFilled, err := p.parseOrderQuantity(order.FilledQuantity, sourceAsset)
+	baseQuantityFilled, err := p.parseOrderQuantity(order.FilledQuantity, baseSymbol)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse filled quantity: %w", err)
 	}
 
-	// Parse fees
+	// Parse fees using quote asset precision
 	var fee *big.Int
 	if order.Commission != "" {
-		fee, err = p.parseOrderQuantity(order.Commission, targetAsset)
+		fee, err = p.parseOrderQuantity(order.Commission, quoteSymbol)
 		if err != nil {
-			fee = big.NewInt(0)
+			return models.PSPOrder{}, fmt.Errorf("failed to parse commission: %w", err)
 		}
 	}
 
-	// Parse limit price
+	// Parse limit price using quote asset precision
 	var limitPrice *big.Int
 	if order.LimitPrice != "" {
-		limitPrice, err = p.parseOrderQuantity(order.LimitPrice, targetAsset)
+		limitPrice, err = p.parseOrderQuantity(order.LimitPrice, quoteSymbol)
 		if err != nil {
-			limitPrice = nil
+			return models.PSPOrder{}, fmt.Errorf("failed to parse limit price: %w", err)
 		}
 	}
 
-	// Parse created time
-	createdAt, _ := time.Parse(time.RFC3339, order.CreatedAt)
-	if createdAt.IsZero() {
-		createdAt = time.Now()
+	// Parse created time — return error if unparseable to ensure idempotent adjustment IDs
+	createdAt, err := time.Parse(time.RFC3339, order.CreatedAt)
+	if err != nil {
+		return models.PSPOrder{}, fmt.Errorf("failed to parse order createdAt %q: %w", order.CreatedAt, err)
 	}
 
 	return models.PSPOrder{
@@ -163,9 +176,13 @@ func mapCoinbaseStatus(cbStatus, baseQuantity, filledQuantity string) models.Ord
 	case "PENDING":
 		return models.ORDER_STATUS_PENDING
 	case "OPEN":
-		// Check if partially filled
-		if filledQuantity != "" && filledQuantity != "0" && baseQuantity != filledQuantity {
-			return models.ORDER_STATUS_PARTIALLY_FILLED
+		// Check if partially filled using numeric comparison
+		if filledQuantity != "" && filledQuantity != "0" {
+			filled, ok1 := new(big.Float).SetString(filledQuantity)
+			base, ok2 := new(big.Float).SetString(baseQuantity)
+			if ok1 && ok2 && filled.Sign() > 0 && filled.Cmp(base) < 0 {
+				return models.ORDER_STATUS_PARTIALLY_FILLED
+			}
 		}
 		return models.ORDER_STATUS_OPEN
 	case "FILLED":

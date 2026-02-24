@@ -63,7 +63,11 @@ func (t *TimeInForce) UnmarshalJSON(data []byte) error {
 }
 
 func (t TimeInForce) Value() (driver.Value, error) {
-	return t.String(), nil
+	res := t.String()
+	if res == "UNKNOWN" {
+		return nil, fmt.Errorf("unknown time in force")
+	}
+	return res, nil
 }
 
 func (t *TimeInForce) Scan(value interface{}) error {

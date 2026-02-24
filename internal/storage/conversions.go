@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -46,16 +45,8 @@ func (s *store) ConversionsUpsert(ctx context.Context, conversions []models.Conv
 		conversionsToInsert = append(conversionsToInsert, fromConversionModels(c))
 	}
 
-	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return e("failed to create transaction", err)
-	}
-	defer func() {
-		rollbackOnTxError(ctx, &tx, err)
-	}()
-
 	if len(conversionsToInsert) > 0 {
-		_, err = tx.NewInsert().
+		_, err := s.db.NewInsert().
 			Model(&conversionsToInsert).
 			On("CONFLICT (id) DO UPDATE").
 			Set("updated_at = EXCLUDED.updated_at").
@@ -66,11 +57,6 @@ func (s *store) ConversionsUpsert(ctx context.Context, conversions []models.Conv
 		if err != nil {
 			return e("failed to insert conversions", err)
 		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return e("failed to commit transaction", err)
 	}
 
 	return nil
@@ -124,19 +110,18 @@ func (s *store) conversionsQueryContext(qb query.Builder) (string, []any, error)
 			if operator != "$match" {
 				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
+			return fmt.Sprintf("conversion.%s = ?", key), []any{value}, nil
 
 		case key == "source_amount",
 			key == "target_amount":
-			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
+			return fmt.Sprintf("conversion.%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
 				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
-			key := "metadata"
-			return key + " @> ?", []any{map[string]any{
+			return "conversion.metadata @> ?", []any{map[string]any{
 				match[0][1]: value,
 			}}, nil
 		default:
