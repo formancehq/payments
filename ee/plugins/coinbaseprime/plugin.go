@@ -165,4 +165,18 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return p.fetchNextPayments(ctx, req)
 }
 
+func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	if p.client == nil || len(p.currencies) == 0 {
+		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextOrders(ctx, req)
+}
+
+func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	if p.client == nil || len(p.currencies) == 0 {
+		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextConversions(ctx, req)
+}
+
 var _ models.Plugin = &Plugin{}
