@@ -57,11 +57,13 @@ type Engine struct {
 	running     bool
 
 	// Fetch state (for step-by-step execution)
-	accountsFetchState   *fetchState
-	paymentsFetchState   map[string]*fetchState // keyed by fromPayload ID
-	balancesFetchState   map[string]*fetchState
+	accountsFetchState    *fetchState
+	paymentsFetchState    map[string]*fetchState // keyed by fromPayload ID
+	balancesFetchState    map[string]*fetchState
 	externalAccountsState map[string]*fetchState
-	othersFetchState     map[string]map[string]*fetchState // keyed by name, then fromPayload ID
+	ordersFetchState      map[string]*fetchState
+	conversionsFetchState map[string]*fetchState
+	othersFetchState      map[string]map[string]*fetchState // keyed by name, then fromPayload ID
 }
 
 type fetchState struct {
@@ -87,11 +89,13 @@ func NewEngine(
 		debug:                debug,
 		tasks:                tasks,
 		logger:               logger,
-		pageSize:             DefaultPageSize,
-		paymentsFetchState:   make(map[string]*fetchState),
-		balancesFetchState:   make(map[string]*fetchState),
+		pageSize:              DefaultPageSize,
+		paymentsFetchState:    make(map[string]*fetchState),
+		balancesFetchState:    make(map[string]*fetchState),
 		externalAccountsState: make(map[string]*fetchState),
-		othersFetchState:     make(map[string]map[string]*fetchState),
+		ordersFetchState:      make(map[string]*fetchState),
+		conversionsFetchState: make(map[string]*fetchState),
+		othersFetchState:      make(map[string]map[string]*fetchState),
 	}
 }
 
@@ -232,6 +236,10 @@ func (e *Engine) executeTask(ctx context.Context, task models.ConnectorTaskTree,
 		return e.executeFetchBalancesTask(ctx, task, fromPayload)
 	case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 		return e.executeFetchExternalAccountsTask(ctx, task, fromPayload)
+	case models.TASK_FETCH_ORDERS:
+		return e.executeFetchOrdersTask(ctx, task, fromPayload)
+	case models.TASK_FETCH_CONVERSIONS:
+		return e.executeFetchConversionsTask(ctx, task, fromPayload)
 	case models.TASK_FETCH_OTHERS:
 		return e.executeFetchOthersTask(ctx, task, fromPayload)
 	case models.TASK_CREATE_WEBHOOKS:
@@ -693,6 +701,164 @@ func (e *Engine) executeFetchOthersTask(ctx context.Context, task models.Connect
 	return nil
 }
 
+func (e *Engine) executeFetchOrdersTask(ctx context.Context, task models.ConnectorTaskTree, fromPayload json.RawMessage) error {
+	e.debug.Log("fetch_orders", "Fetching orders...")
+
+	var state json.RawMessage
+	hasMore := true
+	totalFetched := 0
+	pageNum := 0
+
+	for hasMore {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		pageNum++
+
+		var exec *TaskExecution
+		if e.tasks != nil {
+			exec = e.tasks.StartTask(models.TASK_FETCH_ORDERS, "", fromPayload)
+			exec.PageNumber = pageNum
+		}
+
+		if e.tasks != nil && !e.tasks.WaitForStep() {
+			return fmt.Errorf("execution stopped")
+		}
+
+		callID := e.debug.LogPluginCall("FetchNextOrders", models.FetchNextOrdersRequest{
+			FromPayload: fromPayload,
+			State:       state,
+			PageSize:    e.pageSize,
+		})
+		start := time.Now()
+
+		resp, err := e.plugin.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+			FromPayload: fromPayload,
+			State:       state,
+			PageSize:    e.pageSize,
+		})
+
+		e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+		if e.tasks != nil && exec != nil {
+			itemCount := 0
+			if err == nil {
+				itemCount = len(resp.Orders)
+			}
+			e.tasks.CompleteTask(exec, itemCount, resp.HasMore, err)
+		}
+
+		if err != nil {
+			e.debug.LogError("fetch_orders", err)
+			return fmt.Errorf("fetch orders failed: %w", err)
+		}
+
+		if len(resp.Orders) > 0 {
+			e.storage.StoreOrders(resp.Orders)
+			totalFetched += len(resp.Orders)
+		}
+
+		if state != nil || resp.NewState != nil {
+			e.debug.LogStateChange("orders", state, resp.NewState)
+		}
+
+		state = resp.NewState
+		hasMore = resp.HasMore
+	}
+
+	e.debug.Log("fetch_orders", fmt.Sprintf("Fetched %d orders", totalFetched))
+
+	stateKey := "orders"
+	if payloadKey := extractPayloadKey(fromPayload); payloadKey != "" {
+		stateKey = fmt.Sprintf("orders:%s", payloadKey)
+	}
+	e.storage.SaveState(stateKey, state)
+
+	return nil
+}
+
+func (e *Engine) executeFetchConversionsTask(ctx context.Context, task models.ConnectorTaskTree, fromPayload json.RawMessage) error {
+	e.debug.Log("fetch_conversions", "Fetching conversions...")
+
+	var state json.RawMessage
+	hasMore := true
+	totalFetched := 0
+	pageNum := 0
+
+	for hasMore {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		pageNum++
+
+		var exec *TaskExecution
+		if e.tasks != nil {
+			exec = e.tasks.StartTask(models.TASK_FETCH_CONVERSIONS, "", fromPayload)
+			exec.PageNumber = pageNum
+		}
+
+		if e.tasks != nil && !e.tasks.WaitForStep() {
+			return fmt.Errorf("execution stopped")
+		}
+
+		callID := e.debug.LogPluginCall("FetchNextConversions", models.FetchNextConversionsRequest{
+			FromPayload: fromPayload,
+			State:       state,
+			PageSize:    e.pageSize,
+		})
+		start := time.Now()
+
+		resp, err := e.plugin.FetchNextConversions(ctx, models.FetchNextConversionsRequest{
+			FromPayload: fromPayload,
+			State:       state,
+			PageSize:    e.pageSize,
+		})
+
+		e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+		if e.tasks != nil && exec != nil {
+			itemCount := 0
+			if err == nil {
+				itemCount = len(resp.Conversions)
+			}
+			e.tasks.CompleteTask(exec, itemCount, resp.HasMore, err)
+		}
+
+		if err != nil {
+			e.debug.LogError("fetch_conversions", err)
+			return fmt.Errorf("fetch conversions failed: %w", err)
+		}
+
+		if len(resp.Conversions) > 0 {
+			e.storage.StoreConversions(resp.Conversions)
+			totalFetched += len(resp.Conversions)
+		}
+
+		if state != nil || resp.NewState != nil {
+			e.debug.LogStateChange("conversions", state, resp.NewState)
+		}
+
+		state = resp.NewState
+		hasMore = resp.HasMore
+	}
+
+	e.debug.Log("fetch_conversions", fmt.Sprintf("Fetched %d conversions", totalFetched))
+
+	stateKey := "conversions"
+	if payloadKey := extractPayloadKey(fromPayload); payloadKey != "" {
+		stateKey = fmt.Sprintf("conversions:%s", payloadKey)
+	}
+	e.storage.SaveState(stateKey, state)
+
+	return nil
+}
+
 func (e *Engine) executeCreateWebhooksTask(ctx context.Context, task models.ConnectorTaskTree, fromPayload json.RawMessage) error {
 	e.debug.Log("create_webhooks", "Creating webhooks...")
 
@@ -955,6 +1121,112 @@ func (e *Engine) FetchExternalAccountsOnePage(ctx context.Context, fromPayload j
 	return &resp, nil
 }
 
+// FetchOrdersOnePage fetches one page of orders.
+func (e *Engine) FetchOrdersOnePage(ctx context.Context, fromPayload json.RawMessage) (*models.FetchNextOrdersResponse, error) {
+	key := string(fromPayload)
+	if key == "" {
+		key = "_root"
+	}
+
+	e.mu.Lock()
+	state, ok := e.ordersFetchState[key]
+	if !ok {
+		state = &fetchState{HasMore: true}
+		e.ordersFetchState[key] = state
+	}
+	currentState := state.State
+	e.mu.Unlock()
+
+	if !state.HasMore {
+		return &models.FetchNextOrdersResponse{HasMore: false}, nil
+	}
+
+	callID := e.debug.LogPluginCall("FetchNextOrders", models.FetchNextOrdersRequest{
+		FromPayload: fromPayload,
+		State:       currentState,
+		PageSize:    e.pageSize,
+	})
+	start := time.Now()
+
+	resp, err := e.plugin.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+		FromPayload: fromPayload,
+		State:       currentState,
+		PageSize:    e.pageSize,
+	})
+
+	e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+	if err != nil {
+		return nil, err
+	}
+
+	e.mu.Lock()
+	state.State = resp.NewState
+	state.HasMore = resp.HasMore
+	state.PagesFetched++
+	state.TotalItems += len(resp.Orders)
+	e.mu.Unlock()
+
+	if len(resp.Orders) > 0 {
+		e.storage.StoreOrders(resp.Orders)
+	}
+
+	return &resp, nil
+}
+
+// FetchConversionsOnePage fetches one page of conversions.
+func (e *Engine) FetchConversionsOnePage(ctx context.Context, fromPayload json.RawMessage) (*models.FetchNextConversionsResponse, error) {
+	key := string(fromPayload)
+	if key == "" {
+		key = "_root"
+	}
+
+	e.mu.Lock()
+	state, ok := e.conversionsFetchState[key]
+	if !ok {
+		state = &fetchState{HasMore: true}
+		e.conversionsFetchState[key] = state
+	}
+	currentState := state.State
+	e.mu.Unlock()
+
+	if !state.HasMore {
+		return &models.FetchNextConversionsResponse{HasMore: false}, nil
+	}
+
+	callID := e.debug.LogPluginCall("FetchNextConversions", models.FetchNextConversionsRequest{
+		FromPayload: fromPayload,
+		State:       currentState,
+		PageSize:    e.pageSize,
+	})
+	start := time.Now()
+
+	resp, err := e.plugin.FetchNextConversions(ctx, models.FetchNextConversionsRequest{
+		FromPayload: fromPayload,
+		State:       currentState,
+		PageSize:    e.pageSize,
+	})
+
+	e.debug.LogPluginResult(callID, resp, time.Since(start), err)
+
+	if err != nil {
+		return nil, err
+	}
+
+	e.mu.Lock()
+	state.State = resp.NewState
+	state.HasMore = resp.HasMore
+	state.PagesFetched++
+	state.TotalItems += len(resp.Conversions)
+	e.mu.Unlock()
+
+	if len(resp.Conversions) > 0 {
+		e.storage.StoreConversions(resp.Conversions)
+	}
+
+	return &resp, nil
+}
+
 // CreateTransfer creates a transfer.
 func (e *Engine) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (*models.CreateTransferResponse, error) {
 	callID := e.debug.LogPluginCall("CreateTransfer", req)
@@ -988,10 +1260,19 @@ func (e *Engine) ResetFetchState() {
 	e.paymentsFetchState = make(map[string]*fetchState)
 	e.balancesFetchState = make(map[string]*fetchState)
 	e.externalAccountsState = make(map[string]*fetchState)
+	e.ordersFetchState = make(map[string]*fetchState)
+	e.conversionsFetchState = make(map[string]*fetchState)
 	e.othersFetchState = make(map[string]map[string]*fetchState)
 
 	e.storage.ClearAllStates()
 	e.debug.Log("reset", "Fetch state reset")
+}
+
+// fetchStatusEntry is used for map-based fetch status entries.
+type fetchStatusEntry struct {
+	HasMore      bool `json:"has_more"`
+	PagesFetched int  `json:"pages_fetched"`
+	TotalItems   int  `json:"total_items"`
 }
 
 // GetFetchStatus returns the current fetch status.
@@ -1001,16 +1282,10 @@ type FetchStatus struct {
 		PagesFetched int  `json:"pages_fetched"`
 		TotalItems   int  `json:"total_items"`
 	} `json:"accounts"`
-	Payments map[string]struct {
-		HasMore      bool `json:"has_more"`
-		PagesFetched int  `json:"pages_fetched"`
-		TotalItems   int  `json:"total_items"`
-	} `json:"payments"`
-	Balances map[string]struct {
-		HasMore      bool `json:"has_more"`
-		PagesFetched int  `json:"pages_fetched"`
-		TotalItems   int  `json:"total_items"`
-	} `json:"balances"`
+	Payments    map[string]fetchStatusEntry `json:"payments"`
+	Balances    map[string]fetchStatusEntry `json:"balances"`
+	Orders      map[string]fetchStatusEntry `json:"orders"`
+	Conversions map[string]fetchStatusEntry `json:"conversions"`
 }
 
 func (e *Engine) GetFetchStatus() FetchStatus {
@@ -1018,16 +1293,10 @@ func (e *Engine) GetFetchStatus() FetchStatus {
 	defer e.mu.RUnlock()
 
 	status := FetchStatus{
-		Payments: make(map[string]struct {
-			HasMore      bool `json:"has_more"`
-			PagesFetched int  `json:"pages_fetched"`
-			TotalItems   int  `json:"total_items"`
-		}),
-		Balances: make(map[string]struct {
-			HasMore      bool `json:"has_more"`
-			PagesFetched int  `json:"pages_fetched"`
-			TotalItems   int  `json:"total_items"`
-		}),
+		Payments:    make(map[string]fetchStatusEntry),
+		Balances:    make(map[string]fetchStatusEntry),
+		Orders:      make(map[string]fetchStatusEntry),
+		Conversions: make(map[string]fetchStatusEntry),
 	}
 
 	if e.accountsFetchState != nil {
@@ -1039,11 +1308,7 @@ func (e *Engine) GetFetchStatus() FetchStatus {
 	}
 
 	for k, v := range e.paymentsFetchState {
-		status.Payments[k] = struct {
-			HasMore      bool `json:"has_more"`
-			PagesFetched int  `json:"pages_fetched"`
-			TotalItems   int  `json:"total_items"`
-		}{
+		status.Payments[k] = fetchStatusEntry{
 			HasMore:      v.HasMore,
 			PagesFetched: v.PagesFetched,
 			TotalItems:   v.TotalItems,
@@ -1051,11 +1316,23 @@ func (e *Engine) GetFetchStatus() FetchStatus {
 	}
 
 	for k, v := range e.balancesFetchState {
-		status.Balances[k] = struct {
-			HasMore      bool `json:"has_more"`
-			PagesFetched int  `json:"pages_fetched"`
-			TotalItems   int  `json:"total_items"`
-		}{
+		status.Balances[k] = fetchStatusEntry{
+			HasMore:      v.HasMore,
+			PagesFetched: v.PagesFetched,
+			TotalItems:   v.TotalItems,
+		}
+	}
+
+	for k, v := range e.ordersFetchState {
+		status.Orders[k] = fetchStatusEntry{
+			HasMore:      v.HasMore,
+			PagesFetched: v.PagesFetched,
+			TotalItems:   v.TotalItems,
+		}
+	}
+
+	for k, v := range e.conversionsFetchState {
+		status.Conversions[k] = fetchStatusEntry{
 			HasMore:      v.HasMore,
 			PagesFetched: v.PagesFetched,
 			TotalItems:   v.TotalItems,

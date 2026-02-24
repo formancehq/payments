@@ -18,15 +18,19 @@ type Baseline struct {
 	Provider  string    `json:"provider"`
 
 	// Captured data
-	Accounts         []models.PSPAccount  `json:"accounts"`
-	Payments         []models.PSPPayment  `json:"payments"`
-	Balances         []models.PSPBalance  `json:"balances"`
-	ExternalAccounts []models.PSPAccount  `json:"external_accounts"`
+	Accounts         []models.PSPAccount    `json:"accounts"`
+	Payments         []models.PSPPayment    `json:"payments"`
+	Balances         []models.PSPBalance    `json:"balances"`
+	Orders           []models.PSPOrder      `json:"orders"`
+	Conversions      []models.PSPConversion `json:"conversions"`
+	ExternalAccounts []models.PSPAccount    `json:"external_accounts"`
 
 	// Metadata
 	AccountCount         int `json:"account_count"`
 	PaymentCount         int `json:"payment_count"`
 	BalanceCount         int `json:"balance_count"`
+	OrderCount           int `json:"order_count"`
+	ConversionCount      int `json:"conversion_count"`
 	ExternalAccountCount int `json:"external_account_count"`
 }
 
@@ -96,6 +100,8 @@ func (m *BaselineManager) SaveBaseline(name string) (*Baseline, error) {
 	accounts := m.storage.GetAccounts()
 	payments := m.storage.GetPayments()
 	balances := m.storage.GetBalances()
+	orders := m.storage.GetOrders()
+	conversions := m.storage.GetConversions()
 	externalAccounts := m.storage.GetExternalAccounts()
 
 	baseline := &Baseline{
@@ -106,10 +112,14 @@ func (m *BaselineManager) SaveBaseline(name string) (*Baseline, error) {
 		Accounts:             accounts,
 		Payments:             payments,
 		Balances:             balances,
+		Orders:               orders,
+		Conversions:          conversions,
 		ExternalAccounts:     externalAccounts,
 		AccountCount:         len(accounts),
 		PaymentCount:         len(payments),
 		BalanceCount:         len(balances),
+		OrderCount:           len(orders),
+		ConversionCount:      len(conversions),
 		ExternalAccountCount: len(externalAccounts),
 	}
 
