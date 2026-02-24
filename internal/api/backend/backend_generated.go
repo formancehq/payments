@@ -297,6 +297,66 @@ func (mr *MockBackendMockRecorder) ConnectorsUninstall(ctx, connectorID any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsUninstall", reflect.TypeOf((*MockBackend)(nil).ConnectorsUninstall), ctx, connectorID)
 }
 
+// ConversionsGet mocks base method.
+func (m *MockBackend) ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsGet", ctx, id)
+	ret0, _ := ret[0].(*models.Conversion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConversionsGet indicates an expected call of ConversionsGet.
+func (mr *MockBackendMockRecorder) ConversionsGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsGet", reflect.TypeOf((*MockBackend)(nil).ConversionsGet), ctx, id)
+}
+
+// ConversionsList mocks base method.
+func (m *MockBackend) ConversionsList(ctx context.Context, query storage.ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConversionsList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Conversion])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConversionsList indicates an expected call of ConversionsList.
+func (mr *MockBackendMockRecorder) ConversionsList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConversionsList", reflect.TypeOf((*MockBackend)(nil).ConversionsList), ctx, query)
+}
+
+// OrdersGet mocks base method.
+func (m *MockBackend) OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersGet", ctx, id)
+	ret0, _ := ret[0].(*models.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrdersGet indicates an expected call of OrdersGet.
+func (mr *MockBackendMockRecorder) OrdersGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersGet", reflect.TypeOf((*MockBackend)(nil).OrdersGet), ctx, id)
+}
+
+// OrdersList mocks base method.
+func (m *MockBackend) OrdersList(ctx context.Context, query storage.ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrdersList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Order])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrdersList indicates an expected call of OrdersList.
+func (mr *MockBackendMockRecorder) OrdersList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrdersList", reflect.TypeOf((*MockBackend)(nil).OrdersList), ctx, query)
+}
+
 // PaymentInitiationAdjustmentsGetLast mocks base method.
 func (m *MockBackend) PaymentInitiationAdjustmentsGetLast(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiationAdjustment, error) {
 	m.ctrl.T.Helper()

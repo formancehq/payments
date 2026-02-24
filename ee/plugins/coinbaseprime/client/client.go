@@ -23,6 +23,7 @@ type Client interface {
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error)
 	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
+	ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error)
 }
 
 const defaultBaseURL = "https://api.prime.coinbase.com"
@@ -200,6 +201,31 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 	return &response, nil
 }
 
+func (c *client) ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error) {
+	endpoint, err := c.buildPortfolioEndpoint("orders", cursor, pageSize)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response OrdersResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list orders (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
+	}
+
+	return &response, nil
+}
+
 func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (string, error) {
 	endpoint, err := url.Parse(fmt.Sprintf("%s/v1/portfolios/%s/%s", c.baseURL, c.portfolioID, resource))
 	if err != nil {
@@ -330,6 +356,33 @@ type WalletBalanceResponse struct {
 type TransactionsResponse struct {
 	Transactions []Transaction `json:"transactions"`
 	Pagination   Pagination    `json:"pagination"`
+}
+
+// Order represents a Coinbase Prime order.
+type Order struct {
+	ID             string `json:"id"`
+	PortfolioID    string `json:"portfolio_id"`
+	ProductID      string `json:"product_id"`
+	Side           string `json:"side"`            // BUY, SELL
+	Type           string `json:"type"`            // MARKET, LIMIT, TWAP, BLOCK
+	BaseQuantity   string `json:"base_quantity"`
+	QuoteValue     string `json:"quote_value"`
+	LimitPrice     string `json:"limit_price"`
+	FilledQuantity string `json:"filled_quantity"`
+	FilledValue    string `json:"filled_value"`
+	AveragePrice   string `json:"average_filled_price"`
+	Commission     string `json:"commission"`
+	Status         string `json:"status"`         // PENDING, OPEN, FILLED, CANCELLED, EXPIRED, FAILED
+	TimeInForce    string `json:"time_in_force"`
+	CreatedAt      string `json:"created_at"`
+	ExpiryTime     string `json:"expiry_time"`
+	ClientOrderID  string `json:"client_order_id"`
+}
+
+// OrdersResponse wraps orders with pagination.
+type OrdersResponse struct {
+	Orders     []Order    `json:"orders"`
+	Pagination Pagination `json:"pagination"`
 }
 
 // ErrorResponse represents an API error.
