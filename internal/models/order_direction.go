@@ -53,7 +53,11 @@ func (d *OrderDirection) UnmarshalJSON(data []byte) error {
 }
 
 func (d OrderDirection) Value() (driver.Value, error) {
-	return d.String(), nil
+	res := d.String()
+	if res == "UNKNOWN" {
+		return nil, fmt.Errorf("unknown order direction")
+	}
+	return res, nil
 }
 
 func (d *OrderDirection) Scan(value interface{}) error {

@@ -65,6 +65,7 @@ create table if not exists order_adjustments (
     primary key (id)
 );
 create index order_adjustments_created_at_sort_id on order_adjustments (created_at, sort_id);
+create index order_adjustments_order_id on order_adjustments (order_id);
 alter table order_adjustments
     add constraint order_adjustments_order_id_fk foreign key (order_id)
     references orders (id)

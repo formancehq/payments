@@ -301,10 +301,6 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageOrdersUpsert,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageOrdersGet",
-			Func: a.StorageOrdersGet,
-		}).
-		Append(temporalworker.Definition{
 			Name: "StorageConversionsUpsert",
 			Func: a.StorageConversionsUpsert,
 		}).

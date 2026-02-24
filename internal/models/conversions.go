@@ -114,7 +114,7 @@ type Conversion struct {
 	Status ConversionStatus `json:"status"`
 
 	// Wallet ID where the conversion takes place
-	WalletID string `json:"walletId"`
+	WalletID string `json:"walletID"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
@@ -140,8 +140,9 @@ func (c Conversion) MarshalJSON() ([]byte, error) {
 		SourceAmount *big.Int          `json:"sourceAmount"`
 		TargetAmount *big.Int          `json:"targetAmount,omitempty"`
 		Status       ConversionStatus  `json:"status"`
-		WalletID     string            `json:"walletId"`
+		WalletID     string            `json:"walletID"`
 		Metadata     map[string]string `json:"metadata"`
+		Raw          json.RawMessage   `json:"raw"`
 	}{
 		ID:           c.ID.String(),
 		ConnectorID:  c.ConnectorID.String(),
@@ -156,6 +157,7 @@ func (c Conversion) MarshalJSON() ([]byte, error) {
 		Status:       c.Status,
 		WalletID:     c.WalletID,
 		Metadata:     c.Metadata,
+		Raw:          c.Raw,
 	})
 }
 
@@ -171,8 +173,9 @@ func (c *Conversion) UnmarshalJSON(data []byte) error {
 		SourceAmount *big.Int          `json:"sourceAmount"`
 		TargetAmount *big.Int          `json:"targetAmount,omitempty"`
 		Status       ConversionStatus  `json:"status"`
-		WalletID     string            `json:"walletId"`
+		WalletID     string            `json:"walletID"`
 		Metadata     map[string]string `json:"metadata"`
+		Raw          json.RawMessage   `json:"raw"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -201,6 +204,7 @@ func (c *Conversion) UnmarshalJSON(data []byte) error {
 	c.Status = aux.Status
 	c.WalletID = aux.WalletID
 	c.Metadata = aux.Metadata
+	c.Raw = aux.Raw
 
 	return nil
 }
@@ -265,8 +269,9 @@ func (ce ConversionExpanded) MarshalJSON() ([]byte, error) {
 		SourceAmount *big.Int          `json:"sourceAmount"`
 		TargetAmount *big.Int          `json:"targetAmount,omitempty"`
 		Status       string            `json:"status"`
-		WalletID     string            `json:"walletId"`
+		WalletID     string            `json:"walletID"`
 		Metadata     map[string]string `json:"metadata"`
+		Raw          json.RawMessage   `json:"raw"`
 		Error        *string           `json:"error,omitempty"`
 	}{
 		ID:           ce.Conversion.ID.String(),
@@ -282,6 +287,7 @@ func (ce ConversionExpanded) MarshalJSON() ([]byte, error) {
 		Status:       ce.Status.String(),
 		WalletID:     ce.Conversion.WalletID,
 		Metadata:     ce.Conversion.Metadata,
+		Raw:          ce.Conversion.Raw,
 		Error: func() *string {
 			if ce.Error == nil {
 				return nil
