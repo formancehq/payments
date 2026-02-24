@@ -78,7 +78,11 @@ func (s *OrderStatus) UnmarshalJSON(data []byte) error {
 }
 
 func (s OrderStatus) Value() (driver.Value, error) {
-	return s.String(), nil
+	res := s.String()
+	if res == "UNKNOWN" {
+		return nil, fmt.Errorf("unknown order status")
+	}
+	return res, nil
 }
 
 func (s *OrderStatus) Scan(value interface{}) error {

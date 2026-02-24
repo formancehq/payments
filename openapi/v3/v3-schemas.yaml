@@ -997,6 +997,8 @@ components:
           nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
+        raw:
+          type: object
 
     V3OrderDirectionEnum:
       type: string
@@ -1117,7 +1119,7 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/V3ConversionStatusEnum'
-        walletId:
+        walletID:
           type: string
         metadata:
           $ref: '#/components/schemas/V3Metadata'

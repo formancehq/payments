@@ -45,7 +45,7 @@ func (w Workflow) fetchConversions(
 	}
 	state, err := activities.StorageStatesGet(infiniteRetryContext(ctx), stateID)
 	if err != nil {
-		return fmt.Errorf("retrieving state %s: %v", stateID.String(), err)
+		return fmt.Errorf("retrieving state %s: %w", stateID.String(), err)
 	}
 
 	// Get pageSize from registry using provider from ConnectorID (no DB call needed)
