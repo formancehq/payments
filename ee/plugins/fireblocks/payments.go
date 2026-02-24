@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/fireblocks/client"
+	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
 	"github.com/formancehq/payments/internal/models"
 )
 

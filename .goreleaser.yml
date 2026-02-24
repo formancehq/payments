@@ -8,11 +8,30 @@ includes:
 
 builds:
   - binary: payments
-    id: payments
+    id: payments-ce
     ldflags:
       - -X github.com/formancehq/payments/cmd.BuildDate={{ .Date }}
       - -X github.com/formancehq/payments/cmd.Version=v{{ .Version }}
       - -X github.com/formancehq/payments/cmd.Commit={{ .ShortCommit }}
+      - -X github.com/formancehq/payments/cmd.Edition=community
+      - -extldflags "-static"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+  - binary: payments
+    id: payments-ee
+    tags:
+      - ee
+    ldflags:
+      - -X github.com/formancehq/payments/cmd.BuildDate={{ .Date }}
+      - -X github.com/formancehq/payments/cmd.Version=v{{ .Version }}
+      - -X github.com/formancehq/payments/cmd.Commit={{ .ShortCommit }}
+      - -X github.com/formancehq/payments/cmd.Edition=enterprise
       - -extldflags "-static"
     env:
       - CGO_ENABLED=0
@@ -23,11 +42,17 @@ builds:
       - arm64
 
 archives:
-  - id: "{{.ProjectName}}"
+  - id: payments-ce
     builds:
-      - payments
+      - payments-ce
     format: tar.gz
     name_template: "{{.ProjectName}}_{{.Os}}-{{.Arch}}"
+
+  - id: payments-ee
+    builds:
+      - payments-ee
+    format: tar.gz
+    name_template: "{{.ProjectName}}-ee_{{.Os}}-{{.Arch}}"
 
 release:
   prerelease: auto
