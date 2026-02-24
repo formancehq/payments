@@ -2,6 +2,7 @@ package workbench
 
 import (
 	"encoding/json"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
@@ -119,4 +120,106 @@ func ToBalanceResponses(balances []models.PSPBalance) []BalanceResponse {
 		result[i] = ToBalanceResponse(bal)
 	}
 	return result
+}
+
+// OrderResponse is the JSON-serializable order for the UI.
+type OrderResponse struct {
+	Reference           string            `json:"reference"`
+	CreatedAt           time.Time         `json:"created_at"`
+	Direction           string            `json:"direction"`
+	SourceAsset         string            `json:"source_asset"`
+	TargetAsset         string            `json:"target_asset"`
+	Type                string            `json:"type"`
+	Status              string            `json:"status"`
+	BaseQuantityOrdered string            `json:"base_quantity_ordered"`
+	BaseQuantityFilled  string            `json:"base_quantity_filled,omitempty"`
+	LimitPrice          string            `json:"limit_price,omitempty"`
+	StopPrice           string            `json:"stop_price,omitempty"`
+	TimeInForce         string            `json:"time_in_force,omitempty"`
+	ExpiresAt           *time.Time        `json:"expires_at,omitempty"`
+	Fee                 string            `json:"fee,omitempty"`
+	FeeAsset            *string           `json:"fee_asset,omitempty"`
+	AverageFillPrice    string            `json:"average_fill_price,omitempty"`
+	Metadata            map[string]string `json:"metadata,omitempty"`
+	Raw                 json.RawMessage   `json:"raw,omitempty"`
+}
+
+// ToOrderResponse converts a PSPOrder to an OrderResponse.
+func ToOrderResponse(o models.PSPOrder) OrderResponse {
+	resp := OrderResponse{
+		Reference:           o.Reference,
+		CreatedAt:           o.CreatedAt,
+		Direction:           o.Direction.String(),
+		SourceAsset:         o.SourceAsset,
+		TargetAsset:         o.TargetAsset,
+		Type:                o.Type.String(),
+		Status:              o.Status.String(),
+		BaseQuantityOrdered: bigIntToString(o.BaseQuantityOrdered),
+		BaseQuantityFilled:  bigIntToString(o.BaseQuantityFilled),
+		LimitPrice:          bigIntToString(o.LimitPrice),
+		StopPrice:           bigIntToString(o.StopPrice),
+		TimeInForce:         o.TimeInForce.String(),
+		ExpiresAt:           o.ExpiresAt,
+		Fee:                 bigIntToString(o.Fee),
+		FeeAsset:            o.FeeAsset,
+		AverageFillPrice:    bigIntToString(o.AverageFillPrice),
+		Metadata:            o.Metadata,
+		Raw:                 o.Raw,
+	}
+	return resp
+}
+
+// ToOrderResponses converts a slice of PSPOrders to OrderResponses.
+func ToOrderResponses(orders []models.PSPOrder) []OrderResponse {
+	result := make([]OrderResponse, len(orders))
+	for i, o := range orders {
+		result[i] = ToOrderResponse(o)
+	}
+	return result
+}
+
+// ConversionResponse is the JSON-serializable conversion for the UI.
+type ConversionResponse struct {
+	Reference    string            `json:"reference"`
+	CreatedAt    time.Time         `json:"created_at"`
+	SourceAsset  string            `json:"source_asset"`
+	TargetAsset  string            `json:"target_asset"`
+	SourceAmount string            `json:"source_amount"`
+	TargetAmount string            `json:"target_amount,omitempty"`
+	Status       string            `json:"status"`
+	WalletID     string            `json:"wallet_id"`
+	Metadata     map[string]string `json:"metadata,omitempty"`
+	Raw          json.RawMessage   `json:"raw,omitempty"`
+}
+
+// ToConversionResponse converts a PSPConversion to a ConversionResponse.
+func ToConversionResponse(c models.PSPConversion) ConversionResponse {
+	return ConversionResponse{
+		Reference:    c.Reference,
+		CreatedAt:    c.CreatedAt,
+		SourceAsset:  c.SourceAsset,
+		TargetAsset:  c.TargetAsset,
+		SourceAmount: bigIntToString(c.SourceAmount),
+		TargetAmount: bigIntToString(c.TargetAmount),
+		Status:       c.Status.String(),
+		WalletID:     c.WalletID,
+		Metadata:     c.Metadata,
+		Raw:          c.Raw,
+	}
+}
+
+// ToConversionResponses converts a slice of PSPConversions to ConversionResponses.
+func ToConversionResponses(conversions []models.PSPConversion) []ConversionResponse {
+	result := make([]ConversionResponse, len(conversions))
+	for i, c := range conversions {
+		result[i] = ToConversionResponse(c)
+	}
+	return result
+}
+
+func bigIntToString(v *big.Int) string {
+	if v == nil {
+		return ""
+	}
+	return v.String()
 }
