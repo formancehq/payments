@@ -8,15 +8,19 @@ import (
 	"time"
 )
 
+type V3OrderAdjustmentRaw struct {
+}
+
 type V3OrderAdjustment struct {
-	ID                 string            `json:"id"`
-	Reference          string            `json:"reference"`
-	CreatedAt          time.Time         `json:"createdAt"`
-	Status             V3OrderStatusEnum `json:"status"`
-	BaseQuantityFilled *big.Int          `json:"baseQuantityFilled,omitempty"`
-	Fee                *big.Int          `json:"fee,omitempty"`
-	FeeAsset           *string           `json:"feeAsset,omitempty"`
-	Metadata           map[string]string `json:"metadata,omitempty"`
+	ID                 string                `json:"id"`
+	Reference          string                `json:"reference"`
+	CreatedAt          time.Time             `json:"createdAt"`
+	Status             V3OrderStatusEnum     `json:"status"`
+	BaseQuantityFilled *big.Int              `json:"baseQuantityFilled,omitempty"`
+	Fee                *big.Int              `json:"fee,omitempty"`
+	FeeAsset           *string               `json:"feeAsset,omitempty"`
+	Metadata           map[string]string     `json:"metadata,omitempty"`
+	Raw                *V3OrderAdjustmentRaw `json:"raw,omitempty"`
 }
 
 func (v V3OrderAdjustment) MarshalJSON() ([]byte, error) {
@@ -84,4 +88,11 @@ func (o *V3OrderAdjustment) GetMetadata() map[string]string {
 		return nil
 	}
 	return o.Metadata
+}
+
+func (o *V3OrderAdjustment) GetRaw() *V3OrderAdjustmentRaw {
+	if o == nil {
+		return nil
+	}
+	return o.Raw
 }
