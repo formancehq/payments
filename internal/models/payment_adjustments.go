@@ -21,7 +21,8 @@ type PaymentAdjustment struct {
 	Status PaymentStatus `json:"status"`
 
 	// Optional
-	// Amount moved
+	// Amount moved in this adjustment, using gross convention.
+	// Do not subtract PSP fees from this value.
 	Amount *big.Int `json:"amount"`
 	// Optional
 	// Asset related to amount

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -25,11 +26,13 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name       string
-	logger     logging.Logger
-	client     client.Client
-	config     Config
-	currencies map[string]int // symbol → decimal precision (loaded dynamically)
+	name           string
+	logger         logging.Logger
+	client         client.Client
+	config         Config
+	currMu         sync.Mutex
+	currencies     map[string]int    // symbol → decimal precision (loaded dynamically)
+	networkSymbols map[string]string // network-scoped symbol → base symbol (e.g. "BASEUSDC" → "USDC")
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -78,6 +81,7 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 	}
 
 	currencies := make(map[string]int, len(assets.Assets)+len(fiatCurrenciesFallback))
+	networkSymbols := make(map[string]string)
 
 	// Start with fiat fallback
 	for k, v := range fiatCurrenciesFallback {
@@ -98,10 +102,19 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 		}
 
 		currencies[symbol] = precision
+
+		// Build network-scoped symbol aliases (e.g. "BASEUSDC" → "USDC")
+		for _, net := range asset.Networks {
+			ns := strings.ToUpper(strings.TrimSpace(net.NetworkScopedSymbol))
+			if ns != "" && ns != symbol {
+				networkSymbols[ns] = symbol
+			}
+		}
 	}
 
 	p.currencies = currencies
-	p.logger.Infof("loaded %d currencies from Coinbase Prime", len(currencies))
+	p.networkSymbols = networkSymbols
+	p.logger.Infof("loaded %d currencies and %d network aliases from Coinbase Prime", len(currencies), len(networkSymbols))
 	return nil
 }
 
@@ -109,37 +122,65 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
+// ensureCurrencies lazily loads currencies with double-checked locking.
+func (p *Plugin) ensureCurrencies(ctx context.Context) error {
+	if len(p.currencies) > 0 {
+		return nil
+	}
+	p.currMu.Lock()
+	defer p.currMu.Unlock()
+	if len(p.currencies) > 0 {
+		return nil
+	}
+	return p.loadCurrencies(ctx)
+}
+
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	if p.client == nil || len(p.currencies) == 0 {
+	if p.client == nil {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextAccountsResponse{}, err
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	if p.client == nil || len(p.currencies) == 0 {
+	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextBalancesResponse{}, err
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	if p.client == nil || len(p.currencies) == 0 {
+	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextPaymentsResponse{}, err
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
-	if p.client == nil || len(p.currencies) == 0 {
+	if p.client == nil {
 		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextOrdersResponse{}, err
 	}
 	return p.fetchNextOrders(ctx, req)
 }
 
 func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
-	if p.client == nil || len(p.currencies) == 0 {
+	if p.client == nil {
 		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextConversionsResponse{}, err
 	}
 	return p.fetchNextConversions(ctx, req)
 }
