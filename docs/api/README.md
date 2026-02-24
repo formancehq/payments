@@ -1313,7 +1313,8 @@ Accept: application/json
             "metadata": {
               "property1": "string",
               "property2": "string"
-            }
+            },
+            "raw": {}
           }
         ],
         "error": "string"
@@ -1399,7 +1400,8 @@ Accept: application/json
         "metadata": {
           "property1": "string",
           "property2": "string"
-        }
+        },
+        "raw": {}
       }
     ],
     "error": "string"
@@ -1477,7 +1479,7 @@ Accept: application/json
         "sourceAmount": 0,
         "targetAmount": 0,
         "status": "UNKNOWN",
-        "walletId": "string",
+        "walletID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -1540,7 +1542,7 @@ Accept: application/json
     "sourceAmount": 0,
     "targetAmount": 0,
     "status": "UNKNOWN",
-    "walletId": "string",
+    "walletID": "string",
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -5555,7 +5557,8 @@ None ( Scopes: payments:read )
             "metadata": {
               "property1": "string",
               "property2": "string"
-            }
+            },
+            "raw": {}
           }
         ],
         "error": "string"
@@ -5623,7 +5626,8 @@ None ( Scopes: payments:read )
         "metadata": {
           "property1": "string",
           "property2": "string"
-        }
+        },
+        "raw": {}
       }
     ],
     "error": "string"
@@ -5683,7 +5687,8 @@ None ( Scopes: payments:read )
       "metadata": {
         "property1": "string",
         "property2": "string"
-      }
+      },
+      "raw": {}
     }
   ],
   "error": "string"
@@ -5738,7 +5743,8 @@ None ( Scopes: payments:read )
   "metadata": {
     "property1": "string",
     "property2": "string"
-  }
+  },
+  "raw": {}
 }
 
 ```
@@ -5755,6 +5761,7 @@ None ( Scopes: payments:read )
 |fee|integer(bigint)¦null|false|none|none|
 |feeAsset|string¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|raw|object|false|none|none|
 
 <h2 id="tocS_V3OrderDirectionEnum">V3OrderDirectionEnum</h2>
 <!-- backwards compatibility -->
@@ -5895,7 +5902,7 @@ None ( Scopes: payments:read )
         "sourceAmount": 0,
         "targetAmount": 0,
         "status": "UNKNOWN",
-        "walletId": "string",
+        "walletID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -5940,7 +5947,7 @@ None ( Scopes: payments:read )
     "sourceAmount": 0,
     "targetAmount": 0,
     "status": "UNKNOWN",
-    "walletId": "string",
+    "walletID": "string",
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -5977,7 +5984,7 @@ None ( Scopes: payments:read )
   "sourceAmount": 0,
   "targetAmount": 0,
   "status": "UNKNOWN",
-  "walletId": "string",
+  "walletID": "string",
   "metadata": {
     "property1": "string",
     "property2": "string"
@@ -6002,7 +6009,7 @@ None ( Scopes: payments:read )
 |sourceAmount|integer(bigint)|true|none|none|
 |targetAmount|integer(bigint)¦null|false|none|none|
 |status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|none|
-|walletId|string|true|none|none|
+|walletID|string|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 |error|string¦null|false|none|none|
 
