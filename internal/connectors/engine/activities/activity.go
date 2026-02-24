@@ -56,6 +56,14 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginFetchNextOthers,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginFetchNextOrders",
+			Func: a.PluginFetchNextOrders,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginFetchNextConversions",
+			Func: a.PluginFetchNextConversions,
+		}).
+		Append(temporalworker.Definition{
 			Name: "PluginCreateBankAccount",
 			Func: a.PluginCreateBankAccount,
 		}).
@@ -282,6 +290,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StorageBalancesStore",
 			Func: a.StorageBalancesStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageOrdersUpsert",
+			Func: a.StorageOrdersUpsert,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageOrdersGet",
+			Func: a.StorageOrdersGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageConversionsUpsert",
+			Func: a.StorageConversionsUpsert,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageWebhooksConfigsStore",
