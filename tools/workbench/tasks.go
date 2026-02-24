@@ -17,6 +17,8 @@ var taskTypeNames = map[models.TaskType]string{
 	models.TASK_FETCH_BALANCES:          "FETCH_BALANCES",
 	models.TASK_FETCH_EXTERNAL_ACCOUNTS: "FETCH_EXTERNAL_ACCOUNTS",
 	models.TASK_FETCH_PAYMENTS:          "FETCH_PAYMENTS",
+	models.TASK_FETCH_ORDERS:            "FETCH_ORDERS",
+	models.TASK_FETCH_CONVERSIONS:       "FETCH_CONVERSIONS",
 	models.TASK_CREATE_WEBHOOKS:         "CREATE_WEBHOOKS",
 }
 
