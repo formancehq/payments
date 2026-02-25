@@ -97,6 +97,12 @@ func (p *Plugin) transactionToPayment(tx client.Transaction) (*models.PSPPayment
 
 func (p *Plugin) resolveAssetAndPrecision(symbol string) (string, int, bool) {
 	symbol = strings.ToUpper(strings.TrimSpace(symbol))
+
+	// Resolve network-scoped symbols (e.g. "BASEUSDC") to their base symbol ("USDC")
+	if base, ok := p.networkSymbols[symbol]; ok {
+		symbol = base
+	}
+
 	precision, err := currency.GetPrecision(p.currencies, symbol)
 	if err != nil {
 		return "", 0, false

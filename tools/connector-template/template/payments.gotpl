@@ -49,7 +49,9 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		// TODO: transfer PSP object into formance object
+		// TODO: transfer PSP object into formance object.
+		// Use gross amount convention: report the full amount before any fee
+		// deduction. Store PSP fees in metadata, never subtract them from Amount.
 		payments = append(payments, models.PSPPayment{})
 
 		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
