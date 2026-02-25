@@ -263,12 +263,27 @@ type PortfolioResponse struct {
 	Portfolio Portfolio `json:"portfolio"`
 }
 
+// NetworkInfo describes a blockchain network identity.
+type NetworkInfo struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// Network represents a network-scoped asset entry (e.g. USDC on Base → "BASEUSDC").
+type Network struct {
+	Network            NetworkInfo `json:"network"`
+	Name               string     `json:"name"`
+	NetworkScopedSymbol string    `json:"network_scoped_symbol"`
+	MaxDecimals        string     `json:"max_decimals"`
+}
+
 // Asset represents a Coinbase Prime asset with its decimal precision.
 type Asset struct {
-	Name             string `json:"name"`
-	Symbol           string `json:"symbol"`
-	DecimalPrecision string `json:"decimal_precision"`
-	TradingSupported bool   `json:"trading_supported"`
+	Name             string    `json:"name"`
+	Symbol           string    `json:"symbol"`
+	DecimalPrecision string    `json:"decimal_precision"`
+	TradingSupported bool      `json:"trading_supported"`
+	Networks         []Network `json:"networks"`
 }
 
 // AssetsResponse wraps assets.
