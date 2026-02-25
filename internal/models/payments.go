@@ -30,7 +30,7 @@ type PSPPayment struct {
 	// Type of payment: payin, payout, transfer etc...
 	Type PaymentType
 
-	// Payment amount.
+	// Payment amount (gross). Do not subtract PSP fees from this value.
 	Amount *big.Int
 
 	// Currency. Should be in minor currencies unit.
@@ -115,9 +115,9 @@ type Payment struct {
 	// Type of payment: payin, payout, transfer etc...
 	Type PaymentType `json:"type"`
 
-	// Payment Initial amount
+	// Payment Initial amount (gross). Do not subtract PSP fees from this value.
 	InitialAmount *big.Int `json:"initialAmount"`
-	// Payment amount.
+	// Payment amount (gross). Do not subtract PSP fees from this value.
 	Amount *big.Int `json:"amount"`
 
 	// Currency. Should be in minor currencies unit.
