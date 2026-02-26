@@ -21,6 +21,10 @@ func (o *V3GetConnectorConfigResponse) GetDataAtlar() *V3AtlarConfig {
 	return o.GetData().V3AtlarConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataBankingbridge() *V3BankingbridgeConfig {
+	return o.GetData().V3BankingbridgeConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataBankingcircle() *V3BankingcircleConfig {
 	return o.GetData().V3BankingcircleConfig
 }
