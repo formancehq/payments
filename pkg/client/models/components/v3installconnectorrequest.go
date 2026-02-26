@@ -14,6 +14,7 @@ type V3InstallConnectorRequestType string
 const (
 	V3InstallConnectorRequestTypeAdyen         V3InstallConnectorRequestType = "Adyen"
 	V3InstallConnectorRequestTypeAtlar         V3InstallConnectorRequestType = "Atlar"
+	V3InstallConnectorRequestTypeBankingbridge V3InstallConnectorRequestType = "Bankingbridge"
 	V3InstallConnectorRequestTypeBankingcircle V3InstallConnectorRequestType = "Bankingcircle"
 	V3InstallConnectorRequestTypeCoinbaseprime V3InstallConnectorRequestType = "Coinbaseprime"
 	V3InstallConnectorRequestTypeColumn        V3InstallConnectorRequestType = "Column"
@@ -36,6 +37,7 @@ const (
 type V3InstallConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
+	V3BankingbridgeConfig *V3BankingbridgeConfig `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
@@ -78,6 +80,18 @@ func CreateV3InstallConnectorRequestAtlar(atlar V3AtlarConfig) V3InstallConnecto
 	return V3InstallConnectorRequest{
 		V3AtlarConfig: &atlar,
 		Type:          typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestBankingbridge(bankingbridge V3BankingbridgeConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeBankingbridge
+
+	typStr := string(typ)
+	bankingbridge.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3BankingbridgeConfig: &bankingbridge,
+		Type:                  typ,
 	}
 }
 
@@ -315,6 +329,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3AtlarConfig = v3AtlarConfig
 		u.Type = V3InstallConnectorRequestTypeAtlar
 		return nil
+	case "Bankingbridge":
+		v3BankingbridgeConfig := new(V3BankingbridgeConfig)
+		if err := utils.UnmarshalJSON(data, &v3BankingbridgeConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Bankingbridge) type V3BankingbridgeConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3BankingbridgeConfig = v3BankingbridgeConfig
+		u.Type = V3InstallConnectorRequestTypeBankingbridge
+		return nil
 	case "Bankingcircle":
 		v3BankingcircleConfig := new(V3BankingcircleConfig)
 		if err := utils.UnmarshalJSON(data, &v3BankingcircleConfig, "", true, false); err != nil {
@@ -480,6 +503,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3AtlarConfig != nil {
 		return utils.MarshalJSON(u.V3AtlarConfig, "", true)
+	}
+
+	if u.V3BankingbridgeConfig != nil {
+		return utils.MarshalJSON(u.V3BankingbridgeConfig, "", true)
 	}
 
 	if u.V3BankingcircleConfig != nil {
