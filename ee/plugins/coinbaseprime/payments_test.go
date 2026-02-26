@@ -177,8 +177,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[0].Asset).To(Equal("BTC/8"))
 			// 1.5 BTC = 150000000 (1.5 * 10^8)
 			Expect(resp.Payments[0].Amount.Cmp(big.NewInt(150000000))).To(Equal(0))
-			Expect(resp.Payments[0].SourceAccountReference).ToNot(BeNil())
-			Expect(*resp.Payments[0].SourceAccountReference).To(Equal("pm-123"))
+			Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
 			Expect(resp.Payments[0].DestinationAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("wallet1"))
 
@@ -191,8 +190,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[1].Amount.Cmp(big.NewInt(50000))).To(Equal(0))
 			Expect(resp.Payments[1].SourceAccountReference).ToNot(BeNil())
 			Expect(*resp.Payments[1].SourceAccountReference).To(Equal("wallet2"))
-			Expect(resp.Payments[1].DestinationAccountReference).ToNot(BeNil())
-			Expect(*resp.Payments[1].DestinationAccountReference).To(Equal("external-bank"))
+			Expect(resp.Payments[1].DestinationAccountReference).To(BeNil())
 
 			// Verify third payment (USDC conversion - completed)
 			Expect(resp.Payments[2].Reference).To(Equal("tx3"))
@@ -583,6 +581,275 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			Expect(resp.Payments[0].Asset).To(Equal("NEWTOKEN/12"))
+		})
+
+		It("should set account references to nil for non-WALLET types", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-payment-method",
+							WalletID:    "",
+							PortfolioID: "portfolio1",
+							Type:        "DEPOSIT",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "BTC",
+							Amount:      "1.0",
+							CreatedAt:   now,
+							TransferFrom: &client.TransferEndpoint{
+								Type:  "PAYMENT_METHOD",
+								Value: "pm-external-123",
+							},
+							TransferTo: &client.TransferEndpoint{
+								Type:  "PAYMENT_METHOD",
+								Value: "pm-external-456",
+							},
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
+			Expect(resp.Payments[0].DestinationAccountReference).To(BeNil())
+		})
+
+		It("should set account references for WALLET type but not for PAYMENT_METHOD type", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-mixed",
+							WalletID:    "",
+							PortfolioID: "portfolio1",
+							Type:        "DEPOSIT",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "BTC",
+							Amount:      "1.0",
+							CreatedAt:   now,
+							TransferFrom: &client.TransferEndpoint{
+								Type:  "PAYMENT_METHOD",
+								Value: "pm-external-123",
+							},
+							TransferTo: &client.TransferEndpoint{
+								Type:  "WALLET",
+								Value: "wallet-123",
+							},
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
+			Expect(resp.Payments[0].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("wallet-123"))
+		})
+
+		It("should handle case-insensitive WALLET type", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-lowercase",
+							WalletID:    "",
+							PortfolioID: "portfolio1",
+							Type:        "DEPOSIT",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "BTC",
+							Amount:      "1.0",
+							CreatedAt:   now,
+							TransferFrom: &client.TransferEndpoint{
+								Type:  "wallet",
+								Value: "wallet-lower",
+							},
+							TransferTo: &client.TransferEndpoint{
+								Type:  "Wallet",
+								Value: "wallet-mixed",
+							},
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].SourceAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[0].SourceAccountReference).To(Equal("wallet-lower"))
+			Expect(resp.Payments[0].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("wallet-mixed"))
+		})
+
+		It("should not include fee_symbol when fees and network_fees are zero", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-no-fees",
+							WalletID:    "wallet1",
+							PortfolioID: "portfolio1",
+							Type:        "DEPOSIT",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "BTC",
+							Amount:      "1.0",
+							Fees:        "0",
+							FeeSymbol:   "BTC",
+							NetworkFees: "0",
+							CreatedAt:   now,
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			md := resp.Payments[0].Metadata
+			Expect(md).ToNot(HaveKey("fee_symbol"))
+			Expect(md).ToNot(HaveKey("fees"))
+			Expect(md).ToNot(HaveKey("network_fees"))
+		})
+
+		It("should include fee_symbol when fees is greater than zero", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-with-fees",
+							WalletID:    "wallet1",
+							PortfolioID: "portfolio1",
+							Type:        "DEPOSIT",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "BTC",
+							Amount:      "1.0",
+							Fees:        "0.001",
+							FeeSymbol:   "BTC",
+							NetworkFees: "0",
+							CreatedAt:   now,
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			md := resp.Payments[0].Metadata
+			Expect(md["fee_symbol"]).To(Equal("BTC"))
+			Expect(md["fees"]).To(Equal("0.001"))
+		})
+
+		It("should include fee_symbol when network_fees is greater than zero", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-with-network-fees",
+							WalletID:    "wallet1",
+							PortfolioID: "portfolio1",
+							Type:        "DEPOSIT",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "ETH",
+							Amount:      "1.0",
+							Fees:        "0",
+							FeeSymbol:   "ETH",
+							NetworkFees: "0.0005",
+							CreatedAt:   now,
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			md := resp.Payments[0].Metadata
+			Expect(md["fee_symbol"]).To(Equal("ETH"))
+			Expect(md["network_fees"]).To(Equal("0.0005"))
+		})
+
+		It("should include fee_symbol when either fees or network_fees is greater than zero", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+				&client.TransactionsResponse{
+					Transactions: []client.Transaction{
+						{
+							ID:          "tx-with-both-fees",
+							WalletID:    "wallet1",
+							PortfolioID: "portfolio1",
+							Type:        "WITHDRAWAL",
+							Status:      "TRANSACTION_DONE",
+							Symbol:      "USDC",
+							Amount:      "100.0",
+							Fees:        "0.5",
+							FeeSymbol:   "USDC",
+							NetworkFees: "0.1",
+							CreatedAt:   now,
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			md := resp.Payments[0].Metadata
+			Expect(md["fee_symbol"]).To(Equal("USDC"))
+			Expect(md["fees"]).To(Equal("0.5"))
+			Expect(md["network_fees"]).To(Equal("0.1"))
 		})
 	})
 })

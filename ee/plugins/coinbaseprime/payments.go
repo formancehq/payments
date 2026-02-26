@@ -126,10 +126,11 @@ func buildTransactionMetadata(tx client.Transaction) map[string]string {
 	metadata["status"] = tx.Status
 
 	// Fees
+	hasFees := (tx.Fees != "" && tx.Fees != "0") || (tx.NetworkFees != "" && tx.NetworkFees != "0")
 	if tx.Fees != "" && tx.Fees != "0" {
 		metadata["fees"] = tx.Fees
 	}
-	if tx.FeeSymbol != "" {
+	if tx.FeeSymbol != "" && hasFees {
 		metadata["fee_symbol"] = tx.FeeSymbol
 	}
 	if tx.NetworkFees != "" && tx.NetworkFees != "0" {
@@ -180,12 +181,12 @@ func buildTransactionMetadata(tx client.Transaction) map[string]string {
 func resolveAccountReferences(tx client.Transaction) (*string, *string) {
 	var source, dest *string
 
-	// Use transfer_from/transfer_to when available (all tx types can have them)
-	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" {
+	// Use transfer_from/transfer_to only when type is WALLET
+	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" && strings.ToUpper(tx.TransferFrom.Type) == "WALLET" {
 		v := tx.TransferFrom.Value
 		source = &v
 	}
-	if tx.TransferTo != nil && tx.TransferTo.Value != "" {
+	if tx.TransferTo != nil && tx.TransferTo.Value != "" && strings.ToUpper(tx.TransferTo.Type) == "WALLET" {
 		v := tx.TransferTo.Value
 		dest = &v
 	}
