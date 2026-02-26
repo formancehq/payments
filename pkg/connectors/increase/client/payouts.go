@@ -259,6 +259,162 @@ func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayou
 	return payoutResponse, nil
 }
 
+type FedNowPayoutRequest struct {
+	AccountID                         string `json:"account_id"`
+	Amount                            int64  `json:"amount"`
+	CreditorName                      string `json:"creditor_name"`
+	DebtorName                        string `json:"debtor_name"`
+	SourceAccountNumberID             string `json:"source_account_number_id"`
+	UnstructuredRemittanceInformation string `json:"unstructured_remittance_information,omitempty"`
+}
+
+type FedNowPayoutResponse struct {
+	ID                   string `json:"id"`
+	TransactionID        string `json:"transaction_id"`
+	PendingTransactionID string `json:"pending_transaction_id"`
+	AccountID            string `json:"account_id"`
+	Amount               int64  `json:"amount"`
+	Currency             string `json:"currency"`
+	CreatedAt            string `json:"created_at"`
+	Status               string `json:"status"`
+	CreditorName         string `json:"creditor_name"`
+	DebtorName           string `json:"debtor_name"`
+}
+
+type SWIFTAddress struct {
+	Line1   string `json:"line1"`
+	City    string `json:"city,omitempty"`
+	Country string `json:"country"`
+}
+
+type SWIFTPayoutRequest struct {
+	AccountID              string       `json:"account_id"`
+	Amount                 int64        `json:"amount"`
+	BankIdentificationCode string       `json:"bank_identification_code"`
+	CreditorName           string       `json:"creditor_name"`
+	CreditorAddress        SWIFTAddress `json:"creditor_address"`
+	DebtorName             string       `json:"debtor_name,omitempty"`
+	DebtorAddress          SWIFTAddress `json:"debtor_address,omitempty"`
+	InstructedCurrency     string       `json:"instructed_currency,omitempty"`
+}
+
+type SWIFTPayoutResponse struct {
+	ID                   string `json:"id"`
+	TransactionID        string `json:"transaction_id"`
+	PendingTransactionID string `json:"pending_transaction_id"`
+	AccountID            string `json:"account_id"`
+	Amount               int64  `json:"amount"`
+	Currency             string `json:"currency"`
+	CreatedAt            string `json:"created_at"`
+	Status               string `json:"status"`
+	CreditorName         string `json:"creditor_name"`
+}
+
+func (c *client) InitiateFedNowTransferPayout(ctx context.Context, pr *FedNowPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_fednow_payout")
+
+	body, err := json.Marshal(pr)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost, "fednow_transfers", bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fednow transfer payout request: %w", err)
+	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
+
+	var res FedNowPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fednow transfer payout: %w %w", err, errRes.Error())
+	}
+
+	return &PayoutResponse{
+		ID:                   res.ID,
+		TransactionID:        res.TransactionID,
+		PendingTransactionID: res.PendingTransactionID,
+		AccountID:            res.AccountID,
+		Amount:               res.Amount,
+		Currency:             res.Currency,
+		CreatedAt:            res.CreatedAt,
+		Status:               res.Status,
+		RecipientName:        res.CreditorName,
+	}, nil
+}
+
+func (c *client) InitiateSWIFTTransferPayout(ctx context.Context, pr *SWIFTPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_swift_payout")
+
+	body, err := json.Marshal(pr)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost, "swift_transfers", bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create swift transfer payout request: %w", err)
+	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
+
+	var res SWIFTPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create swift transfer payout: %w %w", err, errRes.Error())
+	}
+
+	return &PayoutResponse{
+		ID:            res.ID,
+		TransactionID: res.TransactionID,
+		AccountID:     res.AccountID,
+		Amount:        res.Amount,
+		Currency:      res.Currency,
+		CreatedAt:     res.CreatedAt,
+		Status:        res.Status,
+		RecipientName: res.CreditorName,
+	}, nil
+}
+
+func (c *client) GetCheckTransfer(ctx context.Context, checkTransferID string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_check_transfer")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("check_transfers/%s", checkTransferID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create check transfer request: %w", err)
+	}
+
+	var res CheckPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get check transfer: %w %w", err, errRes.Error())
+	}
+
+	payoutResponse := &PayoutResponse{
+		ID:                   res.ID,
+		TransactionID:        res.TransactionID,
+		PendingTransactionID: res.PendingTransactionID,
+		AccountID:            res.AccountID,
+		Amount:               res.Amount,
+		Currency:             res.Currency,
+		CreatedAt:            res.CreatedAt,
+		Status:               res.Status,
+		AccountNumber:        res.AccountNumber,
+		RoutingNumber:        res.RoutingNumber,
+		CheckNumber:          res.CheckNumber,
+		RecipientName:        "Unknown",
+		ExternalAccountId:    "Unknown",
+	}
+
+	if res.PhysicalCheck != nil {
+		payoutResponse.RecipientName = res.PhysicalCheck.RecipientName
+	}
+
+	return payoutResponse, nil
+}
+
 func (c *client) InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_rtp_payout")
 

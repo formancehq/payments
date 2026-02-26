@@ -483,6 +483,85 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.ID))
 			Expect(res.Responses[0].Payment.ParentReference).To(Equal(samplePaymentCreated.Source.TransferID))
 		})
+
+		It("should return an error - check_transfer.updated error", func(ctx SpecContext) {
+			req := connector.TranslateWebhookRequest{
+				Name: "check_transfer.updated",
+				Webhook: connector.PSPWebhook{
+					Headers: map[string][]string{
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+					},
+					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
+				},
+			}
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
+				client.EventCategoryCheckTransferUpdated: {
+					urlPath: "/check_transfer/updated",
+					fn:      plg.translateCheckTransfer,
+				},
+			}
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
+				errors.New("test error"),
+			)
+
+			res, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get check transfer: test error : : status code: 0"))
+			Expect(res).To(Equal(connector.TranslateWebhookResponse{}))
+		})
+
+		It("translate webhooks - check_transfer.updated", func(ctx SpecContext) {
+			req := connector.TranslateWebhookRequest{
+				Name: "check_transfer.updated",
+				Webhook: connector.PSPWebhook{
+					Headers: map[string][]string{
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+					},
+					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
+				},
+			}
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
+				client.EventCategoryCheckTransferUpdated: {
+					urlPath: "/check_transfer/updated",
+					fn:      plg.translateCheckTransfer,
+				},
+			}
+
+			checkTransfer := client.CheckPayoutResponse{
+				ID:        "check-1",
+				AccountID: "acc-1",
+				Amount:    500,
+				Currency:  "USD",
+				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
+				Status:    "mailed",
+				PhysicalCheck: &client.PhysicalCheck{
+					RecipientName: "Jane Doe",
+				},
+			}
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, checkTransfer)
+
+			res, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Responses).To(HaveLen(1))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(checkTransfer.ID))
+			Expect(res.Responses[0].Payment.Status).To(Equal(connector.PAYMENT_STATUS_SUCCEEDED))
+		})
 	})
 
 	AfterEach(func() {

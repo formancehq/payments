@@ -47,6 +47,10 @@ func (p *Plugin) initWebhookConfig() map[client.EventCategory]supportedWebhook {
 			urlPath: "/pending_transactions/updated",
 			fn:      p.translatePendingTransaction,
 		},
+		client.EventCategoryCheckTransferUpdated: {
+			urlPath: "/check_transfer/updated",
+			fn:      p.translateCheckTransfer,
+		},
 	}
 
 	return p.supportedWebhooks
@@ -159,6 +163,22 @@ func (p *Plugin) translateTransaction(ctx context.Context, webhook client.Webhoo
 		return connector.WebhookResponse{}, fmt.Errorf("failed to map transaction payment: %w", err)
 	}
 	response.Payment = &pspPayment
+
+	return response, nil
+}
+
+func (p *Plugin) translateCheckTransfer(ctx context.Context, webhook client.WebhookEvent) (connector.WebhookResponse, error) {
+	var response connector.WebhookResponse
+	transfer, err := p.client.GetCheckTransfer(ctx, webhook.AssociatedObjectID)
+	if err != nil {
+		return connector.WebhookResponse{}, err
+	}
+
+	pspPayment, err := p.payoutToPayment(transfer)
+	if err != nil {
+		return connector.WebhookResponse{}, fmt.Errorf("failed to map check transfer payment: %w", err)
+	}
+	response.Payment = pspPayment
 
 	return response, nil
 }

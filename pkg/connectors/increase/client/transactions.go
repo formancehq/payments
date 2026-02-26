@@ -19,6 +19,7 @@ type Source struct {
 	CheckDepositID        string `json:"check_deposit_id"`
 	InboundAchTransferID  string `json:"inbound_ach_transfer_id"`
 	InboundWireTransferID string `json:"inbound_wire_transfer_id"`
+	FedNowTransferID      string `json:"fednow_transfer_id"`
 	ID                    string `json:"id"`
 	Amount                int64  `json:"amount"`
 }

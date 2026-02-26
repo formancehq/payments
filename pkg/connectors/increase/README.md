@@ -14,7 +14,9 @@ This connector enables synchronization of accounts, balances, payments, external
   - ACH transfers
   - Wire transfers
   - Check transfers
-  - Real-Time Payments Transfers
+  - Real-Time Payments Transfers (RTP)
+  - FedNow Transfers
+  - SWIFT Transfers
 
 ### External Account Operations
 - Fetch external bank accounts  
@@ -128,6 +130,39 @@ Note: Payout destination id must be an account with name.
   }
 }
 ```
+
+#### FedNow
+
+```json
+{
+  "metadata": {
+    "com.increase.spec/payoutMethod": "fednow",
+    "com.increase.spec/sourceAccountNumberID": "account_number_zhlqj5dkyr95otox5nv3",
+  }
+}
+```
+
+Note: `creditorName` is taken from the destination account's name. `debtorName` is taken from the source account's name (or optionally from the `com.increase.spec/debtorName` metadata key). `unstructuredRemittanceInformation` is taken from the payout description.
+
+#### SWIFT
+
+```json
+{
+  "metadata": {
+    "com.increase.spec/payoutMethod": "swift",
+    "com.increase.spec/bankIdentificationCode": "RBOSGB2L",
+    "com.increase.spec/creditorAddressLine1": "33 Liberty Street",
+    "com.increase.spec/creditorAddressCity": "New York",
+    "com.increase.spec/creditorAddressCountry": "US",
+    "com.increase.spec/debtorAddressLine1": "33 Main Street",  // optional
+    "com.increase.spec/debtorAddressCity": "Boston",           // optional
+    "com.increase.spec/debtorAddressCountry": "US",            // optional
+    "com.increase.spec/instructedCurrency": "EUR",             // optional, if different from account currency
+  }
+}
+```
+
+Note: `creditorName` is taken from the destination account's name. `debtorName` is taken from the source account's name.
 
 ### Webhooks
 

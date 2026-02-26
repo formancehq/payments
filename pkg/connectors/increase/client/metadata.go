@@ -25,4 +25,17 @@ const (
 	IncreaseTypeMetadataKey                     = increaseMetadataSpecNamespace + "type"
 	IncreaseBankMetadataKey                     = increaseMetadataSpecNamespace + "bank"
 	IncreaseStatusMetadataKey                   = increaseMetadataSpecNamespace + "status"
+
+	// FedNow metadata keys
+	IncreaseDebtorNameMetadataKey = increaseMetadataSpecNamespace + "debtorName"
+
+	// SWIFT metadata keys
+	IncreaseBankIdentificationCodeMetadataKey = increaseMetadataSpecNamespace + "bankIdentificationCode"
+	IncreaseCreditorAddressLine1MetadataKey   = increaseMetadataSpecNamespace + "creditorAddressLine1"
+	IncreaseCreditorAddressCityMetadataKey    = increaseMetadataSpecNamespace + "creditorAddressCity"
+	IncreaseCreditorAddressCountryMetadataKey = increaseMetadataSpecNamespace + "creditorAddressCountry"
+	IncreaseDebtorAddressLine1MetadataKey     = increaseMetadataSpecNamespace + "debtorAddressLine1"
+	IncreaseDebtorAddressCityMetadataKey      = increaseMetadataSpecNamespace + "debtorAddressCity"
+	IncreaseDebtorAddressCountryMetadataKey   = increaseMetadataSpecNamespace + "debtorAddressCountry"
+	IncreaseInstructedCurrencyMetadataKey     = increaseMetadataSpecNamespace + "instructedCurrency"
 )
