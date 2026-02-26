@@ -130,6 +130,47 @@ var _ = Describe("Column Plugin Accounts", func() {
 			Expect(state.LastIDCreated).To(BeEmpty())
 		})
 
+		It("should surface IsFrozen in account metadata (COLUMN-003)", func(ctx SpecContext) {
+			frozenAccounts := []*client.Account{
+				{
+					ID:           "frozen-acc",
+					Description:  "Frozen Account",
+					CurrencyCode: "USD",
+					IsFrozen:     true,
+					CreatedAt:    now.UTC().Format(time.RFC3339),
+				},
+				{
+					ID:           "active-acc",
+					Description:  "Active Account",
+					CurrencyCode: "USD",
+					IsFrozen:     false,
+					CreatedAt:    now.UTC().Format(time.RFC3339),
+				},
+			}
+
+			req := connector.FetchNextAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.AccountResponseWrapper[[]*client.Account]{
+				BankAccounts: frozenAccounts,
+			})
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Accounts).To(HaveLen(2))
+			Expect(resp.Accounts[0].Metadata[client.ColumnIsFrozenMetadataKey]).To(Equal("true"))
+			Expect(resp.Accounts[1].Metadata[client.ColumnIsFrozenMetadataKey]).To(Equal("false"))
+		})
+
 		It("should fetch next accounts - no state pageSize > total accounts", func(ctx SpecContext) {
 			req := connector.FetchNextAccountsRequest{
 				State:    []byte(`{}`),

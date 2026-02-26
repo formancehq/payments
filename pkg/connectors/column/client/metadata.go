@@ -40,6 +40,7 @@ const (
 	ColumnDefaultAccountNumberIDMetadataKey            = columnMetadataSpecNamespace + "default_account_number_id"
 	ColumnDescriptionMetadataKey                       = columnMetadataSpecNamespace + "description"
 	ColumnIsOverdraftableMetadataKey                   = columnMetadataSpecNamespace + "is_overdraftable"
+	ColumnIsFrozenMetadataKey                          = columnMetadataSpecNamespace + "is_frozen"
 	ColumnOverdraftReserveAccountIDMetadataKey         = columnMetadataSpecNamespace + "overdraft_reserve_account_id"
 	ColumnRoutingNumberMetadataKey                     = columnMetadataSpecNamespace + "routing_number"
 	ColumnTypeMetadataKey                              = columnMetadataSpecNamespace + "type"

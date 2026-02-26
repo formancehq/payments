@@ -89,6 +89,7 @@ func (p *Plugin) fillAccounts(
 				client.ColumnDefaultAccountNumberIDMetadataKey:    account.DefaultAccountNumberID,
 				client.ColumnDefaultAccountNumberMetadataKey:      account.DefaultAccountNumber,
 				client.ColumnIsOverdraftableMetadataKey:           strconv.FormatBool(account.IsOverdraftable),
+				client.ColumnIsFrozenMetadataKey:                  strconv.FormatBool(account.IsFrozen),
 				client.ColumnOverdraftReserveAccountIDMetadataKey: account.OverdraftReserveAccountID,
 				client.ColumnRoutingNumberMetadataKey:             account.RoutingNumber,
 				client.ColumnOwnersMetadataKey:                    strings.Join(account.Owners, ","),
