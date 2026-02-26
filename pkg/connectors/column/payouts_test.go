@@ -580,6 +580,94 @@ var _ = Describe("Column Plugin Payouts", func() {
 
 			})
 
+			It("should default ACH entry_class_code to CCD when not in metadata (COLUMN-001)", func(ctx SpecContext) {
+				// No ColumnEntryClassCodeMetadataKey provided — connector must default to "CCD"
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(500),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "src-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "dst-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "ach",
+						},
+						Description: "no-ecc-test",
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.ACHPayoutResponse{
+					ID:             "ach-default-ecc",
+					CreatedAt:      "2021-06-01T00:00:00Z",
+					UpdatedAt:      "2021-06-01T00:00:00Z",
+					Status:         "submitted",
+					Amount:         500,
+					CurrencyCode:   "USD",
+					BankAccountID:  "src-ref",
+					EntryClassCode: "CCD",
+				})
+
+				resp, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(resp.Payment.Reference).To(Equal("ach-default-ecc"))
+				Expect(resp.Payment.Metadata[client.ColumnEntryClassCodeMetadataKey]).To(Equal("CCD"))
+			})
+
+			It("should use explicit ACH entry_class_code when provided in metadata (COLUMN-001)", func(ctx SpecContext) {
+				req := connector.CreatePayoutRequest{
+					PaymentInitiation: connector.PSPPaymentInitiation{
+						Amount: big.NewInt(200),
+						Asset:  "USD/2",
+						SourceAccount: &connector.PSPAccount{
+							Reference: "src-ref",
+						},
+						DestinationAccount: &connector.PSPAccount{
+							Reference: "dst-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey:     "ach",
+							client.ColumnEntryClassCodeMetadataKey: "PPD",
+						},
+						Description: "explicit-ecc-test",
+					},
+				}
+
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.ACHPayoutResponse{
+					ID:             "ach-explicit-ecc",
+					CreatedAt:      "2021-06-01T00:00:00Z",
+					UpdatedAt:      "2021-06-01T00:00:00Z",
+					Status:         "submitted",
+					Amount:         200,
+					CurrencyCode:   "USD",
+					BankAccountID:  "src-ref",
+					EntryClassCode: "PPD",
+				})
+
+				resp, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(resp.Payment.Reference).To(Equal("ach-explicit-ecc"))
+				Expect(resp.Payment.Metadata[client.ColumnEntryClassCodeMetadataKey]).To(Equal("PPD"))
+			})
+
 			It("should create a payment from an international wire payout response", func(ctx SpecContext) {
 				req := connector.CreatePayoutRequest{
 					PaymentInitiation: connector.PSPPaymentInitiation{

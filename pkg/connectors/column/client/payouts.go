@@ -318,6 +318,10 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 
 	switch payoutType {
 	case "ach":
+		entryClassCode := connector.ExtractNamespacedMetadata(pr.Metadata, ColumnEntryClassCodeMetadataKey)
+		if entryClassCode == "" {
+			entryClassCode = "CCD"
+		}
 		achPayload := &ACHPayoutRequest{
 			Amount:                            pr.Amount,
 			BankAccountID:                     pr.SourceAccount,
@@ -333,7 +337,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 			PaymentRelatedInfo:                connector.ExtractNamespacedMetadata(pr.Metadata, ColumnPaymentRelatedInfoMetadataKey),
 			ReceiverName:                      connector.ExtractNamespacedMetadata(pr.Metadata, ColumnReceiverNameMetadataKey),
 			ReceiverId:                        connector.ExtractNamespacedMetadata(pr.Metadata, ColumnReceiverIDMetadataKey),
-			EntryClassCode:                    connector.ExtractNamespacedMetadata(pr.Metadata, ColumnEntryClassCodeMetadataKey),
+			EntryClassCode:                    entryClassCode,
 			AllowOverdraft:                    connector.ExtractNamespacedMetadata(pr.Metadata, ColumnAllowOverdraftMetadataKey) == "true",
 			UltimateBeneficiaryCounterparty:   connector.ExtractNamespacedMetadata(pr.Metadata, ColumnUltimateBeneficiaryCounterpartyMetadataKey),
 			UltimateBeneficiaryCounterpartyId: connector.ExtractNamespacedMetadata(pr.Metadata, ColumnUltimateBeneficiaryCounterpartyIDMetadataKey),

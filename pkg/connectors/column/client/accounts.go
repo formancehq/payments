@@ -27,6 +27,7 @@ type Account struct {
 	DefaultAccountNumberID    string   `json:"default_account_number_id"`
 	Description               string   `json:"description"`
 	IsOverdraftable           bool     `json:"is_overdraftable"`
+	IsFrozen                  bool     `json:"is_frozen"`
 	OverdraftReserveAccountID string   `json:"overdraft_reserve_account_id"`
 	RoutingNumber             string   `json:"routing_number"`
 	Owners                    []string `json:"owners"`
