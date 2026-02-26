@@ -2,9 +2,37 @@
 version: 2
 project_name: payments
 
-includes:
-  - from_url:
-      url: https://raw.githubusercontent.com/formancehq/earthly/refs/heads/main/.goreleaser.default.yaml
+nightly:
+  version_template: '{{ .FullCommit }}'
+  publish_release: false
+
+checksum:
+  name_template: '{{.ProjectName}}_checksums.txt'
+
+snapshot:
+  version_template: "{{ .Version }}"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^spec:'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
+  groups:
+    - title: 'New Features'
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 10
+    - title: Other work
+      order: 999
 
 builds:
   - binary: payments
@@ -43,16 +71,206 @@ builds:
 
 archives:
   - id: payments-ce
-    builds:
+    ids:
       - payments-ce
-    format: tar.gz
+    formats:
+      - tar.gz
     name_template: "{{.ProjectName}}_{{.Os}}-{{.Arch}}"
 
   - id: payments-ee
-    builds:
+    ids:
       - payments-ee
-    format: tar.gz
+    formats:
+      - tar.gz
     name_template: "{{.ProjectName}}-ee_{{.Os}}-{{.Arch}}"
+
+dockers:
+  # CE - build.Dockerfile amd64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+    ids:
+      - payments-ce
+    goarch: amd64
+    dockerfile: build.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+  # CE - build.Dockerfile arm64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+    ids:
+      - payments-ce
+    goarch: arm64
+    dockerfile: build.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/arm64/v8
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+  # CE - scratch.Dockerfile amd64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
+    ids:
+      - payments-ce
+    goarch: amd64
+    dockerfile: scratch.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+  # CE - scratch.Dockerfile arm64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+    ids:
+      - payments-ce
+    goarch: arm64
+    dockerfile: scratch.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/arm64/v8
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+
+  # EE - build.Dockerfile amd64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+    ids:
+      - payments-ee
+    goarch: amd64
+    dockerfile: build.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.description={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+  # EE - build.Dockerfile arm64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+    ids:
+      - payments-ee
+    goarch: arm64
+    dockerfile: build.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/arm64/v8
+      - --label=org.opencontainers.image.title={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.description={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+  # EE - scratch.Dockerfile amd64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
+    ids:
+      - payments-ee
+    goarch: amd64
+    dockerfile: scratch.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.description={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+  # EE - scratch.Dockerfile arm64
+  - image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+    ids:
+      - payments-ee
+    goarch: arm64
+    dockerfile: scratch.Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --provenance=false
+      - --platform=linux/arm64/v8
+      - --label=org.opencontainers.image.title={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.description={{ .ProjectName }}-ee
+      - --label=org.opencontainers.image.url=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/formancehq/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT
+
+docker_manifests:
+  # CE - versioned
+  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}"
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+  # CE - latest
+  - name_template: "{{ if not .IsNightly }}{{ if not .Prerelease }}ghcr.io/formancehq/{{ .ProjectName }}:latest{{ end }}{{ end }}"
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+  # CE - scratch
+  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-scratch"
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
+      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+
+  # EE - versioned
+  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}"
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+  # EE - latest
+  - name_template: "{{ if not .IsNightly }}{{ if not .Prerelease }}ghcr.io/formancehq/{{ .ProjectName }}-ee:latest{{ end }}{{ end }}"
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+  # EE - scratch
+  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-scratch"
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
 
 release:
   prerelease: auto
