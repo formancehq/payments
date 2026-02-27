@@ -96,12 +96,14 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(first.Metadata["txHash"]).To(Equal("hash"))
 		Expect(first.Metadata["networkFee"]).To(Equal("0.01"))
 
-		second := resp.Payments[1]
-		Expect(second.Reference).To(Equal("c"))
-		Expect(second.Amount).To(Equal(big.NewInt(1050)))
-		Expect(second.Asset).To(Equal("USD/2"))
-		Expect(second.Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
-		Expect(second.Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+	second := resp.Payments[1]
+	Expect(second.Reference).To(Equal("c"))
+	Expect(second.Amount).To(Equal(big.NewInt(1050)))
+	Expect(second.Asset).To(Equal("USD/2"))
+	Expect(second.Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+	Expect(second.Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+	Expect(second.SourceAccountReference).To(BeNil())
+	Expect(second.DestinationAccountReference).To(BeNil())
 
 		var newState paymentsState
 		err = json.Unmarshal(resp.NewState, &newState)
@@ -128,6 +130,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(err).To(BeNil())
 		Expect(resp.Payments).To(HaveLen(1))
 		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+		Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
+		Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("vault-1"))
 	})
 
 	It("classifies PAY-OUT when destination is external", func(ctx SpecContext) {
@@ -148,6 +152,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(err).To(BeNil())
 		Expect(resp.Payments).To(HaveLen(1))
 		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+		Expect(*resp.Payments[0].SourceAccountReference).To(Equal("vault-1"))
+		Expect(resp.Payments[0].DestinationAccountReference).To(BeNil())
 	})
 
 	It("classifies OTHER for non-transfer operations", func(ctx SpecContext) {
@@ -189,6 +195,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(err).To(BeNil())
 		Expect(resp.Payments).To(HaveLen(1))
 		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+		Expect(*resp.Payments[0].SourceAccountReference).To(Equal("vault-1"))
+		Expect(resp.Payments[0].DestinationAccountReference).To(BeNil())
 	})
 
 	It("classifies PAY-IN for FIAT_ACCOUNT source", func(ctx SpecContext) {
@@ -209,6 +217,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(err).To(BeNil())
 		Expect(resp.Payments).To(HaveLen(1))
 		Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+		Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
+		Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("vault-1"))
 	})
 
 	It("advances state even when transactions are skipped", func(ctx SpecContext) {
