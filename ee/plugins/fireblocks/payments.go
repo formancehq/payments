@@ -11,15 +11,17 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+type PeerType string
+
 const (
 	// Fireblocks peer types - internal vs external
-	peerTypeVaultAccount    = "VAULT_ACCOUNT"
-	peerTypeExternalWallet  = "EXTERNAL_WALLET"
-	peerTypeOneTimeAddress  = "ONE_TIME_ADDRESS"
-	peerTypeNetworkConn     = "NETWORK_CONNECTION"
-	peerTypeFiatAccount     = "FIAT_ACCOUNT"
-	peerTypeEndUserWallet   = "END_USER_WALLET"
-	peerTypeUnknown         = "UNKNOWN"
+	peerTypeVaultAccount   PeerType = "VAULT_ACCOUNT"
+	peerTypeExternalWallet PeerType = "EXTERNAL_WALLET"
+	peerTypeOneTimeAddress PeerType = "ONE_TIME_ADDRESS"
+	peerTypeNetworkConn    PeerType = "NETWORK_CONNECTION"
+	peerTypeFiatAccount    PeerType = "FIAT_ACCOUNT"
+	peerTypeEndUserWallet  PeerType = "END_USER_WALLET"
+	peerTypeUnknown        PeerType = "UNKNOWN"
 )
 
 type paymentsState struct {
@@ -101,7 +103,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			Raw:       raw,
 		}
 
-		if tx.Source.ID != "" && strings.ToUpper(tx.Source.Type) == peerTypeVaultAccount {
+		if tx.Source.ID != "" && isPeerType(tx.Source.Type, peerTypeVaultAccount) {
 			sourceRef := tx.Source.ID
 			payment.SourceAccountReference = &sourceRef
 		}
@@ -109,7 +111,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		metadata := map[string]string{}
 		if len(tx.Destinations) > 0 {
 			if len(tx.Destinations) == 1 && tx.Destinations[0].ID != "" {
-				if strings.ToUpper(tx.Destinations[0].Type) == peerTypeVaultAccount {
+				if isPeerType(tx.Destinations[0].Type, peerTypeVaultAccount) {
 					destRef := tx.Destinations[0].ID
 					payment.DestinationAccountReference = &destRef
 				}
@@ -124,7 +126,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 					metadata["destinationIds"] = strings.Join(ids, ",")
 				}
 			}
-		} else if tx.Destination.ID != "" && strings.ToUpper(tx.Destination.Type) == peerTypeVaultAccount {
+		} else if tx.Destination.ID != "" && isPeerType(tx.Destination.Type, peerTypeVaultAccount) {
 			destRef := tx.Destination.ID
 			payment.DestinationAccountReference = &destRef
 		}
@@ -162,12 +164,17 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
+// isPeerType checks if a peer type string matches the expected PeerType (case-insensitive).
+func isPeerType(t string, expected PeerType) bool {
+	return strings.ToUpper(t) == string(expected)
+}
+
 // isExternalPeerType returns true for peer types representing endpoints
 // outside the user's Fireblocks workspace.
 func isExternalPeerType(peerType string) bool {
-	switch peerType {
-	case peerTypeExternalWallet, peerTypeOneTimeAddress, peerTypeUnknown,
-		peerTypeNetworkConn, peerTypeFiatAccount, peerTypeEndUserWallet:
+	switch strings.ToUpper(peerType) {
+	case string(peerTypeExternalWallet), string(peerTypeOneTimeAddress), string(peerTypeUnknown),
+		string(peerTypeNetworkConn), string(peerTypeFiatAccount), string(peerTypeEndUserWallet):
 		return true
 	default:
 		return false
