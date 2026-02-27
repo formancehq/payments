@@ -93,6 +93,22 @@ components:
       schema:
         type: string
 
+    V3OrderID:
+      name: orderID
+      in: path
+      required: true
+      description: The order ID
+      schema:
+        type: string
+
+    V3ConversionID:
+      name: conversionID
+      in: path
+      required: true
+      description: The conversion ID
+      schema:
+        type: string
+
     V3Connector:
       name: connector
       in: path

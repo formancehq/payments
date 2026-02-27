@@ -18,7 +18,7 @@ import (
 const ProviderName = "coinbaseprime"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, models.PluginTypeExchange, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{}, PAGE_SIZE)
 }
@@ -163,6 +163,26 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, err
 	}
 	return p.fetchNextPayments(ctx, req)
+}
+
+func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	if p.client == nil {
+		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextOrdersResponse{}, err
+	}
+	return p.fetchNextOrders(ctx, req)
+}
+
+func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+	}
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return models.FetchNextConversionsResponse{}, err
+	}
+	return p.fetchNextConversions(ctx, req)
 }
 
 var _ models.Plugin = &Plugin{}
