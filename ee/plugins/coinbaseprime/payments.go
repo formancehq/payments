@@ -15,9 +15,13 @@ import (
 type TransferEndpointType string
 
 const (
-	// CoinbasePrime transfer endpoint types
-	transferTypeWallet        TransferEndpointType = "WALLET"
-	transferTypePaymentMethod TransferEndpointType = "PAYMENT_METHOD"
+	// CoinbasePrime transfer types
+	transferTypeWallet          TransferEndpointType = "WALLET"
+	transferTypePaymentMethod   TransferEndpointType = "PAYMENT_METHOD"
+	transferTypeAddress         TransferEndpointType = "ADDRESS"
+	transferTypeOther           TransferEndpointType = "OTHER"
+	transferTypeMultipleAddress TransferEndpointType = "MULTIPLE_ADDRESSES"
+	transferTypeCounterpartyID  TransferEndpointType = "COUNTERPARTY_ID"
 )
 
 type paymentsState struct {
