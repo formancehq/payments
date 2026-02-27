@@ -11,6 +11,17 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+const (
+	// Fireblocks peer types - internal vs external
+	peerTypeVaultAccount    = "VAULT_ACCOUNT"
+	peerTypeExternalWallet  = "EXTERNAL_WALLET"
+	peerTypeOneTimeAddress  = "ONE_TIME_ADDRESS"
+	peerTypeNetworkConn     = "NETWORK_CONNECTION"
+	peerTypeFiatAccount     = "FIAT_ACCOUNT"
+	peerTypeEndUserWallet   = "END_USER_WALLET"
+	peerTypeUnknown         = "UNKNOWN"
+)
+
 type paymentsState struct {
 	LastCreatedAt int64  `json:"lastCreatedAt"`
 	LastTxID      string `json:"lastTxId"`
@@ -90,7 +101,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			Raw:       raw,
 		}
 
-		if tx.Source.ID != "" && strings.ToUpper(tx.Source.Type) == "VAULT_ACCOUNT" {
+		if tx.Source.ID != "" && strings.ToUpper(tx.Source.Type) == peerTypeVaultAccount {
 			sourceRef := tx.Source.ID
 			payment.SourceAccountReference = &sourceRef
 		}
@@ -98,7 +109,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		metadata := map[string]string{}
 		if len(tx.Destinations) > 0 {
 			if len(tx.Destinations) == 1 && tx.Destinations[0].ID != "" {
-				if strings.ToUpper(tx.Destinations[0].Type) == "VAULT_ACCOUNT" {
+				if strings.ToUpper(tx.Destinations[0].Type) == peerTypeVaultAccount {
 					destRef := tx.Destinations[0].ID
 					payment.DestinationAccountReference = &destRef
 				}
@@ -113,7 +124,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 					metadata["destinationIds"] = strings.Join(ids, ",")
 				}
 			}
-		} else if tx.Destination.ID != "" && strings.ToUpper(tx.Destination.Type) == "VAULT_ACCOUNT" {
+		} else if tx.Destination.ID != "" && strings.ToUpper(tx.Destination.Type) == peerTypeVaultAccount {
 			destRef := tx.Destination.ID
 			payment.DestinationAccountReference = &destRef
 		}
@@ -155,8 +166,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 // outside the user's Fireblocks workspace.
 func isExternalPeerType(peerType string) bool {
 	switch peerType {
-	case "EXTERNAL_WALLET", "ONE_TIME_ADDRESS", "UNKNOWN",
-		"NETWORK_CONNECTION", "FIAT_ACCOUNT", "END_USER_WALLET":
+	case peerTypeExternalWallet, peerTypeOneTimeAddress, peerTypeUnknown,
+		peerTypeNetworkConn, peerTypeFiatAccount, peerTypeEndUserWallet:
 		return true
 	default:
 		return false
