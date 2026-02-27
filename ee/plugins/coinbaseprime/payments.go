@@ -12,6 +12,18 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+type TransferEndpointType string
+
+const (
+	// CoinbasePrime transfer types
+	transferTypeWallet          TransferEndpointType = "WALLET"
+	transferTypePaymentMethod   TransferEndpointType = "PAYMENT_METHOD"
+	transferTypeAddress         TransferEndpointType = "ADDRESS"
+	transferTypeOther           TransferEndpointType = "OTHER"
+	transferTypeMultipleAddress TransferEndpointType = "MULTIPLE_ADDRESSES"
+	transferTypeCounterpartyID  TransferEndpointType = "COUNTERPARTY_ID"
+)
+
 type paymentsState struct {
 	Cursor string `json:"cursor"`
 }
@@ -178,15 +190,19 @@ func buildTransactionMetadata(tx client.Transaction) map[string]string {
 	return metadata
 }
 
+func isTransferType(t string, expected TransferEndpointType) bool {
+	return strings.ToUpper(t) == string(expected)
+}
+
 func resolveAccountReferences(tx client.Transaction) (*string, *string) {
 	var source, dest *string
 
 	// Use transfer_from/transfer_to only when type is WALLET
-	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" && strings.ToUpper(tx.TransferFrom.Type) == "WALLET" {
+	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" && isTransferType(tx.TransferFrom.Type, transferTypeWallet) {
 		v := tx.TransferFrom.Value
 		source = &v
 	}
-	if tx.TransferTo != nil && tx.TransferTo.Value != "" && strings.ToUpper(tx.TransferTo.Type) == "WALLET" {
+	if tx.TransferTo != nil && tx.TransferTo.Value != "" && isTransferType(tx.TransferTo.Type, transferTypeWallet) {
 		v := tx.TransferTo.Value
 		dest = &v
 	}
