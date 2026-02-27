@@ -90,7 +90,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			Raw:       raw,
 		}
 
-		if tx.Source.ID != "" {
+		if tx.Source.ID != "" && strings.ToUpper(tx.Source.Type) == "VAULT_ACCOUNT" {
 			sourceRef := tx.Source.ID
 			payment.SourceAccountReference = &sourceRef
 		}
@@ -98,8 +98,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		metadata := map[string]string{}
 		if len(tx.Destinations) > 0 {
 			if len(tx.Destinations) == 1 && tx.Destinations[0].ID != "" {
-				destRef := tx.Destinations[0].ID
-				payment.DestinationAccountReference = &destRef
+				if strings.ToUpper(tx.Destinations[0].Type) == "VAULT_ACCOUNT" {
+					destRef := tx.Destinations[0].ID
+					payment.DestinationAccountReference = &destRef
+				}
 			} else {
 				ids := make([]string, 0, len(tx.Destinations))
 				for _, dest := range tx.Destinations {
@@ -111,7 +113,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 					metadata["destinationIds"] = strings.Join(ids, ",")
 				}
 			}
-		} else if tx.Destination.ID != "" {
+		} else if tx.Destination.ID != "" && strings.ToUpper(tx.Destination.Type) == "VAULT_ACCOUNT" {
 			destRef := tx.Destination.ID
 			payment.DestinationAccountReference = &destRef
 		}
