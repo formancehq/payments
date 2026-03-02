@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Account struct {
-	Reference    string `json:"reference"`
-	DefaultAsset string `json:"defaultAsset"`
-	Name         string `json:"name"`
-	ImportedAt   string `json:"importedAt"`
-	UpdatedAt    string `json:"updatedAt"`
+	Reference    string    `json:"reference"`
+	DefaultAsset *string   `json:"defaultAsset,omitempty"`
+	Name         *string   `json:"name,omitempty"`
+	ImportedAt   time.Time `json:"importedAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
 func (c *client) GetAccounts(ctx context.Context, cursor string, pageSize int) ([]Account, bool, string, error) {
