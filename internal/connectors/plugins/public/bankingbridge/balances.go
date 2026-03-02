@@ -3,7 +3,9 @@ package bankingbridge
 import (
 	"context"
 	"encoding/json"
+	"math/big"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingbridge/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -26,9 +28,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}
 
 	for _, balance := range pagedBalances {
-		balances = append(balances, models.PSPBalance{
-			AccountReference: balance.AccountReference,
-		})
+		balances = append(balances, ToPSPBalance(balance))
 	}
 
 	newState.Cursor = cursor
@@ -42,4 +42,14 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func ToPSPBalance(in client.Balance) models.PSPBalance {
+	amount := big.NewInt(in.AmountInMinors)
+	return models.PSPBalance{
+		AccountReference: in.AccountReference,
+		Amount:           amount,
+		Asset:            in.Asset,
+		CreatedAt:        in.ReportedAt,
+	}
 }

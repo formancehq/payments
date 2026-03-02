@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingbridge/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -26,9 +27,11 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	for _, acc := range pagedAccounts {
-		accounts = append(accounts, models.PSPAccount{
-			Reference: acc.Reference,
-		})
+		raw, err := json.Marshal(&acc)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
+		accounts = append(accounts, ToPSPAccount(acc, raw))
 	}
 
 	newState.Cursor = cursor
@@ -42,4 +45,14 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func ToPSPAccount(in client.Account, raw json.RawMessage) models.PSPAccount {
+	return models.PSPAccount{
+		Reference:    in.Reference,
+		DefaultAsset: in.DefaultAsset,
+		Name:         in.Name,
+		CreatedAt:    in.ImportedAt,
+		Raw:          raw,
+	}
 }
