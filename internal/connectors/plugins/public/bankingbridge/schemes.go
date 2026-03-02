@@ -38,18 +38,21 @@ const (
 	TransactionCodeSubFamilyDirectDebitReversal         = "PRDD"
 	TransactionCodeSubFamilyDirectDebitUnpaid           = "UPDD"
 	TransactionCodeSubFamilyReversalPaymentCancellation = "RPCR"
+	TransactionCodeSubFamilyUnpaidDishonoredDraft       = "UDFT"
+	TransactionCodeSubFamilyUnpaidCardTransaction       = "UPCT"
+	TransactionCodeSubFamilyDebitAdjustment             = "DAJT"
 )
 
 // https://www.cfonb.org/sites/www.cfonb.org/files/documents/Brochure%20CodesOperation%20V5-1_Finalisee_20221123.pdf
-func PaymentSchemeAndType(scheme string) (models.PaymentScheme, models.PaymentType) {
-	schemeParts := strings.Split(scheme, ".")
-	if len(schemeParts) != 3 {
+func PaymentSchemeAndType(code string) (models.PaymentScheme, models.PaymentType) {
+	codeParts := strings.Split(code, ".")
+	if len(codeParts) != 3 {
 		return models.PAYMENT_SCHEME_UNKNOWN, models.PAYMENT_TYPE_UNKNOWN
 	}
 
-	domain := schemeParts[0]
-	family := schemeParts[1]
-	subFamily := schemeParts[2]
+	domain := codeParts[0]
+	family := codeParts[1]
+	subFamily := codeParts[2]
 
 	// account overdrafts, interest accumulation, fees etc will not be classified as payments
 	if domain != TransactionCodeDomainPayment {
@@ -142,4 +145,30 @@ func PaymentSchemeAndType(scheme string) (models.PaymentScheme, models.PaymentTy
 		return models.PAYMENT_SCHEME_OTHER, models.PAYMENT_TYPE_PAYOUT
 	}
 	return models.PAYMENT_SCHEME_UNKNOWN, models.PAYMENT_TYPE_UNKNOWN
+}
+
+func PaymentStatus(code string) models.PaymentStatus {
+	codeParts := strings.Split(code, ".")
+	if len(codeParts) != 3 {
+		return models.PAYMENT_STATUS_UNKNOWN
+	}
+
+	// account overdrafts, interest accumulation, fees etc will not be classified as payments
+	if codeParts[0] != TransactionCodeDomainPayment {
+		return models.PAYMENT_STATUS_OTHER
+	}
+
+	subFamily := codeParts[2]
+	switch subFamily {
+	case TransactionCodeSubFamilyReversalReturn, TransactionCodeSubFamilyCrossborderReturn,
+		TransactionCodeSubFamilyDirectDebitReversal, TransactionCodeSubFamilyDirectDebitUnpaid,
+		TransactionCodeSubFamilyReversalPaymentCancellation, TransactionCodeSubFamilyReimbursement,
+		TransactionCodeSubFamilyUnpaidDishonoredDraft,
+		TransactionCodeSubFamilyUnpaidCheque,
+		TransactionCodeSubFamilyUnpaidCardTransaction:
+		return models.PAYMENT_STATUS_REFUNDED
+	case TransactionCodeSubFamilyDebitAdjustment:
+		return models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT
+	}
+	return models.PAYMENT_STATUS_SUCCEEDED
 }
