@@ -125,6 +125,9 @@ func getTransferID(transaction *client.Transaction) string {
 	if transaction.Source.InboundWireTransferID != "" {
 		return transaction.Source.InboundWireTransferID
 	}
+	if transaction.Source.FedNowTransferID != "" {
+		return transaction.Source.FedNowTransferID
+	}
 	if transaction.Source.ID != "" {
 		return transaction.Source.ID
 	}
@@ -262,6 +265,7 @@ func isPayin(transactionType string) bool {
 		transactionType == "inbound_check_deposit_return_intention" ||
 		transactionType == "inbound_real_time_payments_transfer_confirmation" ||
 		transactionType == "inbound_real_time_payments_transfer_decline" ||
+		transactionType == "inbound_fednow_transfer_confirmation" ||
 		transactionType == "inbound_wire_transfer" ||
 		transactionType == "inbound_wire_transfer_reversal" ||
 		transactionType == "card_refund" ||
@@ -283,6 +287,7 @@ func isPayin(transactionType string) bool {
 func isPayout(transactionType string) bool {
 	if transactionType == "wire_transfer_intention" ||
 		transactionType == "real_time_payments_transfer_acknowledgement" ||
+		transactionType == "fednow_transfer_intention" ||
 		transactionType == "ach_transfer_intention" ||
 		transactionType == "ach_transfer_return" ||
 		transactionType == "fee_payment" ||

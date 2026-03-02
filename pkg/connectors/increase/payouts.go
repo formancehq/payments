@@ -20,6 +20,8 @@ const (
 	increaseWirePaymentMethod      = "wire"
 	increaseCheckPaymentMethod     = "check"
 	increaseRTPPaymentMethod       = "rtp"
+	increaseFedNowPaymentMethod    = "fednow"
+	increaseSWIFTPaymentMethod     = "swift"
 )
 
 func (p *Plugin) createPayout(ctx context.Context, pi connector.PSPPaymentInitiation) (*connector.PSPPayment, error) {
@@ -122,6 +124,66 @@ func (p *Plugin) createPayout(ctx context.Context, pi connector.PSPPaymentInitia
 		resp, err := p.client.InitiateACHTransferPayout(
 			ctx,
 			apr,
+			idempotencyKey,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return p.payoutToPayment(resp)
+	case increaseFedNowPaymentMethod:
+		sourceAccountNumberID := connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
+		fnr := &client.FedNowPayoutRequest{
+			AccountID:                         pi.SourceAccount.Reference,
+			Amount:                            pi.Amount.Int64(),
+			SourceAccountNumberID:             sourceAccountNumberID,
+			UnstructuredRemittanceInformation: pi.Description,
+		}
+		if pi.DestinationAccount.Name != nil {
+			fnr.CreditorName = *pi.DestinationAccount.Name
+		}
+		if pi.SourceAccount.Name != nil {
+			fnr.DebtorName = *pi.SourceAccount.Name
+		}
+		debtorName := connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseDebtorNameMetadataKey)
+		if debtorName != "" {
+			fnr.DebtorName = debtorName
+		}
+		resp, err := p.client.InitiateFedNowTransferPayout(
+			ctx,
+			fnr,
+			idempotencyKey,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return p.payoutToPayment(resp)
+	case increaseSWIFTPaymentMethod:
+		bic := connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseBankIdentificationCodeMetadataKey)
+		swr := &client.SWIFTPayoutRequest{
+			AccountID:              pi.SourceAccount.Reference,
+			Amount:                 pi.Amount.Int64(),
+			BankIdentificationCode: bic,
+			CreditorAddress: client.SWIFTAddress{
+				Line1:   connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCreditorAddressLine1MetadataKey),
+				City:    connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCreditorAddressCityMetadataKey),
+				Country: connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCreditorAddressCountryMetadataKey),
+			},
+			DebtorAddress: client.SWIFTAddress{
+				Line1:   connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseDebtorAddressLine1MetadataKey),
+				City:    connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseDebtorAddressCityMetadataKey),
+				Country: connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseDebtorAddressCountryMetadataKey),
+			},
+			InstructedCurrency: connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseInstructedCurrencyMetadataKey),
+		}
+		if pi.DestinationAccount.Name != nil {
+			swr.CreditorName = *pi.DestinationAccount.Name
+		}
+		if pi.SourceAccount.Name != nil {
+			swr.DebtorName = *pi.SourceAccount.Name
+		}
+		resp, err := p.client.InitiateSWIFTTransferPayout(
+			ctx,
+			swr,
 			idempotencyKey,
 		)
 		if err != nil {

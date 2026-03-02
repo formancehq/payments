@@ -568,5 +568,205 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				},
 			}))
 		})
+
+		It("should return an error - validation error - sourceAccountNumberID is required for fednow", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseFedNowPaymentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey] = ""
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/sourceAccountNumberID: missing required metadata in request"))
+			Expect(resp).To(Equal(connector.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - initiate fednow payout error", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseFedNowPaymentMethod
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to create fednow transfer payout: test error : : status code: 0"))
+			Expect(resp).To(Equal(connector.CreatePayoutResponse{}))
+		})
+
+		It("should be ok - fednow", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseFedNowPaymentMethod
+
+			trResponse := client.PayoutResponse{
+				ID:            "1",
+				Status:        "complete",
+				CreatedAt:     now.Format(time.RFC3339),
+				AccountID:     "234R5432",
+				Currency:      "USD",
+				Amount:        100,
+				RecipientName: "acc2",
+			}
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.FedNowPayoutResponse{
+				ID:           "1",
+				AccountID:    "234R5432",
+				Status:       "complete",
+				CreatedAt:    now.Format(time.RFC3339),
+				Amount:       100,
+				Currency:     "USD",
+				CreditorName: "acc2",
+			})
+
+			raw, err := json.Marshal(&trResponse)
+			Expect(err).To(BeNil())
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(connector.CreatePayoutResponse{
+				Payment: &connector.PSPPayment{
+					Reference:              "1",
+					ParentReference:        "1",
+					CreatedAt:              now,
+					Type:                   connector.PAYMENT_TYPE_PAYOUT,
+					Amount:                 big.NewInt(100),
+					Asset:                  "USD/2",
+					Scheme:                 connector.PAYMENT_SCHEME_OTHER,
+					Status:                 connector.PAYMENT_STATUS_SUCCEEDED,
+					SourceAccountReference: pointer.For("234R5432"),
+					DestinationAccountReference: pointer.For("Unknown"),
+					Raw: raw,
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "acc2",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
+				},
+			}))
+		})
+
+		It("should return an error - validation error - bankIdentificationCode is required for swift", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseSWIFTPaymentMethod
+			delete(req.PaymentInitiation.Metadata, client.IncreaseBankIdentificationCodeMetadataKey)
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/bankIdentificationCode: missing required metadata in request"))
+			Expect(resp).To(Equal(connector.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - initiate swift payout error", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseSWIFTPaymentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseBankIdentificationCodeMetadataKey] = "RBOSGB2L"
+			req.PaymentInitiation.Metadata[client.IncreaseCreditorAddressLine1MetadataKey] = "33 Liberty St"
+			req.PaymentInitiation.Metadata[client.IncreaseCreditorAddressCountryMetadataKey] = "US"
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to create swift transfer payout: test error : : status code: 0"))
+			Expect(resp).To(Equal(connector.CreatePayoutResponse{}))
+		})
+
+		It("should be ok - swift", func(ctx SpecContext) {
+			req := connector.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseSWIFTPaymentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseBankIdentificationCodeMetadataKey] = "RBOSGB2L"
+			req.PaymentInitiation.Metadata[client.IncreaseCreditorAddressLine1MetadataKey] = "33 Liberty St"
+			req.PaymentInitiation.Metadata[client.IncreaseCreditorAddressCountryMetadataKey] = "US"
+
+			trResponse := client.PayoutResponse{
+				ID:            "1",
+				Status:        "complete",
+				CreatedAt:     now.Format(time.RFC3339),
+				AccountID:     "234R5432",
+				Currency:      "USD",
+				Amount:        100,
+				RecipientName: "acc2",
+			}
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.SWIFTPayoutResponse{
+				ID:           "1",
+				AccountID:    "234R5432",
+				Status:       "complete",
+				CreatedAt:    now.Format(time.RFC3339),
+				Amount:       100,
+				Currency:     "USD",
+				CreditorName: "acc2",
+			})
+
+			raw, err := json.Marshal(&trResponse)
+			Expect(err).To(BeNil())
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(connector.CreatePayoutResponse{
+				Payment: &connector.PSPPayment{
+					Reference:              "1",
+					ParentReference:        "1",
+					CreatedAt:              now,
+					Type:                   connector.PAYMENT_TYPE_PAYOUT,
+					Amount:                 big.NewInt(100),
+					Asset:                  "USD/2",
+					Scheme:                 connector.PAYMENT_SCHEME_OTHER,
+					Status:                 connector.PAYMENT_STATUS_SUCCEEDED,
+					SourceAccountReference:      pointer.For("234R5432"),
+					DestinationAccountReference: pointer.For("Unknown"),
+					Raw:                         raw,
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "acc2",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
+				},
+			}))
+		})
 	})
 })

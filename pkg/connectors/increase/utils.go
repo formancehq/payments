@@ -20,6 +20,8 @@ func (p *Plugin) validatePayoutRequests(pi connector.PSPPaymentInitiation) error
 		increaseWirePaymentMethod:  true,
 		increaseCheckPaymentMethod: true,
 		increaseRTPPaymentMethod:   true,
+		increaseFedNowPaymentMethod: true,
+		increaseSWIFTPaymentMethod:  true,
 	}
 
 	if !validMethods[payoutMethod] {
@@ -47,8 +49,12 @@ func (p *Plugin) validatePayoutRequests(pi connector.PSPPaymentInitiation) error
 	}
 
 	sourceAccountNumberID := connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
-	if sourceAccountNumberID == "" && (payoutMethod == increaseCheckPaymentMethod || payoutMethod == increaseRTPPaymentMethod) {
+	if sourceAccountNumberID == "" && (payoutMethod == increaseCheckPaymentMethod || payoutMethod == increaseRTPPaymentMethod || payoutMethod == increaseFedNowPaymentMethod) {
 		return connector.NewConnectorValidationError(client.IncreaseSourceAccountNumberIdMetadataKey, connector.ErrMissingConnectorMetadata)
+	}
+
+	if payoutMethod == increaseSWIFTPaymentMethod && connector.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseBankIdentificationCodeMetadataKey) == "" {
+		return connector.NewConnectorValidationError(client.IncreaseBankIdentificationCodeMetadataKey, connector.ErrMissingConnectorMetadata)
 	}
 
 	return nil
