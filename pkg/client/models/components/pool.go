@@ -5,7 +5,7 @@ package components
 type Pool struct {
 	ID       string         `json:"id"`
 	Name     string         `json:"name"`
-	Type     PoolTypeEnum   `json:"type"`
+	Type     *PoolTypeEnum  `json:"type,omitempty"`
 	Query    map[string]any `json:"query,omitempty"`
 	Accounts []string       `json:"accounts"`
 }
@@ -24,9 +24,9 @@ func (o *Pool) GetName() string {
 	return o.Name
 }
 
-func (o *Pool) GetType() PoolTypeEnum {
+func (o *Pool) GetType() *PoolTypeEnum {
 	if o == nil {
-		return PoolTypeEnum("")
+		return nil
 	}
 	return o.Type
 }
