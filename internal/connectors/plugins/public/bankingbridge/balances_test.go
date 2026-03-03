@@ -20,13 +20,16 @@ func (suite *PluginTestSuite) TestFetchNextBalances_Success() {
 		PageSize: 2,
 		State:    nil,
 	}
+	reportedAt := time.Now().Add(-time.Hour).UTC()
+	importedAt1 := time.Now().Add(-time.Minute).UTC()
+	importedAt2 := time.Now().UTC()
 	bals := []client.Balance{
-		{AccountReference: "acc1", AmountInMinors: int64(1234), Asset: "EUR", ReportedAt: time.Now()},
-		{AccountReference: "acc2", AmountInMinors: int64(999), Asset: "USD", ReportedAt: time.Now()},
+		{AccountReference: "acc1", AmountInMinors: int64(1234), Asset: "EUR", ReportedAt: reportedAt, ImportedAt: importedAt1},
+		{AccountReference: "acc2", AmountInMinors: int64(999), Asset: "USD", ReportedAt: reportedAt, ImportedAt: importedAt2},
 	}
 
 	newCursor := "newCursor"
-	suite.client.EXPECT().GetAccountBalances(gomock.Any(), "", req.PageSize).Return(bals, true, newCursor, nil)
+	suite.client.EXPECT().GetAccountBalances(gomock.Any(), "", "", req.PageSize).Return(bals, true, newCursor, nil)
 
 	resp, err := suite.plugin.FetchNextBalances(ctx, req)
 	require.NoError(suite.T(), err)
@@ -42,6 +45,10 @@ func (suite *PluginTestSuite) TestFetchNextBalances_Success() {
 	err = json.Unmarshal(resp.NewState, &state)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), newCursor, state.Cursor)
+
+	lastSeenImportedAt, err := time.Parse(ImportedAtLayout, state.LastSeenImportedAt)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), importedAt2, lastSeenImportedAt)
 }
 
 func (suite *PluginTestSuite) TestFetchNextBalances_ClientError() {
@@ -52,7 +59,7 @@ func (suite *PluginTestSuite) TestFetchNextBalances_ClientError() {
 	}
 
 	expectedErr := errors.New("expected")
-	suite.client.EXPECT().GetAccountBalances(gomock.Any(), "", req.PageSize).Return(nil, false, "", expectedErr)
+	suite.client.EXPECT().GetAccountBalances(gomock.Any(), "", "", req.PageSize).Return(nil, false, "", expectedErr)
 
 	_, err := suite.plugin.FetchNextBalances(ctx, req)
 	require.Error(suite.T(), err)

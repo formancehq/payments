@@ -18,17 +18,19 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}
 
 	newState := workflowState{
-		Cursor: oldState.Cursor,
+		Cursor:             oldState.Cursor,
+		LastSeenImportedAt: oldState.LastSeenImportedAt,
 	}
 
 	balances := make([]models.PSPBalance, 0, req.PageSize)
-	pagedBalances, hasMore, cursor, err := p.client.GetAccountBalances(ctx, newState.Cursor, req.PageSize)
+	pagedBalances, hasMore, cursor, err := p.client.GetAccountBalances(ctx, newState.Cursor, newState.LastSeenImportedAt, req.PageSize)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
 	for _, balance := range pagedBalances {
 		balances = append(balances, ToPSPBalance(balance))
+		newState.LastSeenImportedAt = balance.ImportedAt.Format(ImportedAtLayout)
 	}
 
 	newState.Cursor = cursor

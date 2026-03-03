@@ -11,9 +11,9 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
-	GetAccounts(ctx context.Context, cursor string, pageSize int) ([]Account, bool, string, error)
-	GetAccountBalances(ctx context.Context, cursor string, pageSize int) ([]Balance, bool, string, error)
-	GetTransactions(ctx context.Context, cursor string, pageSize int) ([]Transaction, bool, string, error)
+	GetAccounts(ctx context.Context, cursor string, lastImportedAt string, pageSize int) ([]Account, bool, string, error)
+	GetAccountBalances(ctx context.Context, cursor string, lastImportedAt string, pageSize int) ([]Balance, bool, string, error)
+	GetTransactions(ctx context.Context, cursor string, lastImportedAt string, pageSize int) ([]Transaction, bool, string, error)
 }
 
 type client struct {

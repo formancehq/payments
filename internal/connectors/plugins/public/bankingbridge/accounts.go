@@ -17,11 +17,12 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	newState := workflowState{
-		Cursor: oldState.Cursor,
+		Cursor:             oldState.Cursor,
+		LastSeenImportedAt: oldState.LastSeenImportedAt,
 	}
 
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	pagedAccounts, hasMore, cursor, err := p.client.GetAccounts(ctx, newState.Cursor, req.PageSize)
+	pagedAccounts, hasMore, cursor, err := p.client.GetAccounts(ctx, newState.Cursor, newState.LastSeenImportedAt, req.PageSize)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -32,6 +33,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 		accounts = append(accounts, ToPSPAccount(acc, raw))
+		newState.LastSeenImportedAt = acc.ImportedAt.Format(ImportedAtLayout)
 	}
 
 	newState.Cursor = cursor

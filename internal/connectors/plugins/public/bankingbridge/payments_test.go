@@ -23,13 +23,16 @@ func (suite *PluginTestSuite) TestFetchNextPayments_Success() {
 		PageSize: 2,
 		State:    nil,
 	}
+	bookedAt := time.Now().Add(-time.Hour).UTC()
+	importedAt1 := time.Now().Add(-time.Minute).UTC()
+	importedAt2 := time.Now().UTC()
 	trxs := []client.Transaction{
-		{ID: "someID!", AccountReference: "acc1", BookedAt: time.Now(), AmountInMinors: int64(5432), Asset: "CAD"},
-		{ID: "someID!!", AccountReference: "acc2", BookedAt: time.Now(), AmountInMinors: int64(5431), Asset: "KRW"},
+		{ID: "someID!", AccountReference: "acc1", BookedAt: bookedAt, ImportedAt: importedAt1, AmountInMinors: int64(5432), Asset: "CAD"},
+		{ID: "someID!!", AccountReference: "acc2", BookedAt: bookedAt, ImportedAt: importedAt2, AmountInMinors: int64(5431), Asset: "KRW"},
 	}
 
 	newCursor := "newCursor"
-	suite.client.EXPECT().GetTransactions(gomock.Any(), "", req.PageSize).Return(trxs, true, newCursor, nil)
+	suite.client.EXPECT().GetTransactions(gomock.Any(), "", "", req.PageSize).Return(trxs, true, newCursor, nil)
 
 	resp, err := suite.plugin.FetchNextPayments(ctx, req)
 	require.NoError(suite.T(), err)
@@ -46,6 +49,10 @@ func (suite *PluginTestSuite) TestFetchNextPayments_Success() {
 	err = json.Unmarshal(resp.NewState, &state)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), newCursor, state.Cursor)
+
+	lastSeenImportedAt, err := time.Parse(ImportedAtLayout, state.LastSeenImportedAt)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), importedAt2, lastSeenImportedAt)
 }
 
 func (suite *PluginTestSuite) TestFetchNextPayments_ClientError() {
@@ -56,7 +63,7 @@ func (suite *PluginTestSuite) TestFetchNextPayments_ClientError() {
 	}
 
 	expectedErr := errors.New("new err")
-	suite.client.EXPECT().GetTransactions(gomock.Any(), "", req.PageSize).Return(nil, false, "", expectedErr)
+	suite.client.EXPECT().GetTransactions(gomock.Any(), "", "", req.PageSize).Return(nil, false, "", expectedErr)
 
 	_, err := suite.plugin.FetchNextPayments(ctx, req)
 	require.Error(suite.T(), err)
