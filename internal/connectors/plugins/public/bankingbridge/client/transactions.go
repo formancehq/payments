@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -39,7 +38,7 @@ type Transaction struct {
 	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
-func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) ([]Transaction, bool, string, error) {
+func (c *client) GetTransactions(ctx context.Context, cursor string, lastImportedAt string, pageSize int) ([]Transaction, bool, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	endpoint := fmt.Sprintf("%s/v1/connectors/transactions", c.endpoint)
@@ -48,11 +47,7 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 		return nil, false, "", fmt.Errorf("failed to create transactions request: %w", err)
 	}
 
-	q := req.URL.Query()
-	q.Add("pageSize", strconv.Itoa(pageSize))
-	q.Add("cursor", cursor)
-	req.URL.RawQuery = q.Encode()
-
+	req.URL.RawQuery = RawQuery(req.URL.Query(), pageSize, cursor, lastImportedAt)
 	var body struct {
 		Cursor struct {
 			PageSize int64         `json:"pageSize"`

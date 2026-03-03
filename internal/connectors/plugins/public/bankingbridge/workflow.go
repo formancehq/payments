@@ -2,6 +2,8 @@ package bankingbridge
 
 import "github.com/formancehq/payments/internal/models"
 
+var ImportedAtLayout = "2006-01-02 15:04:05.999999Z"
+
 func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{
 		{
@@ -27,5 +29,6 @@ func workflow() models.ConnectorTasksTree {
 }
 
 type workflowState struct {
-	Cursor string `json:"cursor"`
+	Cursor             string `json:"cursor"`
+	LastSeenImportedAt string `json:"lastSeenImportedAt"`
 }

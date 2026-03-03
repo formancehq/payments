@@ -20,11 +20,12 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := workflowState{
-		Cursor: oldState.Cursor,
+		Cursor:             oldState.Cursor,
+		LastSeenImportedAt: oldState.LastSeenImportedAt,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
-	pagedTrxs, hasMore, cursor, err := p.client.GetTransactions(ctx, newState.Cursor, req.PageSize)
+	pagedTrxs, hasMore, cursor, err := p.client.GetTransactions(ctx, newState.Cursor, newState.LastSeenImportedAt, req.PageSize)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -35,6 +36,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 		payments = append(payments, ToPSPPayment(trx, raw))
+		newState.LastSeenImportedAt = trx.ImportedAt.Format(ImportedAtLayout)
 	}
 
 	newState.Cursor = cursor

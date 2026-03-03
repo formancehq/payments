@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -21,7 +20,7 @@ type Balance struct {
 	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
-func (c *client) GetAccountBalances(ctx context.Context, cursor string, pageSize int) ([]Balance, bool, string, error) {
+func (c *client) GetAccountBalances(ctx context.Context, cursor string, lastImportedAt string, pageSize int) ([]Balance, bool, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_account_balances")
 
 	endpoint := fmt.Sprintf("%s/v1/connectors/balances", c.endpoint)
@@ -30,11 +29,7 @@ func (c *client) GetAccountBalances(ctx context.Context, cursor string, pageSize
 		return nil, false, "", fmt.Errorf("failed to create balances request: %w", err)
 	}
 
-	q := req.URL.Query()
-	q.Add("pageSize", strconv.Itoa(pageSize))
-	q.Add("cursor", cursor)
-	req.URL.RawQuery = q.Encode()
-
+	req.URL.RawQuery = RawQuery(req.URL.Query(), pageSize, cursor, lastImportedAt)
 	var body struct {
 		Cursor struct {
 			PageSize int64     `json:"pageSize"`
