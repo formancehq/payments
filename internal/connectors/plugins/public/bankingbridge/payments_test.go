@@ -23,9 +23,9 @@ func (suite *PluginTestSuite) TestFetchNextPayments_Success() {
 		PageSize: 2,
 		State:    nil,
 	}
-	bookedAt := time.Now().Add(-time.Hour).UTC()
-	importedAt1 := time.Now().Add(-time.Minute).UTC()
-	importedAt2 := time.Now().UTC()
+	bookedAt := time.Now().Add(-time.Hour).Truncate(time.Millisecond).UTC()
+	importedAt1 := time.Now().Add(-time.Minute).Truncate(time.Millisecond).UTC()
+	importedAt2 := time.Now().Truncate(time.Millisecond).UTC()
 	trxs := []client.Transaction{
 		{ID: "someID!", AccountReference: "acc1", BookedAt: bookedAt, ImportedAt: importedAt1, AmountInMinors: int64(5432), Asset: "CAD"},
 		{ID: "someID!!", AccountReference: "acc2", BookedAt: bookedAt, ImportedAt: importedAt2, AmountInMinors: int64(5431), Asset: "KRW"},

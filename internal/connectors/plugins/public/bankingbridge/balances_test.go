@@ -20,9 +20,9 @@ func (suite *PluginTestSuite) TestFetchNextBalances_Success() {
 		PageSize: 2,
 		State:    nil,
 	}
-	reportedAt := time.Now().Add(-time.Hour).UTC()
-	importedAt1 := time.Now().Add(-time.Minute).UTC()
-	importedAt2 := time.Now().UTC()
+	reportedAt := time.Now().Add(-time.Hour).Truncate(time.Millisecond).UTC()
+	importedAt1 := time.Now().Add(-time.Minute).Truncate(time.Millisecond).UTC()
+	importedAt2 := time.Now().Truncate(time.Millisecond).UTC()
 	bals := []client.Balance{
 		{AccountReference: "acc1", AmountInMinors: int64(1234), Asset: "EUR", ReportedAt: reportedAt, ImportedAt: importedAt1},
 		{AccountReference: "acc2", AmountInMinors: int64(999), Asset: "USD", ReportedAt: reportedAt, ImportedAt: importedAt2},

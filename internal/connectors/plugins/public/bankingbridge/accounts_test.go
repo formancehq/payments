@@ -21,8 +21,8 @@ func (suite *PluginTestSuite) TestFetchNextAccounts_Success() {
 		PageSize: 2,
 		State:    nil,
 	}
-	importedAt1 := time.Now().Add(-time.Minute).UTC()
-	importedAt2 := time.Now().UTC()
+	importedAt1 := time.Now().Add(-time.Minute).Truncate(time.Millisecond).UTC()
+	importedAt2 := time.Now().Truncate(time.Millisecond).UTC()
 
 	accs := []client.Account{
 		{Reference: "acc1", ImportedAt: importedAt1, Name: pointer.For("name1"), DefaultAsset: pointer.For("JPY")},
