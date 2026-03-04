@@ -11,7 +11,11 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "bankingbridge"
+const (
+	ProviderName = "bankingbridge"
+
+	MetadataPrefix = "cloud.formance.banking-bridge.spec/"
+)
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
