@@ -24,5 +24,9 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	return config, validate.Struct(config)
+	err := validate.Struct(config)
+	if err != nil {
+		return Config{}, fmt.Errorf("%w: %w", err, models.ErrInvalidConfig)
+	}
+	return config, nil
 }
