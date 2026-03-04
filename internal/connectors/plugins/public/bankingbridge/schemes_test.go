@@ -141,3 +141,91 @@ func TestPaymentSchemeAndType(t *testing.T) {
 		})
 	}
 }
+
+func TestPaymentStatus(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		code           string
+		expectedStatus models.PaymentStatus
+	}{
+		{
+			name:           "invalid code format",
+			code:           "PMNT.RCDT",
+			expectedStatus: models.PAYMENT_STATUS_UNKNOWN,
+		},
+		{
+			name:           "non-PMNT domain",
+			code:           "ACMT.MCOP.INTR",
+			expectedStatus: models.PAYMENT_STATUS_OTHER,
+		},
+		{
+			name:           "reversal return",
+			code:           "PMNT.RCDT.RRTN",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "crossborder return",
+			code:           "PMNT.RCDT.XRTN",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "direct debit reversal",
+			code:           "PMNT.IDDT.PRDD",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "direct debit unpaid",
+			code:           "PMNT.IDDT.UPDD",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "reversal payment cancellation",
+			code:           "PMNT.ICDT.RPCR",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "reimbursement",
+			code:           "PMNT.CCRD.RIMB",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "unpaid dishonored draft",
+			code:           "PMNT.DRFT.UDFT",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "unpaid cheque",
+			code:           "PMNT.RCHQ.UPCQ",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "unpaid card transaction",
+			code:           "PMNT.CCRD.UPCT",
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
+		},
+		{
+			name:           "debit adjustment",
+			code:           "PMNT.MDOP.DAJT",
+			expectedStatus: models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
+		},
+		{
+			name:           "normal SEPA credit transfer",
+			code:           "PMNT.RCDT.ESCT",
+			expectedStatus: models.PAYMENT_STATUS_SUCCEEDED,
+		},
+		{
+			name:           "normal direct debit",
+			code:           "PMNT.IDDT.BBDD",
+			expectedStatus: models.PAYMENT_STATUS_SUCCEEDED,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			status := bankingbridge.PaymentStatus(tt.code)
+			assert.Equal(t, tt.expectedStatus, status)
+		})
+	}
+}

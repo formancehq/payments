@@ -79,7 +79,7 @@ func ToPSPPayment(in client.Transaction, raw json.RawMessage) models.PSPPayment 
 			MetadataPrefix + "bookingDate":          in.BookingDate,
 			MetadataPrefix + "valueDate":            in.ValutaDate,
 			MetadataPrefix + "bankTransactionCode":  in.BankTransactionCode,
-			MetadataPrefix + "numberofTransactions": fmt.Sprintf("%d", in.NumberOfTransactions),
+			MetadataPrefix + "numberOfTransactions": fmt.Sprintf("%d", in.NumberOfTransactions),
 			MetadataPrefix + "entryReference":       in.EntryReference,
 			MetadataPrefix + "servicerReference":    in.ServicerReference,
 			MetadataPrefix + "isReversal":           fmt.Sprintf("%t", in.IsReversal),
