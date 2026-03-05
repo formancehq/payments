@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
@@ -22,8 +21,6 @@ type Client interface {
 	GetPortfolio(ctx context.Context) (*PortfolioResponse, error)
 	GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error)
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
-	GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error)
-	GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error)
 	GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error)
 	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
 }
@@ -151,62 +148,6 @@ func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*
 	}
 
 	return &response, nil
-}
-
-func (c *client) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
-	endpoint, err := c.buildPortfolioEndpoint("balances", cursor, pageSize)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	if err := c.signRequest(req, ""); err != nil {
-		return nil, err
-	}
-
-	var response BalancesResponse
-	var errorResponse ErrorResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get balances (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
-	}
-
-	return &response, nil
-}
-
-func (c *client) GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error) {
-	symbol = strings.TrimSpace(symbol)
-	if symbol == "" {
-		return nil, fmt.Errorf("missing symbol for balances filtering")
-	}
-
-	var allFiltered []Balance
-	currentCursor := cursor
-
-	for {
-		response, err := c.GetBalances(ctx, currentCursor, pageSize)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, balance := range response.Balances {
-			if strings.EqualFold(balance.Symbol, symbol) {
-				allFiltered = append(allFiltered, balance)
-			}
-		}
-
-		if !response.Pagination.HasNext {
-			return &BalancesResponse{
-				Balances:   allFiltered,
-				Pagination: response.Pagination,
-			}, nil
-		}
-		currentCursor = response.Pagination.NextCursor
-	}
 }
 
 func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error) {
@@ -377,12 +318,6 @@ type Pagination struct {
 // WalletsResponse wraps wallets with pagination.
 type WalletsResponse struct {
 	Wallets    []Wallet   `json:"wallets"`
-	Pagination Pagination `json:"pagination"`
-}
-
-// BalancesResponse wraps balances with pagination.
-type BalancesResponse struct {
-	Balances   []Balance  `json:"balances"`
 	Pagination Pagination `json:"pagination"`
 }
 

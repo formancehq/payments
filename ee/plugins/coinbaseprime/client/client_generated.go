@@ -70,36 +70,6 @@ func (mr *MockClientMockRecorder) GetBalanceForWallet(ctx, walletID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalanceForWallet", reflect.TypeOf((*MockClient)(nil).GetBalanceForWallet), ctx, walletID)
 }
 
-// GetBalances mocks base method.
-func (m *MockClient) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBalances", ctx, cursor, pageSize)
-	ret0, _ := ret[0].(*BalancesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBalances indicates an expected call of GetBalances.
-func (mr *MockClientMockRecorder) GetBalances(ctx, cursor, pageSize any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalances", reflect.TypeOf((*MockClient)(nil).GetBalances), ctx, cursor, pageSize)
-}
-
-// GetBalancesForSymbol mocks base method.
-func (m *MockClient) GetBalancesForSymbol(ctx context.Context, symbol, cursor string, pageSize int) (*BalancesResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBalancesForSymbol", ctx, symbol, cursor, pageSize)
-	ret0, _ := ret[0].(*BalancesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBalancesForSymbol indicates an expected call of GetBalancesForSymbol.
-func (mr *MockClientMockRecorder) GetBalancesForSymbol(ctx, symbol, cursor, pageSize any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalancesForSymbol", reflect.TypeOf((*MockClient)(nil).GetBalancesForSymbol), ctx, symbol, cursor, pageSize)
-}
-
 // GetPortfolio mocks base method.
 func (m *MockClient) GetPortfolio(ctx context.Context) (*PortfolioResponse, error) {
 	m.ctrl.T.Helper()

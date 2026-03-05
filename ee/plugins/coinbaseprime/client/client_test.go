@@ -64,13 +64,13 @@ func TestSignRequestExcludesQueryParams(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedHeaders = r.Header
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"balances":[],"pagination":{"next_cursor":"","sort_direction":"ASC","has_next":false}}`))
+		_, _ = w.Write([]byte(`{"wallets":[],"pagination":{"next_cursor":"","sort_direction":"ASC","has_next":false}}`))
 	}))
 	defer server.Close()
 
 	c := NewWithBaseURL("coinbaseprime", "api-key", secret, "passphrase", "portfolio-123", server.URL)
 
-	_, err := c.GetBalances(context.Background(), "cursor-abc", 50)
+	_, err := c.GetWallets(context.Background(), "cursor-abc", 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestSignRequestExcludesQueryParams(t *testing.T) {
 	timestamp := capturedHeaders.Get("X-CB-ACCESS-TIMESTAMP")
 
 	// The signature message must use only the path, NOT query params.
-	message := timestamp + "GET" + "/v1/portfolios/portfolio-123/balances"
+	message := timestamp + "GET" + "/v1/portfolios/portfolio-123/wallets"
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(message))
 	expectedSig := base64.StdEncoding.EncodeToString(h.Sum(nil))
@@ -124,52 +124,6 @@ func TestSignRequestSetsAllRequiredHeaders(t *testing.T) {
 	}
 }
 
-func TestGetBalancesForSymbolFiltersCaseInsensitive(t *testing.T) {
-	t.Parallel()
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/portfolios/portfolio-123/balances" {
-			t.Fatalf("unexpected path: %s", r.URL.Path)
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{
-			"balances": [
-				{"symbol":"BTC","amount":"1.5","holds":"0.5","withdrawable_amount":"1.0","fiat_amount":"75000.00"},
-				{"symbol":"USD","amount":"1000.50","holds":"100.50","withdrawable_amount":"900.00","fiat_amount":"1000.50"}
-			],
-			"pagination": {"next_cursor":"","sort_direction":"ASC","has_next":false}
-		}`))
-	}))
-	defer server.Close()
-
-	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", server.URL)
-
-	response, err := c.GetBalancesForSymbol(context.Background(), "btc", "", 100)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(response.Balances) != 1 {
-		t.Fatalf("expected 1 balance, got %d", len(response.Balances))
-	}
-
-	if response.Balances[0].Symbol != "BTC" {
-		t.Fatalf("expected BTC symbol, got %s", response.Balances[0].Symbol)
-	}
-}
-
-func TestGetBalancesForSymbolRequiresSymbol(t *testing.T) {
-	t.Parallel()
-
-	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", "http://localhost")
-
-	_, err := c.GetBalancesForSymbol(context.Background(), "   ", "", 100)
-	if err == nil {
-		t.Fatalf("expected an error when symbol is missing")
-	}
-}
-
 func TestPortfolioEndpointsEncodeCursor(t *testing.T) {
 	t.Parallel()
 
@@ -200,9 +154,6 @@ func TestPortfolioEndpointsEncodeCursor(t *testing.T) {
 		case "/v1/portfolios/" + portfolioID + "/wallets":
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"wallets":[],"pagination":{"next_cursor":"","sort_direction":"ASC","has_next":false}}`))
-		case "/v1/portfolios/" + portfolioID + "/balances":
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"balances":[],"pagination":{"next_cursor":"","sort_direction":"ASC","has_next":false}}`))
 		case "/v1/portfolios/" + portfolioID + "/transactions":
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"transactions":[],"pagination":{"next_cursor":"","sort_direction":"ASC","has_next":false}}`))
@@ -217,106 +168,8 @@ func TestPortfolioEndpointsEncodeCursor(t *testing.T) {
 	if _, err := c.GetWallets(context.Background(), cursor, pageSize); err != nil {
 		t.Fatalf("GetWallets failed: %v", err)
 	}
-	if _, err := c.GetBalances(context.Background(), cursor, pageSize); err != nil {
-		t.Fatalf("GetBalances failed: %v", err)
-	}
 	if _, err := c.GetTransactions(context.Background(), cursor, pageSize); err != nil {
 		t.Fatalf("GetTransactions failed: %v", err)
 	}
 }
 
-func TestGetBalancesForSymbolMultiPage(t *testing.T) {
-	t.Parallel()
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cursor := r.URL.Query().Get("cursor")
-		w.WriteHeader(http.StatusOK)
-
-		if cursor == "" {
-			// Page 1: only USD
-			_, _ = w.Write([]byte(`{
-				"balances": [
-					{"symbol":"USD","amount":"500.00","holds":"0","withdrawable_amount":"500.00","fiat_amount":"500.00"}
-				],
-				"pagination": {"next_cursor":"page2","sort_direction":"ASC","has_next":true}
-			}`))
-		} else if cursor == "page2" {
-			// Page 2: only BTC
-			_, _ = w.Write([]byte(`{
-				"balances": [
-					{"symbol":"BTC","amount":"2.0","holds":"0","withdrawable_amount":"2.0","fiat_amount":"120000.00"}
-				],
-				"pagination": {"next_cursor":"","sort_direction":"ASC","has_next":false}
-			}`))
-		} else {
-			t.Fatalf("unexpected cursor: %s", cursor)
-		}
-	}))
-	defer server.Close()
-
-	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", server.URL)
-
-	response, err := c.GetBalancesForSymbol(context.Background(), "btc", "", 100)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(response.Balances) != 1 {
-		t.Fatalf("expected 1 balance, got %d", len(response.Balances))
-	}
-
-	if response.Balances[0].Symbol != "BTC" {
-		t.Fatalf("expected BTC symbol, got %s", response.Balances[0].Symbol)
-	}
-}
-
-func TestGetBalancesForSymbolAggregatesAcrossPages(t *testing.T) {
-	t.Parallel()
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cursor := r.URL.Query().Get("cursor")
-		w.WriteHeader(http.StatusOK)
-
-		if cursor == "" {
-			// Page 1: BTC and USD
-			_, _ = w.Write([]byte(`{
-				"balances": [
-					{"symbol":"BTC","amount":"1.0","holds":"0","withdrawable_amount":"1.0","fiat_amount":"60000.00"},
-					{"symbol":"USD","amount":"500.00","holds":"0","withdrawable_amount":"500.00","fiat_amount":"500.00"}
-				],
-				"pagination": {"next_cursor":"page2","sort_direction":"ASC","has_next":true}
-			}`))
-		} else if cursor == "page2" {
-			// Page 2: BTC and ETH
-			_, _ = w.Write([]byte(`{
-				"balances": [
-					{"symbol":"BTC","amount":"3.0","holds":"1.0","withdrawable_amount":"2.0","fiat_amount":"180000.00"},
-					{"symbol":"ETH","amount":"10.0","holds":"0","withdrawable_amount":"10.0","fiat_amount":"30000.00"}
-				],
-				"pagination": {"next_cursor":"","sort_direction":"ASC","has_next":false}
-			}`))
-		} else {
-			t.Fatalf("unexpected cursor: %s", cursor)
-		}
-	}))
-	defer server.Close()
-
-	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", "portfolio-123", server.URL)
-
-	response, err := c.GetBalancesForSymbol(context.Background(), "BTC", "", 100)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if len(response.Balances) != 2 {
-		t.Fatalf("expected 2 balances, got %d", len(response.Balances))
-	}
-
-	if response.Balances[0].Amount != "1.0" {
-		t.Fatalf("expected first balance amount 1.0, got %s", response.Balances[0].Amount)
-	}
-
-	if response.Balances[1].Amount != "3.0" {
-		t.Fatalf("expected second balance amount 3.0, got %s", response.Balances[1].Amount)
-	}
-}
