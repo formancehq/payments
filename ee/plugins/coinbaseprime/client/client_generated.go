@@ -55,6 +55,21 @@ func (mr *MockClientMockRecorder) GetAssets(ctx, entityID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssets", reflect.TypeOf((*MockClient)(nil).GetAssets), ctx, entityID)
 }
 
+// GetBalanceForWallet mocks base method.
+func (m *MockClient) GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBalanceForWallet", ctx, walletID)
+	ret0, _ := ret[0].(*WalletBalanceResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBalanceForWallet indicates an expected call of GetBalanceForWallet.
+func (mr *MockClientMockRecorder) GetBalanceForWallet(ctx, walletID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalanceForWallet", reflect.TypeOf((*MockClient)(nil).GetBalanceForWallet), ctx, walletID)
+}
+
 // GetBalances mocks base method.
 func (m *MockClient) GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error) {
 	m.ctrl.T.Helper()

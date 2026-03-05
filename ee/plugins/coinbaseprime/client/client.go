@@ -24,6 +24,7 @@ type Client interface {
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalances(ctx context.Context, cursor string, pageSize int) (*BalancesResponse, error)
 	GetBalancesForSymbol(ctx context.Context, symbol string, cursor string, pageSize int) (*BalancesResponse, error)
+	GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error)
 	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
 }
 
@@ -208,6 +209,31 @@ func (c *client) GetBalancesForSymbol(ctx context.Context, symbol string, cursor
 	}
 }
 
+func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error) {
+	if walletID == "" {
+		return nil, fmt.Errorf("missing wallet ID for balance")
+	}
+	endpoint := fmt.Sprintf("%s/v1/portfolios/%s/wallets/%s/balance", c.baseURL, c.portfolioID, url.PathEscape(walletID))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response WalletBalanceResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wallet balance (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
+	}
+
+	return &response, nil
+}
+
 func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
 	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize)
 	if err != nil {
@@ -358,6 +384,11 @@ type WalletsResponse struct {
 type BalancesResponse struct {
 	Balances   []Balance  `json:"balances"`
 	Pagination Pagination `json:"pagination"`
+}
+
+// WalletBalanceResponse is the response for GET /v1/portfolios/{id}/wallets/{wallet_id}/balance.
+type WalletBalanceResponse struct {
+	Balance Balance `json:"balance"`
 }
 
 // TransactionsResponse wraps transactions with pagination.
