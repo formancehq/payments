@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -464,7 +464,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(md["deposit_address"]).To(Equal("bc1q..."))
 		})
 
-		It("should handle STAKE as payin", func(ctx SpecContext) {
+		It("should handle STAKE as transfer", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -490,10 +490,10 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
-			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 		})
 
-		It("should handle UNSTAKE as payout", func(ctx SpecContext) {
+		It("should handle UNSTAKE as transfer", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -519,7 +519,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
-			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 		})
 
 		It("should handle DELEGATION as transfer", func(ctx SpecContext) {
