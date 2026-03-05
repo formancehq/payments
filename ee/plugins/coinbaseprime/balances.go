@@ -20,56 +20,37 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	walletSymbol, err := p.walletSymbolFromAccount(from)
+	response, err := p.client.GetBalanceForWallet(ctx, from.Reference)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	response, err := p.client.GetBalancesForSymbol(ctx, walletSymbol, "", req.PageSize)
+	bal := response.Balance
+	symbol := strings.ToUpper(strings.TrimSpace(bal.Symbol))
+
+	precision, ok := p.currencies[symbol]
+	if !ok {
+		return models.FetchNextBalancesResponse{
+			Balances: nil,
+			HasMore:  false,
+		}, nil
+	}
+
+	amount, err := currency.GetAmountWithPrecisionFromString(bal.Amount, precision)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 	}
 
 	now := time.Now().UTC()
-	var balances []models.PSPBalance
-	for _, bal := range response.Balances {
-		symbol := strings.ToUpper(strings.TrimSpace(bal.Symbol))
+	asset := currency.FormatAsset(p.currencies, symbol)
 
-		precision, ok := p.currencies[symbol]
-		if !ok {
-			continue
-		}
-
-		amount, err := currency.GetAmountWithPrecisionFromString(bal.Amount, precision)
-		if err != nil {
-			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
-		}
-
-		asset := currency.FormatAsset(p.currencies, symbol)
-
-		balances = append(balances, models.PSPBalance{
+	return models.FetchNextBalancesResponse{
+		Balances: []models.PSPBalance{{
 			AccountReference: from.Reference,
 			Asset:            asset,
 			Amount:           amount,
 			CreatedAt:        now,
-		})
-	}
-
-	return models.FetchNextBalancesResponse{
-		Balances: balances,
-		HasMore:  false,
+		}},
+		HasMore: false,
 	}, nil
-}
-
-func (p *Plugin) walletSymbolFromAccount(from models.PSPAccount) (string, error) {
-	if from.DefaultAsset == nil {
-		return "", fmt.Errorf("missing default asset in from payload")
-	}
-
-	symbol, _, err := currency.GetCurrencyAndPrecisionFromAsset(p.currencies, *from.DefaultAsset)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse default asset %q: %w", *from.DefaultAsset, err)
-	}
-
-	return symbol, nil
 }
