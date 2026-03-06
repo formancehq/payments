@@ -522,7 +522,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 		})
 
-		It("should handle DELEGATION as transfer", func(ctx SpecContext) {
+		It("should handle DELEGATION as other", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -548,7 +548,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
-			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
+			Expect(resp.Payments[0].Type).To(Equal(models.PaymentType(models.PAYMENT_TYPE_OTHER)))
 		})
 
 		It("should use dynamic currencies for previously unknown assets", func(ctx SpecContext) {
