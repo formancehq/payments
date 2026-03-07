@@ -1,20 +1,18 @@
-package {{ .Connector }}
+package bankingbridge
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/go-playground/validator/v10"
 )
 
 type Config struct {
-	// TODO: fill Config struct
-	// This is the config a user will pass when installing this connector.
-	// Authentication criteria for connecting to your connector should be provided here. Example:
-	// ClientID string `json:"clientID" validate:"required"`
-	// APIKey   string `json:"apiKey" validate:"required"`
-	// Endpoint string `json:"endpoint" validate:"required"`
+	ClientID     string `json:"clientID" validate:"required"`
+	ClientSecret string `json:"clientSecret" validate:"required"`
+	Endpoint     string `json:"endpoint" validate:"required,uri"`
+	AuthEndpoint string `json:"authEndpoint" validate:"required,uri"` // TODO maybe we can do a redirect
 }
 
 const PAGE_SIZE = 100
