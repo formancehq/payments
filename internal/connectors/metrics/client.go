@@ -1,13 +1,8 @@
 package metrics
 
 import (
-	"net/http"
-	"time"
+	"github.com/formancehq/payments/pkg/connector/metrics"
 )
 
-func NewHTTPClient(connectorName string, timeout time.Duration) *http.Client {
-	return &http.Client{
-		Timeout:   timeout,
-		Transport: NewTransport(connectorName, TransportOpts{}),
-	}
-}
+// NewHTTPClient creates a new HTTP client with metrics instrumentation.
+var NewHTTPClient = metrics.NewHTTPClient
