@@ -15,6 +15,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestAdyen(compo
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestAtlar(components.V3AtlarConfig{/* values here */})
 ```
 
+### V3BankingbridgeConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestBankingbridge(components.V3BankingbridgeConfig{/* values here */})
+```
+
 ### V3BankingcircleConfig
 
 ```go
