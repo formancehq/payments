@@ -5,7 +5,7 @@ tmp_dir = "/tmp/air"
 [build]
   args_bin = []
   bin = "/tmp/air/main"
-  cmd = "mkdir -p /tmp/air && go build -gcflags='all=-N -l' -o /tmp/air/main . && chmod +x /tmp/air/main"
+  cmd = "mkdir -p /tmp/air && go build -tags ee -gcflags='all=-N -l' -o /tmp/air/main . && chmod +x /tmp/air/main"
   full_bin = "dlv exec --headless --listen=:2345 --api-version=2 --accept-multiclient --continue /tmp/air/main --"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "docs", "openapi", "pkg/client"]
