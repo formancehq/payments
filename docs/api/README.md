@@ -8014,6 +8014,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3BitstampConfig](#schemav3bitstampconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
 
 xor
@@ -8161,6 +8167,38 @@ xor
 |userCertificate|string|true|none|none|
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
+
+<h2 id="tocS_V3BitstampConfig">V3BitstampConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3bitstampconfig"></a>
+<a id="schema_V3BitstampConfig"></a>
+<a id="tocSv3bitstampconfig"></a>
+<a id="tocsv3bitstampconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "apiSecret": "string",
+  "baseUrl": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "provider": "Bitstamp"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|apiSecret|string|true|none|none|
+|baseUrl|string|false|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3CoinbaseprimeConfig">V3CoinbaseprimeConfig</h2>
 <!-- backwards compatibility -->
