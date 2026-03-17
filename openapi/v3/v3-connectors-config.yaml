@@ -149,6 +149,8 @@ components:
                     type: string
                 apiSecret:
                     type: string
+                baseUrl:
+                    type: string
                 name:
                     type: string
                 pageSize:
