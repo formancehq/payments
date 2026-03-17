@@ -22,15 +22,15 @@ const bitstampDatetimeLayout = "2006-01-02 15:04:05.000000"
 
 // Bitstamp user_transactions type values.
 const (
-	txTypeDeposit             = "0"
-	txTypeWithdrawal          = "1"
-	txTypeMarketTrade         = "2"
-	txTypeSubAccountTransfer  = "14"
-	txTypeStakingCredit       = "25"
-	txTypeStakingSent         = "26"
-	txTypeStakingReward       = "27"
-	txTypeReferralReward      = "32"
-	txTypeSettlementTransfer  = "33"
+	txTypeDeposit              = "0"
+	txTypeWithdrawal           = "1"
+	txTypeMarketTrade          = "2"
+	txTypeSubAccountTransfer   = "14"
+	txTypeStakingCredit        = "25"
+	txTypeStakingSent          = "26"
+	txTypeStakingReward        = "27"
+	txTypeReferralReward       = "32"
+	txTypeSettlementTransfer   = "33"
 	txTypeInterAccountTransfer = "35"
 )
 
@@ -73,7 +73,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 }
 
 func (p *Plugin) transactionToPayment(tx client.UserTransaction) (*models.PSPPayment, error) {
-	asset, precision, ok := p.resolveAssetAndPrecision(tx.CurrencyAmounts)
+	asset, amount, ok, err := p.resolveAssetAndAmount(tx.CurrencyAmounts)
+	if err != nil {
+		return nil, err
+	}
 	if !ok {
 		p.logger.Infof("skipping transaction %d: no matching currency found", tx.ID)
 		return nil, nil
@@ -89,11 +92,6 @@ func (p *Plugin) transactionToPayment(tx client.UserTransaction) (*models.PSPPay
 	// All Bitstamp user_transactions are completed — the API only returns
 	// settled transactions, unlike Coinbase Prime which returns all states.
 	status := models.PAYMENT_STATUS_SUCCEEDED
-
-	amount, err := p.extractAmount(tx.CurrencyAmounts, asset, precision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse amount: %w", err)
-	}
 
 	createdAt, err := time.Parse(bitstampDatetimeLayout, tx.Datetime)
 	if err != nil {
@@ -117,79 +115,63 @@ func (p *Plugin) transactionToPayment(tx client.UserTransaction) (*models.PSPPay
 	return &payment, nil
 }
 
-// resolveAssetAndPrecision finds the primary currency in the transaction
-// using a deterministic strategy: pick the currency with the largest absolute
-// value among known currencies. This avoids non-determinism from Go map
-// iteration order on multi-currency transactions (trades).
-func (p *Plugin) resolveAssetAndPrecision(amounts map[string]string) (string, int, bool) {
+// resolveAssetAndAmount finds the primary currency in the transaction using a
+// deterministic strategy: pick the currency with the largest absolute value
+// among known currencies. Returns the formatted asset, the parsed amount
+// (always positive), and whether a match was found. This is a single-pass
+// replacement for the former resolveAssetAndPrecision + extractAmount.
+func (p *Plugin) resolveAssetAndAmount(amounts map[string]string) (string, *big.Int, bool, error) {
 	var bestSymbol string
 	var bestPrecision int
+	var bestRawVal string
 	var bestAbsVal float64
 	found := false
 
 	for key, val := range amounts {
-		symbol := strings.ToUpper(strings.TrimSpace(key))
+		symbol := normalizeCurrency(key)
 		precision, ok := p.currencies[symbol]
 		if !ok {
 			continue
 		}
 
-		// Parse absolute value for comparison.
 		cleanVal := strings.TrimPrefix(val, "-")
+		if isZeroAmount(cleanVal) {
+			continue
+		}
+
 		fval, _, err := new(big.Float).Parse(cleanVal, 10)
 		if err != nil {
 			continue
 		}
 		absVal, _ := fval.Float64()
 
-		// Skip zero amounts.
-		if absVal == 0 {
-			continue
-		}
-
 		if !found || absVal > bestAbsVal {
 			bestSymbol = symbol
 			bestPrecision = precision
+			bestRawVal = cleanVal
 			bestAbsVal = absVal
 			found = true
 		}
 	}
 
 	if !found {
-		return "", 0, false
+		return "", nil, false, nil
 	}
 
 	asset := currency.FormatAsset(p.currencies, bestSymbol)
-	return asset, bestPrecision, true
-}
-
-func (p *Plugin) extractAmount(amounts map[string]string, targetAsset string, precision int) (*big.Int, error) {
-	for key, val := range amounts {
-		symbol := strings.ToUpper(strings.TrimSpace(key))
-		if _, ok := p.currencies[symbol]; !ok {
-			continue
-		}
-		asset := currency.FormatAsset(p.currencies, symbol)
-		if asset != targetAsset {
-			continue
-		}
-
-		// Remove sign for amount — PSPPayment.Amount is always positive.
-		cleanVal := strings.TrimPrefix(val, "-")
-		amount, err := currency.GetAmountWithPrecisionFromString(cleanVal, precision)
-		if err != nil {
-			return nil, err
-		}
-		return amount, nil
+	amount, err := currency.GetAmountWithPrecisionFromString(bestRawVal, bestPrecision)
+	if err != nil {
+		return "", nil, false, fmt.Errorf("failed to parse amount for %s: %w", bestSymbol, err)
 	}
-	return big.NewInt(0), nil
+
+	return asset, amount, true, nil
 }
 
 func buildTransactionMetadata(tx client.UserTransaction) map[string]string {
 	metadata := make(map[string]string)
 	metadata["type"] = tx.Type
 
-	if tx.Fee != "" && tx.Fee != "0" && tx.Fee != "0.00" {
+	if !isZeroAmount(tx.Fee) {
 		metadata["fee"] = tx.Fee
 	}
 	if tx.OrderID != 0 {
@@ -198,7 +180,7 @@ func buildTransactionMetadata(tx client.UserTransaction) map[string]string {
 
 	// Record all currency amounts in metadata for traceability.
 	for key, val := range tx.CurrencyAmounts {
-		if val != "0" && val != "0.00" {
+		if !isZeroAmount(val) {
 			metadata["amount_"+key] = val
 		}
 	}
