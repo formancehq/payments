@@ -3,7 +3,6 @@ package bitstamp
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
@@ -22,7 +21,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, len(balances))
 	for _, bal := range balances {
-		symbol := strings.ToUpper(strings.TrimSpace(bal.Currency))
+		symbol := normalizeCurrency(bal.Currency)
 		if symbol == "" {
 			continue
 		}
@@ -33,7 +32,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		}
 
 		// Skip zero-balance currencies.
-		if bal.Available == "0" && bal.Total == "0" && bal.Reserved == "0" {
+		if isZeroAmount(bal.Available) && isZeroAmount(bal.Total) && isZeroAmount(bal.Reserved) {
 			continue
 		}
 

@@ -34,6 +34,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				"ETH": 18,
 			},
 		}
+		plg.currLoaded.Store(true)
 	})
 
 	AfterEach(func() {

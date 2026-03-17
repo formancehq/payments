@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
@@ -25,12 +25,13 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name       string
-	logger     logging.Logger
-	client     client.Client
-	config     Config
-	currMu     sync.Mutex
-	currencies map[string]int // currency ticker (uppercase) → decimal precision
+	name           string
+	logger         logging.Logger
+	client         client.Client
+	config         Config
+	currMu         sync.Mutex
+	currLoaded     atomic.Bool
+	currencies     map[string]int // currency ticker (uppercase) → decimal precision
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -80,7 +81,7 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 
 	currencyMap := make(map[string]int, len(currencies))
 	for _, c := range currencies {
-		symbol := strings.ToUpper(strings.TrimSpace(c.Currency))
+		symbol := normalizeCurrency(c.Currency)
 		if symbol == "" {
 			continue
 		}
@@ -88,6 +89,7 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 	}
 
 	p.currencies = currencyMap
+	p.currLoaded.Store(true)
 	p.logger.Infof("loaded %d currencies from Bitstamp", len(currencyMap))
 	return nil
 }
@@ -96,14 +98,15 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
-// ensureCurrencies lazily loads currencies with double-checked locking.
+// ensureCurrencies lazily loads currencies using an atomic flag for the fast
+// path and a mutex for the slow path, avoiding data races on the map read.
 func (p *Plugin) ensureCurrencies(ctx context.Context) error {
-	if len(p.currencies) > 0 {
+	if p.currLoaded.Load() {
 		return nil
 	}
 	p.currMu.Lock()
 	defer p.currMu.Unlock()
-	if len(p.currencies) > 0 {
+	if p.currLoaded.Load() {
 		return nil
 	}
 	return p.loadCurrencies(ctx)
