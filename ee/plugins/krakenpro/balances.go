@@ -65,7 +65,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 		// Use the normalized code to format the asset, falling back to the
 		// raw precision when the code is not in the currency library's map.
-		asset := currency.FormatAsset(p.formattedCurrMap, normalized)
+		asset := currency.FormatAsset(p.currencies, normalized)
 
 		balances = append(balances, models.PSPBalance{
 			AccountReference: from.Reference,

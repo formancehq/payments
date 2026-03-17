@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
-	"strings"
 	"sync"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -32,10 +31,9 @@ type Plugin struct {
 	logger     logging.Logger
 	client     client.Client
 	config     Config
-	currOnce         sync.Once
-	currencies       map[string]int // normalized asset → decimal precision
-	formattedCurrMap map[string]int // pre-computed uppercase map for currency.FormatAsset
-	accountRef       string         // derived non-secret account reference
+	currOnce   sync.Once
+	currencies map[string]int // normalized asset → decimal precision
+	accountRef string         // derived non-secret account reference
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -93,14 +91,6 @@ func (p *Plugin) loadCurrencies() {
 	maps.Copy(currencies, cryptoCurrenciesPrecision)
 
 	p.currencies = currencies
-
-	// Pre-compute the uppercase currency map for FormatAsset calls
-	formatted := make(map[string]int, len(currencies))
-	for k, v := range currencies {
-		formatted[strings.ToUpper(k)] = v
-	}
-	p.formattedCurrMap = formatted
-
 	p.logger.Infof("loaded %d currencies for krakenpro", len(currencies))
 }
 

@@ -29,28 +29,28 @@ var krakenXZPrefixMap = map[string]string{
 // should be normalized to BTC (common ticker).
 const xbtToBTC = "XBT"
 
+// truncateToPrecision truncates a decimal string to at most `precision` decimal places.
+// Kraken returns amounts with more decimals than the currency precision (e.g. "171288.6158" for USD/2).
+func truncateToPrecision(amountStr string, precision int) string {
+	dotIdx := strings.IndexByte(amountStr, '.')
+	if dotIdx < 0 {
+		return amountStr
+	}
+	if precision == 0 {
+		return amountStr[:dotIdx]
+	}
+	decimals := amountStr[dotIdx+1:]
+	if len(decimals) > precision {
+		decimals = decimals[:precision]
+	}
+	return amountStr[:dotIdx+1] + decimals
+}
+
 // normalizeAssetCode converts a Kraken asset code to a standard code.
 // It handles:
 // 1. Suffix stripping (.S, .F, .B, .M, .T, .P for staking/rewards variants)
 // 2. X/Z prefix stripping for known 4-char codes (XXBT→XBT, ZUSD→USD)
 // 3. XBT→BTC special case
-// truncateToPrecision truncates a decimal string to at most `precision` decimal places.
-// Kraken returns amounts with more decimals than the currency precision (e.g. "171288.6158" for USD/2).
-func truncateToPrecision(amountStr string, precision int) string {
-	parts := strings.Split(amountStr, ".")
-	if len(parts) != 2 {
-		return amountStr
-	}
-	decimals := parts[1]
-	if len(decimals) > precision {
-		decimals = decimals[:precision]
-	}
-	if precision == 0 {
-		return parts[0]
-	}
-	return parts[0] + "." + decimals
-}
-
 func normalizeAssetCode(krakenCode string) string {
 	code := strings.ToUpper(strings.TrimSpace(krakenCode))
 	if code == "" {
