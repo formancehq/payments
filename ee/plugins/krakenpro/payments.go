@@ -14,8 +14,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// ledgerPageSize matches PAGE_SIZE from config.go — Kraken returns max 50 entries per Ledgers call.
-const ledgerPageSize = PAGE_SIZE
 
 type paymentsState struct {
 	Offset    int   `json:"offset"`
@@ -45,8 +43,14 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	sort.Strings(ledgerIDs)
 
 	payments := make([]models.PSPPayment, 0, len(response.Result.Ledgers))
+	latestTime := oldState.LastSeenTime
 	for _, ledgerID := range ledgerIDs {
 		entry := response.Result.Ledgers[ledgerID]
+
+		// Track the latest timestamp for the next polling cycle
+		if entryTime := int64(entry.Time); entryTime > latestTime {
+			latestTime = entryTime
+		}
 
 		payment, err := p.ledgerEntryToPayment(ledgerID, entry)
 		if err != nil {
@@ -58,16 +62,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		payments = append(payments, *payment)
 	}
 
-	hasMore := len(response.Result.Ledgers) >= ledgerPageSize
-
-	// Track the latest timestamp seen for the next polling cycle
-	latestTime := oldState.LastSeenTime
-	for _, entry := range response.Result.Ledgers {
-		entryTime := int64(entry.Time)
-		if entryTime > latestTime {
-			latestTime = entryTime
-		}
-	}
+	hasMore := len(response.Result.Ledgers) >= PAGE_SIZE
 
 	newState := paymentsState{
 		Offset:       oldState.Offset + len(response.Result.Ledgers),
@@ -108,7 +103,7 @@ func (p *Plugin) ledgerEntryToPayment(ledgerID string, entry client.LedgerEntry)
 		return nil, fmt.Errorf("failed to parse amount: %w", err)
 	}
 
-	asset := currency.FormatAsset(p.formattedCurrMap, normalized)
+	asset := currency.FormatAsset(p.currencies, normalized)
 
 	raw, err := json.Marshal(entry)
 	if err != nil {
