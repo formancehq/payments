@@ -25,6 +25,10 @@ func (o *V3GetConnectorConfigResponse) GetDataBankingcircle() *V3BankingcircleCo
 	return o.GetData().V3BankingcircleConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataBitstamp() *V3BitstampConfig {
+	return o.GetData().V3BitstampConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataCoinbaseprime() *V3CoinbaseprimeConfig {
 	return o.GetData().V3CoinbaseprimeConfig
 }

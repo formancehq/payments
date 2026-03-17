@@ -47,6 +47,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBankingcircle() 
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBitstamp() *components.V3BitstampConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3BitstampConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestCoinbaseprime() *components.V3CoinbaseprimeConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3CoinbaseprimeConfig
