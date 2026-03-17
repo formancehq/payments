@@ -39,7 +39,12 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	c := client.New(ProviderName, config.APIKey, config.APISecret)
+	var c client.Client
+	if config.BaseURL != "" {
+		c = client.NewWithBaseURL(ProviderName, config.APIKey, config.APISecret, config.BaseURL)
+	} else {
+		c = client.New(ProviderName, config.APIKey, config.APISecret)
+	}
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),
