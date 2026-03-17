@@ -7,6 +7,7 @@ package registry
 // on a Community Edition binary, we can return a more helpful error message.
 var EnterpriseOnlyPlugins = map[string]struct{}{
 	"bankingbridge": {},
+	"bitstamp":      {},
 	"fireblocks":    {},
 	"coinbaseprime": {},
 }

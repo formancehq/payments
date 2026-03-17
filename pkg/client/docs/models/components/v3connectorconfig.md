@@ -27,6 +27,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigBankingbridge(components.
 v3ConnectorConfig := components.CreateV3ConnectorConfigBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3BitstampConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigBitstamp(components.V3BitstampConfig{/* values here */})
+```
+
 ### V3CoinbaseprimeConfig
 
 ```go
