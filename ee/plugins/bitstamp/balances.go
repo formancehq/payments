@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
@@ -25,10 +24,10 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	targetCurrency := strings.ToUpper(strings.TrimSpace(from.Reference))
+	targetCurrency := normalizeCurrency(from.Reference)
 
 	for _, bal := range accountBalances {
-		symbol := strings.ToUpper(strings.TrimSpace(bal.Currency))
+		symbol := normalizeCurrency(bal.Currency)
 		if symbol != targetCurrency {
 			continue
 		}

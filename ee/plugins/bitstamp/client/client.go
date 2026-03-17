@@ -17,7 +17,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/google/uuid"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -49,7 +48,7 @@ func NewWithBaseURL(connectorName, apiKey, apiSecret, baseURL string) Client {
 
 	config := &httpwrapper.Config{
 		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
-			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Transport: http.DefaultTransport,
 		}),
 	}
 	c.httpClient = httpwrapper.NewClient(config)
@@ -61,10 +60,9 @@ func (c *client) signRequest(req *http.Request, body string) {
 	nonce := uuid.New().String()
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-	parsedURL, _ := url.Parse(req.URL.String())
-	host := parsedURL.Host
-	path := parsedURL.Path
-	query := parsedURL.RawQuery
+	host := req.URL.Host
+	path := req.URL.Path
+	query := req.URL.RawQuery
 
 	contentType := ""
 	if body != "" {

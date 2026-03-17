@@ -33,6 +33,7 @@ var _ = Describe("Bitstamp Plugin Balances", func() {
 				"ETH": 18,
 			},
 		}
+		plg.currLoaded.Store(true)
 	})
 
 	AfterEach(func() {
