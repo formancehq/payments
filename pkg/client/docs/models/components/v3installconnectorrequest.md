@@ -63,6 +63,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestGeneric(c
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestIncrease(components.V3IncreaseConfig{/* values here */})
 ```
 
+### V3KrakenproConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestKrakenpro(components.V3KrakenproConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go

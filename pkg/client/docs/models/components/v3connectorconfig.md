@@ -63,6 +63,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigGeneric(components.V3Gene
 v3ConnectorConfig := components.CreateV3ConnectorConfigIncrease(components.V3IncreaseConfig{/* values here */})
 ```
 
+### V3KrakenproConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigKrakenpro(components.V3KrakenproConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go

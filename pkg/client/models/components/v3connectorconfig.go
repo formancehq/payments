@@ -22,6 +22,7 @@ const (
 	V3ConnectorConfigTypeFireblocks    V3ConnectorConfigType = "Fireblocks"
 	V3ConnectorConfigTypeGeneric       V3ConnectorConfigType = "Generic"
 	V3ConnectorConfigTypeIncrease      V3ConnectorConfigType = "Increase"
+	V3ConnectorConfigTypeKrakenpro     V3ConnectorConfigType = "Krakenpro"
 	V3ConnectorConfigTypeMangopay      V3ConnectorConfigType = "Mangopay"
 	V3ConnectorConfigTypeModulr        V3ConnectorConfigType = "Modulr"
 	V3ConnectorConfigTypeMoneycorp     V3ConnectorConfigType = "Moneycorp"
@@ -53,6 +54,7 @@ type V3ConnectorConfig struct {
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
+	V3KrakenproConfig     *V3KrakenproConfig     `queryParam:"inline"`
 
 	Type V3ConnectorConfigType
 }
@@ -174,6 +176,18 @@ func CreateV3ConnectorConfigIncrease(increase V3IncreaseConfig) V3ConnectorConfi
 	return V3ConnectorConfig{
 		V3IncreaseConfig: &increase,
 		Type:             typ,
+	}
+}
+
+func CreateV3ConnectorConfigKrakenpro(krakenpro V3KrakenproConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeKrakenpro
+
+	typStr := string(typ)
+	krakenpro.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3KrakenproConfig: &krakenpro,
+		Type:              typ,
 	}
 }
 
@@ -387,6 +401,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3IncreaseConfig = v3IncreaseConfig
 		u.Type = V3ConnectorConfigTypeIncrease
 		return nil
+	case "Krakenpro":
+		v3KrakenproConfig := new(V3KrakenproConfig)
+		if err := utils.UnmarshalJSON(data, &v3KrakenproConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Krakenpro) type V3KrakenproConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3KrakenproConfig = v3KrakenproConfig
+		u.Type = V3ConnectorConfigTypeKrakenpro
+		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
 		if err := utils.UnmarshalJSON(data, &v3MangopayConfig, "", true, false); err != nil {
@@ -548,6 +571,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3FireblocksConfig != nil {
 		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
+	if u.V3KrakenproConfig != nil {
+		return utils.MarshalJSON(u.V3KrakenproConfig, "", true)
 	}
 
 	return nil, errors.New("could not marshal union type V3ConnectorConfig: all fields are null")

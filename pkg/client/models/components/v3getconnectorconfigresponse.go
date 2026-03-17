@@ -53,6 +53,10 @@ func (o *V3GetConnectorConfigResponse) GetDataIncrease() *V3IncreaseConfig {
 	return o.GetData().V3IncreaseConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataKrakenpro() *V3KrakenproConfig {
+	return o.GetData().V3KrakenproConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataMangopay() *V3MangopayConfig {
 	return o.GetData().V3MangopayConfig
 }

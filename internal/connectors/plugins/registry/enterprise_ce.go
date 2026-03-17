@@ -8,4 +8,5 @@ package registry
 var EnterpriseOnlyPlugins = map[string]struct{}{
 	"fireblocks":    {},
 	"coinbaseprime": {},
+	"krakenpro":     {},
 }
