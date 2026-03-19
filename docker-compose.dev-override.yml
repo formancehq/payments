@@ -13,7 +13,7 @@ services:
       dockerfile: dev.Dockerfile
     image: payments-dev:latest
     pull_policy: never
-    command: go run -tags ee . migrate up
+    command: go run . migrate up
     volumes:
       - .:/app:delegated
       - go-cache:/home/appuser/.cache/go-build
