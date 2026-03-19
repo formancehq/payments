@@ -29,7 +29,7 @@ func New(connectorName, clientID, clientSecret, authEndpoint, endpoint string) C
 		EndpointParams: make(url.Values),
 	}
 	cfg.EndpointParams.Set("grant_type", "client_credentials")
-	cfg.EndpointParams.Set("resource", "app://bbs")
+	cfg.EndpointParams.Set("resource", "app://bbs|bankingbridge:ReadBankStatement")
 
 	config := &httpwrapper.Config{
 		Transport:   metrics.NewTransport(connectorName, metrics.TransportOpts{}),
