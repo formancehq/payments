@@ -79,7 +79,7 @@ func (p *Plugin) processPaymentTypes(ctx context.Context, state *paymentsState, 
 		return payments[i].CreatedAt.Before(payments[j].CreatedAt)
 	})
 
-	hasMore := !state.StopPending || !state.StopSucceeded || !state.StopDeclined
+	hasMore := !(state.StopPending && state.StopSucceeded && state.StopDeclined)
 
 	return payments, hasMore, nil
 }
