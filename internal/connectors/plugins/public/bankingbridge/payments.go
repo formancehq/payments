@@ -55,14 +55,22 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 func ToPSPPayment(in client.Transaction, raw json.RawMessage) models.PSPPayment {
 	amount := big.NewInt(in.AmountInMinors)
 	scheme, paymentType := PaymentSchemeAndType(in.BankTransactionCode)
-	status := PaymentStatus(in.BankTransactionCode)
+	status := PaymentStatus(in.BankTransactionCode, in.IsReversal)
 
 	var sourceAccount, destinationAccount *string
 	if amount.Sign() < 0 { // negative value means account is being debited
 		sourceAccount = pointer.For(in.AccountReference)
 		amount.Abs(amount) // convert to a positive amount
+
+		if in.BankTransactionCode == "" {
+			paymentType = models.PAYMENT_TYPE_PAYOUT
+		}
 	} else {
 		destinationAccount = pointer.For(in.AccountReference)
+
+		if in.BankTransactionCode == "" {
+			paymentType = models.PAYMENT_TYPE_PAYIN
+		}
 	}
 
 	return models.PSPPayment{

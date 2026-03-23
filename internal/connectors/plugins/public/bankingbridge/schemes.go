@@ -147,10 +147,14 @@ func PaymentSchemeAndType(code string) (models.PaymentScheme, models.PaymentType
 	return models.PAYMENT_SCHEME_UNKNOWN, models.PAYMENT_TYPE_UNKNOWN
 }
 
-func PaymentStatus(code string) models.PaymentStatus {
+func PaymentStatus(code string, isReversal bool) models.PaymentStatus {
 	codeParts := strings.Split(code, ".")
+	// some transactions may have proprietary codes that we don't really know how to parse
 	if len(codeParts) != 3 {
-		return models.PAYMENT_STATUS_UNKNOWN
+		if isReversal {
+			return models.PAYMENT_STATUS_REFUNDED
+		}
+		return models.PAYMENT_STATUS_SUCCEEDED
 	}
 
 	// account overdrafts, interest accumulation, fees etc will not be classified as payments

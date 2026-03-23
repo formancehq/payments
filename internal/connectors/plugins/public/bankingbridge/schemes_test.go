@@ -148,12 +148,19 @@ func TestPaymentStatus(t *testing.T) {
 	tests := []struct {
 		name           string
 		code           string
+		isReversal     bool
 		expectedStatus models.PaymentStatus
 	}{
 		{
 			name:           "invalid code format",
 			code:           "PMNT.RCDT",
-			expectedStatus: models.PAYMENT_STATUS_UNKNOWN,
+			expectedStatus: models.PAYMENT_STATUS_SUCCEEDED,
+		},
+		{
+			name:           "invalid code format reversal",
+			code:           "",
+			isReversal:     true,
+			expectedStatus: models.PAYMENT_STATUS_REFUNDED,
 		},
 		{
 			name:           "non-PMNT domain",
@@ -224,7 +231,7 @@ func TestPaymentStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			status := bankingbridge.PaymentStatus(tt.code)
+			status := bankingbridge.PaymentStatus(tt.code, tt.isReversal)
 			assert.Equal(t, tt.expectedStatus, status)
 		})
 	}
