@@ -94,7 +94,7 @@ func ToPSPPayment(in client.Transaction, raw json.RawMessage) models.PSPPayment 
 			MetadataPrefix + "isBatch":              fmt.Sprintf("%t", in.IsBatch),
 			MetadataPrefix + "batchMessageId":       in.BatchMessageID,
 			MetadataPrefix + "batchPaymentInfoId":   in.BatchPaymentInfoID,
-			MetadataPrefix + "importedAt":           in.ImportedAt.String(),
+			MetadataPrefix + "importedAt":           in.ImportedAt.Format(ImportedAtLayout),
 		},
 		Raw: raw,
 	}
