@@ -603,9 +603,10 @@ func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
 	for _, event := range pendingEvents {
 		assert.Equal(t, "shared-key", event.ID.EventIdempotencyKey)
 		if event.ConnectorID != nil {
-			if *event.ConnectorID == defaultConnector.ID {
+			switch *event.ConnectorID {
+			case defaultConnector.ID:
 				foundConnector1 = true
-			} else if *event.ConnectorID == defaultConnector2.ID {
+			case defaultConnector2.ID:
 				foundConnector2 = true
 			}
 		}

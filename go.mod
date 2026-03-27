@@ -6,6 +6,8 @@ replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
+replace gopkg.in/go-jose/go-jose.v4 => github.com/go-jose/go-jose/v4 v4.1.3
+
 require (
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
