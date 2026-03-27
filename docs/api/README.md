@@ -6975,6 +6975,12 @@ xor
 |---|---|---|---|---|
 |*anonymous*|[V3FireblocksConfig](#schemav3fireblocksconfig)|false|none|none|
 
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3KrakenproConfig](#schemav3krakenproconfig)|false|none|none|
+
 <h2 id="tocS_V3AdyenConfig">V3AdyenConfig</h2>
 <!-- backwards compatibility -->
 <a id="schemav3adyenconfig"></a>
@@ -7302,6 +7308,38 @@ xor
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |webhookSharedSecret|string|true|none|none|
+
+<h2 id="tocS_V3KrakenproConfig">V3KrakenproConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3krakenproconfig"></a>
+<a id="schema_V3KrakenproConfig"></a>
+<a id="tocSv3krakenproconfig"></a>
+<a id="tocsv3krakenproconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "privateKey": "string",
+  "provider": "Krakenpro"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|endpoint|string|false|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|privateKey|string|true|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3MangopayConfig">V3MangopayConfig</h2>
 <!-- backwards compatibility -->

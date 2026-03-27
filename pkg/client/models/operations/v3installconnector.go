@@ -96,6 +96,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestIncrease() *comp
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestKrakenpro() *components.V3KrakenproConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3KrakenproConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestMangopay() *components.V3MangopayConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3MangopayConfig
