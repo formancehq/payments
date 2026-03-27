@@ -15,6 +15,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigAdyen(components.V3AdyenC
 v3ConnectorConfig := components.CreateV3ConnectorConfigAtlar(components.V3AtlarConfig{/* values here */})
 ```
 
+### V3BankingbridgeConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigBankingbridge(components.V3BankingbridgeConfig{/* values here */})
+```
+
 ### V3BankingcircleConfig
 
 ```go

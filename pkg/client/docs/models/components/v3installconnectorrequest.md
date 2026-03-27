@@ -15,6 +15,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestAdyen(com
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestAtlar(components.V3AtlarConfig{/* values here */})
 ```
 
+### V3BankingbridgeConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBankingbridge(components.V3BankingbridgeConfig{/* values here */})
+```
+
 ### V3BankingcircleConfig
 
 ```go
