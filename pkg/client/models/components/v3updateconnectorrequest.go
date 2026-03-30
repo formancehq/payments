@@ -37,7 +37,6 @@ const (
 type V3UpdateConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
-	V3BankingbridgeConfig *V3BankingbridgeConfig `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
@@ -53,6 +52,7 @@ type V3UpdateConnectorRequest struct {
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
+	V3BankingbridgeConfig *V3BankingbridgeConfig `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 
@@ -505,10 +505,6 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3AtlarConfig, "", true)
 	}
 
-	if u.V3BankingbridgeConfig != nil {
-		return utils.MarshalJSON(u.V3BankingbridgeConfig, "", true)
-	}
-
 	if u.V3BankingcircleConfig != nil {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
 	}
@@ -567,6 +563,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3WiseConfig != nil {
 		return utils.MarshalJSON(u.V3WiseConfig, "", true)
+	}
+
+	if u.V3BankingbridgeConfig != nil {
+		return utils.MarshalJSON(u.V3BankingbridgeConfig, "", true)
 	}
 
 	if u.V3CoinbaseprimeConfig != nil {
