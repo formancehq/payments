@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/ee/plugins/bankingbridge/client"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingbridge/client"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingbridge/client"
+	"github.com/formancehq/payments/ee/plugins/bankingbridge/client"
 	"github.com/stretchr/testify/assert"
 )
 

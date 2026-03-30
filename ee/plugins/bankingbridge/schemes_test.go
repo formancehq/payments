@@ -3,7 +3,7 @@ package bankingbridge_test
 import (
 	"testing"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingbridge"
+	"github.com/formancehq/payments/ee/plugins/bankingbridge"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/assert"
 )

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/payments/ee/plugins/bankingbridge/client"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingbridge/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
