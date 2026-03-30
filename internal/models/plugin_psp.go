@@ -11,6 +11,8 @@ type PSPPlugin interface {
 	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
 	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
 	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
+	FetchNextOrders(context.Context, FetchNextOrdersRequest) (FetchNextOrdersResponse, error)
+	FetchNextConversions(context.Context, FetchNextConversionsRequest) (FetchNextConversionsResponse, error)
 
 	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
 	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
@@ -159,4 +161,28 @@ type PollPayoutStatusResponse struct {
 	// If not nil, it means that the payout failed, the payment initiation
 	// will be marked as fail and the workflow will be terminated
 	Error *string
+}
+
+type FetchNextOrdersRequest struct {
+	FromPayload json.RawMessage
+	State       json.RawMessage
+	PageSize    int
+}
+
+type FetchNextOrdersResponse struct {
+	Orders   []PSPOrder
+	NewState json.RawMessage
+	HasMore  bool
+}
+
+type FetchNextConversionsRequest struct {
+	FromPayload json.RawMessage
+	State       json.RawMessage
+	PageSize    int
+}
+
+type FetchNextConversionsResponse struct {
+	Conversions []PSPConversion
+	NewState    json.RawMessage
+	HasMore     bool
 }

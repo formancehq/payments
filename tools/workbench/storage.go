@@ -15,11 +15,13 @@ type MemoryStorage struct {
 	mu sync.RWMutex
 
 	// Core data
-	accounts  map[string]models.PSPAccount
-	payments  map[string]models.PSPPayment
-	balances  map[string]models.PSPBalance
-	others    map[string][]models.PSPOther
-	
+	accounts    map[string]models.PSPAccount
+	payments    map[string]models.PSPPayment
+	balances    map[string]models.PSPBalance
+	orders      map[string]models.PSPOrder
+	conversions map[string]models.PSPConversion
+	others      map[string][]models.PSPOther
+
 	// External accounts (beneficiaries, etc.)
 	externalAccounts map[string]models.PSPAccount
 
@@ -41,6 +43,8 @@ type StorageStats struct {
 	AccountsCount         int
 	PaymentsCount         int
 	BalancesCount         int
+	OrdersCount           int
+	ConversionsCount      int
 	ExternalAccountsCount int
 	LastUpdated           time.Time
 }
@@ -51,6 +55,8 @@ func NewMemoryStorage() *MemoryStorage {
 		accounts:         make(map[string]models.PSPAccount),
 		payments:         make(map[string]models.PSPPayment),
 		balances:         make(map[string]models.PSPBalance),
+		orders:           make(map[string]models.PSPOrder),
+		conversions:      make(map[string]models.PSPConversion),
 		others:           make(map[string][]models.PSPOther),
 		externalAccounts: make(map[string]models.PSPAccount),
 		states:           make(map[string]json.RawMessage),
@@ -65,6 +71,8 @@ func (s *MemoryStorage) Clear() {
 	s.accounts = make(map[string]models.PSPAccount)
 	s.payments = make(map[string]models.PSPPayment)
 	s.balances = make(map[string]models.PSPBalance)
+	s.orders = make(map[string]models.PSPOrder)
+	s.conversions = make(map[string]models.PSPConversion)
 	s.others = make(map[string][]models.PSPOther)
 	s.externalAccounts = make(map[string]models.PSPAccount)
 	s.states = make(map[string]json.RawMessage)
@@ -243,6 +251,88 @@ func (s *MemoryStorage) GetBalancesForAccount(accountRef string) []models.PSPBal
 	return balances
 }
 
+// === Orders ===
+
+// StoreOrders stores orders.
+func (s *MemoryStorage) StoreOrders(orders []models.PSPOrder) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, o := range orders {
+		s.orders[o.Reference] = o
+	}
+	s.stats.OrdersCount = len(s.orders)
+	s.stats.LastUpdated = time.Now()
+}
+
+// GetOrders returns all orders sorted by creation time, then reference.
+func (s *MemoryStorage) GetOrders() []models.PSPOrder {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	orders := make([]models.PSPOrder, 0, len(s.orders))
+	for _, o := range s.orders {
+		orders = append(orders, o)
+	}
+	sort.Slice(orders, func(i, j int) bool {
+		if !orders[i].CreatedAt.Equal(orders[j].CreatedAt) {
+			return orders[i].CreatedAt.Before(orders[j].CreatedAt)
+		}
+		return orders[i].Reference < orders[j].Reference
+	})
+	return orders
+}
+
+// GetOrder returns a specific order by reference.
+func (s *MemoryStorage) GetOrder(reference string) (models.PSPOrder, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	o, ok := s.orders[reference]
+	return o, ok
+}
+
+// === Conversions ===
+
+// StoreConversions stores conversions.
+func (s *MemoryStorage) StoreConversions(conversions []models.PSPConversion) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, c := range conversions {
+		s.conversions[c.Reference] = c
+	}
+	s.stats.ConversionsCount = len(s.conversions)
+	s.stats.LastUpdated = time.Now()
+}
+
+// GetConversions returns all conversions sorted by creation time, then reference.
+func (s *MemoryStorage) GetConversions() []models.PSPConversion {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	conversions := make([]models.PSPConversion, 0, len(s.conversions))
+	for _, c := range s.conversions {
+		conversions = append(conversions, c)
+	}
+	sort.Slice(conversions, func(i, j int) bool {
+		if !conversions[i].CreatedAt.Equal(conversions[j].CreatedAt) {
+			return conversions[i].CreatedAt.Before(conversions[j].CreatedAt)
+		}
+		return conversions[i].Reference < conversions[j].Reference
+	})
+	return conversions
+}
+
+// GetConversion returns a specific conversion by reference.
+func (s *MemoryStorage) GetConversion(reference string) (models.PSPConversion, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	c, ok := s.conversions[reference]
+	return c, ok
+}
+
 // === Others ===
 
 // StoreOthers stores other data by name.
@@ -370,15 +460,17 @@ func (s *MemoryStorage) GetStats() StorageStats {
 
 // StorageSnapshot represents a snapshot of all storage data.
 type StorageSnapshot struct {
-	Accounts         map[string]models.PSPAccount   `json:"accounts"`
-	Payments         map[string]models.PSPPayment   `json:"payments"`
-	Balances         map[string]models.PSPBalance   `json:"balances"`
-	ExternalAccounts map[string]models.PSPAccount   `json:"external_accounts"`
-	Others           map[string][]models.PSPOther   `json:"others"`
-	States           map[string]json.RawMessage     `json:"states"`
-	TasksTree        *models.ConnectorTasksTree     `json:"tasks_tree,omitempty"`
-	WebhookConfigs   []models.PSPWebhookConfig      `json:"webhook_configs,omitempty"`
-	ExportedAt       time.Time                      `json:"exported_at"`
+	Accounts         map[string]models.PSPAccount      `json:"accounts"`
+	Payments         map[string]models.PSPPayment      `json:"payments"`
+	Balances         map[string]models.PSPBalance      `json:"balances"`
+	Orders           map[string]models.PSPOrder        `json:"orders"`
+	Conversions      map[string]models.PSPConversion   `json:"conversions"`
+	ExternalAccounts map[string]models.PSPAccount      `json:"external_accounts"`
+	Others           map[string][]models.PSPOther      `json:"others"`
+	States           map[string]json.RawMessage        `json:"states"`
+	TasksTree        *models.ConnectorTasksTree        `json:"tasks_tree,omitempty"`
+	WebhookConfigs   []models.PSPWebhookConfig         `json:"webhook_configs,omitempty"`
+	ExportedAt       time.Time                         `json:"exported_at"`
 }
 
 // Export exports all storage data as a snapshot.
@@ -390,6 +482,8 @@ func (s *MemoryStorage) Export() StorageSnapshot {
 		Accounts:         s.accounts,
 		Payments:         s.payments,
 		Balances:         s.balances,
+		Orders:           s.orders,
+		Conversions:      s.conversions,
 		ExternalAccounts: s.externalAccounts,
 		Others:           s.others,
 		States:           s.states,
@@ -413,6 +507,12 @@ func (s *MemoryStorage) Import(snapshot StorageSnapshot) {
 	if snapshot.Balances != nil {
 		s.balances = snapshot.Balances
 	}
+	if snapshot.Orders != nil {
+		s.orders = snapshot.Orders
+	}
+	if snapshot.Conversions != nil {
+		s.conversions = snapshot.Conversions
+	}
 	if snapshot.ExternalAccounts != nil {
 		s.externalAccounts = snapshot.ExternalAccounts
 	}
@@ -428,6 +528,8 @@ func (s *MemoryStorage) Import(snapshot StorageSnapshot) {
 	s.stats.AccountsCount = len(s.accounts)
 	s.stats.PaymentsCount = len(s.payments)
 	s.stats.BalancesCount = len(s.balances)
+	s.stats.OrdersCount = len(s.orders)
+	s.stats.ConversionsCount = len(s.conversions)
 	s.stats.ExternalAccountsCount = len(s.externalAccounts)
 	s.stats.LastUpdated = time.Now()
 }

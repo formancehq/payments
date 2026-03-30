@@ -1,0 +1,85 @@
+package models
+
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
+type OrderType int
+
+const (
+	ORDER_TYPE_UNKNOWN OrderType = iota
+	ORDER_TYPE_MARKET
+	ORDER_TYPE_LIMIT
+	ORDER_TYPE_STOP_LIMIT
+)
+
+func (t OrderType) String() string {
+	switch t {
+	case ORDER_TYPE_MARKET:
+		return "MARKET"
+	case ORDER_TYPE_LIMIT:
+		return "LIMIT"
+	case ORDER_TYPE_STOP_LIMIT:
+		return "STOP_LIMIT"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+func OrderTypeFromString(s string) (OrderType, error) {
+	switch s {
+	case "MARKET":
+		return ORDER_TYPE_MARKET, nil
+	case "LIMIT":
+		return ORDER_TYPE_LIMIT, nil
+	case "STOP_LIMIT":
+		return ORDER_TYPE_STOP_LIMIT, nil
+	default:
+		return ORDER_TYPE_UNKNOWN, fmt.Errorf("unknown order type: %s", s)
+	}
+}
+
+func (t OrderType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+func (t *OrderType) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	var err error
+	*t, err = OrderTypeFromString(s)
+	return err
+}
+
+func (t OrderType) Value() (driver.Value, error) {
+	res := t.String()
+	if res == "UNKNOWN" {
+		return nil, fmt.Errorf("unknown order type")
+	}
+	return res, nil
+}
+
+func (t *OrderType) Scan(value interface{}) error {
+	if value == nil {
+		return errors.New("order type is nil")
+	}
+
+	s, err := driver.String.ConvertValue(value)
+	if err != nil {
+		return fmt.Errorf("failed to convert order type")
+	}
+
+	v, ok := s.(string)
+	if !ok {
+		return fmt.Errorf("failed to cast order type")
+	}
+
+	*t, err = OrderTypeFromString(v)
+	return err
+}
