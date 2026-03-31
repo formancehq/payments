@@ -40,6 +40,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestAtlar() *com
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBankingbridge() *components.V3BankingbridgeConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3BankingbridgeConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBankingcircle() *components.V3BankingcircleConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3BankingcircleConfig

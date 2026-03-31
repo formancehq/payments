@@ -6,6 +6,7 @@ components:
                 mapping:
                     Adyen: '#/components/schemas/V3AdyenConfig'
                     Atlar: '#/components/schemas/V3AtlarConfig'
+                    Bankingbridge: '#/components/schemas/V3BankingbridgeConfig'
                     Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
                     Coinbaseprime: '#/components/schemas/V3CoinbaseprimeConfig'
                     Column: '#/components/schemas/V3ColumnConfig'
@@ -41,6 +42,7 @@ components:
                 - $ref: '#/components/schemas/V3StripeConfig'
                 - $ref: '#/components/schemas/V3TinkConfig'
                 - $ref: '#/components/schemas/V3WiseConfig'
+                - $ref: '#/components/schemas/V3BankingbridgeConfig'
                 - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
                 - $ref: '#/components/schemas/V3FireblocksConfig'
         V3AdyenConfig:
@@ -100,6 +102,36 @@ components:
                     default: Atlar
                 secret:
                     type: string
+        V3BankingbridgeConfig:
+            type: object
+            required:
+                - name
+                - clientID
+                - clientSecret
+                - endpoint
+                - authEndpoint
+            properties:
+                authEndpoint:
+                    type: string
+                clientID:
+                    type: string
+                clientSecret:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+                pollingPeriod:
+                    type: string
+                    default: 30m
+                provider:
+                    type: string
+                    default: Bankingbridge
         V3BankingcircleConfig:
             type: object
             required:

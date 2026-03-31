@@ -1,17 +1,21 @@
-package {{ .Connector }}
+package bankingbridge
 
 import (
 	"context"
 	"encoding/json"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/ee/plugins/bankingbridge/client"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/{{ .Connector }}/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "{{ .Connector }}"
+const (
+	ProviderName = "bankingbridge"
+
+	MetadataPrefix = "cloud.formance.banking-bridge.spec/"
+)
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
@@ -25,7 +29,7 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-  config Config
+	config Config
 	client client.Client
 }
 
@@ -35,15 +39,13 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	_ = config // TODO: use config to create client and remove this line
-	client := client.New()
-
+	client := client.New(name, config.ClientID, config.ClientSecret, config.AuthEndpoint, config.Endpoint)
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
-    config: config,
+		config: config,
 		client: client,
 	}, nil
 }
@@ -81,10 +83,7 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
-	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
-	}
-	return p.fetchNextExternalAccounts(ctx, req)
+	return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -103,61 +102,33 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
-	}
-
-	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
-	if err != nil {
-		return models.CreateTransferResponse{}, err
-	}
-
-	return models.CreateTransferResponse{
-		Payment: payment,
-	}, nil
+	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
 	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: Fill only if we cannot have the related payment in the CreateTransfer method
 func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
-	}
-
-	payment, err := p.createPayout(ctx, req.PaymentInitiation)
-	if err != nil {
-		return models.CreatePayoutResponse{}, err
-	}
-
-	return models.CreatePayoutResponse{
-		Payment: payment,
-	}, nil
+	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
 	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: Fill only if we cannot have the related payment in the CreatePayout method
 func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
 	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: if the connector has webhooks, use this method to create the related
-// webhooks on the PSP.
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: if the connector has webhooks, use this method to translate incoming
-// webhooks to a formance object.
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	return models.TranslateWebhookResponse{}, plugins.ErrNotImplemented
 }

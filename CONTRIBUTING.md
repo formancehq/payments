@@ -101,8 +101,7 @@ $ cd payments
 2. Use the connector-template tool to create the connector directory and generate all files needed for the connector to work:
 
 ```console
-$ cd tools/connector-template
-$ go run ./ --connector-dir-path ../../internal/connectors/plugins/public/ --connector-name dummypay2
+$ just bootstrap-plugin dummypay2
 ```
 
 ### Define connector capabilities

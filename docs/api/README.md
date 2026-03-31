@@ -6967,6 +6967,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3BankingbridgeConfig](#schemav3bankingbridgeconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3CoinbaseprimeConfig](#schemav3coinbaseprimeconfig)|false|none|none|
 
 xor
@@ -7042,6 +7048,40 @@ xor
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 |secret|string|true|none|none|
+
+<h2 id="tocS_V3BankingbridgeConfig">V3BankingbridgeConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3bankingbridgeconfig"></a>
+<a id="schema_V3BankingbridgeConfig"></a>
+<a id="tocSv3bankingbridgeconfig"></a>
+<a id="tocsv3bankingbridgeconfig"></a>
+
+```json
+{
+  "authEndpoint": "string",
+  "clientID": "string",
+  "clientSecret": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "provider": "Bankingbridge"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|authEndpoint|string|true|none|none|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3BankingcircleConfig">V3BankingcircleConfig</h2>
 <!-- backwards compatibility -->
