@@ -33,7 +33,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 		accounts = append(accounts, ToPSPAccount(acc, raw))
-		newState.LastSeenImportedAt = acc.ImportedAt.Format(ImportedAtLayout)
+		newState.LastSeenImportedAt = acc.ImportedAt.UTC().Format(ImportedAtLayout)
 	}
 
 	newState.Cursor = cursor
