@@ -86,7 +86,7 @@ func (suite *PluginTestSuite) TestFetchNextPayments_NotYetInstalled() {
 
 func (suite *PluginTestSuite) TestToPSPPayment() {
 	bookedAt := time.Now().Add(-time.Hour)
-	importedAt := time.Now()
+	importedAt := time.Now().UTC()
 
 	rawMessage := json.RawMessage(`{"key":"value"}`)
 

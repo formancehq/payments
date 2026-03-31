@@ -36,7 +36,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 		payments = append(payments, ToPSPPayment(trx, raw))
-		newState.LastSeenImportedAt = trx.ImportedAt.Format(ImportedAtLayout)
+		newState.LastSeenImportedAt = trx.ImportedAt.UTC().Format(ImportedAtLayout)
 	}
 
 	newState.Cursor = cursor
@@ -94,7 +94,7 @@ func ToPSPPayment(in client.Transaction, raw json.RawMessage) models.PSPPayment 
 			MetadataPrefix + "isBatch":              fmt.Sprintf("%t", in.IsBatch),
 			MetadataPrefix + "batchMessageId":       in.BatchMessageID,
 			MetadataPrefix + "batchPaymentInfoId":   in.BatchPaymentInfoID,
-			MetadataPrefix + "importedAt":           in.ImportedAt.Format(ImportedAtLayout),
+			MetadataPrefix + "importedAt":           in.ImportedAt.UTC().Format(ImportedAtLayout),
 		},
 		Raw: raw,
 	}

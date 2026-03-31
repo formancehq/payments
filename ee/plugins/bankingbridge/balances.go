@@ -30,7 +30,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	for _, balance := range pagedBalances {
 		balances = append(balances, ToPSPBalance(balance))
-		newState.LastSeenImportedAt = balance.ImportedAt.Format(ImportedAtLayout)
+		newState.LastSeenImportedAt = balance.ImportedAt.UTC().Format(ImportedAtLayout)
 	}
 
 	newState.Cursor = cursor
