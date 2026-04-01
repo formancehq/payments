@@ -32,7 +32,7 @@ services:
       #- postgres:/var/lib/postgresql/data
 
   payments-migrate:
-    image: golang:1.24.7-alpine
+    image: golang:1.24.10-alpine
     command: go run ./ migrate up
     depends_on:
       postgres:
@@ -81,7 +81,7 @@ services:
       - 8081:8080
 
   payments:
-    image: golang:1.24.7-alpine
+    image: golang:1.24.10-alpine
     command: go run ./ server
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
@@ -110,7 +110,7 @@ services:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
   payments-worker:
-    image: golang:1.24.7-alpine
+    image: golang:1.24.10-alpine
     command: go run ./ worker
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
@@ -138,13 +138,13 @@ services:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
   console:
-    image: ghcr.io/formancehq/console-v3:v1.17.0
+    image: ghcr.io/formancehq/console-v3:v2.2.1
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
       - MICRO_STACK=1
-      - API_URL=http://gateway:80/api
+      - API_STACK_URL=http://gateway:80/api
       - COOKIE_SECRET=secret
       - COOKIE_DOMAIN=localhost
     depends_on:
