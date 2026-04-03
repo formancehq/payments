@@ -69,6 +69,8 @@ func runRecreateSchedules() func(cmd *cobra.Command, args []string) error {
 	}
 }
 
+// RecreateSchedules recreates missing Temporal schedules for active connectors
+// by reading their stored task trees and connector configs from the database.
 type RecreateSchedules struct {
 	logger         logging.Logger
 	temporalClient client.Client
@@ -76,6 +78,7 @@ type RecreateSchedules struct {
 	stack          string
 }
 
+// NewRecreateSchedules creates a new RecreateSchedules instance with the given dependencies.
 func NewRecreateSchedules(logger logging.Logger, temporalClient client.Client, storage storage.Storage, stack string) *RecreateSchedules {
 	return &RecreateSchedules{
 		logger:         logger,
@@ -85,6 +88,8 @@ func NewRecreateSchedules(logger logging.Logger, temporalClient client.Client, s
 	}
 }
 
+// Run iterates over all active connectors and recreates their Temporal polling
+// schedules. Existing schedules are silently skipped (idempotent).
 func (r *RecreateSchedules) Run(ctx context.Context) error {
 	r.logger.Infof("recreating Temporal schedules for stack %q", r.stack)
 
