@@ -15,8 +15,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/spf13/cobra"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
@@ -51,9 +49,6 @@ func runRecreateSchedules() func(cmd *cobra.Command, args []string) error {
 		options := []fx.Option{
 			fx.Supply(fx.Annotate(logger, fx.As(new(logging.Logger)))),
 			commonOpts,
-			fx.Provide(func() metric.MeterProvider {
-				return noop.NewMeterProvider()
-			}),
 			fx.Provide(func(logger logging.Logger, temporalClient client.Client, storage storage.Storage) *RecreateSchedules {
 				return NewRecreateSchedules(logger, temporalClient, storage, stack)
 			}),
