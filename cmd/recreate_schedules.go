@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -22,10 +21,11 @@ import (
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/fx"
+	"golang.org/x/sync/errgroup"
 )
 
-// knownCapabilities maps capability strings to their task type, workflow name,
-// and whether the capability uses account-based sub-schedules.
+// knownCapabilities maps capability strings to their task type and workflow name.
+// Ordered longest-first so parseScheduleID matches FETCH_EXTERNAL_ACCOUNTS before FETCH_ACCOUNTS.
 var knownCapabilities = []struct {
 	name         string
 	capability   models.Capability
@@ -188,70 +188,57 @@ func (r *RecreateSchedules) recreateConnectorSchedules(ctx context.Context, conn
 	}
 
 	taskQueue := engine.GetDefaultTaskQueue(r.stack)
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var errs []error
 
 	// Phase 1: Recreate root schedules from the task tree
 	r.logger.Infof("  phase 1: recreating root schedules from task tree")
-	r.walkTaskTree(ctx, *taskTree, connector.ID, config, taskQueue, nil, &wg, &mu, &errs)
-	wg.Wait()
+	if err := r.recreateRootSchedules(ctx, *taskTree, connector.ID, config, taskQueue); err != nil {
+		return fmt.Errorf("phase 1 (root schedules): %w", err)
+	}
 
 	// Phase 2: Recreate sub-schedules from the schedules DB table + account data
 	r.logger.Infof("  phase 2: recreating sub-schedules from DB")
-	if err := r.recreateSubSchedules(ctx, connector.ID, *taskTree, config, taskQueue, &wg, &mu, &errs); err != nil {
-		return err
-	}
-	wg.Wait()
-
-	if len(errs) > 0 {
-		return fmt.Errorf("encountered %d error(s) recreating schedules", len(errs))
+	if err := r.recreateSubSchedules(ctx, connector.ID, *taskTree, config, taskQueue); err != nil {
+		return fmt.Errorf("phase 2 (sub-schedules): %w", err)
 	}
 
 	return nil
 }
 
-func (r *RecreateSchedules) walkTaskTree(
+func (r *RecreateSchedules) recreateRootSchedules(
 	ctx context.Context,
-	tasks []models.ConnectorTaskTree,
+	tasks models.ConnectorTasksTree,
 	connectorID models.ConnectorID,
 	config models.Config,
 	taskQueue string,
-	fromPayload *workflow.FromPayload,
-	wg *sync.WaitGroup,
-	mu *sync.Mutex,
-	errs *[]error,
-) {
+) error {
+	g, ctx := errgroup.WithContext(ctx)
+
 	for _, task := range tasks {
 		if !task.Periodically {
 			continue
 		}
 
-		workflowName, capability, request := r.buildScheduleParams(task, connectorID, fromPayload)
+		workflowName, capability, request := r.buildScheduleParams(task, connectorID, nil)
 		if workflowName == "" {
 			r.logger.Errorf("  unknown task type %d, skipping", task.TaskType)
 			continue
 		}
 
-		scheduleID := r.buildScheduleID(connectorID, capability, task.Name, fromPayload)
+		scheduleID := fmt.Sprintf("%s-%s-%s", r.stack, connectorID.String(), capability.String())
 		nextTasks := task.NextTasks
 
-		wg.Add(1)
-		go func(scheduleID, workflowName string, request any, nextTasks []models.ConnectorTaskTree) {
-			defer wg.Done()
-
+		g.Go(func() error {
 			err := r.createSchedule(ctx, scheduleID, workflowName, config.PollingPeriod, taskQueue, request, nextTasks)
 			if err != nil {
 				r.logger.Errorf("  failed to create schedule %s: %v", scheduleID, err)
-				mu.Lock()
-				*errs = append(*errs, err)
-				mu.Unlock()
-				return
+				return err
 			}
-
 			r.logger.Infof("  schedule %s ensured (workflow=%s, interval=%s)", scheduleID, workflowName, config.PollingPeriod)
-		}(scheduleID, workflowName, request, nextTasks)
+			return nil
+		})
 	}
+
+	return g.Wait()
 }
 
 // recreateSubSchedules lists all schedules stored in the DB for a connector,
@@ -264,11 +251,11 @@ func (r *RecreateSchedules) recreateSubSchedules(
 	taskTree models.ConnectorTasksTree,
 	config models.Config,
 	taskQueue string,
-	wg *sync.WaitGroup,
-	mu *sync.Mutex,
-	errs *[]error,
 ) error {
 	prefix := fmt.Sprintf("%s-%s-", r.stack, connectorID.String())
+
+	// Cache account lookups to avoid repeated DB queries for the same reference
+	accountCache := make(map[string]*models.Account)
 
 	q := storage.NewListSchedulesQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
@@ -277,6 +264,8 @@ func (r *RecreateSchedules) recreateSubSchedules(
 				query.Match("connector_id", connectorID.String()),
 			),
 	)
+
+	g, ctx := errgroup.WithContext(ctx)
 
 	for {
 		page, err := r.storage.SchedulesList(ctx, q)
@@ -302,14 +291,18 @@ func (r *RecreateSchedules) recreateSubSchedules(
 				continue
 			}
 
-			// Look up the account to reconstruct the FromPayload
-			account, err := r.storage.AccountsGet(ctx, models.AccountID{
-				Reference:   payloadID,
-				ConnectorID: connectorID,
-			})
-			if err != nil {
-				r.logger.Errorf("  account %q not found for schedule %s, skipping: %v", payloadID, schedule.ID, err)
-				continue
+			// Look up account (with cache)
+			account, ok := accountCache[payloadID]
+			if !ok {
+				account, err = r.storage.AccountsGet(ctx, models.AccountID{
+					Reference:   payloadID,
+					ConnectorID: connectorID,
+				})
+				if err != nil {
+					r.logger.Errorf("  account %q not found for schedule %s, skipping: %v", payloadID, schedule.ID, err)
+					continue
+				}
+				accountCache[payloadID] = account
 			}
 
 			pspAccount := models.PSPAccount{
@@ -337,21 +330,17 @@ func (r *RecreateSchedules) recreateSubSchedules(
 			nextTasks := r.findNextTasksForCapability(taskTree, capInfo.taskType)
 			request := r.buildRequestForCapability(capInfo, connectorID, fromPayload)
 
-			wg.Add(1)
-			go func(scheduleID, workflowName string, request any, nextTasks []models.ConnectorTaskTree) {
-				defer wg.Done()
-
-				err := r.createSchedule(ctx, scheduleID, workflowName, config.PollingPeriod, taskQueue, request, nextTasks)
+			sid := schedule.ID
+			wfName := capInfo.workflowName
+			g.Go(func() error {
+				err := r.createSchedule(ctx, sid, wfName, config.PollingPeriod, taskQueue, request, nextTasks)
 				if err != nil {
-					r.logger.Errorf("  failed to create sub-schedule %s: %v", scheduleID, err)
-					mu.Lock()
-					*errs = append(*errs, err)
-					mu.Unlock()
-					return
+					r.logger.Errorf("  failed to create sub-schedule %s: %v", sid, err)
+					return err
 				}
-
-				r.logger.Infof("  sub-schedule %s ensured (workflow=%s, account=%s)", scheduleID, workflowName, payloadID)
-			}(schedule.ID, capInfo.workflowName, request, nextTasks)
+				r.logger.Infof("  sub-schedule %s ensured (workflow=%s, account=%s)", sid, wfName, payloadID)
+				return nil
+			})
 		}
 
 		if !page.HasMore {
@@ -363,29 +352,30 @@ func (r *RecreateSchedules) recreateSubSchedules(
 		}
 	}
 
-	return nil
+	return g.Wait()
 }
 
 // parseScheduleID extracts the capability string and optional fromPayload.ID
 // from a schedule ID by stripping the known prefix ({stack}-{connectorID}-).
-// Returns (capabilityStr, payloadID, ok).
+//
+// Schedule IDs follow the format set by scheduleNextWorkflow in plugin_workflow.go:
+//   - Root: {stack}-{connectorID}-{CAPABILITY}
+//   - Sub:  {stack}-{connectorID}-{CAPABILITY}-{fromPayload.ID}
+//
+// The capability names use underscores (e.g., FETCH_ACCOUNTS) so the dash after
+// the capability unambiguously separates it from the payload ID.
 func (r *RecreateSchedules) parseScheduleID(scheduleID, prefix string) (string, string, bool) {
 	remainder, found := strings.CutPrefix(scheduleID, prefix)
-	if !found {
-		return "", "", false
-	}
-	if remainder == "" {
+	if !found || remainder == "" {
 		return "", "", false
 	}
 
 	// Try to match against known capabilities (longest first to avoid partial matches).
-	// knownCapabilities is ordered with FETCH_EXTERNAL_ACCOUNTS first.
 	for _, cap := range knownCapabilities {
 		if remainder == cap.name {
 			return cap.name, "", true
 		}
-		if strings.HasPrefix(remainder, cap.name+"-") {
-			payloadID := strings.TrimPrefix(remainder, cap.name+"-")
+		if payloadID, found := strings.CutPrefix(remainder, cap.name+"-"); found {
 			return cap.name, payloadID, true
 		}
 	}
@@ -447,23 +437,6 @@ func (r *RecreateSchedules) buildRequestForCapability(
 	default:
 		return nil
 	}
-}
-
-func (r *RecreateSchedules) buildScheduleID(
-	connectorID models.ConnectorID,
-	capability models.Capability,
-	taskName string,
-	fromPayload *workflow.FromPayload,
-) string {
-	suffix := capability.String()
-	if capability == models.CAPABILITY_FETCH_OTHERS && taskName != "" {
-		suffix = fmt.Sprintf("%s-%s", suffix, taskName)
-	}
-
-	if fromPayload == nil {
-		return fmt.Sprintf("%s-%s-%s", r.stack, connectorID.String(), suffix)
-	}
-	return fmt.Sprintf("%s-%s-%s-%s", r.stack, connectorID.String(), suffix, fromPayload.ID)
 }
 
 func (r *RecreateSchedules) buildScheduleParams(

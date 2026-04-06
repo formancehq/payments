@@ -29,6 +29,10 @@ func TestRecreateSchedules(t *testing.T) {
 	RunSpecs(t, "RecreateSchedules Suite")
 }
 
+func emptySchedulesList() *bunpaginate.Cursor[models.Schedule] {
+	return &bunpaginate.Cursor[models.Schedule]{Data: []models.Schedule{}}
+}
+
 var _ = Describe("RecreateSchedules", func() {
 	var (
 		ctrl               *gomock.Controller
@@ -64,8 +68,7 @@ var _ = Describe("RecreateSchedules", func() {
 	Context("Run", func() {
 		It("should succeed with no connectors", func(ctx SpecContext) {
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{}},
-				nil,
+				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{}}, nil,
 			)
 
 			err := rs.Run(ctx)
@@ -74,8 +77,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should return error when listing connectors fails", func(ctx SpecContext) {
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				nil,
-				fmt.Errorf("db connection error"),
+				nil, fmt.Errorf("db connection error"),
 			)
 
 			err := rs.Run(ctx)
@@ -88,15 +90,12 @@ var _ = Describe("RecreateSchedules", func() {
 				&bunpaginate.Cursor[models.Connector]{
 					Data: []models.Connector{
 						{
-							ConnectorBase: models.ConnectorBase{
-								ID: connectorID, Name: "deleted-connector", Provider: "stripe",
-							},
+							ConnectorBase:        models.ConnectorBase{ID: connectorID, Name: "deleted", Provider: "stripe"},
 							ScheduledForDeletion: true,
 							Config:               connectorConfig,
 						},
 					},
-				},
-				nil,
+				}, nil,
 			)
 
 			err := rs.Run(ctx)
@@ -105,15 +104,12 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should return error when one connector fails", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}},
-				nil,
+				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil,
 			)
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(
 				nil, fmt.Errorf("task tree error"),
@@ -126,15 +122,12 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip connector with no task tree", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}},
-				nil,
+				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil,
 			)
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(nil, nil)
 
@@ -143,38 +136,30 @@ var _ = Describe("RecreateSchedules", func() {
 		})
 	})
 
-	Context("recreateConnectorSchedules - root schedules", func() {
+	Context("root schedules", func() {
 		It("should create schedule for periodic fetch accounts task", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			taskTree := models.ConnectorTasksTree{
 				{TaskType: models.TASK_FETCH_ACCOUNTS, Periodically: true, NextTasks: []models.ConnectorTaskTree{}},
 			}
 
-			expectedScheduleID := fmt.Sprintf("%s-%s-%s", stackName, connectorID.String(), models.CAPABILITY_FETCH_ACCOUNTS.String())
+			expectedID := fmt.Sprintf("%s-%s-%s", stackName, connectorID.String(), models.CAPABILITY_FETCH_ACCOUNTS.String())
 
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(&taskTree, nil)
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-
-			// Phase 1: root schedule
 			mockScheduleClient.EXPECT().Create(gomock.Any(), gomock.Any()).Do(func(_ context.Context, opts client.ScheduleOptions) {
-				Expect(opts.ID).To(Equal(expectedScheduleID))
+				Expect(opts.ID).To(Equal(expectedID))
 				Expect(opts.TriggerImmediately).To(BeTrue())
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_BUFFER_ONE))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
 				Expect(ok).To(BeTrue())
 				Expect(action.Workflow).To(Equal(workflow.RunFetchNextAccounts))
 			}).Return(mockHandle, nil)
-
-			// Phase 2: no sub-schedules in DB
-			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{Data: []models.Schedule{}}, nil,
-			)
+			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(emptySchedulesList(), nil)
 
 			err := rs.recreateConnectorSchedules(ctx, connector)
 			Expect(err).To(BeNil())
@@ -182,10 +167,8 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should create schedules for all periodic task types", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			taskTree := models.ConnectorTasksTree{
@@ -208,11 +191,7 @@ var _ = Describe("RecreateSchedules", func() {
 				mu.Unlock()
 				return mockHandle, nil
 			}).Times(5)
-
-			// Phase 2: no sub-schedules
-			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{Data: []models.Schedule{}}, nil,
-			)
+			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(emptySchedulesList(), nil)
 
 			err := rs.recreateConnectorSchedules(ctx, connector)
 			Expect(err).To(BeNil())
@@ -221,10 +200,8 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip non-periodic tasks", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			taskTree := models.ConnectorTasksTree{
@@ -233,10 +210,7 @@ var _ = Describe("RecreateSchedules", func() {
 			}
 
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(&taskTree, nil)
-			// Phase 2: no sub-schedules
-			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{Data: []models.Schedule{}}, nil,
-			)
+			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(emptySchedulesList(), nil)
 
 			err := rs.recreateConnectorSchedules(ctx, connector)
 			Expect(err).To(BeNil())
@@ -244,10 +218,8 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should use default polling period when config has zero value", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: json.RawMessage(`{"name": "test"}`),
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        json.RawMessage(`{"name": "test"}`),
 			}
 
 			taskTree := models.ConnectorTasksTree{
@@ -260,24 +232,18 @@ var _ = Describe("RecreateSchedules", func() {
 				Expect(opts.Spec.Intervals[0].Every).To(Equal(30 * time.Minute))
 				Expect(opts.Spec.Jitter).To(Equal(5 * time.Minute))
 			}).Return(mockHandle, nil)
-
-			// Phase 2: no sub-schedules
-			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{Data: []models.Schedule{}}, nil,
-			)
+			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(emptySchedulesList(), nil)
 
 			err := rs.recreateConnectorSchedules(ctx, connector)
 			Expect(err).To(BeNil())
 		})
 	})
 
-	Context("recreateConnectorSchedules - sub-schedules", func() {
+	Context("sub-schedules", func() {
 		It("should recreate sub-schedule from DB schedule + account lookup", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			taskTree := models.ConnectorTasksTree{
@@ -294,8 +260,6 @@ var _ = Describe("RecreateSchedules", func() {
 
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(&taskTree, nil)
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-
-			// Phase 1: root schedule created
 			mockScheduleClient.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, opts client.ScheduleOptions) (client.ScheduleHandle, error) {
 				return mockHandle, nil
 			}).AnyTimes()
@@ -309,10 +273,8 @@ var _ = Describe("RecreateSchedules", func() {
 				}, nil,
 			)
 
-			// Account lookup
 			mockStore.EXPECT().AccountsGet(gomock.Any(), models.AccountID{
-				Reference:   accountRef,
-				ConnectorID: connectorID,
+				Reference: accountRef, ConnectorID: connectorID,
 			}).Return(&models.Account{
 				ID:          models.AccountID{Reference: accountRef, ConnectorID: connectorID},
 				ConnectorID: connectorID,
@@ -327,10 +289,8 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip sub-schedule when account not found", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{
-					ID: connectorID, Name: "test-connector", Provider: "stripe",
-				},
-				Config: connectorConfig,
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
 			}
 
 			taskTree := models.ConnectorTasksTree{
@@ -341,11 +301,8 @@ var _ = Describe("RecreateSchedules", func() {
 
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(&taskTree, nil)
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
-
-			// Phase 1
 			mockScheduleClient.EXPECT().Create(gomock.Any(), gomock.Any()).Return(mockHandle, nil)
 
-			// Phase 2: sub-schedule in DB
 			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Schedule]{
 					Data: []models.Schedule{
@@ -353,13 +310,58 @@ var _ = Describe("RecreateSchedules", func() {
 					},
 				}, nil,
 			)
+			mockStore.EXPECT().AccountsGet(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("not found"))
 
-			// Account not found
-			mockStore.EXPECT().AccountsGet(gomock.Any(), gomock.Any()).Return(
-				nil, fmt.Errorf("not found"),
+			err := rs.recreateConnectorSchedules(ctx, connector)
+			Expect(err).To(BeNil())
+		})
+
+		It("should use account cache to avoid duplicate lookups", func(ctx SpecContext) {
+			connector := models.Connector{
+				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				Config:        connectorConfig,
+			}
+
+			taskTree := models.ConnectorTasksTree{
+				{
+					TaskType: models.TASK_FETCH_ACCOUNTS, Periodically: true,
+					NextTasks: []models.ConnectorTaskTree{
+						{TaskType: models.TASK_FETCH_BALANCES, Periodically: true},
+						{TaskType: models.TASK_FETCH_PAYMENTS, Periodically: true},
+					},
+				},
+			}
+
+			accountRef := "acct_cached"
+			balanceSchedule := fmt.Sprintf("%s-%s-FETCH_BALANCES-%s", stackName, connectorID.String(), accountRef)
+			paymentSchedule := fmt.Sprintf("%s-%s-FETCH_PAYMENTS-%s", stackName, connectorID.String(), accountRef)
+
+			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(&taskTree, nil)
+			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
+			mockScheduleClient.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, opts client.ScheduleOptions) (client.ScheduleHandle, error) {
+				return mockHandle, nil
+			}).AnyTimes()
+
+			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
+				&bunpaginate.Cursor[models.Schedule]{
+					Data: []models.Schedule{
+						{ID: balanceSchedule, ConnectorID: connectorID},
+						{ID: paymentSchedule, ConnectorID: connectorID},
+					},
+				}, nil,
 			)
 
-			// Should succeed (skip the failed sub-schedule, no error propagated)
+			// Account should be looked up only ONCE thanks to cache
+			mockStore.EXPECT().AccountsGet(gomock.Any(), models.AccountID{
+				Reference: accountRef, ConnectorID: connectorID,
+			}).Return(&models.Account{
+				ID:          models.AccountID{Reference: accountRef, ConnectorID: connectorID},
+				ConnectorID: connectorID,
+				Reference:   accountRef,
+				CreatedAt:   time.Now(),
+				Raw:         json.RawMessage(`{"id": "acct_cached"}`),
+			}, nil).Times(1)
+
 			err := rs.recreateConnectorSchedules(ctx, connector)
 			Expect(err).To(BeNil())
 		})
@@ -454,22 +456,35 @@ var _ = Describe("RecreateSchedules", func() {
 		})
 	})
 
-	Context("buildScheduleID", func() {
-		It("should include task name for FETCH_OTHERS", func() {
-			id := rs.buildScheduleID(connectorID, models.CAPABILITY_FETCH_OTHERS, "custom-task", nil)
-			Expect(id).To(ContainSubstring("FETCH_OTHERS-custom-task"))
+	Context("buildScheduleParams", func() {
+		It("should map all task types correctly", func() {
+			tests := []struct {
+				taskType    models.TaskType
+				expectedWf  string
+				expectedCap models.Capability
+			}{
+				{models.TASK_FETCH_ACCOUNTS, workflow.RunFetchNextAccounts, models.CAPABILITY_FETCH_ACCOUNTS},
+				{models.TASK_FETCH_BALANCES, workflow.RunFetchNextBalances, models.CAPABILITY_FETCH_BALANCES},
+				{models.TASK_FETCH_EXTERNAL_ACCOUNTS, workflow.RunFetchNextExternalAccounts, models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS},
+				{models.TASK_FETCH_PAYMENTS, workflow.RunFetchNextPayments, models.CAPABILITY_FETCH_PAYMENTS},
+				{models.TASK_FETCH_OTHERS, workflow.RunFetchNextOthers, models.CAPABILITY_FETCH_OTHERS},
+				{models.TASK_CREATE_WEBHOOKS, workflow.RunCreateWebhooks, models.CAPABILITY_CREATE_WEBHOOKS},
+			}
+
+			for _, tt := range tests {
+				task := models.ConnectorTaskTree{TaskType: tt.taskType, Name: "test"}
+				wf, cap, req := rs.buildScheduleParams(task, connectorID, nil)
+				Expect(wf).To(Equal(tt.expectedWf))
+				Expect(cap).To(Equal(tt.expectedCap))
+				Expect(req).NotTo(BeNil())
+			}
 		})
 
-		It("should not include task name for other capabilities", func() {
-			id := rs.buildScheduleID(connectorID, models.CAPABILITY_FETCH_ACCOUNTS, "ignored", nil)
-			Expect(id).NotTo(ContainSubstring("ignored"))
-			Expect(id).To(ContainSubstring("FETCH_ACCOUNTS"))
-		})
-
-		It("should include fromPayload ID when present", func() {
-			fp := &workflow.FromPayload{ID: "acct_456"}
-			id := rs.buildScheduleID(connectorID, models.CAPABILITY_FETCH_BALANCES, "", fp)
-			Expect(id).To(ContainSubstring("FETCH_BALANCES-acct_456"))
+		It("should return empty for unknown task type", func() {
+			task := models.ConnectorTaskTree{TaskType: 99}
+			wf, _, req := rs.buildScheduleParams(task, connectorID, nil)
+			Expect(wf).To(BeEmpty())
+			Expect(req).To(BeNil())
 		})
 	})
 
