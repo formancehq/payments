@@ -62,6 +62,9 @@ func NewRootCommand() *cobra.Command {
 	workbench := newWorkbench()
 	root.AddCommand(workbench)
 
+	recreateSchedules := newRecreateSchedules()
+	root.AddCommand(recreateSchedules)
+
 	return root
 }
 

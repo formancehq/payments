@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/genericclient/v3"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"
 )

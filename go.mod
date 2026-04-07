@@ -4,7 +4,7 @@ go 1.24.10
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
-replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
+replace github.com/formancehq/payments/genericclient/v3 => ./internal/connectors/plugins/public/generic/client/generated
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.5.1
@@ -12,7 +12,7 @@ require (
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/emvi/iso-639-1 v1.1.1
 	github.com/formancehq/go-libs/v3 v3.6.1
-	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/genericclient/v3 v3.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/genericclient/v3"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"

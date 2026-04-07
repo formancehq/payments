@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	genericclient "github.com/formancehq/payments/genericclient"
+	genericclient "github.com/formancehq/payments/genericclient/v3"
 	gomock "go.uber.org/mock/gomock"
 )
 
