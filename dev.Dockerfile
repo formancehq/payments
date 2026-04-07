@@ -3,7 +3,7 @@
 # Development Dockerfile for payments service
 # Based on ebics-bridge structure but optimized for development workflow
 
-FROM golang:1.24.7-alpine as development
+FROM golang:1.26.1-alpine as development
 
 # Install minimal dependencies including build tools
 RUN apk add --no-cache \
@@ -16,8 +16,8 @@ RUN apk add --no-cache \
     make
 
 # Install delve (debugger) and air (hot reload)
-RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@v1.25.2
-RUN CGO_ENABLED=0 go install github.com/air-verse/air@v1.61.7
+RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@v1.26.1
+RUN CGO_ENABLED=0 go install github.com/air-verse/air@v1.64.5
 
 # Create a custom user with appropriate permissions
 RUN addgroup -g 1001 -S appgroup && \

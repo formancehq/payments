@@ -144,7 +144,7 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector, oldCo
 			return e("failed to marshal connector reset event payload", err)
 		}
 
-		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Time.Format(stdtime.RFC3339Nano))
+		idempotencyKey := fmt.Sprintf("%s-%s", oldConnectorID.String(), now.Format(stdtime.RFC3339Nano))
 		outboxEvent := models.OutboxEvent{
 			ID: models.EventID{
 				EventIdempotencyKey: idempotencyKey,
