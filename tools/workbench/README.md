@@ -10,6 +10,34 @@ Running the full payments stack locally requires Docker, Temporal, PostgreSQL, a
 - **Debug easily** - See all HTTP traffic, plugin calls, and state changes
 - **Iterate quickly** - Hot reload-friendly, instant feedback
 
+## How to setup
+
+### Setup UI:
+Tested on node 22 (part of Nix configuration)
+
+```bash
+ cd tools/workbench/ui
+  npm install
+  npm run build
+  cd -
+```
+### Run the Go binary
+
+No connector pre-configured (create from UI):
+```bash
+go run . workbench
+```
+
+With a provider pre-configured:
+```bash
+go run . workbench --provider=stripe --config='{"apiKey":"sk_test_..."}'
+```
+
+### Access
+- Web UI: http://127.0.0.1:8080/ui
+- API: http://127.0.0.1:8080/api/status
+
+
 ## How It Works
 
 The workbench is an alternative entry point to the same binary:
