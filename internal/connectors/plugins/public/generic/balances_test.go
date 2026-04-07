@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/genericclient/v3"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/generic/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"

@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/genericclient/v3"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 

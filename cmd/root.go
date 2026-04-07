@@ -53,6 +53,9 @@ func NewRootCommand() *cobra.Command {
 	purge.Flags().String(StackFlag, "", "Stack name")
 	root.AddCommand(purge)
 
+	recreateSchedules := newRecreateSchedules()
+	root.AddCommand(recreateSchedules)
+
 	return root
 }
 
