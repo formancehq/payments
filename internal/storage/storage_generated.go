@@ -595,6 +595,21 @@ func (mr *MockStorageMockRecorder) InstancesGet(ctx, id, scheduleID, connectorID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesGet", reflect.TypeOf((*MockStorage)(nil).InstancesGet), ctx, id, scheduleID, connectorID)
 }
 
+// InstancesGetErrors mocks base method.
+func (m *MockStorage) InstancesGetErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstancesGetErrors", ctx, connectorID, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Instance])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstancesGetErrors indicates an expected call of InstancesGetErrors.
+func (mr *MockStorageMockRecorder) InstancesGetErrors(ctx, connectorID, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesGetErrors", reflect.TypeOf((*MockStorage)(nil).InstancesGetErrors), ctx, connectorID, q)
+}
+
 // InstancesList mocks base method.
 func (m *MockStorage) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
 	m.ctrl.T.Helper()

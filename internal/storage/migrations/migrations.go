@@ -55,6 +55,9 @@ var dynamicPools string
 //go:embed 25-add-outbox-table.sql
 var addOutboxTable string
 
+//go:embed 26-schedules-pause-columns.sql
+var schedulesPauseColumns string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -374,6 +377,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.WithField("error", err).Info("finished running add outbox for events migration")
 					return err
 				})
+			},
+		},
+		migrations.Migration{
+			Name: "add paused columns to schedules",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add paused columns to schedules migration...")
+				_, err := db.ExecContext(ctx, schedulesPauseColumns)
+				logger.WithField("error", err).Info("finished running add paused columns to schedules migration")
+				return err
 			},
 		},
 	)

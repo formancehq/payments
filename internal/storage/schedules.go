@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	gotime "time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -19,6 +20,10 @@ type schedule struct {
 	ID          string             `bun:"id,pk,type:text,notnull"`
 	ConnectorID models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
 	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
+
+	// Optional fields
+	PausedAt     *time.Time `bun:"paused_at,type:timestamp without time zone,nullzero"`
+	PausedReason *string    `bun:"paused_reason,type:text,nullzero"`
 }
 
 func (s *store) SchedulesUpsert(ctx context.Context, schedule models.Schedule) error {
@@ -161,6 +166,13 @@ func fromScheduleModel(s models.Schedule) schedule {
 		ID:          s.ID,
 		ConnectorID: s.ConnectorID,
 		CreatedAt:   time.New(s.CreatedAt),
+		PausedAt: func() *time.Time {
+			if s.PausedAt == nil {
+				return nil
+			}
+			return pointer.For(time.New(*s.PausedAt))
+		}(),
+		PausedReason: s.PausedReason,
 	}
 }
 
@@ -169,5 +181,12 @@ func toScheduleModel(s schedule) models.Schedule {
 		ID:          s.ID,
 		ConnectorID: s.ConnectorID,
 		CreatedAt:   s.CreatedAt.Time,
+		PausedAt: func() *gotime.Time {
+			if s.PausedAt == nil {
+				return nil
+			}
+			return pointer.For(s.PausedAt.Time)
+		}(),
+		PausedReason: s.PausedReason,
 	}
 }

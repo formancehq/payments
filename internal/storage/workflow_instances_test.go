@@ -346,6 +346,7 @@ func TestInstancesList(t *testing.T) {
 	})
 }
 
+
 func TestInstancesDeleteFromConnectorIDBatch(t *testing.T) {
 	t.Parallel()
 

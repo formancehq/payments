@@ -6,24 +6,24 @@ import (
 )
 
 type Instance struct {
-	ID           string
-	ScheduleID   string
-	ConnectorID  ConnectorID
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Terminated   bool
+	ID          string
+	ScheduleID  string
+	ConnectorID ConnectorID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Terminated  bool
 	TerminatedAt *time.Time
 	Error        *string
 }
 
 func (i Instance) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID           string     `json:"id"`
-		ScheduleID   string     `json:"scheduleID"`
-		ConnectorID  string     `json:"connectorID"`
-		CreatedAt    time.Time  `json:"createdAt"`
-		UpdatedAt    time.Time  `json:"updatedAt"`
-		Terminated   bool       `json:"terminated"`
+		ID          string     `json:"id"`
+		ScheduleID  string     `json:"scheduleID"`
+		ConnectorID string     `json:"connectorID"`
+		CreatedAt   time.Time  `json:"createdAt"`
+		UpdatedAt   time.Time  `json:"updatedAt"`
+		Terminated  bool       `json:"terminated"`
 		TerminatedAt *time.Time `json:"terminatedAt,omitempty"`
 		Error        *string    `json:"error,omitempty"`
 	}{
@@ -40,12 +40,12 @@ func (i Instance) MarshalJSON() ([]byte, error) {
 
 func (i *Instance) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		ID           string     `json:"id"`
-		ScheduleID   string     `json:"scheduleID"`
-		ConnectorID  string     `json:"connectorID"`
-		CreatedAt    time.Time  `json:"createdAt"`
-		UpdatedAt    time.Time  `json:"updatedAt"`
-		Terminated   bool       `json:"terminated"`
+		ID          string     `json:"id"`
+		ScheduleID  string     `json:"scheduleID"`
+		ConnectorID string     `json:"connectorID"`
+		CreatedAt   time.Time  `json:"createdAt"`
+		UpdatedAt   time.Time  `json:"updatedAt"`
+		Terminated  bool       `json:"terminated"`
 		TerminatedAt *time.Time `json:"terminatedAt,omitempty"`
 		Error        *string    `json:"error,omitempty"`
 	}

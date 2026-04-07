@@ -205,9 +205,37 @@ func toInstanceModel(from instance) models.Instance {
 			if from.TerminatedAt == nil {
 				return nil
 			}
-
 			return pointer.For(from.TerminatedAt.Time)
 		}(),
 		Error: from.Error,
 	}
+}
+
+func (s *store) InstancesGetErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
+		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]])(&q),
+		func(query *bun.SelectQuery) *bun.SelectQuery {
+			return query.
+				DistinctOn("schedule_id").
+				Where("connector_id = ?", connectorID).
+				Where("error IS NOT NULL").
+				Order("schedule_id ASC", "created_at DESC")
+		},
+	)
+	if err != nil {
+		return nil, e("failed to fetch instance errors", err)
+	}
+
+	instances := make([]models.Instance, 0, len(cursor.Data))
+	for _, i := range cursor.Data {
+		instances = append(instances, toInstanceModel(i))
+	}
+
+	return &bunpaginate.Cursor[models.Instance]{
+		PageSize: cursor.PageSize,
+		HasMore:  cursor.HasMore,
+		Previous: cursor.Previous,
+		Next:     cursor.Next,
+		Data:     instances,
+	}, nil
 }

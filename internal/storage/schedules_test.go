@@ -7,6 +7,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
@@ -64,6 +65,23 @@ func TestSchedulesUpsert(t *testing.T) {
 		actual, err := store.SchedulesGet(ctx, sch.ID, sch.ConnectorID)
 		require.NoError(t, err)
 		require.Equal(t, defaultSchedules[0], *actual)
+	})
+
+	t.Run("upsert with paused_at and paused_reason set", func(t *testing.T) {
+		pausedAt := now.UTC().Time
+		sch := models.Schedule{
+			ID:           "test-paused",
+			ConnectorID:  defaultConnector.ID,
+			CreatedAt:    now.Add(-20 * time.Minute).UTC().Time,
+			PausedAt:     &pausedAt,
+			PausedReason: pointer.For("maintenance window"),
+		}
+
+		require.NoError(t, store.SchedulesUpsert(ctx, sch))
+
+		actual, err := store.SchedulesGet(ctx, sch.ID, sch.ConnectorID)
+		require.NoError(t, err)
+		require.Equal(t, sch, *actual)
 	})
 
 	t.Run("upsert with unknown connector id", func(t *testing.T) {
