@@ -383,7 +383,12 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 			Name: "add paused columns to schedules",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				logger.Info("running add paused columns to schedules migration...")
-				_, err := db.ExecContext(ctx, schedulesPauseColumns)
+				if _, err := db.ExecContext(ctx, schedulesPauseColumns); err != nil {
+					return err
+				}
+				_, err := db.ExecContext(ctx, `
+					CREATE INDEX CONCURRENTLY IF NOT EXISTS workflows_instances_error ON workflows_instances (error);
+				`)
 				logger.WithField("error", err).Info("finished running add paused columns to schedules migration")
 				return err
 			},
