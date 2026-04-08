@@ -102,7 +102,6 @@ func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpen
 				},
 			},
 		).Get(ctx, nil); err != nil {
-			workflow.GetLogger(ctx).Error("failed to fetch accounts", "error", err)
 			*errPtr = err
 		}
 	}
@@ -131,7 +130,6 @@ func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpe
 			},
 			[]models.ConnectorTaskTree{},
 		).Get(ctx, nil); err != nil {
-			workflow.GetLogger(ctx).Error("failed to fetch payments", "error", err)
 			*errPtr = err
 		}
 	}
