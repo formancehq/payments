@@ -12,10 +12,10 @@ import (
 func (a Activities) TemporalSchedulesPause(ctx context.Context, instances []models.Instance) error {
 	now := time.Now()
 	for _, instance := range instances {
-		reason := ""
-		if instance.Error != nil {
-			reason = *instance.Error
+		if instance.Error == nil {
+			continue
 		}
+		reason := *instance.Error
 
 		handle := a.temporalClient.ScheduleClient().GetHandle(ctx, instance.ScheduleID)
 		if err := handle.Pause(ctx, client.SchedulePauseOptions{

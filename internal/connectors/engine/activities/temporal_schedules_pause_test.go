@@ -57,18 +57,14 @@ var _ = Describe("TemporalSchedulesPause", func() {
 		Expect(err).To(BeNil())
 	})
 
-	It("uses an empty reason when the instance error is nil", func(ctx SpecContext) {
+	It("does not pause a schedule when the instance has no error", func(ctx SpecContext) {
 		instance := models.Instance{
 			ID:         "workflow-id-2",
 			ScheduleID: "test-connector-FETCH_PAYMENTS",
 			Error:      nil,
 		}
 
-		tc.EXPECT().ScheduleClient().Return(sc)
-		sc.EXPECT().GetHandle(ctx, instance.ScheduleID).Return(sh)
-		sh.EXPECT().Pause(ctx, client.SchedulePauseOptions{Note: ""}).Return(nil)
-		s.EXPECT().SchedulesPause(ctx, instance.ScheduleID, gomock.Any(), "").Return(nil)
-
+		// No mock expectations set — gomock will fail if Pause or SchedulesPause are called.
 		err := act.TemporalSchedulesPause(ctx, []models.Instance{instance})
 		Expect(err).To(BeNil())
 	})
