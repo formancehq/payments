@@ -416,7 +416,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		require.Empty(t, cursor.Data)
 	})
 
-	t.Run("includes schedule with fewer than 5 executions all having errors", func(t *testing.T) {
+	t.Run("excludes schedule with fewer than 5 executions", func(t *testing.T) {
 		store := newStore(t)
 		defer store.Close()
 		upsertConnector(t, ctx, store, defaultConnector)
@@ -431,8 +431,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
 		require.NoError(t, err)
-		require.Len(t, cursor.Data, 1)
-		require.Equal(t, defaultSchedules[0].ID, cursor.Data[0].ScheduleID)
+		require.Empty(t, cursor.Data)
 	})
 
 	t.Run("ignores executions beyond the 5 most recent", func(t *testing.T) {

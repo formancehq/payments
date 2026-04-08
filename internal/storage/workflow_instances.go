@@ -232,7 +232,7 @@ func (s *store) InstancesGetScheduleErrors(ctx context.Context, connectorID mode
 					) ranked
 					WHERE rn <= 5
 					GROUP BY schedule_id
-					HAVING COUNT(*) FILTER (WHERE error IS NULL) = 0
+					HAVING COUNT(*) = 5 AND COUNT(*) FILTER (WHERE error IS NULL) = 0
 				)`, connectorID).
 				Order("schedule_id ASC", "created_at DESC")
 		},
