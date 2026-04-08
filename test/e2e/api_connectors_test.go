@@ -353,6 +353,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 				"FetchExternalAccounts": {},
 				"FetchPayments":         {},
 				"FetchBalances":         {},
+				"ConnectorHealthCheck":  {},
 			}
 		)
 		BeforeEach(func() {
