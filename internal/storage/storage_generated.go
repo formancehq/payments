@@ -1741,7 +1741,6 @@ func (mr *MockStorageMockRecorder) SchedulesUnpause(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesUnpause", reflect.TypeOf((*MockStorage)(nil).SchedulesUnpause), ctx, id)
 }
 
-
 // SchedulesUpsert mocks base method.
 func (m *MockStorage) SchedulesUpsert(ctx context.Context, schedule models.Schedule) error {
 	m.ctrl.T.Helper()

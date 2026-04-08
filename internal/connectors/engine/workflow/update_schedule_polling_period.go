@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"strings"
+
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -42,7 +44,19 @@ func (w Workflow) runUpdateSchedulePollingPeriod(
 		}
 
 		var paused []models.Schedule
+		var matching []models.Schedule
 		for _, s := range schedules.Data {
+			hasFetchCapability := false
+			for _, capability := range fetchCapabilities {
+				if strings.Contains(s.ID, capability) {
+					hasFetchCapability = true
+					break
+				}
+			}
+			if !hasFetchCapability {
+				continue
+			}
+			matching = append(matching, s)
 			if s.PausedAt != nil {
 				paused = append(paused, s)
 			}
@@ -56,7 +70,7 @@ func (w Workflow) runUpdateSchedulePollingPeriod(
 
 		wg := workflow.NewWaitGroup(ctx)
 
-		for _, schedule := range schedules.Data {
+		for _, schedule := range matching {
 			s := schedule
 			wg.Add(1)
 			workflow.Go(ctx, func(ctx workflow.Context) {
