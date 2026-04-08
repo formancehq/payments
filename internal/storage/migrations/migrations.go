@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/migrations"
@@ -383,17 +384,37 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 			Name: "add paused columns to schedules",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				logger.Info("running add paused columns to schedules migration...")
-				if _, err := db.ExecContext(ctx, schedulesPauseColumns); err != nil {
-					return err
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration must not run inside a transaction: CREATE INDEX CONCURRENTLY is not allowed in a transaction block")
 				}
-				_, err := db.ExecContext(ctx, `
-					CREATE INDEX CONCURRENTLY IF NOT EXISTS workflows_instances_error ON workflows_instances (error);
-				`)
+				// Execute each statement individually: CREATE INDEX CONCURRENTLY
+				// cannot share a connection batch with other statements because
+				// the driver would wrap them in an implicit transaction.
+				var err error
+				for _, stmt := range splitSQLStatements(schedulesPauseColumns) {
+					if _, err = db.ExecContext(ctx, stmt); err != nil {
+						return err
+					}
+				}
 				logger.WithField("error", err).Info("finished running add paused columns to schedules migration")
 				return err
 			},
 		},
 	)
+}
+
+// splitSQLStatements splits a SQL string on semicolons and returns each
+// non-empty trimmed statement. This allows CONCURRENT index creation to run
+// in its own ExecContext call, separate from any preceding DDL statements.
+func splitSQLStatements(sql string) []string {
+	parts := strings.Split(sql, ";")
+	stmts := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if s := strings.TrimSpace(p); s != "" {
+			stmts = append(stmts, s)
+		}
+	}
+	return stmts
 }
 
 func GetMigrator(logger logging.Logger, db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
