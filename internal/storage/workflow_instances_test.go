@@ -390,7 +390,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		}
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
-		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.Equal(t, defaultSchedules[0].ID, cursor.Data[0].ScheduleID)
@@ -411,7 +411,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		}
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
-		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Empty(t, cursor.Data)
 	})
@@ -429,7 +429,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		}
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
-		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Empty(t, cursor.Data)
 	})
@@ -449,7 +449,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		}
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
-		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.Equal(t, defaultSchedules[0].ID, cursor.Data[0].ScheduleID)
@@ -471,7 +471,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		upsertInstance(t, ctx, store, makeInstance("sched0-latest", 0, 5, pointer.For("latest")))
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
-		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.Equal(t, pointer.For("latest"), cursor.Data[0].Error)
@@ -500,7 +500,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		}
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
-		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
 		scheduleIDs := []string{cursor.Data[0].ScheduleID, cursor.Data[1].ScheduleID}
@@ -524,7 +524,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		}
 
 		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(1))
-		page1, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		page1, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, page1.Data, 1)
 		require.True(t, page1.HasMore)
@@ -532,7 +532,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 
 		err = bunpaginate.UnmarshalCursor(page1.Next, &q)
 		require.NoError(t, err)
-		page2, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		page2, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, page2.Data, 1)
 		require.True(t, page2.HasMore)
@@ -540,7 +540,7 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 
 		err = bunpaginate.UnmarshalCursor(page2.Next, &q)
 		require.NoError(t, err)
-		page3, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q)
+		page3, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
 		require.NoError(t, err)
 		require.Len(t, page3.Data, 1)
 		require.False(t, page3.HasMore)

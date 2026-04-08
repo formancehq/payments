@@ -19,7 +19,7 @@ func (a Activities) StorageInstancesGetScheduleErrors(ctx context.Context, conne
 		q = storage.NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(storage.InstanceQuery{}))
 	}
 
-	result, err := a.storage.InstancesGetScheduleErrors(ctx, connectorID, q)
+	result, err := a.storage.InstancesGetScheduleErrors(ctx, connectorID, q, a.healthCheckErrorThreshold)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}

@@ -51,7 +51,7 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			p = connectors.NewMockManager(ctrl)
 			s = storage.NewMockStorage(ctrl)
-			act = activities.New(logger, nil, s, evts, p, delay)
+			act = activities.New(logger, nil, s, evts, p, delay, 0)
 			paymentID = models.PaymentID{
 				PaymentReference: models.PaymentReference{
 					Reference: "test",

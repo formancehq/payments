@@ -45,6 +45,7 @@ func NewModule(
 	outboxPollingInterval time.Duration,
 	outboxCleanupInterval time.Duration,
 	healthCheckPollingPeriod time.Duration,
+	healthCheckErrorThreshold int,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
@@ -70,7 +71,7 @@ func NewModule(
 			events *events.Events,
 			connectors connectors.Manager,
 		) activities.Activities {
-			return activities.New(logger, temporalClient, storage, events, connectors, temporalRateLimitingRetryDelay)
+			return activities.New(logger, temporalClient, storage, events, connectors, temporalRateLimitingRetryDelay, healthCheckErrorThreshold)
 		}),
 		fx.Provide(
 			fx.Annotate(func(

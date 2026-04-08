@@ -36,7 +36,7 @@ var _ = Describe("TemporalSchedulesUnpause", func() {
 		sh = activities.NewMockScheduleHandle(ctrl)
 		s = storage.NewMockStorage(ctrl)
 		evts = &events.Events{}
-		act = activities.New(logger, tc, s, evts, p, time.Millisecond)
+		act = activities.New(logger, tc, s, evts, p, time.Millisecond, 0)
 	})
 
 	It("unpauses a schedule and clears it in storage", func(ctx SpecContext) {

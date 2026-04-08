@@ -41,7 +41,7 @@ var _ = Describe("Send Events", func() {
 			s = storage.NewMockStorage(ctrl)
 			publisher = newTestPublisher()
 			evts = events.New(publisher, "")
-			act = activities.New(logger, nil, s, evts, p, delay)
+			act = activities.New(logger, nil, s, evts, p, delay, 0)
 
 			ik = "test"
 			connectorID = models.ConnectorID{

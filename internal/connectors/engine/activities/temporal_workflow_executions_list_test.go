@@ -41,7 +41,7 @@ var _ = Describe("Temporal Workflow Executions List", func() {
 		w = workflowservicemock.NewMockWorkflowServiceClient(legacyCtrl)
 		s = storage.NewMockStorage(ctrl)
 		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
-		act = activities.New(logger, t, s, evts, p, time.Millisecond)
+		act = activities.New(logger, t, s, evts, p, time.Millisecond, 0)
 	})
 
 	It("returns an error when list workflow execution call fails", func(ctx SpecContext) {

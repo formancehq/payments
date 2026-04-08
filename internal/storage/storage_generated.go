@@ -596,18 +596,18 @@ func (mr *MockStorageMockRecorder) InstancesGet(ctx, id, scheduleID, connectorID
 }
 
 // InstancesGetScheduleErrors mocks base method.
-func (m *MockStorage) InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+func (m *MockStorage) InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery, threshold int) (*bunpaginate.Cursor[models.Instance], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstancesGetScheduleErrors", ctx, connectorID, q)
+	ret := m.ctrl.Call(m, "InstancesGetScheduleErrors", ctx, connectorID, q, threshold)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Instance])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InstancesGetScheduleErrors indicates an expected call of InstancesGetScheduleErrors.
-func (mr *MockStorageMockRecorder) InstancesGetScheduleErrors(ctx, connectorID, q any) *gomock.Call {
+func (mr *MockStorageMockRecorder) InstancesGetScheduleErrors(ctx, connectorID, q, threshold any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesGetScheduleErrors", reflect.TypeOf((*MockStorage)(nil).InstancesGetScheduleErrors), ctx, connectorID, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesGetScheduleErrors", reflect.TypeOf((*MockStorage)(nil).InstancesGetScheduleErrors), ctx, connectorID, q, threshold)
 }
 
 // InstancesList mocks base method.

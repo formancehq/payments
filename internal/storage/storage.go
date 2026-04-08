@@ -180,7 +180,7 @@ type Storage interface {
 	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
-	InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
+	InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery, threshold int) (*bunpaginate.Cursor[models.Instance], error)
 
 	// Outbox Events
 	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error

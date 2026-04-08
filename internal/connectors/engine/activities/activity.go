@@ -20,7 +20,8 @@ type Activities struct {
 	events         *events.Events
 	temporalClient client.Client
 
-	rateLimitingRetryDelay time.Duration
+	rateLimitingRetryDelay    time.Duration
+	healthCheckErrorThreshold int
 
 	connectors connectors.Manager
 }
@@ -526,14 +527,16 @@ func New(
 	events *events.Events,
 	connectors connectors.Manager,
 	rateLimitingRetryDelay time.Duration,
+	healthCheckErrorThreshold int,
 ) Activities {
 	return Activities{
-		logger:                 logger,
-		temporalClient:         temporalClient,
-		storage:                storage,
-		connectors:             connectors,
-		events:                 events,
-		rateLimitingRetryDelay: rateLimitingRetryDelay,
+		logger:                    logger,
+		temporalClient:            temporalClient,
+		storage:                   storage,
+		connectors:                connectors,
+		events:                    events,
+		rateLimitingRetryDelay:    rateLimitingRetryDelay,
+		healthCheckErrorThreshold: healthCheckErrorThreshold,
 	}
 }
 

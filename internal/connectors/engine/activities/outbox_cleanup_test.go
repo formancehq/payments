@@ -26,7 +26,7 @@ var _ = Describe("OutboxDeleteOldProcessedEvents", func() {
 		ctrl := gomock.NewController(GinkgoT())
 		s = storage.NewMockStorage(ctrl)
 		evts = internalevents.New(nil, "http://localhost")
-		act = activities.New(logger, nil, s, evts, nil, 0)
+		act = activities.New(logger, nil, s, evts, nil, 0, 0)
 	})
 
 	Context("when deleting old processed outbox events", func() {

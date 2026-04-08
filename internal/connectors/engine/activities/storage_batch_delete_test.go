@@ -122,7 +122,7 @@ var _ = Describe("Batch Delete Activities", func() {
 				s = storage.NewMockStorage(ctrl)
 				publisher = newTestPublisher()
 				evts = events.New(publisher, "")
-				act = activities.New(logger, nil, s, evts, p, 0)
+				act = activities.New(logger, nil, s, evts, p, 0, 0)
 
 				connectorID = models.ConnectorID{Provider: "test", Reference: uuid.New()}
 

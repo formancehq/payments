@@ -37,7 +37,7 @@ var _ = Describe("TemporalSchedulesPause", func() {
 		sh = activities.NewMockScheduleHandle(ctrl)
 		s = storage.NewMockStorage(ctrl)
 		evts = &events.Events{}
-		act = activities.New(logger, tc, s, evts, p, time.Millisecond)
+		act = activities.New(logger, tc, s, evts, p, time.Millisecond, 0)
 	})
 
 	It("pauses a schedule and records it in storage", func(ctx SpecContext) {

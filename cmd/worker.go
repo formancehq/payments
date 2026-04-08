@@ -35,6 +35,7 @@ func newWorker() *cobra.Command {
 	cmd.Flags().Duration(OutboxCleanupIntervalFlag, 7*24*time.Hour, "Cleanup interval for notifications outbox")
 	cmd.Flags().Bool(SkipOutboxScheduleCreationFlag, false, "Skip creating the outbox event publisher schedule (e.g. for tests)")
 	cmd.Flags().Duration(ConnectorHealthCheckPollingPeriod, 12*time.Hour, "Polling period for connector health checks")
+	cmd.Flags().Int(ConnectorHealthCheckErrorThreshold, 10, "Number of consecutive errors required to pause a connector schedule")
 	return cmd
 }
 
@@ -78,6 +79,7 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	outboxPollingInterval, _ := cmd.Flags().GetDuration(OutboxPollingIntervalFlag)
 	outboxCleanupInterval, _ := cmd.Flags().GetDuration(OutboxCleanupIntervalFlag)
 	healthCheckPollingPeriod, _ := cmd.Flags().GetDuration(ConnectorHealthCheckPollingPeriod)
+	healthCheckErrorThreshold, _ := cmd.Flags().GetInt(ConnectorHealthCheckErrorThreshold)
 	return fx.Options(
 		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
 		worker.NewModule(
@@ -96,6 +98,7 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 			outboxPollingInterval,
 			outboxCleanupInterval,
 			healthCheckPollingPeriod,
+			healthCheckErrorThreshold,
 		),
 	), nil
 }
