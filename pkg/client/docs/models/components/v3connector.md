@@ -12,3 +12,4 @@
 | `Provider`                                             | *string*                                               | :heavy_check_mark:                                     | N/A                                                    |
 | `ScheduledForDeletion`                                 | *bool*                                                 | :heavy_check_mark:                                     | N/A                                                    |
 | `Config`                                               | [components.Config](../../models/components/config.md) | :heavy_check_mark:                                     | N/A                                                    |
+| `UpdatedAt`                                            | [*time.Time](https://pkg.go.dev/time#Time)             | :heavy_minus_sign:                                     | N/A                                                    |

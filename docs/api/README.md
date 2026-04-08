@@ -706,7 +706,8 @@ Accept: application/json
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
         "scheduledForDeletion": true,
-        "config": {}
+        "config": {},
+        "updatedAt": "2019-08-24T14:15:22Z"
       }
     ]
   }
@@ -4464,7 +4465,8 @@ None ( Scopes: payments:read )
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
         "scheduledForDeletion": true,
-        "config": {}
+        "config": {},
+        "updatedAt": "2019-08-24T14:15:22Z"
       }
     ]
   }
@@ -4605,7 +4607,8 @@ None ( Scopes: payments:read )
   "createdAt": "2019-08-24T14:15:22Z",
   "provider": "string",
   "scheduledForDeletion": true,
-  "config": {}
+  "config": {},
+  "updatedAt": "2019-08-24T14:15:22Z"
 }
 
 ```
@@ -4621,6 +4624,7 @@ None ( Scopes: payments:read )
 |provider|string|true|none|none|
 |scheduledForDeletion|boolean|true|none|none|
 |config|object|true|none|none|
+|updatedAt|string(date-time)¦null|false|none|none|
 
 <h2 id="tocS_V3ConnectorBase">V3ConnectorBase</h2>
 <!-- backwards compatibility -->

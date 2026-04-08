@@ -11,13 +11,14 @@ type Config struct {
 }
 
 type V3Connector struct {
-	ID                   string    `json:"id"`
-	Reference            string    `json:"reference"`
-	Name                 string    `json:"name"`
-	CreatedAt            time.Time `json:"createdAt"`
-	Provider             string    `json:"provider"`
-	ScheduledForDeletion bool      `json:"scheduledForDeletion"`
-	Config               Config    `json:"config"`
+	ID                   string     `json:"id"`
+	Reference            string     `json:"reference"`
+	Name                 string     `json:"name"`
+	CreatedAt            time.Time  `json:"createdAt"`
+	Provider             string     `json:"provider"`
+	ScheduledForDeletion bool       `json:"scheduledForDeletion"`
+	Config               Config     `json:"config"`
+	UpdatedAt            *time.Time `json:"updatedAt,omitempty"`
 }
 
 func (v V3Connector) MarshalJSON() ([]byte, error) {
@@ -78,4 +79,11 @@ func (o *V3Connector) GetConfig() Config {
 		return Config{}
 	}
 	return o.Config
+}
+
+func (o *V3Connector) GetUpdatedAt() *time.Time {
+	if o == nil {
+		return nil
+	}
+	return o.UpdatedAt
 }

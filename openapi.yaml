@@ -4590,6 +4590,10 @@ components:
           type: boolean
         config:
           type: object
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
     V3ConnectorBase:
       type: object
       properties:
