@@ -65,6 +65,10 @@ type Connector struct {
 
 	// Config given by the user. It will be encrypted when stored
 	Config json.RawMessage `json:"config"`
+
+	// UpdatedAt is set by a DB trigger whenever the connector row is updated.
+	// Nil means the connector has never been updated since initial install.
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
 }
 
 func (c *Connector) IdempotencyKey() string {
@@ -89,6 +93,7 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 		Provider             string          `json:"provider"`
 		Config               json.RawMessage `json:"config"`
 		ScheduledForDeletion bool            `json:"scheduledForDeletion"`
+		UpdatedAt            *time.Time      `json:"updatedAt,omitempty"`
 	}{
 		ID:                   c.ID.String(),
 		Reference:            c.ID.Reference.String(),
@@ -97,6 +102,7 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 		Provider:             ToV3Provider(c.Provider),
 		Config:               c.Config,
 		ScheduledForDeletion: c.ScheduledForDeletion,
+		UpdatedAt:            c.UpdatedAt,
 	})
 }
 
@@ -104,6 +110,7 @@ func (c *Connector) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		Config               json.RawMessage `json:"config"`
 		ScheduledForDeletion bool            `json:"scheduledForDeletion"`
+		UpdatedAt            *time.Time      `json:"updatedAt,omitempty"`
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
@@ -120,6 +127,7 @@ func (c *Connector) UnmarshalJSON(data []byte) error {
 	c.Provider = base.Provider
 	c.Config = aux.Config
 	c.ScheduledForDeletion = aux.ScheduledForDeletion
+	c.UpdatedAt = aux.UpdatedAt
 
 	return nil
 }

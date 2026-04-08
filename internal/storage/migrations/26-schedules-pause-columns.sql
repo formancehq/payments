@@ -2,6 +2,24 @@ ALTER TABLE schedules
     ADD COLUMN IF NOT EXISTS paused_at timestamp without time zone,
     ADD COLUMN IF NOT EXISTS paused_reason text;
 
+ALTER TABLE connectors
+    ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone;
+
+CREATE OR REPLACE FUNCTION set_connectors_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS connectors_updated_at_trigger ON connectors;
+
+CREATE TRIGGER connectors_updated_at_trigger
+    BEFORE UPDATE ON connectors
+    FOR EACH ROW
+    EXECUTE FUNCTION set_connectors_updated_at();
+
 CREATE INDEX CONCURRENTLY IF NOT EXISTS schedules_connector_id_paused_at ON schedules (connector_id, paused_at);
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS workflows_instances_error ON workflows_instances (error);

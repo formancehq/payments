@@ -403,16 +403,36 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 	)
 }
 
-// splitSQLStatements splits a SQL string on semicolons and returns each
-// non-empty trimmed statement. This allows CONCURRENT index creation to run
-// in its own ExecContext call, separate from any preceding DDL statements.
-func splitSQLStatements(sql string) []string {
-	parts := strings.Split(sql, ";")
-	stmts := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if s := strings.TrimSpace(p); s != "" {
-			stmts = append(stmts, s)
+// splitSQLStatements splits a SQL string into individual statements on
+// semicolons, skipping semicolons inside $$ ... $$ dollar-quoted blocks
+// (used by PL/pgSQL function bodies). Each returned statement is trimmed.
+// This allows CONCURRENT index creation to run in its own ExecContext call,
+// separate from any preceding DDL statements.
+func splitSQLStatements(input string) []string {
+	var stmts []string
+	var current strings.Builder
+	inDollarQuote := false
+	n := len(input)
+
+	for i := 0; i < n; i++ {
+		if i+1 < n && input[i] == '$' && input[i+1] == '$' {
+			inDollarQuote = !inDollarQuote
+			current.WriteByte('$')
+			current.WriteByte('$')
+			i++ // skip second '$'
+			continue
 		}
+		if !inDollarQuote && input[i] == ';' {
+			if stmt := strings.TrimSpace(current.String()); stmt != "" {
+				stmts = append(stmts, stmt)
+			}
+			current.Reset()
+			continue
+		}
+		current.WriteByte(input[i])
+	}
+	if stmt := strings.TrimSpace(current.String()); stmt != "" {
+		stmts = append(stmts, stmt)
 	}
 	return stmts
 }

@@ -32,6 +32,11 @@ func (w Workflow) runConnectorHealthCheck(ctx workflow.Context, req ConnectorHea
 }
 
 func (w Workflow) connectorHealthCheck(ctx workflow.Context, req ConnectorHealthCheck) error {
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), req.ConnectorID)
+	if err != nil {
+		return err
+	}
+
 	cursor := req.NextCursor
 
 	for {
@@ -42,6 +47,11 @@ func (w Workflow) connectorHealthCheck(ctx workflow.Context, req ConnectorHealth
 
 		var toPause []models.Instance
 		for _, instance := range result.Data {
+			// skip instances that predate the last connector config update — the
+			// config change may have resolved the issue
+			if connector.UpdatedAt != nil && instance.CreatedAt.Before(*connector.UpdatedAt) {
+				continue
+			}
 			// we only want to pause schedules related to fetching connector data
 			for _, capability := range fetchCapabilities {
 				if strings.Contains(instance.ScheduleID, capability) {
