@@ -356,6 +356,96 @@ func TestSchedulesList(t *testing.T) {
 	})
 }
 
+func TestSchedulesPause(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertSchedule(t, ctx, store, defaultSchedules[0])
+
+	t.Run("pause unknown schedule is no-op", func(t *testing.T) {
+		err := store.SchedulesPause(ctx, "unknown", now.UTC().Time, "reason")
+		require.NoError(t, err)
+
+		// Existing schedule unaffected
+		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.NoError(t, err)
+		require.Nil(t, actual.PausedAt)
+		require.Nil(t, actual.PausedReason)
+	})
+
+	t.Run("pause schedule sets paused_at and paused_reason", func(t *testing.T) {
+		pausedAt := now.UTC().Time
+		reason := "maintenance"
+
+		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, pausedAt, reason))
+
+		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.NoError(t, err)
+		require.NotNil(t, actual.PausedAt)
+		require.Equal(t, pausedAt.UTC(), actual.PausedAt.UTC())
+		require.NotNil(t, actual.PausedReason)
+		require.Equal(t, reason, *actual.PausedReason)
+	})
+
+	t.Run("pause already paused schedule updates values", func(t *testing.T) {
+		newPausedAt := now.Add(time.Minute).UTC().Time
+		newReason := "extended maintenance"
+
+		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, newPausedAt, newReason))
+
+		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.NoError(t, err)
+		require.NotNil(t, actual.PausedAt)
+		require.Equal(t, newPausedAt.UTC(), actual.PausedAt.UTC())
+		require.NotNil(t, actual.PausedReason)
+		require.Equal(t, newReason, *actual.PausedReason)
+	})
+}
+
+func TestSchedulesUnpause(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertSchedule(t, ctx, store, defaultSchedules[0])
+
+	t.Run("unpause unknown schedule is no-op", func(t *testing.T) {
+		require.NoError(t, store.SchedulesUnpause(ctx, "unknown"))
+	})
+
+	t.Run("unpause schedule that is not paused is no-op", func(t *testing.T) {
+		require.NoError(t, store.SchedulesUnpause(ctx, defaultSchedules[0].ID))
+
+		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.NoError(t, err)
+		require.Nil(t, actual.PausedAt)
+		require.Nil(t, actual.PausedReason)
+	})
+
+	t.Run("unpause paused schedule clears paused_at and paused_reason", func(t *testing.T) {
+		pausedAt := now.UTC().Time
+		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, pausedAt, "maintenance"))
+
+		paused, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.NoError(t, err)
+		require.NotNil(t, paused.PausedAt)
+
+		require.NoError(t, store.SchedulesUnpause(ctx, defaultSchedules[0].ID))
+
+		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.NoError(t, err)
+		require.Nil(t, actual.PausedAt)
+		require.Nil(t, actual.PausedReason)
+	})
+}
+
 func TestSchedulesDeleteFromConnectorIDBatch(t *testing.T) {
 	t.Parallel()
 
