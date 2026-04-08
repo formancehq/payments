@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -11,10 +10,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const (
-	RunScheduleConnectorHealthCheck = "ScheduleConnectorHealthCheck"
-	healthCheckPollingPeriod        = 12 * time.Hour
-)
+const RunScheduleConnectorHealthCheck = "ScheduleConnectorHealthCheck"
 
 type ScheduleConnectorHealthCheck struct {
 	ConnectorID models.ConnectorID
@@ -39,7 +35,7 @@ func (w Workflow) runScheduleConnectorHealthCheck(ctx workflow.Context, req Sche
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
 			Interval: client.ScheduleIntervalSpec{
-				Every: healthCheckPollingPeriod,
+				Every: w.healthCheckPollingPeriod,
 			},
 			Action: client.ScheduleWorkflowAction{
 				ID:        scheduleID,

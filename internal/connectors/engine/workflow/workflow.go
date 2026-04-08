@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	temporalworker "github.com/formancehq/go-libs/v3/temporal"
@@ -33,20 +34,22 @@ type Workflow struct {
 
 	connectors connectors.Manager
 
-	stackPublicURL string
-	stack          string
+	stackPublicURL           string
+	stack                    string
+	healthCheckPollingPeriod time.Duration
 
 	logger logging.Logger
 }
 
-func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger, healthCheckPollingPeriod time.Duration) Workflow {
 	return Workflow{
-		temporalClient:    temporalClient,
-		temporalNamespace: temporalNamespace,
-		connectors:        connectors,
-		stack:             stack,
-		stackPublicURL:    stackPublicURL,
-		logger:            logger,
+		temporalClient:           temporalClient,
+		temporalNamespace:        temporalNamespace,
+		connectors:               connectors,
+		stack:                    stack,
+		stackPublicURL:           stackPublicURL,
+		healthCheckPollingPeriod: healthCheckPollingPeriod,
+		logger:                   logger,
 	}
 }
 

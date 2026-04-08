@@ -44,6 +44,7 @@ func NewModule(
 	pollingPeriodMinimum time.Duration,
 	outboxPollingInterval time.Duration,
 	outboxCleanupInterval time.Duration,
+	healthCheckPollingPeriod time.Duration,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
@@ -60,7 +61,7 @@ func NewModule(
 			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum)
 		}),
 		fx.Provide(func(temporalClient client.Client, manager connectors.Manager, logger logging.Logger) workflow.Workflow {
-			return workflow.New(temporalClient, temporalNamespace, manager, stack, stackURL, logger)
+			return workflow.New(temporalClient, temporalNamespace, manager, stack, stackURL, logger, healthCheckPollingPeriod)
 		}),
 		fx.Provide(func(
 			logger logging.Logger,

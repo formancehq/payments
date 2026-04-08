@@ -175,3 +175,43 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_ErrorAlreadyStarted() {
 	// without error
 	s.NoError(err)
 }
+
+func (s *UnitTestSuite) Test_InstallConnector_ScheduleHealthCheck_CompletionErrorIgnored() {
+	// Only start errors are observable via GetChildWorkflowExecution; completion
+	// errors are fire-and-forget so installation must still succeed.
+	s.env.OnActivity(activities.PluginInstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(&models.InstallResponse{
+		Workflow: []models.ConnectorTaskTree{},
+	}, nil)
+	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunScheduleConnectorHealthCheck, mock.Anything, mock.Anything).Once().Return(
+		temporal.NewNonRetryableApplicationError("health check schedule error", "SCHEDULE", errors.New("health check schedule error")),
+	)
+
+	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
+		ConnectorID: s.connectorID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_InstallConnector_ScheduleHealthCheck_AlreadyStarted() {
+	s.env.OnActivity(activities.PluginInstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(&models.InstallResponse{
+		Workflow: []models.ConnectorTaskTree{},
+	}, nil)
+	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunScheduleConnectorHealthCheck, mock.Anything, mock.Anything).Once().Return(
+		serviceerror.NewWorkflowExecutionAlreadyStarted("test", "test", "test"),
+	)
+
+	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
+		ConnectorID: s.connectorID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}

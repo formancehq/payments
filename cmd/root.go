@@ -21,6 +21,7 @@ const (
 	StackFlag                                    = "stack"
 	ConnectorPollingPeriodDefault                = "connector-polling-period-default"
 	ConnectorPollingPeriodMinimum                = "connector-polling-period-minimum"
+	ConnectorHealthCheckPollingPeriod            = "connector-health-check-polling-period"
 	stackPublicURLFlag                           = "stack-public-url"
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 	temporalMaxConcurrentActivityTaskPollersFlag = "temporal-max-concurrent-activity-task-pollers"
