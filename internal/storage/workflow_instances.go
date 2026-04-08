@@ -211,7 +211,8 @@ func toInstanceModel(from instance) models.Instance {
 	}
 }
 
-func (s *store) InstancesGetErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+// Returns the latest workflow instance for schedules which in their last 5 executions returned exclusively errors
+func (s *store) InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
@@ -219,6 +220,20 @@ func (s *store) InstancesGetErrors(ctx context.Context, connectorID models.Conne
 				DistinctOn("schedule_id").
 				Where("connector_id = ?", connectorID).
 				Where("error IS NOT NULL").
+				Where(`schedule_id IN (
+					SELECT schedule_id
+					FROM (
+						SELECT
+							schedule_id,
+							ROW_NUMBER() OVER (PARTITION BY schedule_id ORDER BY created_at DESC) AS rn,
+							error
+						FROM workflows_instances
+						WHERE connector_id = ?
+					) ranked
+					WHERE rn <= 5
+					GROUP BY schedule_id
+					HAVING COUNT(*) FILTER (WHERE error IS NULL) = 0
+				)`, connectorID).
 				Order("schedule_id ASC", "created_at DESC")
 		},
 	)

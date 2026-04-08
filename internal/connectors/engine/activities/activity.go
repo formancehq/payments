@@ -260,8 +260,8 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageInstancesDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageInstancesGetErrors",
-			Func: a.StorageInstancesGetErrors,
+			Name: "StorageInstancesGetScheduleErrors",
+			Func: a.StorageInstancesGetScheduleErrors,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageBankAccountsDeleteRelatedAccounts",

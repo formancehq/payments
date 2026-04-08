@@ -9,7 +9,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StorageInstancesGetErrors(ctx context.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
+func (a Activities) StorageInstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
 	var q storage.ListInstancesQuery
 	if cursor != nil && *cursor != "" {
 		if err := bunpaginate.UnmarshalCursor(*cursor, &q); err != nil {
@@ -19,18 +19,18 @@ func (a Activities) StorageInstancesGetErrors(ctx context.Context, connectorID m
 		q = storage.NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(storage.InstanceQuery{}))
 	}
 
-	result, err := a.storage.InstancesGetErrors(ctx, connectorID, q)
+	result, err := a.storage.InstancesGetScheduleErrors(ctx, connectorID, q)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}
 	return result, nil
 }
 
-var StorageInstancesGetErrorsActivity = Activities{}.StorageInstancesGetErrors
+var StorageInstancesGetScheduleErrorsActivity = Activities{}.StorageInstancesGetScheduleErrors
 
-func StorageInstancesGetErrors(ctx workflow.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
+func StorageInstancesGetScheduleErrors(ctx workflow.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
 	var result bunpaginate.Cursor[models.Instance]
-	if err := executeActivity(ctx, StorageInstancesGetErrorsActivity, &result, connectorID, cursor); err != nil {
+	if err := executeActivity(ctx, StorageInstancesGetScheduleErrorsActivity, &result, connectorID, cursor); err != nil {
 		return nil, err
 	}
 	return &result, nil

@@ -14,7 +14,7 @@ import (
 )
 
 func (s *UnitTestSuite) Test_ConnectorHealthCheck_NoErrors_Success() {
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: []models.Instance{}}, nil)
 
 	s.env.ExecuteWorkflow(RunConnectorHealthCheck, ConnectorHealthCheck{
@@ -31,7 +31,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_PausesFetchSchedules_Success()
 		{ID: "wf-1", ScheduleID: scheduleID, ConnectorID: s.connectorID, Error: pointer.For("fetch error")},
 	}
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: instances}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesPauseActivity, mock.Anything, mock.Anything).
 		Once().Return(nil)
@@ -52,7 +52,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_AllCapabilities_Success() {
 		{ID: "wf-4", ScheduleID: fmt.Sprintf("test-%s-FETCH_BALANCES", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
 	}
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: instances}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesPauseActivity, mock.Anything, mock.Anything).
 		Once().Return(nil)
@@ -72,7 +72,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_NonFetchSchedulesFiltered_Succ
 		{ID: "wf-2", ScheduleID: fmt.Sprintf("test-%s-CREATE_TRANSFER", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
 	}
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: instances}, nil)
 	// TemporalSchedulesPauseActivity must NOT be called.
 
@@ -91,7 +91,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_PartialFilter_Success() {
 		{ID: "wf-2", ScheduleID: fmt.Sprintf("test-%s-CREATE_PAYOUT", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
 	}
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: instances}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesPauseActivity, mock.Anything, mock.Anything).
 		Once().Return(nil)
@@ -115,7 +115,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_HasMore_Success() {
 		},
 	)
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{
 			HasMore: true,
 			Next:    nextCursor,
@@ -126,7 +126,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_HasMore_Success() {
 	s.env.OnActivity(activities.TemporalSchedulesPauseActivity, mock.Anything, mock.Anything).
 		Once().Return(nil)
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: []models.Instance{}}, nil)
 
 	s.env.ExecuteWorkflow(RunConnectorHealthCheck, ConnectorHealthCheck{
@@ -137,8 +137,8 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_HasMore_Success() {
 	s.NoError(s.env.GetWorkflowError())
 }
 
-func (s *UnitTestSuite) Test_ConnectorHealthCheck_StorageInstancesGetErrors_Error() {
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+func (s *UnitTestSuite) Test_ConnectorHealthCheck_StorageInstancesGetScheduleErrors_Error() {
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(
 			nil,
 			temporal.NewNonRetryableApplicationError("storage error", "storage error", errors.New("storage error")),
@@ -157,7 +157,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_StorageInstancesGetErrors_Erro
 func (s *UnitTestSuite) Test_ConnectorHealthCheck_TemporalSchedulesPause_Error() {
 	scheduleID := fmt.Sprintf("test-%s-FETCH_BALANCES", s.connectorID.String())
 
-	s.env.OnActivity(activities.StorageInstancesGetErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
+	s.env.OnActivity(activities.StorageInstancesGetScheduleErrorsActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{
 			HasMore: false,
 			Data: []models.Instance{
