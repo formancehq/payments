@@ -1091,7 +1091,9 @@ Accept: application/json
       {
         "id": "string",
         "connectorID": "string",
-        "createdAt": "2019-08-24T14:15:22Z"
+        "createdAt": "2019-08-24T14:15:22Z",
+        "pausedAt": "2019-08-24T14:15:22Z",
+        "pausedReason": "string"
       }
     ]
   }
@@ -1141,7 +1143,9 @@ Accept: application/json
   "data": {
     "id": "string",
     "connectorID": "string",
-    "createdAt": "2019-08-24T14:15:22Z"
+    "createdAt": "2019-08-24T14:15:22Z",
+    "pausedAt": "2019-08-24T14:15:22Z",
+    "pausedReason": "string"
   }
 }
 ```
@@ -4497,7 +4501,9 @@ None ( Scopes: payments:read )
       {
         "id": "string",
         "connectorID": "string",
-        "createdAt": "2019-08-24T14:15:22Z"
+        "createdAt": "2019-08-24T14:15:22Z",
+        "pausedAt": "2019-08-24T14:15:22Z",
+        "pausedReason": "string"
       }
     ]
   }
@@ -4528,7 +4534,9 @@ None ( Scopes: payments:read )
   "data": {
     "id": "string",
     "connectorID": "string",
-    "createdAt": "2019-08-24T14:15:22Z"
+    "createdAt": "2019-08-24T14:15:22Z",
+    "pausedAt": "2019-08-24T14:15:22Z",
+    "pausedReason": "string"
   }
 }
 
@@ -4653,7 +4661,9 @@ None ( Scopes: payments:read )
 {
   "id": "string",
   "connectorID": "string",
-  "createdAt": "2019-08-24T14:15:22Z"
+  "createdAt": "2019-08-24T14:15:22Z",
+  "pausedAt": "2019-08-24T14:15:22Z",
+  "pausedReason": "string"
 }
 
 ```
@@ -4665,6 +4675,8 @@ None ( Scopes: payments:read )
 |id|string|true|none|none|
 |connectorID|string(byte)|true|none|none|
 |createdAt|string(date-time)|true|none|none|
+|pausedAt|string(date-time)¦null|false|none|none|
+|pausedReason|string¦null|false|none|none|
 
 <h2 id="tocS_V3Instance">V3Instance</h2>
 <!-- backwards compatibility -->

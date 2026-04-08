@@ -1640,20 +1640,6 @@ func (mr *MockStorageMockRecorder) PoolsUpsert(ctx, pool any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsUpsert", reflect.TypeOf((*MockStorage)(nil).PoolsUpsert), ctx, pool)
 }
 
-// SchedulesPause mocks base method.
-func (m *MockStorage) SchedulesPause(ctx context.Context, id string, pausedAt time.Time, reason string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SchedulesPause", ctx, id, pausedAt, reason)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SchedulesPause indicates an expected call of SchedulesPause.
-func (mr *MockStorageMockRecorder) SchedulesPause(ctx, id, pausedAt, reason any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesPause", reflect.TypeOf((*MockStorage)(nil).SchedulesPause), ctx, id, pausedAt, reason)
-}
-
 // SchedulesDelete mocks base method.
 func (m *MockStorage) SchedulesDelete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -1725,6 +1711,20 @@ func (m *MockStorage) SchedulesList(ctx context.Context, q ListSchedulesQuery) (
 func (mr *MockStorageMockRecorder) SchedulesList(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesList", reflect.TypeOf((*MockStorage)(nil).SchedulesList), ctx, q)
+}
+
+// SchedulesPause mocks base method.
+func (m *MockStorage) SchedulesPause(ctx context.Context, id string, pausedAt time.Time, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesPause", ctx, id, pausedAt, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SchedulesPause indicates an expected call of SchedulesPause.
+func (mr *MockStorageMockRecorder) SchedulesPause(ctx, id, pausedAt, reason any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesPause", reflect.TypeOf((*MockStorage)(nil).SchedulesPause), ctx, id, pausedAt, reason)
 }
 
 // SchedulesUpsert mocks base method.

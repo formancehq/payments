@@ -8,9 +8,11 @@ import (
 )
 
 type V3Schedule struct {
-	ID          string    `json:"id"`
-	ConnectorID string    `json:"connectorID"`
-	CreatedAt   time.Time `json:"createdAt"`
+	ID           string     `json:"id"`
+	ConnectorID  string     `json:"connectorID"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	PausedAt     *time.Time `json:"pausedAt,omitempty"`
+	PausedReason *string    `json:"pausedReason,omitempty"`
 }
 
 func (v V3Schedule) MarshalJSON() ([]byte, error) {
@@ -43,4 +45,18 @@ func (o *V3Schedule) GetCreatedAt() time.Time {
 		return time.Time{}
 	}
 	return o.CreatedAt
+}
+
+func (o *V3Schedule) GetPausedAt() *time.Time {
+	if o == nil {
+		return nil
+	}
+	return o.PausedAt
+}
+
+func (o *V3Schedule) GetPausedReason() *string {
+	if o == nil {
+		return nil
+	}
+	return o.PausedReason
 }

@@ -4619,6 +4619,13 @@ components:
         createdAt:
           type: string
           format: date-time
+        pausedAt:
+          type: string
+          format: date-time
+          nullable: true
+        pausedReason:
+          type: string
+          nullable: true
     V3Instance:
       type: object
       required:

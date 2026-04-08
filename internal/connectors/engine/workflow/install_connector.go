@@ -136,7 +136,7 @@ func (w Workflow) installConnector(
 				},
 			}),
 			RunScheduleConnectorHealthCheck,
-			ScheduleConnectorHealthCheck{ConnectorID: installConnector.ConnectorID},
+			ScheduleConnectorHealthCheck(installConnector),
 		).GetChildWorkflowExecution().Get(ctx, nil)
 	})
 
