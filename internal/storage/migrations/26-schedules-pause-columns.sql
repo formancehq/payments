@@ -5,6 +5,8 @@ ALTER TABLE schedules
 ALTER TABLE connectors
     ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone;
 
+UPDATE connectors SET updated_at = created_at WHERE updated_at IS NULL;
+
 CREATE OR REPLACE FUNCTION set_connectors_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
