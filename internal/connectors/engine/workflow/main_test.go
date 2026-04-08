@@ -2,6 +2,8 @@ package workflow
 
 import (
 	"encoding/json"
+	"io"
+	"log/slog"
 	"math/big"
 	"testing"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
+	temporallog "go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/testsuite"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 )
@@ -52,6 +55,7 @@ type UnitTestSuite struct {
 }
 
 func (s *UnitTestSuite) SetupTest() {
+	s.SetLogger(temporallog.NewStructuredLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
 	s.env = s.NewTestWorkflowEnvironment()
 
 	for _, def := range s.w.DefinitionSet() {
