@@ -63,7 +63,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_NonFetchSchedule_Skippe
 
 func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_PausedSchedule_UnpausedAndUpdated() {
 	scheduleID := fmt.Sprintf("test-%s-FETCH_PAYMENTS", s.connectorID.String())
-	pausedAt := s.env.Now()
+	pausedAt := s.env.Now().UTC()
 	schedule := models.Schedule{
 		ID:          scheduleID,
 		ConnectorID: s.connectorID,
@@ -87,7 +87,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_PausedSchedule_Unpaused
 }
 
 func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_MixedPaused_OnlyPausedUnpaused() {
-	pausedAt := s.env.Now()
+	pausedAt := s.env.Now().UTC()
 	pausedID := fmt.Sprintf("test-%s-FETCH_ACCOUNTS", s.connectorID.String())
 	activeID := fmt.Sprintf("test-%s-FETCH_PAYMENTS", s.connectorID.String())
 	paused := models.Schedule{ID: pausedID, ConnectorID: s.connectorID, PausedAt: pointer.For(pausedAt)}
