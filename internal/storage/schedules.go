@@ -80,6 +80,18 @@ func (s *store) SchedulesPause(ctx context.Context, id string, pausedAt gotime.T
 	return e("failed to pause schedule", err)
 }
 
+func (s *store) SchedulesUnpause(ctx context.Context, id string) error {
+	_, err := s.db.NewUpdate().
+		Model((*schedule)(nil)).
+		Set("paused_at = NULL").
+		Set("paused_reason = NULL").
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to unpause schedule", err)
+}
+
+
 func (s *store) SchedulesDelete(ctx context.Context, id string) error {
 	_, err := s.db.NewDelete().
 		Model((*schedule)(nil)).

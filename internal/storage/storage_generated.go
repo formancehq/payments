@@ -1727,6 +1727,21 @@ func (mr *MockStorageMockRecorder) SchedulesPause(ctx, id, pausedAt, reason any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesPause", reflect.TypeOf((*MockStorage)(nil).SchedulesPause), ctx, id, pausedAt, reason)
 }
 
+// SchedulesUnpause mocks base method.
+func (m *MockStorage) SchedulesUnpause(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesUnpause", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SchedulesUnpause indicates an expected call of SchedulesUnpause.
+func (mr *MockStorageMockRecorder) SchedulesUnpause(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesUnpause", reflect.TypeOf((*MockStorage)(nil).SchedulesUnpause), ctx, id)
+}
+
+
 // SchedulesUpsert mocks base method.
 func (m *MockStorage) SchedulesUpsert(ctx context.Context, schedule models.Schedule) error {
 	m.ctrl.T.Helper()

@@ -440,6 +440,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.TemporalSchedulesPause,
 		}).
 		Append(temporalworker.Definition{
+			Name: "TemporalSchedulesUnpause",
+			Func: a.TemporalSchedulesUnpause,
+		}).
+		Append(temporalworker.Definition{
 			Name: "TemporalWorkflowTerminate",
 			Func: a.TemporalWorkflowTerminate,
 		}).

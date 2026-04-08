@@ -41,6 +41,19 @@ func (w Workflow) runUpdateSchedulePollingPeriod(
 			return err
 		}
 
+		var paused []models.Schedule
+		for _, s := range schedules.Data {
+			if s.PausedAt != nil {
+				paused = append(paused, s)
+			}
+		}
+
+		if len(paused) > 0 {
+			if err := activities.TemporalSchedulesUnpause(infiniteRetryContext(ctx), paused); err != nil {
+				return err
+			}
+		}
+
 		wg := workflow.NewWaitGroup(ctx)
 
 		for _, schedule := range schedules.Data {

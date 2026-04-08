@@ -150,6 +150,7 @@ type Storage interface {
 	SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	SchedulesDelete(ctx context.Context, id string) error
 	SchedulesPause(ctx context.Context, id string, pausedAt time.Time, reason string) error
+	SchedulesUnpause(ctx context.Context, id string) error
 
 	// State
 	StatesUpsert(ctx context.Context, state models.State) error
