@@ -185,6 +185,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runConnectorHealthCheck,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunScheduleConnectorHealthCheck,
+			Func: w.runScheduleConnectorHealthCheck,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunNextTasks,   //nolint:staticcheck
 			Func: w.runNextTasks, //nolint:staticcheck
 		}).

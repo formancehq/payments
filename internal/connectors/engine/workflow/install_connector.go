@@ -122,6 +122,24 @@ func (w Workflow) installConnector(
 		}
 	}
 
+	// Launch the health check schedule in the background without blocking
+	// installation from returning.
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		_ = workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
+				WorkflowID:            fmt.Sprintf("schedule-health-check-%s-%s", w.stack, installConnector.ConnectorID.String()),
+				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+				TaskQueue:             w.getDefaultTaskQueue(),
+				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			}),
+			RunScheduleConnectorHealthCheck,
+			ScheduleConnectorHealthCheck{ConnectorID: installConnector.ConnectorID},
+		).GetChildWorkflowExecution().Get(ctx, nil)
+	})
+
 	return nil
 }
 

@@ -21,6 +21,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunScheduleConnectorHealthCheck, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -63,6 +64,7 @@ func (s *UnitTestSuite) Test_InstallConnector_NoConfigs_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunScheduleConnectorHealthCheck, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -140,6 +142,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_Error() {
 	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("error-test")),
 	)
+	s.env.OnWorkflow(RunScheduleConnectorHealthCheck, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
@@ -160,6 +163,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_ErrorAlreadyStarted() {
 	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
 		serviceerror.NewWorkflowExecutionAlreadyStarted("test", "test", "test"),
 	)
+	s.env.OnWorkflow(RunScheduleConnectorHealthCheck, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
 		ConnectorID: s.connectorID,
