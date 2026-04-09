@@ -49,7 +49,7 @@ func (w Workflow) connectorHealthCheck(ctx workflow.Context, req ConnectorHealth
 		for _, instance := range result.Data {
 			// skip instances that predate the last connector config update — the
 			// config change may have resolved the issue
-			if connector.UpdatedAt != nil && instance.CreatedAt.Before(*connector.UpdatedAt) {
+			if connector.UpdatedAt != nil && !instance.CreatedAt.After(*connector.UpdatedAt) {
 				continue
 			}
 			// we only want to pause schedules related to fetching connector data

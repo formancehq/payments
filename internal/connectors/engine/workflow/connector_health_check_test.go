@@ -291,6 +291,28 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_UpdatedAt_InstanceBeforeUpdate
 	s.NoError(s.env.GetWorkflowError())
 }
 
+func (s *UnitTestSuite) Test_ConnectorHealthCheck_UpdatedAt_InstanceEqualToUpdate_ExcludedFromPause() {
+	// instance.CreatedAt == connector.UpdatedAt → skip; TemporalSchedulesPause must NOT be called
+	scheduleID := fmt.Sprintf("test-%s-FETCH_ACCOUNTS", s.connectorID.String())
+	now := s.env.Now()
+	instance := models.Instance{
+		ID: "wf-1", ScheduleID: scheduleID, ConnectorID: s.connectorID,
+		CreatedAt: now, // equal to the config update timestamp
+		Error:     pointer.For("err"),
+	}
+
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).
+		Once().Return(s.connectorWithUpdatedAt(&now), nil)
+	s.env.OnActivity(activities.StorageInstancesListSchedulesAboveErrorThresholdActivity, mock.Anything, s.connectorID, mock.Anything).
+		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: []models.Instance{instance}}, nil)
+	// TemporalSchedulesPauseActivity must NOT be called.
+
+	s.env.ExecuteWorkflow(RunConnectorHealthCheck, ConnectorHealthCheck{ConnectorID: s.connectorID})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
 func (s *UnitTestSuite) Test_ConnectorHealthCheck_UpdatedAt_MixedInstances_OnlyNewerOnes() {
 	// One instance before the config update (excluded), one after (included).
 	scheduleID := fmt.Sprintf("test-%s-FETCH_BALANCES", s.connectorID.String())
