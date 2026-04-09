@@ -221,7 +221,6 @@ func (s *store) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, c
 				DistinctOn("schedule_id").
 				Where("connector_id = ?", connectorID).
 				Where("terminated = TRUE").
-				Where("error IS NOT NULL").
 				Where(`schedule_id IN (
 					SELECT schedule_id
 					FROM (
