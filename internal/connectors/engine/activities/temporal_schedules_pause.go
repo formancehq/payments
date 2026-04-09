@@ -24,7 +24,7 @@ func (a Activities) TemporalSchedulesPause(ctx context.Context, instances []mode
 			return err
 		}
 
-		if err := a.storage.SchedulesPause(ctx, instance.ScheduleID, now, reason); err != nil {
+		if err := a.storage.SchedulesPause(ctx, instance.ScheduleID, instance.ConnectorID, now, reason); err != nil {
 			return err
 		}
 	}

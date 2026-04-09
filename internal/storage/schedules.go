@@ -69,23 +69,23 @@ func (s *store) SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connect
 	return int(rowsAffected), nil
 }
 
-func (s *store) SchedulesPause(ctx context.Context, id string, pausedAt gotime.Time, reason string) error {
+func (s *store) SchedulesPause(ctx context.Context, id string, connectorID models.ConnectorID, pausedAt gotime.Time, reason string) error {
 	_, err := s.db.NewUpdate().
 		Model((*schedule)(nil)).
 		Set("paused_at = ?", pausedAt).
 		Set("paused_reason = ?", reason).
-		Where("id = ?", id).
+		Where("id = ? AND connector_id = ?", id, connectorID).
 		Exec(ctx)
 
 	return e("failed to pause schedule", err)
 }
 
-func (s *store) SchedulesUnpause(ctx context.Context, id string) error {
+func (s *store) SchedulesUnpause(ctx context.Context, id string, connectorID models.ConnectorID) error {
 	_, err := s.db.NewUpdate().
 		Model((*schedule)(nil)).
 		Set("paused_at = NULL").
 		Set("paused_reason = NULL").
-		Where("id = ?", id).
+		Where("id = ? AND connector_id = ?", id, connectorID).
 		Exec(ctx)
 
 	return e("failed to unpause schedule", err)

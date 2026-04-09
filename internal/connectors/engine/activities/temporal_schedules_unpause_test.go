@@ -48,7 +48,7 @@ var _ = Describe("TemporalSchedulesUnpause", func() {
 		tc.EXPECT().ScheduleClient().Return(sc)
 		sc.EXPECT().GetHandle(ctx, schedule.ID).Return(sh)
 		sh.EXPECT().Unpause(ctx, client.ScheduleUnpauseOptions{}).Return(nil)
-		s.EXPECT().SchedulesUnpause(ctx, schedule.ID).Return(nil)
+		s.EXPECT().SchedulesUnpause(ctx, schedule.ID, schedule.ConnectorID).Return(nil)
 
 		err := act.TemporalSchedulesUnpause(ctx, []models.Schedule{schedule})
 		Expect(err).To(BeNil())
@@ -68,8 +68,8 @@ var _ = Describe("TemporalSchedulesUnpause", func() {
 		sc.EXPECT().GetHandle(ctx, schedules[1].ID).Return(sh2)
 		sh.EXPECT().Unpause(ctx, client.ScheduleUnpauseOptions{}).Return(nil)
 		sh2.EXPECT().Unpause(ctx, client.ScheduleUnpauseOptions{}).Return(nil)
-		s.EXPECT().SchedulesUnpause(ctx, schedules[0].ID).Return(nil)
-		s.EXPECT().SchedulesUnpause(ctx, schedules[1].ID).Return(nil)
+		s.EXPECT().SchedulesUnpause(ctx, schedules[0].ID, schedules[0].ConnectorID).Return(nil)
+		s.EXPECT().SchedulesUnpause(ctx, schedules[1].ID, schedules[1].ConnectorID).Return(nil)
 
 		err := act.TemporalSchedulesUnpause(ctx, schedules)
 		Expect(err).To(BeNil())
@@ -99,7 +99,7 @@ var _ = Describe("TemporalSchedulesUnpause", func() {
 		tc.EXPECT().ScheduleClient().Return(sc)
 		sc.EXPECT().GetHandle(ctx, schedule.ID).Return(sh)
 		sh.EXPECT().Unpause(ctx, client.ScheduleUnpauseOptions{}).Return(nil)
-		s.EXPECT().SchedulesUnpause(ctx, schedule.ID).Return(expectedErr)
+		s.EXPECT().SchedulesUnpause(ctx, schedule.ID, schedule.ConnectorID).Return(expectedErr)
 
 		err := act.TemporalSchedulesUnpause(ctx, []models.Schedule{schedule})
 		Expect(err).To(MatchError(expectedErr))

@@ -51,7 +51,7 @@ var _ = Describe("TemporalSchedulesPause", func() {
 		tc.EXPECT().ScheduleClient().Return(sc)
 		sc.EXPECT().GetHandle(ctx, instance.ScheduleID).Return(sh)
 		sh.EXPECT().Pause(ctx, client.SchedulePauseOptions{Note: reason}).Return(nil)
-		s.EXPECT().SchedulesPause(ctx, instance.ScheduleID, gomock.Any(), reason).Return(nil)
+		s.EXPECT().SchedulesPause(ctx, instance.ScheduleID, instance.ConnectorID, gomock.Any(), reason).Return(nil)
 
 		err := act.TemporalSchedulesPause(ctx, []models.Instance{instance})
 		Expect(err).To(BeNil())
@@ -83,8 +83,8 @@ var _ = Describe("TemporalSchedulesPause", func() {
 		sc.EXPECT().GetHandle(ctx, instances[1].ScheduleID).Return(sh2)
 		sh.EXPECT().Pause(ctx, client.SchedulePauseOptions{Note: "error 1"}).Return(nil)
 		sh2.EXPECT().Pause(ctx, client.SchedulePauseOptions{Note: "error 2"}).Return(nil)
-		s.EXPECT().SchedulesPause(ctx, instances[0].ScheduleID, gomock.Any(), "error 1").Return(nil)
-		s.EXPECT().SchedulesPause(ctx, instances[1].ScheduleID, gomock.Any(), "error 2").Return(nil)
+		s.EXPECT().SchedulesPause(ctx, instances[0].ScheduleID, instances[0].ConnectorID, gomock.Any(), "error 1").Return(nil)
+		s.EXPECT().SchedulesPause(ctx, instances[1].ScheduleID, instances[1].ConnectorID, gomock.Any(), "error 2").Return(nil)
 
 		err := act.TemporalSchedulesPause(ctx, instances)
 		Expect(err).To(BeNil())
@@ -124,7 +124,7 @@ var _ = Describe("TemporalSchedulesPause", func() {
 		tc.EXPECT().ScheduleClient().Return(sc)
 		sc.EXPECT().GetHandle(ctx, instance.ScheduleID).Return(sh)
 		sh.EXPECT().Pause(ctx, client.SchedulePauseOptions{Note: reason}).Return(nil)
-		s.EXPECT().SchedulesPause(ctx, instance.ScheduleID, gomock.Any(), reason).Return(expectedErr)
+		s.EXPECT().SchedulesPause(ctx, instance.ScheduleID, instance.ConnectorID, gomock.Any(), reason).Return(expectedErr)
 
 		err := act.TemporalSchedulesPause(ctx, []models.Instance{instance})
 		Expect(err).To(MatchError(expectedErr))

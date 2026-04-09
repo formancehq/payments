@@ -15,7 +15,7 @@ func (a Activities) TemporalSchedulesUnpause(ctx context.Context, schedules []mo
 			return err
 		}
 
-		if err := a.storage.SchedulesUnpause(ctx, s.ID); err != nil {
+		if err := a.storage.SchedulesUnpause(ctx, s.ID, s.ConnectorID); err != nil {
 			return err
 		}
 	}

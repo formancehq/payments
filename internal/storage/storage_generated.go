@@ -1714,31 +1714,31 @@ func (mr *MockStorageMockRecorder) SchedulesList(ctx, q any) *gomock.Call {
 }
 
 // SchedulesPause mocks base method.
-func (m *MockStorage) SchedulesPause(ctx context.Context, id string, pausedAt time.Time, reason string) error {
+func (m *MockStorage) SchedulesPause(ctx context.Context, id string, connectorID models.ConnectorID, pausedAt time.Time, reason string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SchedulesPause", ctx, id, pausedAt, reason)
+	ret := m.ctrl.Call(m, "SchedulesPause", ctx, id, connectorID, pausedAt, reason)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SchedulesPause indicates an expected call of SchedulesPause.
-func (mr *MockStorageMockRecorder) SchedulesPause(ctx, id, pausedAt, reason any) *gomock.Call {
+func (mr *MockStorageMockRecorder) SchedulesPause(ctx, id, connectorID, pausedAt, reason any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesPause", reflect.TypeOf((*MockStorage)(nil).SchedulesPause), ctx, id, pausedAt, reason)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesPause", reflect.TypeOf((*MockStorage)(nil).SchedulesPause), ctx, id, connectorID, pausedAt, reason)
 }
 
 // SchedulesUnpause mocks base method.
-func (m *MockStorage) SchedulesUnpause(ctx context.Context, id string) error {
+func (m *MockStorage) SchedulesUnpause(ctx context.Context, id string, connectorID models.ConnectorID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SchedulesUnpause", ctx, id)
+	ret := m.ctrl.Call(m, "SchedulesUnpause", ctx, id, connectorID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SchedulesUnpause indicates an expected call of SchedulesUnpause.
-func (mr *MockStorageMockRecorder) SchedulesUnpause(ctx, id any) *gomock.Call {
+func (mr *MockStorageMockRecorder) SchedulesUnpause(ctx, id, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesUnpause", reflect.TypeOf((*MockStorage)(nil).SchedulesUnpause), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesUnpause", reflect.TypeOf((*MockStorage)(nil).SchedulesUnpause), ctx, id, connectorID)
 }
 
 // SchedulesUpsert mocks base method.

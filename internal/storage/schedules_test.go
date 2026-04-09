@@ -367,7 +367,7 @@ func TestSchedulesPause(t *testing.T) {
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
 
 	t.Run("pause unknown schedule is no-op", func(t *testing.T) {
-		err := store.SchedulesPause(ctx, "unknown", now.UTC().Time, "reason")
+		err := store.SchedulesPause(ctx, "unknown", defaultConnector.ID, now.UTC().Time, "reason")
 		require.NoError(t, err)
 
 		// Existing schedule unaffected
@@ -381,7 +381,7 @@ func TestSchedulesPause(t *testing.T) {
 		pausedAt := now.UTC().Time
 		reason := "maintenance"
 
-		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, pausedAt, reason))
+		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID, pausedAt, reason))
 
 		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
 		require.NoError(t, err)
@@ -395,7 +395,7 @@ func TestSchedulesPause(t *testing.T) {
 		newPausedAt := now.Add(time.Minute).UTC().Time
 		newReason := "extended maintenance"
 
-		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, newPausedAt, newReason))
+		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID, newPausedAt, newReason))
 
 		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
 		require.NoError(t, err)
@@ -417,11 +417,11 @@ func TestSchedulesUnpause(t *testing.T) {
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
 
 	t.Run("unpause unknown schedule is no-op", func(t *testing.T) {
-		require.NoError(t, store.SchedulesUnpause(ctx, "unknown"))
+		require.NoError(t, store.SchedulesUnpause(ctx, "unknown", defaultConnector.ID))
 	})
 
 	t.Run("unpause schedule that is not paused is no-op", func(t *testing.T) {
-		require.NoError(t, store.SchedulesUnpause(ctx, defaultSchedules[0].ID))
+		require.NoError(t, store.SchedulesUnpause(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID))
 
 		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
 		require.NoError(t, err)
@@ -431,13 +431,13 @@ func TestSchedulesUnpause(t *testing.T) {
 
 	t.Run("unpause paused schedule clears paused_at and paused_reason", func(t *testing.T) {
 		pausedAt := now.UTC().Time
-		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, pausedAt, "maintenance"))
+		require.NoError(t, store.SchedulesPause(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID, pausedAt, "maintenance"))
 
 		paused, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
 		require.NoError(t, err)
 		require.NotNil(t, paused.PausedAt)
 
-		require.NoError(t, store.SchedulesUnpause(ctx, defaultSchedules[0].ID))
+		require.NoError(t, store.SchedulesUnpause(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID))
 
 		actual, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
 		require.NoError(t, err)
