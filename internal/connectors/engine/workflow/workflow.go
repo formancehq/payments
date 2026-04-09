@@ -36,19 +36,19 @@ type Workflow struct {
 
 	stackPublicURL           string
 	stack                    string
-	healthCheckPollingPeriod time.Duration
+	healthCheckInterval time.Duration
 
 	logger logging.Logger
 }
 
-func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger, healthCheckPollingPeriod time.Duration) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger, healthCheckInterval time.Duration) Workflow {
 	return Workflow{
 		temporalClient:           temporalClient,
 		temporalNamespace:        temporalNamespace,
 		connectors:               connectors,
 		stack:                    stack,
 		stackPublicURL:           stackPublicURL,
-		healthCheckPollingPeriod: healthCheckPollingPeriod,
+		healthCheckInterval: healthCheckInterval,
 		logger:                   logger,
 	}
 }

@@ -35,7 +35,7 @@ func (w Workflow) runScheduleConnectorHealthCheck(ctx workflow.Context, req Sche
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
 			Interval: client.ScheduleIntervalSpec{
-				Every: w.healthCheckPollingPeriod,
+				Every: w.healthCheckInterval,
 			},
 			Action: client.ScheduleWorkflowAction{
 				ID:        scheduleID,
