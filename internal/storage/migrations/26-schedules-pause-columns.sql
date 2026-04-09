@@ -1,9 +1,9 @@
 ALTER TABLE schedules
-    ADD COLUMN IF NOT EXISTS paused_at timestamp without time zone,
-    ADD COLUMN IF NOT EXISTS paused_reason text;
+    ADD COLUMN paused_at timestamp without time zone,
+    ADD COLUMN paused_reason text;
 
 ALTER TABLE connectors
-    ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone;
+    ADD COLUMN updated_at timestamp without time zone;
 
 UPDATE connectors SET updated_at = created_at WHERE updated_at IS NULL;
 
