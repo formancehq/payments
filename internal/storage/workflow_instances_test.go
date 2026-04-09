@@ -547,6 +547,27 @@ func TestInstancesGetScheduleErrors(t *testing.T) {
 		require.NotEqual(t, page2.Data[0].ScheduleID, page3.Data[0].ScheduleID)
 	})
 
+	t.Run("excludes non-terminated instances even when they have errors", func(t *testing.T) {
+		store := newStore(t)
+		defer store.Close()
+		upsertConnector(t, ctx, store, defaultConnector)
+		for _, s := range defaultSchedules {
+			upsertSchedule(t, ctx, store, s)
+		}
+
+		// Insert 5 instances with errors but terminated=false (still running).
+		for i := 0; i < 5; i++ {
+			inst := makeInstance(fmt.Sprintf("running-err-%d", i), 0, 10+i, pointer.For("error"))
+			inst.Terminated = false
+			upsertInstance(t, ctx, store, inst)
+		}
+
+		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		cursor, err := store.InstancesGetScheduleErrors(ctx, defaultConnector.ID, q, 5)
+		require.NoError(t, err)
+		require.Empty(t, cursor.Data)
+	})
+
 	_ = store // used for setup above
 }
 

@@ -220,6 +220,7 @@ func (s *store) InstancesGetScheduleErrors(ctx context.Context, connectorID mode
 			return query.
 				DistinctOn("schedule_id").
 				Where("connector_id = ?", connectorID).
+				Where("terminated = TRUE").
 				Where("error IS NOT NULL").
 				Where(`schedule_id IN (
 					SELECT schedule_id
