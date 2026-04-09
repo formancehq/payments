@@ -48,7 +48,8 @@ func (w Workflow) runUpdateSchedulePollingPeriod(
 		for _, s := range schedules.Data {
 			hasFetchCapability := false
 			for _, capability := range fetchCapabilities {
-				if strings.Contains(s.ID, capability) {
+				prefix := fetchNextWorkflowScheduleID(w.stack, s.ConnectorID.String(), capability.String(), nil)
+				if strings.HasPrefix(s.ID, prefix) {
 					hasFetchCapability = true
 					break
 				}

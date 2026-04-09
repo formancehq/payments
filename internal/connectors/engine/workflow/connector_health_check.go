@@ -11,11 +11,12 @@ import (
 
 const RunConnectorHealthCheck = "ConnectorHealthCheck"
 
-var fetchCapabilities = []string{
-	models.CAPABILITY_FETCH_ACCOUNTS.String(),
-	models.CAPABILITY_FETCH_PAYMENTS.String(),
-	models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS.String(),
-	models.CAPABILITY_FETCH_BALANCES.String(),
+var fetchCapabilities = []models.Capability{
+	models.CAPABILITY_FETCH_ACCOUNTS,
+	models.CAPABILITY_FETCH_PAYMENTS,
+	models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS,
+	models.CAPABILITY_FETCH_BALANCES,
+	models.CAPABILITY_FETCH_OTHERS,
 }
 
 type ConnectorHealthCheck struct {
@@ -52,9 +53,10 @@ func (w Workflow) connectorHealthCheck(ctx workflow.Context, req ConnectorHealth
 			if connector.UpdatedAt != nil && !instance.CreatedAt.After(*connector.UpdatedAt) {
 				continue
 			}
-			// we only want to pause schedules related to fetching connector data
+			// we only want to pause schedules related to fetching connector data;
 			for _, capability := range fetchCapabilities {
-				if strings.Contains(instance.ScheduleID, capability) {
+				prefix := fetchNextWorkflowScheduleID(w.stack, req.ConnectorID.String(), capability.String(), nil)
+				if strings.HasPrefix(instance.ScheduleID, prefix) {
 					toPause = append(toPause, instance)
 					break
 				}

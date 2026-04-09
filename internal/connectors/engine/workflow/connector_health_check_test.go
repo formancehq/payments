@@ -81,6 +81,28 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_AllCapabilities_Success() {
 	s.NoError(s.env.GetWorkflowError())
 }
 
+func (s *UnitTestSuite) Test_ConnectorHealthCheck_PayloadSuffixScheduleID_Success() {
+	// Schedule IDs with a payload suffix ({stack}-{connectorID}-{capability}-{payloadID})
+	// should also be matched and paused.
+	instances := []models.Instance{
+		{ID: "wf-1", ScheduleID: fmt.Sprintf("test-%s-FETCH_PAYMENTS-some-payload-id", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
+	}
+
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).
+		Once().Return(s.connectorWithUpdatedAt(nil), nil)
+	s.env.OnActivity(activities.StorageInstancesListSchedulesAboveErrorThresholdActivity, mock.Anything, s.connectorID, mock.Anything).
+		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: instances}, nil)
+	s.env.OnActivity(activities.TemporalSchedulesPauseActivity, mock.Anything, mock.Anything).
+		Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunConnectorHealthCheck, ConnectorHealthCheck{
+		ConnectorID: s.connectorID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
 func (s *UnitTestSuite) Test_ConnectorHealthCheck_NonFetchSchedulesFiltered_Success() {
 	// Instances whose schedule IDs do not contain any FETCH_ capability should be omitted.
 	instances := []models.Instance{
