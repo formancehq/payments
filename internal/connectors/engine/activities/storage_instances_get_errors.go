@@ -9,7 +9,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StorageInstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
+func (a Activities) StorageInstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
 	var q storage.ListInstancesQuery
 	if cursor != nil && *cursor != "" {
 		if err := bunpaginate.UnmarshalCursor(*cursor, &q); err != nil {
@@ -19,18 +19,18 @@ func (a Activities) StorageInstancesGetScheduleErrors(ctx context.Context, conne
 		q = storage.NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(storage.InstanceQuery{}))
 	}
 
-	result, err := a.storage.InstancesGetScheduleErrors(ctx, connectorID, q, a.healthCheckErrorThreshold)
+	result, err := a.storage.InstancesListSchedulesAboveErrorThreshold(ctx, connectorID, a.healthCheckErrorThreshold, q)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}
 	return result, nil
 }
 
-var StorageInstancesGetScheduleErrorsActivity = Activities{}.StorageInstancesGetScheduleErrors
+var StorageInstancesListSchedulesAboveErrorThresholdActivity = Activities{}.StorageInstancesListSchedulesAboveErrorThreshold
 
-func StorageInstancesGetScheduleErrors(ctx workflow.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
+func StorageInstancesListSchedulesAboveErrorThreshold(ctx workflow.Context, connectorID models.ConnectorID, cursor *string) (*bunpaginate.Cursor[models.Instance], error) {
 	var result bunpaginate.Cursor[models.Instance]
-	if err := executeActivity(ctx, StorageInstancesGetScheduleErrorsActivity, &result, connectorID, cursor); err != nil {
+	if err := executeActivity(ctx, StorageInstancesListSchedulesAboveErrorThresholdActivity, &result, connectorID, cursor); err != nil {
 		return nil, err
 	}
 	return &result, nil

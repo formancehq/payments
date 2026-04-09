@@ -40,7 +40,7 @@ func (w Workflow) connectorHealthCheck(ctx workflow.Context, req ConnectorHealth
 	cursor := req.NextCursor
 
 	for {
-		result, err := activities.StorageInstancesGetScheduleErrors(infiniteRetryContext(ctx), req.ConnectorID, cursor)
+		result, err := activities.StorageInstancesListSchedulesAboveErrorThreshold(infiniteRetryContext(ctx), req.ConnectorID, cursor)
 		if err != nil {
 			return err
 		}

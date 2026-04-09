@@ -213,7 +213,7 @@ func toInstanceModel(from instance) models.Instance {
 
 // Returns the latest workflow instance for schedules which in their last N executions returned exclusively errors,
 // where N is determined by the threshold parameter.
-func (s *store) InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery, threshold int) (*bunpaginate.Cursor[models.Instance], error) {
+func (s *store) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {

@@ -595,19 +595,19 @@ func (mr *MockStorageMockRecorder) InstancesGet(ctx, id, scheduleID, connectorID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesGet", reflect.TypeOf((*MockStorage)(nil).InstancesGet), ctx, id, scheduleID, connectorID)
 }
 
-// InstancesGetScheduleErrors mocks base method.
-func (m *MockStorage) InstancesGetScheduleErrors(ctx context.Context, connectorID models.ConnectorID, q ListInstancesQuery, threshold int) (*bunpaginate.Cursor[models.Instance], error) {
+// InstancesListSchedulesAboveErrorThreshold mocks base method.
+func (m *MockStorage) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstancesGetScheduleErrors", ctx, connectorID, q, threshold)
+	ret := m.ctrl.Call(m, "InstancesListSchedulesAboveErrorThreshold", ctx, connectorID, threshold, q)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Instance])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// InstancesGetScheduleErrors indicates an expected call of InstancesGetScheduleErrors.
-func (mr *MockStorageMockRecorder) InstancesGetScheduleErrors(ctx, connectorID, q, threshold any) *gomock.Call {
+// InstancesListSchedulesAboveErrorThreshold indicates an expected call of InstancesListSchedulesAboveErrorThreshold.
+func (mr *MockStorageMockRecorder) InstancesListSchedulesAboveErrorThreshold(ctx, connectorID, threshold, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesGetScheduleErrors", reflect.TypeOf((*MockStorage)(nil).InstancesGetScheduleErrors), ctx, connectorID, q, threshold)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesListSchedulesAboveErrorThreshold", reflect.TypeOf((*MockStorage)(nil).InstancesListSchedulesAboveErrorThreshold), ctx, connectorID, threshold, q)
 }
 
 // InstancesList mocks base method.

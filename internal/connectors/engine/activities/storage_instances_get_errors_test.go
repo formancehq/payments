@@ -17,7 +17,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
+var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", func() {
 	var (
 		act       activities.Activities
 		ctrl      *gomock.Controller
@@ -62,10 +62,10 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 				}},
 			}
 			s.EXPECT().
-				InstancesGetScheduleErrors(gomock.Any(), connectorID, gomock.Any(), healthCheckErrorThreshold).
+				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, healthCheckErrorThreshold, gomock.Any()).
 				Return(expected, nil)
 
-			result, err := act.StorageInstancesGetScheduleErrors(ctx, connectorID, nil)
+			result, err := act.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(expected))
 		})
@@ -76,10 +76,10 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 			empty := ""
 			expected := &bunpaginate.Cursor[models.Instance]{Data: []models.Instance{}}
 			s.EXPECT().
-				InstancesGetScheduleErrors(gomock.Any(), connectorID, gomock.Any(), healthCheckErrorThreshold).
+				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, healthCheckErrorThreshold, gomock.Any()).
 				Return(expected, nil)
 
-			result, err := act.StorageInstancesGetScheduleErrors(ctx, connectorID, &empty)
+			result, err := act.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, &empty)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(expected))
 		})
@@ -94,10 +94,10 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 				Data: []models.Instance{{ID: "inst-2", ConnectorID: connectorID, CreatedAt: now, UpdatedAt: now}},
 			}
 			s.EXPECT().
-				InstancesGetScheduleErrors(gomock.Any(), connectorID, gomock.Any(), healthCheckErrorThreshold).
+				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, healthCheckErrorThreshold, gomock.Any()).
 				Return(expected, nil)
 
-			result, err := act.StorageInstancesGetScheduleErrors(ctx, connectorID, &cursorStr)
+			result, err := act.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, &cursorStr)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(expected))
 		})
@@ -107,7 +107,7 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 		It("returns an error without calling storage", func(ctx SpecContext) {
 			invalid := "not!!valid!!base64"
 
-			result, err := act.StorageInstancesGetScheduleErrors(ctx, connectorID, &invalid)
+			result, err := act.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, &invalid)
 			Expect(err).To(HaveOccurred())
 			Expect(result).To(BeNil())
 		})
@@ -116,10 +116,10 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 	Context("when storage returns an error", func() {
 		It("wraps and returns the error", func(ctx SpecContext) {
 			s.EXPECT().
-				InstancesGetScheduleErrors(gomock.Any(), connectorID, gomock.Any(), healthCheckErrorThreshold).
+				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, healthCheckErrorThreshold, gomock.Any()).
 				Return(nil, errors.New("db failure"))
 
-			result, err := act.StorageInstancesGetScheduleErrors(ctx, connectorID, nil)
+			result, err := act.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("db failure"))
 			Expect(result).To(BeNil())
@@ -152,10 +152,10 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 				},
 			}
 			s.EXPECT().
-				InstancesGetScheduleErrors(gomock.Any(), connectorID, gomock.Any(), healthCheckErrorThreshold).
+				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, healthCheckErrorThreshold, gomock.Any()).
 				Return(expected, nil)
 
-			result, err := act.StorageInstancesGetScheduleErrors(ctx, connectorID, nil)
+			result, err := act.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.HasMore).To(BeTrue())
 			Expect(result.Data).To(HaveLen(2))
@@ -168,10 +168,10 @@ var _ = Describe("Activity StorageInstancesGetScheduleErrors", func() {
 		It("uses the threshold configured at construction time", func(ctx SpecContext) {
 			customAct := activities.New(logger, nil, s, evts, p, 0, 10)
 			s.EXPECT().
-				InstancesGetScheduleErrors(gomock.Any(), connectorID, gomock.Any(), 10).
+				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, 10, gomock.Any()).
 				Return(&bunpaginate.Cursor[models.Instance]{}, nil)
 
-			_, err := customAct.StorageInstancesGetScheduleErrors(ctx, connectorID, nil)
+			_, err := customAct.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})

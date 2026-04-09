@@ -64,6 +64,9 @@ var schedulesPauseColumnsConcurrentIndexSchedules string
 //go:embed 26-schedules-pause-columns-concurrent-index-workflow-instances.sql
 var schedulesPauseColumnsConcurrentIndexWorkflowInstances string
 
+//go:embed 27-workflow-instances-connector-schedule-index.sql
+var workflowInstancesConnectorScheduleIndex string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -409,6 +412,20 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					}
 				}
 				logger.Info("finished running add paused columns to schedules migration")
+				return nil
+			},
+		},
+		migrations.Migration{
+			Name: "add workflow instances connector schedule index",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add workflow instances connector schedule index migration...")
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration must not run inside a transaction: CREATE INDEX CONCURRENTLY is not allowed in a transaction block")
+				}
+				if _, err := db.ExecContext(ctx, workflowInstancesConnectorScheduleIndex); err != nil {
+					return err
+				}
+				logger.Info("finished running add workflow instances connector schedule index migration")
 				return nil
 			},
 		},
