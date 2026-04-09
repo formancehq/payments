@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	temporalworker "github.com/formancehq/go-libs/v3/temporal"
@@ -33,20 +34,22 @@ type Workflow struct {
 
 	connectors connectors.Manager
 
-	stackPublicURL string
-	stack          string
+	stackPublicURL           string
+	stack                    string
+	healthCheckInterval time.Duration
 
 	logger logging.Logger
 }
 
-func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger, healthCheckInterval time.Duration) Workflow {
 	return Workflow{
-		temporalClient:    temporalClient,
-		temporalNamespace: temporalNamespace,
-		connectors:        connectors,
-		stack:             stack,
-		stackPublicURL:    stackPublicURL,
-		logger:            logger,
+		temporalClient:           temporalClient,
+		temporalNamespace:        temporalNamespace,
+		connectors:               connectors,
+		stack:                    stack,
+		stackPublicURL:           stackPublicURL,
+		healthCheckInterval: healthCheckInterval,
+		logger:                   logger,
 	}
 }
 
@@ -179,6 +182,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunOutboxCleanup,
 			Func: w.runOutboxCleanup,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunConnectorHealthCheck,
+			Func: w.runConnectorHealthCheck,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunScheduleConnectorHealthCheck,
+			Func: w.runScheduleConnectorHealthCheck,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunNextTasks,   //nolint:staticcheck

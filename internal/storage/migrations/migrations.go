@@ -55,6 +55,15 @@ var dynamicPools string
 //go:embed 25-add-outbox-table.sql
 var addOutboxTable string
 
+//go:embed 26-schedules-pause-columns.sql
+var schedulesPauseColumns string
+
+//go:embed 27-schedules-pause-columns-concurrent-index-schedules.sql
+var schedulesPauseColumnsConcurrentIndexSchedules string
+
+//go:embed 28-workflow-instances-connector-schedule-index.sql
+var workflowInstancesConnectorScheduleIndex string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -376,8 +385,47 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+		migrations.Migration{
+			Name: "add paused columns to schedules",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add paused columns to schedules migration...")
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					_, err := tx.ExecContext(ctx, schedulesPauseColumns)
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "add schedules paused at index",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add schedules paused at index migration...")
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration must not run inside a transaction: CREATE INDEX CONCURRENTLY is not allowed in a transaction block")
+				}
+				if _, err := db.ExecContext(ctx, schedulesPauseColumnsConcurrentIndexSchedules); err != nil {
+					return err
+				}
+				logger.Info("finished running add schedules paused at index migration")
+				return nil
+			},
+		},
+		migrations.Migration{
+			Name: "add workflow instances connector schedule index",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add workflow instances connector schedule index migration...")
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration must not run inside a transaction: CREATE INDEX CONCURRENTLY is not allowed in a transaction block")
+				}
+				if _, err := db.ExecContext(ctx, workflowInstancesConnectorScheduleIndex); err != nil {
+					return err
+				}
+				logger.Info("finished running add workflow instances connector schedule index migration")
+				return nil
+			},
+		},
 	)
 }
+
 
 func GetMigrator(logger logging.Logger, db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
 	migrator := migrations.NewMigrator(db, opts...)

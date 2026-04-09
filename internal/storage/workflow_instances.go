@@ -205,9 +205,53 @@ func toInstanceModel(from instance) models.Instance {
 			if from.TerminatedAt == nil {
 				return nil
 			}
-
 			return pointer.For(from.TerminatedAt.Time)
 		}(),
 		Error: from.Error,
 	}
+}
+
+// Returns the latest workflow instance for schedules which in their last N executions returned exclusively errors,
+// where N is determined by the threshold parameter.
+func (s *store) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
+		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]])(&q),
+		func(query *bun.SelectQuery) *bun.SelectQuery {
+			return query.
+				DistinctOn("schedule_id").
+				Where("connector_id = ?", connectorID).
+				Where("terminated = TRUE").
+				Where(`schedule_id IN (
+					SELECT schedule_id
+					FROM (
+						SELECT
+							schedule_id,
+							ROW_NUMBER() OVER (PARTITION BY schedule_id ORDER BY created_at DESC) AS rn,
+							error
+						FROM workflows_instances
+						WHERE connector_id = ?
+					) ranked
+					WHERE rn <= ?
+					GROUP BY schedule_id
+					HAVING COUNT(*) = ? AND COUNT(*) FILTER (WHERE error IS NULL) = 0
+				)`, connectorID, threshold, threshold).
+				Order("schedule_id ASC", "created_at DESC")
+		},
+	)
+	if err != nil {
+		return nil, e("failed to fetch instance errors", err)
+	}
+
+	instances := make([]models.Instance, 0, len(cursor.Data))
+	for _, i := range cursor.Data {
+		instances = append(instances, toInstanceModel(i))
+	}
+
+	return &bunpaginate.Cursor[models.Instance]{
+		PageSize: cursor.PageSize,
+		HasMore:  cursor.HasMore,
+		Previous: cursor.Previous,
+		Next:     cursor.Next,
+		Data:     instances,
+	}, nil
 }

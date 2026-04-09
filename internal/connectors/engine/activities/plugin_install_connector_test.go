@@ -44,7 +44,7 @@ var _ = Describe("Plugin Install Connector", func() {
 			p = connectors.NewMockManager(ctrl)
 			s = storage.NewMockStorage(ctrl)
 			plugin = models.NewMockPlugin(ctrl)
-			act = activities.New(logger, nil, s, evts, p, delay)
+			act = activities.New(logger, nil, s, evts, p, delay, 0)
 			req = activities.InstallConnectorRequest{
 				ConnectorID: models.ConnectorID{
 					Provider: "some_provider",

@@ -610,6 +610,21 @@ func (mr *MockStorageMockRecorder) InstancesList(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesList", reflect.TypeOf((*MockStorage)(nil).InstancesList), ctx, q)
 }
 
+// InstancesListSchedulesAboveErrorThreshold mocks base method.
+func (m *MockStorage) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstancesListSchedulesAboveErrorThreshold", ctx, connectorID, threshold, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Instance])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstancesListSchedulesAboveErrorThreshold indicates an expected call of InstancesListSchedulesAboveErrorThreshold.
+func (mr *MockStorageMockRecorder) InstancesListSchedulesAboveErrorThreshold(ctx, connectorID, threshold, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesListSchedulesAboveErrorThreshold", reflect.TypeOf((*MockStorage)(nil).InstancesListSchedulesAboveErrorThreshold), ctx, connectorID, threshold, q)
+}
+
 // InstancesUpdate mocks base method.
 func (m *MockStorage) InstancesUpdate(ctx context.Context, instance models.Instance) error {
 	m.ctrl.T.Helper()
@@ -1696,6 +1711,34 @@ func (m *MockStorage) SchedulesList(ctx context.Context, q ListSchedulesQuery) (
 func (mr *MockStorageMockRecorder) SchedulesList(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesList", reflect.TypeOf((*MockStorage)(nil).SchedulesList), ctx, q)
+}
+
+// SchedulesPause mocks base method.
+func (m *MockStorage) SchedulesPause(ctx context.Context, id string, connectorID models.ConnectorID, pausedAt time.Time, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesPause", ctx, id, connectorID, pausedAt, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SchedulesPause indicates an expected call of SchedulesPause.
+func (mr *MockStorageMockRecorder) SchedulesPause(ctx, id, connectorID, pausedAt, reason any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesPause", reflect.TypeOf((*MockStorage)(nil).SchedulesPause), ctx, id, connectorID, pausedAt, reason)
+}
+
+// SchedulesUnpause mocks base method.
+func (m *MockStorage) SchedulesUnpause(ctx context.Context, id string, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesUnpause", ctx, id, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SchedulesUnpause indicates an expected call of SchedulesUnpause.
+func (mr *MockStorageMockRecorder) SchedulesUnpause(ctx, id, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesUnpause", reflect.TypeOf((*MockStorage)(nil).SchedulesUnpause), ctx, id, connectorID)
 }
 
 // SchedulesUpsert mocks base method.

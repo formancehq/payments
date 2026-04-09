@@ -64,6 +64,15 @@ func upsertConnector(t *testing.T, ctx context.Context, storage Storage, connect
 	require.NoError(t, storage.ConnectorsInstall(ctx, connector, nil))
 }
 
+// withoutUpdatedAt zeroes the UpdatedAt field before structural comparison.
+// The updated_at column is set by a DB trigger on every UPDATE (including the
+// internal config-write during install), so its exact value is non-deterministic
+// and should not be asserted in tests that focus on other fields.
+func withoutUpdatedAt(c models.Connector) models.Connector {
+	c.UpdatedAt = nil
+	return c
+}
+
 func TestConnectorsInstall(t *testing.T) {
 	t.Parallel()
 
@@ -90,7 +99,7 @@ func TestConnectorsInstall(t *testing.T) {
 		connector, err := store.ConnectorsGet(ctx, c.ID)
 		require.NoError(t, err)
 		require.NotNil(t, connector)
-		require.Equal(t, defaultConnector, *connector)
+		require.Equal(t, defaultConnector, withoutUpdatedAt(*connector))
 	})
 
 	t.Run("unique same upsert", func(t *testing.T) {
@@ -332,7 +341,7 @@ func TestConnectorsGet(t *testing.T) {
 		connector, err := store.ConnectorsGet(ctx, defaultConnector.ID)
 		require.NoError(t, err)
 		require.NotNil(t, connector)
-		require.Equal(t, defaultConnector, *connector)
+		require.Equal(t, defaultConnector, withoutUpdatedAt(*connector))
 	})
 
 	t.Run("get unknown connector", func(t *testing.T) {
@@ -372,7 +381,7 @@ func TestConnectorsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultConnector, cursor.Data[0])
+		require.Equal(t, defaultConnector, withoutUpdatedAt(cursor.Data[0]))
 	})
 
 	t.Run("list connectors by unknown name", func(t *testing.T) {
@@ -403,8 +412,8 @@ func TestConnectorsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultConnector3, cursor.Data[0])
-		require.Equal(t, defaultConnector, cursor.Data[1])
+		require.Equal(t, defaultConnector3, withoutUpdatedAt(cursor.Data[0]))
+		require.Equal(t, defaultConnector, withoutUpdatedAt(cursor.Data[1]))
 	})
 
 	t.Run("list connectors by provider uppercase", func(t *testing.T) {
@@ -420,8 +429,8 @@ func TestConnectorsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultConnector3, cursor.Data[0])
-		require.Equal(t, defaultConnector, cursor.Data[1])
+		require.Equal(t, defaultConnector3, withoutUpdatedAt(cursor.Data[0]))
+		require.Equal(t, defaultConnector, withoutUpdatedAt(cursor.Data[1]))
 	})
 
 	t.Run("list connectors by provider with wrong type", func(t *testing.T) {
@@ -464,7 +473,7 @@ func TestConnectorsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultConnector3, cursor.Data[0])
+		require.Equal(t, defaultConnector3, withoutUpdatedAt(cursor.Data[0]))
 	})
 
 	t.Run("list connectors by unknown id", func(t *testing.T) {
@@ -494,7 +503,7 @@ func TestConnectorsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultConnector3, cursor.Data[0])
+		require.Equal(t, defaultConnector3, withoutUpdatedAt(cursor.Data[0]))
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
@@ -504,7 +513,7 @@ func TestConnectorsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultConnector2, cursor.Data[0])
+		require.Equal(t, defaultConnector2, withoutUpdatedAt(cursor.Data[0]))
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
@@ -514,7 +523,7 @@ func TestConnectorsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultConnector, cursor.Data[0])
+		require.Equal(t, defaultConnector, withoutUpdatedAt(cursor.Data[0]))
 
 		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
@@ -524,7 +533,7 @@ func TestConnectorsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultConnector2, cursor.Data[0])
+		require.Equal(t, defaultConnector2, withoutUpdatedAt(cursor.Data[0]))
 
 		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
@@ -534,6 +543,6 @@ func TestConnectorsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultConnector3, cursor.Data[0])
+		require.Equal(t, defaultConnector3, withoutUpdatedAt(cursor.Data[0]))
 	})
 }

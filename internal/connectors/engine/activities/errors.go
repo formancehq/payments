@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
 )
 
@@ -54,17 +53,6 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 
 	// Potentially retry
 	case errors.Is(err, plugins.ErrUpstreamRatelimit):
-		// periodic tasks will be repeated in the future anyway so we can skip retry in case of rate-limiting
-		if isPeriodic {
-			info := activity.GetInfo(ctx)
-			a.logger.WithFields(map[string]any{
-				"workflow_type":  info.WorkflowType.Name,
-				"scheduled_time": info.ScheduledTime.String(),
-				"workflow_id":    info.WorkflowExecution.ID,
-			}).Debug("disabling retry for polled activity triggered by schedule due to rate-limit")
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeRateLimited, cause)
-		}
-
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
 			// temporal already implements a backoff strategy, but let's add an extra delay before the next retry
 			// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay

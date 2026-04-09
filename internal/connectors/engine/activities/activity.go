@@ -20,7 +20,8 @@ type Activities struct {
 	events         *events.Events
 	temporalClient client.Client
 
-	rateLimitingRetryDelay time.Duration
+	rateLimitingRetryDelay    time.Duration
+	healthCheckErrorThreshold int
 
 	connectors connectors.Manager
 }
@@ -260,6 +261,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageInstancesDelete,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageInstancesListSchedulesAboveErrorThreshold",
+			Func: a.StorageInstancesListSchedulesAboveErrorThreshold,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageBankAccountsDeleteRelatedAccounts",
 			Func: a.StorageBankAccountsDeleteRelatedAccounts,
 		}).
@@ -432,6 +437,14 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.TemporalScheduleDelete,
 		}).
 		Append(temporalworker.Definition{
+			Name: "TemporalSchedulesPause",
+			Func: a.TemporalSchedulesPause,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalSchedulesUnpause",
+			Func: a.TemporalSchedulesUnpause,
+		}).
+		Append(temporalworker.Definition{
 			Name: "TemporalWorkflowTerminate",
 			Func: a.TemporalWorkflowTerminate,
 		}).
@@ -514,14 +527,16 @@ func New(
 	events *events.Events,
 	connectors connectors.Manager,
 	rateLimitingRetryDelay time.Duration,
+	healthCheckErrorThreshold int,
 ) Activities {
 	return Activities{
-		logger:                 logger,
-		temporalClient:         temporalClient,
-		storage:                storage,
-		connectors:             connectors,
-		events:                 events,
-		rateLimitingRetryDelay: rateLimitingRetryDelay,
+		logger:                    logger,
+		temporalClient:            temporalClient,
+		storage:                   storage,
+		connectors:                connectors,
+		events:                    events,
+		rateLimitingRetryDelay:    rateLimitingRetryDelay,
+		healthCheckErrorThreshold: healthCheckErrorThreshold,
 	}
 }
 

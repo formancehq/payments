@@ -4590,6 +4590,10 @@ components:
           type: boolean
         config:
           type: object
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
     V3ConnectorBase:
       type: object
       properties:
@@ -4619,6 +4623,13 @@ components:
         createdAt:
           type: string
           format: date-time
+        pausedAt:
+          type: string
+          format: date-time
+          nullable: true
+        pausedReason:
+          type: string
+          nullable: true
     V3Instance:
       type: object
       required:

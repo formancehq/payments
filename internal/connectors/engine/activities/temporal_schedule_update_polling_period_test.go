@@ -38,7 +38,7 @@ var _ = Describe("Temporal Schedule Update Polling Period", func() {
 			t = activities.NewMockClient(ctrl)
 			sc = activities.NewMockScheduleClient(ctrl)
 			sh = activities.NewMockScheduleHandle(ctrl)
-			act = activities.New(logger, t, s, evts, p, delay)
+			act = activities.New(logger, t, s, evts, p, delay, 0)
 		})
 
 		It("calls underlying schedule update function", func(ctx SpecContext) {

@@ -49,6 +49,9 @@ type connector struct {
 
 	// Config is a decrypted config. It is not stored in the database.
 	DecryptedConfig json.RawMessage `bun:"decrypted_config,scanonly"`
+
+	// UpdatedAt is set by a DB trigger on every UPDATE. Nullable until first update.
+	UpdatedAt *time.Time `bun:"updated_at,type:timestamp without time zone,nullzero"`
 }
 
 func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerConnectorsChanges) error {
@@ -228,6 +231,11 @@ func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*mode
 		return nil, e("failed to fetch connector", err)
 	}
 
+	var updatedAt *stdtime.Time
+	if connector.UpdatedAt != nil {
+		t := connector.UpdatedAt.Time
+		updatedAt = &t
+	}
 	return &models.Connector{
 		ConnectorBase: models.ConnectorBase{
 			ID:        connector.ID,
@@ -237,6 +245,7 @@ func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*mode
 		},
 		Config:               connector.DecryptedConfig,
 		ScheduledForDeletion: connector.ScheduledForDeletion,
+		UpdatedAt:            updatedAt,
 	}, nil
 }
 
@@ -316,12 +325,20 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 }
 
 func toConnectorModels(from connector) models.Connector {
+	var updatedAt *stdtime.Time
+	if from.UpdatedAt != nil {
+		t := from.UpdatedAt.Time
+		updatedAt = &t
+	}
 	return models.Connector{
 		ConnectorBase:        toConnectorBaseModels(from),
 		Config:               from.DecryptedConfig,
 		ScheduledForDeletion: from.ScheduledForDeletion,
+		UpdatedAt:            updatedAt,
 	}
 }
+
+
 
 func toConnectorBaseModels(from connector) models.ConnectorBase {
 	return models.ConnectorBase{

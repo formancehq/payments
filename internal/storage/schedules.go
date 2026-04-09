@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	gotime "time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -19,6 +20,10 @@ type schedule struct {
 	ID          string             `bun:"id,pk,type:text,notnull"`
 	ConnectorID models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
 	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
+
+	// Optional fields
+	PausedAt     *time.Time `bun:"paused_at,type:timestamp without time zone,nullzero"`
+	PausedReason *string    `bun:"paused_reason,type:text,nullzero"`
 }
 
 func (s *store) SchedulesUpsert(ctx context.Context, schedule models.Schedule) error {
@@ -63,6 +68,29 @@ func (s *store) SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connect
 
 	return int(rowsAffected), nil
 }
+
+func (s *store) SchedulesPause(ctx context.Context, id string, connectorID models.ConnectorID, pausedAt gotime.Time, reason string) error {
+	_, err := s.db.NewUpdate().
+		Model((*schedule)(nil)).
+		Set("paused_at = ?", pausedAt).
+		Set("paused_reason = ?", reason).
+		Where("id = ? AND connector_id = ?", id, connectorID).
+		Exec(ctx)
+
+	return e("failed to pause schedule", err)
+}
+
+func (s *store) SchedulesUnpause(ctx context.Context, id string, connectorID models.ConnectorID) error {
+	_, err := s.db.NewUpdate().
+		Model((*schedule)(nil)).
+		Set("paused_at = NULL").
+		Set("paused_reason = NULL").
+		Where("id = ? AND connector_id = ?", id, connectorID).
+		Exec(ctx)
+
+	return e("failed to unpause schedule", err)
+}
+
 
 func (s *store) SchedulesDelete(ctx context.Context, id string) error {
 	_, err := s.db.NewDelete().
@@ -161,6 +189,13 @@ func fromScheduleModel(s models.Schedule) schedule {
 		ID:          s.ID,
 		ConnectorID: s.ConnectorID,
 		CreatedAt:   time.New(s.CreatedAt),
+		PausedAt: func() *time.Time {
+			if s.PausedAt == nil {
+				return nil
+			}
+			return pointer.For(time.New(*s.PausedAt))
+		}(),
+		PausedReason: s.PausedReason,
 	}
 }
 
@@ -169,5 +204,12 @@ func toScheduleModel(s schedule) models.Schedule {
 		ID:          s.ID,
 		ConnectorID: s.ConnectorID,
 		CreatedAt:   s.CreatedAt.Time,
+		PausedAt: func() *gotime.Time {
+			if s.PausedAt == nil {
+				return nil
+			}
+			return pointer.For(s.PausedAt.Time)
+		}(),
+		PausedReason: s.PausedReason,
 	}
 }

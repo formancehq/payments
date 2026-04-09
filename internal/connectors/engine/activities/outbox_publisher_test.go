@@ -32,7 +32,7 @@ var _ = Describe("OutboxPublishPendingEvents", func() {
 		s = storage.NewMockStorage(ctrl)
 		mockPublisher = activities.NewMockPublisher(ctrl)
 		evts = internalevents.New(mockPublisher, "http://localhost")
-		act = activities.New(logger, nil, s, evts, nil, 0)
+		act = activities.New(logger, nil, s, evts, nil, 0, 0)
 	})
 
 	Context("when polling pending outbox events", func() {

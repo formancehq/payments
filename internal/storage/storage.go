@@ -149,6 +149,8 @@ type Storage interface {
 	SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	SchedulesDelete(ctx context.Context, id string) error
+	SchedulesPause(ctx context.Context, id string, connectorID models.ConnectorID, pausedAt time.Time, reason string) error
+	SchedulesUnpause(ctx context.Context, id string, connectorID models.ConnectorID) error
 
 	// State
 	StatesUpsert(ctx context.Context, state models.State) error
@@ -178,6 +180,7 @@ type Storage interface {
 	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
+	InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 
 	// Outbox Events
 	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error

@@ -37,7 +37,7 @@ var _ = Describe("Temporal Schedule Deletion", func() {
 		sh = activities.NewMockScheduleHandle(ctrl)
 		s = storage.NewMockStorage(ctrl)
 		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
-		act = activities.New(logger, t, s, evts, p, time.Millisecond)
+		act = activities.New(logger, t, s, evts, p, time.Millisecond, 0)
 		scheduleID = "scheduleID"
 	})
 

@@ -136,6 +136,13 @@ func (w Workflow) runNextTasksV3_1(
 	return nil
 }
 
+func fetchNextWorkflowScheduleID(stack, connectorID, capability string, fromPayload *FromPayload) string {
+	if fromPayload == nil {
+		return fmt.Sprintf("%s-%s-%s", stack, connectorID, capability)
+	}
+	return fmt.Sprintf("%s-%s-%s-%s", stack, connectorID, capability, fromPayload.ID)
+}
+
 func (w Workflow) scheduleNextWorkflow(
 	ctx workflow.Context,
 	connectorID models.ConnectorID,
@@ -145,14 +152,7 @@ func (w Workflow) scheduleNextWorkflow(
 	nextWorkflow interface{},
 	request interface{},
 ) error {
-	var (
-		scheduleID string
-	)
-	if fromPayload == nil {
-		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connectorID.String(), capability.String())
-	} else {
-		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
-	}
+	scheduleID := fetchNextWorkflowScheduleID(w.stack, connectorID.String(), capability.String(), fromPayload)
 
 	err := activities.StorageSchedulesStore(
 		infiniteRetryContext(ctx),
