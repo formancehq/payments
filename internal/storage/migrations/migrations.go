@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
-	"strings"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/migrations"
@@ -58,6 +57,12 @@ var addOutboxTable string
 
 //go:embed 26-schedules-pause-columns.sql
 var schedulesPauseColumns string
+
+//go:embed 26-schedules-pause-columns-concurrent-index-schedules.sql
+var schedulesPauseColumnsConcurrentIndexSchedules string
+
+//go:embed 26-schedules-pause-columns-concurrent-index-workflow-instances.sql
+var schedulesPauseColumnsConcurrentIndexWorkflowInstances string
 
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
@@ -387,55 +392,29 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				if _, ok := db.(*bun.Tx); ok {
 					return fmt.Errorf("migration must not run inside a transaction: CREATE INDEX CONCURRENTLY is not allowed in a transaction block")
 				}
-				// Execute each statement individually: CREATE INDEX CONCURRENTLY
-				// cannot share a connection batch with other statements because
-				// the driver would wrap them in an implicit transaction.
-				var err error
-				for _, stmt := range splitSQLStatements(schedulesPauseColumns) {
-					if _, err = db.ExecContext(ctx, stmt); err != nil {
+				if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					_, err := tx.ExecContext(ctx, schedulesPauseColumns)
+					return err
+				}); err != nil {
+					return err
+				}
+				// CREATE INDEX CONCURRENTLY cannot run inside a transaction block;
+				// each index must be its own ExecContext call.
+				for _, stmt := range []string{
+					schedulesPauseColumnsConcurrentIndexSchedules,
+					schedulesPauseColumnsConcurrentIndexWorkflowInstances,
+				} {
+					if _, err := db.ExecContext(ctx, stmt); err != nil {
 						return err
 					}
 				}
-				logger.WithField("error", err).Info("finished running add paused columns to schedules migration")
-				return err
+				logger.Info("finished running add paused columns to schedules migration")
+				return nil
 			},
 		},
 	)
 }
 
-// splitSQLStatements splits a SQL string into individual statements on
-// semicolons, skipping semicolons inside $$ ... $$ dollar-quoted blocks
-// (used by PL/pgSQL function bodies). Each returned statement is trimmed.
-// This allows CONCURRENT index creation to run in its own ExecContext call,
-// separate from any preceding DDL statements.
-func splitSQLStatements(input string) []string {
-	var stmts []string
-	var current strings.Builder
-	inDollarQuote := false
-	n := len(input)
-
-	for i := 0; i < n; i++ {
-		if i+1 < n && input[i] == '$' && input[i+1] == '$' {
-			inDollarQuote = !inDollarQuote
-			current.WriteByte('$')
-			current.WriteByte('$')
-			i++ // skip second '$'
-			continue
-		}
-		if !inDollarQuote && input[i] == ';' {
-			if stmt := strings.TrimSpace(current.String()); stmt != "" {
-				stmts = append(stmts, stmt)
-			}
-			current.Reset()
-			continue
-		}
-		current.WriteByte(input[i])
-	}
-	if stmt := strings.TrimSpace(current.String()); stmt != "" {
-		stmts = append(stmts, stmt)
-	}
-	return stmts
-}
 
 func GetMigrator(logger logging.Logger, db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
 	migrator := migrations.NewMigrator(db, opts...)

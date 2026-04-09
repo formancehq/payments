@@ -22,6 +22,3 @@ CREATE TRIGGER connectors_updated_at_trigger
     FOR EACH ROW
     EXECUTE FUNCTION set_connectors_updated_at();
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS schedules_connector_id_paused_at ON schedules (connector_id, paused_at);
-
-CREATE INDEX CONCURRENTLY IF NOT EXISTS workflows_instances_error ON workflows_instances (error);
