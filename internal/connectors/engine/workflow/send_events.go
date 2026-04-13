@@ -34,6 +34,7 @@ type SendEvents struct {
 	UserConnectionDataSynced        *models.UserConnectionDataSynced
 	Task                            *models.Task
 	Order                           *models.Order
+	Conversion                      *models.Conversion
 }
 
 func (w Workflow) runSendEvents(
@@ -249,6 +250,23 @@ func (w Workflow) runSendEvents(
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if sendEvents.Conversion != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.Conversion.IdempotencyKey(),
+			&sendEvents.Conversion.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendConversion(
+					infiniteRetryContext(ctx),
+					*sendEvents.Conversion,
+				)
+			},
+		)
+		if err != nil {
+			return err
 		}
 	}
 
