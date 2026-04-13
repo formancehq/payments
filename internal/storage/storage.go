@@ -196,6 +196,8 @@ type Storage interface {
 	OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error)
 	OrdersDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
+
+
 	// Conversions
 	ConversionsUpsert(ctx context.Context, conversions []models.Conversion) error
 	ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error)

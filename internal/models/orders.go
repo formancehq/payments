@@ -21,6 +21,9 @@ type PSPOrder struct {
 	// PSP order reference. Should be unique within the connector.
 	Reference string
 
+	// Client-assigned order ID for idempotency (exchange-specific: Coinbase client_order_id, Kraken cl_ord_id, Binance clientOrderId)
+	ClientOrderID string
+
 	// Order creation date
 	CreatedAt time.Time
 
@@ -35,7 +38,7 @@ type PSPOrder struct {
 	// Target asset (what you're trading to)
 	// For BUY orders: the base currency (e.g., BTC in BTC/EUR)
 	// For SELL orders: the quote currency (e.g., EUR in BTC/EUR)
-	TargetAsset string
+	DestinationAsset string
 
 	// Order type: MARKET or LIMIT
 	Type OrderType
@@ -61,14 +64,31 @@ type PSPOrder struct {
 	// Expiration time for GTD orders
 	ExpiresAt *time.Time
 
-	// Fee charged for the order (using integer representation)
+	// Quote amount filled (in quote asset units, e.g. USD cents).
+	// For BUY: how much quote currency was spent. For SELL: how much was received.
+	// This is the exact filled_value from the exchange, parsed at quote precision.
+	QuoteAmount *big.Int
+
+	// Quote asset with precision (e.g. "USD/2")
+	QuoteAsset string
+
+	// Fee charged for the order (using integer representation, in quote currency)
 	Fee *big.Int
 
-	// Fee asset
+	// Fee asset with precision (e.g. "USD/2")
 	FeeAsset *string
 
-	// Average fill price (using integer representation)
+	// Average fill price (using integer representation, analytics only)
 	AverageFillPrice *big.Int
+
+	// Price asset with precision for interpreting price fields (analytics only)
+	PriceAsset *string
+
+	// Account references (wallet UUIDs) for source and destination.
+	// BUY: source = quote wallet (USD), destination = base wallet (crypto)
+	// SELL: source = base wallet (crypto), destination = quote wallet (USD)
+	SourceAccountReference      *string
+	DestinationAccountReference *string
 
 	// Additional metadata
 	Metadata map[string]string
@@ -94,7 +114,7 @@ func (o *PSPOrder) Validate() error {
 		return errorsutils.NewWrappedError(errors.New("invalid order source asset"), ErrValidation)
 	}
 
-	if !assets.IsValid(o.TargetAsset) {
+	if !assets.IsValid(o.DestinationAsset) {
 		return errorsutils.NewWrappedError(errors.New("invalid order target asset"), ErrValidation)
 	}
 
@@ -128,6 +148,9 @@ type Order struct {
 	// PSP order reference
 	Reference string `json:"reference"`
 
+	// Client-assigned order ID for idempotency
+	ClientOrderID string `json:"clientOrderId,omitempty"`
+
 	// Order creation date
 	CreatedAt time.Time `json:"createdAt"`
 
@@ -141,7 +164,7 @@ type Order struct {
 	SourceAsset string `json:"sourceAsset"`
 
 	// Target asset
-	TargetAsset string `json:"targetAsset"`
+	DestinationAsset string `json:"destinationAsset"`
 
 	// Order type: MARKET or LIMIT
 	Type OrderType `json:"type"`
@@ -167,14 +190,27 @@ type Order struct {
 	// Expiration time for GTD orders
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 
-	// Fee charged for the order
+	// Quote amount filled (in quote asset units, integer)
+	QuoteAmount *big.Int `json:"quoteAmount,omitempty"`
+
+	// Quote asset with precision (e.g. "USD/2")
+	QuoteAsset string `json:"quoteAsset,omitempty"`
+
+	// Fee charged (in quote currency, integer)
 	Fee *big.Int `json:"fee,omitempty"`
 
-	// Fee asset
+	// Fee asset with precision (e.g. "USD/2")
 	FeeAsset *string `json:"feeAsset,omitempty"`
 
-	// Average fill price
+	// Average fill price (analytics, integer at priceAsset precision)
 	AverageFillPrice *big.Int `json:"averageFillPrice,omitempty"`
+
+	// Price asset with precision for interpreting price fields (analytics)
+	PriceAsset *string `json:"priceAsset,omitempty"`
+
+	// Account references (Formance AccountIDs built from wallet UUID + connectorID)
+	SourceAccountID      *AccountID `json:"sourceAccountID"`
+	DestinationAccountID *AccountID `json:"destinationAccountID"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
@@ -193,11 +229,12 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		ConnectorID         string            `json:"connectorID"`
 		Provider            string            `json:"provider"`
 		Reference           string            `json:"reference"`
+		ClientOrderID       string            `json:"clientOrderId,omitempty"`
 		CreatedAt           time.Time         `json:"createdAt"`
 		UpdatedAt           time.Time         `json:"updatedAt"`
 		Direction           OrderDirection    `json:"direction"`
 		SourceAsset         string            `json:"sourceAsset"`
-		TargetAsset         string            `json:"targetAsset"`
+		DestinationAsset         string            `json:"destinationAsset"`
 		Type                OrderType         `json:"type"`
 		Status              OrderStatus       `json:"status"`
 		BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered"`
@@ -206,21 +243,27 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 		TimeInForce         TimeInForce       `json:"timeInForce"`
 		ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
+		QuoteAmount         *big.Int          `json:"quoteAmount,omitempty"`
+		QuoteAsset          string            `json:"quoteAsset,omitempty"`
 		Fee                 *big.Int          `json:"fee,omitempty"`
 		FeeAsset            *string           `json:"feeAsset,omitempty"`
 		AverageFillPrice    *big.Int          `json:"averageFillPrice,omitempty"`
-		Metadata            map[string]string `json:"metadata"`
-		Adjustments         []OrderAdjustment `json:"adjustments"`
+		PriceAsset           *string           `json:"priceAsset,omitempty"`
+		SourceAccountID      *string           `json:"sourceAccountID"`
+		DestinationAccountID *string           `json:"destinationAccountID"`
+		Metadata             map[string]string `json:"metadata"`
+		Adjustments          []OrderAdjustment `json:"adjustments"`
 	}{
 		ID:                  o.ID.String(),
 		ConnectorID:         o.ConnectorID.String(),
 		Provider:            ToV3Provider(o.ConnectorID.Provider),
 		Reference:           o.Reference,
+		ClientOrderID:       o.ClientOrderID,
 		CreatedAt:           o.CreatedAt,
 		UpdatedAt:           o.UpdatedAt,
 		Direction:           o.Direction,
 		SourceAsset:         o.SourceAsset,
-		TargetAsset:         o.TargetAsset,
+		DestinationAsset:    o.DestinationAsset,
 		Type:                o.Type,
 		Status:              o.Status,
 		BaseQuantityOrdered: o.BaseQuantityOrdered,
@@ -229,11 +272,16 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		StopPrice:           o.StopPrice,
 		TimeInForce:         o.TimeInForce,
 		ExpiresAt:           o.ExpiresAt,
+		QuoteAmount:         o.QuoteAmount,
+		QuoteAsset:          o.QuoteAsset,
 		Fee:                 o.Fee,
 		FeeAsset:            o.FeeAsset,
 		AverageFillPrice:    o.AverageFillPrice,
-		Metadata:            o.Metadata,
-		Adjustments:         o.Adjustments,
+		PriceAsset:          o.PriceAsset,
+		SourceAccountID:      o.SourceAccountID.StringPtr(),
+		DestinationAccountID: o.DestinationAccountID.StringPtr(),
+		Metadata:    o.Metadata,
+		Adjustments: o.Adjustments,
 	})
 }
 
@@ -242,11 +290,12 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 		ID                  string            `json:"id"`
 		ConnectorID         string            `json:"connectorID"`
 		Reference           string            `json:"reference"`
+		ClientOrderID       string            `json:"clientOrderId,omitempty"`
 		CreatedAt           time.Time         `json:"createdAt"`
 		UpdatedAt           time.Time         `json:"updatedAt"`
 		Direction           OrderDirection    `json:"direction"`
 		SourceAsset         string            `json:"sourceAsset"`
-		TargetAsset         string            `json:"targetAsset"`
+		DestinationAsset         string            `json:"destinationAsset"`
 		Type                OrderType         `json:"type"`
 		Status              OrderStatus       `json:"status"`
 		BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered"`
@@ -255,11 +304,16 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 		StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 		TimeInForce         TimeInForce       `json:"timeInForce"`
 		ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
+		QuoteAmount         *big.Int          `json:"quoteAmount,omitempty"`
+		QuoteAsset          string            `json:"quoteAsset,omitempty"`
 		Fee                 *big.Int          `json:"fee,omitempty"`
 		FeeAsset            *string           `json:"feeAsset,omitempty"`
 		AverageFillPrice    *big.Int          `json:"averageFillPrice,omitempty"`
-		Metadata            map[string]string `json:"metadata"`
-		Adjustments         []OrderAdjustment `json:"adjustments"`
+		PriceAsset           *string           `json:"priceAsset,omitempty"`
+		SourceAccountID      *string           `json:"sourceAccountID,omitempty"`
+		DestinationAccountID *string           `json:"destinationAccountID,omitempty"`
+		Metadata             map[string]string `json:"metadata"`
+		Adjustments          []OrderAdjustment `json:"adjustments"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -279,11 +333,12 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 	o.ID = id
 	o.ConnectorID = connectorID
 	o.Reference = aux.Reference
+	o.ClientOrderID = aux.ClientOrderID
 	o.CreatedAt = aux.CreatedAt
 	o.UpdatedAt = aux.UpdatedAt
 	o.Direction = aux.Direction
 	o.SourceAsset = aux.SourceAsset
-	o.TargetAsset = aux.TargetAsset
+	o.DestinationAsset = aux.DestinationAsset
 	o.Type = aux.Type
 	o.Status = aux.Status
 	o.BaseQuantityOrdered = aux.BaseQuantityOrdered
@@ -292,9 +347,26 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 	o.StopPrice = aux.StopPrice
 	o.TimeInForce = aux.TimeInForce
 	o.ExpiresAt = aux.ExpiresAt
+	o.QuoteAmount = aux.QuoteAmount
+	o.QuoteAsset = aux.QuoteAsset
 	o.Fee = aux.Fee
 	o.FeeAsset = aux.FeeAsset
 	o.AverageFillPrice = aux.AverageFillPrice
+	o.PriceAsset = aux.PriceAsset
+	if aux.SourceAccountID != nil {
+		id, err := AccountIDFromString(*aux.SourceAccountID)
+		if err != nil {
+			return err
+		}
+		o.SourceAccountID = &id
+	}
+	if aux.DestinationAccountID != nil {
+		id, err := AccountIDFromString(*aux.DestinationAccountID)
+		if err != nil {
+			return err
+		}
+		o.DestinationAccountID = &id
+	}
 	o.Metadata = aux.Metadata
 	o.Adjustments = aux.Adjustments
 
@@ -308,7 +380,7 @@ func ToPSPOrder(order *Order) PSPOrder {
 		CreatedAt:           order.CreatedAt,
 		Direction:           order.Direction,
 		SourceAsset:         order.SourceAsset,
-		TargetAsset:         order.TargetAsset,
+		DestinationAsset:         order.DestinationAsset,
 		Type:                order.Type,
 		Status:              order.Status,
 		BaseQuantityOrdered: order.BaseQuantityOrdered,
@@ -317,10 +389,15 @@ func ToPSPOrder(order *Order) PSPOrder {
 		StopPrice:           order.StopPrice,
 		TimeInForce:         order.TimeInForce,
 		ExpiresAt:           order.ExpiresAt,
+		QuoteAmount:         order.QuoteAmount,
+		QuoteAsset:          order.QuoteAsset,
 		Fee:                 order.Fee,
 		FeeAsset:            order.FeeAsset,
 		AverageFillPrice:    order.AverageFillPrice,
-		Metadata:            order.Metadata,
+		PriceAsset:                  order.PriceAsset,
+		SourceAccountReference:      order.SourceAccountID.Ref(),
+		DestinationAccountReference: order.DestinationAccountID.Ref(),
+		Metadata:                    order.Metadata,
 	}
 }
 
@@ -338,11 +415,12 @@ func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) 
 		},
 		ConnectorID:         connectorID,
 		Reference:           from.Reference,
+		ClientOrderID:       from.ClientOrderID,
 		CreatedAt:           from.CreatedAt,
 		UpdatedAt:           now,
 		Direction:           from.Direction,
 		SourceAsset:         from.SourceAsset,
-		TargetAsset:         from.TargetAsset,
+		DestinationAsset:         from.DestinationAsset,
 		Type:                from.Type,
 		Status:              from.Status,
 		BaseQuantityOrdered: from.BaseQuantityOrdered,
@@ -351,10 +429,15 @@ func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) 
 		StopPrice:           from.StopPrice,
 		TimeInForce:         from.TimeInForce,
 		ExpiresAt:           from.ExpiresAt,
+		QuoteAmount:         from.QuoteAmount,
+		QuoteAsset:          from.QuoteAsset,
 		Fee:                 from.Fee,
 		FeeAsset:            from.FeeAsset,
 		AverageFillPrice:    from.AverageFillPrice,
-		Metadata:            from.Metadata,
+		PriceAsset:           from.PriceAsset,
+		SourceAccountID:      NewAccountID(from.SourceAccountReference, connectorID),
+		DestinationAccountID: NewAccountID(from.DestinationAccountReference, connectorID),
+		Metadata:             from.Metadata,
 	}
 
 	o.Adjustments = append(o.Adjustments, FromPSPOrderToOrderAdjustment(from, connectorID))
@@ -560,11 +643,12 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		ConnectorID         string            `json:"connectorID"`
 		Provider            string            `json:"provider"`
 		Reference           string            `json:"reference"`
+		ClientOrderID       string            `json:"clientOrderId,omitempty"`
 		CreatedAt           time.Time         `json:"createdAt"`
 		UpdatedAt           time.Time         `json:"updatedAt"`
 		Direction           OrderDirection    `json:"direction"`
 		SourceAsset         string            `json:"sourceAsset"`
-		TargetAsset         string            `json:"targetAsset"`
+		DestinationAsset         string            `json:"destinationAsset"`
 		Type                OrderType         `json:"type"`
 		Status              string            `json:"status"`
 		BaseQuantityOrdered *big.Int          `json:"baseQuantityOrdered"`
@@ -573,22 +657,28 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		StopPrice           *big.Int          `json:"stopPrice,omitempty"`
 		TimeInForce         TimeInForce       `json:"timeInForce"`
 		ExpiresAt           *time.Time        `json:"expiresAt,omitempty"`
+		QuoteAmount         *big.Int          `json:"quoteAmount,omitempty"`
+		QuoteAsset          string            `json:"quoteAsset,omitempty"`
 		Fee                 *big.Int          `json:"fee,omitempty"`
 		FeeAsset            *string           `json:"feeAsset,omitempty"`
 		AverageFillPrice    *big.Int          `json:"averageFillPrice,omitempty"`
-		Metadata            map[string]string `json:"metadata"`
-		Adjustments         []OrderAdjustment `json:"adjustments"`
-		Error               *string           `json:"error,omitempty"`
+		PriceAsset           *string           `json:"priceAsset,omitempty"`
+		SourceAccountID      *string           `json:"sourceAccountID"`
+		DestinationAccountID *string           `json:"destinationAccountID"`
+		Metadata             map[string]string `json:"metadata"`
+		Adjustments          []OrderAdjustment `json:"adjustments"`
+		Error                *string           `json:"error,omitempty"`
 	}{
-		ID:                  oe.Order.ID.String(),
-		ConnectorID:         oe.Order.ConnectorID.String(),
-		Provider:            ToV3Provider(oe.Order.ConnectorID.Provider),
-		Reference:           oe.Order.Reference,
-		CreatedAt:           oe.Order.CreatedAt,
-		UpdatedAt:           oe.Order.UpdatedAt,
-		Direction:           oe.Order.Direction,
-		SourceAsset:         oe.Order.SourceAsset,
-		TargetAsset:         oe.Order.TargetAsset,
+		ID:                   oe.Order.ID.String(),
+		ConnectorID:          oe.Order.ConnectorID.String(),
+		Provider:             ToV3Provider(oe.Order.ConnectorID.Provider),
+		Reference:            oe.Order.Reference,
+		ClientOrderID:        oe.Order.ClientOrderID,
+		CreatedAt:            oe.Order.CreatedAt,
+		UpdatedAt:            oe.Order.UpdatedAt,
+		Direction:            oe.Order.Direction,
+		SourceAsset:          oe.Order.SourceAsset,
+		DestinationAsset:     oe.Order.DestinationAsset,
 		Type:                oe.Order.Type,
 		Status:              oe.Status.String(),
 		BaseQuantityOrdered: oe.Order.BaseQuantityOrdered,
@@ -597,11 +687,16 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		StopPrice:           oe.Order.StopPrice,
 		TimeInForce:         oe.Order.TimeInForce,
 		ExpiresAt:           oe.Order.ExpiresAt,
+		QuoteAmount:         oe.Order.QuoteAmount,
+		QuoteAsset:          oe.Order.QuoteAsset,
 		Fee:                 oe.Order.Fee,
 		FeeAsset:            oe.Order.FeeAsset,
 		AverageFillPrice:    oe.Order.AverageFillPrice,
-		Metadata:            oe.Order.Metadata,
-		Adjustments:         oe.Order.Adjustments,
+		PriceAsset:           oe.Order.PriceAsset,
+		SourceAccountID:      oe.Order.SourceAccountID.StringPtr(),
+		DestinationAccountID: oe.Order.DestinationAccountID.StringPtr(),
+		Metadata:             oe.Order.Metadata,
+		Adjustments:          oe.Order.Adjustments,
 		Error: func() *string {
 			if oe.Error == nil {
 				return nil

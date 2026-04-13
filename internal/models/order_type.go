@@ -14,6 +14,17 @@ const (
 	ORDER_TYPE_MARKET
 	ORDER_TYPE_LIMIT
 	ORDER_TYPE_STOP_LIMIT
+	ORDER_TYPE_STOP
+	ORDER_TYPE_TWAP
+	ORDER_TYPE_VWAP
+	ORDER_TYPE_PEG
+	ORDER_TYPE_BLOCK
+	ORDER_TYPE_RFQ
+	ORDER_TYPE_TRAILING_STOP
+	ORDER_TYPE_TRAILING_STOP_LIMIT
+	ORDER_TYPE_TAKE_PROFIT
+	ORDER_TYPE_TAKE_PROFIT_LIMIT
+	ORDER_TYPE_LIMIT_MAKER
 )
 
 func (t OrderType) String() string {
@@ -24,6 +35,28 @@ func (t OrderType) String() string {
 		return "LIMIT"
 	case ORDER_TYPE_STOP_LIMIT:
 		return "STOP_LIMIT"
+	case ORDER_TYPE_STOP:
+		return "STOP"
+	case ORDER_TYPE_TWAP:
+		return "TWAP"
+	case ORDER_TYPE_VWAP:
+		return "VWAP"
+	case ORDER_TYPE_PEG:
+		return "PEG"
+	case ORDER_TYPE_BLOCK:
+		return "BLOCK"
+	case ORDER_TYPE_RFQ:
+		return "RFQ"
+	case ORDER_TYPE_TRAILING_STOP:
+		return "TRAILING_STOP"
+	case ORDER_TYPE_TRAILING_STOP_LIMIT:
+		return "TRAILING_STOP_LIMIT"
+	case ORDER_TYPE_TAKE_PROFIT:
+		return "TAKE_PROFIT"
+	case ORDER_TYPE_TAKE_PROFIT_LIMIT:
+		return "TAKE_PROFIT_LIMIT"
+	case ORDER_TYPE_LIMIT_MAKER:
+		return "LIMIT_MAKER"
 	default:
 		return "UNKNOWN"
 	}
@@ -37,6 +70,28 @@ func OrderTypeFromString(s string) (OrderType, error) {
 		return ORDER_TYPE_LIMIT, nil
 	case "STOP_LIMIT":
 		return ORDER_TYPE_STOP_LIMIT, nil
+	case "STOP":
+		return ORDER_TYPE_STOP, nil
+	case "TWAP":
+		return ORDER_TYPE_TWAP, nil
+	case "VWAP":
+		return ORDER_TYPE_VWAP, nil
+	case "PEG":
+		return ORDER_TYPE_PEG, nil
+	case "BLOCK":
+		return ORDER_TYPE_BLOCK, nil
+	case "RFQ":
+		return ORDER_TYPE_RFQ, nil
+	case "TRAILING_STOP":
+		return ORDER_TYPE_TRAILING_STOP, nil
+	case "TRAILING_STOP_LIMIT":
+		return ORDER_TYPE_TRAILING_STOP_LIMIT, nil
+	case "TAKE_PROFIT":
+		return ORDER_TYPE_TAKE_PROFIT, nil
+	case "TAKE_PROFIT_LIMIT":
+		return ORDER_TYPE_TAKE_PROFIT_LIMIT, nil
+	case "LIMIT_MAKER":
+		return ORDER_TYPE_LIMIT_MAKER, nil
 	default:
 		return ORDER_TYPE_UNKNOWN, fmt.Errorf("unknown order type: %s", s)
 	}

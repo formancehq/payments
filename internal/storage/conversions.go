@@ -23,13 +23,16 @@ type conversion struct {
 	CreatedAt    internalTime.Time       `bun:"created_at,type:timestamp without time zone,notnull"`
 	UpdatedAt    internalTime.Time       `bun:"updated_at,type:timestamp without time zone,notnull"`
 	SourceAsset  string                  `bun:"source_asset,type:text,notnull"`
-	TargetAsset  string                  `bun:"target_asset,type:text,notnull"`
+	DestinationAsset  string                  `bun:"destination_asset,type:text,notnull"`
 	SourceAmount *big.Int                `bun:"source_amount,type:numeric,notnull"`
 	Status       models.ConversionStatus `bun:"status,type:text,notnull"`
-	WalletID     string                  `bun:"wallet_id,type:text,notnull"`
 
 	// Optional fields
-	TargetAmount *big.Int `bun:"target_amount,type:numeric,nullzero"`
+	DestinationAmount    *big.Int `bun:"destination_amount,type:numeric,nullzero"`
+	Fee                  *big.Int `bun:"fee,type:numeric,nullzero"`
+	FeeAsset             *string  `bun:"fee_asset,type:text,nullzero"`
+	SourceAccountID      *models.AccountID `bun:"source_account_id,type:character varying,nullzero"`
+	DestinationAccountID *models.AccountID `bun:"destination_account_id,type:character varying,nullzero"`
 
 	// Optional fields with default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
@@ -51,7 +54,11 @@ func (s *store) ConversionsUpsert(ctx context.Context, conversions []models.Conv
 			On("CONFLICT (id) DO UPDATE").
 			Set("updated_at = EXCLUDED.updated_at").
 			Set("status = EXCLUDED.status").
-			Set("target_amount = EXCLUDED.target_amount").
+			Set("destination_amount = EXCLUDED.destination_amount").
+			Set("fee = EXCLUDED.fee").
+			Set("fee_asset = EXCLUDED.fee_asset").
+			Set("source_account_id = EXCLUDED.source_account_id").
+			Set("destination_account_id = EXCLUDED.destination_account_id").
 			Set("metadata = conversion.metadata || EXCLUDED.metadata").
 			Exec(ctx)
 		if err != nil {
@@ -104,16 +111,17 @@ func (s *store) conversionsQueryContext(qb query.Builder) (string, []any, error)
 			key == "id",
 			key == "connector_id",
 			key == "source_asset",
-			key == "target_asset",
+			key == "destination_asset",
 			key == "status",
-			key == "wallet_id":
+			key == "source_account_id",
+			key == "destination_account_id":
 			if operator != "$match" {
 				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
 			}
 			return fmt.Sprintf("conversion.%s = ?", key), []any{value}, nil
 
 		case key == "source_amount",
-			key == "target_amount":
+			key == "destination_amount":
 			return fmt.Sprintf("conversion.%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
@@ -177,36 +185,42 @@ func (s *store) ConversionsList(ctx context.Context, q ListConversionsQuery) (*b
 
 func fromConversionModels(from models.Conversion) conversion {
 	return conversion{
-		ID:           from.ID,
-		ConnectorID:  from.ConnectorID,
-		Reference:    from.Reference,
-		CreatedAt:    internalTime.New(from.CreatedAt),
-		UpdatedAt:    internalTime.New(from.UpdatedAt),
-		SourceAsset:  from.SourceAsset,
-		TargetAsset:  from.TargetAsset,
-		SourceAmount: from.SourceAmount,
-		TargetAmount: from.TargetAmount,
-		Status:       from.Status,
-		WalletID:     from.WalletID,
-		Metadata:     from.Metadata,
-		Raw:          from.Raw,
+		ID:                   from.ID,
+		ConnectorID:          from.ConnectorID,
+		Reference:            from.Reference,
+		CreatedAt:            internalTime.New(from.CreatedAt),
+		UpdatedAt:            internalTime.New(from.UpdatedAt),
+		SourceAsset:          from.SourceAsset,
+		DestinationAsset:     from.DestinationAsset,
+		SourceAmount:         from.SourceAmount,
+		DestinationAmount:    from.DestinationAmount,
+		Fee:                  from.Fee,
+		FeeAsset:             from.FeeAsset,
+		Status:               from.Status,
+		SourceAccountID:      from.SourceAccountID,
+		DestinationAccountID: from.DestinationAccountID,
+		Metadata:             from.Metadata,
+		Raw:                  from.Raw,
 	}
 }
 
 func toConversionModels(from conversion) models.Conversion {
 	return models.Conversion{
-		ID:           from.ID,
-		ConnectorID:  from.ConnectorID,
-		Reference:    from.Reference,
-		CreatedAt:    from.CreatedAt.Time,
-		UpdatedAt:    from.UpdatedAt.Time,
-		SourceAsset:  from.SourceAsset,
-		TargetAsset:  from.TargetAsset,
-		SourceAmount: from.SourceAmount,
-		TargetAmount: from.TargetAmount,
-		Status:       from.Status,
-		WalletID:     from.WalletID,
-		Metadata:     from.Metadata,
-		Raw:          from.Raw,
+		ID:                   from.ID,
+		ConnectorID:          from.ConnectorID,
+		Reference:            from.Reference,
+		CreatedAt:            from.CreatedAt.Time,
+		UpdatedAt:            from.UpdatedAt.Time,
+		SourceAsset:          from.SourceAsset,
+		DestinationAsset:     from.DestinationAsset,
+		SourceAmount:         from.SourceAmount,
+		DestinationAmount:    from.DestinationAmount,
+		Fee:                  from.Fee,
+		FeeAsset:             from.FeeAsset,
+		Status:               from.Status,
+		SourceAccountID:      from.SourceAccountID,
+		DestinationAccountID: from.DestinationAccountID,
+		Metadata:             from.Metadata,
+		Raw:                  from.Raw,
 	}
 }

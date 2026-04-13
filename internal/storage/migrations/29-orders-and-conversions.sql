@@ -11,7 +11,7 @@ create table if not exists orders (
     updated_at     timestamp without time zone not null,
     direction      text not null,
     source_asset   text not null,
-    target_asset   text not null,
+    destination_asset   text not null,
     type           text not null,
     status         text not null,
     base_quantity_ordered numeric not null,
@@ -20,10 +20,16 @@ create table if not exists orders (
     -- Optional fields
     base_quantity_filled numeric,
     limit_price    numeric,
+    stop_price     numeric,
     expires_at     timestamp without time zone,
+    quote_amount   numeric,
+    quote_asset    text not null default '',
     fee            numeric,
     fee_asset      text,
     average_fill_price numeric,
+    price_asset    text,
+    source_account_id text,
+    destination_account_id text,
 
     -- Optional fields with default
     metadata jsonb not null default '{}'::jsonb,
@@ -83,13 +89,16 @@ create table if not exists conversions (
     created_at     timestamp without time zone not null,
     updated_at     timestamp without time zone not null,
     source_asset   text not null,
-    target_asset   text not null,
+    destination_asset   text not null,
     source_amount  numeric not null,
     status         text not null,
-    wallet_id      text not null,
 
     -- Optional fields
-    target_amount  numeric,
+    destination_amount  numeric,
+    fee            numeric,
+    fee_asset      text,
+    source_account_id text,
+    destination_account_id text,
 
     -- Optional fields with default
     metadata jsonb not null default '{}'::jsonb,

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -64,15 +63,12 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		return models.PSPOrder{}, fmt.Errorf("failed to marshal order raw: %w", err)
 	}
 
-	// Parse product ID to get base/quote assets (e.g., "BTC-USD" -> base="BTC", quote="USD")
 	parts := strings.Split(order.ProductID, "-")
 	if len(parts) != 2 {
 		return models.PSPOrder{}, fmt.Errorf("invalid product ID: %s", order.ProductID)
 	}
-	baseSymbol := parts[0]
-	quoteSymbol := parts[1]
+	baseSymbol, quoteSymbol := parts[0], parts[1]
 
-	// Resolve assets with proper formatting (e.g., "BTC" -> "BTC/8")
 	baseAsset, _, baseOk := p.resolveAssetAndPrecision(baseSymbol)
 	if !baseOk {
 		return models.PSPOrder{}, fmt.Errorf("unsupported base asset: %s", baseSymbol)
@@ -82,44 +78,28 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		return models.PSPOrder{}, fmt.Errorf("unsupported quote asset: %s", quoteSymbol)
 	}
 
-	// Map direction and determine source/target based on trade direction
-	// BUY BTC-USD: source=USD (what you spend), target=BTC (what you receive)
-	// SELL BTC-USD: source=BTC (what you spend), target=USD (what you receive)
+	// BUY BTC-USD: source=USD (spend), target=BTC (receive)
+	// SELL BTC-USD: source=BTC (spend), target=USD (receive)
 	direction := models.ORDER_DIRECTION_BUY
-	sourceAsset := quoteAsset
-	targetAsset := baseAsset
+	sourceAsset, destinationAsset := quoteAsset, baseAsset
 	if strings.ToUpper(order.Side) == "SELL" {
 		direction = models.ORDER_DIRECTION_SELL
-		sourceAsset = baseAsset
-		targetAsset = quoteAsset
+		sourceAsset, destinationAsset = baseAsset, quoteAsset
 	}
 
-	// Map order type
-	orderType := models.ORDER_TYPE_MARKET
-	switch strings.ToUpper(order.Type) {
-	case "LIMIT":
-		orderType = models.ORDER_TYPE_LIMIT
-	case "STOP_LIMIT":
-		orderType = models.ORDER_TYPE_STOP_LIMIT
+	orderType, knownType := mapCoinbaseOrderType(order.Type)
+	if !knownType {
+		p.logger.Infof("unknown coinbase order type %q for order %s, defaulting to MARKET", order.Type, order.ID)
 	}
-
-	// Map status
-	status := mapCoinbaseStatus(order.Status, order.BaseQuantity, order.FilledQuantity)
-
-	// Map time in force
-	timeInForce := models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED
-	switch strings.ToUpper(order.TimeInForce) {
-	case "GTC", "GOOD_UNTIL_CANCELLED":
+	status, knownStatus := mapCoinbaseStatus(order.Status, order.BaseQuantity, order.FilledQuantity)
+	if !knownStatus {
+		p.logger.Infof("unknown coinbase order status %q for order %s, defaulting to PENDING", order.Status, order.ID)
+	}
+	timeInForce, _ := models.TimeInForceFromString(strings.ToUpper(order.TimeInForce))
+	if timeInForce == models.TIME_IN_FORCE_UNKNOWN {
 		timeInForce = models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED
-	case "GTD", "GOOD_UNTIL_DATE_TIME":
-		timeInForce = models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME
-	case "IOC", "IMMEDIATE_OR_CANCEL":
-		timeInForce = models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL
-	case "FOK", "FILL_OR_KILL":
-		timeInForce = models.TIME_IN_FORCE_FILL_OR_KILL
 	}
 
-	// Parse quantities using base asset precision
 	baseQuantityOrdered, err := p.parseOrderQuantity(order.BaseQuantity, baseSymbol)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse base quantity: %w", err)
@@ -130,71 +110,272 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		return models.PSPOrder{}, fmt.Errorf("failed to parse filled quantity: %w", err)
 	}
 
-	// Parse fees using quote asset precision
-	var fee *big.Int
-	if order.Commission != "" {
-		fee, err = p.parseOrderQuantity(order.Commission, quoteSymbol)
-		if err != nil {
-			return models.PSPOrder{}, fmt.Errorf("failed to parse commission: %w", err)
-		}
+	// Quote amount (filled_value) at quote precision — the exact USD amount
+	quoteAmount, err := p.parseOrderQuantity(order.FilledValue, quoteSymbol)
+	if err != nil {
+		return models.PSPOrder{}, fmt.Errorf("failed to parse filled value: %w", err)
 	}
 
-	// Parse limit price using quote asset precision
-	var limitPrice *big.Int
-	if order.LimitPrice != "" {
-		limitPrice, err = p.parseOrderQuantity(order.LimitPrice, quoteSymbol)
-		if err != nil {
-			return models.PSPOrder{}, fmt.Errorf("failed to parse limit price: %w", err)
-		}
+	// Fee at quote precision
+	fee, feeAsset, err := p.parseFeeFields(order, quoteSymbol, quoteAsset)
+	if err != nil {
+		return models.PSPOrder{}, err
 	}
 
-	// Parse created time — return error if unparseable to ensure idempotent adjustment IDs
+	// Use dynamic precision: max decimal places across all price fields for this
+	// order, so all prices are at the same scale and directly comparable.
+	pricePrecision := maxPricePrecision(order.LimitPrice, order.StopPrice, order.AveragePrice)
+
+	limitPrice, err := p.parseOptionalAmount(order.LimitPrice, pricePrecision)
+	if err != nil {
+		return models.PSPOrder{}, fmt.Errorf("failed to parse limit price: %w", err)
+	}
+
+	stopPrice, err := p.parseOptionalAmount(order.StopPrice, pricePrecision)
+	if err != nil {
+		return models.PSPOrder{}, fmt.Errorf("failed to parse stop price: %w", err)
+	}
+
+	avgFillPrice, err := p.parseOptionalAmount(order.AveragePrice, pricePrecision)
+	if err != nil {
+		return models.PSPOrder{}, fmt.Errorf("failed to parse average filled price: %w", err)
+	}
+
 	createdAt, err := time.Parse(time.RFC3339, order.CreatedAt)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse order createdAt %q: %w", order.CreatedAt, err)
 	}
 
+	var expiresAt *time.Time
+	if order.ExpiryTime != "" {
+		t, err := time.Parse(time.RFC3339, order.ExpiryTime)
+		if err != nil {
+			return models.PSPOrder{}, fmt.Errorf("failed to parse order expiryTime %q: %w", order.ExpiryTime, err)
+		}
+		expiresAt = &t
+	}
+
+	metadata := p.buildOrderMetadata(order, baseSymbol, quoteSymbol, pricePrecision)
+	priceAsset := fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
+
+	// Resolve account references from wallet map.
+	// BUY: source = quote wallet (USD out), destination = base wallet (crypto in)
+	// SELL: source = base wallet (crypto out), destination = quote wallet (USD in)
+	var sourceAccountRef, destAccountRef *string
+	if p.wallets != nil {
+		quoteWallet := p.wallets[strings.ToUpper(quoteSymbol)]
+		baseWallet := p.wallets[strings.ToUpper(baseSymbol)]
+		if direction == models.ORDER_DIRECTION_BUY {
+			if quoteWallet != "" {
+				sourceAccountRef = &quoteWallet
+			}
+			if baseWallet != "" {
+				destAccountRef = &baseWallet
+			}
+		} else {
+			if baseWallet != "" {
+				sourceAccountRef = &baseWallet
+			}
+			if quoteWallet != "" {
+				destAccountRef = &quoteWallet
+			}
+		}
+	}
+
 	return models.PSPOrder{
 		Reference:           order.ID,
+		ClientOrderID:       order.ClientOrderID,
 		CreatedAt:           createdAt,
 		Direction:           direction,
 		Type:                orderType,
 		SourceAsset:         sourceAsset,
-		TargetAsset:         targetAsset,
+		DestinationAsset:         destinationAsset,
 		BaseQuantityOrdered: baseQuantityOrdered,
 		BaseQuantityFilled:  baseQuantityFilled,
 		LimitPrice:          limitPrice,
+		StopPrice:           stopPrice,
+		QuoteAmount:         quoteAmount,
+		QuoteAsset:          quoteAsset,
+		AverageFillPrice:    avgFillPrice,
 		Fee:                 fee,
-		Status:              status,
+		FeeAsset:            feeAsset,
+		PriceAsset:                  &priceAsset,
+		SourceAccountReference:      sourceAccountRef,
+		DestinationAccountReference: destAccountRef,
+		Status:                      status,
 		TimeInForce:         timeInForce,
+		ExpiresAt:           expiresAt,
+		Metadata:            metadata,
 		Raw:                 raw,
 	}, nil
 }
 
-func mapCoinbaseStatus(cbStatus, baseQuantity, filledQuantity string) models.OrderStatus {
+func mapCoinbaseOrderType(t string) (models.OrderType, bool) {
+	switch strings.ToUpper(t) {
+	case "MARKET":
+		return models.ORDER_TYPE_MARKET, true
+	case "LIMIT":
+		return models.ORDER_TYPE_LIMIT, true
+	case "STOP_LIMIT":
+		return models.ORDER_TYPE_STOP_LIMIT, true
+	case "TWAP":
+		return models.ORDER_TYPE_TWAP, true
+	case "VWAP":
+		return models.ORDER_TYPE_VWAP, true
+	case "PEG":
+		return models.ORDER_TYPE_PEG, true
+	case "BLOCK":
+		return models.ORDER_TYPE_BLOCK, true
+	case "RFQ":
+		return models.ORDER_TYPE_RFQ, true
+	default:
+		return models.ORDER_TYPE_MARKET, false
+	}
+}
+
+func (p *Plugin) parseFeeFields(order client.Order, quoteSymbol, quoteAsset string) (*big.Int, *string, error) {
+	if order.Commission == "" {
+		return nil, nil, nil
+	}
+	fee, err := p.parseOrderQuantity(order.Commission, quoteSymbol)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse commission: %w", err)
+	}
+	return fee, &quoteAsset, nil
+}
+
+func (p *Plugin) parseOptionalAmount(value string, precision int) (*big.Int, error) {
+	if value == "" {
+		return nil, nil
+	}
+	return parseDecimalString(value, precision)
+}
+
+// parseDecimalString converts a decimal string to *big.Int using pure string
+// manipulation -- no float64 anywhere -- to avoid precision loss.
+func parseDecimalString(value string, precision int) (*big.Int, error) {
+	if value == "" {
+		return nil, fmt.Errorf("empty decimal string")
+	}
+
+	// Strip leading/trailing whitespace
+	value = strings.TrimSpace(value)
+
+	parts := strings.SplitN(value, ".", 2)
+	intPart := parts[0]
+	fracPart := ""
+	if len(parts) == 2 {
+		fracPart = parts[1]
+	}
+
+	if len(fracPart) > precision {
+		fracPart = fracPart[:precision]
+	} else {
+		fracPart += strings.Repeat("0", precision-len(fracPart))
+	}
+
+	result, ok := new(big.Int).SetString(intPart+fracPart, 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid decimal: %s", value)
+	}
+	return result, nil
+}
+
+// decimalPlaces returns the number of digits after the decimal point in a string.
+func decimalPlaces(s string) int {
+	if i := strings.IndexByte(s, '.'); i >= 0 {
+		return len(s) - i - 1
+	}
+	return 0
+}
+
+// maxPricePrecision returns the max decimal places across non-empty values,
+// capped at 10. Coinbase returns prices computed with float64, which can
+// produce strings like "1825.6099999998417653" -- the trailing digits past
+// ~10 decimals are float noise, not real precision.
+const maxPricePrecisionCap = 10
+
+func maxPricePrecision(values ...string) int {
+	m := 0
+	for _, v := range values {
+		if d := decimalPlaces(v); d > m {
+			m = d
+		}
+	}
+	if m > maxPricePrecisionCap {
+		m = maxPricePrecisionCap
+	}
+	return m
+}
+
+// buildOrderMetadata captures valuable Coinbase Prime fields that don't map to
+// structured Order fields, preserving data that's useful for reconciliation and debugging.
+func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol string, pricePrecision int) map[string]string {
+	m := make(map[string]string)
+
+	set := func(k, v string) {
+		if v != "" {
+			m[k] = v
+		}
+	}
+
+	set("coinbase_product_id", order.ProductID)
+	set("coinbase_portfolio_id", order.PortfolioID)
+	set("coinbase_client_order_id", order.ClientOrderID)
+	set("coinbase_quote_value", order.QuoteValue)
+	set("coinbase_filled_value", order.FilledValue)
+	set("coinbase_order_total", order.OrderTotal)
+	set("coinbase_exchange_fee", order.ExchangeFee)
+	set("coinbase_net_average_filled_price", order.NetAverageFilledPrice)
+	set("coinbase_historical_pov", order.HistoricalPov)
+	set("quote_currency", quoteSymbol)
+	m["price_asset"] = fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
+
+	if p.wallets != nil {
+		set("base_wallet_id", p.wallets[strings.ToUpper(baseSymbol)])
+		set("quote_wallet_id", p.wallets[strings.ToUpper(quoteSymbol)])
+	}
+
+	if order.CommissionDetail != nil {
+		set("coinbase_commission_total", order.CommissionDetail.TotalCommission)
+		set("coinbase_commission_client", order.CommissionDetail.ClientCommission)
+		set("coinbase_commission_venue", order.CommissionDetail.VenueCommission)
+		set("coinbase_commission_ces", order.CommissionDetail.CesCommission)
+		set("coinbase_commission_financing", order.CommissionDetail.FinancingCommission)
+		set("coinbase_commission_regulatory", order.CommissionDetail.RegulatoryCommission)
+		set("coinbase_commission_clearing", order.CommissionDetail.ClearingCommission)
+	}
+
+	if order.PostOnly {
+		m["coinbase_post_only"] = "true"
+	}
+
+	return m
+}
+
+func mapCoinbaseStatus(cbStatus, baseQuantity, filledQuantity string) (models.OrderStatus, bool) {
 	switch strings.ToUpper(cbStatus) {
 	case "PENDING":
-		return models.ORDER_STATUS_PENDING
+		return models.ORDER_STATUS_PENDING, true
 	case "OPEN":
-		// Check if partially filled using numeric comparison
 		if filledQuantity != "" && filledQuantity != "0" {
 			filled, ok1 := new(big.Float).SetString(filledQuantity)
 			base, ok2 := new(big.Float).SetString(baseQuantity)
 			if ok1 && ok2 && filled.Sign() > 0 && filled.Cmp(base) < 0 {
-				return models.ORDER_STATUS_PARTIALLY_FILLED
+				return models.ORDER_STATUS_PARTIALLY_FILLED, true
 			}
 		}
-		return models.ORDER_STATUS_OPEN
+		return models.ORDER_STATUS_OPEN, true
 	case "FILLED":
-		return models.ORDER_STATUS_FILLED
+		return models.ORDER_STATUS_FILLED, true
 	case "CANCELLED":
-		return models.ORDER_STATUS_CANCELLED
+		return models.ORDER_STATUS_CANCELLED, true
 	case "EXPIRED":
-		return models.ORDER_STATUS_EXPIRED
+		return models.ORDER_STATUS_EXPIRED, true
 	case "FAILED":
-		return models.ORDER_STATUS_FAILED
+		return models.ORDER_STATUS_FAILED, true
 	default:
-		return models.ORDER_STATUS_PENDING
+		return models.ORDER_STATUS_PENDING, false
 	}
 }
 
@@ -202,14 +383,7 @@ func (p *Plugin) parseOrderQuantity(quantityStr string, asset string) (*big.Int,
 	if quantityStr == "" {
 		return big.NewInt(0), nil
 	}
-
-	precision := p.getPrecision(asset)
-	amount, err := currency.GetAmountWithPrecisionFromString(quantityStr, precision)
-	if err != nil {
-		return nil, err
-	}
-
-	return amount, nil
+	return parseDecimalString(quantityStr, p.getPrecision(asset))
 }
 
 func (p *Plugin) getPrecision(asset string) int {

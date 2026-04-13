@@ -128,7 +128,7 @@ type OrderResponse struct {
 	CreatedAt           time.Time         `json:"created_at"`
 	Direction           string            `json:"direction"`
 	SourceAsset         string            `json:"source_asset"`
-	TargetAsset         string            `json:"target_asset"`
+	DestinationAsset         string            `json:"destination_asset"`
 	Type                string            `json:"type"`
 	Status              string            `json:"status"`
 	BaseQuantityOrdered string            `json:"base_quantity_ordered"`
@@ -151,7 +151,7 @@ func ToOrderResponse(o models.PSPOrder) OrderResponse {
 		CreatedAt:           o.CreatedAt,
 		Direction:           o.Direction.String(),
 		SourceAsset:         o.SourceAsset,
-		TargetAsset:         o.TargetAsset,
+		DestinationAsset:         o.DestinationAsset,
 		Type:                o.Type.String(),
 		Status:              o.Status.String(),
 		BaseQuantityOrdered: bigIntToString(o.BaseQuantityOrdered),
@@ -183,12 +183,13 @@ type ConversionResponse struct {
 	Reference    string            `json:"reference"`
 	CreatedAt    time.Time         `json:"created_at"`
 	SourceAsset  string            `json:"source_asset"`
-	TargetAsset  string            `json:"target_asset"`
+	DestinationAsset  string            `json:"destination_asset"`
 	SourceAmount string            `json:"source_amount"`
-	TargetAmount string            `json:"target_amount,omitempty"`
-	Status       string            `json:"status"`
-	WalletID     string            `json:"wallet_id"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	DestinationAmount string            `json:"target_amount,omitempty"`
+	Status               string            `json:"status"`
+	SourceAccountID      string            `json:"source_account_id,omitempty"`
+	DestinationAccountID string            `json:"destination_account_id,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
 	Raw          json.RawMessage   `json:"raw,omitempty"`
 }
 
@@ -198,11 +199,12 @@ func ToConversionResponse(c models.PSPConversion) ConversionResponse {
 		Reference:    c.Reference,
 		CreatedAt:    c.CreatedAt,
 		SourceAsset:  c.SourceAsset,
-		TargetAsset:  c.TargetAsset,
+		DestinationAsset:  c.DestinationAsset,
 		SourceAmount: bigIntToString(c.SourceAmount),
-		TargetAmount: bigIntToString(c.TargetAmount),
-		Status:       c.Status.String(),
-		WalletID:     c.WalletID,
+		DestinationAmount: bigIntToString(c.DestinationAmount),
+		Status:               c.Status.String(),
+		SourceAccountID:      ptrToString(c.SourceAccountReference),
+		DestinationAccountID: ptrToString(c.DestinationAccountReference),
 		Metadata:     c.Metadata,
 		Raw:          c.Raw,
 	}
@@ -215,6 +217,13 @@ func ToConversionResponses(conversions []models.PSPConversion) []ConversionRespo
 		result[i] = ToConversionResponse(c)
 	}
 	return result
+}
+
+func ptrToString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 func bigIntToString(v *big.Int) string {

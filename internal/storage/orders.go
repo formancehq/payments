@@ -21,11 +21,12 @@ type order struct {
 	ID                  models.OrderID        `bun:"id,pk,type:character varying,notnull"`
 	ConnectorID         models.ConnectorID    `bun:"connector_id,type:character varying,notnull"`
 	Reference           string                `bun:"reference,type:text,notnull"`
+	ClientOrderID       string                `bun:"client_order_id,type:text,notnull,default:''"`
 	CreatedAt           internalTime.Time     `bun:"created_at,type:timestamp without time zone,notnull"`
 	UpdatedAt           internalTime.Time     `bun:"updated_at,type:timestamp without time zone,notnull"`
 	Direction           models.OrderDirection `bun:"direction,type:text,notnull"`
 	SourceAsset         string                `bun:"source_asset,type:text,notnull"`
-	TargetAsset         string                `bun:"target_asset,type:text,notnull"`
+	DestinationAsset         string                `bun:"destination_asset,type:text,notnull"`
 	Type                models.OrderType      `bun:"type,type:text,notnull"`
 	BaseQuantityOrdered *big.Int              `bun:"base_quantity_ordered,type:numeric,notnull"`
 	TimeInForce         models.TimeInForce    `bun:"time_in_force,type:text,notnull"`
@@ -36,10 +37,16 @@ type order struct {
 	// Optional fields
 	BaseQuantityFilled *big.Int           `bun:"base_quantity_filled,type:numeric,nullzero"`
 	LimitPrice         *big.Int           `bun:"limit_price,type:numeric,nullzero"`
+	StopPrice          *big.Int           `bun:"stop_price,type:numeric,nullzero"`
 	ExpiresAt          *internalTime.Time `bun:"expires_at,type:timestamp without time zone,nullzero"`
 	Fee                *big.Int           `bun:"fee,type:numeric,nullzero"`
+	QuoteAmount        *big.Int           `bun:"quote_amount,type:numeric,nullzero"`
+	QuoteAsset         string             `bun:"quote_asset,type:text,notnull,default:''"`
 	FeeAsset           *string            `bun:"fee_asset,type:text,nullzero"`
 	AverageFillPrice   *big.Int           `bun:"average_fill_price,type:numeric,nullzero"`
+	PriceAsset             *string            `bun:"price_asset,type:text,nullzero"`
+	SourceAccountID        *models.AccountID  `bun:"source_account_id,type:character varying,nullzero"`
+	DestinationAccountID   *models.AccountID  `bun:"destination_account_id,type:character varying,nullzero"`
 
 	// Optional fields with default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
@@ -92,9 +99,16 @@ func (s *store) OrdersUpsert(ctx context.Context, orders []models.Order) error {
 			Set("updated_at = EXCLUDED.updated_at").
 			Set("status = EXCLUDED.status").
 			Set("base_quantity_filled = EXCLUDED.base_quantity_filled").
+			Set("stop_price = EXCLUDED.stop_price").
+			Set("quote_amount = EXCLUDED.quote_amount").
+			Set("quote_asset = EXCLUDED.quote_asset").
 			Set("fee = EXCLUDED.fee").
 			Set("fee_asset = EXCLUDED.fee_asset").
 			Set("average_fill_price = EXCLUDED.average_fill_price").
+			Set("price_asset = EXCLUDED.price_asset").
+			Set("source_account_id = EXCLUDED.source_account_id").
+			Set("destination_account_id = EXCLUDED.destination_account_id").
+			Set("expires_at = EXCLUDED.expires_at").
 			Set("metadata = \"order\".metadata || EXCLUDED.metadata").
 			Exec(ctx)
 		if err != nil {
@@ -125,14 +139,15 @@ func (s *store) OrdersGet(ctx context.Context, id models.OrderID) (*models.Order
 	err := s.db.NewSelect().
 		Model(&o).
 		ModelTableExpr("orders AS o").
-		Column("o.*", "oad.status").
-		Join(`join lateral (
-			select status
-			from order_adjustments oad
-			where order_id = o.id
-			order by created_at desc, sort_id desc
-			limit 1
-		) oad on true`).
+		Column("o.*").
+		ColumnExpr("COALESCE(oad.status, o.status) AS status").
+		Join(`LEFT JOIN LATERAL (
+			SELECT status
+			FROM order_adjustments oad
+			WHERE order_id = o.id
+			ORDER BY created_at DESC, sort_id DESC
+			LIMIT 1
+		) oad ON true`).
 		Where("o.id = ?", id).
 		Scan(ctx)
 	if err != nil {
@@ -198,7 +213,7 @@ func (s *store) ordersQueryContext(qb query.Builder) (string, []any, error) {
 			key == "connector_id",
 			key == "direction",
 			key == "source_asset",
-			key == "target_asset",
+			key == "destination_asset",
 			key == "type",
 			key == "status",
 			key == "time_in_force":
@@ -250,14 +265,15 @@ func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate
 			}
 
 			query.ModelTableExpr("orders AS o").
-				Column("o.*", "oad.status").
-				Join(`join lateral (
-				select status
-				from order_adjustments oad
-				where order_id = o.id
-				order by created_at desc, sort_id desc
-				limit 1
-			) oad on true`)
+				Column("o.*").
+				ColumnExpr("COALESCE(oad.status, o.status) AS status").
+				Join(`LEFT JOIN LATERAL (
+				SELECT status
+				FROM order_adjustments oad
+				WHERE order_id = o.id
+				ORDER BY created_at DESC, sort_id DESC
+				LIMIT 1
+			) oad ON true`)
 
 			query = query.Order("created_at DESC", "sort_id DESC")
 
@@ -287,21 +303,28 @@ func fromOrderModels(from models.Order) order {
 		ID:                  from.ID,
 		ConnectorID:         from.ConnectorID,
 		Reference:           from.Reference,
+		ClientOrderID:       from.ClientOrderID,
 		CreatedAt:           internalTime.New(from.CreatedAt),
 		UpdatedAt:           internalTime.New(from.UpdatedAt),
 		Direction:           from.Direction,
 		SourceAsset:         from.SourceAsset,
-		TargetAsset:         from.TargetAsset,
+		DestinationAsset:         from.DestinationAsset,
 		Type:                from.Type,
 		Status:              from.Status,
 		BaseQuantityOrdered: from.BaseQuantityOrdered,
 		BaseQuantityFilled:  from.BaseQuantityFilled,
 		LimitPrice:          from.LimitPrice,
+		StopPrice:           from.StopPrice,
+		QuoteAmount:         from.QuoteAmount,
+		QuoteAsset:          from.QuoteAsset,
 		Fee:                 from.Fee,
 		FeeAsset:            from.FeeAsset,
 		AverageFillPrice:    from.AverageFillPrice,
-		TimeInForce:         from.TimeInForce,
-		Metadata:            from.Metadata,
+		PriceAsset:           from.PriceAsset,
+		SourceAccountID:      from.SourceAccountID,
+		DestinationAccountID: from.DestinationAccountID,
+		TimeInForce:          from.TimeInForce,
+		Metadata:             from.Metadata,
 	}
 
 	if from.ExpiresAt != nil {
@@ -314,24 +337,31 @@ func fromOrderModels(from models.Order) order {
 
 func toOrderModels(from order) models.Order {
 	o := models.Order{
-		ID:                  from.ID,
-		ConnectorID:         from.ConnectorID,
-		Reference:           from.Reference,
-		CreatedAt:           from.CreatedAt.Time,
-		UpdatedAt:           from.UpdatedAt.Time,
-		Direction:           from.Direction,
-		SourceAsset:         from.SourceAsset,
-		TargetAsset:         from.TargetAsset,
-		Type:                from.Type,
-		Status:              from.Status,
-		BaseQuantityOrdered: from.BaseQuantityOrdered,
-		BaseQuantityFilled:  from.BaseQuantityFilled,
-		LimitPrice:          from.LimitPrice,
-		Fee:                 from.Fee,
-		FeeAsset:            from.FeeAsset,
-		AverageFillPrice:    from.AverageFillPrice,
-		TimeInForce:         from.TimeInForce,
-		Metadata:            from.Metadata,
+		ID:                   from.ID,
+		ConnectorID:          from.ConnectorID,
+		Reference:            from.Reference,
+		ClientOrderID:        from.ClientOrderID,
+		CreatedAt:            from.CreatedAt.Time,
+		UpdatedAt:            from.UpdatedAt.Time,
+		Direction:            from.Direction,
+		SourceAsset:          from.SourceAsset,
+		DestinationAsset:     from.DestinationAsset,
+		Type:                 from.Type,
+		Status:               from.Status,
+		BaseQuantityOrdered:  from.BaseQuantityOrdered,
+		BaseQuantityFilled:   from.BaseQuantityFilled,
+		LimitPrice:           from.LimitPrice,
+		StopPrice:            from.StopPrice,
+		QuoteAmount:          from.QuoteAmount,
+		QuoteAsset:           from.QuoteAsset,
+		Fee:                  from.Fee,
+		FeeAsset:             from.FeeAsset,
+		AverageFillPrice:     from.AverageFillPrice,
+		PriceAsset:           from.PriceAsset,
+		SourceAccountID:      from.SourceAccountID,
+		DestinationAccountID: from.DestinationAccountID,
+		TimeInForce:          from.TimeInForce,
+		Metadata:             from.Metadata,
 	}
 
 	if from.ExpiresAt != nil {

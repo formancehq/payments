@@ -33,6 +33,7 @@ type Plugin struct {
 	currMu         sync.Mutex
 	currencies     map[string]int    // symbol → decimal precision (loaded dynamically)
 	networkSymbols map[string]string // network-scoped symbol → base symbol (e.g. "BASEUSDC" → "USDC")
+	wallets        map[string]string // symbol → wallet ID (e.g. "USD" → "570270d8-...")
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -112,10 +113,49 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 		}
 	}
 
+	wallets, err := p.loadWalletMap(ctx)
+	if err != nil {
+		p.logger.Infof("could not load wallet map: %v (wallet IDs will be unavailable on orders)", err)
+	}
+
 	p.currencies = currencies
 	p.networkSymbols = networkSymbols
-	p.logger.Infof("loaded %d currencies and %d network aliases from Coinbase Prime", len(currencies), len(networkSymbols))
+	p.wallets = wallets
+	p.logger.Infof("loaded %d currencies, %d network aliases, %d wallets from Coinbase Prime", len(currencies), len(networkSymbols), len(wallets))
 	return nil
+}
+
+func (p *Plugin) refreshWallets(ctx context.Context) error {
+	wallets, err := p.loadWalletMap(ctx)
+	if err != nil {
+		return err
+	}
+	p.currMu.Lock()
+	defer p.currMu.Unlock()
+	p.wallets = wallets
+	return nil
+}
+
+func (p *Plugin) loadWalletMap(ctx context.Context) (map[string]string, error) {
+	wallets := make(map[string]string)
+	cursor := ""
+	for {
+		resp, err := p.client.GetWallets(ctx, cursor, 100)
+		if err != nil {
+			return wallets, fmt.Errorf("listing wallets: %w", err)
+		}
+		for _, w := range resp.Wallets {
+			sym := strings.ToUpper(strings.TrimSpace(w.Symbol))
+			if sym != "" {
+				wallets[sym] = w.ID
+			}
+		}
+		if !resp.Pagination.HasNext || resp.Pagination.NextCursor == "" {
+			break
+		}
+		cursor = resp.Pagination.NextCursor
+	}
+	return wallets, nil
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
@@ -171,6 +211,9 @@ func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}
 	if err := p.ensureCurrencies(ctx); err != nil {
 		return models.FetchNextOrdersResponse{}, err
+	}
+	if err := p.refreshWallets(ctx); err != nil {
+		p.logger.Infof("could not refresh wallet map: %v", err)
 	}
 	return p.fetchNextOrders(ctx, req)
 }

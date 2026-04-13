@@ -186,3 +186,4 @@ type FetchNextConversionsResponse struct {
 	NewState    json.RawMessage
 	HasMore     bool
 }
+

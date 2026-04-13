@@ -80,7 +80,7 @@ func (w Workflow) fetchOrders(
 			)
 		}
 
-		if len(ordersResponse.Orders) > 0 {
+		if len(orders) > 0 {
 			err = activities.StorageOrdersUpsert(
 				infiniteRetryContext(ctx),
 				orders,
@@ -90,8 +90,21 @@ func (w Workflow) fetchOrders(
 			}
 		}
 
-		// TODO: Add event sending for orders when needed
-		// Currently orders don't have event sending like accounts/balances
+		if !IsEventOutboxPatternEnabled(ctx) {
+			wg := workflow.NewWaitGroup(ctx)
+			errChan := make(chan error, len(orders))
+			for _, o := range orders {
+				ord := o
+				w.runSendEventAsChildWorkflow(ctx, wg, SendEvents{Order: &ord}, errChan)
+			}
+			wg.Wait(ctx)
+			close(errChan)
+			for err := range errChan {
+				if err != nil {
+					return err
+				}
+			}
+		}
 
 		state.State = ordersResponse.NewState
 		err = activities.StorageStatesStore(
