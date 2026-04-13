@@ -37,6 +37,8 @@ func ConversionStatusFromString(str string) (ConversionStatus, error) {
 		return CONVERSION_STATUS_COMPLETED, nil
 	case "FAILED":
 		return CONVERSION_STATUS_FAILED, nil
+	case "UNKNOWN":
+		return CONVERSION_STATUS_UNKNOWN, nil
 	default:
 		return CONVERSION_STATUS_UNKNOWN, fmt.Errorf("unknown conversion status: %s", str)
 	}
@@ -58,11 +60,10 @@ func (s *ConversionStatus) UnmarshalJSON(data []byte) error {
 }
 
 func (s ConversionStatus) Value() (driver.Value, error) {
-	res := s.String()
-	if res == "UNKNOWN" {
+	if s == CONVERSION_STATUS_UNKNOWN {
 		return nil, fmt.Errorf("unknown conversion status")
 	}
-	return res, nil
+	return s.String(), nil
 }
 
 func (s *ConversionStatus) Scan(value interface{}) error {

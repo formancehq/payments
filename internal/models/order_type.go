@@ -92,6 +92,8 @@ func OrderTypeFromString(s string) (OrderType, error) {
 		return ORDER_TYPE_TAKE_PROFIT_LIMIT, nil
 	case "LIMIT_MAKER":
 		return ORDER_TYPE_LIMIT_MAKER, nil
+	case "UNKNOWN":
+		return ORDER_TYPE_UNKNOWN, nil
 	default:
 		return ORDER_TYPE_UNKNOWN, fmt.Errorf("unknown order type: %s", s)
 	}
@@ -113,11 +115,10 @@ func (t *OrderType) UnmarshalJSON(data []byte) error {
 }
 
 func (t OrderType) Value() (driver.Value, error) {
-	res := t.String()
-	if res == "UNKNOWN" {
+	if t == ORDER_TYPE_UNKNOWN {
 		return nil, fmt.Errorf("unknown order type")
 	}
-	return res, nil
+	return t.String(), nil
 }
 
 func (t *OrderType) Scan(value interface{}) error {

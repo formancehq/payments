@@ -16,6 +16,8 @@ import (
 type conversion struct {
 	bun.BaseModel `bun:"table:conversions"`
 
+	SortID int64 `bun:"sort_id,autoincrement"`
+
 	// Mandatory fields
 	ID           models.ConversionID     `bun:"id,pk,type:character varying,notnull"`
 	ConnectorID  models.ConnectorID      `bun:"connector_id,type:character varying,notnull"`
