@@ -117,7 +117,7 @@ export interface Order {
   created_at: string;
   direction: string;
   source_asset: string;
-  target_asset: string;
+  destination_asset: string;
   type: string;
   status: string;
   base_quantity_ordered: string;
@@ -137,9 +137,9 @@ export interface Conversion {
   reference: string;
   created_at: string;
   source_asset: string;
-  target_asset: string;
+  destination_asset: string;
   source_amount: string;
-  target_amount?: string;
+  destination_amount?: string;
   status: string;
   wallet_id: string;
   metadata?: Record<string, string>;

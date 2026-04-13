@@ -19,6 +19,21 @@ const (
 	PluginTypeExchange
 )
 
+func (t PluginType) String() string {
+	switch t {
+	case PluginTypePSP:
+		return "PSP"
+	case PluginTypeOpenBanking:
+		return "OPEN_BANKING"
+	case PluginTypeBoth:
+		return "BOTH"
+	case PluginTypeExchange:
+		return "EXCHANGE"
+	default:
+		return "PSP"
+	}
+}
+
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
 type Plugin interface {
 	PSPPlugin

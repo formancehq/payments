@@ -36,24 +36,14 @@ type PaymentMessagePayload struct {
 
 func (p *PaymentMessagePayload) MarshalJSON() ([]byte, error) {
 	type Alias PaymentMessagePayload
-	var initialAmountStr *string
-	if p.InitialAmount != nil {
-		s := p.InitialAmount.String()
-		initialAmountStr = &s
-	}
-	var amountStr *string
-	if p.Amount != nil {
-		s := p.Amount.String()
-		amountStr = &s
-	}
 	return json.Marshal(&struct {
 		InitialAmount *string `json:"initialAmount"`
 		Amount        *string `json:"amount"`
 		*Alias
 	}{
-		InitialAmount: initialAmountStr,
-		Amount:        amountStr,
-		Alias:        (*Alias)(p),
+		InitialAmount: bigIntToString(p.InitialAmount),
+		Amount:        bigIntToString(p.Amount),
+		Alias:         (*Alias)(p),
 	})
 }
 
@@ -69,23 +59,13 @@ func (p *PaymentMessagePayload) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	if aux.InitialAmount != nil {
-		bi := new(big.Int)
-		if _, ok := bi.SetString(*aux.InitialAmount, 10); !ok {
-			return fmt.Errorf("invalid initialAmount string: %s", *aux.InitialAmount)
-		}
-		p.InitialAmount = bi
-	} else {
-		p.InitialAmount = nil
+
+	var err error
+	if p.InitialAmount, err = bigIntFromString(aux.InitialAmount, "initialAmount"); err != nil {
+		return err
 	}
-	if aux.Amount != nil {
-		bi := new(big.Int)
-		if _, ok := bi.SetString(*aux.Amount, 10); !ok {
-			return fmt.Errorf("invalid amount string: %s", *aux.Amount)
-		}
-		p.Amount = bi
-	} else {
-		p.Amount = nil
+	if p.Amount, err = bigIntFromString(aux.Amount, "amount"); err != nil {
+		return err
 	}
 	return nil
 }

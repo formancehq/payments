@@ -13,23 +13,27 @@ type ConnectorBase struct {
 	Name string `json:"name"`
 	// Creation date
 	CreatedAt time.Time `json:"createdAt"`
-	// Provider type
+	// Provider name
 	Provider string `json:"provider"`
+	// Connector type (PSP, OPEN_BANKING, BOTH, EXCHANGE)
+	ConnectorType PluginType `json:"connectorType"`
 }
 
 func (c ConnectorBase) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID        string    `json:"id"`
-		Reference string    `json:"reference"`
-		Name      string    `json:"name"`
-		CreatedAt time.Time `json:"createdAt"`
-		Provider  string    `json:"provider"`
+		ID            string    `json:"id"`
+		Reference     string    `json:"reference"`
+		Name          string    `json:"name"`
+		CreatedAt     time.Time `json:"createdAt"`
+		Provider      string    `json:"provider"`
+		ConnectorType string    `json:"connectorType,omitempty"`
 	}{
-		ID:        c.ID.String(),
-		Reference: c.ID.Reference.String(),
-		Name:      c.Name,
-		CreatedAt: c.CreatedAt,
-		Provider:  ToV3Provider(c.Provider),
+		ID:            c.ID.String(),
+		Reference:     c.ID.Reference.String(),
+		Name:          c.Name,
+		CreatedAt:     c.CreatedAt,
+		Provider:      ToV3Provider(c.Provider),
+		ConnectorType: c.ConnectorType.String(),
 	})
 }
 

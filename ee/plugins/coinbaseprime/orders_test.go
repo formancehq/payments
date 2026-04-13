@@ -39,6 +39,20 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			},
 			networkSymbols: map[string]string{},
 		}
+
+		m.EXPECT().GetWallets(gomock.Any(), "", 100).Return(
+			&client.WalletsResponse{
+				Wallets: []client.Wallet{
+					{ID: "wallet-usd", Symbol: "USD"},
+					{ID: "wallet-btc", Symbol: "BTC"},
+					{ID: "wallet-eth", Symbol: "ETH"},
+					{ID: "wallet-doge", Symbol: "DOGE"},
+					{ID: "wallet-sol", Symbol: "SOL"},
+				},
+				Pagination: client.Pagination{HasNext: false},
+			},
+			nil,
+		).AnyTimes()
 	})
 
 	AfterEach(func() {
@@ -63,7 +77,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
 		})
 
-		It("should fetch and convert a BUY order correctly", func(ctx SpecContext) {
+		It("should fetch and convert a BUY order correctly with all fields", func(ctx SpecContext) {
 			req := models.FetchNextOrdersRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -73,19 +87,36 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 				&client.OrdersResponse{
 					Orders: []client.Order{
 						{
-							ID:             "order-1",
-							PortfolioID:    "portfolio-1",
-							ProductID:      "BTC-USD",
-							Side:           "BUY",
-							Type:           "LIMIT",
-							BaseQuantity:   "1.5",
-							FilledQuantity: "0.5",
-							Commission:     "10.50",
-							LimitPrice:     "50000.00",
-							Status:         "OPEN",
-							TimeInForce:    "GTC",
-							CreatedAt:      "2024-01-15T10:30:00Z",
+							ID:                    "order-1",
+							PortfolioID:           "portfolio-1",
+							ProductID:             "BTC-USD",
+							Side:                  "BUY",
+							Type:                  "LIMIT",
+							BaseQuantity:          "1.5",
+							FilledQuantity:        "0.5",
+							FilledValue:           "25000.00",
+							Commission:            "10.50",
+							ExchangeFee:           "5.25",
+							LimitPrice:            "50000.00",
+							AveragePrice:          "50000.00",
+							NetAverageFilledPrice: "50021.00",
+							OrderTotal:            "25010.50",
+							QuoteValue:            "75000.00",
+							Status:                "OPEN",
+							TimeInForce:           "GTC",
+							CreatedAt:             "2024-01-15T10:30:00Z",
+						ClientOrderID:         "my-order-1",
+						PostOnly:              true,
+						CommissionDetail: &client.CommissionDetail{
+							TotalCommission:      "10.50",
+							ClientCommission:     "8.00",
+							VenueCommission:      "2.00",
+							CesCommission:        "0.50",
+							FinancingCommission:  "0.10",
+							RegulatoryCommission: "0.05",
+							ClearingCommission:   "0.03",
 						},
+					},
 					},
 					Pagination: client.Pagination{
 						NextCursor: "cursor-abc",
@@ -105,7 +136,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.Direction).To(Equal(models.ORDER_DIRECTION_BUY))
 			Expect(order.Type).To(Equal(models.ORDER_TYPE_LIMIT))
 			Expect(order.SourceAsset).To(Equal("USD/2"))
-			Expect(order.TargetAsset).To(Equal("BTC/8"))
+			Expect(order.DestinationAsset).To(Equal("BTC/8"))
 
 			// BaseQuantityOrdered: 1.5 BTC = 150000000 (1.5 * 10^8)
 			Expect(order.BaseQuantityOrdered).ToNot(BeNil())
@@ -119,14 +150,45 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.Fee).ToNot(BeNil())
 			Expect(order.Fee.Cmp(big.NewInt(1050))).To(Equal(0))
 
-			// LimitPrice: 50000.00 USD = 5000000 (50000.00 * 10^2)
+			// FeeAsset should be set to quote currency
+			Expect(order.FeeAsset).ToNot(BeNil())
+			Expect(*order.FeeAsset).To(Equal("USD/2"))
+
+			// LimitPrice: 50000.00 at dynamic precision 2 → 5000000
 			Expect(order.LimitPrice).ToNot(BeNil())
 			Expect(order.LimitPrice.Cmp(big.NewInt(5000000))).To(Equal(0))
+
+			// AverageFillPrice: 50000.00 at dynamic precision 2 → 5000000
+			Expect(order.AverageFillPrice).ToNot(BeNil())
+			Expect(order.AverageFillPrice.Cmp(big.NewInt(5000000))).To(Equal(0))
+
+			// price_asset should reflect the dynamic precision
+			Expect(order.Metadata["price_asset"]).To(Equal("USD/2"))
 
 			// Status: OPEN with filledQty > 0 && < baseQty → PARTIALLY_FILLED
 			Expect(order.Status).To(Equal(models.ORDER_STATUS_PARTIALLY_FILLED))
 
 			Expect(order.TimeInForce).To(Equal(models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED))
+
+			// Metadata should capture Coinbase-specific fields
+			Expect(order.Metadata).ToNot(BeNil())
+			Expect(order.Metadata["coinbase_product_id"]).To(Equal("BTC-USD"))
+			Expect(order.Metadata["coinbase_portfolio_id"]).To(Equal("portfolio-1"))
+			Expect(order.Metadata["coinbase_client_order_id"]).To(Equal("my-order-1"))
+			Expect(order.Metadata["coinbase_filled_value"]).To(Equal("25000.00"))
+			Expect(order.Metadata["coinbase_quote_value"]).To(Equal("75000.00"))
+			Expect(order.Metadata["coinbase_order_total"]).To(Equal("25010.50"))
+			Expect(order.Metadata["coinbase_exchange_fee"]).To(Equal("5.25"))
+			Expect(order.Metadata["coinbase_net_average_filled_price"]).To(Equal("50021.00"))
+			Expect(order.Metadata["quote_currency"]).To(Equal("USD"))
+			Expect(order.Metadata["coinbase_commission_total"]).To(Equal("10.50"))
+			Expect(order.Metadata["coinbase_commission_client"]).To(Equal("8.00"))
+			Expect(order.Metadata["coinbase_commission_venue"]).To(Equal("2.00"))
+			Expect(order.Metadata["coinbase_commission_ces"]).To(Equal("0.50"))
+			Expect(order.Metadata["coinbase_commission_financing"]).To(Equal("0.10"))
+			Expect(order.Metadata["coinbase_commission_regulatory"]).To(Equal("0.05"))
+			Expect(order.Metadata["coinbase_commission_clearing"]).To(Equal("0.03"))
+			Expect(order.Metadata["coinbase_post_only"]).To(Equal("true"))
 
 			// Verify pagination state
 			var state ordersState
@@ -152,6 +214,9 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 							Type:           "MARKET",
 							BaseQuantity:   "2.0",
 							FilledQuantity: "2.0",
+							AveragePrice:   "65000.00",
+							FilledValue:    "130000.00",
+							Commission:     "25.00",
 							Status:         "FILLED",
 							TimeInForce:    "GTC",
 							CreatedAt:      "2024-01-15T10:30:00Z",
@@ -170,7 +235,20 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.Direction).To(Equal(models.ORDER_DIRECTION_SELL))
 			// SELL BTC-USD: source=BTC (what you spend), target=USD (what you receive)
 			Expect(order.SourceAsset).To(Equal("BTC/8"))
-			Expect(order.TargetAsset).To(Equal("USD/2"))
+			Expect(order.DestinationAsset).To(Equal("USD/2"))
+
+			// AverageFillPrice: 65000.00 at dynamic precision 2 → 6500000
+			Expect(order.AverageFillPrice).ToNot(BeNil())
+			Expect(order.AverageFillPrice.Cmp(big.NewInt(6500000))).To(Equal(0))
+
+			// Fee + FeeAsset
+			Expect(order.Fee).ToNot(BeNil())
+			Expect(order.Fee.Cmp(big.NewInt(2500))).To(Equal(0))
+			Expect(order.FeeAsset).ToNot(BeNil())
+			Expect(*order.FeeAsset).To(Equal("USD/2"))
+
+			// Metadata includes filled_value for reconciliation
+			Expect(order.Metadata["coinbase_filled_value"]).To(Equal("130000.00"))
 		})
 
 		It("should map FILLED status", func(ctx SpecContext) {
@@ -649,6 +727,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Orders).To(HaveLen(1))
 			Expect(resp.Orders[0].Fee).To(BeNil())
+			Expect(resp.Orders[0].FeeAsset).To(BeNil())
 		})
 
 		It("should handle empty quantities", func(ctx SpecContext) {

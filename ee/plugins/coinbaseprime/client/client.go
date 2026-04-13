@@ -325,6 +325,7 @@ type Transaction struct {
 	CompletedAt   *time.Time        `json:"completed_at"`
 	TransferFrom  *TransferEndpoint `json:"transfer_from"`
 	TransferTo    *TransferEndpoint `json:"transfer_to"`
+	DestinationSymbol string          `json:"destination_symbol"`
 	NetworkFees    string            `json:"network_fees"`
 	Network        string            `json:"network"`
 	BlockchainIDs  []string          `json:"blockchain_ids"`
@@ -359,24 +360,44 @@ type TransactionsResponse struct {
 }
 
 // Order represents a Coinbase Prime order.
+// See: https://docs.cdp.coinbase.com/prime/reference/primerestapi_getorders
 type Order struct {
 	ID             string `json:"id"`
 	PortfolioID    string `json:"portfolio_id"`
 	ProductID      string `json:"product_id"`
-	Side           string `json:"side"`            // BUY, SELL
-	Type           string `json:"type"`            // MARKET, LIMIT, TWAP, BLOCK
+	Side           string `json:"side"`
+	Type           string `json:"type"`
 	BaseQuantity   string `json:"base_quantity"`
 	QuoteValue     string `json:"quote_value"`
 	LimitPrice     string `json:"limit_price"`
+	StopPrice      string `json:"stop_price"`
 	FilledQuantity string `json:"filled_quantity"`
 	FilledValue    string `json:"filled_value"`
 	AveragePrice   string `json:"average_filled_price"`
 	Commission     string `json:"commission"`
-	Status         string `json:"status"`         // PENDING, OPEN, FILLED, CANCELLED, EXPIRED, FAILED
+	ExchangeFee    string `json:"exchange_fee"`
+	OrderTotal     string `json:"order_total"`
+	Status         string `json:"status"`
 	TimeInForce    string `json:"time_in_force"`
 	CreatedAt      string `json:"created_at"`
 	ExpiryTime     string `json:"expiry_time"`
 	ClientOrderID  string `json:"client_order_id"`
+	PostOnly       bool   `json:"post_only"`
+
+	NetAverageFilledPrice string               `json:"net_average_filled_price"`
+	HistoricalPov         string               `json:"historical_pov"`
+	CommissionDetail      *CommissionDetail     `json:"commission_detail_total,omitempty"`
+}
+
+// CommissionDetail contains a breakdown of all commission charges for an order.
+type CommissionDetail struct {
+	TotalCommission      string `json:"total_commission,omitempty"`
+	ClientCommission     string `json:"client_commission,omitempty"`
+	VenueCommission      string `json:"venue_commission,omitempty"`
+	CesCommission        string `json:"ces_commission,omitempty"`
+	FinancingCommission  string `json:"financing_commission,omitempty"`
+	RegulatoryCommission string `json:"regulatory_commission,omitempty"`
+	ClearingCommission   string `json:"clearing_commission,omitempty"`
 }
 
 // OrdersResponse wraps orders with pagination.

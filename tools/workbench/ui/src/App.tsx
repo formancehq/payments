@@ -1597,7 +1597,7 @@ function OrdersTab({ orders, onFetch }: OrdersTabProps) {
                     {ord.status}
                   </span>
                 </td>
-                <td className="mono">{ord.source_asset}/{ord.target_asset}</td>
+                <td className="mono">{ord.source_asset}/{ord.destination_asset}</td>
                 <td className="mono">{ord.base_quantity_ordered}</td>
                 <td>
                   <Tooltip text={new Date(ord.created_at).toLocaleString()}>
@@ -1698,7 +1698,7 @@ function ConversionsTab({ conversions, onFetch }: ConversionsTabProps) {
               >
                 <td className="mono">{conv.reference}</td>
                 <td>{conv.source_asset}</td>
-                <td>{conv.target_asset}</td>
+                <td>{conv.destination_asset}</td>
                 <td className="mono">{conv.source_amount}</td>
                 <td className="mono">{conv.target_amount || '-'}</td>
                 <td>

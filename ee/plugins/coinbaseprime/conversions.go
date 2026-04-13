@@ -2,17 +2,162 @@ package coinbaseprime
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"math/big"
+	"strings"
 
+	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
+type conversionsState struct {
+	Cursor string `json:"cursor"`
+}
+
 func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
-	// Coinbase Prime conversions are typically tracked via transactions.
-	// For now, return empty as there is no dedicated list endpoint.
-	// This would need to be implemented by polling transactions and filtering for conversions.
+	var state conversionsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &state); err != nil {
+			return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to unmarshal state: %w", err)
+		}
+	}
+
+	resp, err := p.client.GetTransactions(ctx, state.Cursor, req.PageSize)
+	if err != nil {
+		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to list transactions: %w", err)
+	}
+
+	conversions := make([]models.PSPConversion, 0)
+	for _, tx := range resp.Transactions {
+		if strings.ToUpper(tx.Type) != "CONVERSION" {
+			continue
+		}
+
+		conv, err := p.transactionToConversion(tx)
+		if err != nil {
+			return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to convert transaction %s: %w", tx.ID, err)
+		}
+		if conv != nil {
+			conversions = append(conversions, *conv)
+		}
+	}
+
+	newState := conversionsState{Cursor: resp.Pagination.NextCursor}
+	stateBytes, err := json.Marshal(newState)
+	if err != nil {
+		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to marshal state: %w", err)
+	}
+
 	return models.FetchNextConversionsResponse{
-		Conversions: []models.PSPConversion{},
-		NewState:    nil,
-		HasMore:     false,
+		Conversions: conversions,
+		NewState:    stateBytes,
+		HasMore:     resp.Pagination.HasNext,
 	}, nil
+}
+
+func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConversion, error) {
+	sourceAsset, sourcePrecision, sourceOk := p.resolveAssetAndPrecision(tx.Symbol)
+	if !sourceOk {
+		p.logger.Infof("skipping conversion %s: unsupported source currency %q", tx.ID, tx.Symbol)
+		return nil, nil
+	}
+
+	targetSymbol := tx.DestinationSymbol
+	if targetSymbol == "" {
+		p.logger.Infof("skipping conversion %s: missing destination_symbol", tx.ID)
+		return nil, nil
+	}
+
+	targetAsset, targetPrecision, targetOk := p.resolveAssetAndPrecision(targetSymbol)
+	if !targetOk {
+		p.logger.Infof("skipping conversion %s: unsupported target currency %q", tx.ID, targetSymbol)
+		return nil, nil
+	}
+
+	raw, err := json.Marshal(tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal raw: %w", err)
+	}
+
+	sourceAmount, err := parseDecimalString(tx.Amount, sourcePrecision)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse source amount: %w", err)
+	}
+
+	// For 1:1 conversions (stablecoin), target amount equals source amount at target precision.
+	// The amount string is the same, just parsed at a different precision.
+	targetAmount, err := parseDecimalString(tx.Amount, targetPrecision)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse target amount: %w", err)
+	}
+
+	var fee *big.Int
+	var feeAsset *string
+	if tx.Fees != "" && tx.Fees != "0" {
+		feeSymbol := tx.FeeSymbol
+		if feeSymbol == "" {
+			feeSymbol = tx.Symbol
+		}
+		fAsset, fPrecision, fOk := p.resolveAssetAndPrecision(feeSymbol)
+		if fOk {
+			fee, err = parseDecimalString(tx.Fees, fPrecision)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse fee: %w", err)
+			}
+			feeAsset = &fAsset
+		}
+	}
+
+	status := mapTransactionToConversionStatus(tx.Status)
+
+	var sourceWalletID, targetWalletID string
+	if tx.TransferFrom != nil && tx.TransferFrom.Value != "" {
+		sourceWalletID = tx.TransferFrom.Value
+	}
+	if tx.TransferTo != nil && tx.TransferTo.Value != "" {
+		targetWalletID = tx.TransferTo.Value
+	}
+
+	metadata := map[string]string{
+		"coinbase_transaction_id": tx.TransactionID,
+		"coinbase_type":          tx.Type,
+	}
+	if tx.PortfolioID != "" {
+		metadata["coinbase_portfolio_id"] = tx.PortfolioID
+	}
+
+	return &models.PSPConversion{
+		Reference:      tx.ID,
+		CreatedAt:      tx.CreatedAt,
+		SourceAsset:    sourceAsset,
+		DestinationAsset:    targetAsset,
+		SourceAmount:   sourceAmount,
+		DestinationAmount:   targetAmount,
+		Fee:            fee,
+		FeeAsset:       feeAsset,
+		Status:                      status,
+		SourceAccountReference:      ptrIfNotEmpty(sourceWalletID),
+		DestinationAccountReference: ptrIfNotEmpty(targetWalletID),
+		Metadata:                    metadata,
+		Raw:                         raw,
+	}, nil
+}
+
+func ptrIfNotEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func mapTransactionToConversionStatus(status string) models.ConversionStatus {
+	switch strings.ToUpper(status) {
+	case "TRANSACTION_DONE", "TRANSACTION_IMPORTED":
+		return models.CONVERSION_STATUS_COMPLETED
+	case "TRANSACTION_FAILED", "TRANSACTION_REJECTED", "TRANSACTION_CANCELLED":
+		return models.CONVERSION_STATUS_FAILED
+	default:
+		return models.CONVERSION_STATUS_PENDING
+	}
 }
