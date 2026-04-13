@@ -90,8 +90,21 @@ func (w Workflow) fetchConversions(
 			}
 		}
 
-		// TODO: Add event sending for conversions when needed
-		// Currently conversions don't have event sending like accounts/balances
+		if !IsEventOutboxPatternEnabled(ctx) {
+			wg := workflow.NewWaitGroup(ctx)
+			errChan := make(chan error, len(conversions))
+			for _, c := range conversions {
+				conv := c
+				w.runSendEventAsChildWorkflow(ctx, wg, SendEvents{Conversion: &conv}, errChan)
+			}
+			wg.Wait(ctx)
+			close(errChan)
+			for err := range errChan {
+				if err != nil {
+					return err
+				}
+			}
+		}
 
 		state.State = conversionsResponse.NewState
 		err = activities.StorageStatesStore(

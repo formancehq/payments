@@ -515,6 +515,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.EventsSendOrder,
 		}).
 		Append(temporalworker.Definition{
+			Name: "EventsSendConversion",
+			Func: a.EventsSendConversion,
+		}).
+		Append(temporalworker.Definition{
 			Name: "EventsSendPoolCreation",
 			Func: a.EventsSendPoolCreation, //nolint:staticcheck // ignore deprecated
 		}).
