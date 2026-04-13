@@ -32,6 +32,8 @@ func OrderDirectionFromString(s string) (OrderDirection, error) {
 		return ORDER_DIRECTION_BUY, nil
 	case "SELL":
 		return ORDER_DIRECTION_SELL, nil
+	case "UNKNOWN":
+		return ORDER_DIRECTION_UNKNOWN, nil
 	default:
 		return ORDER_DIRECTION_UNKNOWN, fmt.Errorf("unknown order direction: %s", s)
 	}
@@ -53,11 +55,10 @@ func (d *OrderDirection) UnmarshalJSON(data []byte) error {
 }
 
 func (d OrderDirection) Value() (driver.Value, error) {
-	res := d.String()
-	if res == "UNKNOWN" {
+	if d == ORDER_DIRECTION_UNKNOWN {
 		return nil, fmt.Errorf("unknown order direction")
 	}
-	return res, nil
+	return d.String(), nil
 }
 
 func (d *OrderDirection) Scan(value interface{}) error {

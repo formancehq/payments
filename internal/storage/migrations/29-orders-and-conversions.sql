@@ -1,5 +1,5 @@
 -- Orders table for trading orders on crypto exchanges
-create table if not exists orders (
+create table orders (
     -- Autoincrement fields
     sort_id bigserial not null,
 
@@ -47,7 +47,7 @@ alter table orders
     on delete cascade;
 
 -- Order adjustments table for tracking order status changes
-create table if not exists order_adjustments (
+create table order_adjustments (
     -- Autoincrement fields
     sort_id bigserial not null,
 
@@ -78,7 +78,7 @@ alter table order_adjustments
     on delete cascade;
 
 -- Conversions table for stablecoin conversions (USD↔USDC, USD↔PYUSD)
-create table if not exists conversions (
+create table conversions (
     -- Autoincrement fields
     sort_id bigserial not null,
 

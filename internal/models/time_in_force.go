@@ -42,6 +42,8 @@ func TimeInForceFromString(s string) (TimeInForce, error) {
 		return TIME_IN_FORCE_IMMEDIATE_OR_CANCEL, nil
 	case "FILL_OR_KILL", "FOK":
 		return TIME_IN_FORCE_FILL_OR_KILL, nil
+	case "UNKNOWN":
+		return TIME_IN_FORCE_UNKNOWN, nil
 	default:
 		return TIME_IN_FORCE_UNKNOWN, fmt.Errorf("unknown time in force: %s", s)
 	}
@@ -63,11 +65,10 @@ func (t *TimeInForce) UnmarshalJSON(data []byte) error {
 }
 
 func (t TimeInForce) Value() (driver.Value, error) {
-	res := t.String()
-	if res == "UNKNOWN" {
+	if t == TIME_IN_FORCE_UNKNOWN {
 		return nil, fmt.Errorf("unknown time in force")
 	}
-	return res, nil
+	return t.String(), nil
 }
 
 func (t *TimeInForce) Scan(value interface{}) error {

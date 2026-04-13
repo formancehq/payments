@@ -57,6 +57,8 @@ func OrderStatusFromString(str string) (OrderStatus, error) {
 		return ORDER_STATUS_FAILED, nil
 	case "EXPIRED":
 		return ORDER_STATUS_EXPIRED, nil
+	case "UNKNOWN":
+		return ORDER_STATUS_UNKNOWN, nil
 	default:
 		return ORDER_STATUS_UNKNOWN, fmt.Errorf("unknown order status: %s", str)
 	}
@@ -78,11 +80,10 @@ func (s *OrderStatus) UnmarshalJSON(data []byte) error {
 }
 
 func (s OrderStatus) Value() (driver.Value, error) {
-	res := s.String()
-	if res == "UNKNOWN" {
+	if s == ORDER_STATUS_UNKNOWN {
 		return nil, fmt.Errorf("unknown order status")
 	}
-	return res, nil
+	return s.String(), nil
 }
 
 func (s *OrderStatus) Scan(value interface{}) error {

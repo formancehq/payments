@@ -164,9 +164,6 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 // ensureCurrencies lazily loads currencies with double-checked locking.
 func (p *Plugin) ensureCurrencies(ctx context.Context) error {
-	if len(p.currencies) > 0 {
-		return nil
-	}
 	p.currMu.Lock()
 	defer p.currMu.Unlock()
 	if len(p.currencies) > 0 {
