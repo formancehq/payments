@@ -100,7 +100,9 @@ func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConv
 			feeSymbol = tx.Symbol
 		}
 		fAsset, fPrecision, fOk := p.resolveAssetAndPrecision(feeSymbol)
-		if fOk {
+		if !fOk {
+			p.logger.Infof("skipping fee for conversion %s: unsupported fee currency %q", tx.ID, feeSymbol)
+		} else {
 			fee, err = parseDecimalString(tx.Fees, fPrecision)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse fee: %w", err)

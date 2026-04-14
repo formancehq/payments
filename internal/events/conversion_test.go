@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -109,4 +111,46 @@ func TestConversionMessagePayload_MarshalJSON(t *testing.T) {
 		assert.Equal(t, original.DestinationAccountID, restored.DestinationAccountID)
 		assert.Equal(t, original.Metadata["key"], restored.Metadata["key"])
 	})
+}
+
+func TestNewEventSavedConversion(t *testing.T) {
+	t.Parallel()
+
+	connID := models.ConnectorID{Provider: "test", Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001")}
+	srcAcct := models.AccountID{Reference: "wallet-usd", ConnectorID: connID}
+	dstAcct := models.AccountID{Reference: "wallet-usdc", ConnectorID: connID}
+
+	conversion := models.Conversion{
+		ID:                   models.ConversionID{Reference: "conv-1", ConnectorID: connID},
+		ConnectorID:          connID,
+		Reference:            "conv-1",
+		CreatedAt:            time.Date(2026, 2, 9, 15, 33, 0, 0, time.UTC),
+		UpdatedAt:            time.Date(2026, 2, 9, 15, 34, 0, 0, time.UTC),
+		SourceAsset:          "USD/2",
+		DestinationAsset:     "USDC/6",
+		SourceAmount:         big.NewInt(10000),
+		DestinationAmount:    big.NewInt(10000000),
+		Status:               models.CONVERSION_STATUS_COMPLETED,
+		SourceAccountID:      &srcAcct,
+		DestinationAccountID: &dstAcct,
+		Metadata:             map[string]string{"key": "val"},
+		Raw:                  json.RawMessage(`{"raw":"data"}`),
+	}
+
+	e := Events{}
+	msg := e.NewEventSavedConversion(conversion)
+
+	assert.Equal(t, "SAVED_CONVERSION", msg.Type)
+	assert.NotEmpty(t, msg.IdempotencyKey)
+
+	payload, ok := msg.Payload.(ConversionMessagePayload)
+	require.True(t, ok)
+	assert.Equal(t, "conv-1", payload.Reference)
+	assert.Equal(t, "USD/2", payload.SourceAsset)
+	assert.Equal(t, "USDC/6", payload.DestinationAsset)
+	assert.Equal(t, 0, payload.SourceAmount.Cmp(big.NewInt(10000)))
+	assert.Equal(t, 0, payload.DestinationAmount.Cmp(big.NewInt(10000000)))
+	assert.Equal(t, "COMPLETED", payload.Status)
+	assert.NotEmpty(t, payload.SourceAccountID)
+	assert.NotEmpty(t, payload.DestinationAccountID)
 }

@@ -1,11 +1,14 @@
 package workflow
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
+	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	pkgevents "github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -90,19 +93,34 @@ func (w Workflow) fetchOrders(
 			}
 		}
 
-		if !IsEventOutboxPatternEnabled(ctx) {
-			wg := workflow.NewWaitGroup(ctx)
-			errChan := make(chan error, len(orders))
-			for _, o := range orders {
-				ord := o
-				w.runSendEventAsChildWorkflow(ctx, wg, SendEvents{Order: &ord}, errChan)
-			}
-			wg.Wait(ctx)
-			close(errChan)
-			for err := range errChan {
+		outboxEvents := make([]models.OutboxEvent, 0)
+		for _, o := range orders {
+			for _, adj := range o.Adjustments {
+				evtMsg := events.Events{}.NewEventSavedOrder(o, adj)
+				payload, err := json.Marshal(evtMsg.Payload)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to marshal order event payload: %w", err)
 				}
+				outboxEvents = append(outboxEvents, models.OutboxEvent{
+					ID: models.EventID{
+						EventIdempotencyKey: adj.IdempotencyKey(),
+						ConnectorID:         &o.ConnectorID,
+					},
+					EventType:   pkgevents.EventTypeSavedOrder,
+					EntityID:    o.ID.String(),
+					Payload:     payload,
+					CreatedAt:   workflow.Now(ctx).UTC(),
+					Status:      models.OUTBOX_STATUS_PENDING,
+					ConnectorID: &o.ConnectorID,
+				})
+			}
+		}
+		if len(outboxEvents) > 0 {
+			if err := activities.StorageOutboxEventsInsert(
+				infiniteRetryContext(ctx),
+				outboxEvents,
+			); err != nil {
+				return errors.Wrap(err, "inserting order outbox events")
 			}
 		}
 
