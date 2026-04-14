@@ -128,30 +128,16 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 				DestinationAccountReference: pointer.For("acc123"),
 				Raw:                         rawMessage,
 				Metadata: map[string]string{
-					MetadataPrefix + "bookingDate":                 "2023-10-01",
-					MetadataPrefix + "valueDate":                   "2023-10-02",
-					MetadataPrefix + "bankTransactionCode":         "PMNT.RCDT.ESCT",
-					MetadataPrefix + "numberOfTransactions":        "1",
-					MetadataPrefix + "entryReference":              "entry1",
-					MetadataPrefix + "servicerReference":           "servicer1",
-					MetadataPrefix + "isReversal":                  "false",
-					MetadataPrefix + "isBatch":                     "false",
-					MetadataPrefix + "batchMessageId":              "batch1",
-					MetadataPrefix + "batchPaymentInfoId":          "batchInfo1",
-					MetadataPrefix + "messageIds":                  "",
-					MetadataPrefix + "accountServicerReferenceIds": "",
-					MetadataPrefix + "paymentInformationIds":       "",
-					MetadataPrefix + "instructionIds":              "",
-					MetadataPrefix + "endToEndIds":                 "",
-					MetadataPrefix + "uetrs":                       "",
-					MetadataPrefix + "transactionIds":              "",
-					MetadataPrefix + "mandateIds":                  "",
-					MetadataPrefix + "chequeNumbers":               "",
-					MetadataPrefix + "clearingSystemReferenceIds":  "",
-					MetadataPrefix + "accountOwnerTxIds":           "",
-					MetadataPrefix + "accountServicerTxIds":        "",
-					MetadataPrefix + "marketInfrastructureTxIds":   "",
-					MetadataPrefix + "processingIds":               "",
+					MetadataPrefix + "bookingDate":          "2023-10-01",
+					MetadataPrefix + "valueDate":            "2023-10-02",
+					MetadataPrefix + "bankTransactionCode":  "PMNT.RCDT.ESCT",
+					MetadataPrefix + "numberOfTransactions": "1",
+					MetadataPrefix + "entryReference":       "entry1",
+					MetadataPrefix + "servicerReference":    "servicer1",
+					MetadataPrefix + "isReversal":           "false",
+					MetadataPrefix + "isBatch":              "false",
+					MetadataPrefix + "batchMessageId":       "batch1",
+					MetadataPrefix + "batchPaymentInfoId":   "batchInfo1",
 				},
 			},
 		},
@@ -186,30 +172,16 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 				Status:                 models.PAYMENT_STATUS_SUCCEEDED,
 				SourceAccountReference: pointer.For("acc456"),
 				Metadata: map[string]string{
-					MetadataPrefix + "bookingDate":                 "2023-10-03",
-					MetadataPrefix + "valueDate":                   "2023-10-04",
-					MetadataPrefix + "bankTransactionCode":         "PMNT.ICDT.ESCT",
-					MetadataPrefix + "numberOfTransactions":        "2",
-					MetadataPrefix + "entryReference":              "entry2",
-					MetadataPrefix + "servicerReference":           "servicer2",
-					MetadataPrefix + "isReversal":                  "false",
-					MetadataPrefix + "isBatch":                     "true",
-					MetadataPrefix + "batchMessageId":              "batch2",
-					MetadataPrefix + "batchPaymentInfoId":          "batchInfo2",
-					MetadataPrefix + "messageIds":                  "",
-					MetadataPrefix + "accountServicerReferenceIds": "",
-					MetadataPrefix + "paymentInformationIds":       "",
-					MetadataPrefix + "instructionIds":              "",
-					MetadataPrefix + "endToEndIds":                 "",
-					MetadataPrefix + "uetrs":                       "",
-					MetadataPrefix + "transactionIds":              "",
-					MetadataPrefix + "mandateIds":                  "",
-					MetadataPrefix + "chequeNumbers":               "",
-					MetadataPrefix + "clearingSystemReferenceIds":  "",
-					MetadataPrefix + "accountOwnerTxIds":           "",
-					MetadataPrefix + "accountServicerTxIds":        "",
-					MetadataPrefix + "marketInfrastructureTxIds":   "",
-					MetadataPrefix + "processingIds":               "",
+					MetadataPrefix + "bookingDate":          "2023-10-03",
+					MetadataPrefix + "valueDate":            "2023-10-04",
+					MetadataPrefix + "bankTransactionCode":  "PMNT.ICDT.ESCT",
+					MetadataPrefix + "numberOfTransactions": "2",
+					MetadataPrefix + "entryReference":       "entry2",
+					MetadataPrefix + "servicerReference":    "servicer2",
+					MetadataPrefix + "isReversal":           "false",
+					MetadataPrefix + "isBatch":              "true",
+					MetadataPrefix + "batchMessageId":       "batch2",
+					MetadataPrefix + "batchPaymentInfoId":   "batchInfo2",
 				},
 				Raw: rawMessage,
 			},
@@ -245,30 +217,16 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 				Status:                 models.PAYMENT_STATUS_SUCCEEDED,
 				SourceAccountReference: pointer.For("acc456"),
 				Metadata: map[string]string{
-					MetadataPrefix + "bookingDate":                 "2023-10-03",
-					MetadataPrefix + "valueDate":                   "2023-10-04",
-					MetadataPrefix + "bankTransactionCode":         "",
-					MetadataPrefix + "numberOfTransactions":        "2",
-					MetadataPrefix + "entryReference":              "entry2",
-					MetadataPrefix + "servicerReference":           "servicer2",
-					MetadataPrefix + "isReversal":                  "false",
-					MetadataPrefix + "isBatch":                     "true",
-					MetadataPrefix + "batchMessageId":              "batch2",
-					MetadataPrefix + "batchPaymentInfoId":          "batchInfo2",
-					MetadataPrefix + "messageIds":                  "",
-					MetadataPrefix + "accountServicerReferenceIds": "",
-					MetadataPrefix + "paymentInformationIds":       "",
-					MetadataPrefix + "instructionIds":              "",
-					MetadataPrefix + "endToEndIds":                 "",
-					MetadataPrefix + "uetrs":                       "",
-					MetadataPrefix + "transactionIds":              "",
-					MetadataPrefix + "mandateIds":                  "",
-					MetadataPrefix + "chequeNumbers":               "",
-					MetadataPrefix + "clearingSystemReferenceIds":  "",
-					MetadataPrefix + "accountOwnerTxIds":           "",
-					MetadataPrefix + "accountServicerTxIds":        "",
-					MetadataPrefix + "marketInfrastructureTxIds":   "",
-					MetadataPrefix + "processingIds":               "",
+					MetadataPrefix + "bookingDate":          "2023-10-03",
+					MetadataPrefix + "valueDate":            "2023-10-04",
+					MetadataPrefix + "bankTransactionCode":  "",
+					MetadataPrefix + "numberOfTransactions": "2",
+					MetadataPrefix + "entryReference":       "entry2",
+					MetadataPrefix + "servicerReference":    "servicer2",
+					MetadataPrefix + "isReversal":           "false",
+					MetadataPrefix + "isBatch":              "true",
+					MetadataPrefix + "batchMessageId":       "batch2",
+					MetadataPrefix + "batchPaymentInfoId":   "batchInfo2",
 				},
 				Raw: rawMessage,
 			},
@@ -292,10 +250,10 @@ func (suite *PluginTestSuite) TestMetadata_EndToEndIds() {
 
 	m := metadata(trx)
 
-	assert.Equal(suite.T(), "260305KREDBEBB0000900001000003", m[MetadataPrefix+"endToEndIds"])
+	assert.Equal(suite.T(), "260305KREDBEBB0000900001000003", m[MetadataPrefix+"endToEndId"])
 }
 
-func (suite *PluginTestSuite) TestMetadata_EndToEndIds_MultipleDetails() {
+func (suite *PluginTestSuite) TestMetadata_EndToEndId_MultipleDetails_UsesFirst() {
 	details := []json.RawMessage{
 		json.RawMessage(`{"rawDetail":{"references":{"endToEndId":"ID-ONE"}}}`),
 		json.RawMessage(`{"rawDetail":{"references":{"endToEndId":"ID-TWO"}}}`),
@@ -307,5 +265,29 @@ func (suite *PluginTestSuite) TestMetadata_EndToEndIds_MultipleDetails() {
 
 	m := metadata(trx)
 
-	assert.Equal(suite.T(), "ID-ONE,ID-TWO", m[MetadataPrefix+"endToEndIds"])
+	assert.Equal(suite.T(), "ID-ONE", m[MetadataPrefix+"endToEndId"])
+}
+
+func (suite *PluginTestSuite) TestMetadata_RemittanceInfo_Unstructured() {
+	detail := json.RawMessage(`{"rawDetail":{"remittanceInfo":{"unstructured":["Invoice 1234","Order 5678"]}}}`)
+
+	trx := client.Transaction{
+		Details: []json.RawMessage{detail},
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "Invoice 1234 Order 5678", m[MetadataPrefix+"remittanceInfo"])
+}
+
+func (suite *PluginTestSuite) TestMetadata_RemittanceInfo_Structured() {
+	detail := json.RawMessage(`{"rawDetail":{"remittanceInfo":{"structured":[{"creditorReferenceInfo":{"reference":"RF18539007547034"}}]}}}`)
+
+	trx := client.Transaction{
+		Details: []json.RawMessage{detail},
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "RF18539007547034", m[MetadataPrefix+"remittanceInfo"])
 }

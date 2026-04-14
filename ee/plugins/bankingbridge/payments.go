@@ -90,20 +90,18 @@ func ToPSPPayment(in client.Transaction, raw json.RawMessage) models.PSPPayment 
 }
 
 func metadata(in client.Transaction) map[string]string {
-	messageIds := make([]string, 0)
-	accountServicerReferenceIds := make([]string, 0)
-	paymentInformationIds := make([]string, 0)
-	instructionIds := make([]string, 0)
-	endToEndIds := make([]string, 0)
-	uetrs := make([]string, 0)
-	transactionIds := make([]string, 0)
-	mandateIds := make([]string, 0)
-	chequeNumbers := make([]string, 0)
-	clearingSystemReferenceIds := make([]string, 0)
-	accountOwnerTxIds := make([]string, 0)
-	accountServicerTxIds := make([]string, 0)
-	marketInfrastructureTxIds := make([]string, 0)
-	processingIds := make([]string, 0)
+	m := map[string]string{
+		MetadataPrefix + "bookingDate":          in.BookingDate,
+		MetadataPrefix + "valueDate":            in.ValutaDate,
+		MetadataPrefix + "bankTransactionCode":  in.BankTransactionCode,
+		MetadataPrefix + "numberOfTransactions": fmt.Sprintf("%d", in.NumberOfTransactions),
+		MetadataPrefix + "entryReference":       in.EntryReference,
+		MetadataPrefix + "servicerReference":    in.ServicerReference,
+		MetadataPrefix + "isReversal":           fmt.Sprintf("%t", in.IsReversal),
+		MetadataPrefix + "isBatch":              fmt.Sprintf("%t", in.IsBatch),
+		MetadataPrefix + "batchMessageId":       in.BatchMessageID,
+		MetadataPrefix + "batchPaymentInfoId":   in.BatchPaymentInfoID,
+	}
 
 	for _, detail := range in.Details {
 		var parsed struct {
@@ -124,6 +122,14 @@ func metadata(in client.Transaction) map[string]string {
 					MarketInfrastructureTxID string `json:"marketInfrastructureTxId"`
 					ProcessingID             string `json:"processingId"`
 				} `json:"references,omitempty"`
+				RemittanceInfo *struct {
+					Unstructured []string `json:"unstructured,omitempty"`
+					Structured   []struct {
+						CreditorReferenceInfo *struct {
+							Reference string `json:"reference,omitempty"`
+						} `json:"creditorReferenceInfo,omitempty"`
+					} `json:"structured,omitempty"`
+				} `json:"remittanceInfo,omitempty"`
 			} `json:"rawDetail,omitempty"`
 		}
 
@@ -135,76 +141,35 @@ func metadata(in client.Transaction) map[string]string {
 			continue
 		}
 
-		if refs := parsed.RawDetail.References; refs != nil {
-			if refs.MessageID != "" {
-				messageIds = append(messageIds, refs.MessageID)
-			}
-			if refs.AccountServiceReference != "" {
-				accountServicerReferenceIds = append(accountServicerReferenceIds, refs.AccountServiceReference)
-			}
-			if refs.PaymentInformationID != "" {
-				paymentInformationIds = append(paymentInformationIds, refs.PaymentInformationID)
-			}
-			if refs.InstructionID != "" {
-				instructionIds = append(instructionIds, refs.InstructionID)
-			}
-			if refs.EndToEndID != "" {
-				endToEndIds = append(endToEndIds, refs.EndToEndID)
-			}
-			if refs.UETR != "" {
-				uetrs = append(uetrs, refs.UETR)
-			}
-			if refs.TransactionID != "" {
-				transactionIds = append(transactionIds, refs.TransactionID)
-			}
-			if refs.MandateID != "" {
-				mandateIds = append(mandateIds, refs.MandateID)
-			}
-			if refs.ChequeNumber != "" {
-				chequeNumbers = append(chequeNumbers, refs.ChequeNumber)
-			}
-			if refs.ClearingSystemReference != "" {
-				clearingSystemReferenceIds = append(clearingSystemReferenceIds, refs.ClearingSystemReference)
-			}
-			if refs.AccountOwnerTxID != "" {
-				accountOwnerTxIds = append(accountOwnerTxIds, refs.AccountOwnerTxID)
-			}
-			if refs.AccountServicerTxID != "" {
-				accountServicerTxIds = append(accountServicerTxIds, refs.AccountServicerTxID)
-			}
-			if refs.MarketInfrastructureTxID != "" {
-				marketInfrastructureTxIds = append(marketInfrastructureTxIds, refs.MarketInfrastructureTxID)
-			}
-			if refs.ProcessingID != "" {
-				processingIds = append(processingIds, refs.ProcessingID)
+		if parsed.RawDetail.References != nil {
+			refs := parsed.RawDetail.References
+			m[MetadataPrefix+"messageId"] = refs.MessageID
+			m[MetadataPrefix+"accountServicerReference"] = refs.AccountServiceReference
+			m[MetadataPrefix+"paymentInformationId"] = refs.PaymentInformationID
+			m[MetadataPrefix+"instructionId"] = refs.InstructionID
+			m[MetadataPrefix+"endToEndId"] = refs.EndToEndID
+			m[MetadataPrefix+"uetr"] = refs.UETR
+			m[MetadataPrefix+"transactionId"] = refs.TransactionID
+			m[MetadataPrefix+"mandateId"] = refs.MandateID
+			m[MetadataPrefix+"chequeNumber"] = refs.ChequeNumber
+			m[MetadataPrefix+"clearingSystemReference"] = refs.ClearingSystemReference
+			m[MetadataPrefix+"accountOwnerTxId"] = refs.AccountOwnerTxID
+			m[MetadataPrefix+"accountServicerTxId"] = refs.AccountServicerTxID
+			m[MetadataPrefix+"marketInfrastructureTxId"] = refs.MarketInfrastructureTxID
+			m[MetadataPrefix+"processingId"] = refs.ProcessingID
+		}
+
+		if parsed.RawDetail.RemittanceInfo != nil {
+			remittanceInfo := parsed.RawDetail.RemittanceInfo
+			if len(remittanceInfo.Unstructured) > 0 {
+				m[MetadataPrefix+"remittanceInfo"] = strings.Join(remittanceInfo.Unstructured, " ")
+			} else if len(remittanceInfo.Structured) > 0 && remittanceInfo.Structured[0].CreditorReferenceInfo != nil {
+				m[MetadataPrefix+"remittanceInfo"] = remittanceInfo.Structured[0].CreditorReferenceInfo.Reference
 			}
 		}
+
+		break // only populate metadata from the first record - other data can be found in raw
 	}
 
-	return map[string]string{
-		MetadataPrefix + "bookingDate":                 in.BookingDate,
-		MetadataPrefix + "valueDate":                   in.ValutaDate,
-		MetadataPrefix + "bankTransactionCode":         in.BankTransactionCode,
-		MetadataPrefix + "numberOfTransactions":        fmt.Sprintf("%d", in.NumberOfTransactions),
-		MetadataPrefix + "entryReference":              in.EntryReference,
-		MetadataPrefix + "servicerReference":           in.ServicerReference,
-		MetadataPrefix + "isReversal":                  fmt.Sprintf("%t", in.IsReversal),
-		MetadataPrefix + "isBatch":                     fmt.Sprintf("%t", in.IsBatch),
-		MetadataPrefix + "batchMessageId":              in.BatchMessageID,
-		MetadataPrefix + "batchPaymentInfoId":          in.BatchPaymentInfoID,
-		MetadataPrefix + "messageIds":                  strings.Join(messageIds, ","),
-		MetadataPrefix + "accountServicerReferenceIds": strings.Join(accountServicerReferenceIds, ","),
-		MetadataPrefix + "paymentInformationIds":       strings.Join(paymentInformationIds, ","),
-		MetadataPrefix + "instructionIds":              strings.Join(instructionIds, ","),
-		MetadataPrefix + "endToEndIds":                 strings.Join(endToEndIds, ","),
-		MetadataPrefix + "uetrs":                       strings.Join(uetrs, ","),
-		MetadataPrefix + "transactionIds":              strings.Join(transactionIds, ","),
-		MetadataPrefix + "mandateIds":                  strings.Join(mandateIds, ","),
-		MetadataPrefix + "chequeNumbers":               strings.Join(chequeNumbers, ","),
-		MetadataPrefix + "clearingSystemReferenceIds":  strings.Join(clearingSystemReferenceIds, ","),
-		MetadataPrefix + "accountOwnerTxIds":           strings.Join(accountOwnerTxIds, ","),
-		MetadataPrefix + "accountServicerTxIds":        strings.Join(accountServicerTxIds, ","),
-		MetadataPrefix + "marketInfrastructureTxIds":   strings.Join(marketInfrastructureTxIds, ","),
-		MetadataPrefix + "processingIds":               strings.Join(processingIds, ","),
-	}
+	return m
 }
