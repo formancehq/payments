@@ -128,17 +128,30 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 				DestinationAccountReference: pointer.For("acc123"),
 				Raw:                         rawMessage,
 				Metadata: map[string]string{
-					MetadataPrefix + "bookingDate":          "2023-10-01",
-					MetadataPrefix + "valueDate":            "2023-10-02",
-					MetadataPrefix + "bankTransactionCode":  "PMNT.RCDT.ESCT",
-					MetadataPrefix + "numberOfTransactions": "1",
-					MetadataPrefix + "entryReference":       "entry1",
-					MetadataPrefix + "servicerReference":    "servicer1",
-					MetadataPrefix + "isReversal":           "false",
-					MetadataPrefix + "isBatch":              "false",
-					MetadataPrefix + "batchMessageId":       "batch1",
-					MetadataPrefix + "batchPaymentInfoId":   "batchInfo1",
-					MetadataPrefix + "importedAt":           importedAt.Format(ImportedAtLayout),
+					MetadataPrefix + "bookingDate":                 "2023-10-01",
+					MetadataPrefix + "valueDate":                   "2023-10-02",
+					MetadataPrefix + "bankTransactionCode":         "PMNT.RCDT.ESCT",
+					MetadataPrefix + "numberOfTransactions":        "1",
+					MetadataPrefix + "entryReference":              "entry1",
+					MetadataPrefix + "servicerReference":           "servicer1",
+					MetadataPrefix + "isReversal":                  "false",
+					MetadataPrefix + "isBatch":                     "false",
+					MetadataPrefix + "batchMessageId":              "batch1",
+					MetadataPrefix + "batchPaymentInfoId":          "batchInfo1",
+					MetadataPrefix + "messageIds":                  "",
+					MetadataPrefix + "accountServicerReferenceIds": "",
+					MetadataPrefix + "paymentInformationIds":       "",
+					MetadataPrefix + "instructionIds":              "",
+					MetadataPrefix + "endToEndIds":                 "",
+					MetadataPrefix + "uetrs":                       "",
+					MetadataPrefix + "transactionIds":              "",
+					MetadataPrefix + "mandateIds":                  "",
+					MetadataPrefix + "chequeNumbers":               "",
+					MetadataPrefix + "clearingSystemReferenceIds":  "",
+					MetadataPrefix + "accountOwnerTxIds":           "",
+					MetadataPrefix + "accountServicerTxIds":        "",
+					MetadataPrefix + "marketInfrastructureTxIds":   "",
+					MetadataPrefix + "processingIds":               "",
 				},
 			},
 		},
@@ -173,17 +186,30 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 				Status:                 models.PAYMENT_STATUS_SUCCEEDED,
 				SourceAccountReference: pointer.For("acc456"),
 				Metadata: map[string]string{
-					MetadataPrefix + "bookingDate":          "2023-10-03",
-					MetadataPrefix + "valueDate":            "2023-10-04",
-					MetadataPrefix + "bankTransactionCode":  "PMNT.ICDT.ESCT",
-					MetadataPrefix + "numberOfTransactions": "2",
-					MetadataPrefix + "entryReference":       "entry2",
-					MetadataPrefix + "servicerReference":    "servicer2",
-					MetadataPrefix + "isReversal":           "false",
-					MetadataPrefix + "isBatch":              "true",
-					MetadataPrefix + "batchMessageId":       "batch2",
-					MetadataPrefix + "batchPaymentInfoId":   "batchInfo2",
-					MetadataPrefix + "importedAt":           importedAt.Format(ImportedAtLayout),
+					MetadataPrefix + "bookingDate":                 "2023-10-03",
+					MetadataPrefix + "valueDate":                   "2023-10-04",
+					MetadataPrefix + "bankTransactionCode":         "PMNT.ICDT.ESCT",
+					MetadataPrefix + "numberOfTransactions":        "2",
+					MetadataPrefix + "entryReference":              "entry2",
+					MetadataPrefix + "servicerReference":           "servicer2",
+					MetadataPrefix + "isReversal":                  "false",
+					MetadataPrefix + "isBatch":                     "true",
+					MetadataPrefix + "batchMessageId":              "batch2",
+					MetadataPrefix + "batchPaymentInfoId":          "batchInfo2",
+					MetadataPrefix + "messageIds":                  "",
+					MetadataPrefix + "accountServicerReferenceIds": "",
+					MetadataPrefix + "paymentInformationIds":       "",
+					MetadataPrefix + "instructionIds":              "",
+					MetadataPrefix + "endToEndIds":                 "",
+					MetadataPrefix + "uetrs":                       "",
+					MetadataPrefix + "transactionIds":              "",
+					MetadataPrefix + "mandateIds":                  "",
+					MetadataPrefix + "chequeNumbers":               "",
+					MetadataPrefix + "clearingSystemReferenceIds":  "",
+					MetadataPrefix + "accountOwnerTxIds":           "",
+					MetadataPrefix + "accountServicerTxIds":        "",
+					MetadataPrefix + "marketInfrastructureTxIds":   "",
+					MetadataPrefix + "processingIds":               "",
 				},
 				Raw: rawMessage,
 			},
@@ -219,17 +245,30 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 				Status:                 models.PAYMENT_STATUS_SUCCEEDED,
 				SourceAccountReference: pointer.For("acc456"),
 				Metadata: map[string]string{
-					MetadataPrefix + "bookingDate":          "2023-10-03",
-					MetadataPrefix + "valueDate":            "2023-10-04",
-					MetadataPrefix + "bankTransactionCode":  "",
-					MetadataPrefix + "numberOfTransactions": "2",
-					MetadataPrefix + "entryReference":       "entry2",
-					MetadataPrefix + "servicerReference":    "servicer2",
-					MetadataPrefix + "isReversal":           "false",
-					MetadataPrefix + "isBatch":              "true",
-					MetadataPrefix + "batchMessageId":       "batch2",
-					MetadataPrefix + "batchPaymentInfoId":   "batchInfo2",
-					MetadataPrefix + "importedAt":           importedAt.Format(ImportedAtLayout),
+					MetadataPrefix + "bookingDate":                 "2023-10-03",
+					MetadataPrefix + "valueDate":                   "2023-10-04",
+					MetadataPrefix + "bankTransactionCode":         "",
+					MetadataPrefix + "numberOfTransactions":        "2",
+					MetadataPrefix + "entryReference":              "entry2",
+					MetadataPrefix + "servicerReference":           "servicer2",
+					MetadataPrefix + "isReversal":                  "false",
+					MetadataPrefix + "isBatch":                     "true",
+					MetadataPrefix + "batchMessageId":              "batch2",
+					MetadataPrefix + "batchPaymentInfoId":          "batchInfo2",
+					MetadataPrefix + "messageIds":                  "",
+					MetadataPrefix + "accountServicerReferenceIds": "",
+					MetadataPrefix + "paymentInformationIds":       "",
+					MetadataPrefix + "instructionIds":              "",
+					MetadataPrefix + "endToEndIds":                 "",
+					MetadataPrefix + "uetrs":                       "",
+					MetadataPrefix + "transactionIds":              "",
+					MetadataPrefix + "mandateIds":                  "",
+					MetadataPrefix + "chequeNumbers":               "",
+					MetadataPrefix + "clearingSystemReferenceIds":  "",
+					MetadataPrefix + "accountOwnerTxIds":           "",
+					MetadataPrefix + "accountServicerTxIds":        "",
+					MetadataPrefix + "marketInfrastructureTxIds":   "",
+					MetadataPrefix + "processingIds":               "",
 				},
 				Raw: rawMessage,
 			},
@@ -242,4 +281,31 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func (suite *PluginTestSuite) TestMetadata_EndToEndIds() {
+	detail := json.RawMessage(`{"id":"F4kRqwTa6x3EK2or1k5YCd5sULm","rawDetail":{"references":{"messageId":"EOL/20260305163140/767407","endToEndId":"260305KREDBEBB0000900001000003","paymentInformationId":"260305KREDBEBB0000900001"}}}`)
+
+	trx := client.Transaction{
+		Details: []json.RawMessage{detail},
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "260305KREDBEBB0000900001000003", m[MetadataPrefix+"endToEndIds"])
+}
+
+func (suite *PluginTestSuite) TestMetadata_EndToEndIds_MultipleDetails() {
+	details := []json.RawMessage{
+		json.RawMessage(`{"rawDetail":{"references":{"endToEndId":"ID-ONE"}}}`),
+		json.RawMessage(`{"rawDetail":{"references":{"endToEndId":"ID-TWO"}}}`),
+	}
+
+	trx := client.Transaction{
+		Details: details,
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "ID-ONE,ID-TWO", m[MetadataPrefix+"endToEndIds"])
 }
