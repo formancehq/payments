@@ -10,10 +10,21 @@ import (
 type V3OrderTypeEnum string
 
 const (
-	V3OrderTypeEnumUnknown   V3OrderTypeEnum = "UNKNOWN"
-	V3OrderTypeEnumMarket    V3OrderTypeEnum = "MARKET"
-	V3OrderTypeEnumLimit     V3OrderTypeEnum = "LIMIT"
-	V3OrderTypeEnumStopLimit V3OrderTypeEnum = "STOP_LIMIT"
+	V3OrderTypeEnumUnknown           V3OrderTypeEnum = "UNKNOWN"
+	V3OrderTypeEnumMarket            V3OrderTypeEnum = "MARKET"
+	V3OrderTypeEnumLimit             V3OrderTypeEnum = "LIMIT"
+	V3OrderTypeEnumStopLimit         V3OrderTypeEnum = "STOP_LIMIT"
+	V3OrderTypeEnumStop              V3OrderTypeEnum = "STOP"
+	V3OrderTypeEnumTwap              V3OrderTypeEnum = "TWAP"
+	V3OrderTypeEnumVwap              V3OrderTypeEnum = "VWAP"
+	V3OrderTypeEnumPeg               V3OrderTypeEnum = "PEG"
+	V3OrderTypeEnumBlock             V3OrderTypeEnum = "BLOCK"
+	V3OrderTypeEnumRfq               V3OrderTypeEnum = "RFQ"
+	V3OrderTypeEnumTrailingStop      V3OrderTypeEnum = "TRAILING_STOP"
+	V3OrderTypeEnumTrailingStopLimit V3OrderTypeEnum = "TRAILING_STOP_LIMIT"
+	V3OrderTypeEnumTakeProfit        V3OrderTypeEnum = "TAKE_PROFIT"
+	V3OrderTypeEnumTakeProfitLimit   V3OrderTypeEnum = "TAKE_PROFIT_LIMIT"
+	V3OrderTypeEnumLimitMaker        V3OrderTypeEnum = "LIMIT_MAKER"
 )
 
 func (e V3OrderTypeEnum) ToPointer() *V3OrderTypeEnum {
@@ -32,6 +43,28 @@ func (e *V3OrderTypeEnum) UnmarshalJSON(data []byte) error {
 	case "LIMIT":
 		fallthrough
 	case "STOP_LIMIT":
+		fallthrough
+	case "STOP":
+		fallthrough
+	case "TWAP":
+		fallthrough
+	case "VWAP":
+		fallthrough
+	case "PEG":
+		fallthrough
+	case "BLOCK":
+		fallthrough
+	case "RFQ":
+		fallthrough
+	case "TRAILING_STOP":
+		fallthrough
+	case "TRAILING_STOP_LIMIT":
+		fallthrough
+	case "TAKE_PROFIT":
+		fallthrough
+	case "TAKE_PROFIT_LIMIT":
+		fallthrough
+	case "LIMIT_MAKER":
 		*e = V3OrderTypeEnum(v)
 		return nil
 	default:

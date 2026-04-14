@@ -11,14 +11,15 @@ type Config struct {
 }
 
 type V3Connector struct {
-	ID                   string     `json:"id"`
-	Reference            string     `json:"reference"`
-	Name                 string     `json:"name"`
-	CreatedAt            time.Time  `json:"createdAt"`
-	Provider             string     `json:"provider"`
-	ScheduledForDeletion bool       `json:"scheduledForDeletion"`
-	Config               Config     `json:"config"`
-	UpdatedAt            *time.Time `json:"updatedAt,omitempty"`
+	ID                   string               `json:"id"`
+	Reference            string               `json:"reference"`
+	Name                 string               `json:"name"`
+	CreatedAt            time.Time            `json:"createdAt"`
+	Provider             string               `json:"provider"`
+	ConnectorType        *V3ConnectorTypeEnum `json:"connectorType,omitempty"`
+	ScheduledForDeletion bool                 `json:"scheduledForDeletion"`
+	Config               Config               `json:"config"`
+	UpdatedAt            *time.Time           `json:"updatedAt,omitempty"`
 }
 
 func (v V3Connector) MarshalJSON() ([]byte, error) {
@@ -65,6 +66,13 @@ func (o *V3Connector) GetProvider() string {
 		return ""
 	}
 	return o.Provider
+}
+
+func (o *V3Connector) GetConnectorType() *V3ConnectorTypeEnum {
+	if o == nil {
+		return nil
+	}
+	return o.ConnectorType
 }
 
 func (o *V3Connector) GetScheduledForDeletion() bool {

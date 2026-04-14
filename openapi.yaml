@@ -4698,6 +4698,8 @@ components:
           format: date-time
         provider:
           type: string
+        connectorType:
+          $ref: '#/components/schemas/V3ConnectorTypeEnum'
         scheduledForDeletion:
           type: boolean
         config:
@@ -4720,6 +4722,15 @@ components:
           format: date-time
         provider:
           type: string
+        connectorType:
+          $ref: '#/components/schemas/V3ConnectorTypeEnum'
+    V3ConnectorTypeEnum:
+      type: string
+      enum:
+        - PSP
+        - OPEN_BANKING
+        - BOTH
+        - EXCHANGE
     V3Schedule:
       type: object
       required:
@@ -5050,7 +5061,7 @@ components:
         - updatedAt
         - direction
         - sourceAsset
-        - targetAsset
+        - destinationAsset
         - type
         - status
         - baseQuantityOrdered
@@ -5065,6 +5076,9 @@ components:
           type: string
         reference:
           type: string
+        clientOrderId:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -5075,7 +5089,7 @@ components:
           $ref: '#/components/schemas/V3OrderDirectionEnum'
         sourceAsset:
           type: string
-        targetAsset:
+        destinationAsset:
           type: string
         type:
           $ref: '#/components/schemas/V3OrderTypeEnum'
@@ -5112,6 +5126,22 @@ components:
         averageFillPrice:
           type: integer
           format: bigint
+          nullable: true
+        quoteAmount:
+          type: integer
+          format: bigint
+          nullable: true
+        quoteAsset:
+          type: string
+          nullable: true
+        priceAsset:
+          type: string
+          nullable: true
+        sourceAccountID:
+          type: string
+          nullable: true
+        destinationAccountID:
+          type: string
           nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
@@ -5168,6 +5198,17 @@ components:
         - MARKET
         - LIMIT
         - STOP_LIMIT
+        - STOP
+        - TWAP
+        - VWAP
+        - PEG
+        - BLOCK
+        - RFQ
+        - TRAILING_STOP
+        - TRAILING_STOP_LIMIT
+        - TAKE_PROFIT
+        - TAKE_PROFIT_LIMIT
+        - LIMIT_MAKER
     V3OrderStatusEnum:
       type: string
       enum:
@@ -5234,10 +5275,9 @@ components:
         - createdAt
         - updatedAt
         - sourceAsset
-        - targetAsset
+        - destinationAsset
         - sourceAmount
         - status
-        - walletId
       properties:
         id:
           type: string
@@ -5256,19 +5296,30 @@ components:
           format: date-time
         sourceAsset:
           type: string
-        targetAsset:
+        destinationAsset:
           type: string
         sourceAmount:
           type: integer
           format: bigint
-        targetAmount:
+        destinationAmount:
           type: integer
           format: bigint
           nullable: true
+        fee:
+          type: integer
+          format: bigint
+          nullable: true
+        feeAsset:
+          type: string
+          nullable: true
         status:
           $ref: '#/components/schemas/V3ConversionStatusEnum'
-        walletID:
+        sourceAccountID:
           type: string
+          nullable: true
+        destinationAccountID:
+          type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         error:

@@ -9,29 +9,35 @@ import (
 )
 
 type V3Order struct {
-	ID                  string               `json:"id"`
-	ConnectorID         string               `json:"connectorID"`
-	Provider            string               `json:"provider"`
-	Reference           string               `json:"reference"`
-	CreatedAt           time.Time            `json:"createdAt"`
-	UpdatedAt           time.Time            `json:"updatedAt"`
-	Direction           V3OrderDirectionEnum `json:"direction"`
-	SourceAsset         string               `json:"sourceAsset"`
-	TargetAsset         string               `json:"targetAsset"`
-	Type                V3OrderTypeEnum      `json:"type"`
-	Status              V3OrderStatusEnum    `json:"status"`
-	BaseQuantityOrdered *big.Int             `json:"baseQuantityOrdered"`
-	BaseQuantityFilled  *big.Int             `json:"baseQuantityFilled,omitempty"`
-	LimitPrice          *big.Int             `json:"limitPrice,omitempty"`
-	StopPrice           *big.Int             `json:"stopPrice,omitempty"`
-	TimeInForce         V3TimeInForceEnum    `json:"timeInForce"`
-	ExpiresAt           *time.Time           `json:"expiresAt,omitempty"`
-	Fee                 *big.Int             `json:"fee,omitempty"`
-	FeeAsset            *string              `json:"feeAsset,omitempty"`
-	AverageFillPrice    *big.Int             `json:"averageFillPrice,omitempty"`
-	Metadata            map[string]string    `json:"metadata,omitempty"`
-	Adjustments         []V3OrderAdjustment  `json:"adjustments,omitempty"`
-	Error               *string              `json:"error,omitempty"`
+	ID                   string               `json:"id"`
+	ConnectorID          string               `json:"connectorID"`
+	Provider             string               `json:"provider"`
+	Reference            string               `json:"reference"`
+	ClientOrderID        *string              `json:"clientOrderId,omitempty"`
+	CreatedAt            time.Time            `json:"createdAt"`
+	UpdatedAt            time.Time            `json:"updatedAt"`
+	Direction            V3OrderDirectionEnum `json:"direction"`
+	SourceAsset          string               `json:"sourceAsset"`
+	DestinationAsset     string               `json:"destinationAsset"`
+	Type                 V3OrderTypeEnum      `json:"type"`
+	Status               V3OrderStatusEnum    `json:"status"`
+	BaseQuantityOrdered  *big.Int             `json:"baseQuantityOrdered"`
+	BaseQuantityFilled   *big.Int             `json:"baseQuantityFilled,omitempty"`
+	LimitPrice           *big.Int             `json:"limitPrice,omitempty"`
+	StopPrice            *big.Int             `json:"stopPrice,omitempty"`
+	TimeInForce          V3TimeInForceEnum    `json:"timeInForce"`
+	ExpiresAt            *time.Time           `json:"expiresAt,omitempty"`
+	Fee                  *big.Int             `json:"fee,omitempty"`
+	FeeAsset             *string              `json:"feeAsset,omitempty"`
+	AverageFillPrice     *big.Int             `json:"averageFillPrice,omitempty"`
+	QuoteAmount          *big.Int             `json:"quoteAmount,omitempty"`
+	QuoteAsset           *string              `json:"quoteAsset,omitempty"`
+	PriceAsset           *string              `json:"priceAsset,omitempty"`
+	SourceAccountID      *string              `json:"sourceAccountID,omitempty"`
+	DestinationAccountID *string              `json:"destinationAccountID,omitempty"`
+	Metadata             map[string]string    `json:"metadata,omitempty"`
+	Adjustments          []V3OrderAdjustment  `json:"adjustments,omitempty"`
+	Error                *string              `json:"error,omitempty"`
 }
 
 func (v V3Order) MarshalJSON() ([]byte, error) {
@@ -73,6 +79,13 @@ func (o *V3Order) GetReference() string {
 	return o.Reference
 }
 
+func (o *V3Order) GetClientOrderID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.ClientOrderID
+}
+
 func (o *V3Order) GetCreatedAt() time.Time {
 	if o == nil {
 		return time.Time{}
@@ -101,11 +114,11 @@ func (o *V3Order) GetSourceAsset() string {
 	return o.SourceAsset
 }
 
-func (o *V3Order) GetTargetAsset() string {
+func (o *V3Order) GetDestinationAsset() string {
 	if o == nil {
 		return ""
 	}
-	return o.TargetAsset
+	return o.DestinationAsset
 }
 
 func (o *V3Order) GetType() V3OrderTypeEnum {
@@ -183,6 +196,41 @@ func (o *V3Order) GetAverageFillPrice() *big.Int {
 		return nil
 	}
 	return o.AverageFillPrice
+}
+
+func (o *V3Order) GetQuoteAmount() *big.Int {
+	if o == nil {
+		return nil
+	}
+	return o.QuoteAmount
+}
+
+func (o *V3Order) GetQuoteAsset() *string {
+	if o == nil {
+		return nil
+	}
+	return o.QuoteAsset
+}
+
+func (o *V3Order) GetPriceAsset() *string {
+	if o == nil {
+		return nil
+	}
+	return o.PriceAsset
+}
+
+func (o *V3Order) GetSourceAccountID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.SourceAccountID
+}
+
+func (o *V3Order) GetDestinationAccountID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DestinationAccountID
 }
 
 func (o *V3Order) GetMetadata() map[string]string {
