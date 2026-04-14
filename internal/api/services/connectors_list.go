@@ -14,7 +14,9 @@ func (s *Service) ConnectorsList(ctx context.Context, query storage.ListConnecto
 	if err != nil {
 		return nil, newStorageError(err, "cannot list connectors")
 	}
-	enrichConnectorsWithType(cursor.Data)
+	if cursor != nil {
+		enrichConnectorsWithType(cursor.Data)
+	}
 	return cursor, nil
 }
 
