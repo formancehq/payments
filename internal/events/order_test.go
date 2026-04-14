@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -152,4 +154,55 @@ func TestOrderMessagePayload_MarshalJSON(t *testing.T) {
 		assert.Equal(t, "adj-1", restored.Adjustments[0].ID)
 		assert.Equal(t, "OPEN", restored.Adjustments[0].Status)
 	})
+}
+
+func TestNewEventSavedOrder(t *testing.T) {
+	t.Parallel()
+
+	connID := models.ConnectorID{Provider: "test", Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001")}
+	order := models.Order{
+		ID:                  models.OrderID{Reference: "ord-1", ConnectorID: connID},
+		ConnectorID:         connID,
+		Reference:           "ord-1",
+		CreatedAt:           time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		UpdatedAt:           time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC),
+		Direction:           models.ORDER_DIRECTION_BUY,
+		SourceAsset:         "USD/2",
+		DestinationAsset:    "BTC/8",
+		Type:                models.ORDER_TYPE_MARKET,
+		Status:              models.ORDER_STATUS_FILLED,
+		TimeInForce:         models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
+		BaseQuantityOrdered: big.NewInt(50000000),
+		BaseQuantityFilled:  big.NewInt(50000000),
+		QuoteAmount:         big.NewInt(10000),
+		QuoteAsset:          "USD/2",
+		Fee:                 big.NewInt(14),
+		Metadata:            map[string]string{"key": "val"},
+		Adjustments: []models.OrderAdjustment{
+			{
+				ID:        models.OrderAdjustmentID{Reference: "adj-1", Status: models.ORDER_STATUS_FILLED},
+				Reference: "adj-1",
+				CreatedAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+				Status:    models.ORDER_STATUS_FILLED,
+				Raw:       json.RawMessage(`{"raw":"data"}`),
+			},
+		},
+	}
+
+	e := Events{}
+	msg := e.NewEventSavedOrder(order, order.Adjustments[0])
+
+	assert.Equal(t, "SAVED_ORDER", msg.Type)
+	assert.NotEmpty(t, msg.IdempotencyKey)
+
+	payload, ok := msg.Payload.(OrderMessagePayload)
+	require.True(t, ok)
+	assert.Equal(t, "ord-1", payload.Reference)
+	assert.Equal(t, "BUY", payload.Direction)
+	assert.Equal(t, "USD/2", payload.SourceAsset)
+	assert.Equal(t, "BTC/8", payload.DestinationAsset)
+	assert.Equal(t, 0, payload.BaseQuantityOrdered.Cmp(big.NewInt(50000000)))
+	assert.Equal(t, 0, payload.QuoteAmount.Cmp(big.NewInt(10000)))
+	assert.Len(t, payload.Adjustments, 1)
+	assert.Equal(t, "adj-1", payload.Adjustments[0].Reference)
 }

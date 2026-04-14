@@ -33,8 +33,6 @@ type SendEvents struct {
 	UserLinkStatus                  *models.UserLinkSessionFinished
 	UserConnectionDataSynced        *models.UserConnectionDataSynced
 	Task                            *models.Task
-	Order                           *models.Order
-	Conversion                      *models.Conversion
 }
 
 func (w Workflow) runSendEvents(
@@ -225,43 +223,6 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendTaskUpdated(
 					infiniteRetryContext(ctx),
 					*sendEvents.Task,
-				)
-			},
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	if sendEvents.Order != nil {
-		for _, adjustment := range sendEvents.Order.Adjustments {
-			err := sendEvent(
-				ctx,
-				adjustment.IdempotencyKey(),
-				&sendEvents.Order.ConnectorID,
-				func(ctx workflow.Context) error {
-					return activities.EventsSendOrder(
-						infiniteRetryContext(ctx),
-						*sendEvents.Order,
-						adjustment,
-					)
-				},
-			)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	if sendEvents.Conversion != nil {
-		err := sendEvent(
-			ctx,
-			sendEvents.Conversion.IdempotencyKey(),
-			&sendEvents.Conversion.ConnectorID,
-			func(ctx workflow.Context) error {
-				return activities.EventsSendConversion(
-					infiniteRetryContext(ctx),
-					*sendEvents.Conversion,
 				)
 			},
 		)
