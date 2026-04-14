@@ -93,7 +93,8 @@ Accept: application/json
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string"
+      "provider": "string",
+      "connectorType": "PSP"
     },
     "provider": "string",
     "reference": "string",
@@ -177,7 +178,8 @@ Accept: application/json
           "reference": "string",
           "name": "string",
           "createdAt": "2019-08-24T14:15:22Z",
-          "provider": "string"
+          "provider": "string",
+          "connectorType": "PSP"
         },
         "provider": "string",
         "reference": "string",
@@ -243,7 +245,8 @@ Accept: application/json
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string"
+      "provider": "string",
+      "connectorType": "PSP"
     },
     "provider": "string",
     "reference": "string",
@@ -705,6 +708,7 @@ Accept: application/json
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
+        "connectorType": "PSP",
         "scheduledForDeletion": true,
         "config": {},
         "updatedAt": "2019-08-24T14:15:22Z"
@@ -1281,11 +1285,12 @@ Accept: application/json
         "connectorID": "string",
         "provider": "string",
         "reference": "string",
+        "clientOrderId": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "updatedAt": "2019-08-24T14:15:22Z",
         "direction": "UNKNOWN",
         "sourceAsset": "string",
-        "targetAsset": "string",
+        "destinationAsset": "string",
         "type": "UNKNOWN",
         "status": "UNKNOWN",
         "baseQuantityOrdered": 0,
@@ -1297,6 +1302,11 @@ Accept: application/json
         "fee": 0,
         "feeAsset": "string",
         "averageFillPrice": 0,
+        "quoteAmount": 0,
+        "quoteAsset": "string",
+        "priceAsset": "string",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -1368,11 +1378,12 @@ Accept: application/json
     "connectorID": "string",
     "provider": "string",
     "reference": "string",
+    "clientOrderId": "string",
     "createdAt": "2019-08-24T14:15:22Z",
     "updatedAt": "2019-08-24T14:15:22Z",
     "direction": "UNKNOWN",
     "sourceAsset": "string",
-    "targetAsset": "string",
+    "destinationAsset": "string",
     "type": "UNKNOWN",
     "status": "UNKNOWN",
     "baseQuantityOrdered": 0,
@@ -1384,6 +1395,11 @@ Accept: application/json
     "fee": 0,
     "feeAsset": "string",
     "averageFillPrice": 0,
+    "quoteAmount": 0,
+    "quoteAsset": "string",
+    "priceAsset": "string",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -1475,11 +1491,14 @@ Accept: application/json
         "createdAt": "2019-08-24T14:15:22Z",
         "updatedAt": "2019-08-24T14:15:22Z",
         "sourceAsset": "string",
-        "targetAsset": "string",
+        "destinationAsset": "string",
         "sourceAmount": 0,
-        "targetAmount": 0,
+        "destinationAmount": 0,
+        "fee": 0,
+        "feeAsset": "string",
         "status": "UNKNOWN",
-        "walletID": "string",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -1538,11 +1557,14 @@ Accept: application/json
     "createdAt": "2019-08-24T14:15:22Z",
     "updatedAt": "2019-08-24T14:15:22Z",
     "sourceAsset": "string",
-    "targetAsset": "string",
+    "destinationAsset": "string",
     "sourceAmount": 0,
-    "targetAmount": 0,
+    "destinationAmount": 0,
+    "fee": 0,
+    "feeAsset": "string",
     "status": "UNKNOWN",
-    "walletID": "string",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -4018,7 +4040,8 @@ None ( Scopes: payments:read )
           "reference": "string",
           "name": "string",
           "createdAt": "2019-08-24T14:15:22Z",
-          "provider": "string"
+          "provider": "string",
+          "connectorType": "PSP"
         },
         "provider": "string",
         "reference": "string",
@@ -4066,7 +4089,8 @@ None ( Scopes: payments:read )
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string"
+      "provider": "string",
+      "connectorType": "PSP"
     },
     "provider": "string",
     "reference": "string",
@@ -4142,7 +4166,8 @@ None ( Scopes: payments:read )
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string"
+      "provider": "string",
+      "connectorType": "PSP"
     },
     "provider": "string",
     "reference": "string",
@@ -4182,7 +4207,8 @@ None ( Scopes: payments:read )
     "reference": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
-    "provider": "string"
+    "provider": "string",
+    "connectorType": "PSP"
   },
   "provider": "string",
   "reference": "string",
@@ -4798,6 +4824,7 @@ None ( Scopes: payments:read )
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
+        "connectorType": "PSP",
         "scheduledForDeletion": true,
         "config": {},
         "updatedAt": "2019-08-24T14:15:22Z"
@@ -4940,6 +4967,7 @@ None ( Scopes: payments:read )
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
   "provider": "string",
+  "connectorType": "PSP",
   "scheduledForDeletion": true,
   "config": {},
   "updatedAt": "2019-08-24T14:15:22Z"
@@ -4956,6 +4984,7 @@ None ( Scopes: payments:read )
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
 |provider|string|true|none|none|
+|connectorType|[V3ConnectorTypeEnum](#schemav3connectortypeenum)|false|none|none|
 |scheduledForDeletion|boolean|true|none|none|
 |config|object|true|none|none|
 |updatedAt|string(date-time)¦null|false|none|none|
@@ -4973,7 +5002,8 @@ None ( Scopes: payments:read )
   "reference": "string",
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
-  "provider": "string"
+  "provider": "string",
+  "connectorType": "PSP"
 }
 
 ```
@@ -4987,6 +5017,34 @@ None ( Scopes: payments:read )
 |name|string|false|none|none|
 |createdAt|string(date-time)|false|none|none|
 |provider|string|false|none|none|
+|connectorType|[V3ConnectorTypeEnum](#schemav3connectortypeenum)|false|none|none|
+
+<h2 id="tocS_V3ConnectorTypeEnum">V3ConnectorTypeEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectortypeenum"></a>
+<a id="schema_V3ConnectorTypeEnum"></a>
+<a id="tocSv3connectortypeenum"></a>
+<a id="tocsv3connectortypeenum"></a>
+
+```json
+"PSP"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|PSP|
+|*anonymous*|OPEN_BANKING|
+|*anonymous*|BOTH|
+|*anonymous*|EXCHANGE|
 
 <h2 id="tocS_V3Schedule">V3Schedule</h2>
 <!-- backwards compatibility -->
@@ -5525,11 +5583,12 @@ None ( Scopes: payments:read )
         "connectorID": "string",
         "provider": "string",
         "reference": "string",
+        "clientOrderId": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "updatedAt": "2019-08-24T14:15:22Z",
         "direction": "UNKNOWN",
         "sourceAsset": "string",
-        "targetAsset": "string",
+        "destinationAsset": "string",
         "type": "UNKNOWN",
         "status": "UNKNOWN",
         "baseQuantityOrdered": 0,
@@ -5541,6 +5600,11 @@ None ( Scopes: payments:read )
         "fee": 0,
         "feeAsset": "string",
         "averageFillPrice": 0,
+        "quoteAmount": 0,
+        "quoteAsset": "string",
+        "priceAsset": "string",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -5594,11 +5658,12 @@ None ( Scopes: payments:read )
     "connectorID": "string",
     "provider": "string",
     "reference": "string",
+    "clientOrderId": "string",
     "createdAt": "2019-08-24T14:15:22Z",
     "updatedAt": "2019-08-24T14:15:22Z",
     "direction": "UNKNOWN",
     "sourceAsset": "string",
-    "targetAsset": "string",
+    "destinationAsset": "string",
     "type": "UNKNOWN",
     "status": "UNKNOWN",
     "baseQuantityOrdered": 0,
@@ -5610,6 +5675,11 @@ None ( Scopes: payments:read )
     "fee": 0,
     "feeAsset": "string",
     "averageFillPrice": 0,
+    "quoteAmount": 0,
+    "quoteAsset": "string",
+    "priceAsset": "string",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -5655,11 +5725,12 @@ None ( Scopes: payments:read )
   "connectorID": "string",
   "provider": "string",
   "reference": "string",
+  "clientOrderId": "string",
   "createdAt": "2019-08-24T14:15:22Z",
   "updatedAt": "2019-08-24T14:15:22Z",
   "direction": "UNKNOWN",
   "sourceAsset": "string",
-  "targetAsset": "string",
+  "destinationAsset": "string",
   "type": "UNKNOWN",
   "status": "UNKNOWN",
   "baseQuantityOrdered": 0,
@@ -5671,6 +5742,11 @@ None ( Scopes: payments:read )
   "fee": 0,
   "feeAsset": "string",
   "averageFillPrice": 0,
+  "quoteAmount": 0,
+  "quoteAsset": "string",
+  "priceAsset": "string",
+  "sourceAccountID": "string",
+  "destinationAccountID": "string",
   "metadata": {
     "property1": "string",
     "property2": "string"
@@ -5704,11 +5780,12 @@ None ( Scopes: payments:read )
 |connectorID|string(byte)|true|none|none|
 |provider|string|true|none|none|
 |reference|string|true|none|none|
+|clientOrderId|string¦null|false|none|none|
 |createdAt|string(date-time)|true|none|none|
 |updatedAt|string(date-time)|true|none|none|
 |direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|true|none|none|
 |sourceAsset|string|true|none|none|
-|targetAsset|string|true|none|none|
+|destinationAsset|string|true|none|none|
 |type|[V3OrderTypeEnum](#schemav3ordertypeenum)|true|none|none|
 |status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|none|
 |baseQuantityOrdered|integer(bigint)|true|none|none|
@@ -5720,6 +5797,11 @@ None ( Scopes: payments:read )
 |fee|integer(bigint)¦null|false|none|none|
 |feeAsset|string¦null|false|none|none|
 |averageFillPrice|integer(bigint)¦null|false|none|none|
+|quoteAmount|integer(bigint)¦null|false|none|none|
+|quoteAsset|string¦null|false|none|none|
+|priceAsset|string¦null|false|none|none|
+|sourceAccountID|string¦null|false|none|none|
+|destinationAccountID|string¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 |adjustments|[[V3OrderAdjustment](#schemav3orderadjustment)]¦null|false|none|none|
 |error|string¦null|false|none|none|
@@ -5815,6 +5897,17 @@ None ( Scopes: payments:read )
 |*anonymous*|MARKET|
 |*anonymous*|LIMIT|
 |*anonymous*|STOP_LIMIT|
+|*anonymous*|STOP|
+|*anonymous*|TWAP|
+|*anonymous*|VWAP|
+|*anonymous*|PEG|
+|*anonymous*|BLOCK|
+|*anonymous*|RFQ|
+|*anonymous*|TRAILING_STOP|
+|*anonymous*|TRAILING_STOP_LIMIT|
+|*anonymous*|TAKE_PROFIT|
+|*anonymous*|TAKE_PROFIT_LIMIT|
+|*anonymous*|LIMIT_MAKER|
 
 <h2 id="tocS_V3OrderStatusEnum">V3OrderStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -5898,11 +5991,14 @@ None ( Scopes: payments:read )
         "createdAt": "2019-08-24T14:15:22Z",
         "updatedAt": "2019-08-24T14:15:22Z",
         "sourceAsset": "string",
-        "targetAsset": "string",
+        "destinationAsset": "string",
         "sourceAmount": 0,
-        "targetAmount": 0,
+        "destinationAmount": 0,
+        "fee": 0,
+        "feeAsset": "string",
         "status": "UNKNOWN",
-        "walletID": "string",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -5943,11 +6039,14 @@ None ( Scopes: payments:read )
     "createdAt": "2019-08-24T14:15:22Z",
     "updatedAt": "2019-08-24T14:15:22Z",
     "sourceAsset": "string",
-    "targetAsset": "string",
+    "destinationAsset": "string",
     "sourceAmount": 0,
-    "targetAmount": 0,
+    "destinationAmount": 0,
+    "fee": 0,
+    "feeAsset": "string",
     "status": "UNKNOWN",
-    "walletID": "string",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -5980,11 +6079,14 @@ None ( Scopes: payments:read )
   "createdAt": "2019-08-24T14:15:22Z",
   "updatedAt": "2019-08-24T14:15:22Z",
   "sourceAsset": "string",
-  "targetAsset": "string",
+  "destinationAsset": "string",
   "sourceAmount": 0,
-  "targetAmount": 0,
+  "destinationAmount": 0,
+  "fee": 0,
+  "feeAsset": "string",
   "status": "UNKNOWN",
-  "walletID": "string",
+  "sourceAccountID": "string",
+  "destinationAccountID": "string",
   "metadata": {
     "property1": "string",
     "property2": "string"
@@ -6005,11 +6107,14 @@ None ( Scopes: payments:read )
 |createdAt|string(date-time)|true|none|none|
 |updatedAt|string(date-time)|true|none|none|
 |sourceAsset|string|true|none|none|
-|targetAsset|string|true|none|none|
+|destinationAsset|string|true|none|none|
 |sourceAmount|integer(bigint)|true|none|none|
-|targetAmount|integer(bigint)¦null|false|none|none|
+|destinationAmount|integer(bigint)¦null|false|none|none|
+|fee|integer(bigint)¦null|false|none|none|
+|feeAsset|string¦null|false|none|none|
 |status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|none|
-|walletID|string|false|none|none|
+|sourceAccountID|string¦null|false|none|none|
+|destinationAccountID|string¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 |error|string¦null|false|none|none|
 

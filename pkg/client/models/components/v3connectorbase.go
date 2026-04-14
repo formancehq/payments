@@ -8,11 +8,12 @@ import (
 )
 
 type V3ConnectorBase struct {
-	ID        *string    `json:"id,omitempty"`
-	Reference *string    `json:"reference,omitempty"`
-	Name      *string    `json:"name,omitempty"`
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Provider  *string    `json:"provider,omitempty"`
+	ID            *string              `json:"id,omitempty"`
+	Reference     *string              `json:"reference,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	CreatedAt     *time.Time           `json:"createdAt,omitempty"`
+	Provider      *string              `json:"provider,omitempty"`
+	ConnectorType *V3ConnectorTypeEnum `json:"connectorType,omitempty"`
 }
 
 func (v V3ConnectorBase) MarshalJSON() ([]byte, error) {
@@ -59,4 +60,11 @@ func (o *V3ConnectorBase) GetProvider() *string {
 		return nil
 	}
 	return o.Provider
+}
+
+func (o *V3ConnectorBase) GetConnectorType() *V3ConnectorTypeEnum {
+	if o == nil {
+		return nil
+	}
+	return o.ConnectorType
 }

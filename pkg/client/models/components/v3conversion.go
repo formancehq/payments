@@ -9,20 +9,23 @@ import (
 )
 
 type V3Conversion struct {
-	ID           string                 `json:"id"`
-	ConnectorID  string                 `json:"connectorID"`
-	Provider     string                 `json:"provider"`
-	Reference    string                 `json:"reference"`
-	CreatedAt    time.Time              `json:"createdAt"`
-	UpdatedAt    time.Time              `json:"updatedAt"`
-	SourceAsset  string                 `json:"sourceAsset"`
-	TargetAsset  string                 `json:"targetAsset"`
-	SourceAmount *big.Int               `json:"sourceAmount"`
-	TargetAmount *big.Int               `json:"targetAmount,omitempty"`
-	Status       V3ConversionStatusEnum `json:"status"`
-	WalletID     *string                `json:"walletID,omitempty"`
-	Metadata     map[string]string      `json:"metadata,omitempty"`
-	Error        *string                `json:"error,omitempty"`
+	ID                   string                 `json:"id"`
+	ConnectorID          string                 `json:"connectorID"`
+	Provider             string                 `json:"provider"`
+	Reference            string                 `json:"reference"`
+	CreatedAt            time.Time              `json:"createdAt"`
+	UpdatedAt            time.Time              `json:"updatedAt"`
+	SourceAsset          string                 `json:"sourceAsset"`
+	DestinationAsset     string                 `json:"destinationAsset"`
+	SourceAmount         *big.Int               `json:"sourceAmount"`
+	DestinationAmount    *big.Int               `json:"destinationAmount,omitempty"`
+	Fee                  *big.Int               `json:"fee,omitempty"`
+	FeeAsset             *string                `json:"feeAsset,omitempty"`
+	Status               V3ConversionStatusEnum `json:"status"`
+	SourceAccountID      *string                `json:"sourceAccountID,omitempty"`
+	DestinationAccountID *string                `json:"destinationAccountID,omitempty"`
+	Metadata             map[string]string      `json:"metadata,omitempty"`
+	Error                *string                `json:"error,omitempty"`
 }
 
 func (v V3Conversion) MarshalJSON() ([]byte, error) {
@@ -85,11 +88,11 @@ func (o *V3Conversion) GetSourceAsset() string {
 	return o.SourceAsset
 }
 
-func (o *V3Conversion) GetTargetAsset() string {
+func (o *V3Conversion) GetDestinationAsset() string {
 	if o == nil {
 		return ""
 	}
-	return o.TargetAsset
+	return o.DestinationAsset
 }
 
 func (o *V3Conversion) GetSourceAmount() *big.Int {
@@ -99,11 +102,25 @@ func (o *V3Conversion) GetSourceAmount() *big.Int {
 	return o.SourceAmount
 }
 
-func (o *V3Conversion) GetTargetAmount() *big.Int {
+func (o *V3Conversion) GetDestinationAmount() *big.Int {
 	if o == nil {
 		return nil
 	}
-	return o.TargetAmount
+	return o.DestinationAmount
+}
+
+func (o *V3Conversion) GetFee() *big.Int {
+	if o == nil {
+		return nil
+	}
+	return o.Fee
+}
+
+func (o *V3Conversion) GetFeeAsset() *string {
+	if o == nil {
+		return nil
+	}
+	return o.FeeAsset
 }
 
 func (o *V3Conversion) GetStatus() V3ConversionStatusEnum {
@@ -113,11 +130,18 @@ func (o *V3Conversion) GetStatus() V3ConversionStatusEnum {
 	return o.Status
 }
 
-func (o *V3Conversion) GetWalletID() *string {
+func (o *V3Conversion) GetSourceAccountID() *string {
 	if o == nil {
 		return nil
 	}
-	return o.WalletID
+	return o.SourceAccountID
+}
+
+func (o *V3Conversion) GetDestinationAccountID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DestinationAccountID
 }
 
 func (o *V3Conversion) GetMetadata() map[string]string {

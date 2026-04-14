@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 4aad627e31731114ec66154aa6aee84b
+  docChecksum: 74f5cbd6d41074e8a37ec10e15fc4929
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -121,6 +121,7 @@ generatedFiles:
   - /models/components/v3bankaccount.go
   - /models/components/v3bankaccountrelatedaccount.go
   - /models/components/v3bankaccountscursorresponse.go
+  - /models/components/v3bankingbridgeconfig.go
   - /models/components/v3bankingcircleconfig.go
   - /models/components/v3coinbaseprimeconfig.go
   - /models/components/v3columnconfig.go
@@ -133,6 +134,7 @@ generatedFiles:
   - /models/components/v3connectorscheduleresponse.go
   - /models/components/v3connectorschedulescursorresponse.go
   - /models/components/v3connectorscursorresponse.go
+  - /models/components/v3connectortypeenum.go
   - /models/components/v3contactdetails.go
   - /models/components/v3contactdetailsrequest.go
   - /models/components/v3conversion.go
@@ -473,6 +475,7 @@ generatedFiles:
   - docs/models/components/v3bankaccountrelatedaccount.md
   - docs/models/components/v3bankaccountscursorresponse.md
   - docs/models/components/v3bankaccountscursorresponsecursor.md
+  - docs/models/components/v3bankingbridgeconfig.md
   - docs/models/components/v3bankingcircleconfig.md
   - docs/models/components/v3coinbaseprimeconfig.md
   - docs/models/components/v3columnconfig.md
@@ -489,6 +492,7 @@ generatedFiles:
   - docs/models/components/v3connectorschedulescursorresponsecursor.md
   - docs/models/components/v3connectorscursorresponse.md
   - docs/models/components/v3connectorscursorresponsecursor.md
+  - docs/models/components/v3connectortypeenum.md
   - docs/models/components/v3contactdetails.md
   - docs/models/components/v3contactdetailsrequest.md
   - docs/models/components/v3conversion.md
@@ -1945,7 +1949,7 @@ examples:
           orderID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2026-07-25T03:55:28.354Z", "updatedAt": "2025-01-31T12:41:19.542Z", "direction": "BUY", "sourceAsset": "<value>", "targetAsset": "<value>", "type": "LIMIT", "status": "PENDING", "baseQuantityOrdered": 691479, "timeInForce": "GOOD_UNTIL_CANCELLED"}}
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2026-07-25T03:55:28.354Z", "updatedAt": "2025-01-31T12:41:19.542Z", "direction": "BUY", "sourceAsset": "<value>", "destinationAsset": "<value>", "type": "LIMIT", "status": "PENDING", "baseQuantityOrdered": 691479, "timeInForce": "GOOD_UNTIL_CANCELLED"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3ListConversions:
@@ -1956,7 +1960,7 @@ examples:
           cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2026-05-06T22:18:06.194Z", "updatedAt": "2025-09-14T04:45:59.309Z", "sourceAsset": "<value>", "targetAsset": "<value>", "sourceAmount": 683178, "status": "PENDING"}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2026-05-06T22:18:06.194Z", "updatedAt": "2025-09-14T04:45:59.309Z", "sourceAsset": "<value>", "destinationAsset": "<value>", "sourceAmount": 683178, "status": "PENDING"}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3GetConversion:
@@ -1966,7 +1970,7 @@ examples:
           conversionID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2024-03-23T20:18:04.407Z", "updatedAt": "2026-05-29T07:36:51.024Z", "sourceAsset": "<value>", "targetAsset": "<value>", "sourceAmount": 421979, "status": "PENDING"}}
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2024-03-23T20:18:04.407Z", "updatedAt": "2026-05-29T07:36:51.024Z", "sourceAsset": "<value>", "destinationAsset": "<value>", "sourceAmount": 421979, "status": "PENDING"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0
