@@ -1,6 +1,6 @@
 module github.com/formancehq/payments
 
-go 1.24.10
+go 1.26
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 

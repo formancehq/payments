@@ -92,7 +92,7 @@
             gotools
             jq
             just
-            mockgen
+            (mockgen.override { buildGoModule = buildGo126Module; })
             nodejs_22
             yq-go
           ];
@@ -107,6 +107,10 @@
         {
           default = pkgs.mkShell {
             packages = stablePackages ++ unstablePackages ++ otherPackages;
+
+            env = {
+              GOROOT = "${pkgs.go_1_26}/share/go";
+            };
           };
         }
       );
