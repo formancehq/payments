@@ -101,6 +101,7 @@ func metadata(in client.Transaction) map[string]string {
 		MetadataPrefix + "isBatch":              fmt.Sprintf("%t", in.IsBatch),
 		MetadataPrefix + "batchMessageId":       in.BatchMessageID,
 		MetadataPrefix + "batchPaymentInfoId":   in.BatchPaymentInfoID,
+		MetadataPrefix + "importedAt":           in.ImportedAt.UTC().Format(ImportedAtLayout),
 	}
 
 	for _, detail := range in.Details {
