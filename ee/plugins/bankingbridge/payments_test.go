@@ -138,7 +138,7 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 					MetadataPrefix + "isBatch":              "false",
 					MetadataPrefix + "batchMessageId":       "batch1",
 					MetadataPrefix + "batchPaymentInfoId":   "batchInfo1",
-					MetadataPrefix + "importedAt":           importedAt.Format(ImportedAtLayout),
+					MetadataPrefix + "importedAt":           importedAt.UTC().Format(ImportedAtLayout),
 				},
 			},
 		},
@@ -183,7 +183,7 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 					MetadataPrefix + "isBatch":              "true",
 					MetadataPrefix + "batchMessageId":       "batch2",
 					MetadataPrefix + "batchPaymentInfoId":   "batchInfo2",
-					MetadataPrefix + "importedAt":           importedAt.Format(ImportedAtLayout),
+					MetadataPrefix + "importedAt":           importedAt.UTC().Format(ImportedAtLayout),
 				},
 				Raw: rawMessage,
 			},
@@ -229,7 +229,7 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 					MetadataPrefix + "isBatch":              "true",
 					MetadataPrefix + "batchMessageId":       "batch2",
 					MetadataPrefix + "batchPaymentInfoId":   "batchInfo2",
-					MetadataPrefix + "importedAt":           importedAt.Format(ImportedAtLayout),
+					MetadataPrefix + "importedAt":           importedAt.UTC().Format(ImportedAtLayout),
 				},
 				Raw: rawMessage,
 			},
@@ -242,4 +242,55 @@ func (suite *PluginTestSuite) TestToPSPPayment() {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func (suite *PluginTestSuite) TestMetadata_EndToEndIds() {
+	detail := json.RawMessage(`{"id":"F4kRqwTa6x3EK2or1k5YCd5sULm","rawDetail":{"references":{"messageId":"EOL/20260305163140/767407","endToEndId":"260305KREDBEBB0000900001000003","paymentInformationId":"260305KREDBEBB0000900001"}}}`)
+
+	trx := client.Transaction{
+		Details: []json.RawMessage{detail},
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "260305KREDBEBB0000900001000003", m[MetadataPrefix+"endToEndId"])
+}
+
+func (suite *PluginTestSuite) TestMetadata_EndToEndId_MultipleDetails_UsesFirst() {
+	details := []json.RawMessage{
+		json.RawMessage(`{"rawDetail":{"references":{"endToEndId":"ID-ONE"}}}`),
+		json.RawMessage(`{"rawDetail":{"references":{"endToEndId":"ID-TWO"}}}`),
+	}
+
+	trx := client.Transaction{
+		Details: details,
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "ID-ONE", m[MetadataPrefix+"endToEndId"])
+}
+
+func (suite *PluginTestSuite) TestMetadata_RemittanceInfo_Unstructured() {
+	detail := json.RawMessage(`{"rawDetail":{"remittanceInfo":{"unstructured":["Invoice 1234","Order 5678"]}}}`)
+
+	trx := client.Transaction{
+		Details: []json.RawMessage{detail},
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "Invoice 1234 Order 5678", m[MetadataPrefix+"remittanceInfo"])
+}
+
+func (suite *PluginTestSuite) TestMetadata_RemittanceInfo_Structured() {
+	detail := json.RawMessage(`{"rawDetail":{"remittanceInfo":{"structured":[{"creditorReferenceInfo":{"reference":"RF18539007547034"}}]}}}`)
+
+	trx := client.Transaction{
+		Details: []json.RawMessage{detail},
+	}
+
+	m := metadata(trx)
+
+	assert.Equal(suite.T(), "RF18539007547034", m[MetadataPrefix+"remittanceInfo"])
 }
