@@ -6,7 +6,6 @@ import (
 	"crypto/elliptic"
 	"encoding/base64"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -71,15 +70,24 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 			return nil, fmt.Errorf("expired key: %w", models.ErrInvalidRequest)
 		}
 
-		// Signing key must be an ecdsa.PublicKey struct
-		publicKey := new(ecdsa.PublicKey)
-		publicKey.Curve = elliptic.P256()
-		x, _ := base64.URLEncoding.DecodeString(key.X + "=")
-		xc := new(big.Int)
-		publicKey.X = xc.SetBytes(x)
-		y, _ := base64.URLEncoding.DecodeString(key.Y + "=")
-		yc := new(big.Int)
-		publicKey.Y = yc.SetBytes(y)
+		// Build uncompressed EC point (0x04 || X || Y) and parse it
+		x, err := base64.URLEncoding.DecodeString(key.X + "=")
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode key X: %w", err)
+		}
+		y, err := base64.URLEncoding.DecodeString(key.Y + "=")
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode key Y: %w", err)
+		}
+		uncompressed := make([]byte, 1+len(x)+len(y))
+		uncompressed[0] = 0x04
+		copy(uncompressed[1:], x)
+		copy(uncompressed[1+len(x):], y)
+
+		publicKey, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), uncompressed)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse public key: %w", err)
+		}
 
 		return publicKey, nil
 	}, jwt.WithValidMethods([]string{"ES256"}))
