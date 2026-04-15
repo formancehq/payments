@@ -1,10 +1,12 @@
 module github.com/formancehq/payments
 
-go 1.24.10
+go 1.26
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
 replace github.com/formancehq/payments/genericclient/v3 => ./internal/connectors/plugins/public/generic/client/generated
+
+replace gopkg.in/go-jose/go-jose.v4 => github.com/go-jose/go-jose/v4 v4.1.3
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.5.1

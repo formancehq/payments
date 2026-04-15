@@ -37,7 +37,7 @@ type v2Duration struct {
 }
 
 func (d *v2Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.Duration.String())
+	return json.Marshal(d.String())
 }
 
 func (d *v2Duration) UnmarshalJSON(b []byte) error {
