@@ -1135,9 +1135,10 @@ func (e *Engine) FetchOrdersOnePage(ctx context.Context, fromPayload json.RawMes
 		e.ordersFetchState[key] = state
 	}
 	currentState := state.State
+	hasMore := state.HasMore
 	e.mu.Unlock()
 
-	if !state.HasMore {
+	if !hasMore {
 		return &models.FetchNextOrdersResponse{HasMore: false}, nil
 	}
 

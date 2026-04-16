@@ -40,9 +40,11 @@ type BaselineDiff struct {
 	BaselineID  string    `json:"baseline_id"`
 	HasChanges  bool      `json:"has_changes"`
 
-	Accounts    DataDiff `json:"accounts"`
-	Payments    DataDiff `json:"payments"`
-	Balances    DataDiff `json:"balances"`
+	Accounts         DataDiff `json:"accounts"`
+	Payments         DataDiff `json:"payments"`
+	Balances         DataDiff `json:"balances"`
+	Orders           DataDiff `json:"orders"`
+	Conversions      DataDiff `json:"conversions"`
 	ExternalAccounts DataDiff `json:"external_accounts"`
 
 	Summary string `json:"summary"`
@@ -174,19 +176,24 @@ func (m *BaselineManager) CompareWithCurrent(baselineID string) (*BaselineDiff, 
 	currentAccounts := m.storage.GetAccounts()
 	currentPayments := m.storage.GetPayments()
 	currentBalances := m.storage.GetBalances()
+	currentOrders := m.storage.GetOrders()
+	currentConversions := m.storage.GetConversions()
 	currentExtAccounts := m.storage.GetExternalAccounts()
 
 	diff := &BaselineDiff{
-		Timestamp:  time.Now(),
-		BaselineID: baselineID,
-		Accounts:   m.compareAccounts(baseline.Accounts, currentAccounts),
-		Payments:   m.comparePayments(baseline.Payments, currentPayments),
-		Balances:   m.compareBalances(baseline.Balances, currentBalances),
+		Timestamp:        time.Now(),
+		BaselineID:       baselineID,
+		Accounts:         m.compareAccounts(baseline.Accounts, currentAccounts),
+		Payments:         m.comparePayments(baseline.Payments, currentPayments),
+		Balances:         m.compareBalances(baseline.Balances, currentBalances),
+		Orders:           m.compareOrders(baseline.Orders, currentOrders),
+		Conversions:      m.compareConversions(baseline.Conversions, currentConversions),
 		ExternalAccounts: m.compareAccounts(baseline.ExternalAccounts, currentExtAccounts),
 	}
 
 	diff.HasChanges = diff.Accounts.hasChanges() || diff.Payments.hasChanges() ||
-		diff.Balances.hasChanges() || diff.ExternalAccounts.hasChanges()
+		diff.Balances.hasChanges() || diff.Orders.hasChanges() ||
+		diff.Conversions.hasChanges() || diff.ExternalAccounts.hasChanges()
 
 	diff.Summary = m.generateSummary(diff)
 	return diff, nil
@@ -385,6 +392,62 @@ func (m *BaselineManager) compareBalance(base, curr models.PSPBalance) []Change 
 	return changes
 }
 
+func (m *BaselineManager) compareOrders(baseline, current []models.PSPOrder) DataDiff {
+	diff := DataDiff{BaselineCount: len(baseline), CurrentCount: len(current)}
+	baselineMap := make(map[string]models.PSPOrder)
+	for _, o := range baseline {
+		baselineMap[o.Reference] = o
+	}
+	for _, curr := range current {
+		if base, exists := baselineMap[curr.Reference]; exists {
+			var changes []Change
+			if base.Status != curr.Status {
+				changes = append(changes, Change{Field: "status", OldValue: base.Status.String(), NewValue: curr.Status.String()})
+			}
+			if len(changes) > 0 {
+				diff.Modified = append(diff.Modified, ItemDiff{Reference: curr.Reference, Changes: changes})
+			}
+			delete(baselineMap, curr.Reference)
+		} else {
+			diff.Added = append(diff.Added, curr.Reference)
+		}
+	}
+	for ref := range baselineMap {
+		diff.Removed = append(diff.Removed, ref)
+	}
+	sort.Strings(diff.Added)
+	sort.Strings(diff.Removed)
+	return diff
+}
+
+func (m *BaselineManager) compareConversions(baseline, current []models.PSPConversion) DataDiff {
+	diff := DataDiff{BaselineCount: len(baseline), CurrentCount: len(current)}
+	baselineMap := make(map[string]models.PSPConversion)
+	for _, c := range baseline {
+		baselineMap[c.Reference] = c
+	}
+	for _, curr := range current {
+		if base, exists := baselineMap[curr.Reference]; exists {
+			var changes []Change
+			if base.Status != curr.Status {
+				changes = append(changes, Change{Field: "status", OldValue: base.Status.String(), NewValue: curr.Status.String()})
+			}
+			if len(changes) > 0 {
+				diff.Modified = append(diff.Modified, ItemDiff{Reference: curr.Reference, Changes: changes})
+			}
+			delete(baselineMap, curr.Reference)
+		} else {
+			diff.Added = append(diff.Added, curr.Reference)
+		}
+	}
+	for ref := range baselineMap {
+		diff.Removed = append(diff.Removed, ref)
+	}
+	sort.Strings(diff.Added)
+	sort.Strings(diff.Removed)
+	return diff
+}
+
 func (d DataDiff) hasChanges() bool {
 	return len(d.Added) > 0 || len(d.Removed) > 0 || len(d.Modified) > 0
 }
@@ -403,6 +466,14 @@ func (m *BaselineManager) generateSummary(diff *BaselineDiff) string {
 	if diff.Balances.hasChanges() {
 		parts = append(parts, fmt.Sprintf("Balances: +%d/-%d/~%d",
 			len(diff.Balances.Added), len(diff.Balances.Removed), len(diff.Balances.Modified)))
+	}
+	if diff.Orders.hasChanges() {
+		parts = append(parts, fmt.Sprintf("Orders: +%d/-%d/~%d",
+			len(diff.Orders.Added), len(diff.Orders.Removed), len(diff.Orders.Modified)))
+	}
+	if diff.Conversions.hasChanges() {
+		parts = append(parts, fmt.Sprintf("Conversions: +%d/-%d/~%d",
+			len(diff.Conversions.Added), len(diff.Conversions.Removed), len(diff.Conversions.Modified)))
 	}
 	if diff.ExternalAccounts.hasChanges() {
 		parts = append(parts, fmt.Sprintf("ExtAccounts: +%d/-%d/~%d",
