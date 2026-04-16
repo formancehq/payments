@@ -67,7 +67,7 @@ var workflowInstancesConnectorScheduleIndex string
 //go:embed 29-orders-and-conversions.sql
 var ordersAndConversions string
 
-//go:embed 27-orders-add-client-order-id.sql
+//go:embed 30-orders-add-client-order-id.sql
 var ordersAddClientOrderID string
 
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
@@ -453,7 +453,6 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 		},
 	)
 }
-
 
 func GetMigrator(logger logging.Logger, db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
 	migrator := migrations.NewMigrator(db, opts...)
