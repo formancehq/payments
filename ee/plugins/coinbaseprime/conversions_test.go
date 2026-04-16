@@ -50,7 +50,7 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -67,7 +67,7 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{
 						{
@@ -104,14 +104,14 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{
 						{
 							ID:                "55fa2a0b-5dd4-4924-bba8-214955ffd5dc",
 							WalletID:          "570270d8-bbeb-54fa-a357-459200978943",
 							PortfolioID:       "842695ec-67da-4227-a70f-105dbf2bd62a",
-							Type:              "CONVERSION",
+							Type:              TransactionTypeConversion,
 							Status:            "TRANSACTION_DONE",
 							Symbol:            "USD",
 							DestinationSymbol: "USDC",
@@ -167,8 +167,8 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 			Expect(conv.FeeAsset).To(BeNil())
 
 			// Metadata
-			Expect(conv.Metadata["coinbase_transaction_id"]).To(Equal("CA72CE50"))
-			Expect(conv.Metadata["coinbase_portfolio_id"]).To(Equal("842695ec-67da-4227-a70f-105dbf2bd62a"))
+			Expect(conv.Metadata[MetadataPrefix+"transaction_id"]).To(Equal("CA72CE50"))
+			Expect(conv.Metadata[MetadataPrefix+"portfolio_id"]).To(Equal("842695ec-67da-4227-a70f-105dbf2bd62a"))
 
 			// Pagination state
 			var state conversionsState
@@ -183,13 +183,13 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{
 						{
 							ID:                "conv-with-fee",
 							WalletID:          "wallet-usd",
-							Type:              "CONVERSION",
+							Type:              TransactionTypeConversion,
 							Status:            "TRANSACTION_DONE",
 							Symbol:            "USD",
 							DestinationSymbol: "USDC",
@@ -223,13 +223,13 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{
 						{
 							ID:                "conv-pending",
 							WalletID:          "wallet-usd",
-							Type:              "CONVERSION",
+							Type:              TransactionTypeConversion,
 							Status:            "TRANSACTION_PENDING",
 							Symbol:            "USD",
 							DestinationSymbol: "USDC",
@@ -253,13 +253,13 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{
 						{
 							ID:                "conv-failed",
 							WalletID:          "wallet-usd",
-							Type:              "CONVERSION",
+							Type:              TransactionTypeConversion,
 							Status:            "TRANSACTION_FAILED",
 							Symbol:            "USD",
 							DestinationSymbol: "USDC",
@@ -283,7 +283,7 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 25,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "existing-cursor", 25).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "existing-cursor", 25, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{},
 					Pagination:   client.Pagination{HasNext: false},
@@ -302,13 +302,13 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "", 10, TransactionTypeConversion).Return(
 				&client.TransactionsResponse{
 					Transactions: []client.Transaction{
 						{
 							ID:                "conv-unknown",
 							WalletID:          "wallet-x",
-							Type:              "CONVERSION",
+							Type:              TransactionTypeConversion,
 							Status:            "TRANSACTION_DONE",
 							Symbol:            "UNKNOWNCOIN",
 							DestinationSymbol: "USDC",

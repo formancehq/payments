@@ -163,7 +163,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.AverageFillPrice.Cmp(big.NewInt(5000000))).To(Equal(0))
 
 			// price_asset should reflect the dynamic precision
-			Expect(order.Metadata["price_asset"]).To(Equal("USD/2"))
+			Expect(order.Metadata[MetadataPrefix+"price_asset"]).To(Equal("USD/2"))
 
 			// Status: OPEN with filledQty > 0 && < baseQty → PARTIALLY_FILLED
 			Expect(order.Status).To(Equal(models.ORDER_STATUS_PARTIALLY_FILLED))
@@ -172,23 +172,23 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 
 			// Metadata should capture Coinbase-specific fields
 			Expect(order.Metadata).ToNot(BeNil())
-			Expect(order.Metadata["coinbase_product_id"]).To(Equal("BTC-USD"))
-			Expect(order.Metadata["coinbase_portfolio_id"]).To(Equal("portfolio-1"))
-			Expect(order.Metadata["coinbase_client_order_id"]).To(Equal("my-order-1"))
-			Expect(order.Metadata["coinbase_filled_value"]).To(Equal("25000.00"))
-			Expect(order.Metadata["coinbase_quote_value"]).To(Equal("75000.00"))
-			Expect(order.Metadata["coinbase_order_total"]).To(Equal("25010.50"))
-			Expect(order.Metadata["coinbase_exchange_fee"]).To(Equal("5.25"))
-			Expect(order.Metadata["coinbase_net_average_filled_price"]).To(Equal("50021.00"))
-			Expect(order.Metadata["quote_currency"]).To(Equal("USD"))
-			Expect(order.Metadata["coinbase_commission_total"]).To(Equal("10.50"))
-			Expect(order.Metadata["coinbase_commission_client"]).To(Equal("8.00"))
-			Expect(order.Metadata["coinbase_commission_venue"]).To(Equal("2.00"))
-			Expect(order.Metadata["coinbase_commission_ces"]).To(Equal("0.50"))
-			Expect(order.Metadata["coinbase_commission_financing"]).To(Equal("0.10"))
-			Expect(order.Metadata["coinbase_commission_regulatory"]).To(Equal("0.05"))
-			Expect(order.Metadata["coinbase_commission_clearing"]).To(Equal("0.03"))
-			Expect(order.Metadata["coinbase_post_only"]).To(Equal("true"))
+			Expect(order.Metadata[MetadataPrefix+"product_id"]).To(Equal("BTC-USD"))
+			Expect(order.Metadata[MetadataPrefix+"portfolio_id"]).To(Equal("portfolio-1"))
+			Expect(order.Metadata[MetadataPrefix+"client_order_id"]).To(Equal("my-order-1"))
+			Expect(order.Metadata[MetadataPrefix+"filled_value"]).To(Equal("25000.00"))
+			Expect(order.Metadata[MetadataPrefix+"quote_value"]).To(Equal("75000.00"))
+			Expect(order.Metadata[MetadataPrefix+"order_total"]).To(Equal("25010.50"))
+			Expect(order.Metadata[MetadataPrefix+"exchange_fee"]).To(Equal("5.25"))
+			Expect(order.Metadata[MetadataPrefix+"net_average_filled_price"]).To(Equal("50021.00"))
+			Expect(order.Metadata[MetadataPrefix+"quote_currency"]).To(Equal("USD"))
+			Expect(order.Metadata[MetadataPrefix+"commission_total"]).To(Equal("10.50"))
+			Expect(order.Metadata[MetadataPrefix+"commission_client"]).To(Equal("8.00"))
+			Expect(order.Metadata[MetadataPrefix+"commission_venue"]).To(Equal("2.00"))
+			Expect(order.Metadata[MetadataPrefix+"commission_ces"]).To(Equal("0.50"))
+			Expect(order.Metadata[MetadataPrefix+"commission_financing"]).To(Equal("0.10"))
+			Expect(order.Metadata[MetadataPrefix+"commission_regulatory"]).To(Equal("0.05"))
+			Expect(order.Metadata[MetadataPrefix+"commission_clearing"]).To(Equal("0.03"))
+			Expect(order.Metadata[MetadataPrefix+"post_only"]).To(Equal("true"))
 
 			// Verify pagination state
 			var state ordersState
@@ -248,7 +248,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(*order.FeeAsset).To(Equal("USD/2"))
 
 			// Metadata includes filled_value for reconciliation
-			Expect(order.Metadata["coinbase_filled_value"]).To(Equal("130000.00"))
+			Expect(order.Metadata[MetadataPrefix+"filled_value"]).To(Equal("130000.00"))
 		})
 
 		It("should map FILLED status", func(ctx SpecContext) {

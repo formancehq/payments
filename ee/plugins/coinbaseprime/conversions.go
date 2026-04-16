@@ -24,7 +24,7 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 		}
 	}
 
-	resp, err := p.client.GetTransactions(ctx, state.Cursor, req.PageSize, "CONVERSION")
+	resp, err := p.client.GetTransactions(ctx, state.Cursor, req.PageSize, TransactionTypeConversion)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to list transactions: %w", err)
 	}
