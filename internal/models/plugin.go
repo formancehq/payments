@@ -16,38 +16,7 @@ const (
 	PluginTypePSP PluginType = iota
 	PluginTypeOpenBanking
 	PluginTypeBoth
-	PluginTypeExchange
 )
-
-func PluginTypeFromString(s string) PluginType {
-	switch s {
-	case "PSP":
-		return PluginTypePSP
-	case "OPEN_BANKING":
-		return PluginTypeOpenBanking
-	case "BOTH":
-		return PluginTypeBoth
-	case "EXCHANGE":
-		return PluginTypeExchange
-	default:
-		return PluginTypePSP
-	}
-}
-
-func (t PluginType) String() string {
-	switch t {
-	case PluginTypePSP:
-		return "PSP"
-	case PluginTypeOpenBanking:
-		return "OPEN_BANKING"
-	case PluginTypeBoth:
-		return "BOTH"
-	case PluginTypeExchange:
-		return "EXCHANGE"
-	default:
-		return "PSP"
-	}
-}
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
 type Plugin interface {

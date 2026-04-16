@@ -962,7 +962,7 @@ function NoConnectorView({ connectors, availableConnectors, onSelect, onCreate, 
           {availableConnectors.map((c) => (
             <div key={c.provider} className="available-item">
               <span className="available-provider">{c.provider}</span>
-              <span className={`available-type ${c.plugin_type === 1 ? 'type-openbanking' : c.plugin_type === 3 ? 'type-exchange' : 'type-psp'}`}>
+              <span className={`available-type ${c.plugin_type === 1 ? 'type-openbanking' : 'type-psp'}`}>
                 {formatPluginType(c.plugin_type)}
               </span>
             </div>
@@ -1045,7 +1045,7 @@ function CreateConnectorModal({ availableConnectors, onClose, onCreate }: Create
                   onClick={() => handleProviderChange(c.provider)}
                 >
                   <span className="tile-provider">{c.provider}</span>
-                  <span className={`tile-type ${c.plugin_type === 1 ? 'type-openbanking' : c.plugin_type === 3 ? 'type-exchange' : 'type-psp'}`}>
+                  <span className={`tile-type ${c.plugin_type === 1 ? 'type-openbanking' : 'type-psp'}`}>
                     {formatPluginType(c.plugin_type)}
                   </span>
                 </div>
@@ -2913,7 +2913,6 @@ function formatPluginType(pluginType: number | string): string {
     0: 'PSP',
     1: 'Open Banking',
     2: 'Both',
-    3: 'Exchange',
   };
   if (typeof pluginType === 'number') {
     return types[pluginType] || `Type ${pluginType}`;

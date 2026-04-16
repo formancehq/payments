@@ -21,7 +21,7 @@ const (
 )
 
 func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypeExchange, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{}, PAGE_SIZE)
 }
