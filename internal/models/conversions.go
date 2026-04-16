@@ -81,7 +81,10 @@ type Conversion struct {
 }
 
 func (c *Conversion) IdempotencyKey() string {
-	return IdempotencyKey(c.ID)
+	return IdempotencyKey(struct {
+		ID     ConversionID     `json:"ID"`
+		Status ConversionStatus `json:"Status"`
+	}{c.ID, c.Status})
 }
 
 func (c Conversion) MarshalJSON() ([]byte, error) {

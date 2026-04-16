@@ -86,18 +86,23 @@ func (mr *MockClientMockRecorder) GetPortfolio(ctx any) *gomock.Call {
 }
 
 // GetTransactions mocks base method.
-func (m *MockClient) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
+func (m *MockClient) GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransactions", ctx, cursor, pageSize)
+	varargs := []any{ctx, cursor, pageSize}
+	for _, a := range types {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetTransactions", varargs...)
 	ret0, _ := ret[0].(*TransactionsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTransactions indicates an expected call of GetTransactions.
-func (mr *MockClientMockRecorder) GetTransactions(ctx, cursor, pageSize any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetTransactions(ctx, cursor, pageSize any, types ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, cursor, pageSize)
+	varargs := append([]any{ctx, cursor, pageSize}, types...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), varargs...)
 }
 
 // GetWallets mocks base method.
