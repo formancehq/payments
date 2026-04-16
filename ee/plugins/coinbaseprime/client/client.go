@@ -22,7 +22,7 @@ type Client interface {
 	GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error)
 	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error)
-	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
+	GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error)
 	ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error)
 }
 
@@ -176,10 +176,23 @@ func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*Wal
 	return &response, nil
 }
 
-func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
+func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error) {
 	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(types) > 0 {
+		u, err := url.Parse(endpoint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse endpoint: %w", err)
+		}
+		q := u.Query()
+		for _, t := range types {
+			q.Add("types", t)
+		}
+		u.RawQuery = q.Encode()
+		endpoint = u.String()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)

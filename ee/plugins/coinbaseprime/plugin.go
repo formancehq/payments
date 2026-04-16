@@ -15,7 +15,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "coinbaseprime"
+const (
+	ProviderName   = "coinbaseprime"
+	MetadataPrefix = "com.coinbaseprime.spec/"
+)
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypeExchange, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {

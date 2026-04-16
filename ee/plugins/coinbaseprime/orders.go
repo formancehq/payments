@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -126,17 +127,17 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 	// order, so all prices are at the same scale and directly comparable.
 	pricePrecision := maxPricePrecision(order.LimitPrice, order.StopPrice, order.AveragePrice)
 
-	limitPrice, err := p.parseOptionalAmount(order.LimitPrice, pricePrecision)
+	limitPrice, err := p.parseOptionalPrice(order.LimitPrice, pricePrecision)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse limit price: %w", err)
 	}
 
-	stopPrice, err := p.parseOptionalAmount(order.StopPrice, pricePrecision)
+	stopPrice, err := p.parseOptionalPrice(order.StopPrice, pricePrecision)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse stop price: %w", err)
 	}
 
-	avgFillPrice, err := p.parseOptionalAmount(order.AveragePrice, pricePrecision)
+	avgFillPrice, err := p.parseOptionalPrice(order.AveragePrice, pricePrecision)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse average filled price: %w", err)
 	}
@@ -244,7 +245,10 @@ func (p *Plugin) parseFeeFields(order client.Order, quoteSymbol, quoteAsset stri
 	return fee, &quoteAsset, nil
 }
 
-func (p *Plugin) parseOptionalAmount(value string, precision int) (*big.Int, error) {
+// parseOptionalPrice parses price fields that may contain float artifacts from
+// the exchange. Uses parseDecimalString (truncating) instead of go-libs (strict)
+// because Coinbase returns prices like "1825.6099999998417653".
+func (p *Plugin) parseOptionalPrice(value string, precision int) (*big.Int, error) {
 	if value == "" {
 		return nil, nil
 	}
@@ -252,7 +256,8 @@ func (p *Plugin) parseOptionalAmount(value string, precision int) (*big.Int, err
 }
 
 // parseDecimalString converts a decimal string to *big.Int using pure string
-// manipulation -- no float64 anywhere -- to avoid precision loss.
+// manipulation -- no float64 anywhere -- truncating excess decimals to handle
+// float artifacts from exchange APIs.
 func parseDecimalString(value string, precision int) (*big.Int, error) {
 	if value == "" {
 		return nil, fmt.Errorf("empty decimal string")
@@ -315,21 +320,21 @@ func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol 
 
 	set := func(k, v string) {
 		if v != "" {
-			m[k] = v
+			m[MetadataPrefix+k] = v
 		}
 	}
 
-	set("coinbase_product_id", order.ProductID)
-	set("coinbase_portfolio_id", order.PortfolioID)
-	set("coinbase_client_order_id", order.ClientOrderID)
-	set("coinbase_quote_value", order.QuoteValue)
-	set("coinbase_filled_value", order.FilledValue)
-	set("coinbase_order_total", order.OrderTotal)
-	set("coinbase_exchange_fee", order.ExchangeFee)
-	set("coinbase_net_average_filled_price", order.NetAverageFilledPrice)
-	set("coinbase_historical_pov", order.HistoricalPov)
+	set("product_id", order.ProductID)
+	set("portfolio_id", order.PortfolioID)
+	set("client_order_id", order.ClientOrderID)
+	set("quote_value", order.QuoteValue)
+	set("filled_value", order.FilledValue)
+	set("order_total", order.OrderTotal)
+	set("exchange_fee", order.ExchangeFee)
+	set("net_average_filled_price", order.NetAverageFilledPrice)
+	set("historical_pov", order.HistoricalPov)
 	set("quote_currency", quoteSymbol)
-	m["price_asset"] = fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
+	m[MetadataPrefix+"price_asset"] = fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
 
 	if p.wallets != nil {
 		set("base_wallet_id", p.wallets[strings.ToUpper(baseSymbol)])
@@ -337,17 +342,17 @@ func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol 
 	}
 
 	if order.CommissionDetail != nil {
-		set("coinbase_commission_total", order.CommissionDetail.TotalCommission)
-		set("coinbase_commission_client", order.CommissionDetail.ClientCommission)
-		set("coinbase_commission_venue", order.CommissionDetail.VenueCommission)
-		set("coinbase_commission_ces", order.CommissionDetail.CesCommission)
-		set("coinbase_commission_financing", order.CommissionDetail.FinancingCommission)
-		set("coinbase_commission_regulatory", order.CommissionDetail.RegulatoryCommission)
-		set("coinbase_commission_clearing", order.CommissionDetail.ClearingCommission)
+		set("commission_total", order.CommissionDetail.TotalCommission)
+		set("commission_client", order.CommissionDetail.ClientCommission)
+		set("commission_venue", order.CommissionDetail.VenueCommission)
+		set("commission_ces", order.CommissionDetail.CesCommission)
+		set("commission_financing", order.CommissionDetail.FinancingCommission)
+		set("commission_regulatory", order.CommissionDetail.RegulatoryCommission)
+		set("commission_clearing", order.CommissionDetail.ClearingCommission)
 	}
 
 	if order.PostOnly {
-		m["coinbase_post_only"] = "true"
+		m[MetadataPrefix+"post_only"] = "true"
 	}
 
 	return m
@@ -383,7 +388,7 @@ func (p *Plugin) parseOrderQuantity(quantityStr string, asset string) (*big.Int,
 	if quantityStr == "" {
 		return big.NewInt(0), nil
 	}
-	return parseDecimalString(quantityStr, p.getPrecision(asset))
+	return currency.GetAmountWithPrecisionFromString(quantityStr, p.getPrecision(asset))
 }
 
 func (p *Plugin) getPrecision(asset string) int {

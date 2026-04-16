@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -23,17 +24,13 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 		}
 	}
 
-	resp, err := p.client.GetTransactions(ctx, state.Cursor, req.PageSize)
+	resp, err := p.client.GetTransactions(ctx, state.Cursor, req.PageSize, "CONVERSION")
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to list transactions: %w", err)
 	}
 
-	conversions := make([]models.PSPConversion, 0)
+	conversions := make([]models.PSPConversion, 0, len(resp.Transactions))
 	for _, tx := range resp.Transactions {
-		if strings.ToUpper(tx.Type) != "CONVERSION" {
-			continue
-		}
-
 		conv, err := p.transactionToConversion(tx)
 		if err != nil {
 			return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to convert transaction %s: %w", tx.ID, err)
@@ -80,14 +77,16 @@ func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConv
 		return nil, fmt.Errorf("failed to marshal raw: %w", err)
 	}
 
-	sourceAmount, err := parseDecimalString(tx.Amount, sourcePrecision)
+	sourceAmount, err := currency.GetAmountWithPrecisionFromString(tx.Amount, sourcePrecision)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse source amount: %w", err)
 	}
 
-	// For 1:1 conversions (stablecoin), target amount equals source amount at target precision.
-	// The amount string is the same, just parsed at a different precision.
-	targetAmount, err := parseDecimalString(tx.Amount, targetPrecision)
+	// For 1:1 conversions (e.g. stablecoin USDC->USD), the Coinbase API provides
+	// a single amount field. Source and destination represent the same nominal value
+	// parsed at each asset's precision. For FX conversions where amounts truly differ,
+	// the PSP plugin must supply distinct values from the API response.
+	targetAmount, err := currency.GetAmountWithPrecisionFromString(tx.Amount, targetPrecision)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse target amount: %w", err)
 	}
@@ -103,7 +102,7 @@ func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConv
 		if !fOk {
 			p.logger.Infof("skipping fee for conversion %s: unsupported fee currency %q", tx.ID, feeSymbol)
 		} else {
-			fee, err = parseDecimalString(tx.Fees, fPrecision)
+			fee, err = currency.GetAmountWithPrecisionFromString(tx.Fees, fPrecision)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse fee: %w", err)
 			}
@@ -122,11 +121,11 @@ func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConv
 	}
 
 	metadata := map[string]string{
-		"coinbase_transaction_id": tx.TransactionID,
-		"coinbase_type":          tx.Type,
+		MetadataPrefix + "transaction_id": tx.TransactionID,
+		MetadataPrefix + "type":           tx.Type,
 	}
 	if tx.PortfolioID != "" {
-		metadata["coinbase_portfolio_id"] = tx.PortfolioID
+		metadata[MetadataPrefix+"portfolio_id"] = tx.PortfolioID
 	}
 
 	return &models.PSPConversion{
