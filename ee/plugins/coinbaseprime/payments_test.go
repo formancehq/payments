@@ -167,7 +167,8 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(4))
+			// tx3 is a CONVERSION and is skipped by transactionToPayment
+			Expect(resp.Payments).To(HaveLen(3))
 			Expect(resp.HasMore).To(BeTrue())
 
 			// Verify first payment (BTC deposit - completed, with transfer endpoints)
@@ -192,28 +193,17 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(*resp.Payments[1].SourceAccountReference).To(Equal("wallet2"))
 			Expect(resp.Payments[1].DestinationAccountReference).To(BeNil())
 
-			// Verify third payment (USDC conversion - completed)
-			Expect(resp.Payments[2].Reference).To(Equal("tx3"))
-			Expect(resp.Payments[2].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
-			Expect(resp.Payments[2].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
-			Expect(resp.Payments[2].Asset).To(Equal("USDC/6"))
-			// 100.00 USDC = 100000000 (100.00 * 10^6)
-			Expect(resp.Payments[2].Amount.Cmp(big.NewInt(100000000))).To(Equal(0))
-			Expect(resp.Payments[2].SourceAccountReference).ToNot(BeNil())
-			Expect(*resp.Payments[2].SourceAccountReference).To(Equal("wallet-a"))
-			Expect(resp.Payments[2].DestinationAccountReference).ToNot(BeNil())
-			Expect(*resp.Payments[2].DestinationAccountReference).To(Equal("wallet-b"))
-
-			// Verify fourth payment (ETH deposit - pending, 18 decimals, walletID fallback)
-			Expect(resp.Payments[3].Reference).To(Equal("tx4"))
-			Expect(resp.Payments[3].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
-			Expect(resp.Payments[3].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
-			Expect(resp.Payments[3].Asset).To(Equal("ETH/18"))
+			// Verify third payment (ETH deposit - pending, 18 decimals, walletID fallback)
+			// tx3 (CONVERSION) was skipped, so tx4 is at index 2
+			Expect(resp.Payments[2].Reference).To(Equal("tx4"))
+			Expect(resp.Payments[2].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			Expect(resp.Payments[2].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+			Expect(resp.Payments[2].Asset).To(Equal("ETH/18"))
 			// 1.000000000000000001 ETH = 1000000000000000001 (1.000000000000000001 * 10^18)
-			Expect(resp.Payments[3].Amount.Cmp(big.NewInt(1000000000000000001))).To(Equal(0))
-			Expect(resp.Payments[3].SourceAccountReference).To(BeNil())
-			Expect(resp.Payments[3].DestinationAccountReference).ToNot(BeNil())
-			Expect(*resp.Payments[3].DestinationAccountReference).To(Equal("wallet4"))
+			Expect(resp.Payments[2].Amount.Cmp(big.NewInt(1000000000000000001))).To(Equal(0))
+			Expect(resp.Payments[2].SourceAccountReference).To(BeNil())
+			Expect(resp.Payments[2].DestinationAccountReference).ToNot(BeNil())
+			Expect(*resp.Payments[2].DestinationAccountReference).To(Equal("wallet4"))
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
@@ -451,17 +441,17 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(1))
 
 			md := resp.Payments[0].Metadata
-			Expect(md["wallet_id"]).To(Equal("wallet1"))
-			Expect(md["portfolio_id"]).To(Equal("portfolio1"))
-			Expect(md["type"]).To(Equal("DEPOSIT"))
-			Expect(md["status"]).To(Equal("TRANSACTION_DONE"))
-			Expect(md["fees"]).To(Equal("0.001"))
-			Expect(md["fee_symbol"]).To(Equal("BTC"))
-			Expect(md["network"]).To(Equal("bitcoin"))
-			Expect(md["blockchain_ids"]).To(Equal("0xabc123"))
-			Expect(md).To(HaveKey("completed_at"))
-			Expect(md["source_address"]).To(Equal("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"))
-			Expect(md["deposit_address"]).To(Equal("bc1q..."))
+			Expect(md[MetadataPrefix+"wallet_id"]).To(Equal("wallet1"))
+			Expect(md[MetadataPrefix+"portfolio_id"]).To(Equal("portfolio1"))
+			Expect(md[MetadataPrefix+"type"]).To(Equal("DEPOSIT"))
+			Expect(md[MetadataPrefix+"status"]).To(Equal("TRANSACTION_DONE"))
+			Expect(md[MetadataPrefix+"fees"]).To(Equal("0.001"))
+			Expect(md[MetadataPrefix+"fee_symbol"]).To(Equal("BTC"))
+			Expect(md[MetadataPrefix+"network"]).To(Equal("bitcoin"))
+			Expect(md[MetadataPrefix+"blockchain_ids"]).To(Equal("0xabc123"))
+			Expect(md).To(HaveKey(MetadataPrefix + "completed_at"))
+			Expect(md[MetadataPrefix+"source_address"]).To(Equal("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"))
+			Expect(md[MetadataPrefix+"deposit_address"]).To(Equal("bc1q..."))
 		})
 
 		It("should handle STAKE as transfer", func(ctx SpecContext) {
@@ -738,9 +728,9 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			md := resp.Payments[0].Metadata
-			Expect(md).ToNot(HaveKey("fee_symbol"))
-			Expect(md).ToNot(HaveKey("fees"))
-			Expect(md).ToNot(HaveKey("network_fees"))
+			Expect(md).ToNot(HaveKey(MetadataPrefix + "fee_symbol"))
+			Expect(md).ToNot(HaveKey(MetadataPrefix + "fees"))
+			Expect(md).ToNot(HaveKey(MetadataPrefix + "network_fees"))
 		})
 
 		It("should include fee_symbol when fees is greater than zero", func(ctx SpecContext) {
@@ -775,8 +765,8 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			md := resp.Payments[0].Metadata
-			Expect(md["fee_symbol"]).To(Equal("BTC"))
-			Expect(md["fees"]).To(Equal("0.001"))
+			Expect(md[MetadataPrefix+"fee_symbol"]).To(Equal("BTC"))
+			Expect(md[MetadataPrefix+"fees"]).To(Equal("0.001"))
 		})
 
 		It("should include fee_symbol when network_fees is greater than zero", func(ctx SpecContext) {
@@ -811,8 +801,8 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			md := resp.Payments[0].Metadata
-			Expect(md["fee_symbol"]).To(Equal("ETH"))
-			Expect(md["network_fees"]).To(Equal("0.0005"))
+			Expect(md[MetadataPrefix+"fee_symbol"]).To(Equal("ETH"))
+			Expect(md[MetadataPrefix+"network_fees"]).To(Equal("0.0005"))
 		})
 
 		It("should include fee_symbol when either fees or network_fees is greater than zero", func(ctx SpecContext) {
@@ -847,9 +837,9 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			md := resp.Payments[0].Metadata
-			Expect(md["fee_symbol"]).To(Equal("USDC"))
-			Expect(md["fees"]).To(Equal("0.5"))
-			Expect(md["network_fees"]).To(Equal("0.1"))
+			Expect(md[MetadataPrefix+"fee_symbol"]).To(Equal("USDC"))
+			Expect(md[MetadataPrefix+"fees"]).To(Equal("0.5"))
+			Expect(md[MetadataPrefix+"network_fees"]).To(Equal("0.1"))
 		})
 	})
 })

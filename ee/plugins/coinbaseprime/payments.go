@@ -67,7 +67,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 }
 
 func (p *Plugin) transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
-	if strings.EqualFold(tx.Type, "CONVERSION") {
+	if strings.EqualFold(tx.Type, TransactionTypeConversion) {
 		return nil, nil
 	}
 

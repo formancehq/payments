@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	ProviderName   = "coinbaseprime"
-	MetadataPrefix = "com.coinbaseprime.spec/"
+	ProviderName        = "coinbaseprime"
+	MetadataPrefix      = "com.coinbaseprime.spec/"
+	TransactionTypeConversion = "CONVERSION"
 )
 
 func init() {
