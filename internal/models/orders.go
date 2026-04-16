@@ -21,7 +21,11 @@ type PSPOrder struct {
 	// PSP order reference. Should be unique within the connector.
 	Reference string
 
-	// Client-assigned order ID for idempotency (exchange-specific: Coinbase client_order_id, Kraken cl_ord_id, Binance clientOrderId)
+	// Client-assigned order ID used by the exchange for placement idempotency.
+	// The caller provides this when submitting the order; the exchange deduplicates
+	// retried submissions using it. Formance stores it for traceability only — our
+	// storage dedup keys on Reference (the exchange-assigned ID), not this field.
+	// Exchange-specific names: Coinbase client_order_id, Kraken cl_ord_id, Binance clientOrderId.
 	ClientOrderID string
 
 	// Order creation date
@@ -148,7 +152,7 @@ type Order struct {
 	// PSP order reference
 	Reference string `json:"reference"`
 
-	// Client-assigned order ID for idempotency
+	// Client-assigned order ID for exchange-side placement idempotency (not used for storage dedup).
 	ClientOrderID string `json:"clientOrderId,omitempty"`
 
 	// Order creation date
