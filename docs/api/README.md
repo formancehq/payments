@@ -93,8 +93,7 @@ Accept: application/json
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string",
-      "connectorType": "PSP"
+      "provider": "string"
     },
     "provider": "string",
     "reference": "string",
@@ -178,8 +177,7 @@ Accept: application/json
           "reference": "string",
           "name": "string",
           "createdAt": "2019-08-24T14:15:22Z",
-          "provider": "string",
-          "connectorType": "PSP"
+          "provider": "string"
         },
         "provider": "string",
         "reference": "string",
@@ -245,8 +243,7 @@ Accept: application/json
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string",
-      "connectorType": "PSP"
+      "provider": "string"
     },
     "provider": "string",
     "reference": "string",
@@ -708,7 +705,6 @@ Accept: application/json
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
-        "connectorType": "PSP",
         "scheduledForDeletion": true,
         "config": {},
         "updatedAt": "2019-08-24T14:15:22Z"
@@ -4040,8 +4036,7 @@ None ( Scopes: payments:read )
           "reference": "string",
           "name": "string",
           "createdAt": "2019-08-24T14:15:22Z",
-          "provider": "string",
-          "connectorType": "PSP"
+          "provider": "string"
         },
         "provider": "string",
         "reference": "string",
@@ -4089,8 +4084,7 @@ None ( Scopes: payments:read )
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string",
-      "connectorType": "PSP"
+      "provider": "string"
     },
     "provider": "string",
     "reference": "string",
@@ -4166,8 +4160,7 @@ None ( Scopes: payments:read )
       "reference": "string",
       "name": "string",
       "createdAt": "2019-08-24T14:15:22Z",
-      "provider": "string",
-      "connectorType": "PSP"
+      "provider": "string"
     },
     "provider": "string",
     "reference": "string",
@@ -4207,8 +4200,7 @@ None ( Scopes: payments:read )
     "reference": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
-    "provider": "string",
-    "connectorType": "PSP"
+    "provider": "string"
   },
   "provider": "string",
   "reference": "string",
@@ -4824,7 +4816,6 @@ None ( Scopes: payments:read )
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
-        "connectorType": "PSP",
         "scheduledForDeletion": true,
         "config": {},
         "updatedAt": "2019-08-24T14:15:22Z"
@@ -4967,7 +4958,6 @@ None ( Scopes: payments:read )
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
   "provider": "string",
-  "connectorType": "PSP",
   "scheduledForDeletion": true,
   "config": {},
   "updatedAt": "2019-08-24T14:15:22Z"
@@ -4984,7 +4974,6 @@ None ( Scopes: payments:read )
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
 |provider|string|true|none|none|
-|connectorType|[V3ConnectorTypeEnum](#schemav3connectortypeenum)|false|none|none|
 |scheduledForDeletion|boolean|true|none|none|
 |config|object|true|none|none|
 |updatedAt|string(date-time)¦null|false|none|none|
@@ -5002,8 +4991,7 @@ None ( Scopes: payments:read )
   "reference": "string",
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
-  "provider": "string",
-  "connectorType": "PSP"
+  "provider": "string"
 }
 
 ```
@@ -5017,34 +5005,6 @@ None ( Scopes: payments:read )
 |name|string|false|none|none|
 |createdAt|string(date-time)|false|none|none|
 |provider|string|false|none|none|
-|connectorType|[V3ConnectorTypeEnum](#schemav3connectortypeenum)|false|none|none|
-
-<h2 id="tocS_V3ConnectorTypeEnum">V3ConnectorTypeEnum</h2>
-<!-- backwards compatibility -->
-<a id="schemav3connectortypeenum"></a>
-<a id="schema_V3ConnectorTypeEnum"></a>
-<a id="tocSv3connectortypeenum"></a>
-<a id="tocsv3connectortypeenum"></a>
-
-```json
-"PSP"
-
-```
-
-### Properties
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
-
-#### Enumerated Values
-
-|Property|Value|
-|---|---|
-|*anonymous*|PSP|
-|*anonymous*|OPEN_BANKING|
-|*anonymous*|BOTH|
-|*anonymous*|EXCHANGE|
 
 <h2 id="tocS_V3Schedule">V3Schedule</h2>
 <!-- backwards compatibility -->

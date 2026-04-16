@@ -4698,8 +4698,6 @@ components:
           format: date-time
         provider:
           type: string
-        connectorType:
-          $ref: '#/components/schemas/V3ConnectorTypeEnum'
         scheduledForDeletion:
           type: boolean
         config:
@@ -4722,15 +4720,6 @@ components:
           format: date-time
         provider:
           type: string
-        connectorType:
-          $ref: '#/components/schemas/V3ConnectorTypeEnum'
-    V3ConnectorTypeEnum:
-      type: string
-      enum:
-        - PSP
-        - OPEN_BANKING
-        - BOTH
-        - EXCHANGE
     V3Schedule:
       type: object
       required:

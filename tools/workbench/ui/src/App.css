@@ -3111,12 +3111,6 @@ tbody tr:focus-visible,
   border-color: var(--term-magenta-dim);
 }
 
-.available-type.type-exchange {
-  background: var(--term-green-bg);
-  color: var(--term-green);
-  border-color: var(--term-green-dim);
-}
-
 /* Create Connector Modal */
 .modal-large {
   width: 720px;
@@ -3183,12 +3177,6 @@ tbody tr:focus-visible,
   background: var(--term-magenta-bg);
   color: var(--term-magenta);
   border: 1px solid var(--term-magenta-dim);
-}
-
-.tile-type.type-exchange {
-  background: var(--term-green-bg);
-  color: var(--term-green);
-  border: 1px solid var(--term-green-dim);
 }
 
 .config-section {
