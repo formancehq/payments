@@ -1,14 +1,11 @@
 package workflow
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
-	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
-	pkgevents "github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -90,35 +87,6 @@ func (w Workflow) fetchConversions(
 			)
 			if err != nil {
 				return errors.Wrap(err, "storing next conversions")
-			}
-		}
-
-		outboxEvents := make([]models.OutboxEvent, 0, len(conversions))
-		for _, c := range conversions {
-			evtMsg := events.Events{}.NewEventSavedConversion(c)
-			payload, err := json.Marshal(evtMsg.Payload)
-			if err != nil {
-				return fmt.Errorf("failed to marshal conversion event payload: %w", err)
-			}
-			outboxEvents = append(outboxEvents, models.OutboxEvent{
-				ID: models.EventID{
-					EventIdempotencyKey: c.IdempotencyKey(),
-					ConnectorID:         &c.ConnectorID,
-				},
-				EventType:   pkgevents.EventTypeSavedConversion,
-				EntityID:    c.ID.String(),
-				Payload:     payload,
-				CreatedAt:   workflow.Now(ctx).UTC(),
-				Status:      models.OUTBOX_STATUS_PENDING,
-				ConnectorID: &c.ConnectorID,
-			})
-		}
-		if len(outboxEvents) > 0 {
-			if err := activities.StorageOutboxEventsInsert(
-				infiniteRetryContext(ctx),
-				outboxEvents,
-			); err != nil {
-				return errors.Wrap(err, "inserting conversion outbox events")
 			}
 		}
 

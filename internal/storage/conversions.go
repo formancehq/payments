@@ -2,14 +2,18 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/uptrace/bun"
 )
 
@@ -50,8 +54,16 @@ func (s *store) ConversionsUpsert(ctx context.Context, conversions []models.Conv
 		conversionsToInsert = append(conversionsToInsert, fromConversionModels(c))
 	}
 
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return e("failed to create transaction", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	if len(conversionsToInsert) > 0 {
-		_, err := s.db.NewInsert().
+		_, err = tx.NewInsert().
 			Model(&conversionsToInsert).
 			On("CONFLICT (id) DO UPDATE").
 			Set("updated_at = EXCLUDED.updated_at").
@@ -66,6 +78,42 @@ func (s *store) ConversionsUpsert(ctx context.Context, conversions []models.Conv
 		if err != nil {
 			return e("failed to insert conversions", err)
 		}
+	}
+
+	// Create outbox events in the same transaction
+	outboxEvents := make([]models.OutboxEvent, 0, len(conversions))
+	for _, c := range conversions {
+		evtMsg := internalEvents.Events{}.NewEventSavedConversion(c)
+		var payloadBytes []byte
+		payloadBytes, err = json.Marshal(evtMsg.Payload)
+		if err != nil {
+			return e("failed to marshal conversion event payload", err)
+		}
+
+		connectorID := c.ConnectorID
+		outboxEvents = append(outboxEvents, models.OutboxEvent{
+			ID: models.EventID{
+				EventIdempotencyKey: c.IdempotencyKey(),
+				ConnectorID:         &connectorID,
+			},
+			EventType:   events.EventTypeSavedConversion,
+			EntityID:    c.ID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   time.Now().UTC(),
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &connectorID,
+		})
+	}
+
+	if len(outboxEvents) > 0 {
+		if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
 	}
 
 	return nil
