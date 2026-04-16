@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	internalTime "github.com/formancehq/go-libs/v3/time"
+	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/events"
 	"github.com/uptrace/bun"
 )
 
@@ -116,13 +119,62 @@ func (s *store) OrdersUpsert(ctx context.Context, orders []models.Order) error {
 		}
 	}
 
+	// Track which adjustments were actually inserted (to create outbox events only for new ones)
+	var insertedAdjustments []orderAdjustment
 	if len(adjustmentsToInsert) > 0 {
-		_, err = tx.NewInsert().
+		err = tx.NewInsert().
 			Model(&adjustmentsToInsert).
 			On("CONFLICT (id) DO NOTHING").
-			Exec(ctx)
+			Returning("*").
+			Scan(ctx, &insertedAdjustments)
 		if err != nil {
 			return e("failed to insert order adjustments", err)
+		}
+	}
+
+	// Create outbox events for each inserted adjustment
+	if len(insertedAdjustments) > 0 {
+		// Build a map of order ID to order model for easy lookup
+		orderMap := make(map[models.OrderID]models.Order)
+		for _, o := range orders {
+			orderMap[o.ID] = o
+		}
+
+		outboxEvents := make([]models.OutboxEvent, 0, len(insertedAdjustments))
+		for _, adj := range insertedAdjustments {
+			order, ok := orderMap[adj.OrderID]
+			if !ok {
+				continue
+			}
+
+			adjustmentModel := toOrderAdjustmentModels(adj)
+			evtMsg := internalEvents.Events{}.NewEventSavedOrder(order, adjustmentModel)
+			var payloadBytes []byte
+			payloadBytes, err = json.Marshal(evtMsg.Payload)
+			if err != nil {
+				return e("failed to marshal order event payload", err)
+			}
+
+			connectorID := order.ConnectorID
+			outboxEvents = append(outboxEvents, models.OutboxEvent{
+				ID: models.EventID{
+					EventIdempotencyKey: adjustmentModel.IdempotencyKey(),
+					ConnectorID:         &connectorID,
+				},
+				EventType:   events.EventTypeSavedOrder,
+				EntityID:    order.ID.String(),
+				Payload:     payloadBytes,
+				CreatedAt:   time.Now().UTC(),
+				Status:      models.OUTBOX_STATUS_PENDING,
+				ConnectorID: &connectorID,
+			})
+		}
+
+		// Insert outbox events in the same transaction
+		if len(outboxEvents) > 0 {
+			if err = s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+				return err
+			}
 		}
 	}
 
