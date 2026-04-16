@@ -401,13 +401,13 @@ func ToPSPOrder(order *Order) PSPOrder {
 	}
 }
 
-// FromPSPOrderToOrder converts a PSPOrder to an Order
-func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) {
+// FromPSPOrderToOrder converts a PSPOrder to an Order.
+// observedAt should be workflow.Now() in production (Temporal deterministic clock).
+func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID, observedAt time.Time) (Order, error) {
 	if err := from.Validate(); err != nil {
 		return Order{}, err
 	}
 
-	now := time.Now().UTC()
 	o := Order{
 		ID: OrderID{
 			Reference:   from.Reference,
@@ -417,7 +417,7 @@ func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) 
 		Reference:           from.Reference,
 		ClientOrderID:       from.ClientOrderID,
 		CreatedAt:           from.CreatedAt,
-		UpdatedAt:           now,
+		UpdatedAt:           observedAt,
 		Direction:           from.Direction,
 		SourceAsset:         from.SourceAsset,
 		DestinationAsset:         from.DestinationAsset,
@@ -440,16 +440,17 @@ func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID) (Order, error) 
 		Metadata:             from.Metadata,
 	}
 
-	o.Adjustments = append(o.Adjustments, FromPSPOrderToOrderAdjustment(from, connectorID))
+	o.Adjustments = append(o.Adjustments, FromPSPOrderToOrderAdjustment(from, connectorID, observedAt))
 
 	return o, nil
 }
 
-// FromPSPOrders converts a slice of PSPOrders to Orders
-func FromPSPOrders(from []PSPOrder, connectorID ConnectorID) ([]Order, error) {
+// FromPSPOrders converts a slice of PSPOrders to Orders.
+// observedAt should be workflow.Now() in production (Temporal deterministic clock).
+func FromPSPOrders(from []PSPOrder, connectorID ConnectorID, observedAt time.Time) ([]Order, error) {
 	orders := make([]Order, 0, len(from))
 	for _, o := range from {
-		order, err := FromPSPOrderToOrder(o, connectorID)
+		order, err := FromPSPOrderToOrder(o, connectorID, observedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -551,12 +552,18 @@ func (oa *OrderAdjustment) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// OrderAdjustmentID uniquely identifies an order adjustment
+// OrderAdjustmentID uniquely identifies an order adjustment.
+// CreatedAt is intentionally excluded — it represents observation time (variable),
+// not identity. Mutable fields (BaseQuantityFilled, Fee, FeeAsset) are included
+// so that same-status changes (e.g., PARTIALLY_FILLED at different fill levels)
+// produce distinct adjustments.
 type OrderAdjustmentID struct {
-	OrderID   OrderID
-	Reference string
-	CreatedAt time.Time
-	Status    OrderStatus
+	OrderID            OrderID
+	Reference          string
+	Status             OrderStatus
+	BaseQuantityFilled *big.Int
+	Fee                *big.Int
+	FeeAsset           *string
 }
 
 func (oaid OrderAdjustmentID) String() string {
@@ -605,8 +612,9 @@ func (oaid *OrderAdjustmentID) Scan(value interface{}) error {
 	return fmt.Errorf("failed to scan order adjustment id: %v", value)
 }
 
-// FromPSPOrderToOrderAdjustment creates an OrderAdjustment from a PSPOrder
-func FromPSPOrderToOrderAdjustment(from PSPOrder, connectorID ConnectorID) OrderAdjustment {
+// FromPSPOrderToOrderAdjustment creates an OrderAdjustment from a PSPOrder.
+// observedAt should be workflow.Now() in production (Temporal deterministic clock).
+func FromPSPOrderToOrderAdjustment(from PSPOrder, connectorID ConnectorID, observedAt time.Time) OrderAdjustment {
 	orderID := OrderID{
 		Reference:   from.Reference,
 		ConnectorID: connectorID,
@@ -614,13 +622,15 @@ func FromPSPOrderToOrderAdjustment(from PSPOrder, connectorID ConnectorID) Order
 
 	return OrderAdjustment{
 		ID: OrderAdjustmentID{
-			OrderID:   orderID,
-			Reference: from.Reference,
-			CreatedAt: from.CreatedAt,
-			Status:    from.Status,
+			OrderID:            orderID,
+			Reference:          from.Reference,
+			Status:             from.Status,
+			BaseQuantityFilled: from.BaseQuantityFilled,
+			Fee:                from.Fee,
+			FeeAsset:           from.FeeAsset,
 		},
 		Reference:          from.Reference,
-		CreatedAt:          from.CreatedAt,
+		CreatedAt:          observedAt,
 		Status:             from.Status,
 		BaseQuantityFilled: from.BaseQuantityFilled,
 		Fee:                from.Fee,
