@@ -153,7 +153,7 @@ type Order struct {
 	Reference string `json:"reference"`
 
 	// Client-assigned order ID for exchange-side placement idempotency (not used for storage dedup).
-	ClientOrderID string `json:"clientOrderId,omitempty"`
+	ClientOrderID string `json:"clientOrderID,omitempty"`
 
 	// Order creation date
 	CreatedAt time.Time `json:"createdAt"`
@@ -233,7 +233,7 @@ func (o Order) MarshalJSON() ([]byte, error) {
 		ConnectorID         string            `json:"connectorID"`
 		Provider            string            `json:"provider"`
 		Reference           string            `json:"reference"`
-		ClientOrderID       string            `json:"clientOrderId,omitempty"`
+		ClientOrderID       string            `json:"clientOrderID,omitempty"`
 		CreatedAt           time.Time         `json:"createdAt"`
 		UpdatedAt           time.Time         `json:"updatedAt"`
 		Direction           OrderDirection    `json:"direction"`
@@ -294,7 +294,7 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 		ID                  string            `json:"id"`
 		ConnectorID         string            `json:"connectorID"`
 		Reference           string            `json:"reference"`
-		ClientOrderID       string            `json:"clientOrderId,omitempty"`
+		ClientOrderID       string            `json:"clientOrderID,omitempty"`
 		CreatedAt           time.Time         `json:"createdAt"`
 		UpdatedAt           time.Time         `json:"updatedAt"`
 		Direction           OrderDirection    `json:"direction"`
@@ -657,7 +657,7 @@ func (oe OrderExpanded) MarshalJSON() ([]byte, error) {
 		ConnectorID         string            `json:"connectorID"`
 		Provider            string            `json:"provider"`
 		Reference           string            `json:"reference"`
-		ClientOrderID       string            `json:"clientOrderId,omitempty"`
+		ClientOrderID       string            `json:"clientOrderID,omitempty"`
 		CreatedAt           time.Time         `json:"createdAt"`
 		UpdatedAt           time.Time         `json:"updatedAt"`
 		Direction           OrderDirection    `json:"direction"`

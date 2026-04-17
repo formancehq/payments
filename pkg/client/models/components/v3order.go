@@ -13,7 +13,7 @@ type V3Order struct {
 	ConnectorID          string               `json:"connectorID"`
 	Provider             string               `json:"provider"`
 	Reference            string               `json:"reference"`
-	ClientOrderID        *string              `json:"clientOrderId,omitempty"`
+	ClientOrderID        *string              `json:"clientOrderID,omitempty"`
 	CreatedAt            time.Time            `json:"createdAt"`
 	UpdatedAt            time.Time            `json:"updatedAt"`
 	Direction            V3OrderDirectionEnum `json:"direction"`

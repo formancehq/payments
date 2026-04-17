@@ -1281,7 +1281,7 @@ Accept: application/json
         "connectorID": "string",
         "provider": "string",
         "reference": "string",
-        "clientOrderId": "string",
+        "clientOrderID": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "updatedAt": "2019-08-24T14:15:22Z",
         "direction": "UNKNOWN",
@@ -1374,7 +1374,7 @@ Accept: application/json
     "connectorID": "string",
     "provider": "string",
     "reference": "string",
-    "clientOrderId": "string",
+    "clientOrderID": "string",
     "createdAt": "2019-08-24T14:15:22Z",
     "updatedAt": "2019-08-24T14:15:22Z",
     "direction": "UNKNOWN",
@@ -5543,7 +5543,7 @@ None ( Scopes: payments:read )
         "connectorID": "string",
         "provider": "string",
         "reference": "string",
-        "clientOrderId": "string",
+        "clientOrderID": "string",
         "createdAt": "2019-08-24T14:15:22Z",
         "updatedAt": "2019-08-24T14:15:22Z",
         "direction": "UNKNOWN",
@@ -5618,7 +5618,7 @@ None ( Scopes: payments:read )
     "connectorID": "string",
     "provider": "string",
     "reference": "string",
-    "clientOrderId": "string",
+    "clientOrderID": "string",
     "createdAt": "2019-08-24T14:15:22Z",
     "updatedAt": "2019-08-24T14:15:22Z",
     "direction": "UNKNOWN",
@@ -5685,7 +5685,7 @@ None ( Scopes: payments:read )
   "connectorID": "string",
   "provider": "string",
   "reference": "string",
-  "clientOrderId": "string",
+  "clientOrderID": "string",
   "createdAt": "2019-08-24T14:15:22Z",
   "updatedAt": "2019-08-24T14:15:22Z",
   "direction": "UNKNOWN",
@@ -5740,7 +5740,7 @@ None ( Scopes: payments:read )
 |connectorID|string(byte)|true|none|none|
 |provider|string|true|none|none|
 |reference|string|true|none|none|
-|clientOrderId|string¦null|false|none|none|
+|clientOrderID|string¦null|false|none|none|
 |createdAt|string(date-time)|true|none|none|
 |updatedAt|string(date-time)|true|none|none|
 |direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|true|none|none|
