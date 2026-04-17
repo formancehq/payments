@@ -17,12 +17,54 @@ type ordersState struct {
 	Cursor string `json:"cursor"`
 }
 
+// resolveWallets builds a fresh symbol→walletID map from the engine's
+// AccountLookup each time FetchNextOrders runs. The lookup reads from the
+// persisted accounts table scoped to the connector, so the map is always
+// up-to-date and consistent across pods — unlike the previous in-process
+// cache which only reflected pages processed on the current pod.
+//
+// Returns a hard error if the engine never injected a lookup (configuration
+// bug) or if the DB read fails.
+func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) {
+	if p.accountLookup == nil {
+		return nil, fmt.Errorf("account lookup not wired: engine misconfiguration")
+	}
+
+	accounts, err := p.accountLookup.ListAccountsByConnector(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("listing accounts: %w", err)
+	}
+
+	wallets := make(map[string]string, len(accounts))
+	for _, a := range accounts {
+		if a.DefaultAsset == nil {
+			continue
+		}
+		// DefaultAsset is in the form "SYMBOL/precision" (e.g. "BTC/8").
+		symbol, _, ok := strings.Cut(*a.DefaultAsset, "/")
+		if !ok {
+			continue
+		}
+		symbol = strings.ToUpper(strings.TrimSpace(symbol))
+		if symbol == "" {
+			continue
+		}
+		wallets[symbol] = a.Reference
+	}
+	return wallets, nil
+}
+
 func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
 	var state ordersState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &state); err != nil {
 			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to unmarshal state: %w", err)
 		}
+	}
+
+	wallets, err := p.resolveWallets(ctx)
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, err
 	}
 
 	ordersResp, err := p.client.ListOrders(ctx, state.Cursor, req.PageSize)
@@ -32,8 +74,14 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 	pspOrders := make([]models.PSPOrder, 0, len(ordersResp.Orders))
 	for _, order := range ordersResp.Orders {
-		pspOrder, err := p.clientOrderToPSPOrder(order)
+		pspOrder, err := p.clientOrderToPSPOrder(order, wallets)
 		if err != nil {
+			// Fail the batch when any order in the page references an
+			// unresolved wallet (or anything else goes wrong). This is the
+			// safe default: the cursor is NOT advanced, the page is
+			// retried, and no order is dropped. This allows Temporal retries, for example once a missing account is
+			// is fetched during fetchNextAccount.
+			//
 			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to convert order %s: %w", order.ID, err)
 		}
 		pspOrders = append(pspOrders, pspOrder)
@@ -58,7 +106,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}, nil
 }
 
-func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, error) {
+func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]string) (models.PSPOrder, error) {
 	raw, err := json.Marshal(order)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to marshal order raw: %w", err)
@@ -79,14 +127,8 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		return models.PSPOrder{}, fmt.Errorf("unsupported quote asset: %s", quoteSymbol)
 	}
 
-	// Fail the batch if we can't resolve either wallet ID. Temporal will retry
-	// the activity with the same cursor; by the next attempt, a parallel
-	// FetchNextAccounts cycle will likely have merged the missing wallet into
-	// p.wallets (accounts.go populates it as a side effect). Returning an
-	// error here is preferable to emitting an order with a nil
-	// SourceAccountReference / DestinationAccountReference, which would create
-	// incomplete records that are hard to reconcile later.
-	quoteWallet, baseWallet := p.lookupWalletPair(quoteSymbol, baseSymbol)
+	quoteWallet := wallets[strings.ToUpper(quoteSymbol)]
+	baseWallet := wallets[strings.ToUpper(baseSymbol)]
 	if quoteWallet == "" {
 		return models.PSPOrder{}, fmt.Errorf("unresolved wallet for quote symbol %q on order %s (will retry after next accounts cycle)", quoteSymbol, order.ID)
 	}
@@ -171,7 +213,7 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		expiresAt = &t
 	}
 
-	metadata := p.buildOrderMetadata(order, baseSymbol, quoteSymbol, pricePrecision)
+	metadata := p.buildOrderMetadata(order, baseSymbol, quoteSymbol, pricePrecision, wallets)
 	priceAsset := fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
 
 	// Resolve account references from wallet map. Both wallet IDs were
@@ -320,7 +362,7 @@ func maxPricePrecision(values ...string) int {
 
 // buildOrderMetadata captures valuable Coinbase Prime fields that don't map to
 // structured Order fields, preserving data that's useful for reconciliation and debugging.
-func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol string, pricePrecision int) map[string]string {
+func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol string, pricePrecision int, wallets map[string]string) map[string]string {
 	m := make(map[string]string)
 
 	set := func(k, v string) {
@@ -341,9 +383,8 @@ func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol 
 	set("quote_currency", quoteSymbol)
 	m[MetadataPrefix+"price_asset"] = fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
 
-	quoteWalletID, baseWalletID := p.lookupWalletPair(quoteSymbol, baseSymbol)
-	set("base_wallet_id", baseWalletID)
-	set("quote_wallet_id", quoteWalletID)
+	set("base_wallet_id", wallets[strings.ToUpper(baseSymbol)])
+	set("quote_wallet_id", wallets[strings.ToUpper(quoteSymbol)])
 
 	if order.CommissionDetail != nil {
 		set("commission_total", order.CommissionDetail.TotalCommission)

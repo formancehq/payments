@@ -92,18 +92,6 @@ var _ = Describe("Coinbase Plugin", func() {
 				nil,
 			)
 
-			m.EXPECT().GetWallets(gomock.Any(), "", 100).Return(
-				&client.WalletsResponse{
-					Wallets: []client.Wallet{
-						{ID: "wallet-usd", Symbol: "USD"},
-						{ID: "wallet-btc", Symbol: "BTC"},
-						{ID: "wallet-eth", Symbol: "ETH"},
-					},
-					Pagination: client.Pagination{HasNext: false},
-				},
-				nil,
-			)
-
 			req := models.InstallRequest{}
 			res, err := p.Install(ctx, req)
 			Expect(err).To(BeNil())
@@ -119,11 +107,24 @@ var _ = Describe("Coinbase Plugin", func() {
 			Expect(p.currencies["USDC"]).To(Equal(6))
 			Expect(p.currencies).To(HaveKey("USD"))
 			Expect(p.currencies["USD"]).To(Equal(2))
+		})
 
-			// Verify wallets were loaded
-			Expect(p.wallets).To(HaveKey("USD"))
-			Expect(p.wallets["USD"]).To(Equal("wallet-usd"))
-			Expect(p.wallets["BTC"]).To(Equal("wallet-btc"))
+		It("declares TASK_FETCH_ACCOUNTS as bootstrap-on-install", func() {
+			p := &Plugin{Plugin: plugins.NewBasePlugin()}
+			Expect(p.BootstrapOnInstall()).To(Equal([]models.TaskType{models.TASK_FETCH_ACCOUNTS}))
+		})
+
+		It("stores the AccountLookup injected by the engine", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			defer ctrl.Finish()
+
+			p := &Plugin{Plugin: plugins.NewBasePlugin()}
+			Expect(p.accountLookup).To(BeNil())
+
+			lookup := models.NewMockAccountLookup(ctrl)
+			p.UseAccountLookup(lookup)
+
+			Expect(p.accountLookup).To(Equal(models.AccountLookup(lookup)))
 		})
 
 		It("should return error when portfolio fetch fails", func(ctx SpecContext) {
