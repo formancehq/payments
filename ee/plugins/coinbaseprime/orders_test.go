@@ -1,12 +1,14 @@
 package coinbaseprime
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
@@ -15,41 +17,82 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// walletsToPSPAccounts produces a fixture slice matching the shape
+// scopedAccountLookup returns in production: each PSPAccount carries the
+// wallet ID as Reference and a `SYMBOL/precision` DefaultAsset string so
+// resolveWallets can recover the symbol.
+func walletsToPSPAccounts(wallets map[string]string, currencies map[string]int) []models.PSPAccount {
+	accounts := make([]models.PSPAccount, 0, len(wallets))
+	for symbol, walletID := range wallets {
+		precision := currencies[symbol]
+		asset := symbol + "/" + pspAccountPrecisionSuffix(precision)
+		accounts = append(accounts, models.PSPAccount{
+			Reference:    walletID,
+			DefaultAsset: pointer.For(asset),
+			Raw:          []byte(`{}`),
+		})
+	}
+	return accounts
+}
+
+func pspAccountPrecisionSuffix(p int) string {
+	if p == 0 {
+		return "0"
+	}
+	s := ""
+	for p > 0 {
+		s = string(rune('0'+p%10)) + s
+		p /= 10
+	}
+	return s
+}
+
 var _ = Describe("Coinbase Plugin Orders", func() {
 	var (
-		ctrl *gomock.Controller
-		m    *client.MockClient
-		plg  *Plugin
+		ctrl   *gomock.Controller
+		m      *client.MockClient
+		lookup *models.MockAccountLookup
+		plg    *Plugin
 	)
+
+	defaultWallets := map[string]string{
+		"USD":  "wallet-usd",
+		"BTC":  "wallet-btc",
+		"ETH":  "wallet-eth",
+		"DOGE": "wallet-doge",
+		"SOL":  "wallet-sol",
+	}
+	defaultCurrencies := map[string]int{
+		"USD":  2,
+		"EUR":  2,
+		"GBP":  2,
+		"BTC":  8,
+		"ETH":  18,
+		"USDC": 6,
+		"SOL":  9,
+	}
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		// Orders no longer refresh wallets on every cycle; they consume the
-		// p.wallets map populated at Install or as a side effect of
-		// FetchNextAccounts. No GetWallets mock is registered here — any call
-		// from the orders path would fail the test as an unexpected call.
+		lookup = models.NewMockAccountLookup(ctrl)
+		// Default expectation: fetchNextOrders always calls the lookup at
+		// the top of its loop. Tests that need a different wallet set
+		// replace this expectation via a local EXPECT().
+		lookup.EXPECT().
+			ListAccountsByConnector(gomock.Any()).
+			DoAndReturn(func(ctx context.Context) ([]models.PSPAccount, error) {
+				return walletsToPSPAccounts(defaultWallets, defaultCurrencies), nil
+			}).
+			AnyTimes()
+
 		plg = &Plugin{
-			Plugin: plugins.NewBasePlugin(),
-			client: m,
-			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			currencies: map[string]int{
-				"USD":  2,
-				"EUR":  2,
-				"GBP":  2,
-				"BTC":  8,
-				"ETH":  18,
-				"USDC": 6,
-				"SOL":  9,
-			},
+			Plugin:         plugins.NewBasePlugin(),
+			client:         m,
+			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			currencies:     defaultCurrencies,
 			networkSymbols: map[string]string{},
-			wallets: map[string]string{
-				"USD":  "wallet-usd",
-				"BTC":  "wallet-btc",
-				"ETH":  "wallet-eth",
-				"DOGE": "wallet-doge",
-				"SOL":  "wallet-sol",
-			},
+			accountLookup:  lookup,
 			assetsLastSync: time.Now(),
 		}
 	})
@@ -766,13 +809,14 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.BaseQuantityFilled.Cmp(big.NewInt(0))).To(Equal(0))
 		})
 
-		It("fails the batch when a wallet cannot be resolved so Temporal retries after accounts repopulates p.wallets", func(ctx SpecContext) {
-			// Simulate a freshly-installed connector that hasn't completed an
-			// accounts pagination cycle yet: p.wallets is missing BTC.
-			plg.wallets = map[string]string{
-				"USD": "wallet-usd",
-				// BTC deliberately absent.
-			}
+		It("fails the batch on an unresolved wallet so Temporal retries until the next accounts cycle populates it", func(ctx SpecContext) {
+			// Simulate a freshly-bootstrapped connector missing a newly
+			// created BTC wallet — AccountLookup only has USD.
+			lookup = models.NewMockAccountLookup(ctrl)
+			lookup.EXPECT().
+				ListAccountsByConnector(gomock.Any()).
+				Return(walletsToPSPAccounts(map[string]string{"USD": "wallet-usd"}, defaultCurrencies), nil)
+			plg.accountLookup = lookup
 
 			req := models.FetchNextOrdersRequest{
 				State:    []byte(`{}`),
@@ -803,6 +847,39 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(err.Error()).To(ContainSubstring("unresolved wallet for base symbol"))
 			Expect(err.Error()).To(ContainSubstring("BTC"))
 			Expect(err.Error()).To(ContainSubstring("order-missing-wallet"))
+			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
+		})
+
+		It("returns a hard error when accountLookup is not wired", func(ctx SpecContext) {
+			plg.accountLookup = nil
+
+			req := models.FetchNextOrdersRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			resp, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("account lookup not wired"))
+			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
+		})
+
+		It("wraps and returns the lookup error when ListAccountsByConnector fails", func(ctx SpecContext) {
+			lookup = models.NewMockAccountLookup(ctrl)
+			lookup.EXPECT().
+				ListAccountsByConnector(gomock.Any()).
+				Return(nil, errors.New("db down"))
+			plg.accountLookup = lookup
+
+			req := models.FetchNextOrdersRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			resp, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("listing accounts"))
+			Expect(err.Error()).To(ContainSubstring("db down"))
 			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
 		})
 

@@ -40,9 +40,15 @@ type Plugin struct {
 	client client.Client
 	config Config
 
+	// accountLookup is injected by the engine via UseAccountLookup right
+	// after plugin instantiation. Orders use it to resolve wallet IDs from
+	// the persisted accounts table instead of a fragile in-process cache.
+	// Set once and read-only thereafter, so no mutex.
+	accountLookup models.AccountLookup
+
 	// assetsMu protects concurrent reads/writes of the cached reference data
-	// below (currencies, networkSymbols, wallets, entityID, assetsLastSync).
-	// Reads dominate, so a RWMutex is used.
+	// below (currencies, networkSymbols, entityID, assetsLastSync). Reads
+	// dominate, so a RWMutex is used.
 	assetsMu sync.RWMutex
 	// assetsRefreshMu serializes the refresh path so only one goroutine at a
 	// time can trigger a GetPortfolio/GetAssets reload. Separate from assetsMu
@@ -53,7 +59,6 @@ type Plugin struct {
 	entityID       string            // portfolio entity ID, fetched once at Install
 	currencies     map[string]int    // symbol → decimal precision (loaded dynamically)
 	networkSymbols map[string]string // network-scoped symbol → base symbol (e.g. "BASEUSDC" → "USDC")
-	wallets        map[string]string // symbol → wallet ID (e.g. "USD" → "570270d8-...")
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -86,22 +91,29 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		return models.InstallResponse{}, fmt.Errorf("loading assets: %w", err)
 	}
 
-	wallets, err := p.loadWalletMap(ctx)
-	if err != nil {
-		// Preserve prior behavior: wallet load failure is non-fatal at Install.
-		// Orders will have empty account refs until the next accounts cycle
-		// populates p.wallets via fetchNextAccounts.
-		p.logger.Infof("could not load wallet map: %v (wallet IDs will be unavailable on orders until next accounts cycle)", err)
-	}
-
-	p.assetsMu.Lock()
-	p.wallets = wallets
-	p.logger.Infof("loaded %d currencies, %d network aliases, %d wallets from Coinbase Prime", len(p.currencies), len(p.networkSymbols), len(p.wallets))
-	p.assetsMu.Unlock()
+	p.assetsMu.RLock()
+	p.logger.Infof("loaded %d currencies, %d network aliases from Coinbase Prime", len(p.currencies), len(p.networkSymbols))
+	p.assetsMu.RUnlock()
 
 	return models.InstallResponse{
 		Workflow: workflow(),
 	}, nil
+}
+
+// UseAccountLookup is called by the engine immediately after plugin
+// construction to inject a per-connector AccountLookup. Orders use it to
+// resolve wallet IDs from the persisted accounts table rather than keeping
+// an in-process cache that wouldn't survive pod hops.
+func (p *Plugin) UseAccountLookup(lookup models.AccountLookup) {
+	p.accountLookup = lookup
+}
+
+// BootstrapOnInstall declares that the FetchAccounts task must run to
+// completion during the install flow, before any periodic workflows start.
+// This guarantees the accounts table is fully populated before FetchOrders
+// needs to resolve wallet IDs against it.
+func (p *Plugin) BootstrapOnInstall() []models.TaskType {
+	return []models.TaskType{models.TASK_FETCH_ACCOUNTS}
 }
 
 // loadAssets fetches the portfolio entity (once per plugin instance) and the
@@ -180,40 +192,6 @@ func (p *Plugin) ensurePortfolioEntityID(ctx context.Context) (string, error) {
 	entityID = p.entityID
 	p.assetsMu.Unlock()
 	return entityID, nil
-}
-
-// lookupWalletPair resolves a (quoteSymbol, baseSymbol) pair against the
-// cached wallet map under a read lock. Returns empty strings for symbols that
-// are not mapped.
-func (p *Plugin) lookupWalletPair(quoteSymbol, baseSymbol string) (quoteWalletID, baseWalletID string) {
-	p.assetsMu.RLock()
-	defer p.assetsMu.RUnlock()
-	if p.wallets == nil {
-		return "", ""
-	}
-	return p.wallets[strings.ToUpper(quoteSymbol)], p.wallets[strings.ToUpper(baseSymbol)]
-}
-
-func (p *Plugin) loadWalletMap(ctx context.Context) (map[string]string, error) {
-	wallets := make(map[string]string)
-	cursor := ""
-	for {
-		resp, err := p.client.GetWallets(ctx, cursor, 100)
-		if err != nil {
-			return wallets, fmt.Errorf("listing wallets: %w", err)
-		}
-		for _, w := range resp.Wallets {
-			sym := strings.ToUpper(strings.TrimSpace(w.Symbol))
-			if sym != "" {
-				wallets[sym] = w.ID
-			}
-		}
-		if !resp.Pagination.HasNext || resp.Pagination.NextCursor == "" {
-			break
-		}
-		cursor = resp.Pagination.NextCursor
-	}
-	return wallets, nil
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {

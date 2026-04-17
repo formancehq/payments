@@ -2,6 +2,8 @@ package models
 
 import "context"
 
+//go:generate mockgen -source account_lookup.go -destination account_lookup_generated.go -package models . AccountLookup
+
 // AccountLookup gives a plugin read-only access to the engine's accounts
 // table, scoped to the plugin's own connector. The engine injects an
 // implementation via PluginWithAccountLookup; plugins that need to resolve
