@@ -18,6 +18,7 @@ create table orders (
     time_in_force  text not null,
 
     -- Optional fields
+    client_order_id text not null default '',
     base_quantity_filled numeric,
     limit_price    numeric,
     stop_price     numeric,
@@ -77,7 +78,6 @@ alter table order_adjustments
     references orders (id)
     on delete cascade;
 
--- Conversions table for stablecoin conversions (USD↔USDC, USD↔PYUSD)
 create table conversions (
     -- Autoincrement fields
     sort_id bigserial not null,

@@ -67,9 +67,6 @@ var workflowInstancesConnectorScheduleIndex string
 //go:embed 29-orders-and-conversions.sql
 var ordersAndConversions string
 
-//go:embed 30-orders-add-client-order-id.sql
-var ordersAddClientOrderID string
-
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -436,17 +433,6 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running orders and conversions migration...")
 					_, err := tx.ExecContext(ctx, ordersAndConversions)
 					logger.WithField("error", err).Info("finished running orders and conversions migration")
-					return err
-				})
-			},
-		},
-		migrations.Migration{
-			Name: "orders add client_order_id",
-			Up: func(ctx context.Context, db bun.IDB) error {
-				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					logger.Info("running orders add client_order_id migration...")
-					_, err := tx.ExecContext(ctx, ordersAddClientOrderID)
-					logger.WithField("error", err).Info("finished running orders add client_order_id migration")
 					return err
 				})
 			},
