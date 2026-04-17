@@ -145,7 +145,7 @@ var _ = Describe("Coinbase Plugin", func() {
 			req := models.InstallRequest{}
 			_, err := p.Install(ctx, req)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("loading currencies"))
+			Expect(err.Error()).To(ContainSubstring("loading assets"))
 		})
 	})
 

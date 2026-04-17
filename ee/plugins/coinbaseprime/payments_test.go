@@ -37,6 +37,7 @@ var _ = Describe("Coinbase Plugin Payments", func() {
 				"USDC": 6,
 				"SOL":  9,
 			},
+			assetsLastSync: time.Now(),
 		}
 	})
 

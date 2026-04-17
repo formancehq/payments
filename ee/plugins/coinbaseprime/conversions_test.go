@@ -36,6 +36,7 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 				"BTC":  8,
 			},
 			networkSymbols: map[string]string{},
+			assetsLastSync: time.Now(),
 		}
 	})
 
