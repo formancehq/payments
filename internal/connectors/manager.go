@@ -39,6 +39,13 @@ type manager struct {
 	configurer *Configurer
 
 	debug bool
+
+	// accountLookupFactory, when non-nil, is invoked for every plugin
+	// that implements models.PluginWithAccountLookup right after the
+	// plugin is instantiated so the plugin can read back accounts it
+	// has persisted via the engine (instead of holding fragile in-memory
+	// caches). Nil in tests that don't need the wiring.
+	accountLookupFactory models.AccountLookupFactory
 }
 
 type connector struct {
@@ -53,6 +60,7 @@ func NewManager(
 	debug bool,
 	pollingPeriodDefault time.Duration,
 	pollingPeriodMinimum time.Duration,
+	accountLookupFactory models.AccountLookupFactory,
 ) *manager {
 	configurer, err := NewConfigurer(pollingPeriodDefault, pollingPeriodMinimum)
 	if err != nil {
@@ -61,10 +69,11 @@ func NewManager(
 		log.Panicf("invalid connector polling period configuration: %v", err)
 	}
 	return &manager{
-		logger:     logger,
-		configurer: configurer,
-		connectors: make(map[string]connector),
-		debug:      debug,
+		logger:               logger,
+		configurer:           configurer,
+		connectors:           make(map[string]connector),
+		debug:                debug,
+		accountLookupFactory: accountLookupFactory,
 	}
 }
 
@@ -113,6 +122,12 @@ func (m *manager) Load(connectorModel models.Connector, updateExisting bool, str
 	}
 
 	plugin.ScheduleForDeletion(connectorModel.ScheduledForDeletion)
+
+	if m.accountLookupFactory != nil {
+		if p, ok := plugin.(models.PluginWithAccountLookup); ok {
+			p.UseAccountLookup(m.accountLookupFactory(connectorModel.ID))
+		}
+	}
 
 	validatedConfigJson = json.RawMessage(b)
 	m.connectors[connectorModel.ID.String()] = connector{

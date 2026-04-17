@@ -22,6 +22,7 @@ type Storage interface {
 	AccountsUpsert(ctx context.Context, accounts []models.Account) error
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
 	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
+	AccountsListAllByConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.Account, error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	AccountsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	AccountsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error

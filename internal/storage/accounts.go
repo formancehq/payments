@@ -314,6 +314,29 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 	}, nil
 }
 
+// AccountsListAllByConnectorID returns every account row for the given
+// connector, without pagination. It backs the engine's AccountLookup
+// adapter, which plugins use to resolve accounts from the canonical source
+// of truth rather than from in-memory side tables. The `accounts` table is
+// indexed on `connector_id`, so the query is a single indexed scan.
+func (s *store) AccountsListAllByConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.Account, error) {
+	var rows []account
+	err := s.db.NewSelect().
+		Model(&rows).
+		Where("connector_id = ?", connectorID).
+		Order("sort_id ASC").
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to list accounts by connector", err)
+	}
+
+	accounts := make([]models.Account, 0, len(rows))
+	for _, r := range rows {
+		accounts = append(accounts, toAccountModels(r))
+	}
+	return accounts, nil
+}
+
 func fromAccountModels(from models.Account) account {
 	return account{
 		ID:                      from.ID,
