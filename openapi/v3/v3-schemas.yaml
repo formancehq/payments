@@ -908,7 +908,7 @@ components:
           type: string
         reference:
           type: string
-        clientOrderId:
+        clientOrderID:
           type: string
           nullable: true
         createdAt:
