@@ -161,6 +161,21 @@ func (mr *MockStorageMockRecorder) AccountsList(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsList", reflect.TypeOf((*MockStorage)(nil).AccountsList), ctx, q)
 }
 
+// AccountsListAllByConnectorID mocks base method.
+func (m *MockStorage) AccountsListAllByConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsListAllByConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].([]models.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccountsListAllByConnectorID indicates an expected call of AccountsListAllByConnectorID.
+func (mr *MockStorageMockRecorder) AccountsListAllByConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsListAllByConnectorID", reflect.TypeOf((*MockStorage)(nil).AccountsListAllByConnectorID), ctx, connectorID)
+}
+
 // AccountsUpsert mocks base method.
 func (m *MockStorage) AccountsUpsert(ctx context.Context, accounts []models.Account) error {
 	m.ctrl.T.Helper()

@@ -74,7 +74,7 @@ func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
 func TestUnitTestSuite(t *testing.T) {
 	logger := logging.Testing()
 	w := Workflow{
-		connectors:     connectors.NewManager(logger, true, time.Minute, time.Minute),
+		connectors:     connectors.NewManager(logger, true, time.Minute, time.Minute, nil),
 		stackPublicURL: "http://localhost:8080",
 		stack:          "test",
 		logger:         logger,

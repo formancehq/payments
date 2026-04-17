@@ -93,7 +93,7 @@ func TestManager_Load(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod)
+			manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod, nil)
 			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
 			connector := models.Connector{
 				ConnectorBase: models.ConnectorBase{
@@ -137,7 +137,7 @@ func TestManager_Unload(t *testing.T) {
 
 	minimumPollingPeriod := time.Second
 	logger := logging.NewDefaultLogger(io.Discard, false, false, false)
-	manager := NewManager(logger, false, time.Minute, minimumPollingPeriod)
+	manager := NewManager(logger, false, time.Minute, minimumPollingPeriod, nil)
 
 	connectorID := models.ConnectorID{Reference: uuid.New(), Provider: registry.DummyPSPName}
 	manager.connectors[connectorID.String()] = connector{}
