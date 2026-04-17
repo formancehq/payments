@@ -71,6 +71,43 @@ func (w Workflow) installConnector(
 	if plugin.IsScheduledForDeletion() {
 		return nil
 	}
+
+	// If the plugin declares bootstrap tasks, hand off to RunBootstrapTasks
+	// instead of starting the periodic scheduler inline. RunBootstrapTasks
+	// runs the declared tasks to completion and then starts the periodic
+	// scheduler itself — so the periodic workflows only begin once the
+	// plugin's initial data is in the database.
+	//
+	if p, ok := plugin.(models.PluginWithBootstrapOnInstall); ok {
+		if taskTypes := p.BootstrapOnInstall(); len(taskTypes) > 0 {
+			if err := workflow.ExecuteChildWorkflow(
+				workflow.WithChildOptions(
+					ctx,
+					workflow.ChildWorkflowOptions{
+						WorkflowID:            fmt.Sprintf("bootstrap-%s-%s", w.stack, installConnector.ConnectorID.String()),
+						WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+						TaskQueue:             w.getDefaultTaskQueue(),
+						ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+						SearchAttributes: map[string]interface{}{
+							SearchAttributeStack: w.stack,
+						},
+					},
+				),
+				RunBootstrapTasks,
+				BootstrapTasksRequest{
+					ConnectorID: installConnector.ConnectorID,
+					TaskTypes:   taskTypes,
+					TaskTree:    []models.ConnectorTaskTree(installResponse.Workflow),
+				},
+			).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+				if !temporal.IsWorkflowExecutionAlreadyStartedError(err) {
+					return errors.Wrap(err, "starting bootstrap workflow")
+				}
+			}
+			return w.scheduleConnectorHealthCheck(ctx, installConnector)
+		}
+	}
+
 	if IsRunNextTaskOptimizationsEnabled(ctx) {
 		if err := workflow.ExecuteChildWorkflow(
 			workflow.WithChildOptions(
@@ -122,9 +159,17 @@ func (w Workflow) installConnector(
 		}
 	}
 
-	// Launch the health check schedule without waiting for it to complete.
-	// GetChildWorkflowExecution waits only for the child to start, so any
-	// start-time error is returned while completion runs independently.
+	return w.scheduleConnectorHealthCheck(ctx, installConnector)
+}
+
+// scheduleConnectorHealthCheck launches the health check schedule without
+// waiting for it to complete. GetChildWorkflowExecution waits only for the
+// child to start, so any start-time error is returned while completion runs
+// independently.
+func (w Workflow) scheduleConnectorHealthCheck(
+	ctx workflow.Context,
+	installConnector InstallConnector,
+) error {
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 			WorkflowID:            fmt.Sprintf("schedule-health-check-%s-%s", w.stack, installConnector.ConnectorID.String()),

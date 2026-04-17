@@ -526,3 +526,23 @@ func (i *impl) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (mo
 }
 
 var _ models.Plugin = &impl{}
+
+// UseAccountLookup forwards the lookup to the wrapped plugin if it opts in
+// via models.PluginWithAccountLookup; otherwise it is a no-op. The wrapper
+// always implements the interface itself so the engine's type assertion on
+// the wrapped plugin resolves at this layer.
+func (i *impl) UseAccountLookup(lookup models.AccountLookup) {
+	if p, ok := i.plugin.(models.PluginWithAccountLookup); ok {
+		p.UseAccountLookup(lookup)
+	}
+}
+
+// BootstrapOnInstall forwards to the wrapped plugin if it opts in via
+// models.PluginWithBootstrapOnInstall; otherwise it returns nil so the
+// install workflow takes the legacy code path.
+func (i *impl) BootstrapOnInstall() []models.TaskType {
+	if p, ok := i.plugin.(models.PluginWithBootstrapOnInstall); ok {
+		return p.BootstrapOnInstall()
+	}
+	return nil
+}
