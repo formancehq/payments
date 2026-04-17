@@ -108,6 +108,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runInstallConnector,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunBootstrapTasks,
+			Func: w.runBootstrapTasks,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunBootstrapTask,
+			Func: w.runBootstrapTask,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunResetConnector,
 			Func: w.runResetConnector,
 		}).
