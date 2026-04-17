@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
@@ -24,6 +25,10 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
+		// Orders no longer refresh wallets on every cycle; they consume the
+		// p.wallets map populated at Install or as a side effect of
+		// FetchNextAccounts. No GetWallets mock is registered here — any call
+		// from the orders path would fail the test as an unexpected call.
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 			client: m,
@@ -38,21 +43,15 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 				"SOL":  9,
 			},
 			networkSymbols: map[string]string{},
-		}
-
-		m.EXPECT().GetWallets(gomock.Any(), "", 100).Return(
-			&client.WalletsResponse{
-				Wallets: []client.Wallet{
-					{ID: "wallet-usd", Symbol: "USD"},
-					{ID: "wallet-btc", Symbol: "BTC"},
-					{ID: "wallet-eth", Symbol: "ETH"},
-					{ID: "wallet-doge", Symbol: "DOGE"},
-					{ID: "wallet-sol", Symbol: "SOL"},
-				},
-				Pagination: client.Pagination{HasNext: false},
+			wallets: map[string]string{
+				"USD":  "wallet-usd",
+				"BTC":  "wallet-btc",
+				"ETH":  "wallet-eth",
+				"DOGE": "wallet-doge",
+				"SOL":  "wallet-sol",
 			},
-			nil,
-		).AnyTimes()
+			assetsLastSync: time.Now(),
+		}
 	})
 
 	AfterEach(func() {
@@ -765,6 +764,104 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.BaseQuantityOrdered.Cmp(big.NewInt(0))).To(Equal(0))
 			Expect(order.BaseQuantityFilled).ToNot(BeNil())
 			Expect(order.BaseQuantityFilled.Cmp(big.NewInt(0))).To(Equal(0))
+		})
+
+		It("fails the batch when a wallet cannot be resolved so Temporal retries after accounts repopulates p.wallets", func(ctx SpecContext) {
+			// Simulate a freshly-installed connector that hasn't completed an
+			// accounts pagination cycle yet: p.wallets is missing BTC.
+			plg.wallets = map[string]string{
+				"USD": "wallet-usd",
+				// BTC deliberately absent.
+			}
+
+			req := models.FetchNextOrdersRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().ListOrders(gomock.Any(), "", 10).Return(
+				&client.OrdersResponse{
+					Orders: []client.Order{
+						{
+							ID:           "order-missing-wallet",
+							ProductID:    "BTC-USD",
+							Side:         "BUY",
+							Type:         "MARKET",
+							BaseQuantity: "1.0",
+							Status:       "FILLED",
+							TimeInForce:  "GTC",
+							CreatedAt:    "2024-01-15T10:30:00Z",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unresolved wallet for base symbol"))
+			Expect(err.Error()).To(ContainSubstring("BTC"))
+			Expect(err.Error()).To(ContainSubstring("order-missing-wallet"))
+			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
+		})
+
+		It("resolves source/destination account references from the cached wallets map without calling GetWallets", func(ctx SpecContext) {
+			// The absence of any m.EXPECT().GetWallets(...) in this test is
+			// the core assertion: orders must not trigger a wallet refresh.
+			req := models.FetchNextOrdersRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().ListOrders(gomock.Any(), "", 10).Return(
+				&client.OrdersResponse{
+					Orders: []client.Order{
+						{
+							ID:           "order-buy",
+							ProductID:    "BTC-USD",
+							Side:         "BUY",
+							Type:         "MARKET",
+							BaseQuantity: "1.0",
+							Status:       "FILLED",
+							TimeInForce:  "GTC",
+							CreatedAt:    "2024-01-15T10:30:00Z",
+						},
+						{
+							ID:           "order-sell",
+							ProductID:    "BTC-USD",
+							Side:         "SELL",
+							Type:         "MARKET",
+							BaseQuantity: "1.0",
+							Status:       "FILLED",
+							TimeInForce:  "GTC",
+							CreatedAt:    "2024-01-15T10:30:00Z",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Orders).To(HaveLen(2))
+
+			// BUY BTC-USD: source = quote wallet (USD), destination = base wallet (BTC)
+			buy := resp.Orders[0]
+			Expect(buy.SourceAccountReference).ToNot(BeNil())
+			Expect(*buy.SourceAccountReference).To(Equal("wallet-usd"))
+			Expect(buy.DestinationAccountReference).ToNot(BeNil())
+			Expect(*buy.DestinationAccountReference).To(Equal("wallet-btc"))
+			Expect(buy.Metadata[MetadataPrefix+"quote_wallet_id"]).To(Equal("wallet-usd"))
+			Expect(buy.Metadata[MetadataPrefix+"base_wallet_id"]).To(Equal("wallet-btc"))
+
+			// SELL BTC-USD: source = base wallet (BTC), destination = quote wallet (USD)
+			sell := resp.Orders[1]
+			Expect(sell.SourceAccountReference).ToNot(BeNil())
+			Expect(*sell.SourceAccountReference).To(Equal("wallet-btc"))
+			Expect(sell.DestinationAccountReference).ToNot(BeNil())
+			Expect(*sell.DestinationAccountReference).To(Equal("wallet-usd"))
 		})
 	})
 })

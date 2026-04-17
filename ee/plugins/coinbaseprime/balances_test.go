@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
@@ -34,6 +35,7 @@ var _ = Describe("Coinbase Plugin Balances", func() {
 				"ETH":  18,
 				"USDC": 6,
 			},
+			assetsLastSync: time.Now(),
 		}
 	})
 

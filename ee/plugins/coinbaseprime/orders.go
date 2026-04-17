@@ -79,6 +79,21 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 		return models.PSPOrder{}, fmt.Errorf("unsupported quote asset: %s", quoteSymbol)
 	}
 
+	// Fail the batch if we can't resolve either wallet ID. Temporal will retry
+	// the activity with the same cursor; by the next attempt, a parallel
+	// FetchNextAccounts cycle will likely have merged the missing wallet into
+	// p.wallets (accounts.go populates it as a side effect). Returning an
+	// error here is preferable to emitting an order with a nil
+	// SourceAccountReference / DestinationAccountReference, which would create
+	// incomplete records that are hard to reconcile later.
+	quoteWallet, baseWallet := p.lookupWalletPair(quoteSymbol, baseSymbol)
+	if quoteWallet == "" {
+		return models.PSPOrder{}, fmt.Errorf("unresolved wallet for quote symbol %q on order %s (will retry after next accounts cycle)", quoteSymbol, order.ID)
+	}
+	if baseWallet == "" {
+		return models.PSPOrder{}, fmt.Errorf("unresolved wallet for base symbol %q on order %s (will retry after next accounts cycle)", baseSymbol, order.ID)
+	}
+
 	// BUY BTC-USD: source=USD (spend), target=BTC (receive)
 	// SELL BTC-USD: source=BTC (spend), target=USD (receive)
 	direction := models.ORDER_DIRECTION_BUY
@@ -159,28 +174,18 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order) (models.PSPOrder, err
 	metadata := p.buildOrderMetadata(order, baseSymbol, quoteSymbol, pricePrecision)
 	priceAsset := fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
 
-	// Resolve account references from wallet map.
+	// Resolve account references from wallet map. Both wallet IDs were
+	// validated non-empty at the top of this function, so they are guaranteed
+	// to resolve here.
 	// BUY: source = quote wallet (USD out), destination = base wallet (crypto in)
 	// SELL: source = base wallet (crypto out), destination = quote wallet (USD in)
 	var sourceAccountRef, destAccountRef *string
-	if p.wallets != nil {
-		quoteWallet := p.wallets[strings.ToUpper(quoteSymbol)]
-		baseWallet := p.wallets[strings.ToUpper(baseSymbol)]
-		if direction == models.ORDER_DIRECTION_BUY {
-			if quoteWallet != "" {
-				sourceAccountRef = &quoteWallet
-			}
-			if baseWallet != "" {
-				destAccountRef = &baseWallet
-			}
-		} else {
-			if baseWallet != "" {
-				sourceAccountRef = &baseWallet
-			}
-			if quoteWallet != "" {
-				destAccountRef = &quoteWallet
-			}
-		}
+	if direction == models.ORDER_DIRECTION_BUY {
+		sourceAccountRef = &quoteWallet
+		destAccountRef = &baseWallet
+	} else {
+		sourceAccountRef = &baseWallet
+		destAccountRef = &quoteWallet
 	}
 
 	return models.PSPOrder{
@@ -336,10 +341,9 @@ func (p *Plugin) buildOrderMetadata(order client.Order, baseSymbol, quoteSymbol 
 	set("quote_currency", quoteSymbol)
 	m[MetadataPrefix+"price_asset"] = fmt.Sprintf("%s/%d", quoteSymbol, pricePrecision)
 
-	if p.wallets != nil {
-		set("base_wallet_id", p.wallets[strings.ToUpper(baseSymbol)])
-		set("quote_wallet_id", p.wallets[strings.ToUpper(quoteSymbol)])
-	}
+	quoteWalletID, baseWalletID := p.lookupWalletPair(quoteSymbol, baseSymbol)
+	set("base_wallet_id", baseWalletID)
+	set("quote_wallet_id", quoteWalletID)
 
 	if order.CommissionDetail != nil {
 		set("commission_total", order.CommissionDetail.TotalCommission)

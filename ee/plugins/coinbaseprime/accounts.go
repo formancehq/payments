@@ -26,10 +26,31 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, err
 	}
 
+	// Merge the returned wallets into p.wallets as a side effect of pagination.
+	// Orders rely on p.wallets[symbol] to resolve SourceAccountReference /
+	// DestinationAccountReference. We update even when the currency is
+	// unsupported so the wallet ID is available if support is added later via
+	// a subsequent ensureAssetsFresh refresh. Never clear — deleted wallets
+	// remain mapped until the plugin instance is recreated.
+	p.assetsMu.Lock()
+	if p.wallets == nil {
+		p.wallets = make(map[string]string, len(response.Wallets))
+	}
+	for _, wallet := range response.Wallets {
+		sym := strings.ToUpper(strings.TrimSpace(wallet.Symbol))
+		if sym != "" {
+			p.wallets[sym] = wallet.ID
+		}
+	}
+	// Snapshot currencies under the same lock to keep the filter below
+	// consistent with the side-effect update above.
+	currencies := p.currencies
+	p.assetsMu.Unlock()
+
 	accounts := make([]models.PSPAccount, 0, len(response.Wallets))
 	for _, wallet := range response.Wallets {
 		symbol := strings.ToUpper(strings.TrimSpace(wallet.Symbol))
-		_, ok := p.currencies[symbol]
+		_, ok := currencies[symbol]
 		if !ok {
 			p.logger.Infof("skipping wallet %s: unsupported currency %q", wallet.ID, wallet.Symbol)
 			continue
@@ -40,7 +61,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		defaultAsset := currency.FormatAsset(p.currencies, symbol)
+		defaultAsset := currency.FormatAsset(currencies, symbol)
 
 		accounts = append(accounts, models.PSPAccount{
 			Reference:    wallet.ID,
