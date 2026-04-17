@@ -67,6 +67,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 }
 
 func (p *Plugin) transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
+	if strings.EqualFold(tx.Type, TransactionTypeConversion) {
+		return nil, nil
+	}
+
 	asset, precision, ok := p.resolveAssetAndPrecision(tx.Symbol)
 	if !ok {
 		p.logger.Infof("skipping transaction %s: unsupported currency %q", tx.ID, tx.Symbol)
@@ -126,52 +130,44 @@ func (p *Plugin) resolveAssetAndPrecision(symbol string) (string, int, bool) {
 
 func buildTransactionMetadata(tx client.Transaction) map[string]string {
 	metadata := make(map[string]string)
-
-	// Core identifiers
-	if tx.WalletID != "" {
-		metadata["wallet_id"] = tx.WalletID
+	set := func(k, v string) {
+		if v != "" {
+			metadata[MetadataPrefix+k] = v
+		}
 	}
-	if tx.PortfolioID != "" {
-		metadata["portfolio_id"] = tx.PortfolioID
-	}
-	metadata["type"] = tx.Type
-	metadata["status"] = tx.Status
 
-	// Fees
+	set("wallet_id", tx.WalletID)
+	set("portfolio_id", tx.PortfolioID)
+	metadata[MetadataPrefix+"type"] = tx.Type
+	metadata[MetadataPrefix+"status"] = tx.Status
+
 	hasFees := (tx.Fees != "" && tx.Fees != "0") || (tx.NetworkFees != "" && tx.NetworkFees != "0")
 	if tx.Fees != "" && tx.Fees != "0" {
-		metadata["fees"] = tx.Fees
+		set("fees", tx.Fees)
 	}
-	if tx.FeeSymbol != "" && hasFees {
-		metadata["fee_symbol"] = tx.FeeSymbol
+	if hasFees {
+		set("fee_symbol", tx.FeeSymbol)
 	}
 	if tx.NetworkFees != "" && tx.NetworkFees != "0" {
-		metadata["network_fees"] = tx.NetworkFees
+		set("network_fees", tx.NetworkFees)
 	}
 
-	// Network & blockchain
-	if tx.Network != "" {
-		metadata["network"] = tx.Network
-	}
+	set("network", tx.Network)
 	if len(tx.BlockchainIDs) > 0 {
-		metadata["blockchain_ids"] = strings.Join(tx.BlockchainIDs, ",")
+		metadata[MetadataPrefix+"blockchain_ids"] = strings.Join(tx.BlockchainIDs, ",")
 	}
 
-	// Timestamps
 	if tx.CompletedAt != nil {
-		metadata["completed_at"] = tx.CompletedAt.Format(time.RFC3339)
+		metadata[MetadataPrefix+"completed_at"] = tx.CompletedAt.Format(time.RFC3339)
 	}
 
-	// Addresses
 	sourceAddress := ""
 	if tx.TransferFrom != nil && tx.TransferFrom.Address != "" {
 		sourceAddress = tx.TransferFrom.Address
 	} else if tx.SourceAddress != "" {
 		sourceAddress = tx.SourceAddress
 	}
-	if sourceAddress != "" {
-		metadata["source_address"] = sourceAddress
-	}
+	set("source_address", sourceAddress)
 
 	depositAddress := ""
 	if tx.TransferTo != nil && tx.TransferTo.Address != "" {
@@ -179,13 +175,8 @@ func buildTransactionMetadata(tx client.Transaction) map[string]string {
 	} else if tx.DepositAddress != "" {
 		depositAddress = tx.DepositAddress
 	}
-	if depositAddress != "" {
-		metadata["deposit_address"] = depositAddress
-	}
-
-	if tx.ExternalTxID != "" {
-		metadata["external_tx_id"] = tx.ExternalTxID
-	}
+	set("deposit_address", depositAddress)
+	set("external_tx_id", tx.ExternalTxID)
 
 	return metadata
 }
@@ -235,7 +226,7 @@ func transactionTypeToPaymentType(txType string) models.PaymentType {
 	case "WITHDRAWAL", "SWEEP_WITHDRAWAL",
 		"PROXY_WITHDRAWAL", "BILLING_WITHDRAWAL", "WITHDRAWAL_ADJUSTMENT", "SLASH":
 		return models.PAYMENT_TYPE_PAYOUT
-	case "CONVERSION", "INTERNAL_DEPOSIT", "INTERNAL_WITHDRAWAL", "SWEEP_DEPOSIT", "PROXY_DEPOSIT",
+	case "INTERNAL_DEPOSIT", "INTERNAL_WITHDRAWAL", "SWEEP_DEPOSIT", "PROXY_DEPOSIT",
 		"STAKE", "RESTAKE", "PORTFOLIO_STAKE", "UNSTAKE", "PORTFOLIO_UNSTAKE":
 		return models.PAYMENT_TYPE_TRANSFER
 	case "KEY_REGISTRATION", "COMPLETE_UNBONDING", "WITHDRAW_UNBONDED", "STAKE_ACCOUNT_CREATE", "CHANGE_VALIDATOR",

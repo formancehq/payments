@@ -35,6 +35,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 				"ETH":  18,
 				"USDC": 6,
 			},
+			assetsLastSync: time.Now(),
 		}
 	})
 
@@ -226,5 +227,6 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(resp.Accounts).To(HaveLen(0))
 			Expect(resp.HasMore).To(BeFalse())
 		})
+
 	})
 })

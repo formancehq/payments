@@ -105,9 +105,26 @@ var _ = Describe("Coinbase Plugin", func() {
 			Expect(p.currencies["ETH"]).To(Equal(18))
 			Expect(p.currencies).To(HaveKey("USDC"))
 			Expect(p.currencies["USDC"]).To(Equal(6))
-			// Fiat fallback should also be present
 			Expect(p.currencies).To(HaveKey("USD"))
 			Expect(p.currencies["USD"]).To(Equal(2))
+		})
+
+		It("declares TASK_FETCH_ACCOUNTS as bootstrap-on-install", func() {
+			p := &Plugin{Plugin: plugins.NewBasePlugin()}
+			Expect(p.BootstrapOnInstall()).To(Equal([]models.TaskType{models.TASK_FETCH_ACCOUNTS}))
+		})
+
+		It("stores the AccountLookup injected by the engine", func() {
+			ctrl := gomock.NewController(GinkgoT())
+			defer ctrl.Finish()
+
+			p := &Plugin{Plugin: plugins.NewBasePlugin()}
+			Expect(p.accountLookup).To(BeNil())
+
+			lookup := models.NewMockAccountLookup(ctrl)
+			p.UseAccountLookup(lookup)
+
+			Expect(p.accountLookup).To(Equal(models.AccountLookup(lookup)))
 		})
 
 		It("should return error when portfolio fetch fails", func(ctx SpecContext) {
@@ -129,7 +146,7 @@ var _ = Describe("Coinbase Plugin", func() {
 			req := models.InstallRequest{}
 			_, err := p.Install(ctx, req)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("loading currencies"))
+			Expect(err.Error()).To(ContainSubstring("loading assets"))
 		})
 	})
 

@@ -82,6 +82,8 @@ func (s *Server) Start() error {
 			r.Post("/fetch/payments", s.handleFetchPayments)
 			r.Post("/fetch/balances", s.handleFetchBalances)
 			r.Post("/fetch/external-accounts", s.handleFetchExternalAccounts)
+			r.Post("/fetch/orders", s.handleFetchOrders)
+			r.Post("/fetch/conversions", s.handleFetchConversions)
 			r.Post("/fetch/all", s.handleFetchAll)
 
 			// Write operations
@@ -93,6 +95,8 @@ func (s *Server) Start() error {
 			r.Get("/data/payments", s.handleGetPayments)
 			r.Get("/data/balances", s.handleGetBalances)
 			r.Get("/data/external-accounts", s.handleGetExternalAccounts)
+			r.Get("/data/orders", s.handleGetOrders)
+			r.Get("/data/conversions", s.handleGetConversions)
 			r.Get("/data/others", s.handleGetOthers)
 			r.Get("/data/states", s.handleGetStates)
 			r.Get("/data/tasks-tree", s.handleGetTasksTree)
@@ -430,6 +434,8 @@ func (s *Server) handleConnectorStatus(w http.ResponseWriter, r *http.Request) {
 			"accounts_count":          stats.AccountsCount,
 			"payments_count":          stats.PaymentsCount,
 			"balances_count":          stats.BalancesCount,
+			"orders_count":            stats.OrdersCount,
+			"conversions_count":       stats.ConversionsCount,
 			"external_accounts_count": stats.ExternalAccountsCount,
 			"last_updated":            stats.LastUpdated,
 		}
@@ -587,6 +593,56 @@ func (s *Server) handleFetchExternalAccounts(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+func (s *Server) handleFetchOrders(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	var req fetchRequest
+	if r.Body != nil {
+		_ = json.NewDecoder(r.Body).Decode(&req)
+	}
+
+	resp, err := conn.engine.FetchOrdersOnePage(r.Context(), req.FromPayload)
+	if err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"orders":   resp.Orders,
+		"has_more": resp.HasMore,
+		"count":    len(resp.Orders),
+	})
+}
+
+func (s *Server) handleFetchConversions(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.engine == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	var req fetchRequest
+	if r.Body != nil {
+		_ = json.NewDecoder(r.Body).Decode(&req)
+	}
+
+	resp, err := conn.engine.FetchConversionsOnePage(r.Context(), req.FromPayload)
+	if err != nil {
+		s.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"conversions": resp.Conversions,
+		"has_more":    resp.HasMore,
+		"count":       len(resp.Conversions),
+	})
+}
+
 func (s *Server) handleFetchAll(w http.ResponseWriter, r *http.Request) {
 	conn := s.getConnector(r)
 	if conn == nil || conn.engine == nil {
@@ -601,10 +657,12 @@ func (s *Server) handleFetchAll(w http.ResponseWriter, r *http.Request) {
 
 	stats := conn.storage.GetStats()
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"status":   "complete",
-		"accounts": stats.AccountsCount,
-		"payments": stats.PaymentsCount,
-		"balances": stats.BalancesCount,
+		"status":      "complete",
+		"accounts":    stats.AccountsCount,
+		"payments":    stats.PaymentsCount,
+		"balances":    stats.BalancesCount,
+		"orders":      stats.OrdersCount,
+		"conversions": stats.ConversionsCount,
 	})
 }
 
@@ -683,6 +741,36 @@ func (s *Server) handleGetExternalAccounts(w http.ResponseWriter, r *http.Reques
 	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"external_accounts": response,
 		"count":             len(response),
+	})
+}
+
+func (s *Server) handleGetOrders(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	orders := conn.storage.GetOrders()
+	response := ToOrderResponses(orders)
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"orders": response,
+		"count":  len(response),
+	})
+}
+
+func (s *Server) handleGetConversions(w http.ResponseWriter, r *http.Request) {
+	conn := s.getConnector(r)
+	if conn == nil || conn.storage == nil {
+		s.errorResponse(w, http.StatusBadRequest, "connector not ready")
+		return
+	}
+
+	conversions := conn.storage.GetConversions()
+	response := ToConversionResponses(conversions)
+	s.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"conversions": response,
+		"count":       len(response),
 	})
 }
 

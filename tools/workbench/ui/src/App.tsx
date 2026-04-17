@@ -9,9 +9,11 @@ import {
   type ConnectorSummary, 
   type ConnectorStatus,
   type AvailableConnector,
-  type Account, 
-  type Payment, 
-  type Balance, 
+  type Account,
+  type Payment,
+  type Balance,
+  type Order,
+  type Conversion,
   type DebugEntry, 
   type PluginCall, 
   type HTTPRequest, 
@@ -284,9 +286,9 @@ const ConnectorContext = createContext<ConnectorContextType>({
 
 const useConnector = () => useContext(ConnectorContext);
 
-type Tab = 'dashboard' | 'accounts' | 'payments' | 'balances' | 'tasks' | 'debug' | 'snapshots' | 'analysis' | 'code' | 'state';
+type Tab = 'dashboard' | 'accounts' | 'payments' | 'balances' | 'orders' | 'conversions' | 'tasks' | 'debug' | 'snapshots' | 'analysis' | 'code' | 'state';
 
-const VALID_TABS: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
+const VALID_TABS: Tab[] = ['dashboard', 'accounts', 'payments', 'balances', 'orders', 'conversions', 'tasks', 'debug', 'snapshots', 'analysis', 'code', 'state'];
 
 function isValidTab(tab: string | undefined): tab is Tab {
   return tab !== undefined && VALID_TABS.includes(tab as Tab);
@@ -332,6 +334,8 @@ function AppContent() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [conversions, setConversions] = useState<Conversion[]>([]);
   const [states, setStates] = useState<Record<string, unknown>>({});
   const [tasksTree, setTasksTree] = useState<unknown>(null);
   
@@ -451,22 +455,28 @@ function AppContent() {
       setAccounts([]);
       setPayments([]);
       setBalances([]);
+      setOrders([]);
+      setConversions([]);
       setStates({});
       setTasksTree(null);
       return;
     }
     try {
       const api = connectorApi(selectedConnectorId);
-      const [acc, pay, bal, st, tree] = await Promise.all([
+      const [acc, pay, bal, ord, conv, st, tree] = await Promise.all([
         api.getAccounts(),
         api.getPayments(),
         api.getBalances(),
+        api.getOrders(),
+        api.getConversions(),
         api.getStates(),
         api.getTasksTree(),
       ]);
       setAccounts(acc.accounts || []);
       setPayments(pay.payments || []);
       setBalances(bal.balances || []);
+      setOrders(ord.orders || []);
+      setConversions(conv.conversions || []);
       setStates(st.states || {});
       setTasksTree(tree.tasks_tree);
     } catch (e) {
@@ -699,32 +709,38 @@ function AppContent() {
               </Link>
             </Tooltip>
             <Tooltip text="Ctrl+5">
+              <Link to={`/c/${selectedConnectorId}/orders`} className={`tab ${tab === 'orders' ? 'active' : ''}`}>
+                Orders {orders.length > 0 && <span className="tab-count">{orders.length}</span>}
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+6">
+              <Link to={`/c/${selectedConnectorId}/conversions`} className={`tab ${tab === 'conversions' ? 'active' : ''}`}>
+                Conversions {conversions.length > 0 && <span className="tab-count">{conversions.length}</span>}
+              </Link>
+            </Tooltip>
+            <Tooltip text="Ctrl+7">
               <Link to={`/c/${selectedConnectorId}/tasks`} className={`tab ${tab === 'tasks' ? 'active' : ''}`}>
                 Tasks
               </Link>
             </Tooltip>
-            <Tooltip text="Ctrl+6">
+            <Tooltip text="Ctrl+8">
               <Link to={`/c/${selectedConnectorId}/debug`} className={`tab ${tab === 'debug' ? 'active' : ''}`}>
                 Debug {globalStatus && globalStatus.debug.error_count > 0 && (
                   <span className="tab-count error">{globalStatus.debug.error_count}</span>
                 )}
               </Link>
             </Tooltip>
-            <Tooltip text="Ctrl+7">
+            <Tooltip text="Ctrl+9">
               <Link to={`/c/${selectedConnectorId}/snapshots`} className={`tab ${tab === 'snapshots' ? 'active' : ''}`}>
                 Snapshots
               </Link>
             </Tooltip>
-            <Tooltip text="Ctrl+8">
-              <Link to={`/c/${selectedConnectorId}/analysis`} className={`tab ${tab === 'analysis' ? 'active' : ''}`}>
-                Analysis
-              </Link>
-            </Tooltip>
-            <Tooltip text="Ctrl+9">
-              <Link to={`/c/${selectedConnectorId}/code`} className={`tab ${tab === 'code' ? 'active' : ''}`}>
-                Code
-              </Link>
-            </Tooltip>
+            <Link to={`/c/${selectedConnectorId}/analysis`} className={`tab ${tab === 'analysis' ? 'active' : ''}`}>
+              Analysis
+            </Link>
+            <Link to={`/c/${selectedConnectorId}/code`} className={`tab ${tab === 'code' ? 'active' : ''}`}>
+              Code
+            </Link>
             <Link to={`/c/${selectedConnectorId}/state`} className={`tab ${tab === 'state' ? 'active' : ''}`}>
               State
             </Link>
@@ -762,6 +778,8 @@ function AppContent() {
                   onFetchPayments={() => runAction(() => connectorApi(selectedConnectorId).fetchPayments())}
                   onFetchBalances={() => runAction(() => connectorApi(selectedConnectorId).fetchBalances())}
                   onFetchExternalAccounts={() => runAction(() => connectorApi(selectedConnectorId).fetchExternalAccounts())}
+                  onFetchOrders={() => runAction(() => connectorApi(selectedConnectorId).fetchOrders())}
+                  onFetchConversions={() => runAction(() => connectorApi(selectedConnectorId).fetchConversions())}
                   onFetchAll={() => runAction(() => connectorApi(selectedConnectorId).fetchAll())}
                   onReset={() => runAction(() => connectorApi(selectedConnectorId).reset())}
                 />
@@ -779,9 +797,21 @@ function AppContent() {
                 />
               )}
               {tab === 'balances' && (
-                <BalancesTab 
+                <BalancesTab
                   balances={balances}
                   onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchBalances()) : undefined}
+                />
+              )}
+              {tab === 'orders' && (
+                <OrdersTab
+                  orders={orders}
+                  onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchOrders()) : undefined}
+                />
+              )}
+              {tab === 'conversions' && (
+                <ConversionsTab
+                  conversions={conversions}
+                  onFetch={selectedConnectorId ? () => runAction(() => connectorApi(selectedConnectorId).fetchConversions()) : undefined}
                 />
               )}
               {tab === 'tasks' && <TasksTab />}
@@ -1096,11 +1126,13 @@ interface DashboardTabProps {
   onFetchPayments: () => void;
   onFetchBalances: () => void;
   onFetchExternalAccounts: () => void;
+  onFetchOrders: () => void;
+  onFetchConversions: () => void;
   onFetchAll: () => void;
   onReset: () => void;
 }
 
-function DashboardTab({ status, loading, onFetchAccounts, onFetchPayments, onFetchBalances, onFetchExternalAccounts, onFetchAll, onReset }: DashboardTabProps) {
+function DashboardTab({ status, loading, onFetchAccounts, onFetchPayments, onFetchBalances, onFetchExternalAccounts, onFetchOrders, onFetchConversions, onFetchAll, onReset }: DashboardTabProps) {
   return (
     <div className="dashboard">
       <section className="actions-section">
@@ -1131,6 +1163,16 @@ function DashboardTab({ status, loading, onFetchAccounts, onFetchPayments, onFet
               Fetch Ext. Accounts
             </button>
           </Tooltip>
+          <Tooltip text="Fetch orders from the provider">
+            <button className="btn-secondary" onClick={onFetchOrders} disabled={loading}>
+              Fetch Orders
+            </button>
+          </Tooltip>
+          <Tooltip text="Fetch conversions from the provider">
+            <button className="btn-secondary" onClick={onFetchConversions} disabled={loading}>
+              Fetch Conversions
+            </button>
+          </Tooltip>
           <Tooltip text="Clear all fetched data and reset state">
             <button className="btn-danger" onClick={onReset} disabled={loading}>
               Reset All
@@ -1145,6 +1187,8 @@ function DashboardTab({ status, loading, onFetchAccounts, onFetchPayments, onFet
           <StatCard label="Accounts" value={status?.storage?.accounts_count ?? 0} icon="[A]" />
           <StatCard label="Payments" value={status?.storage?.payments_count ?? 0} icon="[P]" />
           <StatCard label="Balances" value={status?.storage?.balances_count ?? 0} icon="[$]" />
+          <StatCard label="Orders" value={status?.storage?.orders_count ?? 0} icon="[O]" />
+          <StatCard label="Conversions" value={status?.storage?.conversions_count ?? 0} icon="[C]" />
           <StatCard label="External Accounts" value={status?.storage?.external_accounts_count ?? 0} icon="[E]" />
         </div>
       </section>
@@ -1460,6 +1504,226 @@ function BalancesTab({ balances, onFetch }: BalancesTabProps) {
           <div className="card">
             <div className="card-header">
               <div className="card-title">Balance Details</div>
+              <div className="card-actions">
+                <CopyButton text={JSON.stringify(selected, null, 2)} label="Copy JSON" />
+                <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
+              </div>
+            </div>
+            <CodeBlock>{JSON.stringify(selected, null, 2)}</CodeBlock>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Orders Tab
+interface OrdersTabProps {
+  orders: Order[];
+  onFetch?: () => void;
+}
+
+function OrdersTab({ orders, onFetch }: OrdersTabProps) {
+  const [selected, setSelected] = useState<Order | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (orders.length === 0) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const newIndex = Math.min(selectedIndex + 1, orders.length - 1);
+        setSelectedIndex(newIndex);
+        setSelected(orders[newIndex]);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const newIndex = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(newIndex);
+        setSelected(orders[newIndex]);
+      } else if (e.key === 'Escape') {
+        setSelected(null);
+        setSelectedIndex(-1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [orders, selectedIndex]);
+
+  if (orders.length === 0) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon">[O]</div>
+        <p>No orders fetched yet</p>
+        <p className="text-muted">Fetch orders from the connected provider</p>
+        {onFetch && (
+          <button className="btn-primary" onClick={onFetch} style={{ marginTop: '16px' }}>
+            Fetch Orders
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="data-tab">
+      <div className="data-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Direction</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Pair</th>
+              <th>Qty Ordered</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((ord, index) => (
+              <tr
+                key={ord.reference}
+                onClick={() => { setSelected(ord); setSelectedIndex(index); }}
+                className={selectedIndex === index ? 'selected' : ''}
+              >
+                <td className="mono">{ord.reference}</td>
+                <td><span className="badge badge-info">{ord.direction}</span></td>
+                <td><span className="badge">{ord.type}</span></td>
+                <td>
+                  <span className={`badge ${
+                    ord.status === 'FILLED' ? 'badge-success' :
+                    ord.status === 'CANCELLED' || ord.status === 'FAILED' || ord.status === 'EXPIRED' ? 'badge-danger' : 'badge-warning'
+                  }`}>
+                    {ord.status}
+                  </span>
+                </td>
+                <td className="mono">{ord.source_asset}/{ord.destination_asset}</td>
+                <td className="mono">{ord.base_quantity_ordered}</td>
+                <td>
+                  <Tooltip text={new Date(ord.created_at).toLocaleString()}>
+                    <span>{formatRelativeTime(ord.created_at)}</span>
+                  </Tooltip>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {selected && (
+        <div className="data-detail">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Order Details</div>
+              <div className="card-actions">
+                <CopyButton text={JSON.stringify(selected, null, 2)} label="Copy JSON" />
+                <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>
+              </div>
+            </div>
+            <CodeBlock>{JSON.stringify(selected, null, 2)}</CodeBlock>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Conversions Tab
+interface ConversionsTabProps {
+  conversions: Conversion[];
+  onFetch?: () => void;
+}
+
+function ConversionsTab({ conversions, onFetch }: ConversionsTabProps) {
+  const [selected, setSelected] = useState<Conversion | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (conversions.length === 0) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const newIndex = Math.min(selectedIndex + 1, conversions.length - 1);
+        setSelectedIndex(newIndex);
+        setSelected(conversions[newIndex]);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const newIndex = Math.max(selectedIndex - 1, 0);
+        setSelectedIndex(newIndex);
+        setSelected(conversions[newIndex]);
+      } else if (e.key === 'Escape') {
+        setSelected(null);
+        setSelectedIndex(-1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [conversions, selectedIndex]);
+
+  if (conversions.length === 0) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon">[C]</div>
+        <p>No conversions fetched yet</p>
+        <p className="text-muted">Fetch conversions from the connected provider</p>
+        {onFetch && (
+          <button className="btn-primary" onClick={onFetch} style={{ marginTop: '16px' }}>
+            Fetch Conversions
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="data-tab">
+      <div className="data-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Source</th>
+              <th>Target</th>
+              <th>Source Amt</th>
+              <th>Target Amt</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {conversions.map((conv, index) => (
+              <tr
+                key={conv.reference}
+                onClick={() => { setSelected(conv); setSelectedIndex(index); }}
+                className={selectedIndex === index ? 'selected' : ''}
+              >
+                <td className="mono">{conv.reference}</td>
+                <td>{conv.source_asset}</td>
+                <td>{conv.destination_asset}</td>
+                <td className="mono">{conv.source_amount}</td>
+                <td className="mono">{conv.target_amount || '-'}</td>
+                <td>
+                  <span className={`badge ${
+                    conv.status === 'COMPLETED' ? 'badge-success' :
+                    conv.status === 'FAILED' ? 'badge-danger' : 'badge-warning'
+                  }`}>
+                    {conv.status}
+                  </span>
+                </td>
+                <td>
+                  <Tooltip text={new Date(conv.created_at).toLocaleString()}>
+                    <span>{formatRelativeTime(conv.created_at)}</span>
+                  </Tooltip>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {selected && (
+        <div className="data-detail">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Conversion Details</div>
               <div className="card-actions">
                 <CopyButton text={JSON.stringify(selected, null, 2)} label="Copy JSON" />
                 <button className="btn-icon" onClick={() => { setSelected(null); setSelectedIndex(-1); }} title="Close (Esc)">×</button>

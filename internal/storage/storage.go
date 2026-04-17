@@ -22,6 +22,7 @@ type Storage interface {
 	AccountsUpsert(ctx context.Context, accounts []models.Account) error
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
 	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
+	AccountsListAllByConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.Account, error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	AccountsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	AccountsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error
@@ -189,6 +190,20 @@ type Storage interface {
 	OutboxEventsMarkFailed(ctx context.Context, eventID models.EventID, retryCount int, err error) error
 	OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, eventIDs []models.EventID, eventsSent []models.EventSent) error
 	OutboxEventsDeleteOldProcessed(ctx context.Context, olderThan time.Time) error
+
+	// Orders
+	OrdersUpsert(ctx context.Context, orders []models.Order) error
+	OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error)
+	OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error)
+	OrdersDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
+
+
+	// Conversions
+	ConversionsUpsert(ctx context.Context, conversions []models.Conversion) error
+	ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error)
+	ConversionsList(ctx context.Context, q ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error)
+	ConversionsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Raw encryption helpers
 	// EncryptRaw encrypts a JSON payload using the storage encryption key via Postgres pgcrypto
