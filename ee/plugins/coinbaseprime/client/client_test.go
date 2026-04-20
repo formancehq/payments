@@ -28,7 +28,7 @@ func TestSignRequestUsesRawStringSecret(t *testing.T) {
 
 	c := NewWithBaseURL("coinbaseprime", "api-key", secret, "passphrase", "portfolio-123", server.URL)
 
-	_, err := c.GetWallets(context.Background(), "", 10)
+	_, err := c.GetWallets(context.Background(), "", "", 10)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestSignRequestExcludesQueryParams(t *testing.T) {
 
 	c := NewWithBaseURL("coinbaseprime", "api-key", secret, "passphrase", "portfolio-123", server.URL)
 
-	_, err := c.GetWallets(context.Background(), "cursor-abc", 50)
+	_, err := c.GetWallets(context.Background(), "", "cursor-abc", 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestSignRequestSetsAllRequiredHeaders(t *testing.T) {
 
 	c := NewWithBaseURL("coinbaseprime", "my-access-key", "my-signing-key", "my-passphrase", "portfolio-123", server.URL)
 
-	_, err := c.GetWallets(context.Background(), "", 10)
+	_, err := c.GetWallets(context.Background(), "", "", 10)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestPortfolioEndpointsEncodeCursor(t *testing.T) {
 
 	c := NewWithBaseURL("coinbaseprime", "api-key", "signing-key", "passphrase", portfolioID, server.URL)
 
-	if _, err := c.GetWallets(context.Background(), cursor, pageSize); err != nil {
+	if _, err := c.GetWallets(context.Background(), "", cursor, pageSize); err != nil {
 		t.Fatalf("GetWallets failed: %v", err)
 	}
 	if _, err := c.GetTransactions(context.Background(), cursor, pageSize); err != nil {

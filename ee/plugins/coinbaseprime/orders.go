@@ -13,10 +13,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type ordersState struct {
-	Cursor string `json:"cursor"`
-}
-
 // resolveWallets builds a fresh symbol→walletID map from the engine's
 // AccountLookup each time FetchNextOrders runs. The lookup reads from the
 // persisted accounts table scoped to the connector, so the map is always
@@ -55,9 +51,9 @@ func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) 
 }
 
 func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
-	var state ordersState
+	var oldState incrementalState
 	if req.State != nil {
-		if err := json.Unmarshal(req.State, &state); err != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to unmarshal state: %w", err)
 		}
 	}
@@ -67,7 +63,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		return models.FetchNextOrdersResponse{}, err
 	}
 
-	ordersResp, err := p.client.ListOrders(ctx, state.Cursor, req.PageSize)
+	ordersResp, err := p.client.ListOrders(ctx, oldState.Cursor, req.PageSize)
 	if err != nil {
 		return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to list orders: %w", err)
 	}
@@ -78,21 +74,16 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		if err != nil {
 			// Fail the batch when any order in the page references an
 			// unresolved wallet (or anything else goes wrong). This is the
-			// safe default: the cursor is NOT advanced, the page is
-			// retried, and no order is dropped. This allows Temporal retries, for example once a missing account is
-			// is fetched during fetchNextAccount.
-			//
+			// safe default: the cursor is not advanced, the page is
+			// retried, and no order is dropped. This allows Temporal
+			// retries, e.g. once a missing account is fetched during
+			// fetchNextAccounts.
 			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to convert order %s: %w", order.ID, err)
 		}
 		pspOrders = append(pspOrders, pspOrder)
 	}
 
-	newCursor := ordersResp.Pagination.NextCursor
-	hasMore := ordersResp.Pagination.HasNext
-
-	newState := ordersState{
-		Cursor: newCursor,
-	}
+	newState := incrementalState{Cursor: advanceCursor(oldState.Cursor, ordersResp.Pagination.NextCursor)}
 
 	stateBytes, err := json.Marshal(newState)
 	if err != nil {
@@ -102,7 +93,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	return models.FetchNextOrdersResponse{
 		Orders:   pspOrders,
 		NewState: stateBytes,
-		HasMore:  hasMore,
+		HasMore:  ordersResp.Pagination.HasNext,
 	}, nil
 }
 

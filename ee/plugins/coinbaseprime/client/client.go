@@ -20,7 +20,7 @@ import (
 type Client interface {
 	GetPortfolio(ctx context.Context) (*PortfolioResponse, error)
 	GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error)
-	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
+	GetWallets(ctx context.Context, walletType, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error)
 	GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error)
 	ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error)
@@ -126,8 +126,12 @@ func (c *client) GetAssets(ctx context.Context, entityID string) (*AssetsRespons
 	return &response, nil
 }
 
-func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
-	endpoint, err := c.buildPortfolioEndpoint("wallets", cursor, pageSize)
+func (c *client) GetWallets(ctx context.Context, walletType, cursor string, pageSize int) (*WalletsResponse, error) {
+	extra := url.Values{}
+	if walletType != "" {
+		extra.Set("type", walletType)
+	}
+	endpoint, err := c.buildPortfolioEndpoint("wallets", cursor, pageSize, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -177,22 +181,13 @@ func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*Wal
 }
 
 func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error) {
-	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize)
+	extra := url.Values{}
+	for _, t := range types {
+		extra.Add("types", t)
+	}
+	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize, extra)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(types) > 0 {
-		u, err := url.Parse(endpoint)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse endpoint: %w", err)
-		}
-		q := u.Query()
-		for _, t := range types {
-			q.Add("types", t)
-		}
-		u.RawQuery = q.Encode()
-		endpoint = u.String()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -215,7 +210,7 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 }
 
 func (c *client) ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error) {
-	endpoint, err := c.buildPortfolioEndpoint("orders", cursor, pageSize)
+	endpoint, err := c.buildPortfolioEndpoint("orders", cursor, pageSize, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +234,7 @@ func (c *client) ListOrders(ctx context.Context, cursor string, pageSize int) (*
 	return &response, nil
 }
 
-func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (string, error) {
+func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int, extra url.Values) (string, error) {
 	endpoint, err := url.Parse(fmt.Sprintf("%s/v1/portfolios/%s/%s", c.baseURL, c.portfolioID, resource))
 	if err != nil {
 		return "", fmt.Errorf("failed to parse endpoint: %w", err)
@@ -250,6 +245,11 @@ func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (
 	query.Set("sort_direction", "ASC")
 	if cursor != "" {
 		query.Set("cursor", cursor)
+	}
+	for k, vs := range extra {
+		for _, v := range vs {
+			query.Add(k, v)
+		}
 	}
 
 	endpoint.RawQuery = query.Encode()

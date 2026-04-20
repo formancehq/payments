@@ -233,7 +233,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.Metadata[MetadataPrefix+"post_only"]).To(Equal("true"))
 
 			// Verify pagination state
-			var state ordersState
+			var state incrementalState
 			Expect(resp.NewState).ToNot(BeNil())
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())

@@ -172,7 +172,7 @@ var _ = Describe("Coinbase Plugin Conversions", func() {
 			Expect(conv.Metadata[MetadataPrefix+"portfolio_id"]).To(Equal("842695ec-67da-4227-a70f-105dbf2bd62a"))
 
 			// Pagination state
-			var state conversionsState
+			var state incrementalState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			Expect(state.Cursor).To(Equal("cursor-123"))

@@ -12,19 +12,15 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type conversionsState struct {
-	Cursor string `json:"cursor"`
-}
-
 func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
-	var state conversionsState
+	var oldState incrementalState
 	if req.State != nil {
-		if err := json.Unmarshal(req.State, &state); err != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to unmarshal state: %w", err)
 		}
 	}
 
-	resp, err := p.client.GetTransactions(ctx, state.Cursor, req.PageSize, TransactionTypeConversion)
+	resp, err := p.client.GetTransactions(ctx, oldState.Cursor, req.PageSize, TransactionTypeConversion)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to list transactions: %w", err)
 	}
@@ -40,7 +36,7 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 		}
 	}
 
-	newState := conversionsState{Cursor: resp.Pagination.NextCursor}
+	newState := incrementalState{Cursor: advanceCursor(oldState.Cursor, resp.Pagination.NextCursor)}
 	stateBytes, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to marshal state: %w", err)

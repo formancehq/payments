@@ -106,18 +106,18 @@ func (mr *MockClientMockRecorder) GetTransactions(ctx, cursor, pageSize any, typ
 }
 
 // GetWallets mocks base method.
-func (m *MockClient) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
+func (m *MockClient) GetWallets(ctx context.Context, walletType, cursor string, pageSize int) (*WalletsResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWallets", ctx, cursor, pageSize)
+	ret := m.ctrl.Call(m, "GetWallets", ctx, walletType, cursor, pageSize)
 	ret0, _ := ret[0].(*WalletsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetWallets indicates an expected call of GetWallets.
-func (mr *MockClientMockRecorder) GetWallets(ctx, cursor, pageSize any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetWallets(ctx, walletType, cursor, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWallets", reflect.TypeOf((*MockClient)(nil).GetWallets), ctx, cursor, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWallets", reflect.TypeOf((*MockClient)(nil).GetWallets), ctx, walletType, cursor, pageSize)
 }
 
 // ListOrders mocks base method.
