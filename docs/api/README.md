@@ -5602,7 +5602,7 @@ None ( Scopes: payments:read )
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Order](#schemav3order)]|true|none|none|
+|» data|[[V3Order](#schemav3order)]|true|none|[A trade order submitted to an exchange-style PSP. Orders are read-only<br>in the Formance API: they are fetched from the underlying connector.<br>Status transitions are captured via the `adjustments` array; each<br>adjustment is a point-in-time snapshot from the PSP.<br>]|
 
 <h2 id="tocS_V3GetOrderResponse">V3GetOrderResponse</h2>
 <!-- backwards compatibility -->
@@ -5670,7 +5670,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Order](#schemav3order)|true|none|none|
+|data|[V3Order](#schemav3order)|true|none|A trade order submitted to an exchange-style PSP. Orders are read-only<br>in the Formance API: they are fetched from the underlying connector.<br>Status transitions are captured via the `adjustments` array; each<br>adjustment is a point-in-time snapshot from the PSP.|
 
 <h2 id="tocS_V3Order">V3Order</h2>
 <!-- backwards compatibility -->
@@ -5732,39 +5732,44 @@ None ( Scopes: payments:read )
 
 ```
 
+A trade order submitted to an exchange-style PSP. Orders are read-only
+in the Formance API: they are fetched from the underlying connector.
+Status transitions are captured via the `adjustments` array; each
+adjustment is a point-in-time snapshot from the PSP.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|clientOrderID|string¦null|false|none|none|
-|createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|true|none|none|
-|direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|true|none|none|
-|sourceAsset|string|true|none|none|
-|destinationAsset|string|true|none|none|
-|type|[V3OrderTypeEnum](#schemav3ordertypeenum)|true|none|none|
-|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|none|
-|baseQuantityOrdered|integer(bigint)|true|none|none|
-|baseQuantityFilled|integer(bigint)¦null|false|none|none|
-|limitPrice|integer(bigint)¦null|false|none|none|
-|stopPrice|integer(bigint)¦null|false|none|none|
-|timeInForce|[V3TimeInForceEnum](#schemav3timeinforceenum)|true|none|none|
-|expiresAt|string(date-time)¦null|false|none|none|
-|fee|integer(bigint)¦null|false|none|none|
-|feeAsset|string¦null|false|none|none|
-|averageFillPrice|integer(bigint)¦null|false|none|none|
-|quoteAmount|integer(bigint)¦null|false|none|none|
-|quoteAsset|string¦null|false|none|none|
-|priceAsset|string¦null|false|none|none|
-|sourceAccountID|string¦null|false|none|none|
-|destinationAccountID|string¦null|false|none|none|
+|id|string|true|none|Formance-assigned unique order ID (composed from the PSP reference and connector ID).|
+|connectorID|string(byte)|true|none|ID of the Formance connector this order was fetched from.|
+|provider|string|true|none|Provider name of the connector (e.g. `coinbaseprime`).|
+|reference|string|true|none|PSP-assigned order reference. Unique within the connector; used as the storage dedup key.|
+|clientOrderID|string¦null|false|none|Client-assigned ID supplied to the PSP for placement idempotency<br>(e.g. Coinbase `client_order_id`, Kraken `cl_ord_id`, Binance<br>`clientOrderId`). Stored for traceability only — Formance does<br>NOT dedup on this field.|
+|createdAt|string(date-time)|true|none|When the order was created on the PSP.|
+|updatedAt|string(date-time)|true|none|When Formance last observed a state change on the order. Equivalent to the latest adjustment's `createdAt`.|
+|direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|true|none|Whether an order buys or sells the base asset.|
+|sourceAsset|string|true|none|Asset being spent, in `SYMBOL/precision` form (e.g. `USD/2`,<br>`BTC/8`). For BUY: the quote currency. For SELL: the base<br>currency.|
+|destinationAsset|string|true|none|Asset being received, in `SYMBOL/precision` form.<br>For BUY: the base currency. For SELL: the quote currency.|
+|type|[V3OrderTypeEnum](#schemav3ordertypeenum)|true|none|Exchange order type. Determines which price fields are meaningful on<br>`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use<br>`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
+|baseQuantityOrdered|integer(bigint)|true|none|Amount of base asset the order was placed for, as an integer at the base asset's precision.|
+|baseQuantityFilled|integer(bigint)¦null|false|none|Amount of base asset filled so far, as an integer at the base asset's precision. Null before any fill.|
+|limitPrice|integer(bigint)¦null|false|none|Maximum price (for BUY) or minimum price (for SELL) at which the order may execute, in `priceAsset` precision. Required for LIMIT-family order types; null otherwise.|
+|stopPrice|integer(bigint)¦null|false|none|Trigger price at which a STOP / STOP_LIMIT order activates, in `priceAsset` precision. Null for non-stop order types.|
+|timeInForce|[V3TimeInForceEnum](#schemav3timeinforceenum)|true|none|How long an order is valid on the exchange.<br>`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.<br>`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.<br>`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.<br>`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.|
+|expiresAt|string(date-time)¦null|false|none|Expiration instant for `GOOD_UNTIL_DATE_TIME` orders. Null for other time-in-force values.|
+|fee|integer(bigint)¦null|false|none|Commission charged by the PSP for the order, as an integer in `feeAsset` precision.|
+|feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form. Typically the quote asset.|
+|averageFillPrice|integer(bigint)¦null|false|none|Volume-weighted average price across all fills so far, in `priceAsset` precision. Analytics field — may be absent if the PSP does not report it.|
+|quoteAmount|integer(bigint)¦null|false|none|Total amount of quote currency exchanged so far, as reported by<br>the PSP (e.g. Coinbase `filled_value`), at `quoteAsset`<br>precision. For BUY: amount spent. For SELL: amount received.|
+|quoteAsset|string¦null|false|none|Quote currency with precision (e.g. `USD/2`). Null when the order has no quote-side amounts reported yet.|
+|priceAsset|string¦null|false|none|Currency + precision under which `limitPrice`, `stopPrice`, and<br>`averageFillPrice` should be interpreted. Separate from<br>`quoteAsset` because some PSPs return price strings with more<br>decimal digits than the quote currency's natural precision.|
+|sourceAccountID|string¦null|false|none|Formance account ID of the wallet the source asset was debited<br>from. Null if the PSP did not return enough information to<br>resolve it at ingestion time.|
+|destinationAccountID|string¦null|false|none|Formance account ID of the wallet the destination asset was credited to. Null if unresolvable.|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|adjustments|[[V3OrderAdjustment](#schemav3orderadjustment)]¦null|false|none|none|
-|error|string¦null|false|none|none|
+|adjustments|[[V3OrderAdjustment](#schemav3orderadjustment)]¦null|false|none|Ordered history of state snapshots for this order. The most recent element reflects the current `status`.|
+|error|string¦null|false|none|Human-readable error from the PSP (e.g. rejection reason) when `status` is `FAILED`. Null otherwise.|
 
 <h2 id="tocS_V3OrderAdjustment">V3OrderAdjustment</h2>
 <!-- backwards compatibility -->
@@ -5791,19 +5796,25 @@ None ( Scopes: payments:read )
 
 ```
 
+Immutable snapshot of an order's state at a single observation.
+Formance records one adjustment per distinct state the PSP reports
+(status change, fill progress, fee update). Events are emitted
+per-adjustment, not per-order — so a single order can produce many
+events over its lifetime.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|none|
-|baseQuantityFilled|integer(bigint)¦null|false|none|none|
-|fee|integer(bigint)¦null|false|none|none|
-|feeAsset|string¦null|false|none|none|
+|id|string|true|none|Adjustment ID, composed from the order ID plus the state fields that define uniqueness (status, filled quantity, fee). Idempotent — replaying the same observation produces the same ID.|
+|reference|string|true|none|PSP reference the adjustment belongs to (equal to the parent order's `reference`).|
+|createdAt|string(date-time)|true|none|When Formance observed this state. Not the PSP's own timestamp — reflects ingestion time.|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
+|baseQuantityFilled|integer(bigint)¦null|false|none|Base asset filled at this observation, at the base asset's precision.|
+|fee|integer(bigint)¦null|false|none|Cumulative fee at this observation, at `feeAsset` precision.|
+|feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form.|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|raw|object|false|none|none|
+|raw|object|false|none|Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.|
 
 <h2 id="tocS_V3OrderDirectionEnum">V3OrderDirectionEnum</h2>
 <!-- backwards compatibility -->
@@ -5817,11 +5828,13 @@ None ( Scopes: payments:read )
 
 ```
 
+Whether an order buys or sells the base asset.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Whether an order buys or sells the base asset.|
 
 #### Enumerated Values
 
@@ -5843,11 +5856,15 @@ None ( Scopes: payments:read )
 
 ```
 
+Exchange order type. Determines which price fields are meaningful on
+`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use
+`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Exchange order type. Determines which price fields are meaningful on<br>`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use<br>`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.|
 
 #### Enumerated Values
 
@@ -5881,11 +5898,20 @@ None ( Scopes: payments:read )
 
 ```
 
+Lifecycle of an order on the exchange.
+`PENDING` — accepted by the exchange, not yet working.
+`OPEN` — live on the book, no fills yet.
+`PARTIALLY_FILLED` — live on the book, some base quantity filled.
+`FILLED` — fully filled, terminal.
+`CANCELLED` — cancelled by the user or system, terminal.
+`FAILED` — rejected by the exchange, terminal. See `error` for details.
+`EXPIRED` — `timeInForce` elapsed before full fill, terminal.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
 
 #### Enumerated Values
 
@@ -5912,11 +5938,17 @@ None ( Scopes: payments:read )
 
 ```
 
+How long an order is valid on the exchange.
+`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.
+`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.
+`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.
+`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|How long an order is valid on the exchange.<br>`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.<br>`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.<br>`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.<br>`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.|
 
 #### Enumerated Values
 
@@ -5980,7 +6012,7 @@ None ( Scopes: payments:read )
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Conversion](#schemav3conversion)]|true|none|none|
+|» data|[[V3Conversion](#schemav3conversion)]|true|none|[A currency or asset conversion executed on a PSP (e.g. Coinbase Prime<br>transfer between a USD and USDC wallet). Conversions are read-only in<br>the Formance API: they are fetched from the underlying connector.<br>Unlike orders, conversions do not carry an adjustment history —<br>Formance records the final state only.<br>]|
 
 <h2 id="tocS_V3GetConversionResponse">V3GetConversionResponse</h2>
 <!-- backwards compatibility -->
@@ -6021,7 +6053,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Conversion](#schemav3conversion)|true|none|none|
+|data|[V3Conversion](#schemav3conversion)|true|none|A currency or asset conversion executed on a PSP (e.g. Coinbase Prime<br>transfer between a USD and USDC wallet). Conversions are read-only in<br>the Formance API: they are fetched from the underlying connector.<br>Unlike orders, conversions do not carry an adjustment history —<br>Formance records the final state only.|
 
 <h2 id="tocS_V3Conversion">V3Conversion</h2>
 <!-- backwards compatibility -->
@@ -6056,27 +6088,33 @@ None ( Scopes: payments:read )
 
 ```
 
+A currency or asset conversion executed on a PSP (e.g. Coinbase Prime
+transfer between a USD and USDC wallet). Conversions are read-only in
+the Formance API: they are fetched from the underlying connector.
+Unlike orders, conversions do not carry an adjustment history —
+Formance records the final state only.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|true|none|none|
-|sourceAsset|string|true|none|none|
-|destinationAsset|string|true|none|none|
-|sourceAmount|integer(bigint)|true|none|none|
-|destinationAmount|integer(bigint)¦null|false|none|none|
-|fee|integer(bigint)¦null|false|none|none|
-|feeAsset|string¦null|false|none|none|
-|status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|none|
-|sourceAccountID|string¦null|false|none|none|
-|destinationAccountID|string¦null|false|none|none|
+|id|string|true|none|Formance-assigned unique conversion ID.|
+|connectorID|string(byte)|true|none|ID of the Formance connector this conversion was fetched from.|
+|provider|string|true|none|Provider name of the connector (e.g. `coinbaseprime`).|
+|reference|string|true|none|PSP-assigned conversion reference. Unique within the connector.|
+|createdAt|string(date-time)|true|none|When the conversion was initiated on the PSP.|
+|updatedAt|string(date-time)|true|none|When Formance last observed a state change on the conversion.|
+|sourceAsset|string|true|none|Asset being converted from, in `SYMBOL/precision` form (e.g. `USD/2`).|
+|destinationAsset|string|true|none|Asset being converted to, in `SYMBOL/precision` form (e.g. `USDC/6`).|
+|sourceAmount|integer(bigint)|true|none|Amount of source asset debited, as an integer at `sourceAsset` precision.|
+|destinationAmount|integer(bigint)¦null|false|none|Amount of destination asset credited, at `destinationAsset` precision. Null until the conversion completes.|
+|fee|integer(bigint)¦null|false|none|PSP fee for the conversion, at `feeAsset` precision.|
+|feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form.|
+|status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|Lifecycle of a conversion.<br>`PENDING` — accepted by the PSP, not yet settled.<br>`COMPLETED` — settled, terminal.<br>`FAILED` — rejected or reverted, terminal. See `error`.|
+|sourceAccountID|string¦null|false|none|Formance account ID of the wallet the source asset was debited from.|
+|destinationAccountID|string¦null|false|none|Formance account ID of the wallet the destination asset was credited to.|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|error|string¦null|false|none|none|
+|error|string¦null|false|none|Human-readable error from the PSP when `status` is `FAILED`. Null otherwise.|
 
 <h2 id="tocS_V3ConversionStatusEnum">V3ConversionStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -6090,11 +6128,16 @@ None ( Scopes: payments:read )
 
 ```
 
+Lifecycle of a conversion.
+`PENDING` — accepted by the PSP, not yet settled.
+`COMPLETED` — settled, terminal.
+`FAILED` — rejected or reverted, terminal. See `error`.
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Lifecycle of a conversion.<br>`PENDING` — accepted by the PSP, not yet settled.<br>`COMPLETED` — settled, terminal.<br>`FAILED` — rejected or reverted, terminal. See `error`.|
 
 #### Enumerated Values
 

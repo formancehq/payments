@@ -884,6 +884,11 @@ components:
 
     V3Order:
       type: object
+      description: |
+        A trade order submitted to an exchange-style PSP. Orders are read-only
+        in the Formance API: they are fetched from the underlying connector.
+        Status transitions are captured via the `adjustments` array; each
+        adjustment is a point-in-time snapshot from the PSP.
       required:
         - id
         - connectorID
@@ -901,28 +906,46 @@ components:
       properties:
         id:
           type: string
+          description: Formance-assigned unique order ID (composed from the PSP reference and connector ID).
         connectorID:
           type: string
           format: byte
+          description: ID of the Formance connector this order was fetched from.
         provider:
           type: string
+          description: Provider name of the connector (e.g. `coinbaseprime`).
         reference:
           type: string
+          description: PSP-assigned order reference. Unique within the connector; used as the storage dedup key.
         clientOrderID:
           type: string
           nullable: true
+          description: |
+            Client-assigned ID supplied to the PSP for placement idempotency
+            (e.g. Coinbase `client_order_id`, Kraken `cl_ord_id`, Binance
+            `clientOrderId`). Stored for traceability only — Formance does
+            NOT dedup on this field.
         createdAt:
           type: string
           format: date-time
+          description: When the order was created on the PSP.
         updatedAt:
           type: string
           format: date-time
+          description: When Formance last observed a state change on the order. Equivalent to the latest adjustment's `createdAt`.
         direction:
           $ref: '#/components/schemas/V3OrderDirectionEnum'
         sourceAsset:
           type: string
+          description: |
+            Asset being spent, in `SYMBOL/precision` form (e.g. `USD/2`,
+            `BTC/8`). For BUY: the quote currency. For SELL: the base
+            currency.
         destinationAsset:
           type: string
+          description: |
+            Asset being received, in `SYMBOL/precision` form.
+            For BUY: the base currency. For SELL: the quote currency.
         type:
           $ref: '#/components/schemas/V3OrderTypeEnum'
         status:
@@ -930,51 +953,74 @@ components:
         baseQuantityOrdered:
           type: integer
           format: bigint
+          description: Amount of base asset the order was placed for, as an integer at the base asset's precision.
         baseQuantityFilled:
           type: integer
           format: bigint
           nullable: true
+          description: Amount of base asset filled so far, as an integer at the base asset's precision. Null before any fill.
         limitPrice:
           type: integer
           format: bigint
           nullable: true
+          description: Maximum price (for BUY) or minimum price (for SELL) at which the order may execute, in `priceAsset` precision. Required for LIMIT-family order types; null otherwise.
         stopPrice:
           type: integer
           format: bigint
           nullable: true
+          description: Trigger price at which a STOP / STOP_LIMIT order activates, in `priceAsset` precision. Null for non-stop order types.
         timeInForce:
           $ref: '#/components/schemas/V3TimeInForceEnum'
         expiresAt:
           type: string
           format: date-time
           nullable: true
+          description: Expiration instant for `GOOD_UNTIL_DATE_TIME` orders. Null for other time-in-force values.
         fee:
           type: integer
           format: bigint
           nullable: true
+          description: Commission charged by the PSP for the order, as an integer in `feeAsset` precision.
         feeAsset:
           type: string
           nullable: true
+          description: Currency the fee is denominated in, in `SYMBOL/precision` form. Typically the quote asset.
         averageFillPrice:
           type: integer
           format: bigint
           nullable: true
+          description: Volume-weighted average price across all fills so far, in `priceAsset` precision. Analytics field — may be absent if the PSP does not report it.
         quoteAmount:
           type: integer
           format: bigint
           nullable: true
+          description: |
+            Total amount of quote currency exchanged so far, as reported by
+            the PSP (e.g. Coinbase `filled_value`), at `quoteAsset`
+            precision. For BUY: amount spent. For SELL: amount received.
         quoteAsset:
           type: string
           nullable: true
+          description: Quote currency with precision (e.g. `USD/2`). Null when the order has no quote-side amounts reported yet.
         priceAsset:
           type: string
           nullable: true
+          description: |
+            Currency + precision under which `limitPrice`, `stopPrice`, and
+            `averageFillPrice` should be interpreted. Separate from
+            `quoteAsset` because some PSPs return price strings with more
+            decimal digits than the quote currency's natural precision.
         sourceAccountID:
           type: string
           nullable: true
+          description: |
+            Formance account ID of the wallet the source asset was debited
+            from. Null if the PSP did not return enough information to
+            resolve it at ingestion time.
         destinationAccountID:
           type: string
           nullable: true
+          description: Formance account ID of the wallet the destination asset was credited to. Null if unresolvable.
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         adjustments:
@@ -982,12 +1028,20 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/V3OrderAdjustment'
+          description: Ordered history of state snapshots for this order. The most recent element reflects the current `status`.
         error:
           type: string
           nullable: true
+          description: Human-readable error from the PSP (e.g. rejection reason) when `status` is `FAILED`. Null otherwise.
 
     V3OrderAdjustment:
       type: object
+      description: |
+        Immutable snapshot of an order's state at a single observation.
+        Formance records one adjustment per distinct state the PSP reports
+        (status change, fill progress, fee update). Events are emitted
+        per-adjustment, not per-order — so a single order can produce many
+        events over its lifetime.
       required:
         - id
         - reference
@@ -996,31 +1050,39 @@ components:
       properties:
         id:
           type: string
+          description: Adjustment ID, composed from the order ID plus the state fields that define uniqueness (status, filled quantity, fee). Idempotent — replaying the same observation produces the same ID.
         reference:
           type: string
+          description: PSP reference the adjustment belongs to (equal to the parent order's `reference`).
         createdAt:
           type: string
           format: date-time
+          description: When Formance observed this state. Not the PSP's own timestamp — reflects ingestion time.
         status:
           $ref: '#/components/schemas/V3OrderStatusEnum'
         baseQuantityFilled:
           type: integer
           format: bigint
           nullable: true
+          description: Base asset filled at this observation, at the base asset's precision.
         fee:
           type: integer
           format: bigint
           nullable: true
+          description: Cumulative fee at this observation, at `feeAsset` precision.
         feeAsset:
           type: string
           nullable: true
+          description: Currency the fee is denominated in, in `SYMBOL/precision` form.
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         raw:
           type: object
+          description: Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.
 
     V3OrderDirectionEnum:
       type: string
+      description: Whether an order buys or sells the base asset.
       enum:
         - UNKNOWN
         - BUY
@@ -1028,6 +1090,10 @@ components:
 
     V3OrderTypeEnum:
       type: string
+      description: |
+        Exchange order type. Determines which price fields are meaningful on
+        `V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use
+        `stopPrice`; TWAP/VWAP are time-weighted execution algorithms.
       enum:
         - UNKNOWN
         - MARKET
@@ -1047,6 +1113,15 @@ components:
 
     V3OrderStatusEnum:
       type: string
+      description: |
+        Lifecycle of an order on the exchange.
+        `PENDING` — accepted by the exchange, not yet working.
+        `OPEN` — live on the book, no fills yet.
+        `PARTIALLY_FILLED` — live on the book, some base quantity filled.
+        `FILLED` — fully filled, terminal.
+        `CANCELLED` — cancelled by the user or system, terminal.
+        `FAILED` — rejected by the exchange, terminal. See `error` for details.
+        `EXPIRED` — `timeInForce` elapsed before full fill, terminal.
       enum:
         - UNKNOWN
         - PENDING
@@ -1059,6 +1134,12 @@ components:
 
     V3TimeInForceEnum:
       type: string
+      description: |
+        How long an order is valid on the exchange.
+        `GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.
+        `GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.
+        `IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.
+        `FILL_OR_KILL` — fill fully and immediately, or cancel entirely.
       enum:
         - UNKNOWN
         - GOOD_UNTIL_CANCELLED
@@ -1108,6 +1189,12 @@ components:
 
     V3Conversion:
       type: object
+      description: |
+        A currency or asset conversion executed on a PSP (e.g. Coinbase Prime
+        transfer between a USD and USDC wallet). Conversions are read-only in
+        the Formance API: they are fetched from the underlying connector.
+        Unlike orders, conversions do not carry an adjustment history —
+        Formance records the final state only.
       required:
         - id
         - connectorID
@@ -1122,53 +1209,73 @@ components:
       properties:
         id:
           type: string
+          description: Formance-assigned unique conversion ID.
         connectorID:
           type: string
           format: byte
+          description: ID of the Formance connector this conversion was fetched from.
         provider:
           type: string
+          description: Provider name of the connector (e.g. `coinbaseprime`).
         reference:
           type: string
+          description: PSP-assigned conversion reference. Unique within the connector.
         createdAt:
           type: string
           format: date-time
+          description: When the conversion was initiated on the PSP.
         updatedAt:
           type: string
           format: date-time
+          description: When Formance last observed a state change on the conversion.
         sourceAsset:
           type: string
+          description: Asset being converted from, in `SYMBOL/precision` form (e.g. `USD/2`).
         destinationAsset:
           type: string
+          description: Asset being converted to, in `SYMBOL/precision` form (e.g. `USDC/6`).
         sourceAmount:
           type: integer
           format: bigint
+          description: Amount of source asset debited, as an integer at `sourceAsset` precision.
         destinationAmount:
           type: integer
           format: bigint
           nullable: true
+          description: Amount of destination asset credited, at `destinationAsset` precision. Null until the conversion completes.
         fee:
           type: integer
           format: bigint
           nullable: true
+          description: PSP fee for the conversion, at `feeAsset` precision.
         feeAsset:
           type: string
           nullable: true
+          description: Currency the fee is denominated in, in `SYMBOL/precision` form.
         status:
           $ref: '#/components/schemas/V3ConversionStatusEnum'
         sourceAccountID:
           type: string
           nullable: true
+          description: Formance account ID of the wallet the source asset was debited from.
         destinationAccountID:
           type: string
           nullable: true
+          description: Formance account ID of the wallet the destination asset was credited to.
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         error:
           type: string
           nullable: true
+          description: Human-readable error from the PSP when `status` is `FAILED`. Null otherwise.
 
     V3ConversionStatusEnum:
       type: string
+      description: |
+        Lifecycle of a conversion.
+        `PENDING` — accepted by the PSP, not yet settled.
+        `COMPLETED` — settled, terminal.
+        `FAILED` — rejected or reverted, terminal. See `error`.
       enum:
         - UNKNOWN
         - PENDING
