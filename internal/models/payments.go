@@ -315,24 +315,8 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) (Payment,
 		Asset:         from.Asset,
 		Scheme:        from.Scheme,
 		Status:        from.Status,
-		SourceAccountID: func() *AccountID {
-			if from.SourceAccountReference == nil {
-				return nil
-			}
-			return &AccountID{
-				Reference:   *from.SourceAccountReference,
-				ConnectorID: connectorID,
-			}
-		}(),
-		DestinationAccountID: func() *AccountID {
-			if from.DestinationAccountReference == nil {
-				return nil
-			}
-			return &AccountID{
-				Reference:   *from.DestinationAccountReference,
-				ConnectorID: connectorID,
-			}
-		}(),
+		SourceAccountID: NewAccountID(from.SourceAccountReference, connectorID),
+		DestinationAccountID: NewAccountID(from.DestinationAccountReference, connectorID),
 		PsuID: func() *uuid.UUID {
 			if from.PsuID == nil {
 				return nil
