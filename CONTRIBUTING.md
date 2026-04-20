@@ -535,6 +535,8 @@ func (c *client) readFile(filename string) (b []byte, err error) {
 
 This ensures your implementation fetches data and paginates it as required.
 
+Note that whenever you build a connector, you need to have a clear understanding of how the pagination will work, for each endpoint. You will want to store the current page in the state (see below), so that you avoid unecessary refetches. That being said, you won't always have a nice page number to paginate – what if sorting is by creation_date DESC? Each API requires some thinking to find the best solution.
+
 Now that we've defined a way to ingest the data, let's integrate this into `plugin.go` and connect it with the `FetchNextAccounts` function.
 
 ```go
