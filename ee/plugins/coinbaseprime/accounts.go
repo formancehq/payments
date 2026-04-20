@@ -9,6 +9,11 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+// walletTypeTrading identifies the Coinbase Prime wallet type that backs
+// order execution. Orders debit/credit only TRADING wallets, so resolvers
+// that map symbols → wallet IDs for orders must filter on this value.
+const walletTypeTrading = "TRADING"
+
 // walletTypes enumerates the wallet `type` values Coinbase Prime documents
 // as required on GET /wallets. Order is stable so mid-cycle resumability
 // is deterministic: the plugin stores the current type by name
@@ -18,7 +23,7 @@ import (
 // Do not mutate — treat as constant. Declared `var` because Go does not
 // allow `const` slices.
 var walletTypes = []string{
-	"TRADING",
+	walletTypeTrading,
 	"VAULT",
 	"ONCHAIN",
 	"QC",

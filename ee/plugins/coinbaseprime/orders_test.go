@@ -19,8 +19,9 @@ import (
 
 // walletsToPSPAccounts produces a fixture slice matching the shape
 // scopedAccountLookup returns in production: each PSPAccount carries the
-// wallet ID as Reference and a `SYMBOL/precision` DefaultAsset string so
-// resolveWallets can recover the symbol.
+// wallet ID as Reference, a `SYMBOL/precision` DefaultAsset string so
+// resolveWallets can recover the symbol, and a `wallet_type` metadata
+// entry set to TRADING (the only type resolveWallets indexes).
 func walletsToPSPAccounts(wallets map[string]string, currencies map[string]int) []models.PSPAccount {
 	accounts := make([]models.PSPAccount, 0, len(wallets))
 	for symbol, walletID := range wallets {
@@ -29,6 +30,7 @@ func walletsToPSPAccounts(wallets map[string]string, currencies map[string]int) 
 		accounts = append(accounts, models.PSPAccount{
 			Reference:    walletID,
 			DefaultAsset: pointer.For(asset),
+			Metadata:     map[string]string{"wallet_type": "TRADING"},
 			Raw:          []byte(`{}`),
 		})
 	}
@@ -939,6 +941,77 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(*sell.SourceAccountReference).To(Equal("wallet-btc"))
 			Expect(sell.DestinationAccountReference).ToNot(BeNil())
 			Expect(*sell.DestinationAccountReference).To(Equal("wallet-usd"))
+		})
+
+		It("ignores non-TRADING wallets with the same symbol so a VAULT row cannot stomp the TRADING row", func(ctx SpecContext) {
+			// Coinbase Prime now paginates TRADING / VAULT / ONCHAIN / QC /
+			// WALLET_TYPE_OTHER separately — a single user can therefore own
+			// USD-TRADING and USD-VAULT, both with DefaultAsset "USD/2".
+			// Orders always debit/credit the TRADING wallet, so the resolver
+			// must filter on wallet_type before building the map. Here the
+			// VAULT wallet sorts ahead of the TRADING one in the lookup
+			// response to defeat a naive "last write wins" loop.
+			lookup = models.NewMockAccountLookup(ctrl)
+			lookup.EXPECT().
+				ListAccountsByConnector(gomock.Any()).
+				Return([]models.PSPAccount{
+					{
+						Reference:    "wallet-usd-vault",
+						DefaultAsset: pointer.For("USD/2"),
+						Metadata:     map[string]string{"wallet_type": "VAULT"},
+						Raw:          []byte(`{}`),
+					},
+					{
+						Reference:    "wallet-usd-trading",
+						DefaultAsset: pointer.For("USD/2"),
+						Metadata:     map[string]string{"wallet_type": "TRADING"},
+						Raw:          []byte(`{}`),
+					},
+					{
+						Reference:    "wallet-btc-trading",
+						DefaultAsset: pointer.For("BTC/8"),
+						Metadata:     map[string]string{"wallet_type": "TRADING"},
+						Raw:          []byte(`{}`),
+					},
+				}, nil)
+			plg.accountLookup = lookup
+
+			req := models.FetchNextOrdersRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().ListOrders(gomock.Any(), "", 10).Return(
+				&client.OrdersResponse{
+					Orders: []client.Order{
+						{
+							ID:           "order-collision",
+							ProductID:    "BTC-USD",
+							Side:         "BUY",
+							Type:         "MARKET",
+							BaseQuantity: "1.0",
+							Status:       "FILLED",
+							TimeInForce:  "GTC",
+							CreatedAt:    "2024-01-15T10:30:00Z",
+						},
+					},
+					Pagination: client.Pagination{HasNext: false},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Orders).To(HaveLen(1))
+
+			order := resp.Orders[0]
+			// BUY BTC-USD: source = USD wallet — must be the TRADING one, never the VAULT one.
+			Expect(order.SourceAccountReference).ToNot(BeNil())
+			Expect(*order.SourceAccountReference).To(Equal("wallet-usd-trading"))
+			Expect(order.DestinationAccountReference).ToNot(BeNil())
+			Expect(*order.DestinationAccountReference).To(Equal("wallet-btc-trading"))
+			Expect(order.Metadata[MetadataPrefix+"quote_wallet_id"]).To(Equal("wallet-usd-trading"))
+			Expect(order.Metadata[MetadataPrefix+"base_wallet_id"]).To(Equal("wallet-btc-trading"))
 		})
 	})
 })

@@ -19,6 +19,17 @@ import (
 // up-to-date and consistent across pods — unlike the previous in-process
 // cache which only reflected pages processed on the current pod.
 //
+// Only TRADING wallets are indexed: Coinbase Prime paginates TRADING /
+// VAULT / ONCHAIN / QC / WALLET_TYPE_OTHER separately (see GET /wallets
+// `type` query param — https://docs.cdp.coinbase.com/prime/reference/primerestapi_getportfoliowallets),
+// so a single symbol (e.g. "USD") can back multiple accounts with the same
+// DefaultAsset. Orders debit/credit only the TRADING wallet (see the
+// `source_type` / `destination_type` fields on create-order —
+// https://docs.cdp.coinbase.com/prime/reference/primerestapi_createorder),
+// so non-TRADING rows must be excluded — otherwise a VAULT or ONCHAIN row
+// could stomp the TRADING row in the map and resolution would return the
+// wrong account.
+//
 // Returns a hard error if the engine never injected a lookup (configuration
 // bug) or if the DB read fails.
 func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) {
@@ -34,6 +45,9 @@ func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) 
 	wallets := make(map[string]string, len(accounts))
 	for _, a := range accounts {
 		if a.DefaultAsset == nil {
+			continue
+		}
+		if a.Metadata["wallet_type"] != walletTypeTrading {
 			continue
 		}
 		// DefaultAsset is in the form "SYMBOL/precision" (e.g. "BTC/8").
