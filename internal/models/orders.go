@@ -363,6 +363,8 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		o.SourceAccountID = &id
+	} else {
+		o.SourceAccountID = nil
 	}
 	if aux.DestinationAccountID != nil {
 		id, err := AccountIDFromString(*aux.DestinationAccountID)
@@ -370,6 +372,8 @@ func (o *Order) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		o.DestinationAccountID = &id
+	} else {
+		o.DestinationAccountID = nil
 	}
 	o.Metadata = aux.Metadata
 	o.Adjustments = aux.Adjustments

@@ -179,6 +179,8 @@ func (c *Conversion) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.SourceAccountID = &id
+	} else {
+		c.SourceAccountID = nil
 	}
 	if aux.DestinationAccountID != nil {
 		id, err := AccountIDFromString(*aux.DestinationAccountID)
@@ -186,6 +188,8 @@ func (c *Conversion) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.DestinationAccountID = &id
+	} else {
+		c.DestinationAccountID = nil
 	}
 	c.Metadata = aux.Metadata
 	c.Raw = aux.Raw
