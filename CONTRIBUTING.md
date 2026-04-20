@@ -48,18 +48,39 @@ Here is the complete interface definition for your reference:
 
 ```go
 type Plugin interface {
-	PSPPlugin
+	PSPPlugin        // data-plane methods (see below)
+	OpenBankingPlugin // open-banking user/link flows
 
 	Name() string
 	Config() PluginInternalConfig
+	IsScheduledForDeletion() bool
+	ScheduleForDeletion(bool)
 
-    Install(context.Context, InstallRequest) (InstallResponse, error)
+	Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
 	TrimWebhook(context.Context, TrimWebhookRequest) (TrimWebhookResponse, error)
 	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
+}
+
+type PSPPlugin interface {
+	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
+	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
+	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
+	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
+	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
+	FetchNextOrders(context.Context, FetchNextOrdersRequest) (FetchNextOrdersResponse, error)
+	FetchNextConversions(context.Context, FetchNextConversionsRequest) (FetchNextConversionsResponse, error)
+
+	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
+	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
+	ReverseTransfer(context.Context, ReverseTransferRequest) (ReverseTransferResponse, error)
+	PollTransferStatus(context.Context, PollTransferStatusRequest) (PollTransferStatusResponse, error)
+	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
+	ReversePayout(context.Context, ReversePayoutRequest) (ReversePayoutResponse, error)
+	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
 }
 ```
 
@@ -74,6 +95,8 @@ type Plugin interface {
 | FetchNextBalances(...)         | Retrieves the next set of balance data (e.g., account balances) from the PSP for synchronization                                                                                                                                    |
 | FetchNextExternalAccounts(...) | Retrieves external accounts (e.g., linked bank or card accounts) from the PSP for synchronization                                                                                                                                   |
 | FetchNextOthers(...)           | Fetches any additional or custom data from the PSP that doesn't fall into the predefined categories                                                                                                                                 |
+| FetchNextOrders(...)           | Retrieves the next set of orders (e.g., trade/conversion orders) from the PSP for synchronization                                                                                                                                   |
+| FetchNextConversions(...)      | Retrieves the next set of currency conversions (executed FX trades) from the PSP for synchronization                                                                                                                                |
 | CreateBankAccount(...)         | Creates a new bank account or linked financial account in the PSP                                                                                                                                                                   |
 | CreateTransfer(...)            | Initiates a transfer of funds between accounts within the PSP or externally                                                                                                                                                         |
 | ReverseTransfer(...)           | Reverses a previously initiated processed transfer                                                                                                                                                                                  |
