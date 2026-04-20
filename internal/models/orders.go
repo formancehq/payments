@@ -406,7 +406,30 @@ func ToPSPOrder(order *Order) PSPOrder {
 		SourceAccountReference:      order.SourceAccountID.Ref(),
 		DestinationAccountReference: order.DestinationAccountID.Ref(),
 		Metadata:                    order.Metadata,
+		// Order itself does not carry the PSP raw payload — it lives on
+		// the adjustments list (each adjustment snapshots the PSP response
+		// at that moment). For round-trip purposes (Order → PSPOrder →
+		// Validate()), use the latest adjustment's Raw: it represents the
+		// order's current state.
+		Raw: latestAdjustmentRaw(order.Adjustments),
 	}
+}
+
+// latestAdjustmentRaw returns the Raw payload of the most recent
+// adjustment by CreatedAt. FromPSPOrderToOrder appends at least one
+// adjustment on every PSP observation, so a well-formed Order has a
+// non-empty list.
+func latestAdjustmentRaw(adjustments []OrderAdjustment) json.RawMessage {
+	if len(adjustments) == 0 {
+		return nil
+	}
+	latest := adjustments[0]
+	for _, a := range adjustments[1:] {
+		if a.CreatedAt.After(latest.CreatedAt) {
+			latest = a
+		}
+	}
+	return latest.Raw
 }
 
 // FromPSPOrderToOrder converts a PSPOrder to an Order.
