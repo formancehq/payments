@@ -64,6 +64,9 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_AllCapabilities_Success() {
 		{ID: "wf-2", ScheduleID: fmt.Sprintf("test-%s-FETCH_PAYMENTS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
 		{ID: "wf-3", ScheduleID: fmt.Sprintf("test-%s-FETCH_EXTERNAL_ACCOUNTS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
 		{ID: "wf-4", ScheduleID: fmt.Sprintf("test-%s-FETCH_BALANCES", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
+		{ID: "wf-5", ScheduleID: fmt.Sprintf("test-%s-FETCH_OTHERS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
+		{ID: "wf-6", ScheduleID: fmt.Sprintf("test-%s-FETCH_CONVERSIONS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
+		{ID: "wf-7", ScheduleID: fmt.Sprintf("test-%s-FETCH_ORDERS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
 	}
 
 	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).

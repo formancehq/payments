@@ -17,6 +17,8 @@ var fetchCapabilities = []models.Capability{
 	models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS,
 	models.CAPABILITY_FETCH_BALANCES,
 	models.CAPABILITY_FETCH_OTHERS,
+	models.CAPABILITY_FETCH_CONVERSIONS,
+	models.CAPABILITY_FETCH_ORDERS,
 }
 
 type ConnectorHealthCheck struct {
