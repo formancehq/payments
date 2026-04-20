@@ -32,6 +32,13 @@ type AccountLookupFactory func(ConnectorID) AccountLookup
 // completion (HasMore: false) as part of the install flow, before any of
 // the plugin's periodic schedules are registered. The declared tasks run
 // sequentially in the returned order.
+//
+// Dispatcher support is currently narrow: only TASK_FETCH_ACCOUNTS is
+// wired through runBootstrapTask. Any other TaskType returned here will
+// fail the bootstrap workflow with a non-retryable error at runtime.
+// Extending the dispatcher (see runBootstrapTask in
+// internal/connectors/engine/workflow/bootstrap_task.go) is required
+// before declaring additional task types.
 type PluginWithBootstrapOnInstall interface {
 	BootstrapOnInstall() []TaskType
 }
