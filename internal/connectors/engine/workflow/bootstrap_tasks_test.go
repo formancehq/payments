@@ -62,6 +62,45 @@ func (s *UnitTestSuite) Test_BootstrapTasks_BootstrapFailure_DoesNotSchedulePeri
 	s.Error(err)
 }
 
+func (s *UnitTestSuite) Test_BootstrapTasks_PassesNextTasksForMatchingTaskType() {
+	var capturedReq BootstrapTaskRequest
+	s.env.OnWorkflow(RunBootstrapTask, mock.Anything, mock.Anything).Once().Return(
+		func(ctx workflow.Context, req BootstrapTaskRequest) error {
+			capturedReq = req
+			return nil
+		},
+	)
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+
+	balancesSubtree := []models.ConnectorTaskTree{
+		{TaskType: models.TASK_FETCH_BALANCES, Periodically: true},
+	}
+
+	s.env.ExecuteWorkflow(RunBootstrapTasks, BootstrapTasksRequest{
+		ConnectorID: s.connectorID,
+		TaskTypes:   []models.TaskType{models.TASK_FETCH_ACCOUNTS},
+		TaskTree: []models.ConnectorTaskTree{
+			{
+				TaskType:  models.TASK_FETCH_ACCOUNTS,
+				NextTasks: balancesSubtree,
+			},
+			// Unrelated top-level task must not leak its subtree into
+			// the accounts bootstrap.
+			{
+				TaskType: models.TASK_FETCH_PAYMENTS,
+				NextTasks: []models.ConnectorTaskTree{
+					{TaskType: models.TASK_FETCH_CONVERSIONS},
+				},
+			},
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	s.Equal(models.TASK_FETCH_ACCOUNTS, capturedReq.TaskType)
+	s.Equal(balancesSubtree, capturedReq.NextTasks)
+}
+
 func (s *UnitTestSuite) Test_BootstrapTasks_EmptyTaskList_StartsPeriodicScheduleDirectly() {
 	// Declaring BootstrapOnInstall returns an empty slice is a no-op:
 	// RunBootstrapTasks should go straight to starting the periodic scheduler.

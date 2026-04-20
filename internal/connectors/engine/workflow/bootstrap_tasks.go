@@ -27,6 +27,14 @@ func (w Workflow) runBootstrapTasks(
 	req BootstrapTasksRequest,
 ) error {
 	for _, taskType := range req.TaskTypes {
+		// Pass the per-task subtree (the NextTasks under the matching
+		// top-level entry in the connector's ConnectorTasksTree) so the
+		// bootstrap loop can fan out the same per-record downstream tasks
+		// the periodic workflow would have created. Without this, plugins
+		// that do incremental fetch on the periodic tick would never
+		// register the per-account schedules for bootstrapped accounts.
+		nextTasks := findNextTasksForType(req.TaskTree, taskType)
+
 		if err := workflow.ExecuteChildWorkflow(
 			workflow.WithChildOptions(
 				ctx,
@@ -43,6 +51,7 @@ func (w Workflow) runBootstrapTasks(
 			BootstrapTaskRequest{
 				ConnectorID: req.ConnectorID,
 				TaskType:    taskType,
+				NextTasks:   nextTasks,
 			},
 		).Get(ctx, nil); err != nil {
 			return errors.Wrapf(err, "running bootstrap task %d", taskType)
@@ -83,6 +92,19 @@ func (w Workflow) startPeriodicSchedulesForBootstrap(
 			return nil
 		}
 		return errors.Wrap(err, "running next workflow after bootstrap")
+	}
+	return nil
+}
+
+// findNextTasksForType returns the NextTasks subtree for the top-level
+// entry in taskTree whose TaskType matches. Returns nil if no top-level
+// entry matches — in which case the per-task bootstrap runs without any
+// fan-out, matching the plugin's declared task tree.
+func findNextTasksForType(taskTree []models.ConnectorTaskTree, taskType models.TaskType) []models.ConnectorTaskTree {
+	for _, task := range taskTree {
+		if task.TaskType == taskType {
+			return task.NextTasks
+		}
 	}
 	return nil
 }
