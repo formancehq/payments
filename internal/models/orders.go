@@ -223,10 +223,6 @@ type Order struct {
 	Adjustments []OrderAdjustment `json:"adjustments"`
 }
 
-func (o *Order) IdempotencyKey() string {
-	return IdempotencyKey(o.ID)
-}
-
 func (o Order) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                  string            `json:"id"`
