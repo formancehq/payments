@@ -9,6 +9,7 @@ This guide demonstrates the process of building a basic connector for a hypothet
 - [How to build a connector](#how-to-build-a-connector)
   - [Table of Contents](#table-of-contents)
   - [Understanding the Plugin interface](#understanding-the-plugin-interface)
+  - [Optional capability interfaces](#optional-capability-interfaces)
   - [Building a connector](#building-a-connector)
     - [Set up the project](#set-up-the-project)
     - [Define connector capabilities](#define-connector-capabilities)
@@ -82,6 +83,25 @@ type Plugin interface {
 | PollPayoutStatus(...)          | Polls the status of a previously initiated payout to determine whether it was successful, pending, or failed. Useful for PSPs whose APIs don't provide synchronous feedback about whether or not a payout was successful or not     |
 | CreateWebhooks(...)            | Sets up webhooks in the PSP to notify the Payments Service of events (e.g., payment updates)                                                                                                                                        |
 | TranslateWebhook(...)          | Converts incoming webhook events from the PSP into a format that the Payments Service understands                                                                                                                                   |
+
+## Optional capability interfaces
+
+Beyond the base `Plugin` interface, a connector can opt into extra
+engine-provided capabilities by implementing one of the interfaces in
+[internal/models/account_lookup.go](./internal/models/account_lookup.go).
+The registry wrapper
+([internal/connectors/plugins/registry/wrapper.go](./internal/connectors/plugins/registry/wrapper.go))
+detects each one via a type assertion on the underlying plugin and forwards
+only when implemented — so plugins that do not opt in keep the legacy
+behaviour.
+
+| Interface                          | Purpose                                                                                                                                                                                                                        | Wired at                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `PluginWithAccountLookup`          | Receive a per-connector, read-only `AccountLookup` to query accounts the connector has persisted. Use this instead of an in-memory account cache, which is not safe across pods.                                               | `manager.Load` injects via `UseAccountLookup` (see `internal/connectors/manager.go`). |
+| `PluginWithBootstrapOnInstall`     | Declare one or more `TaskType`s that must run to completion (HasMore: false) during install, before any periodic schedule is registered. Useful when later periodic tasks depend on a one-shot bootstrap (e.g., wallet listing). | The install workflow hands the declared tasks to `RunBootstrapTasks` (see `internal/connectors/engine/workflow/install_connector.go`). |
+
+Implement only the interfaces the connector actually needs — implementing
+an interface is itself the opt-in signal.
 
 ## Building a connector
 
