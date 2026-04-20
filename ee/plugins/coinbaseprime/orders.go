@@ -173,7 +173,7 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]st
 
 	// Use dynamic precision: max decimal places across all price fields for this
 	// order, so all prices are at the same scale and directly comparable.
-	pricePrecision := maxPricePrecision(order.LimitPrice, order.StopPrice, order.AveragePrice)
+	pricePrecision := maxPricePrecision(order.LimitPrice, order.StopPrice, order.AverageFilledPrice)
 
 	limitPrice, err := p.parseOptionalPrice(order.LimitPrice, pricePrecision)
 	if err != nil {
@@ -185,7 +185,7 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]st
 		return models.PSPOrder{}, fmt.Errorf("failed to parse stop price: %w", err)
 	}
 
-	avgFillPrice, err := p.parseOptionalPrice(order.AveragePrice, pricePrecision)
+	avgFillPrice, err := p.parseOptionalPrice(order.AverageFilledPrice, pricePrecision)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse average filled price: %w", err)
 	}
@@ -222,30 +222,30 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]st
 	}
 
 	return models.PSPOrder{
-		Reference:           order.ID,
-		ClientOrderID:       order.ClientOrderID,
-		CreatedAt:           createdAt,
-		Direction:           direction,
-		Type:                orderType,
-		SourceAsset:         sourceAsset,
-		DestinationAsset:         destinationAsset,
-		BaseQuantityOrdered: baseQuantityOrdered,
-		BaseQuantityFilled:  baseQuantityFilled,
-		LimitPrice:          limitPrice,
-		StopPrice:           stopPrice,
-		QuoteAmount:         quoteAmount,
-		QuoteAsset:          quoteAsset,
-		AverageFillPrice:    avgFillPrice,
-		Fee:                 fee,
-		FeeAsset:            feeAsset,
+		Reference:                   order.ID,
+		ClientOrderID:               order.ClientOrderID,
+		CreatedAt:                   createdAt,
+		Direction:                   direction,
+		Type:                        orderType,
+		SourceAsset:                 sourceAsset,
+		DestinationAsset:            destinationAsset,
+		BaseQuantityOrdered:         baseQuantityOrdered,
+		BaseQuantityFilled:          baseQuantityFilled,
+		LimitPrice:                  limitPrice,
+		StopPrice:                   stopPrice,
+		QuoteAmount:                 quoteAmount,
+		QuoteAsset:                  quoteAsset,
+		AverageFillPrice:            avgFillPrice,
+		Fee:                         fee,
+		FeeAsset:                    feeAsset,
 		PriceAsset:                  &priceAsset,
 		SourceAccountReference:      sourceAccountRef,
 		DestinationAccountReference: destAccountRef,
 		Status:                      status,
-		TimeInForce:         timeInForce,
-		ExpiresAt:           expiresAt,
-		Metadata:            metadata,
-		Raw:                 raw,
+		TimeInForce:                 timeInForce,
+		ExpiresAt:                   expiresAt,
+		Metadata:                    metadata,
+		Raw:                         raw,
 	}, nil
 }
 

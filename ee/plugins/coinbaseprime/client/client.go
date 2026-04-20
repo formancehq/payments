@@ -375,31 +375,30 @@ type TransactionsResponse struct {
 // Order represents a Coinbase Prime order.
 // See: https://docs.cdp.coinbase.com/prime/reference/primerestapi_getorders
 type Order struct {
-	ID             string `json:"id"`
-	PortfolioID    string `json:"portfolio_id"`
-	ProductID      string `json:"product_id"`
-	Side           string `json:"side"`
-	Type           string `json:"type"`
-	BaseQuantity   string `json:"base_quantity"`
-	QuoteValue     string `json:"quote_value"`
-	LimitPrice     string `json:"limit_price"`
-	StopPrice      string `json:"stop_price"`
-	FilledQuantity string `json:"filled_quantity"`
-	FilledValue    string `json:"filled_value"`
-	AveragePrice   string `json:"average_filled_price"`
-	Commission     string `json:"commission"`
-	ExchangeFee    string `json:"exchange_fee"`
-	OrderTotal     string `json:"order_total"`
-	Status         string `json:"status"`
-	TimeInForce    string `json:"time_in_force"`
-	CreatedAt      string `json:"created_at"`
-	ExpiryTime     string `json:"expiry_time"`
-	ClientOrderID  string `json:"client_order_id"`
-	PostOnly       bool   `json:"post_only"`
-
+	ID                    string               `json:"id"`
+	PortfolioID           string               `json:"portfolio_id"`
+	ProductID             string               `json:"product_id"`
+	Side                  string               `json:"side"`
+	Type                  string               `json:"type"`
+	BaseQuantity          string               `json:"base_quantity"`
+	QuoteValue            string               `json:"quote_value"`
+	LimitPrice            string               `json:"limit_price"`
+	StopPrice             string               `json:"stop_price"`
+	FilledQuantity        string               `json:"filled_quantity"`
+	FilledValue           string               `json:"filled_value"`
+	AverageFilledPrice    string               `json:"average_filled_price"`
+	Commission            string               `json:"commission"`
+	ExchangeFee           string               `json:"exchange_fee"`
+	OrderTotal            string               `json:"order_total"`
+	Status                string               `json:"status"`
+	TimeInForce           string               `json:"time_in_force"`
+	CreatedAt             string               `json:"created_at"`
+	ExpiryTime            string               `json:"expiry_time"`
+	ClientOrderID         string               `json:"client_order_id"`
+	PostOnly              bool                 `json:"post_only"`
 	NetAverageFilledPrice string               `json:"net_average_filled_price"`
 	HistoricalPov         string               `json:"historical_pov"`
-	CommissionDetail      *CommissionDetail     `json:"commission_detail_total,omitempty"`
+	CommissionDetail      *CommissionDetail    `json:"commission_detail_total,omitempty"`
 }
 
 // CommissionDetail contains a breakdown of all commission charges for an order.
