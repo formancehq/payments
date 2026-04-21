@@ -1,5 +1,7 @@
 # V3OrderDirectionEnum
 
+Whether an order buys or sells the base asset.
+
 
 ## Values
 

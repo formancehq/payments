@@ -7,6 +7,10 @@ import (
 	"fmt"
 )
 
+// V3ConversionStatusEnum - Lifecycle of a conversion.
+// `PENDING` — accepted by the PSP, not yet settled.
+// `COMPLETED` — settled, terminal.
+// `FAILED` — rejected or reverted, terminal. See `error`.
 type V3ConversionStatusEnum string
 
 const (

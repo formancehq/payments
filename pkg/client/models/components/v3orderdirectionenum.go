@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// V3OrderDirectionEnum - Whether an order buys or sells the base asset.
 type V3OrderDirectionEnum string
 
 const (

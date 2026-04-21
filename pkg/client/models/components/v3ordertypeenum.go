@@ -7,6 +7,9 @@ import (
 	"fmt"
 )
 
+// V3OrderTypeEnum - Exchange order type. Determines which price fields are meaningful on
+// `V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use
+// `stopPrice`; TWAP/VWAP are time-weighted execution algorithms.
 type V3OrderTypeEnum string
 
 const (

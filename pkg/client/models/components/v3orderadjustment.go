@@ -8,19 +8,41 @@ import (
 	"time"
 )
 
+// V3OrderAdjustmentRaw - Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.
 type V3OrderAdjustmentRaw struct {
 }
 
+// V3OrderAdjustment - Immutable snapshot of an order's state at a single observation.
+// Formance records one adjustment per distinct state the PSP reports
+// (status change, fill progress, fee update). Events are emitted
+// per-adjustment, not per-order — so a single order can produce many
+// events over its lifetime.
 type V3OrderAdjustment struct {
-	ID                 string                `json:"id"`
-	Reference          string                `json:"reference"`
-	CreatedAt          time.Time             `json:"createdAt"`
-	Status             V3OrderStatusEnum     `json:"status"`
-	BaseQuantityFilled *big.Int              `json:"baseQuantityFilled,omitempty"`
-	Fee                *big.Int              `json:"fee,omitempty"`
-	FeeAsset           *string               `json:"feeAsset,omitempty"`
-	Metadata           map[string]string     `json:"metadata,omitempty"`
-	Raw                *V3OrderAdjustmentRaw `json:"raw,omitempty"`
+	// Adjustment ID, composed from the order ID plus the state fields that define uniqueness (status, filled quantity, fee). Idempotent — replaying the same observation produces the same ID.
+	ID string `json:"id"`
+	// PSP reference the adjustment belongs to (equal to the parent order's `reference`).
+	Reference string `json:"reference"`
+	// When Formance observed this state. Not the PSP's own timestamp — reflects ingestion time.
+	CreatedAt time.Time `json:"createdAt"`
+	// Lifecycle of an order on the exchange.
+	// `PENDING` — accepted by the exchange, not yet working.
+	// `OPEN` — live on the book, no fills yet.
+	// `PARTIALLY_FILLED` — live on the book, some base quantity filled.
+	// `FILLED` — fully filled, terminal.
+	// `CANCELLED` — cancelled by the user or system, terminal.
+	// `FAILED` — rejected by the exchange, terminal. See `error` for details.
+	// `EXPIRED` — `timeInForce` elapsed before full fill, terminal.
+	//
+	Status V3OrderStatusEnum `json:"status"`
+	// Base asset filled at this observation, at the base asset's precision.
+	BaseQuantityFilled *big.Int `json:"baseQuantityFilled,omitempty"`
+	// Cumulative fee at this observation, at `feeAsset` precision.
+	Fee *big.Int `json:"fee,omitempty"`
+	// Currency the fee is denominated in, in `SYMBOL/precision` form.
+	FeeAsset *string           `json:"feeAsset,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+	// Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.
+	Raw *V3OrderAdjustmentRaw `json:"raw,omitempty"`
 }
 
 func (v V3OrderAdjustment) MarshalJSON() ([]byte, error) {

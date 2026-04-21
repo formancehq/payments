@@ -3,6 +3,11 @@
 package components
 
 type V3GetOrderResponse struct {
+	// A trade order submitted to an exchange-style PSP. Orders are read-only
+	// in the Formance API: they are fetched from the underlying connector.
+	// Status transitions are captured via the `adjustments` array; each
+	// adjustment is a point-in-time snapshot from the PSP.
+	//
 	Data V3Order `json:"data"`
 }
 

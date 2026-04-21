@@ -8,36 +8,103 @@ import (
 	"time"
 )
 
+// V3Order - A trade order submitted to an exchange-style PSP. Orders are read-only
+// in the Formance API: they are fetched from the underlying connector.
+// Status transitions are captured via the `adjustments` array; each
+// adjustment is a point-in-time snapshot from the PSP.
 type V3Order struct {
-	ID                   string               `json:"id"`
-	ConnectorID          string               `json:"connectorID"`
-	Provider             string               `json:"provider"`
-	Reference            string               `json:"reference"`
-	ClientOrderID        *string              `json:"clientOrderID,omitempty"`
-	CreatedAt            time.Time            `json:"createdAt"`
-	UpdatedAt            time.Time            `json:"updatedAt"`
-	Direction            V3OrderDirectionEnum `json:"direction"`
-	SourceAsset          string               `json:"sourceAsset"`
-	DestinationAsset     string               `json:"destinationAsset"`
-	Type                 V3OrderTypeEnum      `json:"type"`
-	Status               V3OrderStatusEnum    `json:"status"`
-	BaseQuantityOrdered  *big.Int             `json:"baseQuantityOrdered"`
-	BaseQuantityFilled   *big.Int             `json:"baseQuantityFilled,omitempty"`
-	LimitPrice           *big.Int             `json:"limitPrice,omitempty"`
-	StopPrice            *big.Int             `json:"stopPrice,omitempty"`
-	TimeInForce          V3TimeInForceEnum    `json:"timeInForce"`
-	ExpiresAt            *time.Time           `json:"expiresAt,omitempty"`
-	Fee                  *big.Int             `json:"fee,omitempty"`
-	FeeAsset             *string              `json:"feeAsset,omitempty"`
-	AverageFillPrice     *big.Int             `json:"averageFillPrice,omitempty"`
-	QuoteAmount          *big.Int             `json:"quoteAmount,omitempty"`
-	QuoteAsset           *string              `json:"quoteAsset,omitempty"`
-	PriceAsset           *string              `json:"priceAsset,omitempty"`
-	SourceAccountID      *string              `json:"sourceAccountID,omitempty"`
-	DestinationAccountID *string              `json:"destinationAccountID,omitempty"`
-	Metadata             map[string]string    `json:"metadata,omitempty"`
-	Adjustments          []V3OrderAdjustment  `json:"adjustments,omitempty"`
-	Error                *string              `json:"error,omitempty"`
+	// Formance-assigned unique order ID (composed from the PSP reference and connector ID).
+	ID string `json:"id"`
+	// ID of the Formance connector this order was fetched from.
+	ConnectorID string `json:"connectorID"`
+	// Provider name of the connector (e.g. `coinbaseprime`).
+	Provider string `json:"provider"`
+	// PSP-assigned order reference. Unique within the connector; used as the storage dedup key.
+	Reference string `json:"reference"`
+	// Client-assigned ID supplied to the PSP for placement idempotency
+	// (e.g. Coinbase `client_order_id`, Kraken `cl_ord_id`, Binance
+	// `clientOrderId`). Stored for traceability only — Formance does
+	// NOT dedup on this field.
+	//
+	ClientOrderID *string `json:"clientOrderID,omitempty"`
+	// When the order was created on the PSP.
+	CreatedAt time.Time `json:"createdAt"`
+	// When Formance last observed a state change on the order. Equivalent to the latest adjustment's `createdAt`.
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Whether an order buys or sells the base asset.
+	Direction V3OrderDirectionEnum `json:"direction"`
+	// Asset being spent, in `SYMBOL/precision` form (e.g. `USD/2`,
+	// `BTC/8`). For BUY: the quote currency. For SELL: the base
+	// currency.
+	//
+	SourceAsset string `json:"sourceAsset"`
+	// Asset being received, in `SYMBOL/precision` form.
+	// For BUY: the base currency. For SELL: the quote currency.
+	//
+	DestinationAsset string `json:"destinationAsset"`
+	// Exchange order type. Determines which price fields are meaningful on
+	// `V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use
+	// `stopPrice`; TWAP/VWAP are time-weighted execution algorithms.
+	//
+	Type V3OrderTypeEnum `json:"type"`
+	// Lifecycle of an order on the exchange.
+	// `PENDING` — accepted by the exchange, not yet working.
+	// `OPEN` — live on the book, no fills yet.
+	// `PARTIALLY_FILLED` — live on the book, some base quantity filled.
+	// `FILLED` — fully filled, terminal.
+	// `CANCELLED` — cancelled by the user or system, terminal.
+	// `FAILED` — rejected by the exchange, terminal. See `error` for details.
+	// `EXPIRED` — `timeInForce` elapsed before full fill, terminal.
+	//
+	Status V3OrderStatusEnum `json:"status"`
+	// Amount of base asset the order was placed for, as an integer at the base asset's precision.
+	BaseQuantityOrdered *big.Int `json:"baseQuantityOrdered"`
+	// Amount of base asset filled so far, as an integer at the base asset's precision. Null before any fill.
+	BaseQuantityFilled *big.Int `json:"baseQuantityFilled,omitempty"`
+	// Maximum price (for BUY) or minimum price (for SELL) at which the order may execute, in `priceAsset` precision. Required for LIMIT-family order types; null otherwise.
+	LimitPrice *big.Int `json:"limitPrice,omitempty"`
+	// Trigger price at which a STOP / STOP_LIMIT order activates, in `priceAsset` precision. Null for non-stop order types.
+	StopPrice *big.Int `json:"stopPrice,omitempty"`
+	// How long an order is valid on the exchange.
+	// `GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.
+	// `GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.
+	// `IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.
+	// `FILL_OR_KILL` — fill fully and immediately, or cancel entirely.
+	//
+	TimeInForce V3TimeInForceEnum `json:"timeInForce"`
+	// Expiration instant for `GOOD_UNTIL_DATE_TIME` orders. Null for other time-in-force values.
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	// Commission charged by the PSP for the order, as an integer in `feeAsset` precision.
+	Fee *big.Int `json:"fee,omitempty"`
+	// Currency the fee is denominated in, in `SYMBOL/precision` form. Typically the quote asset.
+	FeeAsset *string `json:"feeAsset,omitempty"`
+	// Volume-weighted average price across all fills so far, in `priceAsset` precision. Analytics field — may be absent if the PSP does not report it.
+	AverageFillPrice *big.Int `json:"averageFillPrice,omitempty"`
+	// Total amount of quote currency exchanged so far, as reported by
+	// the PSP (e.g. Coinbase `filled_value`), at `quoteAsset`
+	// precision. For BUY: amount spent. For SELL: amount received.
+	//
+	QuoteAmount *big.Int `json:"quoteAmount,omitempty"`
+	// Quote currency with precision (e.g. `USD/2`). Null when the order has no quote-side amounts reported yet.
+	QuoteAsset *string `json:"quoteAsset,omitempty"`
+	// Currency + precision under which `limitPrice`, `stopPrice`, and
+	// `averageFillPrice` should be interpreted. Separate from
+	// `quoteAsset` because some PSPs return price strings with more
+	// decimal digits than the quote currency's natural precision.
+	//
+	PriceAsset *string `json:"priceAsset,omitempty"`
+	// Formance account ID of the wallet the source asset was debited
+	// from. Null if the PSP did not return enough information to
+	// resolve it at ingestion time.
+	//
+	SourceAccountID *string `json:"sourceAccountID,omitempty"`
+	// Formance account ID of the wallet the destination asset was credited to. Null if unresolvable.
+	DestinationAccountID *string           `json:"destinationAccountID,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
+	// Ordered history of state snapshots for this order. The most recent element reflects the current `status`.
+	Adjustments []V3OrderAdjustment `json:"adjustments,omitempty"`
+	// Human-readable error from the PSP (e.g. rejection reason) when `status` is `FAILED`. Null otherwise.
+	Error *string `json:"error,omitempty"`
 }
 
 func (v V3Order) MarshalJSON() ([]byte, error) {

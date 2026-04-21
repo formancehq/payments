@@ -8,24 +8,49 @@ import (
 	"time"
 )
 
+// V3Conversion - A currency or asset conversion executed on a PSP (e.g. Coinbase Prime
+// transfer between a USD and USDC wallet). Conversions are read-only in
+// the Formance API: they are fetched from the underlying connector.
+// Unlike orders, conversions do not carry an adjustment history —
+// Formance records the final state only.
 type V3Conversion struct {
-	ID                   string                 `json:"id"`
-	ConnectorID          string                 `json:"connectorID"`
-	Provider             string                 `json:"provider"`
-	Reference            string                 `json:"reference"`
-	CreatedAt            time.Time              `json:"createdAt"`
-	UpdatedAt            time.Time              `json:"updatedAt"`
-	SourceAsset          string                 `json:"sourceAsset"`
-	DestinationAsset     string                 `json:"destinationAsset"`
-	SourceAmount         *big.Int               `json:"sourceAmount"`
-	DestinationAmount    *big.Int               `json:"destinationAmount,omitempty"`
-	Fee                  *big.Int               `json:"fee,omitempty"`
-	FeeAsset             *string                `json:"feeAsset,omitempty"`
-	Status               V3ConversionStatusEnum `json:"status"`
-	SourceAccountID      *string                `json:"sourceAccountID,omitempty"`
-	DestinationAccountID *string                `json:"destinationAccountID,omitempty"`
-	Metadata             map[string]string      `json:"metadata,omitempty"`
-	Error                *string                `json:"error,omitempty"`
+	// Formance-assigned unique conversion ID.
+	ID string `json:"id"`
+	// ID of the Formance connector this conversion was fetched from.
+	ConnectorID string `json:"connectorID"`
+	// Provider name of the connector (e.g. `coinbaseprime`).
+	Provider string `json:"provider"`
+	// PSP-assigned conversion reference. Unique within the connector.
+	Reference string `json:"reference"`
+	// When the conversion was initiated on the PSP.
+	CreatedAt time.Time `json:"createdAt"`
+	// When Formance last observed a state change on the conversion.
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Asset being converted from, in `SYMBOL/precision` form (e.g. `USD/2`).
+	SourceAsset string `json:"sourceAsset"`
+	// Asset being converted to, in `SYMBOL/precision` form (e.g. `USDC/6`).
+	DestinationAsset string `json:"destinationAsset"`
+	// Amount of source asset debited, as an integer at `sourceAsset` precision.
+	SourceAmount *big.Int `json:"sourceAmount"`
+	// Amount of destination asset credited, at `destinationAsset` precision. Null until the conversion completes.
+	DestinationAmount *big.Int `json:"destinationAmount,omitempty"`
+	// PSP fee for the conversion, at `feeAsset` precision.
+	Fee *big.Int `json:"fee,omitempty"`
+	// Currency the fee is denominated in, in `SYMBOL/precision` form.
+	FeeAsset *string `json:"feeAsset,omitempty"`
+	// Lifecycle of a conversion.
+	// `PENDING` — accepted by the PSP, not yet settled.
+	// `COMPLETED` — settled, terminal.
+	// `FAILED` — rejected or reverted, terminal. See `error`.
+	//
+	Status V3ConversionStatusEnum `json:"status"`
+	// Formance account ID of the wallet the source asset was debited from.
+	SourceAccountID *string `json:"sourceAccountID,omitempty"`
+	// Formance account ID of the wallet the destination asset was credited to.
+	DestinationAccountID *string           `json:"destinationAccountID,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
+	// Human-readable error from the PSP when `status` is `FAILED`. Null otherwise.
+	Error *string `json:"error,omitempty"`
 }
 
 func (v V3Conversion) MarshalJSON() ([]byte, error) {
