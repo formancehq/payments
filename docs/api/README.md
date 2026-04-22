@@ -1230,7 +1230,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
-## List all orders
+## List orders ingested from exchange-style connectors
 
 <a id="opIdv3ListOrders"></a>
 
@@ -1246,13 +1246,28 @@ Accept: application/json
 
 `GET /v3/orders`
 
+Returns the full list of orders ingested by Formance from connectors
+that implement the orders capability (e.g. `coinbaseprime`). Orders
+represent trade placements on an exchange-style PSP and are
+**read-only** through the Formance API — submission, cancellation,
+and lifecycle transitions are owned by the underlying connector.
+
+Results are cursor-paginated. The optional request body accepts a
+query builder for filtering over top-level `V3Order` fields such as
+`connectorID`, `reference`, `direction`, `status`, `type`,
+`sourceAsset`, `destinationAsset`, and `createdAt`.
+
+See `V3Order` for the full response shape, including the
+`adjustments` array that captures each observed state transition on
+the exchange.
+
 > Body parameter
 
 ```json
 {}
 ```
 
-<h3 id="list-all-orders-parameters">Parameters</h3>
+<h3 id="list-orders-ingested-from-exchange-style-connectors-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -1330,7 +1345,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="list-all-orders-responses">Responses</h3>
+<h3 id="list-orders-ingested-from-exchange-style-connectors-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -1342,7 +1357,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
-## Get an order by ID
+## Get a single order by its Formance ID
 
 <a id="opIdv3GetOrder"></a>
 
@@ -1357,7 +1372,16 @@ Accept: application/json
 
 `GET /v3/orders/{orderID}`
 
-<h3 id="get-an-order-by-id-parameters">Parameters</h3>
+Returns one order identified by its Formance-assigned `id` (composed
+from the PSP `reference` and the connector ID — **not** the PSP's
+native reference). The response includes the full `adjustments`
+history ordered from oldest to most recent; the last adjustment
+reflects the order's current top-level `status`.
+
+Returns an error via `V3ErrorResponse` when no order exists for the
+given ID, or when the ID cannot be decoded.
+
+<h3 id="get-a-single-order-by-its-formance-id-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -1421,7 +1445,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="get-an-order-by-id-responses">Responses</h3>
+<h3 id="get-a-single-order-by-its-formance-id-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -1433,7 +1457,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
-## List all conversions
+## List currency and asset conversions ingested from connectors
 
 <a id="opIdv3ListConversions"></a>
 
@@ -1449,13 +1473,28 @@ Accept: application/json
 
 `GET /v3/conversions`
 
+Returns the full list of conversions ingested by Formance from
+connectors that implement the conversions capability. A conversion
+is a direct swap between two assets on a PSP (e.g. USD → USDC on
+Coinbase Prime). Conversions are **read-only** through the Formance
+API.
+
+Unlike orders, conversions do not carry an adjustment history —
+Formance records only the final observed state (`status`,
+`destinationAmount`, and `fee` when settled).
+
+Results are cursor-paginated. The optional request body accepts a
+query builder for filtering over top-level `V3Conversion` fields
+such as `connectorID`, `reference`, `status`, `sourceAsset`,
+`destinationAsset`, and `createdAt`.
+
 > Body parameter
 
 ```json
 {}
 ```
 
-<h3 id="list-all-conversions-parameters">Parameters</h3>
+<h3 id="list-currency-and-asset-conversions-ingested-from-connectors-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -1506,7 +1545,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="list-all-conversions-responses">Responses</h3>
+<h3 id="list-currency-and-asset-conversions-ingested-from-connectors-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -1518,7 +1557,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
-## Get a conversion by ID
+## Get a single conversion by its Formance ID
 
 <a id="opIdv3GetConversion"></a>
 
@@ -1533,7 +1572,16 @@ Accept: application/json
 
 `GET /v3/conversions/{conversionID}`
 
-<h3 id="get-a-conversion-by-id-parameters">Parameters</h3>
+Returns one conversion identified by its Formance-assigned `id`
+(**not** the PSP's native `reference`). See `V3Conversion` for the
+response shape — on `COMPLETED` status the `destinationAmount` and
+`fee` fields reflect the settled values; on `FAILED` the `error`
+field carries the PSP's rejection reason.
+
+Returns an error via `V3ErrorResponse` when no conversion exists
+for the given ID.
+
+<h3 id="get-a-single-conversion-by-its-formance-id-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -1570,7 +1618,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="get-a-conversion-by-id-responses">Responses</h3>
+<h3 id="get-a-single-conversion-by-its-formance-id-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
