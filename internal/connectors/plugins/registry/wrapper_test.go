@@ -1,7 +1,11 @@
 package registry
 
 import (
+	"errors"
+
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -202,4 +206,258 @@ var _ = Describe("Wrapper", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
+	Context("simple delegators", func() {
+		It("Name forwards to plugin", func() {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().Name().Return("dummy")
+			Expect(wrapper.Name()).To(Equal("dummy"))
+		})
+
+		It("IsScheduledForDeletion forwards to plugin", func() {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().IsScheduledForDeletion().Return(true)
+			Expect(wrapper.IsScheduledForDeletion()).To(BeTrue())
+		})
+
+		It("ScheduleForDeletion forwards to plugin", func() {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().ScheduleForDeletion(true)
+			wrapper.ScheduleForDeletion(true)
+		})
+
+		It("Config forwards to plugin", func() {
+			wrapper := New(connectorID, logger, plg)
+			cfg := struct{ Name string }{Name: "c"}
+			plg.EXPECT().Config().Return(cfg)
+			Expect(wrapper.Config()).To(Equal(cfg))
+		})
+	})
+
+	Context("fetch next orders", func() {
+		It("calls underlying function", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.FetchNextOrdersRequest{}
+			plg.EXPECT().Name().Return("dummy").MaxTimes(2)
+			plg.EXPECT().FetchNextOrders(gomock.Any(), req).Return(models.FetchNextOrdersResponse{}, nil)
+			_, err := wrapper.FetchNextOrders(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("translates plugin errors", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().Name().Return("dummy").MaxTimes(2)
+			plg.EXPECT().FetchNextOrders(gomock.Any(), gomock.Any()).Return(models.FetchNextOrdersResponse{}, plugins.ErrNotImplemented)
+			_, err := wrapper.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
+			Expect(errors.Is(err, plugins.ErrNotImplemented)).To(BeTrue())
+		})
+	})
+
+	Context("fetch next conversions", func() {
+		It("calls underlying function", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.FetchNextConversionsRequest{}
+			plg.EXPECT().Name().Return("dummy").MaxTimes(2)
+			plg.EXPECT().FetchNextConversions(gomock.Any(), req).Return(models.FetchNextConversionsResponse{}, nil)
+			_, err := wrapper.FetchNextConversions(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("translates plugin errors", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().Name().Return("dummy").MaxTimes(2)
+			plg.EXPECT().FetchNextConversions(gomock.Any(), gomock.Any()).Return(models.FetchNextConversionsResponse{}, plugins.ErrNotImplemented)
+			_, err := wrapper.FetchNextConversions(ctx, models.FetchNextConversionsRequest{})
+			Expect(errors.Is(err, plugins.ErrNotImplemented)).To(BeTrue())
+		})
+	})
+
+	Context("poll payout status", func() {
+		It("calls underlying function", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.PollPayoutStatusRequest{PayoutID: "po"}
+			plg.EXPECT().Name().Return("dummy").MaxTimes(2)
+			plg.EXPECT().PollPayoutStatus(gomock.Any(), req).Return(models.PollPayoutStatusResponse{}, nil)
+			_, err := wrapper.PollPayoutStatus(ctx, req)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("trim webhook", func() {
+		It("calls underlying function", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.TrimWebhookRequest{Config: &models.WebhookConfig{Name: "n"}}
+			plg.EXPECT().Name().Return("dummy").MaxTimes(2)
+			plg.EXPECT().TrimWebhook(gomock.Any(), req).Return(models.TrimWebhookResponse{}, nil)
+			_, err := wrapper.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("user lifecycle", func() {
+		It("CreateUser forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.CreateUserRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().CreateUser(gomock.Any(), req).Return(models.CreateUserResponse{}, nil)
+			_, err := wrapper.CreateUser(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("CreateUserLink forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.CreateUserLinkRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().CreateUserLink(gomock.Any(), req).Return(models.CreateUserLinkResponse{}, nil)
+			_, err := wrapper.CreateUserLink(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("CompleteUserLink forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.CompleteUserLinkRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().CompleteUserLink(gomock.Any(), req).Return(models.CompleteUserLinkResponse{}, nil)
+			_, err := wrapper.CompleteUserLink(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("UpdateUserLink forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.UpdateUserLinkRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().UpdateUserLink(gomock.Any(), req).Return(models.UpdateUserLinkResponse{}, nil)
+			_, err := wrapper.UpdateUserLink(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("CompleteUpdateUserLink forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.CompleteUpdateUserLinkRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().CompleteUpdateUserLink(gomock.Any(), req).Return(models.CompleteUpdateUserLinkResponse{}, nil)
+			_, err := wrapper.CompleteUpdateUserLink(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("DeleteUserConnection forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.DeleteUserConnectionRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().DeleteUserConnection(gomock.Any(), req).Return(models.DeleteUserConnectionResponse{}, nil)
+			_, err := wrapper.DeleteUserConnection(ctx, req)
+			Expect(err).To(BeNil())
+		})
+
+		It("DeleteUser forwards", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			req := models.DeleteUserRequest{}
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().DeleteUser(gomock.Any(), req).Return(models.DeleteUserResponse{}, nil)
+			_, err := wrapper.DeleteUser(ctx, req)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("error translation", func() {
+		It("wraps rate-limit errors", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().FetchNextAccounts(gomock.Any(), gomock.Any()).Return(models.FetchNextAccountsResponse{}, httpwrapper.ErrStatusCodeTooManyRequests)
+			_, err := wrapper.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{})
+			Expect(errors.Is(err, plugins.ErrUpstreamRatelimit)).To(BeTrue())
+		})
+
+		It("wraps invalid-request errors", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			plg.EXPECT().FetchNextPayments(gomock.Any(), gomock.Any()).Return(models.FetchNextPaymentsResponse{}, models.ErrInvalidRequest)
+			_, err := wrapper.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{})
+			Expect(errors.Is(err, plugins.ErrInvalidClientRequest)).To(BeTrue())
+		})
+
+		It("leaves unknown errors untouched", func(ctx SpecContext) {
+			wrapper := New(connectorID, logger, plg)
+			plg.EXPECT().Name().Return("dummy").AnyTimes()
+			custom := errors.New("custom")
+			plg.EXPECT().FetchNextBalances(gomock.Any(), gomock.Any()).Return(models.FetchNextBalancesResponse{}, custom)
+			_, err := wrapper.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
+			Expect(err).To(Equal(custom))
+		})
+	})
 })
+
+var _ = Describe("Wrapper optional upgrades", func() {
+	var (
+		ctrl        *gomock.Controller
+		connectorID models.ConnectorID
+		logger      logging.Logger
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+		logger = logging.Testing()
+	})
+
+	Context("UseAccountLookup", func() {
+		It("no-ops when plugin does not implement PluginWithAccountLookup", func() {
+			plg := models.NewMockPlugin(ctrl)
+			wrapper := New(connectorID, logger, plg)
+			// Should not panic and should not call anything on the plugin.
+			wrapper.UseAccountLookup(models.NewMockAccountLookup(ctrl))
+		})
+
+		It("forwards when plugin implements PluginWithAccountLookup", func() {
+			plg := &pluginWithLookup{
+				MockPlugin: models.NewMockPlugin(ctrl),
+				inner:      models.NewMockPluginWithAccountLookup(ctrl),
+			}
+			lookup := models.NewMockAccountLookup(ctrl)
+			plg.inner.EXPECT().UseAccountLookup(lookup)
+			wrapper := New(connectorID, logger, plg)
+			wrapper.UseAccountLookup(lookup)
+		})
+	})
+
+	Context("BootstrapOnInstall", func() {
+		It("returns nil when plugin does not implement PluginWithBootstrapOnInstall", func() {
+			plg := models.NewMockPlugin(ctrl)
+			wrapper := New(connectorID, logger, plg)
+			Expect(wrapper.BootstrapOnInstall()).To(BeNil())
+		})
+
+		It("forwards when plugin implements PluginWithBootstrapOnInstall", func() {
+			plg := &pluginWithBootstrap{
+				MockPlugin: models.NewMockPlugin(ctrl),
+				inner:      models.NewMockPluginWithBootstrapOnInstall(ctrl),
+			}
+			want := []models.TaskType{models.TASK_FETCH_ACCOUNTS}
+			plg.inner.EXPECT().BootstrapOnInstall().Return(want)
+			wrapper := New(connectorID, logger, plg)
+			Expect(wrapper.BootstrapOnInstall()).To(Equal(want))
+		})
+	})
+})
+
+// pluginWithLookup composes MockPlugin with the optional AccountLookup upgrade
+// so the type assertion inside wrapper.UseAccountLookup succeeds.
+type pluginWithLookup struct {
+	*models.MockPlugin
+	inner *models.MockPluginWithAccountLookup
+}
+
+func (p *pluginWithLookup) UseAccountLookup(lookup models.AccountLookup) {
+	p.inner.UseAccountLookup(lookup)
+}
+
+// pluginWithBootstrap composes MockPlugin with the optional BootstrapOnInstall
+// upgrade so the type assertion inside wrapper.BootstrapOnInstall succeeds.
+type pluginWithBootstrap struct {
+	*models.MockPlugin
+	inner *models.MockPluginWithBootstrapOnInstall
+}
+
+func (p *pluginWithBootstrap) BootstrapOnInstall() []models.TaskType {
+	return p.inner.BootstrapOnInstall()
+}
