@@ -149,3 +149,82 @@ var _ = Describe("Coinbase Plugin ensureAssetsFresh", func() {
 		Expect(plg.assetsLastSync).To(BeZero())
 	})
 })
+
+var _ = Describe("Coinbase Plugin resolveAssetAndPrecision", func() {
+	var (
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{
+			Plugin: plugins.NewBasePlugin(),
+			client: m,
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			// Pre-populated, TTL-fresh cache. No client mocks below — any
+			// unexpected client call fails the test, proving the fast-path
+			// served these cases.
+			currencies: map[string]int{
+				"BTC":  8,
+				"USDC": 6,
+				"USD":  2,
+			},
+			networkSymbols: map[string]string{
+				"BASEUSDC": "USDC",
+			},
+			assetsLastSync: time.Now(),
+		}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	It("resolves a known symbol to asset and precision", func(ctx SpecContext) {
+		asset, precision, ok, err := plg.resolveAssetAndPrecision(ctx, "BTC")
+		Expect(err).To(BeNil())
+		Expect(ok).To(BeTrue())
+		Expect(asset).To(Equal("BTC/8"))
+		Expect(precision).To(Equal(8))
+	})
+
+	It("folds network-scoped symbols to the base symbol", func(ctx SpecContext) {
+		asset, precision, ok, err := plg.resolveAssetAndPrecision(ctx, "BASEUSDC")
+		Expect(err).To(BeNil())
+		Expect(ok).To(BeTrue())
+		Expect(asset).To(Equal("USDC/6"))
+		Expect(precision).To(Equal(6))
+	})
+
+	It("normalizes whitespace and case before lookup", func(ctx SpecContext) {
+		asset, precision, ok, err := plg.resolveAssetAndPrecision(ctx, "  btc  ")
+		Expect(err).To(BeNil())
+		Expect(ok).To(BeTrue())
+		Expect(asset).To(Equal("BTC/8"))
+		Expect(precision).To(Equal(8))
+	})
+
+	It("returns ok=false with no error for an unknown symbol", func(ctx SpecContext) {
+		asset, precision, ok, err := plg.resolveAssetAndPrecision(ctx, "DOGE")
+		Expect(err).To(BeNil())
+		Expect(ok).To(BeFalse())
+		Expect(asset).To(BeEmpty())
+		Expect(precision).To(Equal(0))
+	})
+
+	It("propagates freshness-refresh errors from getAssets", func(ctx SpecContext) {
+		// Force a refresh attempt by making the cache stale; mock GetAssets to fail.
+		plg.assetsLastSync = time.Time{}
+		plg.entityID = "entity-resolve-err"
+		m.EXPECT().GetAssets(gomock.Any(), "entity-resolve-err").Return(nil, errors.New("boom"))
+
+		asset, precision, ok, err := plg.resolveAssetAndPrecision(ctx, "BTC")
+		Expect(err).To(MatchError(ContainSubstring("boom")))
+		Expect(ok).To(BeFalse())
+		Expect(asset).To(BeEmpty())
+		Expect(precision).To(Equal(0))
+	})
+})

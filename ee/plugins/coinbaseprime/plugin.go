@@ -120,6 +120,13 @@ func (p *Plugin) BootstrapOnInstall() []models.TaskType {
 // asset list, rebuilding the currencies and networkSymbols maps. Callers must
 // hold p.assetsRefreshMu to prevent concurrent loads. Stamps assetsLastSync on
 // success so ensureAssetsFresh can honor the TTL.
+//
+// Invariant: the currencies and networkSymbols maps are immutable after
+// publication — loadAssets always builds fresh maps locally and publishes
+// them via pointer swap under p.assetsMu's write lock. Callers that obtain a
+// snapshot (see getAssets) may read it freely without holding the lock
+// because no goroutine will ever mutate an already-published map. Do not
+// change this contract without updating every read site.
 func (p *Plugin) loadAssets(ctx context.Context) error {
 	entityID, err := p.ensurePortfolioEntityID(ctx)
 	if err != nil {
@@ -198,12 +205,16 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
+// The FetchNext* methods no longer call ensureAssetsFresh directly — the
+// freshness + lock discipline is enforced at the actual asset-read sites
+// (fetchNextAccounts, fetchNextBalances, transactionToPayment,
+// transactionToConversion, clientOrderToPSPOrder) via p.getAssets(ctx).
+// This removes the implicit "caller must remember" contract and makes each
+// read self-contained.
+
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
-	}
-	if err := p.ensureAssetsFresh(ctx); err != nil {
-		return models.FetchNextAccountsResponse{}, err
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
@@ -212,18 +223,12 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
-	if err := p.ensureAssetsFresh(ctx); err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
-	}
-	if err := p.ensureAssetsFresh(ctx); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
 	}
 	return p.fetchNextPayments(ctx, req)
 }
@@ -232,18 +237,12 @@ func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	if p.client == nil {
 		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
 	}
-	if err := p.ensureAssetsFresh(ctx); err != nil {
-		return models.FetchNextOrdersResponse{}, err
-	}
 	return p.fetchNextOrders(ctx, req)
 }
 
 func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
-	}
-	if err := p.ensureAssetsFresh(ctx); err != nil {
-		return models.FetchNextConversionsResponse{}, err
 	}
 	return p.fetchNextConversions(ctx, req)
 }

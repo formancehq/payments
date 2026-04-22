@@ -84,7 +84,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 	pspOrders := make([]models.PSPOrder, 0, len(ordersResp.Orders))
 	for _, order := range ordersResp.Orders {
-		pspOrder, err := p.clientOrderToPSPOrder(order, wallets)
+		pspOrder, err := p.clientOrderToPSPOrder(ctx, order, wallets)
 		if err != nil {
 			// Fail the batch when any order in the page references an
 			// unresolved wallet (or anything else goes wrong). This is the
@@ -111,7 +111,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}, nil
 }
 
-func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]string) (models.PSPOrder, error) {
+func (p *Plugin) clientOrderToPSPOrder(ctx context.Context, order client.Order, wallets map[string]string) (models.PSPOrder, error) {
 	raw, err := json.Marshal(order)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to marshal order raw: %w", err)
@@ -123,13 +123,27 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]st
 	}
 	baseSymbol, quoteSymbol := parts[0], parts[1]
 
-	baseAsset, _, baseOk := p.resolveAssetAndPrecision(baseSymbol)
+	baseAsset, _, baseOk, err := p.resolveAssetAndPrecision(ctx, baseSymbol)
+	if err != nil {
+		return models.PSPOrder{}, err
+	}
 	if !baseOk {
 		return models.PSPOrder{}, fmt.Errorf("unsupported base asset: %s", baseSymbol)
 	}
-	quoteAsset, _, quoteOk := p.resolveAssetAndPrecision(quoteSymbol)
+	quoteAsset, _, quoteOk, err := p.resolveAssetAndPrecision(ctx, quoteSymbol)
+	if err != nil {
+		return models.PSPOrder{}, err
+	}
 	if !quoteOk {
 		return models.PSPOrder{}, fmt.Errorf("unsupported quote asset: %s", quoteSymbol)
+	}
+
+	// Pull a single snapshot of currencies to thread through parseOrderQuantity /
+	// parseFeeFields. getAssets is cheap on the fresh-cache fast path (the two
+	// resolveAssetAndPrecision calls above just refreshed the TTL).
+	currencies, _, err := p.getAssets(ctx)
+	if err != nil {
+		return models.PSPOrder{}, err
 	}
 
 	quoteWallet := wallets[strings.ToUpper(quoteSymbol)]
@@ -163,24 +177,24 @@ func (p *Plugin) clientOrderToPSPOrder(order client.Order, wallets map[string]st
 		timeInForce = models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED
 	}
 
-	baseQuantityOrdered, err := p.parseOrderQuantity(order.BaseQuantity, baseSymbol)
+	baseQuantityOrdered, err := parseOrderQuantity(currencies, order.BaseQuantity, baseSymbol)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse base quantity: %w", err)
 	}
 
-	baseQuantityFilled, err := p.parseOrderQuantity(order.FilledQuantity, baseSymbol)
+	baseQuantityFilled, err := parseOrderQuantity(currencies, order.FilledQuantity, baseSymbol)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse filled quantity: %w", err)
 	}
 
 	// Quote amount (filled_value) at quote precision — the exact USD amount
-	quoteAmount, err := p.parseOrderQuantity(order.FilledValue, quoteSymbol)
+	quoteAmount, err := parseOrderQuantity(currencies, order.FilledValue, quoteSymbol)
 	if err != nil {
 		return models.PSPOrder{}, fmt.Errorf("failed to parse filled value: %w", err)
 	}
 
 	// Fee at quote precision
-	fee, feeAsset, err := p.parseFeeFields(order, quoteSymbol, quoteAsset)
+	fee, feeAsset, err := parseFeeFields(currencies, order, quoteSymbol, quoteAsset)
 	if err != nil {
 		return models.PSPOrder{}, err
 	}
@@ -286,11 +300,11 @@ func mapCoinbaseOrderType(t string) (models.OrderType, bool) {
 	}
 }
 
-func (p *Plugin) parseFeeFields(order client.Order, quoteSymbol, quoteAsset string) (*big.Int, *string, error) {
+func parseFeeFields(currencies map[string]int, order client.Order, quoteSymbol, quoteAsset string) (*big.Int, *string, error) {
 	if order.Commission == "" {
 		return nil, nil, nil
 	}
-	fee, err := p.parseOrderQuantity(order.Commission, quoteSymbol)
+	fee, err := parseOrderQuantity(currencies, order.Commission, quoteSymbol)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse commission: %w", err)
 	}
@@ -434,16 +448,22 @@ func mapCoinbaseStatus(cbStatus, baseQuantity, filledQuantity string) (models.Or
 	}
 }
 
-func (p *Plugin) parseOrderQuantity(quantityStr string, asset string) (*big.Int, error) {
+// parseOrderQuantity converts a string quantity to a big.Int using the
+// precision lookup from the provided currencies snapshot. Unknown assets
+// fall back to a default precision of 8 (matching the pre-refactor
+// behavior). Callers are responsible for sourcing currencies via
+// p.getAssets(ctx) — keeping the parameter explicit avoids the implicit
+// "must-be-fresh" contract the previous p.currencies read had.
+func parseOrderQuantity(currencies map[string]int, quantityStr string, asset string) (*big.Int, error) {
 	if quantityStr == "" {
 		return big.NewInt(0), nil
 	}
-	return currency.GetAmountWithPrecisionFromString(quantityStr, p.getPrecision(asset))
+	return currency.GetAmountWithPrecisionFromString(quantityStr, precisionFor(currencies, asset))
 }
 
-func (p *Plugin) getPrecision(asset string) int {
-	if p.currencies != nil {
-		if precision, ok := p.currencies[strings.ToUpper(asset)]; ok {
+func precisionFor(currencies map[string]int, asset string) int {
+	if currencies != nil {
+		if precision, ok := currencies[strings.ToUpper(asset)]; ok {
 			return precision
 		}
 	}

@@ -39,7 +39,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	payments := make([]models.PSPPayment, 0, len(response.Transactions))
 	for _, tx := range response.Transactions {
-		payment, err := p.transactionToPayment(tx)
+		payment, err := p.transactionToPayment(ctx, tx)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to convert transaction %s: %w", tx.ID, err)
 		}
@@ -62,12 +62,15 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
-func (p *Plugin) transactionToPayment(tx client.Transaction) (*models.PSPPayment, error) {
+func (p *Plugin) transactionToPayment(ctx context.Context, tx client.Transaction) (*models.PSPPayment, error) {
 	if strings.EqualFold(tx.Type, TransactionTypeConversion) {
 		return nil, nil
 	}
 
-	asset, precision, ok := p.resolveAssetAndPrecision(tx.Symbol)
+	asset, precision, ok, err := p.resolveAssetAndPrecision(ctx, tx.Symbol)
+	if err != nil {
+		return nil, err
+	}
 	if !ok {
 		p.logger.Infof("skipping transaction %s: unsupported currency %q", tx.ID, tx.Symbol)
 		return nil, nil
@@ -105,23 +108,6 @@ func (p *Plugin) transactionToPayment(tx client.Transaction) (*models.PSPPayment
 	payment.DestinationAccountReference = destinationAccountReference
 
 	return &payment, nil
-}
-
-func (p *Plugin) resolveAssetAndPrecision(symbol string) (string, int, bool) {
-	symbol = strings.ToUpper(strings.TrimSpace(symbol))
-
-	// Resolve network-scoped symbols (e.g. "BASEUSDC") to their base symbol ("USDC")
-	if base, ok := p.networkSymbols[symbol]; ok {
-		symbol = base
-	}
-
-	precision, err := currency.GetPrecision(p.currencies, symbol)
-	if err != nil {
-		return "", 0, false
-	}
-
-	asset := currency.FormatAsset(p.currencies, symbol)
-	return asset, precision, true
 }
 
 func buildTransactionMetadata(tx client.Transaction) map[string]string {

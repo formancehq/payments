@@ -66,9 +66,10 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	p.assetsMu.RLock()
-	currencies := p.currencies
-	p.assetsMu.RUnlock()
+	currencies, _, err := p.getAssets(ctx)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, err
+	}
 
 	accounts := make([]models.PSPAccount, 0, len(response.Wallets))
 	for _, wallet := range response.Wallets {

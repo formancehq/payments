@@ -27,7 +27,7 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 
 	conversions := make([]models.PSPConversion, 0, len(resp.Transactions))
 	for _, tx := range resp.Transactions {
-		conv, err := p.transactionToConversion(tx)
+		conv, err := p.transactionToConversion(ctx, tx)
 		if err != nil {
 			return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to convert transaction %s: %w", tx.ID, err)
 		}
@@ -49,8 +49,11 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	}, nil
 }
 
-func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConversion, error) {
-	sourceAsset, sourcePrecision, sourceOk := p.resolveAssetAndPrecision(tx.Symbol)
+func (p *Plugin) transactionToConversion(ctx context.Context, tx client.Transaction) (*models.PSPConversion, error) {
+	sourceAsset, sourcePrecision, sourceOk, err := p.resolveAssetAndPrecision(ctx, tx.Symbol)
+	if err != nil {
+		return nil, err
+	}
 	if !sourceOk {
 		p.logger.Infof("skipping conversion %s: unsupported source currency %q", tx.ID, tx.Symbol)
 		return nil, nil
@@ -62,7 +65,10 @@ func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConv
 		return nil, nil
 	}
 
-	targetAsset, targetPrecision, targetOk := p.resolveAssetAndPrecision(targetSymbol)
+	targetAsset, targetPrecision, targetOk, err := p.resolveAssetAndPrecision(ctx, targetSymbol)
+	if err != nil {
+		return nil, err
+	}
 	if !targetOk {
 		p.logger.Infof("skipping conversion %s: unsupported target currency %q", tx.ID, targetSymbol)
 		return nil, nil
@@ -94,7 +100,10 @@ func (p *Plugin) transactionToConversion(tx client.Transaction) (*models.PSPConv
 		if feeSymbol == "" {
 			feeSymbol = tx.Symbol
 		}
-		fAsset, fPrecision, fOk := p.resolveAssetAndPrecision(feeSymbol)
+		fAsset, fPrecision, fOk, err := p.resolveAssetAndPrecision(ctx, feeSymbol)
+		if err != nil {
+			return nil, err
+		}
 		if !fOk {
 			p.logger.Infof("skipping fee for conversion %s: unsupported fee currency %q", tx.ID, feeSymbol)
 		} else {

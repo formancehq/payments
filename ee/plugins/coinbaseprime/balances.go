@@ -25,10 +25,15 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
+	currencies, _, err := p.getAssets(ctx)
+	if err != nil {
+		return models.FetchNextBalancesResponse{}, err
+	}
+
 	bal := response.Balance
 	symbol := strings.ToUpper(strings.TrimSpace(bal.Symbol))
 
-	precision, ok := p.currencies[symbol]
+	precision, ok := currencies[symbol]
 	if !ok {
 		return models.FetchNextBalancesResponse{
 			Balances: nil,
@@ -42,7 +47,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}
 
 	now := time.Now().UTC()
-	asset := currency.FormatAsset(p.currencies, symbol)
+	asset := currency.FormatAsset(currencies, symbol)
 
 	return models.FetchNextBalancesResponse{
 		Balances: []models.PSPBalance{{
