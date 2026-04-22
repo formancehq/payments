@@ -27,6 +27,7 @@ jobs:
           nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
           develop --impure --command just release
         env:
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
           SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
