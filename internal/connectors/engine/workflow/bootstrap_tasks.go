@@ -26,6 +26,17 @@ func (w Workflow) runBootstrapTasks(
 	ctx workflow.Context,
 	req BootstrapTasksRequest,
 ) error {
+	if err := w.createInstance(ctx, req.ConnectorID); err != nil {
+		return errors.Wrap(err, "creating instance for "+RunBootstrapTasks)
+	}
+	err := w.bootstrapTasks(ctx, req)
+	return w.terminateInstance(ctx, req.ConnectorID, err)
+}
+
+func (w Workflow) bootstrapTasks(
+	ctx workflow.Context,
+	req BootstrapTasksRequest,
+) error {
 	for _, taskType := range req.TaskTypes {
 		// Pass the per-task subtree (the NextTasks under the matching
 		// top-level entry in the connector's ConnectorTasksTree) so the
@@ -94,6 +105,13 @@ func (w Workflow) startPeriodicSchedulesForBootstrap(
 		return errors.Wrap(err, "running next workflow after bootstrap")
 	}
 	return nil
+}
+
+// bootstrapScheduleID returns the deterministic schedule ID for the one-shot
+// bootstrap schedule associated with a connector. Single source of truth for
+// the format so install/uninstall/cleanup/tests cannot drift.
+func (w Workflow) bootstrapScheduleID(connectorID models.ConnectorID) string {
+	return fmt.Sprintf("bootstrap-%s-%s", w.stack, connectorID.String())
 }
 
 // findNextTasksForType returns the NextTasks subtree for the top-level

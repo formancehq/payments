@@ -14,7 +14,7 @@ import (
 
 type ScheduleCreateOptions struct {
 	ScheduleID         string
-	Interval           client.ScheduleIntervalSpec
+	Interval           *client.ScheduleIntervalSpec
 	Action             client.ScheduleWorkflowAction
 	Overlap            enums.ScheduleOverlapPolicy
 	Jitter             time.Duration
@@ -23,6 +23,18 @@ type ScheduleCreateOptions struct {
 }
 
 func (a Activities) TemporalScheduleCreate(ctx context.Context, options ScheduleCreateOptions) error {
+	// Guard against a no-op schedule: nil Interval with TriggerImmediately false
+	// produces a schedule that never fires. Such a schedule has no legitimate
+	// use and indicates a caller bug — fail loudly instead of silently
+	// registering dead state in Temporal.
+	if options.Interval == nil && !options.TriggerImmediately {
+		return temporal.NewNonRetryableApplicationError(
+			"schedule would never fire: either set Interval (periodic) or TriggerImmediately (one-shot)",
+			"invalidScheduleOptions",
+			nil,
+		)
+	}
+
 	attributes := make([]temporal.SearchAttributeUpdate, 0, len(options.SearchAttributes))
 	for key, value := range options.SearchAttributes {
 		v, ok := value.(string)
@@ -36,12 +48,16 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 	}
 	options.Action.TypedSearchAttributes = temporal.NewSearchAttributes(attributes...)
 
+	spec := client.ScheduleSpec{
+		Jitter: options.Jitter,
+	}
+	if options.Interval != nil {
+		spec.Intervals = []client.ScheduleIntervalSpec{*options.Interval}
+	}
+
 	_, err := a.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
-		ID: options.ScheduleID,
-		Spec: client.ScheduleSpec{
-			Intervals: []client.ScheduleIntervalSpec{options.Interval},
-			Jitter:    options.Jitter,
-		},
+		ID:                 options.ScheduleID,
+		Spec:               spec,
 		Action:             &options.Action,
 		Overlap:            options.Overlap,
 		TriggerImmediately: options.TriggerImmediately,

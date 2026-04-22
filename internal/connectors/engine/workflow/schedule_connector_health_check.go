@@ -34,7 +34,7 @@ func (w Workflow) runScheduleConnectorHealthCheck(ctx workflow.Context, req Sche
 		infiniteRetryContext(ctx),
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
-			Interval: client.ScheduleIntervalSpec{
+			Interval: &client.ScheduleIntervalSpec{
 				Every: w.healthCheckInterval,
 			},
 			Action: client.ScheduleWorkflowAction{

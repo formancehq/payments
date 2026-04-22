@@ -1,10 +1,13 @@
 package workflow
 
 import (
+	"context"
 	"errors"
 
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -114,4 +117,70 @@ func (s *UnitTestSuite) Test_BootstrapTasks_EmptyTaskList_StartsPeriodicSchedule
 
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
+}
+
+func (s *UnitTestSuite) Test_BootstrapTasks_WithScheduleID_StoresAndTerminatesInstance() {
+	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
+		func(ctx context.Context, instance models.Instance) error {
+			s.Equal("test-bootstrap-schedule", instance.ScheduleID)
+			s.Equal(s.connectorID, instance.ConnectorID)
+			s.False(instance.Terminated)
+			return nil
+		},
+	)
+	s.env.OnWorkflow(RunBootstrapTask, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunNextTasksV3_1, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(
+		func(ctx context.Context, instance models.Instance) error {
+			s.Equal("test-bootstrap-schedule", instance.ScheduleID)
+			s.Equal(s.connectorID, instance.ConnectorID)
+			s.True(instance.Terminated)
+			s.NotNil(instance.TerminatedAt)
+			s.Nil(instance.Error)
+			return nil
+		},
+	)
+
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test-bootstrap-schedule")))
+	s.NoError(err)
+
+	s.env.ExecuteWorkflow(RunBootstrapTasks, BootstrapTasksRequest{
+		ConnectorID: s.connectorID,
+		TaskTypes:   []models.TaskType{models.TASK_FETCH_ACCOUNTS},
+		TaskTree: []models.ConnectorTaskTree{
+			{TaskType: models.TASK_FETCH_ACCOUNTS},
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
+func (s *UnitTestSuite) Test_BootstrapTasks_WithScheduleID_OnFailure_PropagatesErrorToInstance() {
+	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunBootstrapTask, mock.Anything, mock.Anything).Once().Return(
+		errors.New("bootstrap failed"),
+	)
+	// RunNextTasksV3_1 must NOT be called when bootstrap fails.
+	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(
+		func(ctx context.Context, instance models.Instance) error {
+			s.Equal("test-bootstrap-schedule", instance.ScheduleID)
+			s.True(instance.Terminated)
+			s.NotNil(instance.Error)
+			s.Contains(*instance.Error, "bootstrap failed")
+			return nil
+		},
+	)
+
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test-bootstrap-schedule")))
+	s.NoError(err)
+
+	s.env.ExecuteWorkflow(RunBootstrapTasks, BootstrapTasksRequest{
+		ConnectorID: s.connectorID,
+		TaskTypes:   []models.TaskType{models.TASK_FETCH_ACCOUNTS},
+		TaskTree:    []models.ConnectorTaskTree{},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.Error(s.env.GetWorkflowError())
 }

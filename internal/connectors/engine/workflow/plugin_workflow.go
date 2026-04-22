@@ -197,7 +197,7 @@ func (w Workflow) scheduleNextWorkflow(
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
 			Jitter:     calculateJitter(config.PollingPeriod),
-			Interval: client.ScheduleIntervalSpec{
+			Interval: &client.ScheduleIntervalSpec{
 				Every: config.PollingPeriod,
 			},
 			Action: client.ScheduleWorkflowAction{
