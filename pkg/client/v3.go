@@ -4263,7 +4263,21 @@ func (s *V3) ListConnectorScheduleInstances(ctx context.Context, connectorID str
 
 }
 
-// ListOrders - List all orders
+// ListOrders - List orders ingested from exchange-style connectors
+// Returns the full list of orders ingested by Formance from connectors
+// that implement the orders capability (e.g. `coinbaseprime`). Orders
+// represent trade placements on an exchange-style PSP and are
+// **read-only** through the Formance API — submission, cancellation,
+// and lifecycle transitions are owned by the underlying connector.
+//
+// Results are cursor-paginated. The optional request body accepts a
+// query builder for filtering over top-level `V3Order` fields such as
+// `connectorID`, `reference`, `direction`, `status`, `type`,
+// `sourceAsset`, `destinationAsset`, and `createdAt`.
+//
+// See `V3Order` for the full response shape, including the
+// `adjustments` array that captures each observed state transition on
+// the exchange.
 func (s *V3) ListOrders(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListOrdersResponse, error) {
 	request := operations.V3ListOrdersRequest{
 		PageSize:    pageSize,
@@ -4496,7 +4510,15 @@ func (s *V3) ListOrders(ctx context.Context, pageSize *int64, cursor *string, re
 
 }
 
-// GetOrder - Get an order by ID
+// GetOrder - Get a single order by its Formance ID
+// Returns one order identified by its Formance-assigned `id` (composed
+// from the PSP `reference` and the connector ID — **not** the PSP's
+// native reference). The response includes the full `adjustments`
+// history ordered from oldest to most recent; the last adjustment
+// reflects the order's current top-level `status`.
+//
+// Returns an error via `V3ErrorResponse` when no order exists for the
+// given ID, or when the ID cannot be decoded.
 func (s *V3) GetOrder(ctx context.Context, orderID string, opts ...operations.Option) (*operations.V3GetOrderResponse, error) {
 	request := operations.V3GetOrderRequest{
 		OrderID: orderID,
@@ -4716,7 +4738,21 @@ func (s *V3) GetOrder(ctx context.Context, orderID string, opts ...operations.Op
 
 }
 
-// ListConversions - List all conversions
+// ListConversions - List currency and asset conversions ingested from connectors
+// Returns the full list of conversions ingested by Formance from
+// connectors that implement the conversions capability. A conversion
+// is a direct swap between two assets on a PSP (e.g. USD → USDC on
+// Coinbase Prime). Conversions are **read-only** through the Formance
+// API.
+//
+// Unlike orders, conversions do not carry an adjustment history —
+// Formance records only the final observed state (`status`,
+// `destinationAmount`, and `fee` when settled).
+//
+// Results are cursor-paginated. The optional request body accepts a
+// query builder for filtering over top-level `V3Conversion` fields
+// such as `connectorID`, `reference`, `status`, `sourceAsset`,
+// `destinationAsset`, and `createdAt`.
 func (s *V3) ListConversions(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListConversionsResponse, error) {
 	request := operations.V3ListConversionsRequest{
 		PageSize:    pageSize,
@@ -4949,7 +4985,15 @@ func (s *V3) ListConversions(ctx context.Context, pageSize *int64, cursor *strin
 
 }
 
-// GetConversion - Get a conversion by ID
+// GetConversion - Get a single conversion by its Formance ID
+// Returns one conversion identified by its Formance-assigned `id`
+// (**not** the PSP's native `reference`). See `V3Conversion` for the
+// response shape — on `COMPLETED` status the `destinationAmount` and
+// `fee` fields reflect the settled values; on `FAILED` the `error`
+// field carries the PSP's rejection reason.
+//
+// Returns an error via `V3ErrorResponse` when no conversion exists
+// for the given ID.
 func (s *V3) GetConversion(ctx context.Context, conversionID string, opts ...operations.Option) (*operations.V3GetConversionResponse, error) {
 	request := operations.V3GetConversionRequest{
 		ConversionID: conversionID,

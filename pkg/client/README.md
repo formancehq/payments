@@ -204,10 +204,10 @@ func main() {
 * [ListConnectorSchedules](docs/sdks/v3/README.md#listconnectorschedules) - List all connector schedules
 * [GetConnectorSchedule](docs/sdks/v3/README.md#getconnectorschedule) - Get a connector schedule by ID
 * [ListConnectorScheduleInstances](docs/sdks/v3/README.md#listconnectorscheduleinstances) - List all connector schedule instances
-* [ListOrders](docs/sdks/v3/README.md#listorders) - List all orders
-* [GetOrder](docs/sdks/v3/README.md#getorder) - Get an order by ID
-* [ListConversions](docs/sdks/v3/README.md#listconversions) - List all conversions
-* [GetConversion](docs/sdks/v3/README.md#getconversion) - Get a conversion by ID
+* [ListOrders](docs/sdks/v3/README.md#listorders) - List orders ingested from exchange-style connectors
+* [GetOrder](docs/sdks/v3/README.md#getorder) - Get a single order by its Formance ID
+* [ListConversions](docs/sdks/v3/README.md#listconversions) - List currency and asset conversions ingested from connectors
+* [GetConversion](docs/sdks/v3/README.md#getconversion) - Get a single conversion by its Formance ID
 * [CreatePayment](docs/sdks/v3/README.md#createpayment) - Create a formance payment object. This object will not be forwarded to the connector. It is only used for internal purposes.
 
 * [ListPayments](docs/sdks/v3/README.md#listpayments) - List all payments

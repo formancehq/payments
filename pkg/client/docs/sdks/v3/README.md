@@ -26,10 +26,10 @@
 * [ListConnectorSchedules](#listconnectorschedules) - List all connector schedules
 * [GetConnectorSchedule](#getconnectorschedule) - Get a connector schedule by ID
 * [ListConnectorScheduleInstances](#listconnectorscheduleinstances) - List all connector schedule instances
-* [ListOrders](#listorders) - List all orders
-* [GetOrder](#getorder) - Get an order by ID
-* [ListConversions](#listconversions) - List all conversions
-* [GetConversion](#getconversion) - Get a conversion by ID
+* [ListOrders](#listorders) - List orders ingested from exchange-style connectors
+* [GetOrder](#getorder) - Get a single order by its Formance ID
+* [ListConversions](#listconversions) - List currency and asset conversions ingested from connectors
+* [GetConversion](#getconversion) - Get a single conversion by its Formance ID
 * [CreatePayment](#createpayment) - Create a formance payment object. This object will not be forwarded to the connector. It is only used for internal purposes.
 
 * [ListPayments](#listpayments) - List all payments
@@ -1086,7 +1086,21 @@ func main() {
 
 ## ListOrders
 
-List all orders
+Returns the full list of orders ingested by Formance from connectors
+that implement the orders capability (e.g. `coinbaseprime`). Orders
+represent trade placements on an exchange-style PSP and are
+**read-only** through the Formance API — submission, cancellation,
+and lifecycle transitions are owned by the underlying connector.
+
+Results are cursor-paginated. The optional request body accepts a
+query builder for filtering over top-level `V3Order` fields such as
+`connectorID`, `reference`, `direction`, `status`, `type`,
+`sourceAsset`, `destinationAsset`, and `createdAt`.
+
+See `V3Order` for the full response shape, including the
+`adjustments` array that captures each observed state transition on
+the exchange.
+
 
 ### Example Usage
 
@@ -1140,7 +1154,15 @@ func main() {
 
 ## GetOrder
 
-Get an order by ID
+Returns one order identified by its Formance-assigned `id` (composed
+from the PSP `reference` and the connector ID — **not** the PSP's
+native reference). The response includes the full `adjustments`
+history ordered from oldest to most recent; the last adjustment
+reflects the order's current top-level `status`.
+
+Returns an error via `V3ErrorResponse` when no order exists for the
+given ID, or when the ID cannot be decoded.
+
 
 ### Example Usage
 
@@ -1192,7 +1214,21 @@ func main() {
 
 ## ListConversions
 
-List all conversions
+Returns the full list of conversions ingested by Formance from
+connectors that implement the conversions capability. A conversion
+is a direct swap between two assets on a PSP (e.g. USD → USDC on
+Coinbase Prime). Conversions are **read-only** through the Formance
+API.
+
+Unlike orders, conversions do not carry an adjustment history —
+Formance records only the final observed state (`status`,
+`destinationAmount`, and `fee` when settled).
+
+Results are cursor-paginated. The optional request body accepts a
+query builder for filtering over top-level `V3Conversion` fields
+such as `connectorID`, `reference`, `status`, `sourceAsset`,
+`destinationAsset`, and `createdAt`.
+
 
 ### Example Usage
 
@@ -1246,7 +1282,15 @@ func main() {
 
 ## GetConversion
 
-Get a conversion by ID
+Returns one conversion identified by its Formance-assigned `id`
+(**not** the PSP's native `reference`). See `V3Conversion` for the
+response shape — on `COMPLETED` status the `destinationAmount` and
+`fee` fields reflect the settled values; on `FAILED` the `error`
+field carries the PSP's rejection reason.
+
+Returns an error via `V3ErrorResponse` when no conversion exists
+for the given ID.
+
 
 ### Example Usage
 
