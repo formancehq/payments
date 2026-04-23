@@ -80,6 +80,28 @@ func (w Workflow) runNextTasksV3_1(
 			request = req
 			capability = models.CAPABILITY_FETCH_BALANCES
 
+		case models.TASK_FETCH_ORDERS:
+			req := FetchNextOrders{
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
+			}
+
+			nextWorkflow = RunFetchNextOrders
+			request = req
+			capability = models.CAPABILITY_FETCH_ORDERS
+
+		case models.TASK_FETCH_CONVERSIONS:
+			req := FetchNextConversions{
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
+			}
+
+			nextWorkflow = RunFetchNextConversions
+			request = req
+			capability = models.CAPABILITY_FETCH_CONVERSIONS
+
 		case models.TASK_CREATE_WEBHOOKS:
 			req := CreateWebhooks{
 				ConnectorID: connectorID,
@@ -175,7 +197,7 @@ func (w Workflow) scheduleNextWorkflow(
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
 			Jitter:     calculateJitter(config.PollingPeriod),
-			Interval: client.ScheduleIntervalSpec{
+			Interval: &client.ScheduleIntervalSpec{
 				Every: config.PollingPeriod,
 			},
 			Action: client.ScheduleWorkflowAction{

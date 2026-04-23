@@ -105,6 +105,24 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 				})
 			})
 
+			// Orders
+			r.Route("/orders", func(r chi.Router) {
+				r.Get("/", ordersList(backend))
+
+				r.Route("/{orderID}", func(r chi.Router) {
+					r.Get("/", ordersGet(backend))
+				})
+			})
+
+			// Conversions
+			r.Route("/conversions", func(r chi.Router) {
+				r.Get("/", conversionsList(backend))
+
+				r.Route("/{conversionID}", func(r chi.Router) {
+					r.Get("/", conversionsGet(backend))
+				})
+			})
+
 			// Payment Initiations
 			r.Route("/payment-initiations", func(r chi.Router) {
 				r.Post("/", paymentInitiationsCreate(backend, validator))
@@ -208,4 +226,12 @@ func taskID(r *http.Request) string {
 
 func paymentInitiationID(r *http.Request) string {
 	return chi.URLParam(r, "paymentInitiationID")
+}
+
+func orderID(r *http.Request) string {
+	return chi.URLParam(r, "orderID")
+}
+
+func conversionID(r *http.Request) string {
+	return chi.URLParam(r, "conversionID")
 }

@@ -162,7 +162,7 @@ func (w Workflow) createPayout(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
 					ScheduleID: scheduleID,
-					Interval: client.ScheduleIntervalSpec{
+					Interval: &client.ScheduleIntervalSpec{
 						Every: config.PollingPeriod,
 					},
 					Action: client.ScheduleWorkflowAction{

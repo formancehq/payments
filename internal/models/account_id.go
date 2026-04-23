@@ -14,6 +14,23 @@ type AccountID struct {
 	ConnectorID ConnectorID
 }
 
+// Ref returns the reference string pointer, or nil if the AccountID is nil.
+func (aid *AccountID) Ref() *string {
+	if aid == nil {
+		return nil
+	}
+	return &aid.Reference
+}
+
+// StringPtr returns the base64-encoded AccountID as a *string, or nil if the AccountID is nil.
+func (aid *AccountID) StringPtr() *string {
+	if aid == nil || aid.Reference == "" {
+		return nil
+	}
+	s := aid.String()
+	return &s
+}
+
 func (aid *AccountID) String() string {
 	if aid == nil || aid.Reference == "" {
 		return ""
@@ -41,6 +58,15 @@ func AccountIDFromString(value string) (AccountID, error) {
 	}
 
 	return ret, nil
+}
+
+// NewAccountID builds an AccountID pointer from an optional reference and a
+// ConnectorID. Returns nil when ref is nil or empty.
+func NewAccountID(ref *string, connectorID ConnectorID) *AccountID {
+	if ref == nil || *ref == "" {
+		return nil
+	}
+	return &AccountID{Reference: *ref, ConnectorID: connectorID}
 }
 
 func MustAccountIDFromString(value string) AccountID {

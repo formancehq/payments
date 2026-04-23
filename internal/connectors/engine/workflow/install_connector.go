@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -20,6 +21,18 @@ func (w Workflow) runInstallConnector(
 	installConnector InstallConnector,
 ) error {
 	if errInstall := w.installConnector(ctx, installConnector); errInstall != nil {
+		// Capture whether the connector declared bootstrap tasks BEFORE we
+		// Unload it — after Unload, connectors.Get(...) returns an error and
+		// we can no longer inspect the plugin. If it declared bootstrap tasks,
+		// the install branch may have created the one-shot schedule before
+		// failing and we need to clean it up below.
+		hasBootstrap := false
+		if plugin, err := w.connectors.Get(installConnector.ConnectorID); err == nil {
+			if p, ok := plugin.(models.PluginWithBootstrapOnInstall); ok {
+				hasBootstrap = len(p.BootstrapOnInstall()) > 0
+			}
+		}
+
 		// In that case we don't want the connector to still be present in the
 		// database, so we remove it
 		if err := activities.StorageConnectorsDelete(
@@ -30,6 +43,26 @@ func (w Workflow) runInstallConnector(
 		}
 
 		w.connectors.Unload(installConnector.ConnectorID)
+
+		// Best-effort cleanup of the bootstrap schedule created during
+		// installConnector. Errors are logged but do not override the primary
+		// install error — matching the pattern in instances.go:55 and
+		// instances.go:79.
+		if hasBootstrap {
+			bootstrapScheduleID := w.bootstrapScheduleID(installConnector.ConnectorID)
+			if errDel := activities.TemporalScheduleDelete(infiniteRetryContext(ctx), bootstrapScheduleID); errDel != nil {
+				w.logger.WithFields(map[string]any{
+					"schedule_id": bootstrapScheduleID,
+					"error":       errDel,
+				}).Error("failed to delete bootstrap temporal schedule after install failure")
+			}
+			if errDel := activities.StorageSchedulesDelete(infiniteRetryContext(ctx), bootstrapScheduleID); errDel != nil {
+				w.logger.WithFields(map[string]any{
+					"schedule_id": bootstrapScheduleID,
+					"error":       errDel,
+				}).Error("failed to delete bootstrap storage schedule after install failure")
+			}
+		}
 
 		return errInstall
 	}
@@ -71,6 +104,61 @@ func (w Workflow) installConnector(
 	if plugin.IsScheduledForDeletion() {
 		return nil
 	}
+
+	// If the plugin declares bootstrap tasks, hand off to RunBootstrapTasks
+	// instead of starting the periodic scheduler inline. RunBootstrapTasks
+	// runs the declared tasks to completion and then starts the periodic
+	// scheduler itself — so the periodic workflows only begin once the
+	// plugin's initial data is in the database.
+	//
+	if p, ok := plugin.(models.PluginWithBootstrapOnInstall); ok {
+		if taskTypes := p.BootstrapOnInstall(); len(taskTypes) > 0 {
+			bootstrapScheduleID := w.bootstrapScheduleID(installConnector.ConnectorID)
+
+			// One-shot schedule — registered to inherit the uninstall-cleanup path.
+			// Must not be targeted by pause/unpause operations; those are only
+			// meaningful for periodic schedules.
+			if err := activities.StorageSchedulesStore(
+				infiniteRetryContext(ctx),
+				models.Schedule{
+					ID:          bootstrapScheduleID,
+					ConnectorID: installConnector.ConnectorID,
+					CreatedAt:   workflow.Now(ctx).UTC(),
+				},
+			); err != nil {
+				return errors.Wrap(err, "storing bootstrap schedule")
+			}
+
+			if err := activities.TemporalScheduleCreate(
+				infiniteRetryContext(ctx),
+				activities.ScheduleCreateOptions{
+					ScheduleID: bootstrapScheduleID,
+					Action: client.ScheduleWorkflowAction{
+						ID:       bootstrapScheduleID,
+						Workflow: RunBootstrapTasks,
+						Args: []interface{}{
+							BootstrapTasksRequest{
+								ConnectorID: installConnector.ConnectorID,
+								TaskTypes:   taskTypes,
+								TaskTree:    []models.ConnectorTaskTree(installResponse.Workflow),
+							},
+						},
+						TaskQueue: w.getDefaultTaskQueue(),
+					},
+					TriggerImmediately: true,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeScheduleID: bootstrapScheduleID,
+						SearchAttributeStack:      w.stack,
+					},
+				},
+			); err != nil {
+				return errors.Wrap(err, "creating bootstrap schedule")
+			}
+
+			return w.scheduleConnectorHealthCheck(ctx, installConnector)
+		}
+	}
+
 	if IsRunNextTaskOptimizationsEnabled(ctx) {
 		if err := workflow.ExecuteChildWorkflow(
 			workflow.WithChildOptions(
@@ -122,9 +210,17 @@ func (w Workflow) installConnector(
 		}
 	}
 
-	// Launch the health check schedule without waiting for it to complete.
-	// GetChildWorkflowExecution waits only for the child to start, so any
-	// start-time error is returned while completion runs independently.
+	return w.scheduleConnectorHealthCheck(ctx, installConnector)
+}
+
+// scheduleConnectorHealthCheck launches the health check schedule without
+// waiting for it to complete. GetChildWorkflowExecution waits only for the
+// child to start, so any start-time error is returned while completion runs
+// independently.
+func (w Workflow) scheduleConnectorHealthCheck(
+	ctx workflow.Context,
+	installConnector InstallConnector,
+) error {
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 			WorkflowID:            fmt.Sprintf("schedule-health-check-%s-%s", w.stack, installConnector.ConnectorID.String()),

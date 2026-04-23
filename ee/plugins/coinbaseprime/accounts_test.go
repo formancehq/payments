@@ -1,12 +1,13 @@
 package coinbaseprime
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,6 +36,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 				"ETH":  18,
 				"USDC": 6,
 			},
+			assetsLastSync: time.Now(),
 		}
 	})
 
@@ -82,7 +84,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "TRADING", "", 10).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -93,13 +95,13 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
-		It("should fetch wallets successfully", func(ctx SpecContext) {
+		It("should fetch wallets successfully on the first type", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "TRADING", "", 10).Return(
 				&client.WalletsResponse{
 					Wallets: sampleWallets,
 					Pagination: client.Pagination{
@@ -115,23 +117,21 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(resp.Accounts).To(HaveLen(3))
 			Expect(resp.HasMore).To(BeTrue())
 
-			// Verify BTC wallet
 			Expect(resp.Accounts[0].Reference).To(Equal("wallet1"))
-			Expect(resp.Accounts[0].CreatedAt).To(Equal(sampleWallets[0].CreatedAt))
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
-			Expect(*resp.Accounts[0].Name).To(Equal("BTC Trading Wallet"))
 			Expect(resp.Accounts[0].Metadata["wallet_type"]).To(Equal("TRADING"))
 
-			// Verify USD wallet
 			Expect(resp.Accounts[1].Reference).To(Equal("wallet2"))
-			Expect(resp.Accounts[1].CreatedAt).To(Equal(sampleWallets[1].CreatedAt))
 			Expect(*resp.Accounts[1].DefaultAsset).To(Equal("USD/2"))
 
-			// Verify ETH wallet
 			Expect(resp.Accounts[2].Reference).To(Equal("wallet3"))
-			Expect(resp.Accounts[2].CreatedAt).To(Equal(sampleWallets[2].CreatedAt))
 			Expect(*resp.Accounts[2].DefaultAsset).To(Equal("ETH/18"))
 			Expect(resp.Accounts[2].Metadata["wallet_type"]).To(Equal("VAULT"))
+
+			var newState accountsState
+			Expect(json.Unmarshal(resp.NewState, &newState)).To(Succeed())
+			Expect(newState.CurrentType).To(Equal("TRADING"))
+			Expect(newState.Cursors["TRADING"]).To(Equal("cursor123"))
 		})
 
 		It("should skip unsupported currencies", func(ctx SpecContext) {
@@ -157,7 +157,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 				},
 			}
 
-			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "TRADING", "", 10).Return(
 				&client.WalletsResponse{
 					Wallets: unsupportedWallets,
 					Pagination: client.Pagination{
@@ -189,7 +189,7 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 				},
 			}
 
-			m.EXPECT().GetWallets(gomock.Any(), "", 10).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "TRADING", "", 10).Return(
 				&client.WalletsResponse{
 					Wallets: lowercaseWallets,
 					Pagination: client.Pagination{
@@ -205,13 +205,13 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 		})
 
-		It("should use cursor for pagination", func(ctx SpecContext) {
+		It("should resume mid-type from the persisted cursor and currentType", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(`{"cursor": "existing-cursor"}`),
+				State:    []byte(`{"currentType":"VAULT","cursors":{"VAULT":"existing-cursor"}}`),
 				PageSize: 10,
 			}
 
-			m.EXPECT().GetWallets(gomock.Any(), "existing-cursor", 10).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "VAULT", "existing-cursor", 10).Return(
 				&client.WalletsResponse{
 					Wallets: []client.Wallet{},
 					Pagination: client.Pagination{
@@ -224,7 +224,95 @@ var _ = Describe("Coinbase Plugin Accounts", func() {
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Accounts).To(HaveLen(0))
+			// VAULT done -> ONCHAIN next; framework keeps calling within this cycle.
+			Expect(resp.HasMore).To(BeTrue())
+
+			var newState accountsState
+			Expect(json.Unmarshal(resp.NewState, &newState)).To(Succeed())
+			Expect(newState.CurrentType).To(Equal("ONCHAIN"))
+			// End-of-pagination with empty next_cursor preserves the prior cursor.
+			Expect(newState.Cursors["VAULT"]).To(Equal("existing-cursor"))
+		})
+
+		It("should advance CurrentType when the current type finishes with a new cursor", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetWallets(gomock.Any(), "TRADING", "", 10).Return(
+				&client.WalletsResponse{
+					Wallets: nil,
+					Pagination: client.Pagination{
+						NextCursor: "last-trading-cursor",
+						HasNext:    false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.HasMore).To(BeTrue())
+
+			var state accountsState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.CurrentType).To(Equal("VAULT"))
+			Expect(state.Cursors["TRADING"]).To(Equal("last-trading-cursor"))
+		})
+
+		It("should clear CurrentType when the final type finishes", func(ctx SpecContext) {
+			prevState := accountsState{
+				CurrentType: "WALLET_TYPE_OTHER",
+				Cursors:     map[string]string{"TRADING": "t", "VAULT": "v"},
+			}
+			stateBytes, err := json.Marshal(prevState)
+			Expect(err).To(BeNil())
+
+			req := models.FetchNextAccountsRequest{
+				State:    stateBytes,
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetWallets(gomock.Any(), "WALLET_TYPE_OTHER", "", 10).Return(
+				&client.WalletsResponse{
+					Wallets: nil,
+					Pagination: client.Pagination{
+						HasNext: false,
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
 			Expect(resp.HasMore).To(BeFalse())
+
+			var finalState accountsState
+			Expect(json.Unmarshal(resp.NewState, &finalState)).To(Succeed())
+			Expect(finalState.CurrentType).To(Equal(""))
+			Expect(finalState.Cursors["TRADING"]).To(Equal("t"))
+			Expect(finalState.Cursors["VAULT"]).To(Equal("v"))
+		})
+	})
+
+	Describe("state helpers", func() {
+		It("resolveTypeIndex falls back to 0 for unknown types", func() {
+			Expect(resolveTypeIndex("")).To(Equal(0))
+			Expect(resolveTypeIndex("REMOVED_TYPE")).To(Equal(0))
+			Expect(resolveTypeIndex("TRADING")).To(Equal(0))
+			Expect(resolveTypeIndex("ONCHAIN")).To(Equal(2))
+			Expect(resolveTypeIndex("WALLET_TYPE_OTHER")).To(Equal(4))
+		})
+
+		It("walletTypes is the expected ordered list", func() {
+			Expect(walletTypes).To(Equal([]string{
+				"TRADING",
+				"VAULT",
+				"ONCHAIN",
+				"QC",
+				"WALLET_TYPE_OTHER",
+			}))
 		})
 	})
 })

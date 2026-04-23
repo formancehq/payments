@@ -50,6 +50,8 @@ export interface ConnectorStatus {
     accounts_count: number;
     payments_count: number;
     balances_count: number;
+    orders_count: number;
+    conversions_count: number;
     external_accounts_count: number;
     last_updated: string;
   };
@@ -57,6 +59,8 @@ export interface ConnectorStatus {
     accounts: { has_more: boolean; pages_fetched: number; total_items: number };
     payments: Record<string, { has_more: boolean; pages_fetched: number; total_items: number }>;
     balances: Record<string, { has_more: boolean; pages_fetched: number; total_items: number }>;
+    orders: Record<string, { has_more: boolean; pages_fetched: number; total_items: number }>;
+    conversions: Record<string, { has_more: boolean; pages_fetched: number; total_items: number }>;
   };
 }
 
@@ -106,6 +110,40 @@ export interface Balance {
   asset: string;
   amount: number;
   created_at: string;
+}
+
+export interface Order {
+  reference: string;
+  created_at: string;
+  direction: string;
+  source_asset: string;
+  destination_asset: string;
+  type: string;
+  status: string;
+  base_quantity_ordered: string;
+  base_quantity_filled?: string;
+  limit_price?: string;
+  stop_price?: string;
+  time_in_force?: string;
+  expires_at?: string;
+  fee?: string;
+  fee_asset?: string;
+  average_fill_price?: string;
+  metadata?: Record<string, string>;
+  raw?: unknown;
+}
+
+export interface Conversion {
+  reference: string;
+  created_at: string;
+  source_asset: string;
+  destination_asset: string;
+  source_amount: string;
+  destination_amount?: string;
+  status: string;
+  wallet_id: string;
+  metadata?: Record<string, string>;
+  raw?: unknown;
 }
 
 export interface DebugEntry {
@@ -245,9 +283,21 @@ export function connectorApi(connectorId: string) {
         `${prefix}/fetch/external-accounts`,
         { method: 'POST', body: JSON.stringify({ from_payload: fromPayload }) }
       ),
-    
+
+    fetchOrders: (fromPayload?: unknown) =>
+      fetchJSON<{ orders: Order[]; has_more: boolean; count: number }>(
+        `${prefix}/fetch/orders`,
+        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload }) }
+      ),
+
+    fetchConversions: (fromPayload?: unknown) =>
+      fetchJSON<{ conversions: Conversion[]; has_more: boolean; count: number }>(
+        `${prefix}/fetch/conversions`,
+        { method: 'POST', body: JSON.stringify({ from_payload: fromPayload }) }
+      ),
+
     fetchAll: () =>
-      fetchJSON<{ status: string; accounts: number; payments: number; balances: number }>(
+      fetchJSON<{ status: string; accounts: number; payments: number; balances: number; orders: number; conversions: number }>(
         `${prefix}/fetch/all`,
         { method: 'POST' }
       ),
@@ -264,6 +314,12 @@ export function connectorApi(connectorId: string) {
     
     getExternalAccounts: () =>
       fetchJSON<{ external_accounts: Account[]; count: number }>(`${prefix}/data/external-accounts`),
+
+    getOrders: () =>
+      fetchJSON<{ orders: Order[]; count: number }>(`${prefix}/data/orders`),
+
+    getConversions: () =>
+      fetchJSON<{ conversions: Conversion[]; count: number }>(`${prefix}/data/conversions`),
     
     getStates: () =>
       fetchJSON<{ states: Record<string, unknown> }>(`${prefix}/data/states`),
@@ -713,6 +769,14 @@ export const api = {
     if (!selectedConnectorId) throw new Error('No connector selected');
     return connectorApi(selectedConnectorId).fetchExternalAccounts(fromPayload);
   },
+  fetchOrders: (fromPayload?: unknown) => {
+    if (!selectedConnectorId) throw new Error('No connector selected');
+    return connectorApi(selectedConnectorId).fetchOrders(fromPayload);
+  },
+  fetchConversions: (fromPayload?: unknown) => {
+    if (!selectedConnectorId) throw new Error('No connector selected');
+    return connectorApi(selectedConnectorId).fetchConversions(fromPayload);
+  },
   fetchAll: () => {
     if (!selectedConnectorId) throw new Error('No connector selected');
     return connectorApi(selectedConnectorId).fetchAll();
@@ -732,6 +796,14 @@ export const api = {
   getExternalAccounts: () => {
     if (!selectedConnectorId) throw new Error('No connector selected');
     return connectorApi(selectedConnectorId).getExternalAccounts();
+  },
+  getOrders: () => {
+    if (!selectedConnectorId) throw new Error('No connector selected');
+    return connectorApi(selectedConnectorId).getOrders();
+  },
+  getConversions: () => {
+    if (!selectedConnectorId) throw new Error('No connector selected');
+    return connectorApi(selectedConnectorId).getConversions();
   },
   getStates: () => {
     if (!selectedConnectorId) throw new Error('No connector selected');

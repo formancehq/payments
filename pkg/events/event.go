@@ -17,6 +17,8 @@ const (
 	EventTypeSavedPaymentInitiation                     = "SAVED_PAYMENT_INITIATION"
 	EventTypeSavedPaymentInitiationAdjustment           = "SAVED_PAYMENT_INITIATION_ADJUSTMENT"
 	EventTypeSavedPaymentInitiationRelatedPayment       = "SAVED_PAYMENT_INITIATION_RELATED_PAYMENT"
+	EventTypeSavedOrder                                 = "SAVED_ORDER"
+	EventTypeSavedConversion                            = "SAVED_CONVERSION"
 	EventTypeUpdatedTask                                = "UPDATED_TASK"
 	EventTypeOpenBankingUserLinkStatus                  = "OPEN_BANKING_USER_LINK_STATUS"
 	EventTypeOpenBankingUserConnectionDataSynced        = "OPEN_BANKING_USER_CONNECTION_DATA_SYNCED"

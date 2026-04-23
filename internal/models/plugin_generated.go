@@ -234,6 +234,21 @@ func (mr *MockPluginMockRecorder) FetchNextBalances(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextBalances", reflect.TypeOf((*MockPlugin)(nil).FetchNextBalances), arg0, arg1)
 }
 
+// FetchNextConversions mocks base method.
+func (m *MockPlugin) FetchNextConversions(arg0 context.Context, arg1 FetchNextConversionsRequest) (FetchNextConversionsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextConversions", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextConversionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextConversions indicates an expected call of FetchNextConversions.
+func (mr *MockPluginMockRecorder) FetchNextConversions(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextConversions", reflect.TypeOf((*MockPlugin)(nil).FetchNextConversions), arg0, arg1)
+}
+
 // FetchNextExternalAccounts mocks base method.
 func (m *MockPlugin) FetchNextExternalAccounts(arg0 context.Context, arg1 FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error) {
 	m.ctrl.T.Helper()
@@ -247,6 +262,21 @@ func (m *MockPlugin) FetchNextExternalAccounts(arg0 context.Context, arg1 FetchN
 func (mr *MockPluginMockRecorder) FetchNextExternalAccounts(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextExternalAccounts", reflect.TypeOf((*MockPlugin)(nil).FetchNextExternalAccounts), arg0, arg1)
+}
+
+// FetchNextOrders mocks base method.
+func (m *MockPlugin) FetchNextOrders(arg0 context.Context, arg1 FetchNextOrdersRequest) (FetchNextOrdersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextOrders", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextOrdersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextOrders indicates an expected call of FetchNextOrders.
+func (mr *MockPluginMockRecorder) FetchNextOrders(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextOrders", reflect.TypeOf((*MockPlugin)(nil).FetchNextOrders), arg0, arg1)
 }
 
 // FetchNextOthers mocks base method.

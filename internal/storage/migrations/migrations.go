@@ -64,6 +64,9 @@ var schedulesPauseColumnsConcurrentIndexSchedules string
 //go:embed 28-workflow-instances-connector-schedule-index.sql
 var workflowInstancesConnectorScheduleIndex string
 
+//go:embed 29-orders-and-conversions.sql
+var ordersAndConversions string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -423,9 +426,19 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				return nil
 			},
 		},
+		migrations.Migration{
+			Name: "orders and conversions",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running orders and conversions migration...")
+					_, err := tx.ExecContext(ctx, ordersAndConversions)
+					logger.WithField("error", err).Info("finished running orders and conversions migration")
+					return err
+				})
+			},
+		},
 	)
 }
-
 
 func GetMigrator(logger logging.Logger, db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
 	migrator := migrations.NewMigrator(db, opts...)

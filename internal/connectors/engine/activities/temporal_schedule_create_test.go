@@ -1,6 +1,7 @@
 package activities_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -22,6 +23,7 @@ type scheduleOptionsMatcher struct {
 	triggerImmediately bool
 	overlap            enums.ScheduleOverlapPolicy
 	jitter             time.Duration
+	expectEmptySpec    bool
 }
 
 func (s *scheduleOptionsMatcher) Matches(x any) bool {
@@ -40,6 +42,9 @@ func (s *scheduleOptionsMatcher) Matches(x any) bool {
 		return false
 	}
 	if opts.Spec.Jitter != s.jitter {
+		return false
+	}
+	if s.expectEmptySpec && len(opts.Spec.Intervals) != 0 {
 		return false
 	}
 	return true
@@ -79,6 +84,7 @@ var _ = Describe("Temporal Schedule Creation", func() {
 
 		createOpts := activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
+			Interval:   &client.ScheduleIntervalSpec{Every: time.Second},
 		}
 
 		expectedErr := fmt.Errorf("some error")
@@ -92,6 +98,7 @@ var _ = Describe("Temporal Schedule Creation", func() {
 
 		createOpts := activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
+			Interval:   &client.ScheduleIntervalSpec{Every: time.Second},
 		}
 
 		expectedErr := fmt.Errorf("%w, some error", temporal.ErrScheduleAlreadyRunning)
@@ -105,6 +112,7 @@ var _ = Describe("Temporal Schedule Creation", func() {
 
 		createOpts := activities.ScheduleCreateOptions{
 			ScheduleID:         scheduleID,
+			Interval:           &client.ScheduleIntervalSpec{Every: 5 * time.Second},
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 			Jitter:             2 * time.Second,
 			TriggerImmediately: true,
@@ -114,7 +122,53 @@ var _ = Describe("Temporal Schedule Creation", func() {
 			triggerImmediately: true,
 			overlap:            createOpts.Overlap,
 			jitter:             createOpts.Jitter,
-		}).Return(activities.NewMockScheduleHandle(ctrl), nil)
+		}).DoAndReturn(func(_ context.Context, opts client.ScheduleOptions) (client.ScheduleHandle, error) {
+			// Non-nil Interval must be carried through to Spec.Intervals so the
+			// schedule actually fires on its cadence (guards against regressing
+			// the periodic path when the one-shot path was added).
+			Expect(opts.Spec.Intervals).To(HaveLen(1))
+			Expect(opts.Spec.Intervals[0].Every).To(Equal(5 * time.Second))
+			return activities.NewMockScheduleHandle(ctrl), nil
+		})
+		err := act.TemporalScheduleCreate(ctx, createOpts)
+		Expect(err).To(BeNil())
+	})
+
+	It("rejects options with no Interval and TriggerImmediately false", func(ctx SpecContext) {
+		// Guard against a no-op schedule (never fires). Must NOT call
+		// ScheduleClient().Create — the validation returns before the client
+		// is used.
+		createOpts := activities.ScheduleCreateOptions{
+			ScheduleID:         scheduleID,
+			Interval:           nil,
+			TriggerImmediately: false,
+		}
+		err := act.TemporalScheduleCreate(ctx, createOpts)
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(ContainSubstring("schedule would never fire"))
+	})
+
+	It("creates a one-shot schedule with empty Spec.Intervals when Interval is nil", func(ctx SpecContext) {
+		t.EXPECT().ScheduleClient().Return(sc)
+
+		createOpts := activities.ScheduleCreateOptions{
+			ScheduleID:         scheduleID,
+			Interval:           nil,
+			TriggerImmediately: true,
+			SearchAttributes: map[string]interface{}{
+				"PaymentScheduleID": scheduleID,
+				"Stack":             "test-stack",
+			},
+		}
+		sc.EXPECT().Create(ctx, &scheduleOptionsMatcher{
+			scheduleID:         createOpts.ScheduleID,
+			triggerImmediately: true,
+			expectEmptySpec:    true,
+		}).DoAndReturn(func(_ context.Context, opts client.ScheduleOptions) (client.ScheduleHandle, error) {
+			// Typed search attributes must still be populated from the legacy map.
+			Expect(opts.Action.(*client.ScheduleWorkflowAction).TypedSearchAttributes.Size()).To(Equal(2))
+			return activities.NewMockScheduleHandle(ctrl), nil
+		})
 		err := act.TemporalScheduleCreate(ctx, createOpts)
 		Expect(err).To(BeNil())
 	})

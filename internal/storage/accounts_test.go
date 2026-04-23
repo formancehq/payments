@@ -1039,3 +1039,74 @@ func TestAccountsDeleteFromConnectorIDBatch(t *testing.T) {
 		require.Equal(t, accounts4[0].ID, account.ID)
 	})
 }
+
+func TestAccountsListAllByConnectorID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	t.Run("unknown connector returns empty", func(t *testing.T) {
+		result, err := store.AccountsListAllByConnectorID(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		})
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("connector with no accounts returns empty", func(t *testing.T) {
+		result, err := store.AccountsListAllByConnectorID(ctx, defaultConnector.ID)
+		require.NoError(t, err)
+		require.Empty(t, result)
+	})
+
+	t.Run("returns all accounts for the connector and filters out others", func(t *testing.T) {
+		upsertAccounts(t, ctx, store, defaultAccounts())
+
+		otherConnector := models.Connector{
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "list-all-other",
+				},
+				Name:      "list-all-other",
+				Provider:  "list-all-other",
+				CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
+			},
+			Config: []byte(`{}`),
+		}
+		upsertConnector(t, ctx, store, otherConnector)
+
+		otherAccounts := []models.Account{
+			{
+				ID: models.AccountID{
+					Reference:   "other-list-all-1",
+					ConnectorID: otherConnector.ID,
+				},
+				ConnectorID: otherConnector.ID,
+				Reference:   "other-list-all-1",
+				CreatedAt:   now.Add(-40 * time.Minute).UTC().Time,
+				Type:        models.ACCOUNT_TYPE_INTERNAL,
+				Raw:         []byte(`{}`),
+			},
+		}
+		upsertAccounts(t, ctx, store, otherAccounts)
+
+		result, err := store.AccountsListAllByConnectorID(ctx, defaultConnector.ID)
+		require.NoError(t, err)
+		require.Len(t, result, len(defaultAccounts()))
+		for _, a := range result {
+			require.Equal(t, defaultConnector.ID, a.ConnectorID)
+		}
+
+		// Sanity: other connector's accounts are not returned here.
+		otherResult, err := store.AccountsListAllByConnectorID(ctx, otherConnector.ID)
+		require.NoError(t, err)
+		require.Len(t, otherResult, 1)
+		require.Equal(t, "other-list-all-1", otherResult[0].Reference)
+	})
+}

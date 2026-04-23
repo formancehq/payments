@@ -165,6 +165,42 @@ func (i *impl) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRe
 	return resp, nil
 }
 
+func (i *impl) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextOrders", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetching next orders...")
+
+	resp, err := i.plugin.FetchNextOrders(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next orders failed:", err)
+		otel.RecordError(span, err)
+		return models.FetchNextOrdersResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetched next orders succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextConversions", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetching next conversions...")
+
+	resp, err := i.plugin.FetchNextConversions(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next conversions failed:", err)
+		otel.RecordError(span, err)
+		return models.FetchNextConversionsResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("fetched next conversions succeeded!")
+
+	return resp, nil
+}
+
 func (i *impl) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.CreateBankAccount", attribute.String("psp", i.connectorID.Provider), attribute.String("bankAccount.id", req.BankAccount.ID.String()))
 	defer span.End()
@@ -490,3 +526,23 @@ func (i *impl) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (mo
 }
 
 var _ models.Plugin = &impl{}
+
+// UseAccountLookup forwards the lookup to the wrapped plugin if it opts in
+// via models.PluginWithAccountLookup; otherwise it is a no-op. The wrapper
+// always implements the interface itself so the engine's type assertion on
+// the wrapped plugin resolves at this layer.
+func (i *impl) UseAccountLookup(lookup models.AccountLookup) {
+	if p, ok := i.plugin.(models.PluginWithAccountLookup); ok {
+		p.UseAccountLookup(lookup)
+	}
+}
+
+// BootstrapOnInstall forwards to the wrapped plugin if it opts in via
+// models.PluginWithBootstrapOnInstall; otherwise it returns nil so the
+// install workflow takes the legacy code path.
+func (i *impl) BootstrapOnInstall() []models.TaskType {
+	if p, ok := i.plugin.(models.PluginWithBootstrapOnInstall); ok {
+		return p.BootstrapOnInstall()
+	}
+	return nil
+}

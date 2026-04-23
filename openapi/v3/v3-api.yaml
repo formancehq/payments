@@ -536,6 +536,172 @@ paths:
         - Authorization:
             - payments:read
 
+  # ORDERS
+  /v3/orders:
+    get:
+      tags:
+        - payments.v3
+      summary: List orders ingested from exchange-style connectors
+      description: |
+        Returns the full list of orders ingested by Formance from connectors
+        that implement the orders capability (e.g. `coinbaseprime`). Orders
+        represent trade placements on an exchange-style PSP and are
+        **read-only** through the Formance API — submission, cancellation,
+        and lifecycle transitions are owned by the underlying connector.
+
+        Results are cursor-paginated. The optional request body accepts a
+        query builder for filtering over top-level `V3Order` fields such as
+        `connectorID`, `reference`, `direction`, `status`, `type`,
+        `sourceAsset`, `destinationAsset`, and `createdAt`.
+
+        See `V3Order` for the full response shape, including the
+        `adjustments` array that captures each observed state transition on
+        the exchange.
+      operationId: v3ListOrders
+      x-speakeasy-name-override: ListOrders
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3OrdersCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/orders/{orderID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a single order by its Formance ID
+      description: |
+        Returns one order identified by its Formance-assigned `id` (composed
+        from the PSP `reference` and the connector ID — **not** the PSP's
+        native reference). The response includes the full `adjustments`
+        history ordered from oldest to most recent; the last adjustment
+        reflects the order's current top-level `status`.
+
+        Returns an error via `V3ErrorResponse` when no order exists for the
+        given ID, or when the ID cannot be decoded.
+      operationId: v3GetOrder
+      x-speakeasy-name-override: GetOrder
+      parameters:
+        - $ref: '#/components/parameters/V3OrderID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetOrderResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  # CONVERSIONS
+  /v3/conversions:
+    get:
+      tags:
+        - payments.v3
+      summary: List currency and asset conversions ingested from connectors
+      description: |
+        Returns the full list of conversions ingested by Formance from
+        connectors that implement the conversions capability. A conversion
+        is a direct swap between two assets on a PSP (e.g. USD → USDC on
+        Coinbase Prime). Conversions are **read-only** through the Formance
+        API.
+
+        Unlike orders, conversions do not carry an adjustment history —
+        Formance records only the final observed state (`status`,
+        `destinationAmount`, and `fee` when settled).
+
+        Results are cursor-paginated. The optional request body accepts a
+        query builder for filtering over top-level `V3Conversion` fields
+        such as `connectorID`, `reference`, `status`, `sourceAsset`,
+        `destinationAsset`, and `createdAt`.
+      operationId: v3ListConversions
+      x-speakeasy-name-override: ListConversions
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ConversionsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/conversions/{conversionID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a single conversion by its Formance ID
+      description: |
+        Returns one conversion identified by its Formance-assigned `id`
+        (**not** the PSP's native `reference`). See `V3Conversion` for the
+        response shape — on `COMPLETED` status the `destinationAmount` and
+        `fee` fields reflect the settled values; on `FAILED` the `error`
+        field carries the PSP's rejection reason.
+
+        Returns an error via `V3ErrorResponse` when no conversion exists
+        for the given ID.
+      operationId: v3GetConversion
+      x-speakeasy-name-override: GetConversion
+      parameters:
+        - $ref: '#/components/parameters/V3ConversionID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetConversionResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
   # PAYMENTS
   /v3/payments:
     post:

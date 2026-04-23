@@ -19,8 +19,8 @@ func Module(
 	pollingPeriodMinimum time.Duration,
 ) fx.Option {
 	ret := []fx.Option{
-		fx.Provide(func(logger logging.Logger) connectors.Manager {
-			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum)
+		fx.Provide(func(logger logging.Logger, s storage.Storage) connectors.Manager {
+			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum, NewAccountLookupFactory(s))
 		}),
 		fx.Provide(func(
 			logger logging.Logger,

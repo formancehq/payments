@@ -9,6 +9,7 @@ This guide demonstrates the process of building a basic connector for a hypothet
 - [How to build a connector](#how-to-build-a-connector)
   - [Table of Contents](#table-of-contents)
   - [Understanding the Plugin interface](#understanding-the-plugin-interface)
+  - [Optional capability interfaces](#optional-capability-interfaces)
   - [Building a connector](#building-a-connector)
     - [Set up the project](#set-up-the-project)
     - [Define connector capabilities](#define-connector-capabilities)
@@ -47,18 +48,39 @@ Here is the complete interface definition for your reference:
 
 ```go
 type Plugin interface {
-	PSPPlugin
+	PSPPlugin        // data-plane methods (see below)
+	OpenBankingPlugin // open-banking user/link flows
 
 	Name() string
 	Config() PluginInternalConfig
+	IsScheduledForDeletion() bool
+	ScheduleForDeletion(bool)
 
-    Install(context.Context, InstallRequest) (InstallResponse, error)
+	Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
 	TrimWebhook(context.Context, TrimWebhookRequest) (TrimWebhookResponse, error)
 	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
+}
+
+type PSPPlugin interface {
+	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
+	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
+	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
+	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
+	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
+	FetchNextOrders(context.Context, FetchNextOrdersRequest) (FetchNextOrdersResponse, error)
+	FetchNextConversions(context.Context, FetchNextConversionsRequest) (FetchNextConversionsResponse, error)
+
+	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
+	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
+	ReverseTransfer(context.Context, ReverseTransferRequest) (ReverseTransferResponse, error)
+	PollTransferStatus(context.Context, PollTransferStatusRequest) (PollTransferStatusResponse, error)
+	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
+	ReversePayout(context.Context, ReversePayoutRequest) (ReversePayoutResponse, error)
+	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
 }
 ```
 
@@ -73,6 +95,8 @@ type Plugin interface {
 | FetchNextBalances(...)         | Retrieves the next set of balance data (e.g., account balances) from the PSP for synchronization                                                                                                                                    |
 | FetchNextExternalAccounts(...) | Retrieves external accounts (e.g., linked bank or card accounts) from the PSP for synchronization                                                                                                                                   |
 | FetchNextOthers(...)           | Fetches any additional or custom data from the PSP that doesn't fall into the predefined categories                                                                                                                                 |
+| FetchNextOrders(...)           | Retrieves the next set of orders (e.g., trade/conversion orders) from the PSP for synchronization                                                                                                                                   |
+| FetchNextConversions(...)      | Retrieves the next set of currency conversions (executed FX trades) from the PSP for synchronization                                                                                                                                |
 | CreateBankAccount(...)         | Creates a new bank account or linked financial account in the PSP                                                                                                                                                                   |
 | CreateTransfer(...)            | Initiates a transfer of funds between accounts within the PSP or externally                                                                                                                                                         |
 | ReverseTransfer(...)           | Reverses a previously initiated processed transfer                                                                                                                                                                                  |
@@ -82,6 +106,25 @@ type Plugin interface {
 | PollPayoutStatus(...)          | Polls the status of a previously initiated payout to determine whether it was successful, pending, or failed. Useful for PSPs whose APIs don't provide synchronous feedback about whether or not a payout was successful or not     |
 | CreateWebhooks(...)            | Sets up webhooks in the PSP to notify the Payments Service of events (e.g., payment updates)                                                                                                                                        |
 | TranslateWebhook(...)          | Converts incoming webhook events from the PSP into a format that the Payments Service understands                                                                                                                                   |
+
+## Optional capability interfaces
+
+Beyond the base `Plugin` interface, a connector can opt into extra
+engine-provided capabilities by implementing one of the interfaces in
+[internal/models/account_lookup.go](./internal/models/account_lookup.go).
+The registry wrapper
+([internal/connectors/plugins/registry/wrapper.go](./internal/connectors/plugins/registry/wrapper.go))
+detects each one via a type assertion on the underlying plugin and forwards
+only when implemented — so plugins that do not opt in keep the legacy
+behaviour.
+
+| Interface                          | Purpose                                                                                                                                                                                                                        | Wired at                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `PluginWithAccountLookup`          | Receive a per-connector, read-only `AccountLookup` to query accounts the connector has persisted. Use this instead of an in-memory account cache, which is not safe across pods.                                               | `manager.Load` injects via `UseAccountLookup` (see `internal/connectors/manager.go`). |
+| `PluginWithBootstrapOnInstall`     | Declare one or more `TaskType`s that must run to completion (HasMore: false) during install, before any periodic schedule is registered. Useful when later periodic tasks depend on a one-shot bootstrap (e.g., wallet listing). | The install workflow hands the declared tasks to `RunBootstrapTasks` (see `internal/connectors/engine/workflow/install_connector.go`). |
+
+Implement only the interfaces the connector actually needs — implementing
+an interface is itself the opt-in signal.
 
 ## Building a connector
 
@@ -534,6 +577,8 @@ func (c *client) readFile(filename string) (b []byte, err error) {
 ```
 
 This ensures your implementation fetches data and paginates it as required.
+
+Note that whenever you build a connector, you need to have a clear understanding of how the pagination will work, for each endpoint. You will want to store the current page in the state (see below), so that you avoid unecessary refetches. That being said, you won't always have a nice page number to paginate – what if sorting is by creation_date DESC? Each API requires some thinking to find the best solution.
 
 Now that we've defined a way to ingest the data, let's integrate this into `plugin.go` and connect it with the `FetchNextAccounts` function.
 

@@ -59,19 +59,38 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_PausesFetchSchedules_Success()
 }
 
 func (s *UnitTestSuite) Test_ConnectorHealthCheck_AllCapabilities_Success() {
-	instances := []models.Instance{
-		{ID: "wf-1", ScheduleID: fmt.Sprintf("test-%s-FETCH_ACCOUNTS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
-		{ID: "wf-2", ScheduleID: fmt.Sprintf("test-%s-FETCH_PAYMENTS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
-		{ID: "wf-3", ScheduleID: fmt.Sprintf("test-%s-FETCH_EXTERNAL_ACCOUNTS", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
-		{ID: "wf-4", ScheduleID: fmt.Sprintf("test-%s-FETCH_BALANCES", s.connectorID.String()), ConnectorID: s.connectorID, Error: pointer.For("err")},
+	wantIDs := []string{
+		fmt.Sprintf("test-%s-FETCH_ACCOUNTS", s.connectorID.String()),
+		fmt.Sprintf("test-%s-FETCH_PAYMENTS", s.connectorID.String()),
+		fmt.Sprintf("test-%s-FETCH_EXTERNAL_ACCOUNTS", s.connectorID.String()),
+		fmt.Sprintf("test-%s-FETCH_BALANCES", s.connectorID.String()),
+		fmt.Sprintf("test-%s-FETCH_OTHERS", s.connectorID.String()),
+		fmt.Sprintf("test-%s-FETCH_CONVERSIONS", s.connectorID.String()),
+		fmt.Sprintf("test-%s-FETCH_ORDERS", s.connectorID.String()),
+	}
+	instances := make([]models.Instance, len(wantIDs))
+	for i, id := range wantIDs {
+		instances[i] = models.Instance{
+			ID:          fmt.Sprintf("wf-%d", i+1),
+			ScheduleID:  id,
+			ConnectorID: s.connectorID,
+			Error:       pointer.For("err"),
+		}
 	}
 
+	var pausedIDs []string
 	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).
 		Once().Return(s.connectorWithUpdatedAt(nil), nil)
 	s.env.OnActivity(activities.StorageInstancesListSchedulesAboveErrorThresholdActivity, mock.Anything, s.connectorID, mock.Anything).
 		Once().Return(&bunpaginate.Cursor[models.Instance]{HasMore: false, Data: instances}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesPauseActivity, mock.Anything, mock.Anything).
-		Once().Return(nil)
+		Once().
+		Run(func(args mock.Arguments) {
+			for _, inst := range args.Get(1).([]models.Instance) {
+				pausedIDs = append(pausedIDs, inst.ScheduleID)
+			}
+		}).
+		Return(nil)
 
 	s.env.ExecuteWorkflow(RunConnectorHealthCheck, ConnectorHealthCheck{
 		ConnectorID: s.connectorID,
@@ -79,6 +98,7 @@ func (s *UnitTestSuite) Test_ConnectorHealthCheck_AllCapabilities_Success() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
+	s.ElementsMatch(wantIDs, pausedIDs)
 }
 
 func (s *UnitTestSuite) Test_ConnectorHealthCheck_PayloadSuffixScheduleID_Success() {

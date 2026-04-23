@@ -1230,6 +1230,406 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
+## List orders ingested from exchange-style connectors
+
+<a id="opIdv3ListOrders"></a>
+
+> Code samples
+
+```http
+GET /v3/orders HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`GET /v3/orders`
+
+Returns the full list of orders ingested by Formance from connectors
+that implement the orders capability (e.g. `coinbaseprime`). Orders
+represent trade placements on an exchange-style PSP and are
+**read-only** through the Formance API — submission, cancellation,
+and lifecycle transitions are owned by the underlying connector.
+
+Results are cursor-paginated. The optional request body accepts a
+query builder for filtering over top-level `V3Order` fields such as
+`connectorID`, `reference`, `direction`, `status`, `type`,
+`sourceAsset`, `destinationAsset`, and `createdAt`.
+
+See `V3Order` for the full response shape, including the
+`adjustments` array that captures each observed state transition on
+the exchange.
+
+> Body parameter
+
+```json
+{}
+```
+
+<h3 id="list-orders-ingested-from-exchange-style-connectors-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "clientOrderID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "direction": "UNKNOWN",
+        "sourceAsset": "string",
+        "destinationAsset": "string",
+        "type": "UNKNOWN",
+        "status": "UNKNOWN",
+        "baseQuantityOrdered": 0,
+        "baseQuantityFilled": 0,
+        "limitPrice": 0,
+        "stopPrice": 0,
+        "timeInForce": "UNKNOWN",
+        "expiresAt": "2019-08-24T14:15:22Z",
+        "fee": 0,
+        "feeAsset": "string",
+        "averageFillPrice": 0,
+        "quoteAmount": 0,
+        "quoteAsset": "string",
+        "priceAsset": "string",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "adjustments": [
+          {
+            "id": "string",
+            "reference": "string",
+            "createdAt": "2019-08-24T14:15:22Z",
+            "status": "UNKNOWN",
+            "baseQuantityFilled": 0,
+            "fee": 0,
+            "feeAsset": "string",
+            "metadata": {
+              "property1": "string",
+              "property2": "string"
+            },
+            "raw": {}
+          }
+        ],
+        "error": "string"
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-orders-ingested-from-exchange-style-connectors-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3OrdersCursorResponse](#schemav3orderscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get a single order by its Formance ID
+
+<a id="opIdv3GetOrder"></a>
+
+> Code samples
+
+```http
+GET /v3/orders/{orderID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/orders/{orderID}`
+
+Returns one order identified by its Formance-assigned `id` (composed
+from the PSP `reference` and the connector ID — **not** the PSP's
+native reference). The response includes the full `adjustments`
+history ordered from oldest to most recent; the last adjustment
+reflects the order's current top-level `status`.
+
+Returns an error via `V3ErrorResponse` when no order exists for the
+given ID, or when the ID cannot be decoded.
+
+<h3 id="get-a-single-order-by-its-formance-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|orderID|path|string|true|The order ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "clientOrderID": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "direction": "UNKNOWN",
+    "sourceAsset": "string",
+    "destinationAsset": "string",
+    "type": "UNKNOWN",
+    "status": "UNKNOWN",
+    "baseQuantityOrdered": 0,
+    "baseQuantityFilled": 0,
+    "limitPrice": 0,
+    "stopPrice": 0,
+    "timeInForce": "UNKNOWN",
+    "expiresAt": "2019-08-24T14:15:22Z",
+    "fee": 0,
+    "feeAsset": "string",
+    "averageFillPrice": 0,
+    "quoteAmount": 0,
+    "quoteAsset": "string",
+    "priceAsset": "string",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "adjustments": [
+      {
+        "id": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "status": "UNKNOWN",
+        "baseQuantityFilled": 0,
+        "fee": 0,
+        "feeAsset": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "raw": {}
+      }
+    ],
+    "error": "string"
+  }
+}
+```
+
+<h3 id="get-a-single-order-by-its-formance-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetOrderResponse](#schemav3getorderresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## List currency and asset conversions ingested from connectors
+
+<a id="opIdv3ListConversions"></a>
+
+> Code samples
+
+```http
+GET /v3/conversions HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`GET /v3/conversions`
+
+Returns the full list of conversions ingested by Formance from
+connectors that implement the conversions capability. A conversion
+is a direct swap between two assets on a PSP (e.g. USD → USDC on
+Coinbase Prime). Conversions are **read-only** through the Formance
+API.
+
+Unlike orders, conversions do not carry an adjustment history —
+Formance records only the final observed state (`status`,
+`destinationAmount`, and `fee` when settled).
+
+Results are cursor-paginated. The optional request body accepts a
+query builder for filtering over top-level `V3Conversion` fields
+such as `connectorID`, `reference`, `status`, `sourceAsset`,
+`destinationAsset`, and `createdAt`.
+
+> Body parameter
+
+```json
+{}
+```
+
+<h3 id="list-currency-and-asset-conversions-ingested-from-connectors-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "sourceAsset": "string",
+        "destinationAsset": "string",
+        "sourceAmount": 0,
+        "destinationAmount": 0,
+        "fee": 0,
+        "feeAsset": "string",
+        "status": "UNKNOWN",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "error": "string"
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-currency-and-asset-conversions-ingested-from-connectors-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConversionsCursorResponse](#schemav3conversionscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get a single conversion by its Formance ID
+
+<a id="opIdv3GetConversion"></a>
+
+> Code samples
+
+```http
+GET /v3/conversions/{conversionID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/conversions/{conversionID}`
+
+Returns one conversion identified by its Formance-assigned `id`
+(**not** the PSP's native `reference`). See `V3Conversion` for the
+response shape — on `COMPLETED` status the `destinationAmount` and
+`fee` fields reflect the settled values; on `FAILED` the `error`
+field carries the PSP's rejection reason.
+
+Returns an error via `V3ErrorResponse` when no conversion exists
+for the given ID.
+
+<h3 id="get-a-single-conversion-by-its-formance-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|conversionID|path|string|true|The conversion ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "sourceAsset": "string",
+    "destinationAsset": "string",
+    "sourceAmount": 0,
+    "destinationAmount": 0,
+    "fee": 0,
+    "feeAsset": "string",
+    "status": "UNKNOWN",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "error": "string"
+  }
+}
+```
+
+<h3 id="get-a-single-conversion-by-its-formance-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetConversionResponse](#schemav3getconversionresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
 ## Create a formance payment object. This object will not be forwarded to the connector. It is only used for internal purposes.
 
 <a id="opIdv3CreatePayment"></a>
@@ -5170,6 +5570,631 @@ None ( Scopes: payments:read )
 |*anonymous*|CAPTURE|
 |*anonymous*|CAPTURE_FAILED|
 |*anonymous*|OTHER|
+
+<h2 id="tocS_V3OrdersCursorResponse">V3OrdersCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderscursorresponse"></a>
+<a id="schema_V3OrdersCursorResponse"></a>
+<a id="tocSv3orderscursorresponse"></a>
+<a id="tocsv3orderscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "clientOrderID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "direction": "UNKNOWN",
+        "sourceAsset": "string",
+        "destinationAsset": "string",
+        "type": "UNKNOWN",
+        "status": "UNKNOWN",
+        "baseQuantityOrdered": 0,
+        "baseQuantityFilled": 0,
+        "limitPrice": 0,
+        "stopPrice": 0,
+        "timeInForce": "UNKNOWN",
+        "expiresAt": "2019-08-24T14:15:22Z",
+        "fee": 0,
+        "feeAsset": "string",
+        "averageFillPrice": 0,
+        "quoteAmount": 0,
+        "quoteAsset": "string",
+        "priceAsset": "string",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "adjustments": [
+          {
+            "id": "string",
+            "reference": "string",
+            "createdAt": "2019-08-24T14:15:22Z",
+            "status": "UNKNOWN",
+            "baseQuantityFilled": 0,
+            "fee": 0,
+            "feeAsset": "string",
+            "metadata": {
+              "property1": "string",
+              "property2": "string"
+            },
+            "raw": {}
+          }
+        ],
+        "error": "string"
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3Order](#schemav3order)]|true|none|[A trade order submitted to an exchange-style PSP. Orders are read-only<br>in the Formance API: they are fetched from the underlying connector.<br>Status transitions are captured via the `adjustments` array; each<br>adjustment is a point-in-time snapshot from the PSP.<br>]|
+
+<h2 id="tocS_V3GetOrderResponse">V3GetOrderResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3getorderresponse"></a>
+<a id="schema_V3GetOrderResponse"></a>
+<a id="tocSv3getorderresponse"></a>
+<a id="tocsv3getorderresponse"></a>
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "clientOrderID": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "direction": "UNKNOWN",
+    "sourceAsset": "string",
+    "destinationAsset": "string",
+    "type": "UNKNOWN",
+    "status": "UNKNOWN",
+    "baseQuantityOrdered": 0,
+    "baseQuantityFilled": 0,
+    "limitPrice": 0,
+    "stopPrice": 0,
+    "timeInForce": "UNKNOWN",
+    "expiresAt": "2019-08-24T14:15:22Z",
+    "fee": 0,
+    "feeAsset": "string",
+    "averageFillPrice": 0,
+    "quoteAmount": 0,
+    "quoteAsset": "string",
+    "priceAsset": "string",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "adjustments": [
+      {
+        "id": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "status": "UNKNOWN",
+        "baseQuantityFilled": 0,
+        "fee": 0,
+        "feeAsset": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "raw": {}
+      }
+    ],
+    "error": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[V3Order](#schemav3order)|true|none|A trade order submitted to an exchange-style PSP. Orders are read-only<br>in the Formance API: they are fetched from the underlying connector.<br>Status transitions are captured via the `adjustments` array; each<br>adjustment is a point-in-time snapshot from the PSP.|
+
+<h2 id="tocS_V3Order">V3Order</h2>
+<!-- backwards compatibility -->
+<a id="schemav3order"></a>
+<a id="schema_V3Order"></a>
+<a id="tocSv3order"></a>
+<a id="tocsv3order"></a>
+
+```json
+{
+  "id": "string",
+  "connectorID": "string",
+  "provider": "string",
+  "reference": "string",
+  "clientOrderID": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "updatedAt": "2019-08-24T14:15:22Z",
+  "direction": "UNKNOWN",
+  "sourceAsset": "string",
+  "destinationAsset": "string",
+  "type": "UNKNOWN",
+  "status": "UNKNOWN",
+  "baseQuantityOrdered": 0,
+  "baseQuantityFilled": 0,
+  "limitPrice": 0,
+  "stopPrice": 0,
+  "timeInForce": "UNKNOWN",
+  "expiresAt": "2019-08-24T14:15:22Z",
+  "fee": 0,
+  "feeAsset": "string",
+  "averageFillPrice": 0,
+  "quoteAmount": 0,
+  "quoteAsset": "string",
+  "priceAsset": "string",
+  "sourceAccountID": "string",
+  "destinationAccountID": "string",
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  },
+  "adjustments": [
+    {
+      "id": "string",
+      "reference": "string",
+      "createdAt": "2019-08-24T14:15:22Z",
+      "status": "UNKNOWN",
+      "baseQuantityFilled": 0,
+      "fee": 0,
+      "feeAsset": "string",
+      "metadata": {
+        "property1": "string",
+        "property2": "string"
+      },
+      "raw": {}
+    }
+  ],
+  "error": "string"
+}
+
+```
+
+A trade order submitted to an exchange-style PSP. Orders are read-only
+in the Formance API: they are fetched from the underlying connector.
+Status transitions are captured via the `adjustments` array; each
+adjustment is a point-in-time snapshot from the PSP.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|Formance-assigned unique order ID (composed from the PSP reference and connector ID).|
+|connectorID|string(byte)|true|none|ID of the Formance connector this order was fetched from.|
+|provider|string|true|none|Provider name of the connector (e.g. `coinbaseprime`).|
+|reference|string|true|none|PSP-assigned order reference. Unique within the connector; used as the storage dedup key.|
+|clientOrderID|string¦null|false|none|Client-assigned ID supplied to the PSP for placement idempotency<br>(e.g. Coinbase `client_order_id`, Kraken `cl_ord_id`, Binance<br>`clientOrderId`). Stored for traceability only — Formance does<br>NOT dedup on this field.|
+|createdAt|string(date-time)|true|none|When the order was created on the PSP.|
+|updatedAt|string(date-time)|true|none|When Formance last observed a state change on the order. Equivalent to the latest adjustment's `createdAt`.|
+|direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|true|none|Whether an order buys or sells the base asset.|
+|sourceAsset|string|true|none|Asset being spent, in `SYMBOL/precision` form (e.g. `USD/2`,<br>`BTC/8`). For BUY: the quote currency. For SELL: the base<br>currency.|
+|destinationAsset|string|true|none|Asset being received, in `SYMBOL/precision` form.<br>For BUY: the base currency. For SELL: the quote currency.|
+|type|[V3OrderTypeEnum](#schemav3ordertypeenum)|true|none|Exchange order type. Determines which price fields are meaningful on<br>`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use<br>`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
+|baseQuantityOrdered|integer(bigint)|true|none|Amount of base asset the order was placed for, as an integer at the base asset's precision.|
+|baseQuantityFilled|integer(bigint)¦null|false|none|Amount of base asset filled so far, as an integer at the base asset's precision. Null before any fill.|
+|limitPrice|integer(bigint)¦null|false|none|Maximum price (for BUY) or minimum price (for SELL) at which the order may execute, in `priceAsset` precision. Required for LIMIT-family order types; null otherwise.|
+|stopPrice|integer(bigint)¦null|false|none|Trigger price at which a STOP / STOP_LIMIT order activates, in `priceAsset` precision. Null for non-stop order types.|
+|timeInForce|[V3TimeInForceEnum](#schemav3timeinforceenum)|true|none|How long an order is valid on the exchange.<br>`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.<br>`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.<br>`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.<br>`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.|
+|expiresAt|string(date-time)¦null|false|none|Expiration instant for `GOOD_UNTIL_DATE_TIME` orders. Null for other time-in-force values.|
+|fee|integer(bigint)¦null|false|none|Commission charged by the PSP for the order, as an integer in `feeAsset` precision.|
+|feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form. Typically the quote asset.|
+|averageFillPrice|integer(bigint)¦null|false|none|Volume-weighted average price across all fills so far, in `priceAsset` precision. Analytics field — may be absent if the PSP does not report it.|
+|quoteAmount|integer(bigint)¦null|false|none|Total amount of quote currency exchanged so far, as reported by<br>the PSP (e.g. Coinbase `filled_value`), at `quoteAsset`<br>precision. For BUY: amount spent. For SELL: amount received.|
+|quoteAsset|string¦null|false|none|Quote currency with precision (e.g. `USD/2`). Null when the order has no quote-side amounts reported yet.|
+|priceAsset|string¦null|false|none|Currency + precision under which `limitPrice`, `stopPrice`, and<br>`averageFillPrice` should be interpreted. Separate from<br>`quoteAsset` because some PSPs return price strings with more<br>decimal digits than the quote currency's natural precision.|
+|sourceAccountID|string¦null|false|none|Formance account ID of the wallet the source asset was debited<br>from. Null if the PSP did not return enough information to<br>resolve it at ingestion time.|
+|destinationAccountID|string¦null|false|none|Formance account ID of the wallet the destination asset was credited to. Null if unresolvable.|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|adjustments|[[V3OrderAdjustment](#schemav3orderadjustment)]¦null|false|none|Ordered history of state snapshots for this order. The most recent element reflects the current `status`.|
+|error|string¦null|false|none|Human-readable error from the PSP (e.g. rejection reason) when `status` is `FAILED`. Null otherwise.|
+
+<h2 id="tocS_V3OrderAdjustment">V3OrderAdjustment</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderadjustment"></a>
+<a id="schema_V3OrderAdjustment"></a>
+<a id="tocSv3orderadjustment"></a>
+<a id="tocsv3orderadjustment"></a>
+
+```json
+{
+  "id": "string",
+  "reference": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "status": "UNKNOWN",
+  "baseQuantityFilled": 0,
+  "fee": 0,
+  "feeAsset": "string",
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  },
+  "raw": {}
+}
+
+```
+
+Immutable snapshot of an order's state at a single observation.
+Formance records one adjustment per distinct state the PSP reports
+(status change, fill progress, fee update). Events are emitted
+per-adjustment, not per-order — so a single order can produce many
+events over its lifetime.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|Adjustment ID, composed from the order ID plus the state fields that define uniqueness (status, filled quantity, fee). Idempotent — replaying the same observation produces the same ID.|
+|reference|string|true|none|PSP reference the adjustment belongs to (equal to the parent order's `reference`).|
+|createdAt|string(date-time)|true|none|When Formance observed this state. Not the PSP's own timestamp — reflects ingestion time.|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|true|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
+|baseQuantityFilled|integer(bigint)¦null|false|none|Base asset filled at this observation, at the base asset's precision.|
+|fee|integer(bigint)¦null|false|none|Cumulative fee at this observation, at `feeAsset` precision.|
+|feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form.|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|raw|object|false|none|Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.|
+
+<h2 id="tocS_V3OrderDirectionEnum">V3OrderDirectionEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderdirectionenum"></a>
+<a id="schema_V3OrderDirectionEnum"></a>
+<a id="tocSv3orderdirectionenum"></a>
+<a id="tocsv3orderdirectionenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+Whether an order buys or sells the base asset.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|Whether an order buys or sells the base asset.|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|BUY|
+|*anonymous*|SELL|
+
+<h2 id="tocS_V3OrderTypeEnum">V3OrderTypeEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3ordertypeenum"></a>
+<a id="schema_V3OrderTypeEnum"></a>
+<a id="tocSv3ordertypeenum"></a>
+<a id="tocsv3ordertypeenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+Exchange order type. Determines which price fields are meaningful on
+`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use
+`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|Exchange order type. Determines which price fields are meaningful on<br>`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use<br>`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|MARKET|
+|*anonymous*|LIMIT|
+|*anonymous*|STOP_LIMIT|
+|*anonymous*|STOP|
+|*anonymous*|TWAP|
+|*anonymous*|VWAP|
+|*anonymous*|PEG|
+|*anonymous*|BLOCK|
+|*anonymous*|RFQ|
+|*anonymous*|TRAILING_STOP|
+|*anonymous*|TRAILING_STOP_LIMIT|
+|*anonymous*|TAKE_PROFIT|
+|*anonymous*|TAKE_PROFIT_LIMIT|
+|*anonymous*|LIMIT_MAKER|
+
+<h2 id="tocS_V3OrderStatusEnum">V3OrderStatusEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3orderstatusenum"></a>
+<a id="schema_V3OrderStatusEnum"></a>
+<a id="tocSv3orderstatusenum"></a>
+<a id="tocsv3orderstatusenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+Lifecycle of an order on the exchange.
+`PENDING` — accepted by the exchange, not yet working.
+`OPEN` — live on the book, no fills yet.
+`PARTIALLY_FILLED` — live on the book, some base quantity filled.
+`FILLED` — fully filled, terminal.
+`CANCELLED` — cancelled by the user or system, terminal.
+`FAILED` — rejected by the exchange, terminal. See `error` for details.
+`EXPIRED` — `timeInForce` elapsed before full fill, terminal.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|PENDING|
+|*anonymous*|OPEN|
+|*anonymous*|PARTIALLY_FILLED|
+|*anonymous*|FILLED|
+|*anonymous*|CANCELLED|
+|*anonymous*|FAILED|
+|*anonymous*|EXPIRED|
+
+<h2 id="tocS_V3TimeInForceEnum">V3TimeInForceEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3timeinforceenum"></a>
+<a id="schema_V3TimeInForceEnum"></a>
+<a id="tocSv3timeinforceenum"></a>
+<a id="tocsv3timeinforceenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+How long an order is valid on the exchange.
+`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.
+`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.
+`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.
+`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|How long an order is valid on the exchange.<br>`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.<br>`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.<br>`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.<br>`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|GOOD_UNTIL_CANCELLED|
+|*anonymous*|GOOD_UNTIL_DATE_TIME|
+|*anonymous*|IMMEDIATE_OR_CANCEL|
+|*anonymous*|FILL_OR_KILL|
+
+<h2 id="tocS_V3ConversionsCursorResponse">V3ConversionsCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversionscursorresponse"></a>
+<a id="schema_V3ConversionsCursorResponse"></a>
+<a id="tocSv3conversionscursorresponse"></a>
+<a id="tocsv3conversionscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "",
+    "data": [
+      {
+        "id": "string",
+        "connectorID": "string",
+        "provider": "string",
+        "reference": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "updatedAt": "2019-08-24T14:15:22Z",
+        "sourceAsset": "string",
+        "destinationAsset": "string",
+        "sourceAmount": 0,
+        "destinationAmount": 0,
+        "fee": 0,
+        "feeAsset": "string",
+        "status": "UNKNOWN",
+        "sourceAccountID": "string",
+        "destinationAccountID": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        },
+        "error": "string"
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3Conversion](#schemav3conversion)]|true|none|[A currency or asset conversion executed on a PSP (e.g. Coinbase Prime<br>transfer between a USD and USDC wallet). Conversions are read-only in<br>the Formance API: they are fetched from the underlying connector.<br>Unlike orders, conversions do not carry an adjustment history —<br>Formance records the final state only.<br>]|
+
+<h2 id="tocS_V3GetConversionResponse">V3GetConversionResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3getconversionresponse"></a>
+<a id="schema_V3GetConversionResponse"></a>
+<a id="tocSv3getconversionresponse"></a>
+<a id="tocsv3getconversionresponse"></a>
+
+```json
+{
+  "data": {
+    "id": "string",
+    "connectorID": "string",
+    "provider": "string",
+    "reference": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "updatedAt": "2019-08-24T14:15:22Z",
+    "sourceAsset": "string",
+    "destinationAsset": "string",
+    "sourceAmount": 0,
+    "destinationAmount": 0,
+    "fee": 0,
+    "feeAsset": "string",
+    "status": "UNKNOWN",
+    "sourceAccountID": "string",
+    "destinationAccountID": "string",
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    },
+    "error": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[V3Conversion](#schemav3conversion)|true|none|A currency or asset conversion executed on a PSP (e.g. Coinbase Prime<br>transfer between a USD and USDC wallet). Conversions are read-only in<br>the Formance API: they are fetched from the underlying connector.<br>Unlike orders, conversions do not carry an adjustment history —<br>Formance records the final state only.|
+
+<h2 id="tocS_V3Conversion">V3Conversion</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversion"></a>
+<a id="schema_V3Conversion"></a>
+<a id="tocSv3conversion"></a>
+<a id="tocsv3conversion"></a>
+
+```json
+{
+  "id": "string",
+  "connectorID": "string",
+  "provider": "string",
+  "reference": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "updatedAt": "2019-08-24T14:15:22Z",
+  "sourceAsset": "string",
+  "destinationAsset": "string",
+  "sourceAmount": 0,
+  "destinationAmount": 0,
+  "fee": 0,
+  "feeAsset": "string",
+  "status": "UNKNOWN",
+  "sourceAccountID": "string",
+  "destinationAccountID": "string",
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  },
+  "error": "string"
+}
+
+```
+
+A currency or asset conversion executed on a PSP (e.g. Coinbase Prime
+transfer between a USD and USDC wallet). Conversions are read-only in
+the Formance API: they are fetched from the underlying connector.
+Unlike orders, conversions do not carry an adjustment history —
+Formance records the final state only.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|Formance-assigned unique conversion ID.|
+|connectorID|string(byte)|true|none|ID of the Formance connector this conversion was fetched from.|
+|provider|string|true|none|Provider name of the connector (e.g. `coinbaseprime`).|
+|reference|string|true|none|PSP-assigned conversion reference. Unique within the connector.|
+|createdAt|string(date-time)|true|none|When the conversion was initiated on the PSP.|
+|updatedAt|string(date-time)|true|none|When Formance last observed a state change on the conversion.|
+|sourceAsset|string|true|none|Asset being converted from, in `SYMBOL/precision` form (e.g. `USD/2`).|
+|destinationAsset|string|true|none|Asset being converted to, in `SYMBOL/precision` form (e.g. `USDC/6`).|
+|sourceAmount|integer(bigint)|true|none|Amount of source asset debited, as an integer at `sourceAsset` precision.|
+|destinationAmount|integer(bigint)¦null|false|none|Amount of destination asset credited, at `destinationAsset` precision. Null until the conversion completes.|
+|fee|integer(bigint)¦null|false|none|PSP fee for the conversion, at `feeAsset` precision.|
+|feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form.|
+|status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|Lifecycle of a conversion.<br>`PENDING` — accepted by the PSP, not yet settled.<br>`COMPLETED` — settled, terminal.<br>`FAILED` — rejected or reverted, terminal. See `error`.|
+|sourceAccountID|string¦null|false|none|Formance account ID of the wallet the source asset was debited from.|
+|destinationAccountID|string¦null|false|none|Formance account ID of the wallet the destination asset was credited to.|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|error|string¦null|false|none|Human-readable error from the PSP when `status` is `FAILED`. Null otherwise.|
+
+<h2 id="tocS_V3ConversionStatusEnum">V3ConversionStatusEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversionstatusenum"></a>
+<a id="schema_V3ConversionStatusEnum"></a>
+<a id="tocSv3conversionstatusenum"></a>
+<a id="tocsv3conversionstatusenum"></a>
+
+```json
+"UNKNOWN"
+
+```
+
+Lifecycle of a conversion.
+`PENDING` — accepted by the PSP, not yet settled.
+`COMPLETED` — settled, terminal.
+`FAILED` — rejected or reverted, terminal. See `error`.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|Lifecycle of a conversion.<br>`PENDING` — accepted by the PSP, not yet settled.<br>`COMPLETED` — settled, terminal.<br>`FAILED` — rejected or reverted, terminal. See `error`.|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|UNKNOWN|
+|*anonymous*|PENDING|
+|*anonymous*|COMPLETED|
+|*anonymous*|FAILED|
 
 <h2 id="tocS_V3InitiatePaymentRequest">V3InitiatePaymentRequest</h2>
 <!-- backwards compatibility -->

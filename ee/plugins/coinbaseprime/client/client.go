@@ -20,9 +20,10 @@ import (
 type Client interface {
 	GetPortfolio(ctx context.Context) (*PortfolioResponse, error)
 	GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error)
-	GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error)
+	GetWallets(ctx context.Context, walletType, cursor string, pageSize int) (*WalletsResponse, error)
 	GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error)
-	GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error)
+	GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error)
+	ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error)
 }
 
 const defaultBaseURL = "https://api.prime.coinbase.com"
@@ -125,8 +126,12 @@ func (c *client) GetAssets(ctx context.Context, entityID string) (*AssetsRespons
 	return &response, nil
 }
 
-func (c *client) GetWallets(ctx context.Context, cursor string, pageSize int) (*WalletsResponse, error) {
-	endpoint, err := c.buildPortfolioEndpoint("wallets", cursor, pageSize)
+func (c *client) GetWallets(ctx context.Context, walletType, cursor string, pageSize int) (*WalletsResponse, error) {
+	extra := url.Values{}
+	if walletType != "" {
+		extra.Set("type", walletType)
+	}
+	endpoint, err := c.buildPortfolioEndpoint("wallets", cursor, pageSize, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +180,12 @@ func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*Wal
 	return &response, nil
 }
 
-func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) (*TransactionsResponse, error) {
-	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize)
+func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error) {
+	extra := url.Values{}
+	for _, t := range types {
+		extra.Add("types", t)
+	}
+	endpoint, err := c.buildPortfolioEndpoint("transactions", cursor, pageSize, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +209,32 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 	return &response, nil
 }
 
-func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (string, error) {
+func (c *client) ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error) {
+	endpoint, err := c.buildPortfolioEndpoint("orders", cursor, pageSize, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if err := c.signRequest(req, ""); err != nil {
+		return nil, err
+	}
+
+	var response OrdersResponse
+	var errorResponse ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list orders (status %d, message: %s): %w", statusCode, errorResponse.Message, err)
+	}
+
+	return &response, nil
+}
+
+func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int, extra url.Values) (string, error) {
 	endpoint, err := url.Parse(fmt.Sprintf("%s/v1/portfolios/%s/%s", c.baseURL, c.portfolioID, resource))
 	if err != nil {
 		return "", fmt.Errorf("failed to parse endpoint: %w", err)
@@ -211,6 +245,11 @@ func (c *client) buildPortfolioEndpoint(resource, cursor string, pageSize int) (
 	query.Set("sort_direction", "ASC")
 	if cursor != "" {
 		query.Set("cursor", cursor)
+	}
+	for k, vs := range extra {
+		for _, v := range vs {
+			query.Add(k, v)
+		}
 	}
 
 	endpoint.RawQuery = query.Encode()
@@ -299,6 +338,7 @@ type Transaction struct {
 	CompletedAt   *time.Time        `json:"completed_at"`
 	TransferFrom  *TransferEndpoint `json:"transfer_from"`
 	TransferTo    *TransferEndpoint `json:"transfer_to"`
+	DestinationSymbol string          `json:"destination_symbol"`
 	NetworkFees    string            `json:"network_fees"`
 	Network        string            `json:"network"`
 	BlockchainIDs  []string          `json:"blockchain_ids"`
@@ -330,6 +370,52 @@ type WalletBalanceResponse struct {
 type TransactionsResponse struct {
 	Transactions []Transaction `json:"transactions"`
 	Pagination   Pagination    `json:"pagination"`
+}
+
+// Order represents a Coinbase Prime order.
+// See: https://docs.cdp.coinbase.com/prime/reference/primerestapi_getorders
+type Order struct {
+	ID                    string               `json:"id"`
+	PortfolioID           string               `json:"portfolio_id"`
+	ProductID             string               `json:"product_id"`
+	Side                  string               `json:"side"`
+	Type                  string               `json:"type"`
+	BaseQuantity          string               `json:"base_quantity"`
+	QuoteValue            string               `json:"quote_value"`
+	LimitPrice            string               `json:"limit_price"`
+	StopPrice             string               `json:"stop_price"`
+	FilledQuantity        string               `json:"filled_quantity"`
+	FilledValue           string               `json:"filled_value"`
+	AverageFilledPrice    string               `json:"average_filled_price"`
+	Commission            string               `json:"commission"`
+	ExchangeFee           string               `json:"exchange_fee"`
+	OrderTotal            string               `json:"order_total"`
+	Status                string               `json:"status"`
+	TimeInForce           string               `json:"time_in_force"`
+	CreatedAt             string               `json:"created_at"`
+	ExpiryTime            string               `json:"expiry_time"`
+	ClientOrderID         string               `json:"client_order_id"`
+	PostOnly              bool                 `json:"post_only"`
+	NetAverageFilledPrice string               `json:"net_average_filled_price"`
+	HistoricalPov         string               `json:"historical_pov"`
+	CommissionDetail      *CommissionDetail    `json:"commission_detail_total,omitempty"`
+}
+
+// CommissionDetail contains a breakdown of all commission charges for an order.
+type CommissionDetail struct {
+	TotalCommission      string `json:"total_commission,omitempty"`
+	ClientCommission     string `json:"client_commission,omitempty"`
+	VenueCommission      string `json:"venue_commission,omitempty"`
+	CesCommission        string `json:"ces_commission,omitempty"`
+	FinancingCommission  string `json:"financing_commission,omitempty"`
+	RegulatoryCommission string `json:"regulatory_commission,omitempty"`
+	ClearingCommission   string `json:"clearing_commission,omitempty"`
+}
+
+// OrdersResponse wraps orders with pagination.
+type OrdersResponse struct {
+	Orders     []Order    `json:"orders"`
+	Pagination Pagination `json:"pagination"`
 }
 
 // ErrorResponse represents an API error.
