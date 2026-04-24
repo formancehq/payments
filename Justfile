@@ -81,6 +81,11 @@ release-ci:
 release:
     @goreleaser release --clean
 
+[group('deploy')]
+deploy server auth-token application additional-args:
+    @argocd app set --auth-token {{auth-token}} --server {{server}} {{application}} --grpc-web {{additional-args}}
+    @argocd app sync --auth-token {{auth-token}} --server {{server}} {{application}} --grpc-web
+
 [group('plugins')]
 bootstrap-plugin CONNECTOR_NAME EDITION="public":
     @go build -o connector-template {{justfile_directory()}}/tools/connector-template

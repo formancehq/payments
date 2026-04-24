@@ -101,39 +101,42 @@ jobs:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
   Deploy:
-    runs-on: "ubuntu-latest"
-    if: github.ref == 'refs/heads/main'
+    runs-on: "ubuntu-24.04"
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'deploy-staging')
+    timeout-minutes: 5
     environment: staging
+    permissions:
+      id-token: write
+      contents: read
     needs:
       - GoReleaser
       - Tests
     steps:
-      - uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: "latest"
       - uses: 'actions/checkout@v6'
         with:
           fetch-depth: 0
-      - name: Tailscale
-        uses: formancehq/tailscale-github-action@v3+formance
+      - name: Setup Env
+        uses: ./.github/actions/default
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OIDC_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_OIDC_AUDIENCE }}
           tags: ${{ vars.TS_TAGS }}
           version: ${{ vars.TS_VERSION }}
           args: ${{ vars.TS_ARGS }}
           retry: ${{ vars.TS_RETRY }}
           timeout: ${{ vars.TS_TIMEOUT }}
+          ping: ${{ vars.TS_PING }}
       - name: "Deploy in staging"
         env:
-          TAG: ${{ github.sha }}
+          ARGO_AUTH_TOKEN: ${{ secrets.ARGOCD_REGION_AUTH_TOKEN }}
+          SERVER: argocd.internal.formance.cloud
+          APPLICATION: staging-eu-west-1-hosting-regions
           COMPONENT: payments
-          ARGOCD_REGION_AUTH_TOKEN: ${{ secrets.ARGOCD_REGION_AUTH_TOKEN }}
+          TAG: ${{ github.sha }}
         run: >
-          earthly  
-          --no-output 
-          --secret AUTH_TOKEN=$ARGOCD_REGION_AUTH_TOKEN
-          +deploy-staging
-          --TAG=$TAG
-          --COMPONENT=$COMPONENT
+          nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
+          develop --impure --command just deploy $SERVER $ARGO_AUTH_TOKEN $APPLICATION "--parameter versions.files.default.$COMPONENT=$TAG"
