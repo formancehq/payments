@@ -133,7 +133,7 @@ services:
       CONFIG_ENCRYPTION_KEY: mysuperencryptionkey
       TEMPORAL_ADDRESS: temporal:7233
       PLUGIN_MAGIC_COOKIE: mysupercookie
-      TEMPORAL_INIT_SEARCH_ATTRIBUTES: false
+      TEMPORAL_INIT_SEARCH_ATTRIBUTES: true
       STACK_URL: http://gateway:8092
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
