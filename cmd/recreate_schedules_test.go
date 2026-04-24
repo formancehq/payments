@@ -90,7 +90,7 @@ var _ = Describe("RecreateSchedules", func() {
 				&bunpaginate.Cursor[models.Connector]{
 					Data: []models.Connector{
 						{
-							ConnectorBase:        models.ConnectorBase{ID: connectorID, Name: "deleted", Provider: "stripe"},
+							ID: connectorID, Name: "deleted", Provider: "stripe",
 							ScheduledForDeletion: true,
 							Config:               connectorConfig,
 						},
@@ -104,7 +104,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should return error when one connector fails", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -122,7 +122,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip connector with no task tree", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -139,7 +139,7 @@ var _ = Describe("RecreateSchedules", func() {
 	Context("root schedules", func() {
 		It("should create schedule for periodic fetch accounts task", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -167,7 +167,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should create schedules for all periodic task types", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -200,7 +200,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip non-periodic tasks", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -216,9 +216,10 @@ var _ = Describe("RecreateSchedules", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should use default polling period when config has zero value", func(ctx SpecContext) {
+		It("should use model default polling period when config omits pollingPeriod", func(ctx SpecContext) {
+			// models.Config.UnmarshalJSON defaults PollingPeriod to 2 minutes when omitted
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        json.RawMessage(`{"name": "test"}`),
 			}
 
@@ -229,8 +230,8 @@ var _ = Describe("RecreateSchedules", func() {
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(&taskTree, nil)
 			mockClient.EXPECT().ScheduleClient().Return(mockScheduleClient).AnyTimes()
 			mockScheduleClient.EXPECT().Create(gomock.Any(), gomock.Any()).Do(func(_ context.Context, opts client.ScheduleOptions) {
-				Expect(opts.Spec.Intervals[0].Every).To(Equal(30 * time.Minute))
-				Expect(opts.Spec.Jitter).To(Equal(5 * time.Minute))
+				Expect(opts.Spec.Intervals[0].Every).To(Equal(2 * time.Minute))
+				Expect(opts.Spec.Jitter).To(Equal(1 * time.Minute))
 			}).Return(mockHandle, nil)
 			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(emptySchedulesList(), nil)
 
@@ -242,7 +243,7 @@ var _ = Describe("RecreateSchedules", func() {
 	Context("sub-schedules", func() {
 		It("should recreate sub-schedule from DB schedule + account lookup", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -289,7 +290,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip sub-schedule when account not found", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -318,7 +319,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should use account cache to avoid duplicate lookups", func(ctx SpecContext) {
 			connector := models.Connector{
-				ConnectorBase: models.ConnectorBase{ID: connectorID, Name: "test", Provider: "stripe"},
+				ID: connectorID, Name: "test", Provider: "stripe",
 				Config:        connectorConfig,
 			}
 
@@ -422,8 +423,8 @@ var _ = Describe("RecreateSchedules", func() {
 		})
 	})
 
-	Context("findNextTasksForCapability", func() {
-		It("should find next tasks at root level", func() {
+	Context("findTaskForCapability", func() {
+		It("should find task at root level", func() {
 			tree := models.ConnectorTasksTree{
 				{
 					TaskType: models.TASK_FETCH_ACCOUNTS, Periodically: true,
@@ -433,8 +434,9 @@ var _ = Describe("RecreateSchedules", func() {
 				},
 			}
 
-			nextTasks := rs.findNextTasksForCapability(tree, models.TASK_FETCH_BALANCES)
-			Expect(nextTasks).To(BeNil()) // FETCH_BALANCES has no NextTasks itself
+			task := rs.findTaskForCapability(tree, models.TASK_FETCH_BALANCES)
+			Expect(task).NotTo(BeNil())
+			Expect(task.NextTasks).To(BeNil()) // FETCH_BALANCES has no NextTasks itself
 		})
 
 		It("should find nested tasks", func() {
@@ -450,9 +452,10 @@ var _ = Describe("RecreateSchedules", func() {
 				},
 			}
 
-			nextTasks := rs.findNextTasksForCapability(tree, models.TASK_FETCH_BALANCES)
-			Expect(nextTasks).To(HaveLen(1))
-			Expect(nextTasks[0].TaskType).To(Equal(models.TASK_FETCH_PAYMENTS))
+			task := rs.findTaskForCapability(tree, models.TASK_FETCH_BALANCES)
+			Expect(task).NotTo(BeNil())
+			Expect(task.NextTasks).To(HaveLen(1))
+			Expect(task.NextTasks[0].TaskType).To(Equal(models.TASK_FETCH_PAYMENTS))
 		})
 	})
 
@@ -471,9 +474,10 @@ var _ = Describe("RecreateSchedules", func() {
 				{models.TASK_CREATE_WEBHOOKS, workflow.RunCreateWebhooks, models.CAPABILITY_CREATE_WEBHOOKS},
 			}
 
+			cfg := models.Config{PollingPeriod: 5 * time.Minute}
 			for _, tt := range tests {
 				task := models.ConnectorTaskTree{TaskType: tt.taskType, Name: "test"}
-				wf, cap, req := rs.buildScheduleParams(task, connectorID, nil)
+				wf, cap, req := rs.buildScheduleParams(task, connectorID, nil, cfg)
 				Expect(wf).To(Equal(tt.expectedWf))
 				Expect(cap).To(Equal(tt.expectedCap))
 				Expect(req).NotTo(BeNil())
@@ -482,7 +486,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should return empty for unknown task type", func() {
 			task := models.ConnectorTaskTree{TaskType: 99}
-			wf, _, req := rs.buildScheduleParams(task, connectorID, nil)
+			wf, _, req := rs.buildScheduleParams(task, connectorID, nil, models.Config{})
 			Expect(wf).To(BeEmpty())
 			Expect(req).To(BeNil())
 		})

@@ -87,17 +87,22 @@ func runRecreateSchedules() func(cmd *cobra.Command, args []string) error {
 	}
 }
 
+// scheduleClientProvider is the subset of client.Client used by RecreateSchedules.
+type scheduleClientProvider interface {
+	ScheduleClient() client.ScheduleClient
+}
+
 // RecreateSchedules recreates missing Temporal schedules for active connectors
 // by reading their stored task trees, schedules, and account data from the database.
 type RecreateSchedules struct {
 	logger         logging.Logger
-	temporalClient client.Client
+	temporalClient scheduleClientProvider
 	storage        storage.Storage
 	stack          string
 }
 
 // NewRecreateSchedules creates a new RecreateSchedules instance with the given dependencies.
-func NewRecreateSchedules(logger logging.Logger, temporalClient client.Client, storage storage.Storage, stack string) *RecreateSchedules {
+func NewRecreateSchedules(logger logging.Logger, temporalClient scheduleClientProvider, storage storage.Storage, stack string) *RecreateSchedules {
 	return &RecreateSchedules{
 		logger:         logger,
 		temporalClient: temporalClient,
@@ -218,7 +223,7 @@ func (r *RecreateSchedules) recreateRootSchedules(
 			continue
 		}
 
-		workflowName, capability, request := r.buildScheduleParams(task, connectorID, nil)
+		workflowName, capability, request := r.buildScheduleParams(task, connectorID, nil, config)
 		if workflowName == "" {
 			r.logger.Errorf("  unknown task type %d, skipping", task.TaskType)
 			continue
@@ -325,8 +330,12 @@ func (r *RecreateSchedules) recreateSubSchedules(
 				Payload: payload,
 			}
 
-			nextTasks := r.findNextTasksForCapability(taskTree, capInfo.taskType)
-			request := r.buildRequestForCapability(capInfo, connectorID, fromPayload)
+			task := r.findTaskForCapability(taskTree, capInfo.taskType)
+			var nextTasks []models.ConnectorTaskTree
+			if task != nil {
+				nextTasks = task.NextTasks
+			}
+			request := r.buildRequestForCapability(capInfo, connectorID, fromPayload, config)
 
 			sid := schedule.ID
 			wfName := capInfo.workflowName
@@ -395,14 +404,14 @@ func (r *RecreateSchedules) resolveCapability(capabilityStr string) *struct {
 	return nil
 }
 
-// findNextTasksForCapability walks the task tree recursively to find the
-// NextTasks for a given capability's task type.
-func (r *RecreateSchedules) findNextTasksForCapability(tasks models.ConnectorTasksTree, targetType models.TaskType) []models.ConnectorTaskTree {
-	for _, task := range tasks {
+// findTaskForCapability walks the task tree recursively to find the task node
+// for a given capability's task type.
+func (r *RecreateSchedules) findTaskForCapability(tasks models.ConnectorTasksTree, targetType models.TaskType) *models.ConnectorTaskTree {
+	for i, task := range tasks {
 		if task.TaskType == targetType {
-			return task.NextTasks
+			return &tasks[i]
 		}
-		if result := r.findNextTasksForCapability(task.NextTasks, targetType); result != nil {
+		if result := r.findTaskForCapability(task.NextTasks, targetType); result != nil {
 			return result
 		}
 	}
@@ -418,20 +427,22 @@ func (r *RecreateSchedules) buildRequestForCapability(
 	},
 	connectorID models.ConnectorID,
 	fromPayload *workflow.FromPayload,
+	config models.Config,
 ) any {
+	name := strings.ToLower(capInfo.name)
 	switch capInfo.taskType {
 	case models.TASK_FETCH_ACCOUNTS:
-		return workflow.FetchNextAccounts{ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
+		return workflow.FetchNextAccounts{Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
 	case models.TASK_FETCH_BALANCES:
-		return workflow.FetchNextBalances{ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
+		return workflow.FetchNextBalances{Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
 	case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
-		return workflow.FetchNextExternalAccounts{ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
+		return workflow.FetchNextExternalAccounts{Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
 	case models.TASK_FETCH_OTHERS:
-		return workflow.FetchNextOthers{ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
+		return workflow.FetchNextOthers{Config: config, ConnectorID: connectorID, Name: name, FromPayload: fromPayload, Periodically: true}
 	case models.TASK_FETCH_PAYMENTS:
-		return workflow.FetchNextPayments{ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
+		return workflow.FetchNextPayments{Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true}
 	case models.TASK_CREATE_WEBHOOKS:
-		return workflow.CreateWebhooks{ConnectorID: connectorID, FromPayload: fromPayload}
+		return workflow.CreateWebhooks{Config: config, ConnectorID: connectorID, FromPayload: fromPayload}
 	default:
 		return nil
 	}
@@ -441,31 +452,32 @@ func (r *RecreateSchedules) buildScheduleParams(
 	task models.ConnectorTaskTree,
 	connectorID models.ConnectorID,
 	fromPayload *workflow.FromPayload,
+	config models.Config,
 ) (workflowName string, capability models.Capability, request any) {
 	switch task.TaskType {
 	case models.TASK_FETCH_ACCOUNTS:
 		return workflow.RunFetchNextAccounts, models.CAPABILITY_FETCH_ACCOUNTS, workflow.FetchNextAccounts{
-			ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
+			Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
 		}
 	case models.TASK_FETCH_BALANCES:
 		return workflow.RunFetchNextBalances, models.CAPABILITY_FETCH_BALANCES, workflow.FetchNextBalances{
-			ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
+			Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
 		}
 	case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 		return workflow.RunFetchNextExternalAccounts, models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS, workflow.FetchNextExternalAccounts{
-			ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
+			Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
 		}
 	case models.TASK_FETCH_OTHERS:
 		return workflow.RunFetchNextOthers, models.CAPABILITY_FETCH_OTHERS, workflow.FetchNextOthers{
-			ConnectorID: connectorID, Name: task.Name, FromPayload: fromPayload, Periodically: true,
+			Config: config, ConnectorID: connectorID, Name: strings.ToLower(models.CAPABILITY_FETCH_OTHERS.String()), FromPayload: fromPayload, Periodically: true,
 		}
 	case models.TASK_FETCH_PAYMENTS:
 		return workflow.RunFetchNextPayments, models.CAPABILITY_FETCH_PAYMENTS, workflow.FetchNextPayments{
-			ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
+			Config: config, ConnectorID: connectorID, FromPayload: fromPayload, Periodically: true,
 		}
 	case models.TASK_CREATE_WEBHOOKS:
 		return workflow.RunCreateWebhooks, models.CAPABILITY_CREATE_WEBHOOKS, workflow.CreateWebhooks{
-			ConnectorID: connectorID, FromPayload: fromPayload,
+			Config: config, ConnectorID: connectorID, FromPayload: fromPayload,
 		}
 	default:
 		return "", 0, nil
