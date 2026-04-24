@@ -78,7 +78,6 @@ just pre-commit
 ```
 This runs linting, code generation, and related steps.
 
-- Just: https://github.com/casey/just
 - OpenAPI merge tool mentioned in Justfile requires Node.js (npx). See [Justfile](./Justfile).
 
 ## Deployment
