@@ -50,6 +50,7 @@ services:
       - go-cache:/home/appuser/.cache/go-build
     environment:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
+      OUTBOX_SCHEDULE_POLLING_INTERVAL: 10m
 
 volumes:
   go-cache:
