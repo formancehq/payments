@@ -5800,12 +5800,10 @@ components:
         name:
           type: string
         contactDetails:
-          allOf:
-            - $ref: '#/components/schemas/V3ContactDetailsRequest'
+          $ref: '#/components/schemas/V3ContactDetailsRequest'
           nullable: true
         address:
-          allOf:
-            - $ref: '#/components/schemas/V3AddressRequest'
+          $ref: '#/components/schemas/V3AddressRequest'
           nullable: true
         bankAccountIDs:
           type: array
@@ -5991,12 +5989,10 @@ components:
           type: string
           format: date-time
         contactDetails:
-          allOf:
-            - $ref: '#/components/schemas/V3ContactDetails'
+          $ref: '#/components/schemas/V3ContactDetails'
           nullable: true
         address:
-          allOf:
-            - $ref: '#/components/schemas/V3Address'
+          $ref: '#/components/schemas/V3Address'
           nullable: true
         bankAccountIDs:
           type: array

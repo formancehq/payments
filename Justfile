@@ -18,7 +18,7 @@ compile-plugins:
 
 [group('openapi')]
 validate-openapi:
-  @go run github.com/getkin/kin-openapi/cmd/validate@latest openapi.yaml
+  @go run github.com/getkin/kin-openapi/cmd/validate@v0.135.0 openapi.yaml
 
 [group('openapi')]
 compile-connector-configs:
