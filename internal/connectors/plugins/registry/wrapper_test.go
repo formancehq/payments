@@ -368,6 +368,30 @@ var _ = Describe("Wrapper", func() {
 			Expect(errors.Is(err, plugins.ErrUpstreamRatelimit)).To(BeTrue())
 		})
 
+		DescribeTable("wraps retryable timeout-class errors as ErrUpstreamTimeout",
+			func(ctx SpecContext, sourceErr error) {
+				wrapper := New(connectorID, logger, plg)
+				plg.EXPECT().Name().Return("dummy").AnyTimes()
+				plg.EXPECT().FetchNextAccounts(gomock.Any(), gomock.Any()).Return(models.FetchNextAccountsResponse{}, sourceErr)
+				_, err := wrapper.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{})
+				Expect(errors.Is(err, plugins.ErrUpstreamTimeout)).To(BeTrue())
+			},
+			Entry("408 Request Timeout", httpwrapper.ErrStatusCodeRequestTimeout),
+			Entry("421 Misdirected Request", httpwrapper.ErrStatusCodeMisdirectedRequest),
+		)
+
+		DescribeTable("wraps retry-after-class errors as ErrUpstreamRetryAfter",
+			func(ctx SpecContext, sourceErr error) {
+				wrapper := New(connectorID, logger, plg)
+				plg.EXPECT().Name().Return("dummy").AnyTimes()
+				plg.EXPECT().FetchNextAccounts(gomock.Any(), gomock.Any()).Return(models.FetchNextAccountsResponse{}, sourceErr)
+				_, err := wrapper.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{})
+				Expect(errors.Is(err, plugins.ErrUpstreamRetryAfter)).To(BeTrue())
+			},
+			Entry("423 Locked", httpwrapper.ErrStatusCodeLocked),
+			Entry("425 Too Early", httpwrapper.ErrStatusCodeTooEarly),
+		)
+
 		It("wraps invalid-request errors", func(ctx SpecContext) {
 			wrapper := New(connectorID, logger, plg)
 			plg.EXPECT().Name().Return("dummy").AnyTimes()

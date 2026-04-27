@@ -15,14 +15,27 @@ import (
 )
 
 var (
-	ErrStatusCodeUnexpected      = errors.New("unexpected status code")
-	ErrStatusCodeClientError     = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)
-	ErrStatusCodeServerError     = fmt.Errorf("%w: http server error", ErrStatusCodeUnexpected)
-	ErrStatusCodeTooManyRequests = fmt.Errorf("%w: http too many requests error", ErrStatusCodeUnexpected)
+	ErrStatusCodeUnexpected         = errors.New("unexpected status code")
+	ErrStatusCodeClientError        = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)
+	ErrStatusCodeServerError        = fmt.Errorf("%w: http server error", ErrStatusCodeUnexpected)
+	ErrStatusCodeTooManyRequests    = fmt.Errorf("%w: http too many requests error", ErrStatusCodeUnexpected)
+	ErrStatusCodeRequestTimeout     = fmt.Errorf("%w: http request timeout", ErrStatusCodeUnexpected)
+	ErrStatusCodeMisdirectedRequest = fmt.Errorf("%w: http misdirected request", ErrStatusCodeUnexpected)
+	ErrStatusCodeLocked             = fmt.Errorf("%w: http locked", ErrStatusCodeUnexpected)
+	ErrStatusCodeTooEarly           = fmt.Errorf("%w: http too early", ErrStatusCodeUnexpected)
 
 	defaultHttpErrorCheckerFn = func(statusCode int) error {
-		if statusCode == http.StatusTooManyRequests {
+		switch statusCode {
+		case http.StatusTooManyRequests:
 			return ErrStatusCodeTooManyRequests
+		case http.StatusRequestTimeout:
+			return ErrStatusCodeRequestTimeout
+		case http.StatusMisdirectedRequest:
+			return ErrStatusCodeMisdirectedRequest
+		case http.StatusLocked:
+			return ErrStatusCodeLocked
+		case http.StatusTooEarly:
+			return ErrStatusCodeTooEarly
 		}
 
 		if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {

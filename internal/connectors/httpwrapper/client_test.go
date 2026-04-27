@@ -2,6 +2,7 @@ package httpwrapper_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -90,6 +91,23 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeClientError))
 			Expect(res.Code).To(Equal("err123"))
 		})
+		DescribeTable("classifies retryable 4xx codes",
+			func(ctx SpecContext, statusCode int, expected error) {
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s?code=%d", server.URL, statusCode), http.NoBody)
+				Expect(err).To(BeNil())
+
+				res := &errorRes{}
+				code, doErr := client.Do(context.Background(), req, &successRes{}, res)
+				Expect(code).To(Equal(statusCode))
+				Expect(doErr).To(MatchError(expected))
+				Expect(res.Code).To(Equal("err123"))
+			},
+			Entry("408 Request Timeout", http.StatusRequestTimeout, httpwrapper.ErrStatusCodeRequestTimeout),
+			Entry("421 Misdirected Request", http.StatusMisdirectedRequest, httpwrapper.ErrStatusCodeMisdirectedRequest),
+			Entry("423 Locked", http.StatusLocked, httpwrapper.ErrStatusCodeLocked),
+			Entry("425 Too Early", http.StatusTooEarly, httpwrapper.ErrStatusCodeTooEarly),
+			Entry("429 Too Many Requests", http.StatusTooManyRequests, httpwrapper.ErrStatusCodeTooManyRequests),
+		)
 		It("responds with error when HTTP request fails", func(ctx SpecContext) {
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "notaurl", http.NoBody)
 			Expect(err).To(BeNil())
