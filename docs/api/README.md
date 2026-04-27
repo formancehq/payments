@@ -6748,8 +6748,8 @@ Lifecycle of a conversion.
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |name|string|true|none|none|
-|contactDetails|[V3ContactDetailsRequest](#schemav3contactdetailsrequest)|false|none|none|
-|address|[V3AddressRequest](#schemav3addressrequest)|false|none|none|
+|contactDetails|[V3ContactDetailsRequest](#schemav3contactdetailsrequest)¦null|false|none|none|
+|address|[V3AddressRequest](#schemav3addressrequest)¦null|false|none|none|
 |bankAccountIDs|[string]¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 
@@ -7077,8 +7077,8 @@ Lifecycle of a conversion.
 |id|string|true|none|none|
 |name|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
-|contactDetails|[V3ContactDetails](#schemav3contactdetails)|false|none|none|
-|address|[V3Address](#schemav3address)|false|none|none|
+|contactDetails|[V3ContactDetails](#schemav3contactdetails)¦null|false|none|none|
+|address|[V3Address](#schemav3address)¦null|false|none|none|
 |bankAccountIDs|[string]¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 
