@@ -74,7 +74,7 @@ jobs:
 
   GoReleaser:
     runs-on: "shipfox-4vcpu-ubuntu-2404"
-    if: contains(github.event.pull_request.labels.*.name, 'build-images') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
+    if: contains(github.event.pull_request.labels.*.name, 'build-images') || contains(github.event.pull_request.labels.*.name, 'deploy-staging') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
     needs:
       - Dirty
     steps:
