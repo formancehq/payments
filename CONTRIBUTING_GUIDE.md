@@ -30,7 +30,8 @@ just compile-plugins
 docker compose up
 ```
 
-- Earthly: https://earthly.dev
+- Just: https://just.systems (task runner; see `Justfile` for recipes, run `just --list`)
+- Nix: https://nixos.org (reproducible dev shell; `nix develop --impure` or `direnv allow` to auto-load via `.envrc`)
 - Docker Compose: https://docs.docker.com/compose/
 - Dev compose setup: see [docker-compose.dev.yml](./docker-compose.dev.yml) and [docker-compose.yml](./docker-compose.yml)
 
@@ -77,7 +78,6 @@ just pre-commit
 ```
 This runs linting, code generation, and related steps.
 
-- Just: https://github.com/casey/just
 - OpenAPI merge tool mentioned in Justfile requires Node.js (npx). See [Justfile](./Justfile).
 
 ## Deployment
