@@ -100,8 +100,17 @@ func wrapSDKErr(err error, atlarErr any) error {
 		code = reader.Code()
 	}
 
-	if code == http.StatusTooManyRequests {
+	switch code {
+	case http.StatusTooManyRequests:
 		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooManyRequests)
+	case http.StatusRequestTimeout:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeRequestTimeout)
+	case http.StatusMisdirectedRequest:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeMisdirectedRequest)
+	case http.StatusLocked:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeLocked)
+	case http.StatusTooEarly:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooEarly)
 	}
 
 	if code >= http.StatusBadRequest && code < http.StatusInternalServerError {

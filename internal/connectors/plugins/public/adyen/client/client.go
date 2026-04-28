@@ -70,8 +70,17 @@ func New(
 // wrap a public error for cases that we don't want to retry
 // so that activities can classify this error for temporal
 func (c *client) wrapSDKError(err error, statusCode int) error {
-	if statusCode == http.StatusTooManyRequests {
+	switch statusCode {
+	case http.StatusTooManyRequests:
 		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooManyRequests)
+	case http.StatusRequestTimeout:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeRequestTimeout)
+	case http.StatusMisdirectedRequest:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeMisdirectedRequest)
+	case http.StatusLocked:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeLocked)
+	case http.StatusTooEarly:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooEarly)
 	}
 
 	if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {

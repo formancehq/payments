@@ -28,6 +28,18 @@ func translateError(err error) error {
 			err,
 			plugins.ErrUpstreamRatelimit,
 		)
+	case errors.Is(err, httpwrapper.ErrStatusCodeRequestTimeout),
+		errors.Is(err, httpwrapper.ErrStatusCodeMisdirectedRequest):
+		return errorsutils.NewWrappedError(
+			err,
+			plugins.ErrUpstreamTimeout,
+		)
+	case errors.Is(err, httpwrapper.ErrStatusCodeLocked),
+		errors.Is(err, httpwrapper.ErrStatusCodeTooEarly):
+		return errorsutils.NewWrappedError(
+			err,
+			plugins.ErrUpstreamRetryAfter,
+		)
 	default:
 		return err
 	}

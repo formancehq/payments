@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -111,6 +112,17 @@ func wrapSDKErr(err error) error {
 			err,
 			httpwrapper.ErrStatusCodeTooManyRequests,
 		)
+	}
+
+	switch stripeErr.HTTPStatusCode {
+	case http.StatusRequestTimeout:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeRequestTimeout)
+	case http.StatusMisdirectedRequest:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeMisdirectedRequest)
+	case http.StatusLocked:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeLocked)
+	case http.StatusTooEarly:
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooEarly)
 	}
 
 	switch stripeErr.Type {

@@ -17,6 +17,8 @@ const (
 	ErrTypeDefault         = "DEFAULT"
 	ErrTypeInvalidArgument = "INVALID_ARGUMENT"
 	ErrTypeRateLimited     = "RATE_LIMITED"
+	ErrTypeTimeout         = "TIMEOUT"
+	ErrTypeRetryAfter      = "RETRY_AFTER"
 	ErrTypeUnimplemented   = "UNIMPLEMENTED"
 )
 
@@ -56,6 +58,12 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
 			// temporal already implements a backoff strategy, but let's add an extra delay before the next retry
 			// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay
+			NextRetryDelay: a.rateLimitingRetryDelay,
+		})
+	case errors.Is(err, plugins.ErrUpstreamTimeout):
+		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeTimeout, cause)
+	case errors.Is(err, plugins.ErrUpstreamRetryAfter):
+		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRetryAfter, temporal.ApplicationErrorOptions{
 			NextRetryDelay: a.rateLimitingRetryDelay,
 		})
 
