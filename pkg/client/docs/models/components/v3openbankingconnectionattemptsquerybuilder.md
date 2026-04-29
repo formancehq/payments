@@ -1,0 +1,11 @@
+# V3OpenBankingConnectionAttemptsQueryBuilder
+
+Query body for /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/attempts. Filterable keys are listed on V3OpenBankingConnectionAttemptsFilter.
+
+
+## Fields
+
+| Field                                                                                                                 | Type                                                                                                                  | Required                                                                                                              | Description                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `DollarMatch`                                                                                                         | [*components.V3OpenBankingConnectionAttemptsFilter](../../models/components/v3openbankingconnectionattemptsfilter.md) | :heavy_minus_sign:                                                                                                    | Filterable properties for /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/attempts.         |
+| `AdditionalProperties`                                                                                                | map[string]*any*                                                                                                      | :heavy_minus_sign:                                                                                                    | N/A                                                                                                                   |

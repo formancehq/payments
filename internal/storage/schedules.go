@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage/filters"
 	"github.com/uptrace/bun"
 )
 
@@ -129,15 +130,10 @@ func NewListSchedulesQuery(opts bunpaginate.PaginatedQueryOptions[ScheduleQuery]
 
 func (s *store) schedulesQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch key {
-		case "id", "connector_id":
-			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
-			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+		if err := filters.ConnectorSchedules.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
 		}
+		return fmt.Sprintf("%s = ?", key), []any{value}, nil
 	}))
 }
 

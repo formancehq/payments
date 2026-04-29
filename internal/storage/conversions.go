@@ -13,6 +13,7 @@ import (
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage/filters"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/uptrace/bun"
 )
@@ -156,34 +157,17 @@ func NewListConversionsQuery(opts bunpaginate.PaginatedQueryOptions[ConversionQu
 
 func (s *store) conversionsQueryContext(qb query.Builder) (string, []any, error) {
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "reference",
-			key == "id",
-			key == "connector_id",
-			key == "source_asset",
-			key == "destination_asset",
-			key == "status",
-			key == "source_account_id",
-			key == "destination_account_id":
-			if operator != "$match" {
-				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
-			}
-			return fmt.Sprintf("conversion.%s = ?", key), []any{value}, nil
-
-		case key == "source_amount",
-			key == "destination_amount":
+		if clause, args, ok, err := matchMetadataKey("conversion.metadata", key, operator, value); ok {
+			return clause, args, err
+		}
+		if err := filters.Conversions.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		}
+		switch key {
+		case "source_amount", "destination_amount":
 			return fmt.Sprintf("conversion.%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
-		case metadataRegex.Match([]byte(key)):
-			if operator != "$match" {
-				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
-			}
-			match := metadataRegex.FindAllStringSubmatch(key, 3)
-
-			return "conversion.metadata @> ?", []any{map[string]any{
-				match[0][1]: value,
-			}}, nil
 		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+			return fmt.Sprintf("conversion.%s = ?", key), []any{value}, nil
 		}
 	}))
 
