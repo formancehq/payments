@@ -1,0 +1,17 @@
+# V3AccountsFilter
+
+Filterable properties for /v3/accounts.
+
+
+## Fields
+
+| Field                                                                         | Type                                                                          | Required                                                                      | Description                                                                   |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `ID`                                                                          | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `Reference`                                                                   | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `ConnectorID`                                                                 | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `Type`                                                                        | [*components.V3AccountTypeEnum](../../models/components/v3accounttypeenum.md) | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `DefaultAsset`                                                                | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `Name`                                                                        | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `PsuID`                                                                       | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |
+| `OpenBankingConnectionID`                                                     | **string*                                                                     | :heavy_minus_sign:                                                            | N/A                                                                           |

@@ -251,11 +251,11 @@ func (s *V3) CreateAccount(ctx context.Context, request *components.V3CreateAcco
 }
 
 // ListAccounts - List all accounts
-func (s *V3) ListAccounts(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListAccountsResponse, error) {
+func (s *V3) ListAccounts(ctx context.Context, pageSize *int64, cursor *string, v3AccountsQueryBuilder *components.V3AccountsQueryBuilder, opts ...operations.Option) (*operations.V3ListAccountsResponse, error) {
 	request := operations.V3ListAccountsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:               pageSize,
+		Cursor:                 cursor,
+		V3AccountsQueryBuilder: v3AccountsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -288,7 +288,7 @@ func (s *V3) ListAccounts(ctx context.Context, pageSize *int64, cursor *string, 
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3AccountsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -1147,11 +1147,11 @@ func (s *V3) CreateBankAccount(ctx context.Context, request *components.V3Create
 }
 
 // ListBankAccounts - List all bank accounts
-func (s *V3) ListBankAccounts(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListBankAccountsResponse, error) {
+func (s *V3) ListBankAccounts(ctx context.Context, pageSize *int64, cursor *string, v3BankAccountsQueryBuilder *components.V3BankAccountsQueryBuilder, opts ...operations.Option) (*operations.V3ListBankAccountsResponse, error) {
 	request := operations.V3ListBankAccountsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:                   pageSize,
+		Cursor:                     cursor,
+		V3BankAccountsQueryBuilder: v3BankAccountsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -1184,7 +1184,7 @@ func (s *V3) ListBankAccounts(ctx context.Context, pageSize *int64, cursor *stri
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3BankAccountsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -2036,11 +2036,11 @@ func (s *V3) ForwardBankAccount(ctx context.Context, bankAccountID string, v3For
 }
 
 // ListConnectors - List all connectors
-func (s *V3) ListConnectors(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListConnectorsResponse, error) {
+func (s *V3) ListConnectors(ctx context.Context, pageSize *int64, cursor *string, v3ConnectorsQueryBuilder *components.V3ConnectorsQueryBuilder, opts ...operations.Option) (*operations.V3ListConnectorsResponse, error) {
 	request := operations.V3ListConnectorsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:                 pageSize,
+		Cursor:                   cursor,
+		V3ConnectorsQueryBuilder: v3ConnectorsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -2073,7 +2073,7 @@ func (s *V3) ListConnectors(ctx context.Context, pageSize *int64, cursor *string
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3ConnectorsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -3582,12 +3582,12 @@ func (s *V3) ResetConnector(ctx context.Context, connectorID string, opts ...ope
 }
 
 // ListConnectorSchedules - List all connector schedules
-func (s *V3) ListConnectorSchedules(ctx context.Context, connectorID string, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListConnectorSchedulesResponse, error) {
+func (s *V3) ListConnectorSchedules(ctx context.Context, connectorID string, pageSize *int64, cursor *string, v3ConnectorSchedulesQueryBuilder *components.V3ConnectorSchedulesQueryBuilder, opts ...operations.Option) (*operations.V3ListConnectorSchedulesResponse, error) {
 	request := operations.V3ListConnectorSchedulesRequest{
-		ConnectorID: connectorID,
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		ConnectorID:                      connectorID,
+		PageSize:                         pageSize,
+		Cursor:                           cursor,
+		V3ConnectorSchedulesQueryBuilder: v3ConnectorSchedulesQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -3620,7 +3620,7 @@ func (s *V3) ListConnectorSchedules(ctx context.Context, connectorID string, pag
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3ConnectorSchedulesQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -4278,11 +4278,11 @@ func (s *V3) ListConnectorScheduleInstances(ctx context.Context, connectorID str
 // See `V3Order` for the full response shape, including the
 // `adjustments` array that captures each observed state transition on
 // the exchange.
-func (s *V3) ListOrders(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListOrdersResponse, error) {
+func (s *V3) ListOrders(ctx context.Context, pageSize *int64, cursor *string, v3OrdersQueryBuilder *components.V3OrdersQueryBuilder, opts ...operations.Option) (*operations.V3ListOrdersResponse, error) {
 	request := operations.V3ListOrdersRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:             pageSize,
+		Cursor:               cursor,
+		V3OrdersQueryBuilder: v3OrdersQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -4315,7 +4315,7 @@ func (s *V3) ListOrders(ctx context.Context, pageSize *int64, cursor *string, re
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3OrdersQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -4753,11 +4753,11 @@ func (s *V3) GetOrder(ctx context.Context, orderID string, opts ...operations.Op
 // query builder for filtering over top-level `V3Conversion` fields
 // such as `connectorID`, `reference`, `status`, `sourceAsset`,
 // `destinationAsset`, and `createdAt`.
-func (s *V3) ListConversions(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListConversionsResponse, error) {
+func (s *V3) ListConversions(ctx context.Context, pageSize *int64, cursor *string, v3ConversionsQueryBuilder *components.V3ConversionsQueryBuilder, opts ...operations.Option) (*operations.V3ListConversionsResponse, error) {
 	request := operations.V3ListConversionsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:                  pageSize,
+		Cursor:                    cursor,
+		V3ConversionsQueryBuilder: v3ConversionsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -4790,7 +4790,7 @@ func (s *V3) ListConversions(ctx context.Context, pageSize *int64, cursor *strin
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3ConversionsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -5437,11 +5437,11 @@ func (s *V3) CreatePayment(ctx context.Context, request *components.V3CreatePaym
 }
 
 // ListPayments - List all payments
-func (s *V3) ListPayments(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPaymentsResponse, error) {
+func (s *V3) ListPayments(ctx context.Context, pageSize *int64, cursor *string, v3PaymentsQueryBuilder *components.V3PaymentsQueryBuilder, opts ...operations.Option) (*operations.V3ListPaymentsResponse, error) {
 	request := operations.V3ListPaymentsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:               pageSize,
+		Cursor:                 cursor,
+		V3PaymentsQueryBuilder: v3PaymentsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -5474,7 +5474,7 @@ func (s *V3) ListPayments(ctx context.Context, pageSize *int64, cursor *string, 
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3PaymentsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -6330,11 +6330,11 @@ func (s *V3) InitiatePayment(ctx context.Context, noValidation *bool, v3Initiate
 }
 
 // ListPaymentInitiations - List all payment initiations
-func (s *V3) ListPaymentInitiations(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPaymentInitiationsResponse, error) {
+func (s *V3) ListPaymentInitiations(ctx context.Context, pageSize *int64, cursor *string, v3PaymentInitiationsQueryBuilder *components.V3PaymentInitiationsQueryBuilder, opts ...operations.Option) (*operations.V3ListPaymentInitiationsResponse, error) {
 	request := operations.V3ListPaymentInitiationsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:                         pageSize,
+		Cursor:                           cursor,
+		V3PaymentInitiationsQueryBuilder: v3PaymentInitiationsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -6367,7 +6367,7 @@ func (s *V3) ListPaymentInitiations(ctx context.Context, pageSize *int64, cursor
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3PaymentInitiationsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -7851,12 +7851,12 @@ func (s *V3) ReversePaymentInitiation(ctx context.Context, paymentInitiationID s
 }
 
 // ListPaymentInitiationAdjustments - List all payment initiation adjustments
-func (s *V3) ListPaymentInitiationAdjustments(ctx context.Context, paymentInitiationID string, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPaymentInitiationAdjustmentsResponse, error) {
+func (s *V3) ListPaymentInitiationAdjustments(ctx context.Context, paymentInitiationID string, pageSize *int64, cursor *string, v3PaymentInitiationAdjustmentsQueryBuilder *components.V3PaymentInitiationAdjustmentsQueryBuilder, opts ...operations.Option) (*operations.V3ListPaymentInitiationAdjustmentsResponse, error) {
 	request := operations.V3ListPaymentInitiationAdjustmentsRequest{
 		PaymentInitiationID: paymentInitiationID,
 		PageSize:            pageSize,
 		Cursor:              cursor,
-		RequestBody:         requestBody,
+		V3PaymentInitiationAdjustmentsQueryBuilder: v3PaymentInitiationAdjustmentsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -7889,7 +7889,7 @@ func (s *V3) ListPaymentInitiationAdjustments(ctx context.Context, paymentInitia
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3PaymentInitiationAdjustmentsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -8542,11 +8542,11 @@ func (s *V3) CreatePaymentServiceUser(ctx context.Context, request *components.V
 }
 
 // ListPaymentServiceUsers - List all payment service users
-func (s *V3) ListPaymentServiceUsers(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPaymentServiceUsersResponse, error) {
+func (s *V3) ListPaymentServiceUsers(ctx context.Context, pageSize *int64, cursor *string, v3PaymentServiceUsersQueryBuilder *components.V3PaymentServiceUsersQueryBuilder, opts ...operations.Option) (*operations.V3ListPaymentServiceUsersResponse, error) {
 	request := operations.V3ListPaymentServiceUsersRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:                          pageSize,
+		Cursor:                            cursor,
+		V3PaymentServiceUsersQueryBuilder: v3PaymentServiceUsersQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -8579,7 +8579,7 @@ func (s *V3) ListPaymentServiceUsers(ctx context.Context, pageSize *int64, curso
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3PaymentServiceUsersQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -9215,12 +9215,12 @@ func (s *V3) DeletePaymentServiceUser(ctx context.Context, paymentServiceUserID 
 }
 
 // ListPaymentServiceUserConnections - List all connections for a payment service user
-func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServiceUserID string, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsResponse, error) {
+func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServiceUserID string, pageSize *int64, cursor *string, v3OpenBankingConnectionsQueryBuilder *components.V3OpenBankingConnectionsQueryBuilder, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsResponse, error) {
 	request := operations.V3ListPaymentServiceUserConnectionsRequest{
-		PaymentServiceUserID: paymentServiceUserID,
-		PageSize:             pageSize,
-		Cursor:               cursor,
-		RequestBody:          requestBody,
+		PaymentServiceUserID:                 paymentServiceUserID,
+		PageSize:                             pageSize,
+		Cursor:                               cursor,
+		V3OpenBankingConnectionsQueryBuilder: v3OpenBankingConnectionsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -9253,7 +9253,7 @@ func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServi
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3OpenBankingConnectionsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -10131,7 +10131,7 @@ func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Contex
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3OpenBankingConnectionsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -10359,7 +10359,7 @@ func (s *V3) ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx context.Conte
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3OpenBankingConnectionAttemptsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
@@ -11882,11 +11882,11 @@ func (s *V3) CreatePool(ctx context.Context, request *components.V3CreatePoolReq
 }
 
 // ListPools - List all pools
-func (s *V3) ListPools(ctx context.Context, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPoolsResponse, error) {
+func (s *V3) ListPools(ctx context.Context, pageSize *int64, cursor *string, v3PoolsQueryBuilder *components.V3PoolsQueryBuilder, opts ...operations.Option) (*operations.V3ListPoolsResponse, error) {
 	request := operations.V3ListPoolsRequest{
-		PageSize:    pageSize,
-		Cursor:      cursor,
-		RequestBody: requestBody,
+		PageSize:            pageSize,
+		Cursor:              cursor,
+		V3PoolsQueryBuilder: v3PoolsQueryBuilder,
 	}
 
 	o := operations.Options{}
@@ -11919,7 +11919,7 @@ func (s *V3) ListPools(ctx context.Context, pageSize *int64, cursor *string, req
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3PoolsQueryBuilder", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
