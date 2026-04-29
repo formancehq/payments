@@ -6364,6 +6364,7 @@ components:
           Atlar: '#/components/schemas/V3AtlarConfig'
           Bankingbridge: '#/components/schemas/V3BankingbridgeConfig'
           Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+          Bitstamp: '#/components/schemas/V3BitstampConfig'
           Coinbaseprime: '#/components/schemas/V3CoinbaseprimeConfig'
           Column: '#/components/schemas/V3ColumnConfig'
           Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
@@ -6399,6 +6400,7 @@ components:
         - $ref: '#/components/schemas/V3TinkConfig'
         - $ref: '#/components/schemas/V3WiseConfig'
         - $ref: '#/components/schemas/V3BankingbridgeConfig'
+        - $ref: '#/components/schemas/V3BitstampConfig'
         - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
         - $ref: '#/components/schemas/V3FireblocksConfig'
     V3AdyenConfig:
@@ -6524,6 +6526,32 @@ components:
           type: string
         username:
           type: string
+    V3BitstampConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - apiSecret
+      properties:
+        apiKey:
+          type: string
+        apiSecret:
+          type: string
+        baseUrl:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+        pollingPeriod:
+          type: string
+          default: 30m
+        provider:
+          type: string
+          default: Bitstamp
     V3CoinbaseprimeConfig:
       type: object
       required:
