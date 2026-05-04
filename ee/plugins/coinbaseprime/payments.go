@@ -24,12 +24,8 @@ const (
 	transferTypeCounterpartyID  TransferEndpointType = "COUNTERPARTY_ID"
 )
 
-type paymentsState struct {
-	Cursor string `json:"cursor"`
-}
-
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	var oldState paymentsState
+	var oldState incrementalState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextPaymentsResponse{}, err
@@ -53,7 +49,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		payments = append(payments, *payment)
 	}
 
-	newState := paymentsState{Cursor: response.Pagination.NextCursor}
+	newState := incrementalState{Cursor: advanceCursor(oldState.Cursor, response.Pagination.NextCursor)}
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
