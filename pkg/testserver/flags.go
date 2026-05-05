@@ -24,7 +24,7 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 		"--" + temporal.TemporalNamespaceFlag, configuration.TemporalNamespace,
 		"--" + temporal.TemporalInitSearchAttributesFlag, fmt.Sprintf("stack=%s", configuration.Stack),
 		"--" + cmd.StackFlag, configuration.Stack,
-		"--" + profiling.ProfilerEnableFlag, "false",
+		"--" + profiling.ProfilerEnableFlag + "=false",
 	}
 	if configuration.PostgresConfiguration.MaxIdleConns != 0 {
 		args = append(
