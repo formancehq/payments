@@ -16,7 +16,7 @@ jobs:
   PR:
     if: github.event_name == 'pull_request'
     name: Check PR Title
-    runs-on: "shipfox-4vcpu-ubuntu-2404"
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
     permissions:
       statuses: write
     steps:
@@ -25,9 +25,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Dirty:
-    runs-on: "shipfox-4vcpu-ubuntu-2404"
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'namespacelabs/nscloud-checkout-action@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
@@ -51,11 +51,11 @@ jobs:
           fi
 
   Tests:
-    runs-on: "shipfox-4vcpu-ubuntu-2404"
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
     needs:
       - Dirty
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'namespacelabs/nscloud-checkout-action@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
@@ -73,12 +73,12 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   GoReleaser:
-    runs-on: "shipfox-4vcpu-ubuntu-2404"
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
     if: contains(github.event.pull_request.labels.*.name, 'build-images') || contains(github.event.pull_request.labels.*.name, 'deploy-staging') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
     needs:
       - Dirty
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'namespacelabs/nscloud-checkout-action@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
@@ -112,7 +112,7 @@ jobs:
       - GoReleaser
       - Tests
     steps:
-      - uses: 'actions/checkout@v6'
+      - uses: 'namespacelabs/nscloud-checkout-action@v7'
         with:
           fetch-depth: 0
       - name: Setup Env
