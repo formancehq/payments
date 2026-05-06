@@ -11,7 +11,7 @@ import (
 // PAYMENT_SCHEME_OTHER, which is the same fallback used by the other EE
 // plugins for non-card rails.
 func deliveryMethodToScheme(deliveryMethod string) models.PaymentScheme {
-	switch strings.ToLower(deliveryMethod) {
+	switch strings.ToLower(strings.TrimSpace(deliveryMethod)) {
 	case "ach", "ach_standard", "ach_same_day", "ach_expedited":
 		return models.PAYMENT_SCHEME_ACH
 	case "wire", "international_wire", "swift", "international":

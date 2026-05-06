@@ -126,7 +126,15 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 	var apiErr ErrorResponse
 	statusCode, doErr := c.httpClient.Do(ctx, req, out, &apiErr)
 	if doErr != nil {
-		return statusCode, fmt.Errorf("%w: %s", doErr, apiErr.Error())
+		// Only attach the Routable error envelope when the response carried
+		// one. Transport errors (DNS, timeout, connection refused) leave
+		// apiErr at its zero value, in which case appending the formatted
+		// envelope just produces a misleading "routable api error: empty
+		// body" suffix that hurts log triage.
+		if apiErr.Code != "" || apiErr.Message != "" || len(apiErr.Errors) > 0 {
+			return statusCode, fmt.Errorf("%w: %s", doErr, apiErr.Error())
+		}
+		return statusCode, doErr
 	}
 	return statusCode, nil
 }
