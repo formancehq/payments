@@ -36,6 +36,7 @@ func TestIsTerminalStatus(t *testing.T) {
 		models.PAYMENT_STATUS_FAILED,
 		models.PAYMENT_STATUS_CANCELLED,
 		models.PAYMENT_STATUS_EXPIRED,
+		models.PAYMENT_STATUS_REFUNDED,
 	}
 	for _, s := range terminal {
 		if !isTerminalStatus(s) {

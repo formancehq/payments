@@ -110,6 +110,43 @@ func TestCreatePayableValidatesInputBeforeNetwork(t *testing.T) {
 	}
 }
 
+func TestErrorSuffixOnlyWhenAPIBodyPresent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("with API body", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"object":"Error","code":"invalid","message":"bad amount"}`)
+		})
+		defer srv.Close()
+
+		_, err := c.ListAccounts(context.Background(), 1, 25)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !strings.Contains(err.Error(), "bad amount") {
+			t.Fatalf("expected error to surface API message, got %q", err.Error())
+		}
+	})
+
+	t.Run("without API body", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			// no JSON body
+		})
+		defer srv.Close()
+
+		_, err := c.ListAccounts(context.Background(), 1, 25)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		// We must not pollute the message with the placeholder "empty body" suffix.
+		if strings.Contains(err.Error(), "routable api error: empty body") {
+			t.Fatalf("error should not include placeholder suffix, got %q", err.Error())
+		}
+	})
+}
+
 func TestListPayablesPassesStatusChangedAtGte(t *testing.T) {
 	when := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
