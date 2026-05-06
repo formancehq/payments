@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
@@ -144,12 +145,17 @@ var _ = Describe("Worker Tests", func() {
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
 				Expect(opts.Spec.Intervals).To(HaveLen(1))
 				Expect(opts.Spec.Intervals[0].Every).To(Equal(pollingInterval))
-				//nolint:staticcheck
-				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
+				stackKey := sdktemporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack)
+				scheduleStack, hasScheduleStack := opts.TypedSearchAttributes.GetKeyword(stackKey)
+				Expect(hasScheduleStack).To(BeTrue())
+				Expect(scheduleStack).To(Equal(stackName))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
 				Expect(ok).To(BeTrue())
 				Expect(action.Workflow).To(Equal("OutboxPublisher"))
 				Expect(action.TaskQueue).To(Equal(fmt.Sprintf("%s-default", stackName)))
+				actionStack, hasActionStack := action.TypedSearchAttributes.GetKeyword(stackKey)
+				Expect(hasActionStack).To(BeTrue())
+				Expect(actionStack).To(Equal(stackName))
 			}).Return(mockHandle, nil)
 
 			err := pool.CreateOutboxPublisherSchedule(ctx)
@@ -237,12 +243,17 @@ var _ = Describe("Worker Tests", func() {
 				Expect(opts.Overlap).To(Equal(enums.SCHEDULE_OVERLAP_POLICY_SKIP))
 				Expect(opts.Spec.Intervals).To(HaveLen(1))
 				Expect(opts.Spec.Intervals[0].Every).To(Equal(cleanupInterval))
-				//nolint:staticcheck
-				Expect(opts.SearchAttributes["Stack"]).To(Equal(stackName))
+				stackKey := sdktemporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack)
+				scheduleStack, hasScheduleStack := opts.TypedSearchAttributes.GetKeyword(stackKey)
+				Expect(hasScheduleStack).To(BeTrue())
+				Expect(scheduleStack).To(Equal(stackName))
 				action, ok := opts.Action.(*client.ScheduleWorkflowAction)
 				Expect(ok).To(BeTrue())
 				Expect(action.Workflow).To(Equal("OutboxCleanup"))
 				Expect(action.TaskQueue).To(Equal(fmt.Sprintf("%s-default", stackName)))
+				actionStack, hasActionStack := action.TypedSearchAttributes.GetKeyword(stackKey)
+				Expect(hasActionStack).To(BeTrue())
+				Expect(actionStack).To(Equal(stackName))
 			}).Return(mockHandle, nil)
 
 			err := pool.CreateOutboxCleanupSchedule(ctx)

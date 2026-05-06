@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -277,6 +278,10 @@ func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workf
 	scheduleID := fmt.Sprintf("%s-%s", w.stack, scheduleIDSuffix)
 	taskQueue := GetDefaultTaskQueue(w.stack)
 
+	stackAttr := sdktemporal.NewSearchAttributes(
+		sdktemporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(w.stack),
+	)
+
 	// Create the schedule
 	_, err := w.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
 		ID: scheduleID,
@@ -288,16 +293,15 @@ func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workf
 			},
 		},
 		Action: &client.ScheduleWorkflowAction{
-			ID:        scheduleID,
-			Workflow:  workflowName,
-			Args:      []interface{}{}, // No arguments needed
-			TaskQueue: taskQueue,
+			ID:                    scheduleID,
+			Workflow:              workflowName,
+			Args:                  []interface{}{}, // No arguments needed
+			TaskQueue:             taskQueue,
+			TypedSearchAttributes: stackAttr,
 		},
-		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
-		TriggerImmediately: true,
-		SearchAttributes: map[string]interface{}{
-			"Stack": w.stack,
-		},
+		Overlap:               enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+		TriggerImmediately:    true,
+		TypedSearchAttributes: stackAttr,
 	})
 
 	if err != nil {
