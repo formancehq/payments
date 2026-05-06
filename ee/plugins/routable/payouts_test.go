@@ -1,6 +1,7 @@
 package routable
 
 import (
+	"encoding/json"
 	"errors"
 	"math/big"
 	"time"
@@ -60,6 +61,10 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 			Expect(req.CurrencyCode).To(Equal("USD"))
 			Expect(req.ActingTeamMember).To(Equal("tm_default"))
 			Expect(req.IdempotencyKey).To(Equal("pi_1"))
+			// Routable's v1 schema requires both: line_items[0].description
+			// non-empty AND send_on present (null = send-now).
+			Expect(req.LineItems).To(HaveLen(1))
+			Expect(req.LineItems[0].Description).NotTo(BeEmpty())
 			return &client.Payable{ID: "pa_1", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
 		})
 
@@ -68,6 +73,27 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(resp.Payment).To(BeNil())
 		Expect(resp.PollingPayoutID).NotTo(BeNil())
 		Expect(*resp.PollingPayoutID).To(Equal("pa_1"))
+	})
+
+	It("synthesizes a non-empty line description and emits send_on as JSON null when the PI has neither", func(ctx SpecContext) {
+		bare := pi()
+		bare.Description = "" // no description from PI
+		bare.Metadata = nil   // no metadata override either
+
+		var captured client.CreatePayableRequest
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+			captured = req
+			return &client.Payable{ID: "pa_b", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+		})
+
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bare})
+		Expect(err).To(BeNil())
+		Expect(captured.LineItems[0].Description).NotTo(BeEmpty(), "Routable rejects payables with empty line_items[0].description")
+		// SendOn is nil by design; serialization must preserve that as JSON null.
+		Expect(captured.SendOn).To(BeNil())
+		body, err := json.Marshal(captured)
+		Expect(err).To(BeNil())
+		Expect(string(body)).To(ContainSubstring(`"send_on":null`))
 	})
 
 	It("returns the Payment immediately when the response is terminal", func(ctx SpecContext) {
@@ -89,14 +115,12 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 			MetadataKeyDeliveryMethod:   "wire",
 			MetadataKeyActingTeamMember: "tm_override",
 			MetadataKeyExternalID:       "ext_42",
-			MetadataKeyMemo:             "Q1 invoice",
 		}
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
 			Expect(req.Type).To(Equal("wire"))
 			Expect(req.DeliveryMethod).To(Equal("wire"))
 			Expect(req.ActingTeamMember).To(Equal("tm_override"))
 			Expect(req.ExternalID).To(Equal("ext_42"))
-			Expect(req.Memo).To(Equal("Q1 invoice"))
 			return &client.Payable{ID: "pa_3", Status: "processing", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
 		})
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: piWithOverrides})
