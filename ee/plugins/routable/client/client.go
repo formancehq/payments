@@ -131,7 +131,7 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 		// apiErr at its zero value, in which case appending the formatted
 		// envelope just produces a misleading "routable api error: empty
 		// body" suffix that hurts log triage.
-		if apiErr.Code != "" || apiErr.Message != "" || len(apiErr.Errors) > 0 {
+		if apiErr.hasContent() {
 			return statusCode, fmt.Errorf("%w: %s", doErr, apiErr.Error())
 		}
 		return statusCode, doErr

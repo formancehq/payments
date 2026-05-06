@@ -163,8 +163,9 @@ All keys are defined as constants in [`metadata.go`](metadata.go) so producers c
 | `com.routable.spec/delivery_method` | `MetadataKeyDeliveryMethod` | no | `ach_standard` | `delivery_method` | Specific delivery option (`ach_standard`, `ach_same_day`, `wire`, `check`, …). Must be compatible with `type`. |
 | `com.routable.spec/acting_team_member` | `MetadataKeyActingTeamMember` | conditional¹ | config `actingTeamMember` | `acting_team_member` | Routable team member ID initiating the payable. |
 | `com.routable.spec/external_id` | `MetadataKeyExternalID` | no | `""` | `external_id` | Caller-supplied external reference (idempotent lookup key on Routable's side). |
-| `com.routable.spec/memo` | `MetadataKeyMemo` | no | `PSPPaymentInitiation.Description` | `memo` | Free-form note shown to the recipient. |
-| `com.routable.spec/line_item_description` | `MetadataKeyLineDescription` | no | `PSPPaymentInitiation.Description` | `line_items[0].description` | Description on the auto-generated single-line item. |
+| `com.routable.spec/line_item_description` | `MetadataKeyLineDescription` | no | `PSPPaymentInitiation.Description`, then `"Payment <reference>"` | `line_items[0].description` | Description on the auto-generated single-line item. Required by Routable v1; we always emit a non-empty value. |
+
+> `com.routable.spec/memo` is read-only metadata on synced payables/receivables (populated from the Routable response). Routable's v1 `POST /v1/payables` rejects `memo` as an unknown field, so we do not forward this key on create. Use `com.routable.spec/line_item_description` for the message that ends up on the payable.
 
 ¹ `acting_team_member` must be resolvable at request time — either from the connector config, this metadata key, or both. The client validates and returns `create payable: acting_team_member is required` before any HTTP call when neither is set.
 
@@ -176,7 +177,8 @@ All keys are defined as constants in [`metadata.go`](metadata.go) so producers c
 | `withdraw_from_account` | `PSPPaymentInitiation.SourceAccount.Reference` |
 | `amount` | `PSPPaymentInitiation.Amount` (minor units) → decimal string via `fromMinorUnits` ([`amounts.go`](amounts.go)) |
 | `currency_code` | `PSPPaymentInitiation.Asset` (e.g. `USD/2` → `USD`) |
-| `line_items` | Single line item with `unit_price = amount = total`, `quantity = 1`, optional description from metadata |
+| `line_items` | Single line item with `unit_price = amount = total`, `quantity = 1`, and a non-empty `description` (see metadata table for resolution order) |
+| `send_on` | Always emitted; `null` means "send immediately" (Routable's v1 schema requires the field even when sending now) |
 | `reference` | `PSPPaymentInitiation.Reference` (also forwarded as the `Idempotency-Key` HTTP header) |
 
 ### 5.3 Idempotency

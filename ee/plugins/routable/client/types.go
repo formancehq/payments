@@ -156,17 +156,22 @@ type ListReceivablesResponse struct {
 }
 
 // PayableLineItem is required on POST /v1/payables. Routable rejects payables
-// without at least one line item; we synthesise a single one mirroring the
-// total amount when the caller does not supply richer detail.
+// without at least one line item, AND the v1 sandbox now rejects line items
+// without a non-empty description — so the description field is intentionally
+// emitted unconditionally (no omitempty) and callers must populate it.
 type PayableLineItem struct {
 	UnitPrice   string `json:"unit_price"`
 	Amount      string `json:"amount"`
 	Quantity    int    `json:"quantity,omitempty"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 }
 
 // CreatePayableRequest is the body for POST /v1/payables. IdempotencyKey is
 // sent via the Idempotency-Key header (see Client.CreatePayable).
+//
+// SendOn is documented as a YYYY-MM-DD date, with a nil pointer meaning
+// "send immediately". Routable's v1 schema marks the field required even
+// when sending immediately, so we always emit it as JSON null (not omitted).
 type CreatePayableRequest struct {
 	Type                string            `json:"type"`
 	DeliveryMethod      string            `json:"delivery_method"`
@@ -174,26 +179,53 @@ type CreatePayableRequest struct {
 	WithdrawFromAccount string            `json:"withdraw_from_account"`
 	Amount              string            `json:"amount"`
 	CurrencyCode        string            `json:"currency_code,omitempty"`
-	LineItems           []PayableLineItem `json:"line_items"`
-	ActingTeamMember    string            `json:"acting_team_member"`
-	Reference           string            `json:"reference,omitempty"`
-	ExternalID          string            `json:"external_id,omitempty"`
-	Memo                string            `json:"memo,omitempty"`
+	LineItems        []PayableLineItem `json:"line_items"`
+	SendOn           *string           `json:"send_on"`
+	ActingTeamMember string            `json:"acting_team_member"`
+	Reference        string            `json:"reference,omitempty"`
+	ExternalID       string            `json:"external_id,omitempty"`
 
 	// IdempotencyKey is sent via the Idempotency-Key header, never the body.
+	// memo is intentionally NOT modeled here: Routable's v1 POST /v1/payables
+	// schema rejects it as "Extra inputs are not permitted". The Payable
+	// response object DOES have a memo field — read-only, populated via
+	// other means (line items / future PATCH support) — so the docstring
+	// stays for the read-side type.
 	IdempotencyKey string `json:"-"`
 }
 
-// ErrorResponse is the JSON Routable returns on non-2xx responses.
+// ErrorResponse is the JSON Routable returns on non-2xx responses. Routable's
+// v1 emits an RFC 7807-style application/problem+json envelope with `title`,
+// `status`, `request_id` and `errors[].path/detail`. Older endpoints still
+// use `{object: "Error", message, errors[].field/message}`. We accept both
+// shapes so error reporting works regardless of which endpoint failed.
 type ErrorResponse struct {
-	Object  string       `json:"object,omitempty"`
-	Code    string       `json:"code,omitempty"`
-	Message string       `json:"message,omitempty"`
-	Errors  []FieldError `json:"errors,omitempty"`
+	// RFC 7807 / v1 fields.
+	Type      string `json:"type,omitempty"`
+	Title     string `json:"title,omitempty"`
+	Status    int    `json:"status,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
+
+	// Legacy {object:"Error", code, message}. message is shared with v1
+	// because some endpoints emit a `message` field alongside problem+json.
+	Object  string `json:"object,omitempty"`
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+
+	// Per-field details. Routable populates either {field, message} (legacy)
+	// or {where, path, detail} (v1) — we keep both to round-trip whatever
+	// the API returns.
+	Errors []FieldError `json:"errors,omitempty"`
 }
 
 type FieldError struct {
+	// Legacy shape.
 	Field   string `json:"field,omitempty"`
 	Message string `json:"message,omitempty"`
 	Code    string `json:"code,omitempty"`
+
+	// v1 RFC-7807 shape.
+	Where  string `json:"where,omitempty"`
+	Path   string `json:"path,omitempty"`
+	Detail string `json:"detail,omitempty"`
 }

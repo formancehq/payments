@@ -94,6 +94,20 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 	}
 	amount := fromMinorUnits(pi.Amount, precision)
 
+	// Routable's v1 schema marks line_items[0].description as required, so
+	// we always populate it: caller-supplied override > PaymentInitiation
+	// description > a synthesized fallback referencing the PI reference.
+	lineDescription := fieldOr(pi.Metadata, MetadataKeyLineDescription, pi.Description)
+	if lineDescription == "" {
+		lineDescription = "Payment " + pi.Reference
+	}
+
+	// SendOn is required by Routable's v1 schema even when sending
+	// immediately. nil pointer => JSON null => "send now". An explicit
+	// YYYY-MM-DD value can be supplied via metadata for future-dated
+	// payables once we wire that key.
+	var sendOn *string
+
 	req := client.CreatePayableRequest{
 		Type:                fieldOr(pi.Metadata, MetadataKeyType, defaultPayableType),
 		DeliveryMethod:      fieldOr(pi.Metadata, MetadataKeyDeliveryMethod, defaultDeliveryMethod),
@@ -105,12 +119,12 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 			UnitPrice:   amount,
 			Amount:      amount,
 			Quantity:    1,
-			Description: fieldOr(pi.Metadata, MetadataKeyLineDescription, pi.Description),
+			Description: lineDescription,
 		}},
+		SendOn:           sendOn,
 		ActingTeamMember: fieldOr(pi.Metadata, MetadataKeyActingTeamMember, p.config.ActingTeamMember),
 		Reference:        pi.Reference,
 		ExternalID:       pi.Metadata[MetadataKeyExternalID],
-		Memo:             fieldOr(pi.Metadata, MetadataKeyMemo, pi.Description),
 		IdempotencyKey:   pi.Reference,
 	}
 
