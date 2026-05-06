@@ -30,6 +30,7 @@ const (
 	V3InstallConnectorRequestTypePlaid         V3InstallConnectorRequestType = "Plaid"
 	V3InstallConnectorRequestTypePowens        V3InstallConnectorRequestType = "Powens"
 	V3InstallConnectorRequestTypeQonto         V3InstallConnectorRequestType = "Qonto"
+	V3InstallConnectorRequestTypeRoutable      V3InstallConnectorRequestType = "Routable"
 	V3InstallConnectorRequestTypeStripe        V3InstallConnectorRequestType = "Stripe"
 	V3InstallConnectorRequestTypeTink          V3InstallConnectorRequestType = "Tink"
 	V3InstallConnectorRequestTypeWise          V3InstallConnectorRequestType = "Wise"
@@ -57,6 +58,7 @@ type V3InstallConnectorRequest struct {
 	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
+	V3RoutableConfig      *V3RoutableConfig      `queryParam:"inline"`
 
 	Type V3InstallConnectorRequestType
 }
@@ -277,6 +279,18 @@ func CreateV3InstallConnectorRequestQonto(qonto V3QontoConfig) V3InstallConnecto
 	}
 }
 
+func CreateV3InstallConnectorRequestRoutable(routable V3RoutableConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeRoutable
+
+	typStr := string(typ)
+	routable.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3RoutableConfig: &routable,
+		Type:             typ,
+	}
+}
+
 func CreateV3InstallConnectorRequestStripe(stripe V3StripeConfig) V3InstallConnectorRequest {
 	typ := V3InstallConnectorRequestTypeStripe
 
@@ -487,6 +501,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3QontoConfig = v3QontoConfig
 		u.Type = V3InstallConnectorRequestTypeQonto
 		return nil
+	case "Routable":
+		v3RoutableConfig := new(V3RoutableConfig)
+		if err := utils.UnmarshalJSON(data, &v3RoutableConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Routable) type V3RoutableConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3RoutableConfig = v3RoutableConfig
+		u.Type = V3InstallConnectorRequestTypeRoutable
+		return nil
 	case "Stripe":
 		v3StripeConfig := new(V3StripeConfig)
 		if err := utils.UnmarshalJSON(data, &v3StripeConfig, "", true, false); err != nil {
@@ -602,6 +625,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3FireblocksConfig != nil {
 		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
+	if u.V3RoutableConfig != nil {
+		return utils.MarshalJSON(u.V3RoutableConfig, "", true)
 	}
 
 	return nil, errors.New("could not marshal union type V3InstallConnectorRequest: all fields are null")

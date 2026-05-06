@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 4c2971514f598f50ea21ebd14048fcea
+  docChecksum: dc8b6a141c6b34d83ab1bf9c827bfa34
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -123,7 +123,6 @@ generatedFiles:
   - /models/components/v3bankaccountscursorresponse.go
   - /models/components/v3bankingbridgeconfig.go
   - /models/components/v3bankingcircleconfig.go
-  - /models/components/v3bitstampconfig.go
   - /models/components/v3coinbaseprimeconfig.go
   - /models/components/v3columnconfig.go
   - /models/components/v3connectionstatusenum.go
@@ -224,6 +223,7 @@ generatedFiles:
   - /models/components/v3retrypaymentinitiationresponse.go
   - /models/components/v3reversepaymentinitiationrequest.go
   - /models/components/v3reversepaymentinitiationresponse.go
+  - /models/components/v3routableconfig.go
   - /models/components/v3schedule.go
   - /models/components/v3stripeconfig.go
   - /models/components/v3task.go
@@ -477,7 +477,6 @@ generatedFiles:
   - docs/models/components/v3bankaccountscursorresponsecursor.md
   - docs/models/components/v3bankingbridgeconfig.md
   - docs/models/components/v3bankingcircleconfig.md
-  - docs/models/components/v3bitstampconfig.md
   - docs/models/components/v3coinbaseprimeconfig.md
   - docs/models/components/v3columnconfig.md
   - docs/models/components/v3connectionstatusenum.md
@@ -602,6 +601,7 @@ generatedFiles:
   - docs/models/components/v3reversepaymentinitiationrequest.md
   - docs/models/components/v3reversepaymentinitiationresponse.md
   - docs/models/components/v3reversepaymentinitiationresponsedata.md
+  - docs/models/components/v3routableconfig.md
   - docs/models/components/v3schedule.md
   - docs/models/components/v3stripeconfig.md
   - docs/models/components/v3task.md

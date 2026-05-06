@@ -1626,13 +1626,9 @@ components:
         name:
           type: string
         contactDetails:
-          allOf:
-            - $ref: '#/components/schemas/V3ContactDetailsRequest'
-          nullable: true
+          $ref: '#/components/schemas/V3ContactDetailsRequest'
         address:
-          allOf:
-            - $ref: '#/components/schemas/V3AddressRequest'
-          nullable: true
+          $ref: '#/components/schemas/V3AddressRequest'
         bankAccountIDs:
           type: array
           items:
@@ -1830,13 +1826,9 @@ components:
           type: string
           format: date-time
         contactDetails:
-          allOf:
-            - $ref: '#/components/schemas/V3ContactDetails'
-          nullable: true
+          $ref: '#/components/schemas/V3ContactDetails'
         address:
-          allOf:
-            - $ref: '#/components/schemas/V3Address'
-          nullable: true
+          $ref: '#/components/schemas/V3Address'
         bankAccountIDs:
           type: array
           items:

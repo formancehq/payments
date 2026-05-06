@@ -30,6 +30,7 @@ const (
 	V3ConnectorConfigTypePlaid         V3ConnectorConfigType = "Plaid"
 	V3ConnectorConfigTypePowens        V3ConnectorConfigType = "Powens"
 	V3ConnectorConfigTypeQonto         V3ConnectorConfigType = "Qonto"
+	V3ConnectorConfigTypeRoutable      V3ConnectorConfigType = "Routable"
 	V3ConnectorConfigTypeStripe        V3ConnectorConfigType = "Stripe"
 	V3ConnectorConfigTypeTink          V3ConnectorConfigType = "Tink"
 	V3ConnectorConfigTypeWise          V3ConnectorConfigType = "Wise"
@@ -57,6 +58,7 @@ type V3ConnectorConfig struct {
 	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
+	V3RoutableConfig      *V3RoutableConfig      `queryParam:"inline"`
 
 	Type V3ConnectorConfigType
 }
@@ -277,6 +279,18 @@ func CreateV3ConnectorConfigQonto(qonto V3QontoConfig) V3ConnectorConfig {
 	}
 }
 
+func CreateV3ConnectorConfigRoutable(routable V3RoutableConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeRoutable
+
+	typStr := string(typ)
+	routable.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3RoutableConfig: &routable,
+		Type:             typ,
+	}
+}
+
 func CreateV3ConnectorConfigStripe(stripe V3StripeConfig) V3ConnectorConfig {
 	typ := V3ConnectorConfigTypeStripe
 
@@ -487,6 +501,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3QontoConfig = v3QontoConfig
 		u.Type = V3ConnectorConfigTypeQonto
 		return nil
+	case "Routable":
+		v3RoutableConfig := new(V3RoutableConfig)
+		if err := utils.UnmarshalJSON(data, &v3RoutableConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Routable) type V3RoutableConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3RoutableConfig = v3RoutableConfig
+		u.Type = V3ConnectorConfigTypeRoutable
+		return nil
 	case "Stripe":
 		v3StripeConfig := new(V3StripeConfig)
 		if err := utils.UnmarshalJSON(data, &v3StripeConfig, "", true, false); err != nil {
@@ -602,6 +625,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3FireblocksConfig != nil {
 		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
+	if u.V3RoutableConfig != nil {
+		return utils.MarshalJSON(u.V3RoutableConfig, "", true)
 	}
 
 	return nil, errors.New("could not marshal union type V3ConnectorConfig: all fields are null")
