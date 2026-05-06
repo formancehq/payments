@@ -6378,6 +6378,7 @@ components:
           Plaid: '#/components/schemas/V3PlaidConfig'
           Powens: '#/components/schemas/V3PowensConfig'
           Qonto: '#/components/schemas/V3QontoConfig'
+          Routable: '#/components/schemas/V3RoutableConfig'
           Stripe: '#/components/schemas/V3StripeConfig'
           Tink: '#/components/schemas/V3TinkConfig'
           Wise: '#/components/schemas/V3WiseConfig'
@@ -6403,6 +6404,7 @@ components:
         - $ref: '#/components/schemas/V3BitstampConfig'
         - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
         - $ref: '#/components/schemas/V3FireblocksConfig'
+        - $ref: '#/components/schemas/V3RoutableConfig'
     V3AdyenConfig:
       type: object
       required:
@@ -6907,6 +6909,31 @@ components:
           default: Qonto
         stagingToken:
           type: string
+    V3RoutableConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+      properties:
+        actingTeamMember:
+          type: string
+        apiKey:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+        pollingPeriod:
+          type: string
+          default: 30m
+        provider:
+          type: string
+          default: Routable
     V3StripeConfig:
       type: object
       required:
