@@ -152,6 +152,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestQonto() *compone
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestRoutable() *components.V3RoutableConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3RoutableConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestStripe() *components.V3StripeConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3StripeConfig
