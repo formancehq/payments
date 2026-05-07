@@ -14,7 +14,7 @@ func TestUserTransactionUnmarshalJSONExtractsOnlyCurrencyAmountStrings(t *testin
 		"eur": "-5.00",
 		"usdc": "5.810770",
 		"usdc_eur": 0.86047000,
-		"usd": 0.0,
+		"usd": 0.0
 	}`)
 
 	var tx UserTransaction
