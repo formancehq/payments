@@ -143,7 +143,6 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 						Datetime: "2024-01-15 12:00:00.000000",
 						Type:     "36",
 						Fee:      "1.25",
-						OrderID:  99999,
 						CurrencyAmounts: map[string]string{
 							"btc": "-0.10000000",
 							"usd": "4500.00",

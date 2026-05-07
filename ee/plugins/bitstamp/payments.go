@@ -188,18 +188,12 @@ func buildTransactionMetadata(tx client.UserTransaction) map[string]string {
 	if !isZeroAmount(tx.Fee) {
 		metadata[MetadataPrefix+"fee"] = tx.Fee
 	}
-	if tx.OrderID != 0 {
-		metadata[MetadataPrefix+"order_id"] = strconv.FormatInt(tx.OrderID, 10)
-	}
-	if tx.Market != "" {
-		metadata[MetadataPrefix+"market"] = tx.Market
-	}
 
 	return metadata
 }
 
 func isOrderTransaction(tx client.UserTransaction) bool {
-	return tx.Type == txTypeMarketTrade || tx.Type == txTypeBuySell || tx.Market != ""
+	return tx.Type == txTypeMarketTrade || tx.Type == txTypeBuySell
 }
 
 func transactionTypeToPaymentType(txType string) models.PaymentType {
@@ -213,7 +207,7 @@ func transactionTypeToPaymentType(txType string) models.PaymentType {
 	case txTypeStakingReward, txTypeReferralReward:
 		return models.PAYMENT_TYPE_PAYIN
 	case txTypeStakingCredit, txTypeStakingSent:
-		return models.PAYMENT_TYPE_OTHER
+		return models.PAYMENT_TYPE_TRANSFER
 	default:
 		return models.PAYMENT_TYPE_OTHER
 	}

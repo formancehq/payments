@@ -15,7 +15,6 @@ func TestUserTransactionUnmarshalJSONExtractsOnlyCurrencyAmountStrings(t *testin
 		"usdc": "5.810770",
 		"usdc_eur": 0.86047000,
 		"usd": 0.0,
-		"market": "USDC/EUR"
 	}`)
 
 	var tx UserTransaction
@@ -23,9 +22,6 @@ func TestUserTransactionUnmarshalJSONExtractsOnlyCurrencyAmountStrings(t *testin
 		t.Fatalf("unmarshal transaction: %v", err)
 	}
 
-	if tx.Market != "USDC/EUR" {
-		t.Fatalf("expected market to be parsed, got %q", tx.Market)
-	}
 	if tx.CurrencyAmounts["eur"] != "-5.00" {
 		t.Fatalf("expected eur amount, got %q", tx.CurrencyAmounts["eur"])
 	}
@@ -40,8 +36,8 @@ func TestUserTransactionUnmarshalJSONExtractsOnlyCurrencyAmountStrings(t *testin
 	}
 }
 
-func TestNewWithEndpointDefaultsEmptyEndpoint(t *testing.T) {
-	c, ok := NewWithEndpoint("bitstamp", "api-key", "api-secret", "").(*client)
+func TestNewDefaultsEmptyEndpoint(t *testing.T) {
+	c, ok := New("bitstamp", "api-key", "api-secret", "").(*client)
 	if !ok {
 		t.Fatalf("expected concrete client")
 	}

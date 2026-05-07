@@ -35,11 +35,7 @@ type client struct {
 	apiSecret  string
 }
 
-func New(connectorName, apiKey, apiSecret string) Client {
-	return NewWithEndpoint(connectorName, apiKey, apiSecret, DefaultEndpoint)
-}
-
-func NewWithEndpoint(connectorName, apiKey, apiSecret, endpoint string) Client {
+func New(connectorName, apiKey, apiSecret, endpoint string) Client {
 	if endpoint == "" {
 		endpoint = DefaultEndpoint
 	}
@@ -175,8 +171,6 @@ type UserTransaction struct {
 	Datetime        string            `json:"datetime"`
 	Type            string            `json:"type"`
 	Fee             string            `json:"fee"`
-	OrderID         int64             `json:"order_id"`
-	Market          string            `json:"market"`
 	CurrencyAmounts map[string]string `json:"-"`
 }
 
@@ -201,7 +195,6 @@ func (ut *UserTransaction) UnmarshalJSON(data []byte) error {
 	knownKeys := map[string]struct{}{
 		"id": {}, "datetime": {}, "type": {}, "fee": {},
 		"order_id": {}, "self_trade": {}, "self_trade_order_id": {},
-		"status": {}, "reason": {}, "market": {},
 	}
 
 	ut.CurrencyAmounts = make(map[string]string)

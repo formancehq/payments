@@ -51,11 +51,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			Reference:    symbol,
 			CreatedAt:    bitstampLaunchDate,
 			DefaultAsset: defaultAsset,
-			Metadata: map[string]string{
-				"available": bal.Available,
-				"reserved":  bal.Reserved,
-			},
-			Raw: raw,
+			Raw:          raw,
 		})
 	}
 
