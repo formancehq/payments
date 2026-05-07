@@ -100,7 +100,7 @@ Implemented in [`payments.go`](payments.go) (`payableToPSPPayment`).
 | `Status` | `status` | Mapped via [`status.go`](status.go) → `payableStatus`. See [§4](#4-status-mapping). |
 | `SourceAccountReference` | `withdraw_from_account.id` | Routable settings account ID (matches a `PSPAccount` of internal type). |
 | `DestinationAccountReference` | `pay_to_company.id` | Routable company ID (matches a `PSPAccount` of external type). |
-| `Metadata` | `type`, `delivery_method`, `status`, `external_id`, `memo`, `reference` | See [`metadata.go`](metadata.go) → `payableMetadata`. |
+| `Metadata` | `type`, `delivery_method`, `status`, `external_id`, `memo`, `reference`, plus the correlation aliases `payment_initiation_reference` (= `external_id`) and `payable_id` (= the Routable UUID) | See [`metadata.go`](metadata.go) → `payableMetadata`. The aliases make the Transfer ↔ Payment link discoverable without grepping for Routable-specific keys; see [§5.5](#55-correlating-a-transfer-paymentinitiation-with-the-synced-payment). |
 | `Raw` | full JSON | Verbatim Routable response. |
 
 ### 3.5 Receivable → `PSPPayment` (PAYIN)
@@ -112,7 +112,7 @@ Implemented in [`payments.go`](payments.go) (`receivableToPSPPayment`). Mirror o
 | `Type` | constant `PAYMENT_TYPE_PAYIN` | |
 | `SourceAccountReference` | `pay_from_company.id` | Inbound counterparty (company ID). |
 | `DestinationAccountReference` | `deposit_to_account.id` | Settings account ID. |
-| All other fields | Same shape as §3.4 (`amount`, `currency_code`, `delivery_method`, `status`, `created_at`, …) | See `receivableMetadata` in [`metadata.go`](metadata.go) for the metadata key set. |
+| All other fields | Same shape as §3.4 (`amount`, `currency_code`, `delivery_method`, `status`, `created_at`, …) | See `receivableMetadata` in [`metadata.go`](metadata.go) for the metadata key set. Receivables also carry the `payment_initiation_reference` and `payable_id` aliases described in [§5.5](#55-correlating-a-transfer-paymentinitiation-with-the-synced-payment). |
 
 ### 3.6 Pagination & state
 
@@ -195,6 +195,63 @@ After `POST /v1/payables` returns:
 | Non-terminal (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = Routable payable ID | Engine schedules `PollPayoutStatus`/`PollTransferStatus` against `GET /v1/payables/{id}` until terminal. |
 
 `PollPayoutStatus` (and the shared `pollPayableStatus` it delegates to) treats `404 Not Found` as a transient state (eventual consistency after `202 Accepted`) and asks the engine to retry, instead of failing the workflow. See [`payouts.go`](payouts.go) and [`client/client.go`](client/client.go) (`ErrPayableNotFound`).
+
+### 5.5 Correlating a Transfer (PaymentInitiation) with the synced Payment
+
+When you initiate a payable through Formance, two distinct rows land in the database:
+
+- A `PaymentInitiation` (the **Transfer** in the Console) keyed by `pi.Reference` — the user-supplied string like `payout-acmecorp-20260506-172725`.
+- A `PSPPayment` (the **Payment** / **Transaction** in the Console) keyed by Routable's payable UUID like `652e0807-02ed-4546-848f-56babc66ec99`.
+
+Both are intentional: the PI captures the user's intent, the Payment captures Routable's record. They are linked at the engine level via the `payment_initiation_related_payments` table, populated by [`StoragePaymentInitiationsRelatedPaymentsStore`](../../../internal/connectors/engine/activities/storage_payment_initiations_related_payments_store.go). The connector itself does not own this relationship — it just emits clean PSP types and lets the engine link them.
+
+**Three correlation paths**, in increasing order of indirection:
+
+1. **Engine API** (canonical):
+   ```bash
+   curl "$ROOT/v3/payment-initiations/$(jq -rn --arg s "$PI_ID" '$s | @uri')/payments" \
+     | jq '.cursor.data[] | {reference, status}'
+   ```
+   Returns every Payment ever linked to the given PI.
+
+2. **Payment-side metadata** (no API join needed):
+   ```bash
+   curl "$ROOT/v3/payments" \
+     | jq --arg cid "$ROUTABLE_CONNECTOR_ID" \
+          '.cursor.data[] | select(.connectorID==$cid)
+           | { payment_ref: .reference,
+               pi_ref: .metadata."com.routable.spec/payment_initiation_reference",
+               payable_id: .metadata."com.routable.spec/payable_id" }'
+   ```
+   Every synced Payment carries:
+   - `com.routable.spec/payable_id` — the Routable UUID (mirrors `Payment.Reference`). Always present.
+   - `com.routable.spec/payment_initiation_reference` — the originating PI reference. **Present only when we initiated the payable** (Routable's `external_id` field is populated). For payables created in Routable's UI or by another integration, this key is absent.
+   - `com.routable.spec/external_id` — the same value as `payment_initiation_reference`, kept under Routable's wire vocabulary for backwards compatibility.
+
+3. **PI-side raw lookup** (when you only have the Routable UUID and want the originating PI ref): scan the Payment's metadata as in (2), or hit `/v3/payments/{id}` directly.
+
+The metadata aliases are populated by [`payableMetadata`/`receivableMetadata`](metadata.go); the constants `MetadataKeyPaymentInitiationReference` and `MetadataKeyRoutablePayableID` are stable contract.
+
+### 5.6 Transfers vs Payments — what shows up where
+
+| List | Source | Origin scope |
+|---|---|---|
+| **Transfers** (`/v3/payment-initiations`) | `PaymentInitiation` rows | **Formance-initiated only**. A row exists here only if someone called `POST /v3/payment-initiations`, by definition. |
+| **Payments / Transactions** (`/v3/payments`) | `Payment` rows fed by `FetchNextPayments` | **Comprehensive** — every Routable payable and receivable observed during sync, regardless of origin (Formance UI, Routable UI, third-party integration, …). |
+
+If you want the "all Routable payables, regardless of origin" view that some operators expect under Transfers, it lives under Payments today:
+
+```bash
+curl "$ROOT/v3/payments" \
+  | jq --arg cid "$ROUTABLE_CONNECTOR_ID" \
+       '.cursor.data[] | select(.connectorID==$cid and .type=="PAYOUT")
+        | { reference, status, amount, asset,
+            pi_ref: .metadata."com.routable.spec/payment_initiation_reference" }'
+```
+
+Rows whose `pi_ref` is `null` were created outside Formance (Routable UI or another integration); rows where it is set were initiated through Formance.
+
+> **Forward-looking note (not in this PR).** Synthesizing a `PaymentInitiation` for every payable observed during sync — so Routable-UI-initiated payables also appear under Transfers — would require an engine-contract extension: a new `PaymentInitiations []PSPPaymentInitiation` field on [`FetchNextPaymentsResponse`](../../../internal/models/plugin_psp.go) and a new engine activity to upsert those rows from a fetch workflow. That has cross-connector implications (every PSP plugin returning PIs from sync gets new semantics) and is intentionally out of scope here. If revisited, this PR's discussion captures the rationale for not doing it plugin-only.
 
 ---
 
