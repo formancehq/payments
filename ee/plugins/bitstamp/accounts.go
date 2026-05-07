@@ -14,6 +14,11 @@ import (
 var bitstampLaunchDate = time.Date(2011, 8, 2, 0, 0, 0, 0, time.UTC)
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+	currencies, err := p.getCurrencies(ctx)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, err
+	}
+
 	balances, err := p.client.GetAccountBalances(ctx)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
@@ -23,11 +28,6 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	for _, bal := range balances {
 		symbol := normalizeCurrency(bal.Currency)
 		if symbol == "" {
-			continue
-		}
-
-		if _, ok := p.currencies[symbol]; !ok {
-			p.logger.Infof("skipping account %s: unsupported currency", symbol)
 			continue
 		}
 
@@ -41,14 +41,16 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		defaultAsset := currency.FormatAsset(p.currencies, symbol)
-		name := symbol
+		var defaultAsset *string
+		if _, ok := currencies[symbol]; ok {
+			asset := currency.FormatAsset(currencies, symbol)
+			defaultAsset = &asset
+		}
 
 		accounts = append(accounts, models.PSPAccount{
 			Reference:    symbol,
 			CreatedAt:    bitstampLaunchDate,
-			Name:         &name,
-			DefaultAsset: &defaultAsset,
+			DefaultAsset: defaultAsset,
 			Metadata: map[string]string{
 				"available": bal.Available,
 				"reserved":  bal.Reserved,

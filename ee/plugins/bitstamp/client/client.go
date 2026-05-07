@@ -22,26 +22,29 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetAccountBalances(ctx context.Context) ([]AccountBalance, error)
-	GetUserTransactions(ctx context.Context, offset, limit int) ([]UserTransaction, error)
+	GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error)
 	GetCurrencies(ctx context.Context) ([]Currency, error)
 }
 
-const defaultBaseURL = "https://www.bitstamp.net"
+const DefaultEndpoint = "https://www.bitstamp.net"
 
 type client struct {
 	httpClient httpwrapper.Client
-	baseURL    string
+	endpoint   string
 	apiKey     string
 	apiSecret  string
 }
 
 func New(connectorName, apiKey, apiSecret string) Client {
-	return NewWithBaseURL(connectorName, apiKey, apiSecret, defaultBaseURL)
+	return NewWithEndpoint(connectorName, apiKey, apiSecret, DefaultEndpoint)
 }
 
-func NewWithBaseURL(connectorName, apiKey, apiSecret, baseURL string) Client {
+func NewWithEndpoint(connectorName, apiKey, apiSecret, endpoint string) Client {
+	if endpoint == "" {
+		endpoint = DefaultEndpoint
+	}
 	c := &client{
-		baseURL:   baseURL,
+		endpoint:  strings.TrimRight(endpoint, "/"),
 		apiKey:    apiKey,
 		apiSecret: apiSecret,
 	}
@@ -64,10 +67,7 @@ func (c *client) signRequest(req *http.Request, body string) {
 	path := req.URL.Path
 	query := req.URL.RawQuery
 
-	contentType := ""
-	if body != "" {
-		contentType = "application/x-www-form-urlencoded"
-	}
+	contentType := req.Header.Get("Content-Type")
 
 	// Bitstamp v2 HMAC string-to-sign: raw concatenation, no separators
 	message := "BITSTAMP " + c.apiKey +
@@ -90,13 +90,10 @@ func (c *client) signRequest(req *http.Request, body string) {
 	req.Header.Set("X-Auth-Nonce", nonce)
 	req.Header.Set("X-Auth-Timestamp", timestamp)
 	req.Header.Set("X-Auth-Version", "v2")
-	if body != "" {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
 }
 
 func (c *client) GetAccountBalances(ctx context.Context) ([]AccountBalance, error) {
-	endpoint := fmt.Sprintf("%s/api/v2/account_balances/", c.baseURL)
+	endpoint := fmt.Sprintf("%s/api/v2/account_balances/", c.endpoint)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
 	if err != nil {
@@ -115,13 +112,15 @@ func (c *client) GetAccountBalances(ctx context.Context) ([]AccountBalance, erro
 	return response, nil
 }
 
-func (c *client) GetUserTransactions(ctx context.Context, offset, limit int) ([]UserTransaction, error) {
-	endpoint := fmt.Sprintf("%s/api/v2/user_transactions/", c.baseURL)
+func (c *client) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
+	endpoint := fmt.Sprintf("%s/api/v2/user_transactions/", c.endpoint)
 
 	params := url.Values{}
-	params.Set("offset", strconv.Itoa(offset))
 	params.Set("limit", strconv.Itoa(limit))
 	params.Set("sort", "asc")
+	if sinceID != nil && *sinceID > 0 {
+		params.Set("since_id", strconv.FormatInt(*sinceID, 10))
+	}
 	body := params.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
@@ -129,6 +128,7 @@ func (c *client) GetUserTransactions(ctx context.Context, offset, limit int) ([]
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	c.signRequest(req, body)
 
 	var response []UserTransaction
@@ -142,7 +142,7 @@ func (c *client) GetUserTransactions(ctx context.Context, offset, limit int) ([]
 }
 
 func (c *client) GetCurrencies(ctx context.Context) ([]Currency, error) {
-	endpoint := fmt.Sprintf("%s/api/v2/currencies/", c.baseURL)
+	endpoint := fmt.Sprintf("%s/api/v2/currencies/", c.endpoint)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -176,6 +176,7 @@ type UserTransaction struct {
 	Type            string            `json:"type"`
 	Fee             string            `json:"fee"`
 	OrderID         int64             `json:"order_id"`
+	Market          string            `json:"market"`
 	CurrencyAmounts map[string]string `json:"-"`
 }
 
@@ -188,7 +189,10 @@ func (ut *UserTransaction) UnmarshalJSON(data []byte) error {
 	}
 	*ut = UserTransaction(alias)
 
-	// Then extract dynamic currency keys from the raw map.
+	// Then extract dynamic currency amount keys from the raw map. Bitstamp
+	// also returns dynamic non-currency properties such as pair rates
+	// ("usdc_eur"), so only string decimal fields with single-symbol keys are
+	// considered currency amounts.
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -205,21 +209,15 @@ func (ut *UserTransaction) UnmarshalJSON(data []byte) error {
 		if _, known := knownKeys[key]; known {
 			continue
 		}
-
-		// Try to parse as a string (most currency amounts are strings).
-		var strVal string
-		if err := json.Unmarshal(val, &strVal); err == nil {
-			// Verify it looks like a decimal number.
-			if _, ok := new(big.Float).SetString(strVal); ok {
-				ut.CurrencyAmounts[key] = strVal
-			}
+		if strings.Contains(key, "_") {
 			continue
 		}
 
-		// Try to parse as a number (some fields like exchange rates are numbers).
-		var numVal float64
-		if err := json.Unmarshal(val, &numVal); err == nil {
-			ut.CurrencyAmounts[key] = strconv.FormatFloat(numVal, 'f', -1, 64)
+		var strVal string
+		if err := json.Unmarshal(val, &strVal); err == nil {
+			if _, ok := new(big.Float).SetString(strVal); ok {
+				ut.CurrencyAmounts[key] = strVal
+			}
 		}
 	}
 
@@ -237,10 +235,10 @@ type Currency struct {
 // ErrorResponse represents a Bitstamp API error.
 // Bitstamp uses two formats: old (status/reason/code) and new (code/message).
 type ErrorResponse struct {
-	Status  string `json:"status"`
-	Reason  string `json:"reason"`
-	Code    string `json:"code"`
-	Msg     string `json:"message"`
+	Status string `json:"status"`
+	Reason string `json:"reason"`
+	Code   string `json:"code"`
+	Msg    string `json:"message"`
 }
 
 func (e ErrorResponse) Message() string {

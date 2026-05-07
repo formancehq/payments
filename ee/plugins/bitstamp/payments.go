@@ -15,7 +15,10 @@ import (
 )
 
 type paymentsState struct {
-	Offset int `json:"offset"`
+	// Bitstamp pagination is based on monotonically increasing transaction IDs.
+	// Historical transaction updates are not revisited by since_id; Bitstamp's
+	// user_transactions endpoint is treated here as settled transaction history.
+	LastTransactionID int64 `json:"lastTransactionID"`
 }
 
 const bitstampDatetimeLayout = "2006-01-02 15:04:05.000000"
@@ -32,6 +35,7 @@ const (
 	txTypeReferralReward       = "32"
 	txTypeSettlementTransfer   = "33"
 	txTypeInterAccountTransfer = "35"
+	txTypeBuySell              = "36"
 )
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -42,14 +46,28 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	transactions, err := p.client.GetUserTransactions(ctx, oldState.Offset, req.PageSize)
+	currencies, err := p.getCurrencies(ctx)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	var sinceID *int64
+	if oldState.LastTransactionID > 0 {
+		sinceID = &oldState.LastTransactionID
+	}
+	transactions, err := p.client.GetUserTransactions(ctx, sinceID, req.PageSize)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	payments := make([]models.PSPPayment, 0, len(transactions))
+	lastTransactionID := oldState.LastTransactionID
 	for _, tx := range transactions {
-		payment, err := p.transactionToPayment(tx)
+		if tx.ID > lastTransactionID {
+			lastTransactionID = tx.ID
+		}
+
+		payment, err := p.transactionToPayment(tx, currencies)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to convert transaction %d: %w", tx.ID, err)
 		}
@@ -59,7 +77,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		payments = append(payments, *payment)
 	}
 
-	newState := paymentsState{Offset: oldState.Offset + len(transactions)}
+	newState := paymentsState{LastTransactionID: lastTransactionID}
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
@@ -72,13 +90,18 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
-func (p *Plugin) transactionToPayment(tx client.UserTransaction) (*models.PSPPayment, error) {
-	asset, amount, ok, err := p.resolveAssetAndAmount(tx.CurrencyAmounts)
+func (p *Plugin) transactionToPayment(tx client.UserTransaction, currencies map[string]int) (*models.PSPPayment, error) {
+	if isOrderTransaction(tx) {
+		p.logger.Infof("skipping transaction %d: order transaction type %s", tx.ID, tx.Type)
+		return nil, nil
+	}
+
+	asset, amount, ok, err := resolveAssetAndAmount(currencies, tx.CurrencyAmounts)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		p.logger.Infof("skipping transaction %d: no matching currency found", tx.ID)
+		p.logger.Infof("skipping transaction %d: expected exactly one matching currency amount", tx.ID)
 		return nil, nil
 	}
 
@@ -115,21 +138,18 @@ func (p *Plugin) transactionToPayment(tx client.UserTransaction) (*models.PSPPay
 	return &payment, nil
 }
 
-// resolveAssetAndAmount finds the primary currency in the transaction using a
-// deterministic strategy: pick the currency with the largest absolute value
-// among known currencies. Returns the formatted asset, the parsed amount
-// (always positive), and whether a match was found. This is a single-pass
-// replacement for the former resolveAssetAndPrecision + extractAmount.
-func (p *Plugin) resolveAssetAndAmount(amounts map[string]string) (string, *big.Int, bool, error) {
-	var bestSymbol string
-	var bestPrecision int
-	var bestRawVal string
-	var bestAbsVal float64
-	found := false
+// resolveAssetAndAmount accepts only payment-like transactions with exactly
+// one non-zero known currency amount. Orders/conversions expose multiple assets
+// and are filtered before this point.
+func resolveAssetAndAmount(currencies map[string]int, amounts map[string]string) (string, *big.Int, bool, error) {
+	var selectedSymbol string
+	var selectedPrecision int
+	var selectedRawVal string
+	count := 0
 
 	for key, val := range amounts {
 		symbol := normalizeCurrency(key)
-		precision, ok := p.currencies[symbol]
+		precision, ok := currencies[symbol]
 		if !ok {
 			continue
 		}
@@ -139,29 +159,23 @@ func (p *Plugin) resolveAssetAndAmount(amounts map[string]string) (string, *big.
 			continue
 		}
 
-		fval, _, err := new(big.Float).Parse(cleanVal, 10)
-		if err != nil {
-			continue
+		count++
+		if count > 1 {
+			return "", nil, false, nil
 		}
-		absVal, _ := fval.Float64()
-
-		if !found || absVal > bestAbsVal {
-			bestSymbol = symbol
-			bestPrecision = precision
-			bestRawVal = cleanVal
-			bestAbsVal = absVal
-			found = true
-		}
+		selectedSymbol = symbol
+		selectedPrecision = precision
+		selectedRawVal = cleanVal
 	}
 
-	if !found {
+	if count == 0 {
 		return "", nil, false, nil
 	}
 
-	asset := currency.FormatAsset(p.currencies, bestSymbol)
-	amount, err := currency.GetAmountWithPrecisionFromString(bestRawVal, bestPrecision)
+	asset := currency.FormatAsset(currencies, selectedSymbol)
+	amount, err := currency.GetAmountWithPrecisionFromString(selectedRawVal, selectedPrecision)
 	if err != nil {
-		return "", nil, false, fmt.Errorf("failed to parse amount for %s: %w", bestSymbol, err)
+		return "", nil, false, fmt.Errorf("failed to parse amount for %s: %w", selectedSymbol, err)
 	}
 
 	return asset, amount, true, nil
@@ -169,23 +183,23 @@ func (p *Plugin) resolveAssetAndAmount(amounts map[string]string) (string, *big.
 
 func buildTransactionMetadata(tx client.UserTransaction) map[string]string {
 	metadata := make(map[string]string)
-	metadata["type"] = tx.Type
+	metadata[MetadataPrefix+"type"] = tx.Type
 
 	if !isZeroAmount(tx.Fee) {
-		metadata["fee"] = tx.Fee
+		metadata[MetadataPrefix+"fee"] = tx.Fee
 	}
 	if tx.OrderID != 0 {
-		metadata["order_id"] = strconv.FormatInt(tx.OrderID, 10)
+		metadata[MetadataPrefix+"order_id"] = strconv.FormatInt(tx.OrderID, 10)
 	}
-
-	// Record all currency amounts in metadata for traceability.
-	for key, val := range tx.CurrencyAmounts {
-		if !isZeroAmount(val) {
-			metadata["amount_"+key] = val
-		}
+	if tx.Market != "" {
+		metadata[MetadataPrefix+"market"] = tx.Market
 	}
 
 	return metadata
+}
+
+func isOrderTransaction(tx client.UserTransaction) bool {
+	return tx.Type == txTypeMarketTrade || tx.Type == txTypeBuySell || tx.Market != ""
 }
 
 func transactionTypeToPaymentType(txType string) models.PaymentType {
@@ -194,13 +208,11 @@ func transactionTypeToPaymentType(txType string) models.PaymentType {
 		return models.PAYMENT_TYPE_PAYIN
 	case txTypeWithdrawal:
 		return models.PAYMENT_TYPE_PAYOUT
-	case txTypeMarketTrade:
-		return models.PAYMENT_TYPE_OTHER
 	case txTypeSubAccountTransfer, txTypeSettlementTransfer, txTypeInterAccountTransfer:
 		return models.PAYMENT_TYPE_TRANSFER
-	case txTypeStakingCredit, txTypeStakingSent, txTypeStakingReward:
-		return models.PAYMENT_TYPE_OTHER
-	case txTypeReferralReward:
+	case txTypeStakingReward, txTypeReferralReward:
+		return models.PAYMENT_TYPE_PAYIN
+	case txTypeStakingCredit, txTypeStakingSent:
 		return models.PAYMENT_TYPE_OTHER
 	default:
 		return models.PAYMENT_TYPE_OTHER

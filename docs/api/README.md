@@ -8179,7 +8179,7 @@ xor
 {
   "apiKey": "string",
   "apiSecret": "string",
-  "baseUrl": "string",
+  "endpoint": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
@@ -8194,7 +8194,7 @@ xor
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
 |apiSecret|string|true|none|none|
-|baseUrl|string|false|none|none|
+|endpoint|string|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

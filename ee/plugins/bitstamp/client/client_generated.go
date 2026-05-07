@@ -71,16 +71,16 @@ func (mr *MockClientMockRecorder) GetCurrencies(ctx any) *gomock.Call {
 }
 
 // GetUserTransactions mocks base method.
-func (m *MockClient) GetUserTransactions(ctx context.Context, offset, limit int) ([]UserTransaction, error) {
+func (m *MockClient) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserTransactions", ctx, offset, limit)
+	ret := m.ctrl.Call(m, "GetUserTransactions", ctx, sinceID, limit)
 	ret0, _ := ret[0].([]UserTransaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserTransactions indicates an expected call of GetUserTransactions.
-func (mr *MockClientMockRecorder) GetUserTransactions(ctx, offset, limit any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetUserTransactions(ctx, sinceID, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTransactions", reflect.TypeOf((*MockClient)(nil).GetUserTransactions), ctx, offset, limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTransactions", reflect.TypeOf((*MockClient)(nil).GetUserTransactions), ctx, sinceID, limit)
 }

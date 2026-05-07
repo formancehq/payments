@@ -2,7 +2,6 @@ package bitstamp
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,11 +10,8 @@ import (
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var from models.PSPAccount
-	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, fmt.Errorf("missing from payload when fetching balances")
-	}
-	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+	currencies, err := p.getCurrencies(ctx)
+	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
@@ -24,20 +20,14 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	targetCurrency := normalizeCurrency(from.Reference)
-
+	now := time.Now().UTC()
+	balances := make([]models.PSPBalance, 0, len(accountBalances))
 	for _, bal := range accountBalances {
 		symbol := normalizeCurrency(bal.Currency)
-		if symbol != targetCurrency {
-			continue
-		}
-
-		precision, ok := p.currencies[symbol]
+		precision, ok := currencies[symbol]
 		if !ok {
-			return models.FetchNextBalancesResponse{
-				Balances: nil,
-				HasMore:  false,
-			}, nil
+			p.logger.Infof("skipping balance %s: unsupported currency", symbol)
+			continue
 		}
 
 		amount, err := currency.GetAmountWithPrecisionFromString(bal.Available, precision)
@@ -45,23 +35,17 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 		}
 
-		now := time.Now().UTC()
-		asset := currency.FormatAsset(p.currencies, symbol)
-
-		return models.FetchNextBalancesResponse{
-			Balances: []models.PSPBalance{{
-				AccountReference: from.Reference,
-				Asset:            asset,
-				Amount:           amount,
-				CreatedAt:        now,
-			}},
-			HasMore: false,
-		}, nil
+		asset := currency.FormatAsset(currencies, symbol)
+		balances = append(balances, models.PSPBalance{
+			AccountReference: symbol,
+			Asset:            asset,
+			Amount:           amount,
+			CreatedAt:        now,
+		})
 	}
 
-	// Currency not found in balances response.
 	return models.FetchNextBalancesResponse{
-		Balances: nil,
+		Balances: balances,
 		HasMore:  false,
 	}, nil
 }

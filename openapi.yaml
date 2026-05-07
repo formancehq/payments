@@ -6537,7 +6537,7 @@ components:
           type: string
         apiSecret:
           type: string
-        baseUrl:
+        endpoint:
           type: string
         name:
           type: string

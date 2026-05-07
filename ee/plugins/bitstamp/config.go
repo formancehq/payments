@@ -10,9 +10,9 @@ import (
 )
 
 type Config struct {
-	APIKey        string                    `json:"apiKey" validate:"required"`
-	APISecret     string                    `json:"apiSecret" validate:"required"`
-	BaseURL       string                    `json:"baseUrl"`
+	APIKey        string                     `json:"apiKey" validate:"required"`
+	APISecret     string                     `json:"apiSecret" validate:"required"`
+	Endpoint      string                     `json:"endpoint" validate:"omitempty,url"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 
@@ -22,7 +22,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {
 		APIKey        string `json:"apiKey"`
 		APISecret     string `json:"apiSecret"`
-		BaseURL       string `json:"baseUrl"`
+		Endpoint      string `json:"endpoint"`
 		PollingPeriod string `json:"pollingPeriod"`
 	}
 
@@ -42,7 +42,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	config := Config{
 		APIKey:        raw.APIKey,
 		APISecret:     raw.APISecret,
-		BaseURL:       raw.BaseURL,
+		Endpoint:      raw.Endpoint,
 		PollingPeriod: pp,
 	}
 

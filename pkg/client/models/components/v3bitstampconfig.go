@@ -9,7 +9,7 @@ import (
 type V3BitstampConfig struct {
 	APIKey    string  `json:"apiKey"`
 	APISecret string  `json:"apiSecret"`
-	BaseURL   *string `json:"baseUrl,omitempty"`
+	Endpoint  *string `json:"endpoint,omitempty"`
 	Name      string  `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
@@ -42,11 +42,11 @@ func (o *V3BitstampConfig) GetAPISecret() string {
 	return o.APISecret
 }
 
-func (o *V3BitstampConfig) GetBaseURL() *string {
+func (o *V3BitstampConfig) GetEndpoint() *string {
 	if o == nil {
 		return nil
 	}
-	return o.BaseURL
+	return o.Endpoint
 }
 
 func (o *V3BitstampConfig) GetName() string {

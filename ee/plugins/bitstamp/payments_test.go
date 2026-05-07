@@ -3,6 +3,7 @@ package bitstamp
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
@@ -33,8 +34,8 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				"BTC": 8,
 				"ETH": 18,
 			},
+			currLastSync: time.Now(),
 		}
-		plg.currLoaded.Store(true)
 	})
 
 	AfterEach(func() {
@@ -48,7 +49,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				nil,
 				errors.New("test error"),
 			)
@@ -65,7 +66,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				[]client.UserTransaction{
 					{
 						ID:       12345,
@@ -92,7 +93,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(payment.Asset).To(Equal("BTC/8"))
 			// 0.50000000 BTC = 50000000 satoshis
 			Expect(payment.Amount.Int64()).To(Equal(int64(50000000)))
-			Expect(payment.Metadata["type"]).To(Equal("0"))
+			Expect(payment.Metadata[MetadataPrefix+"type"]).To(Equal("0"))
 		})
 
 		It("should fetch withdrawal transactions as PAYOUT", func(ctx SpecContext) {
@@ -101,7 +102,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				[]client.UserTransaction{
 					{
 						ID:       12346,
@@ -126,21 +127,21 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(payment.Asset).To(Equal("BTC/8"))
 			// Amount should be positive (absolute value)
 			Expect(payment.Amount.Int64()).To(Equal(int64(25000000)))
-			Expect(payment.Metadata["fee"]).To(Equal("0.0005"))
+			Expect(payment.Metadata[MetadataPrefix+"fee"]).To(Equal("0.0005"))
 		})
 
-		It("should fetch trade transactions as OTHER", func(ctx SpecContext) {
+		It("should skip order transactions", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				[]client.UserTransaction{
 					{
 						ID:       12347,
 						Datetime: "2024-01-15 12:00:00.000000",
-						Type:     "2",
+						Type:     "36",
 						Fee:      "1.25",
 						OrderID:  99999,
 						CurrencyAmounts: map[string]string{
@@ -154,14 +155,33 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments).To(HaveLen(0))
+		})
 
-			payment := resp.Payments[0]
-			Expect(payment.Reference).To(Equal("12347"))
-			Expect(payment.Type).To(Equal(models.PaymentType(models.PAYMENT_TYPE_OTHER)))
-			Expect(payment.Metadata["type"]).To(Equal("2"))
-			Expect(payment.Metadata["order_id"]).To(Equal("99999"))
-			Expect(payment.Metadata["fee"]).To(Equal("1.25"))
+		It("should skip legacy market trade transactions", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 100,
+			}
+
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
+				[]client.UserTransaction{
+					{
+						ID:       12352,
+						Datetime: "2024-01-15 12:00:00.000000",
+						Type:     "2",
+						CurrencyAmounts: map[string]string{
+							"btc": "-0.10000000",
+							"usd": "4500.00",
+						},
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(0))
 		})
 
 		It("should fetch sub-account transfer as TRANSFER", func(ctx SpecContext) {
@@ -170,7 +190,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				[]client.UserTransaction{
 					{
 						ID:       12348,
@@ -193,13 +213,39 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(payment.Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 		})
 
+		It("should fetch staking rewards as PAYIN", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 100,
+			}
+
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
+				[]client.UserTransaction{
+					{
+						ID:       12353,
+						Datetime: "2024-01-15 13:30:00.000000",
+						Type:     "27",
+						CurrencyAmounts: map[string]string{
+							"eth": "0.010000000000000000",
+						},
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+		})
+
 		It("should skip transactions with no matching currency", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				[]client.UserTransaction{
 					{
 						ID:       12349,
@@ -219,13 +265,39 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(0))
 		})
 
-		It("should use offset-based pagination with req.PageSize", func(ctx SpecContext) {
+		It("should skip payment transactions with multiple non-zero assets", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(`{"offset": 100}`),
+				State:    []byte(`{}`),
+				PageSize: 100,
+			}
+
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
+				[]client.UserTransaction{
+					{
+						ID:       12354,
+						Datetime: "2024-01-15 14:30:00.000000",
+						Type:     "0",
+						CurrencyAmounts: map[string]string{
+							"btc": "0.10000000",
+							"usd": "4500.00",
+						},
+					},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(0))
+		})
+
+		It("should use since_id pagination with req.PageSize", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{"lastTransactionID": 100}`),
 				PageSize: 50,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 100, 50).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), ptrInt64(100), 50).Return(
 				[]client.UserTransaction{
 					{
 						ID:       12350,
@@ -245,11 +317,11 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(1))
 			Expect(resp.HasMore).To(BeFalse()) // 1 < 50
 
-			// Verify offset incremented by len(transactions) (1), not req.PageSize (50)
+			// Verify state advances to the highest returned transaction ID.
 			var newState paymentsState
 			err = json.Unmarshal(resp.NewState, &newState)
 			Expect(err).To(BeNil())
-			Expect(newState.Offset).To(Equal(101)) // 100 + 1 (actual results)
+			Expect(newState.LastTransactionID).To(Equal(int64(12350)))
 		})
 
 		It("should report HasMore when page is full", func(ctx SpecContext) {
@@ -258,7 +330,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				PageSize: 2,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 2).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 2).Return(
 				[]client.UserTransaction{
 					{
 						ID:       1,
@@ -294,7 +366,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 				PageSize: 100,
 			}
 
-			m.EXPECT().GetUserTransactions(gomock.Any(), 0, 100).Return(
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).Return(
 				[]client.UserTransaction{},
 				nil,
 			)
@@ -306,3 +378,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 		})
 	})
 })
+
+func ptrInt64(v int64) *int64 {
+	return &v
+}

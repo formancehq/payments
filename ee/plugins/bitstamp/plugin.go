@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"sync/atomic"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
@@ -14,7 +14,12 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "bitstamp"
+const (
+	ProviderName   = "bitstamp"
+	MetadataPrefix = "com.bitstamp.spec/"
+
+	currencyRefreshInterval = 24 * time.Hour
+)
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
@@ -25,13 +30,14 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name           string
-	logger         logging.Logger
-	client         client.Client
-	config         Config
-	currMu         sync.Mutex
-	currLoaded     atomic.Bool
-	currencies     map[string]int // currency ticker (uppercase) → decimal precision
+	name          string
+	logger        logging.Logger
+	client        client.Client
+	config        Config
+	currMu        sync.RWMutex
+	currRefreshMu sync.Mutex
+	currLastSync  time.Time
+	currencies    map[string]int // currency ticker (uppercase) → decimal precision
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -40,12 +46,13 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	var c client.Client
-	if config.BaseURL != "" {
-		c = client.NewWithBaseURL(ProviderName, config.APIKey, config.APISecret, config.BaseURL)
-	} else {
-		c = client.New(ProviderName, config.APIKey, config.APISecret)
+	endpoint := config.Endpoint
+	if endpoint == "" {
+		endpoint = client.DefaultEndpoint
+		config.Endpoint = endpoint
 	}
+
+	c := client.NewWithEndpoint(ProviderName, config.APIKey, config.APISecret, endpoint)
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),
@@ -88,8 +95,10 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 		currencyMap[symbol] = c.Decimals
 	}
 
+	p.currMu.Lock()
 	p.currencies = currencyMap
-	p.currLoaded.Store(true)
+	p.currLastSync = time.Now()
+	p.currMu.Unlock()
 	p.logger.Infof("loaded %d currencies from Bitstamp", len(currencyMap))
 	return nil
 }
@@ -98,18 +107,36 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
-// ensureCurrencies lazily loads currencies using an atomic flag for the fast
-// path and a mutex for the slow path, avoiding data races on the map read.
+// ensureCurrencies refreshes Bitstamp currency precision metadata at most once
+// per currencyRefreshInterval. Currencies can be added by Bitstamp without a
+// connector restart, and payments/balances need fresh precision data.
 func (p *Plugin) ensureCurrencies(ctx context.Context) error {
-	if p.currLoaded.Load() {
+	p.currMu.RLock()
+	needsRefresh := len(p.currencies) == 0 || time.Since(p.currLastSync) >= currencyRefreshInterval
+	p.currMu.RUnlock()
+	if !needsRefresh {
 		return nil
 	}
-	p.currMu.Lock()
-	defer p.currMu.Unlock()
-	if p.currLoaded.Load() {
+
+	p.currRefreshMu.Lock()
+	defer p.currRefreshMu.Unlock()
+
+	p.currMu.RLock()
+	needsRefresh = len(p.currencies) == 0 || time.Since(p.currLastSync) >= currencyRefreshInterval
+	p.currMu.RUnlock()
+	if !needsRefresh {
 		return nil
 	}
 	return p.loadCurrencies(ctx)
+}
+
+func (p *Plugin) getCurrencies(ctx context.Context) (map[string]int, error) {
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return nil, err
+	}
+	p.currMu.RLock()
+	defer p.currMu.RUnlock()
+	return p.currencies, nil
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {

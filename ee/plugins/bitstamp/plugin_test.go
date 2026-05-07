@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
@@ -100,6 +101,51 @@ var _ = Describe("Bitstamp Plugin", func() {
 			_, err := p.Install(ctx, req)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("loading currencies"))
+		})
+	})
+
+	Context("currencies cache", func() {
+		It("should not refresh fresh currencies", func(ctx SpecContext) {
+			ctrl := gomock.NewController(GinkgoT())
+			defer ctrl.Finish()
+
+			m := client.NewMockClient(ctrl)
+			p := &Plugin{
+				Plugin:       plugins.NewBasePlugin(),
+				client:       m,
+				logger:       logger,
+				currencies:   map[string]int{"BTC": 8},
+				currLastSync: time.Now(),
+			}
+
+			currencies, err := p.getCurrencies(ctx)
+			Expect(err).To(BeNil())
+			Expect(currencies).To(Equal(map[string]int{"BTC": 8}))
+		})
+
+		It("should refresh stale currencies", func(ctx SpecContext) {
+			ctrl := gomock.NewController(GinkgoT())
+			defer ctrl.Finish()
+
+			m := client.NewMockClient(ctrl)
+			p := &Plugin{
+				Plugin:       plugins.NewBasePlugin(),
+				client:       m,
+				logger:       logger,
+				currencies:   map[string]int{"BTC": 8},
+				currLastSync: time.Now().Add(-currencyRefreshInterval - time.Minute),
+			}
+
+			m.EXPECT().GetCurrencies(gomock.Any()).Return(
+				[]client.Currency{
+					{Name: "Ethereum", Currency: "ETH", Decimals: 18, Type: "crypto"},
+				},
+				nil,
+			)
+
+			currencies, err := p.getCurrencies(ctx)
+			Expect(err).To(BeNil())
+			Expect(currencies).To(Equal(map[string]int{"ETH": 18}))
 		})
 	})
 

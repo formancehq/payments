@@ -2,6 +2,7 @@ package bitstamp
 
 import (
 	"errors"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
@@ -32,8 +33,8 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 				"BTC": 8,
 				"ETH": 18,
 			},
+			currLastSync: time.Now(),
 		}
-		plg.currLoaded.Store(true)
 	})
 
 	AfterEach(func() {
@@ -81,6 +82,7 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 			// Verify BTC account
 			Expect(resp.Accounts[0].Reference).To(Equal("BTC"))
 			Expect(resp.Accounts[0].CreatedAt).To(Equal(bitstampLaunchDate))
+			Expect(resp.Accounts[0].Name).To(BeNil())
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 
 			// Verify USD account
@@ -112,7 +114,7 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 			Expect(resp.Accounts[0].Reference).To(Equal("BTC"))
 		})
 
-		It("should skip unsupported currencies", func(ctx SpecContext) {
+		It("should keep unsupported currencies without a default asset", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -128,8 +130,10 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Accounts).To(HaveLen(1))
-			Expect(resp.Accounts[0].Reference).To(Equal("BTC"))
+			Expect(resp.Accounts).To(HaveLen(2))
+			Expect(resp.Accounts[0].Reference).To(Equal("UNKNOWN_COIN"))
+			Expect(resp.Accounts[0].DefaultAsset).To(BeNil())
+			Expect(resp.Accounts[1].Reference).To(Equal("BTC"))
 		})
 
 		It("should handle empty response", func(ctx SpecContext) {
