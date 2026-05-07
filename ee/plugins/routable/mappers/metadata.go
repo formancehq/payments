@@ -1,4 +1,4 @@
-package routable
+package mappers
 
 import "github.com/formancehq/payments/ee/plugins/routable/client"
 
@@ -23,9 +23,10 @@ const (
 // and operators don't have to know Routable's wire vocabulary to correlate a
 // Payment with the originating Formance Transfer (PaymentInitiation).
 //
-// MetadataKeyPaymentInitiationReference mirrors MetadataKeyExternalID when set
-// — same value, more obvious name. Present only when the payable was created
-// via Formance (we always set Routable's external_id to pi.Reference).
+// MetadataKeyPaymentInitiationReference mirrors MetadataKeyExternalID when
+// set — same value, more obvious name. Present only when the payable was
+// created via Formance (we always set Routable's external_id to
+// pi.Reference).
 //
 // MetadataKeyRoutablePayableID mirrors the Routable payable UUID. The same
 // value lives on PSPPayment.Reference today, but persisting it under a
@@ -40,34 +41,34 @@ const (
 // provide overrides. ach + ach_standard is the most common money-out path
 // and the safest default for an out-of-the-box experience.
 const (
-	defaultPayableType    = "ach"
-	defaultDeliveryMethod = "ach_standard"
+	DefaultPayableType    = "ach"
+	DefaultDeliveryMethod = "ach_standard"
 )
 
-// fieldOr returns the metadata value for key, falling back to fallback when
+// FieldOr returns the metadata value for key, falling back to fallback when
 // the key is absent or empty.
-func fieldOr(meta map[string]string, key, fallback string) string {
+func FieldOr(meta map[string]string, key, fallback string) string {
 	if v, ok := meta[key]; ok && v != "" {
 		return v
 	}
 	return fallback
 }
 
-// companyMetadata flattens a Routable Company into a stable metadata map.
+// CompanyMetadata flattens a Routable Company into a stable metadata map.
 // Address fields are kept namespaced so downstream tenants can lift them
 // into Formance accounts without re-parsing JSON blobs.
-func companyMetadata(co client.Company) map[string]string {
+func CompanyMetadata(co client.Company) map[string]string {
 	m := map[string]string{
-		MetadataPrefix + "object":         co.Object,
-		MetadataPrefix + "type":           co.Type,
-		MetadataPrefix + "status":         co.Status,
-		MetadataPrefix + "country_code":   co.CountryCode,
-		MetadataPrefix + "is_vendor":      boolString(co.IsVendor),
-		MetadataPrefix + "is_customer":    boolString(co.IsCustomer),
-		MetadataPrefix + "is_archived":    boolString(co.IsArchived),
-		MetadataPrefix + "external_id":    co.ExternalID,
-		MetadataPrefix + "business_name":  co.BusinessName,
-		MetadataPrefix + "display_name":   co.DisplayName,
+		MetadataPrefix + "object":        co.Object,
+		MetadataPrefix + "type":          co.Type,
+		MetadataPrefix + "status":        co.Status,
+		MetadataPrefix + "country_code":  co.CountryCode,
+		MetadataPrefix + "is_vendor":     boolString(co.IsVendor),
+		MetadataPrefix + "is_customer":   boolString(co.IsCustomer),
+		MetadataPrefix + "is_archived":   boolString(co.IsArchived),
+		MetadataPrefix + "external_id":   co.ExternalID,
+		MetadataPrefix + "business_name": co.BusinessName,
+		MetadataPrefix + "display_name":  co.DisplayName,
 	}
 	if co.RegisteredAddress != nil {
 		addr := co.RegisteredAddress
@@ -81,10 +82,9 @@ func companyMetadata(co client.Company) map[string]string {
 	return stripEmpty(m)
 }
 
-// settingsAccountMetadata captures the few bookkeeping fields Routable
-// returns on a settings account (funding source) that are useful to keep on
-// the Formance PSPAccount.
-func settingsAccountMetadata(a client.Account) map[string]string {
+// SettingsAccountMetadata captures the few bookkeeping fields Routable
+// returns on a settings account (funding source).
+func SettingsAccountMetadata(a client.Account) map[string]string {
 	return stripEmpty(map[string]string{
 		MetadataPrefix + "object":         a.Object,
 		MetadataPrefix + "type":           a.Type,
@@ -97,12 +97,11 @@ func settingsAccountMetadata(a client.Account) map[string]string {
 	})
 }
 
-// payableMetadata captures the few bookkeeping fields Routable returns on a
-// payable that we want to keep on the Formance PSPPayment. Includes the
-// self-describing aliases (payment_initiation_reference, payable_id) so a
-// reviewer scanning Payment.metadata can correlate to a Transfer without
-// knowing Routable's wire vocabulary.
-func payableMetadata(p client.Payable) map[string]string {
+// PayableMetadata captures the bookkeeping fields Routable returns on a
+// payable. Includes self-describing aliases (payment_initiation_reference,
+// payable_id) so a reviewer scanning Payment.metadata can correlate to a
+// Transfer without knowing Routable's wire vocabulary.
+func PayableMetadata(p client.Payable) map[string]string {
 	return stripEmpty(map[string]string{
 		MetadataPrefix + "type":               p.Type,
 		MetadataPrefix + "delivery_method":    p.DeliveryMethod,
@@ -115,10 +114,10 @@ func payableMetadata(p client.Payable) map[string]string {
 	})
 }
 
-// receivableMetadata captures the few bookkeeping fields Routable returns on
-// a receivable that we want to keep on the Formance PSPPayment. Mirrors the
-// payable-side aliasing so the correlation contract is symmetrical.
-func receivableMetadata(r client.Receivable) map[string]string {
+// ReceivableMetadata captures the bookkeeping fields Routable returns on a
+// receivable. Mirrors the payable-side aliasing so the correlation
+// contract is symmetrical.
+func ReceivableMetadata(r client.Receivable) map[string]string {
 	return stripEmpty(map[string]string{
 		MetadataPrefix + "type":               r.Type,
 		MetadataPrefix + "delivery_method":    r.DeliveryMethod,

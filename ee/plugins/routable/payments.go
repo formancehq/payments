@@ -6,31 +6,30 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/payments/ee/plugins/routable/client"
+	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
 // paymentsState pages through payables and then receivables under a single
-// cycle. The two timestamps capture the cursor invariant the previous design
-// got wrong:
+// cycle. The two timestamps capture the cursor invariant the previous
+// design got wrong:
 //
 //   - CycleLowerBound is the status_changed_at.gte floor used by every
 //     payables and receivables request in the current cycle. It is held
 //     IMMUTABLE for the cycle's full duration. Mutating it mid-cycle (the
-//     old behaviour) caused page=2 to use a tighter lower bound than page=1,
-//     so any row that landed between the two timestamps but only appeared on
-//     a later page would be silently dropped.
-//   - CycleMaxSeen accumulates the latest status_changed_at observed across
-//     every page of the cycle. It is never used to drive a request. Once
-//     receivables exhausts, it is promoted to CycleLowerBound for the next
-//     cycle and reset.
+//     old behaviour) caused page=2 to use a tighter lower bound than
+//     page=1, so any row that landed between the two timestamps but only
+//     appeared on a later page would be silently dropped.
+//   - CycleMaxSeen accumulates the latest status_changed_at observed
+//     across every page of the cycle. It is never used to drive a
+//     request. Once receivables exhausts, it is promoted to
+//     CycleLowerBound for the next cycle and reset.
 //
 // Routable's status_changed_at.gte filter is inclusive, so rows whose
 // timestamp equals the cycle floor get re-emitted at every cycle boundary.
 // The engine framework dedupes by PSPPayment.Reference, so this is wasted
 // traffic but never a correctness problem. A `(timestamp, id)` tiebreaker
-// would eliminate the replay; out of scope for this PR (CodeRabbit notes it
-// as "heavy lift").
+// would eliminate the replay; out of scope for this PR.
 //
 // The legacy LastSeenAt field is kept on the wire so existing persisted
 // state migrates cleanly: on first load we promote it to CycleLowerBound.
@@ -40,8 +39,8 @@ type paymentsState struct {
 	CycleLowerBound time.Time     `json:"cycleLowerBound,omitempty"`
 	CycleMaxSeen    time.Time     `json:"cycleMaxSeen,omitempty"`
 
-	// Deprecated: pre-cycle-immutable state. Promoted to CycleLowerBound on
-	// first decode after the upgrade and zeroed thereafter.
+	// Deprecated: pre-cycle-immutable state. Promoted to CycleLowerBound
+	// on first decode after the upgrade and zeroed thereafter.
 	LastSeenAt time.Time `json:"lastSeenAt,omitempty"`
 }
 
@@ -83,17 +82,20 @@ func (p *Plugin) fetchPayablesPage(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, fmt.Errorf("listing payables (page=%d): %w", state.nextPage(), err)
 	}
 
-	payments, maxSeen := p.payablesToPSPPayments(resp.Results, state.CycleMaxSeen)
+	payments, maxSeen := mappers.PayablesToPSPPayments(resp.Results, state.CycleMaxSeen, func(id string, err error) {
+		p.logger.Infof("skipping payable %s: %v", id, err)
+	})
 
 	next := state
 	next.CycleMaxSeen = maxSeen
 	if resp.Links.HasMore() {
 		next.Page = state.nextPage() + 1
 	} else {
-		// payables exhausted for this cycle: switch to receivables on the
-		// next call. CycleLowerBound stays put — receivables must use the
-		// SAME floor as payables did, otherwise we skip receivables that
-		// changed between the cycle's start and the latest payable seen.
+		// payables exhausted for this cycle: switch to receivables on
+		// the next call. CycleLowerBound stays put — receivables must
+		// use the SAME floor as payables did, otherwise we skip
+		// receivables that changed between the cycle's start and the
+		// latest payable seen.
 		next.Phase = phaseReceivables
 		next.Page = 1
 	}
@@ -111,7 +113,9 @@ func (p *Plugin) fetchReceivablesPage(ctx context.Context, req models.FetchNextP
 		return models.FetchNextPaymentsResponse{}, fmt.Errorf("listing receivables (page=%d): %w", state.nextPage(), err)
 	}
 
-	payments, maxSeen := p.receivablesToPSPPayments(resp.Results, state.CycleMaxSeen)
+	payments, maxSeen := mappers.ReceivablesToPSPPayments(resp.Results, state.CycleMaxSeen, func(id string, err error) {
+		p.logger.Infof("skipping receivable %s: %v", id, err)
+	})
 
 	next := state
 	next.CycleMaxSeen = maxSeen
@@ -119,12 +123,21 @@ func (p *Plugin) fetchReceivablesPage(ctx context.Context, req models.FetchNextP
 	if resp.Links.HasMore() {
 		next.Page = state.nextPage() + 1
 	} else {
-		// Cycle complete: promote CycleMaxSeen to CycleLowerBound for the
-		// next cycle, reset Phase and Page. HasMore=false ends the run.
+		// Cycle complete: promote CycleMaxSeen to CycleLowerBound for
+		// the next cycle, reset Phase and Page. HasMore=false ends the
+		// run.
+		// Empty-cycle guard: if we saw no rows in BOTH phases this
+		// cycle, maxSeen is zero. Promoting that would regress the
+		// floor and trigger a full historical refetch on the next
+		// cycle. Preserve the previous CycleLowerBound instead.
+		nextLowerBound := maxSeen
+		if nextLowerBound.IsZero() {
+			nextLowerBound = state.CycleLowerBound
+		}
 		next = paymentsState{
 			Phase:           phasePayables,
 			Page:            1,
-			CycleLowerBound: maxSeen,
+			CycleLowerBound: nextLowerBound,
 		}
 		hasMore = false
 	}
@@ -136,128 +149,6 @@ func (p *Plugin) fetchReceivablesPage(ctx context.Context, req models.FetchNextP
 	return models.FetchNextPaymentsResponse{Payments: payments, NewState: payload, HasMore: hasMore}, nil
 }
 
-// payablesToPSPPayments maps Routable payables onto PSPPayments and tracks
-// the latest status_changed_at observed so the cursor can advance.
-func (p *Plugin) payablesToPSPPayments(in []client.Payable, watermark time.Time) ([]models.PSPPayment, time.Time) {
-	out := make([]models.PSPPayment, 0, len(in))
-	for _, pa := range in {
-		payment, err := p.payableToPSPPayment(pa)
-		if err != nil {
-			p.logger.Infof("skipping payable %s: %v", pa.ID, err)
-			continue
-		}
-		out = append(out, payment)
-		watermark = laterOf(watermark, statusChangedAtOrCreated(pa.StatusChangedAt, pa.CreatedAt))
-	}
-	return out, watermark
-}
-
-func (p *Plugin) receivablesToPSPPayments(in []client.Receivable, watermark time.Time) ([]models.PSPPayment, time.Time) {
-	out := make([]models.PSPPayment, 0, len(in))
-	for _, r := range in {
-		payment, err := p.receivableToPSPPayment(r)
-		if err != nil {
-			p.logger.Infof("skipping receivable %s: %v", r.ID, err)
-			continue
-		}
-		out = append(out, payment)
-		watermark = laterOf(watermark, statusChangedAtOrCreated(r.StatusChangedAt, r.CreatedAt))
-	}
-	return out, watermark
-}
-
-func (p *Plugin) payableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
-	raw, err := json.Marshal(pa)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("marshaling raw: %w", err)
-	}
-	precision, err := precisionFor(pa.CurrencyCode)
-	if err != nil {
-		return models.PSPPayment{}, err
-	}
-	amount, err := toMinorUnits(pa.Amount, precision)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("parsing amount: %w", err)
-	}
-
-	payment := models.PSPPayment{
-		Reference: pa.ID,
-		CreatedAt: pa.CreatedAt,
-		Type:      models.PAYMENT_TYPE_PAYOUT,
-		Amount:    amount,
-		Asset:     formatAsset(pa.CurrencyCode),
-		Scheme:    deliveryMethodToScheme(pa.DeliveryMethod),
-		Status:    payableStatus(pa.Status),
-		Metadata:  payableMetadata(pa),
-		Raw:       raw,
-	}
-	if pa.WithdrawFromAccount != nil && pa.WithdrawFromAccount.ID != "" {
-		ref := pa.WithdrawFromAccount.ID
-		payment.SourceAccountReference = &ref
-	}
-	if pa.PayToCompany != nil && pa.PayToCompany.ID != "" {
-		ref := pa.PayToCompany.ID
-		payment.DestinationAccountReference = &ref
-	}
-	return payment, nil
-}
-
-func (p *Plugin) receivableToPSPPayment(r client.Receivable) (models.PSPPayment, error) {
-	raw, err := json.Marshal(r)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("marshaling raw: %w", err)
-	}
-	precision, err := precisionFor(r.CurrencyCode)
-	if err != nil {
-		return models.PSPPayment{}, err
-	}
-	amount, err := toMinorUnits(r.Amount, precision)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("parsing amount: %w", err)
-	}
-
-	payment := models.PSPPayment{
-		Reference: r.ID,
-		CreatedAt: r.CreatedAt,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    amount,
-		Asset:     formatAsset(r.CurrencyCode),
-		Scheme:    deliveryMethodToScheme(r.DeliveryMethod),
-		Status:    payableStatus(r.Status),
-		Metadata:  receivableMetadata(r),
-		Raw:       raw,
-	}
-	if r.PayFromCompany != nil && r.PayFromCompany.ID != "" {
-		ref := r.PayFromCompany.ID
-		payment.SourceAccountReference = &ref
-	}
-	if r.DepositToAccount != nil && r.DepositToAccount.ID != "" {
-		ref := r.DepositToAccount.ID
-		payment.DestinationAccountReference = &ref
-	}
-	return payment, nil
-}
-
-// laterOf returns whichever of a or b is later (or zero when both are zero).
-func laterOf(a, b time.Time) time.Time {
-	if a.IsZero() {
-		return b
-	}
-	if b.IsZero() || a.After(b) {
-		return a
-	}
-	return b
-}
-
-// statusChangedAtOrCreated picks status_changed_at when set, otherwise the
-// created_at — Routable can return a nil status_changed_at on draft rows.
-func statusChangedAtOrCreated(statusChangedAt *time.Time, createdAt time.Time) time.Time {
-	if statusChangedAt != nil && !statusChangedAt.IsZero() {
-		return *statusChangedAt
-	}
-	return createdAt
-}
-
 func decodePaymentsState(raw json.RawMessage) (paymentsState, error) {
 	var s paymentsState
 	if len(raw) == 0 {
@@ -266,9 +157,10 @@ func decodePaymentsState(raw json.RawMessage) (paymentsState, error) {
 	if err := json.Unmarshal(raw, &s); err != nil {
 		return s, fmt.Errorf("decoding payments state: %w", err)
 	}
-	// Migrate legacy state (pre cycle-immutable cursor): promote LastSeenAt
-	// to CycleLowerBound on first decode and zero it. Drops the deprecated
-	// field from subsequent serializations without losing the watermark.
+	// Migrate legacy state (pre cycle-immutable cursor): promote
+	// LastSeenAt to CycleLowerBound on first decode and zero it. Drops
+	// the deprecated field from subsequent serializations without losing
+	// the watermark.
 	if s.CycleLowerBound.IsZero() && !s.LastSeenAt.IsZero() {
 		s.CycleLowerBound = s.LastSeenAt
 	}

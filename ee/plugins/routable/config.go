@@ -11,16 +11,18 @@ import (
 )
 
 // PAGE_SIZE is the per-fetch page size advertised to the engine. Routable
-// caps page_size at 100 across the v1 endpoints, so 50 leaves headroom for
-// payable + receivable interleaving without trimming.
-const PAGE_SIZE = 50
+// documents `page_size` as capped at 100 across v1 endpoints; we run at
+// the maximum so a single FETCH_PAYMENTS cycle issues half the pagination
+// requests we'd otherwise need at the default. At 200k tx/wk this is a
+// meaningful Routable-side load reduction.
+const PAGE_SIZE = 100
 
 // Config is the connector configuration persisted by the engine and used to
 // instantiate the Routable HTTP client.
 //
 // ActingTeamMember is optional at the connector level because Routable's
 // POST /v1/payables call accepts the team member identifier on a per-request
-// basis: callers may set the metadata key MetadataKeyActingTeamMember on
+// basis: callers may set the metadata key mappers.MetadataKeyActingTeamMember on
 // the PSPPaymentInitiation to override (or supply) the team member without
 // touching the connector config. If neither the config nor the metadata
 // carry a value, the client returns a clear validation error before the

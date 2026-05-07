@@ -5,15 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/ee/plugins/routable/client"
+	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
-// fetchNextExternalAccounts pages through Routable companies and emits each
-// one as an EXTERNAL PSPAccount. Unlike the Generic-Connector adapter we no
-// longer fan out to GET /v1/companies/{id}/payment-methods per row: the
-// expensive N+1 is deferred until payable creation, where the resolved
-// payment method actually matters.
+// fetchNextExternalAccounts pages through Routable companies and emits
+// each one as an EXTERNAL PSPAccount.
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	state, err := decodePageState(req.State)
 	if err != nil {
@@ -27,7 +24,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 	accounts := make([]models.PSPAccount, 0, len(resp.Results))
 	for _, co := range resp.Results {
-		account, err := p.companyToPSPAccount(co)
+		account, err := mappers.CompanyToPSPAccount(co)
 		if err != nil {
 			p.logger.Infof("skipping company %s: %v", co.ID, err)
 			continue
@@ -48,23 +45,5 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		ExternalAccounts: accounts,
 		NewState:         payload,
 		HasMore:          resp.Links.HasMore(),
-	}, nil
-}
-
-func (p *Plugin) companyToPSPAccount(co client.Company) (models.PSPAccount, error) {
-	raw, err := json.Marshal(co)
-	if err != nil {
-		return models.PSPAccount{}, fmt.Errorf("marshaling raw: %w", err)
-	}
-	displayName := co.DisplayName
-	if displayName == "" {
-		displayName = co.BusinessName
-	}
-	return models.PSPAccount{
-		Reference: co.ID,
-		CreatedAt: co.CreatedAt,
-		Name:      pointerOrNil(displayName),
-		Metadata:  companyMetadata(co),
-		Raw:       raw,
 	}, nil
 }

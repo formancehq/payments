@@ -6,6 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
+	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -48,7 +49,7 @@ var _ = Describe("Routable fetchNextExternalAccounts", func() {
 		Expect(resp.ExternalAccounts).To(HaveLen(1))
 		Expect(resp.ExternalAccounts[0].Reference).To(Equal("co_1"))
 		Expect(*resp.ExternalAccounts[0].Name).To(Equal("Acme Inc"))
-		Expect(resp.ExternalAccounts[0].Metadata[MetadataPrefix+"is_vendor"]).To(Equal("true"))
+		Expect(resp.ExternalAccounts[0].Metadata[mappers.MetadataPrefix+"is_vendor"]).To(Equal("true"))
 		Expect(resp.HasMore).To(BeFalse())
 
 		var state pageState

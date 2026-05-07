@@ -3,23 +3,23 @@ package routable
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/ee/plugins/routable/client"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Routable Plugin Suite")
 }
-
-// validConfig is the canonical good config used across tests; specific specs
-// alter it as needed before passing it to New.
-var validConfig = json.RawMessage(`{"apiKey":"key","endpoint":"https://api.routable.com","actingTeamMember":"tm_1"}`)
 
 var _ = Describe("Routable Plugin", func() {
 	var (
@@ -50,12 +50,37 @@ var _ = Describe("Routable Plugin", func() {
 	})
 
 	Context("install", func() {
-		It("returns the documented workflow", func() {
-			p, err := New("routable", logger, validConfig)
-			Expect(err).To(BeNil())
-			res, err := p.Install(context.Background(), models.InstallRequest{})
+		var (
+			ctrl *gomock.Controller
+			mock *client.MockClient
+		)
+		BeforeEach(func() {
+			ctrl = gomock.NewController(GinkgoT())
+			mock = client.NewMockClient(ctrl)
+			plg = &Plugin{Plugin: plugins.NewBasePlugin(), name: "routable", logger: logger, client: mock, config: Config{}}
+		})
+		AfterEach(func() {
+			ctrl.Finish()
+		})
+
+		It("returns the documented workflow when the credential probe succeeds", func() {
+			mock.EXPECT().ListAccounts(gomock.Any(), 1, 1).Return(&client.ListAccountsResponse{}, nil)
+			res, err := plg.Install(context.Background(), models.InstallRequest{})
 			Expect(err).To(BeNil())
 			Expect(res.Workflow).To(Equal(workflow()))
+		})
+
+		// Fail-fast contract for ops: a bad API key must NOT make it past
+		// install. httpwrapper maps 401/403 to ErrStatusCodeClientError,
+		// which the activity translator already classifies as a
+		// non-retryable INVALID_ARGUMENT error so the engine surfaces it
+		// as an install failure instead of looping forever.
+		It("surfaces a credential failure (401/403) as an install error", func() {
+			mock.EXPECT().ListAccounts(gomock.Any(), 1, 1).Return(nil, httpwrapper.ErrStatusCodeClientError)
+			_, err := plg.Install(context.Background(), models.InstallRequest{})
+			Expect(err).To(HaveOccurred())
+			Expect(errors.Is(err, httpwrapper.ErrStatusCodeClientError)).To(BeTrue())
+			Expect(err.Error()).To(ContainSubstring("verifying routable credentials"))
 		})
 	})
 
