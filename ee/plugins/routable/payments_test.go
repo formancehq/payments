@@ -155,6 +155,128 @@ var _ = Describe("Routable fetchNextPayments", func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("preserves CycleLowerBound when both phases of a cycle return no rows", func(ctx SpecContext) {
+		// Regression for the empty-cycle bug: at high write throughput a
+		// 200k/wk connector may legitimately see a cycle with zero status
+		// transitions for both payables and receivables. Promoting
+		// CycleMaxSeen=0 to CycleLowerBound would regress the floor to
+		// epoch and trigger a full historical refetch on the next cycle.
+		previousFloor := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+
+		// Receivables phase, both pages empty: this is the cycle-end branch
+		// we're guarding.
+		mock.EXPECT().ListReceivables(gomock.Any(), 1, 50, previousFloor).Return(&client.ListReceivablesResponse{}, nil)
+
+		state, _ := json.Marshal(paymentsState{
+			Phase:           phaseReceivables,
+			Page:            1,
+			CycleLowerBound: previousFloor,
+			// CycleMaxSeen left at zero — payables phase saw nothing either.
+		})
+		resp, err := plg.fetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 50, State: state})
+		Expect(err).To(BeNil())
+		Expect(resp.HasMore).To(BeFalse())
+
+		var nextState paymentsState
+		Expect(json.Unmarshal(resp.NewState, &nextState)).To(Succeed())
+		Expect(nextState.Phase).To(Equal(phasePayables))
+		Expect(nextState.CycleLowerBound.Equal(previousFloor)).To(BeTrue(),
+			"empty cycle must NOT regress CycleLowerBound to zero")
+		Expect(nextState.CycleMaxSeen.IsZero()).To(BeTrue())
+	})
+
+	It("preserves CycleLowerBound when only payables saw rows but receivables didn't", func(ctx SpecContext) {
+		previousFloor := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+		payableSeen := time.Date(2025, 6, 3, 0, 0, 0, 0, time.UTC)
+
+		mock.EXPECT().ListReceivables(gomock.Any(), 1, 50, previousFloor).Return(&client.ListReceivablesResponse{}, nil)
+
+		// Payables phase already advanced CycleMaxSeen to payableSeen.
+		state, _ := json.Marshal(paymentsState{
+			Phase:           phaseReceivables,
+			Page:            1,
+			CycleLowerBound: previousFloor,
+			CycleMaxSeen:    payableSeen,
+		})
+		resp, err := plg.fetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 50, State: state})
+		Expect(err).To(BeNil())
+
+		var nextState paymentsState
+		Expect(json.Unmarshal(resp.NewState, &nextState)).To(Succeed())
+		Expect(nextState.CycleLowerBound.Equal(payableSeen)).To(BeTrue(),
+			"non-zero CycleMaxSeen from payables phase must still promote at cycle end")
+	})
+
+	// Resumable: paymentsState round-trips through JSON cleanly so that a
+	// worker crash mid-cycle resumes at the correct page with the same
+	// CycleLowerBound. At 200k tx/wk the cycle has many pages; losing
+	// state would cause both duplicates AND skips on resume.
+	It("survives JSON round-trip mid-cycle without losing the floor", func(ctx SpecContext) {
+		floor := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+		later := time.Date(2025, 6, 4, 0, 0, 0, 0, time.UTC)
+
+		mid := paymentsState{Phase: phaseReceivables, Page: 7, CycleLowerBound: floor, CycleMaxSeen: later}
+		raw, err := json.Marshal(mid)
+		Expect(err).To(BeNil())
+
+		decoded, err := decodePaymentsState(raw)
+		Expect(err).To(BeNil())
+		Expect(decoded.Phase).To(Equal(phaseReceivables))
+		Expect(decoded.Page).To(Equal(7))
+		Expect(decoded.CycleLowerBound.Equal(floor)).To(BeTrue())
+		Expect(decoded.CycleMaxSeen.Equal(later)).To(BeTrue())
+	})
+
+	// Tiebreaker / lossless: rows whose status_changed_at equals the
+	// cycle floor are re-emitted at every cycle boundary because
+	// Routable's gte filter is inclusive. We rely on the engine's
+	// PSPPayment.Reference dedup; the cost is at-most-N replays of the
+	// boundary rows, never lost rows. This test pins the contract by
+	// driving two full cycles and asserting the boundary row keeps the
+	// same Reference each time, so engine dedup catches the replay.
+	It("re-emits boundary rows with the same Reference across cycles for engine dedup", func(ctx SpecContext) {
+		floor := time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC)
+		boundaryRow := func() client.Receivable {
+			return client.Receivable{
+				ID:              "re_boundary",
+				Status:          "completed",
+				Amount:          "1.00",
+				CurrencyCode:    "USD",
+				DeliveryMethod:  "ach_standard",
+				StatusChangedAt: &floor,
+				CreatedAt:       floor,
+			}
+		}
+
+		// Cycle 1 — receivables phase, ends with boundary row.
+		mock.EXPECT().ListReceivables(gomock.Any(), 1, 50, floor).Return(&client.ListReceivablesResponse{
+			Results: []client.Receivable{boundaryRow()},
+		}, nil)
+
+		state, _ := json.Marshal(paymentsState{Phase: phaseReceivables, Page: 1, CycleLowerBound: floor})
+		c1, err := plg.fetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 50, State: state})
+		Expect(err).To(BeNil())
+		Expect(c1.Payments).To(HaveLen(1))
+		Expect(c1.Payments[0].Reference).To(Equal("re_boundary"))
+		Expect(c1.HasMore).To(BeFalse(), "cycle ended")
+
+		// Cycle 2 starts in payables phase (empty in this scenario).
+		mock.EXPECT().ListPayables(gomock.Any(), 1, 50, floor).Return(&client.ListPayablesResponse{}, nil)
+		c2payables, err := plg.fetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 50, State: c1.NewState})
+		Expect(err).To(BeNil())
+		Expect(c2payables.HasMore).To(BeTrue(), "transitions to receivables phase")
+
+		// Cycle 2 receivables — same boundary row reappears (gte-inclusive).
+		mock.EXPECT().ListReceivables(gomock.Any(), 1, 50, floor).Return(&client.ListReceivablesResponse{
+			Results: []client.Receivable{boundaryRow()},
+		}, nil)
+		c2recv, err := plg.fetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 50, State: c2payables.NewState})
+		Expect(err).To(BeNil())
+		Expect(c2recv.Payments).To(HaveLen(1))
+		Expect(c2recv.Payments[0].Reference).To(Equal("re_boundary"),
+			"engine dedup keys on PSPPayment.Reference; boundary row must keep its identity across cycles")
+	})
+
 	It("migrates legacy LastSeenAt state to CycleLowerBound", func(ctx SpecContext) {
 		legacy := time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)
 		mock.EXPECT().ListPayables(gomock.Any(), 1, 50, legacy).Return(&client.ListPayablesResponse{}, nil)

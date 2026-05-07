@@ -3,6 +3,7 @@ package routable
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
@@ -54,8 +55,17 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 	return p.config
 }
 
-func (p *Plugin) Install(_ context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
+func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
 	p.logger.Infof("installing routable connector %q (endpoint=%s, polling=%s)", p.name, p.config.resolvedEndpoint(), p.config.PollingPeriod.Duration())
+	// Credential probe: hit the smallest read-only endpoint so a bad
+	// API key surfaces as an install-time error rather than as the
+	// first FETCH_ACCOUNTS run failing in the worker. ListAccounts is
+	// cheap (page_size=1) and idempotent. 401/403 reaches the engine
+	// as httpwrapper.ErrStatusCodeClientError, which the activity
+	// translator already maps to a non-retryable INVALID_ARGUMENT.
+	if _, err := p.client.ListAccounts(ctx, 1, 1); err != nil {
+		return models.InstallResponse{}, fmt.Errorf("verifying routable credentials: %w", err)
+	}
 	return models.InstallResponse{Workflow: workflow()}, nil
 }
 

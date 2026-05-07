@@ -15,18 +15,14 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // DefaultBaseURL is the production Routable API endpoint. Sandbox is
-// https://api.sandbox.routable.com and is selected via the connector config.
+// https://api.sandbox.routable.com (selected via the connector config).
 const DefaultBaseURL = "https://api.routable.com"
 
-// Client is the minimal Routable API surface the dedicated EE plugin needs:
-// fetching settings accounts (for INTERNAL accounts and balances), companies
-// (for EXTERNAL accounts), payables and receivables (for payment sync), and
-// creating + reading payables (for transfer/payout initiation and polling).
-//
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	ListAccounts(ctx context.Context, page, pageSize int) (*ListAccountsResponse, error)
@@ -57,12 +53,39 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	return t.underlying.RoundTrip(req)
+	resp, err := t.underlying.RoundTrip(req)
+	if err == nil && resp != nil {
+		recordRateLimitHint(req.Context(), resp)
+	}
+	return resp, err
 }
 
-// New builds a Routable client wired with the standard Formance HTTP wrapper
-// (otel + metrics + error mapping). connectorName is used as the metrics
-// label so per-connector dashboards continue to work unchanged.
+// recordRateLimitHint inspects a response for IETF RateLimit / RFC 9110
+// Retry-After signals and writes the parsed wait into the rateLimitHint
+// the caller seeded on the request context. We intentionally signal-flag
+// 429 unconditionally and 5xx only when the server explicitly attached a
+// rate-limit header (per IETF §6, RateLimit headers can accompany any
+// status code; their presence on a 5xx is the server telling us the
+// failure is quota- or capacity-driven, not a generic outage).
+func recordRateLimitHint(ctx context.Context, resp *http.Response) {
+	hint, ok := ctx.Value(rateLimitHintCtxKey{}).(*rateLimitHint)
+	if !ok || hint == nil {
+		return
+	}
+	wait, hasSignal := parseRateLimitHeaders(resp.Header, time.Now())
+	switch {
+	case resp.StatusCode == http.StatusTooManyRequests:
+		hint.rateLimited = true
+		hint.retryAfter = wait
+	case resp.StatusCode >= http.StatusInternalServerError && hasSignal:
+		hint.rateLimited = true
+		hint.retryAfter = wait
+	}
+}
+
+// New builds a Routable client wired with the standard Formance HTTP
+// wrapper (otel + metrics + error mapping). connectorName is used as the
+// metrics label so per-connector dashboards continue to work unchanged.
 func New(connectorName, apiKey, endpoint string) Client {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 	if endpoint == "" {
@@ -71,7 +94,7 @@ func New(connectorName, apiKey, endpoint string) Client {
 
 	transport := &apiTransport{
 		apiKey:     apiKey,
-		underlying: otelhttp.NewTransport(http.DefaultTransport),
+		underlying: otelhttp.NewTransport(tunedHTTPTransport()),
 	}
 
 	return &client{
@@ -80,6 +103,20 @@ func New(connectorName, apiKey, endpoint string) Client {
 			Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: transport}),
 		}),
 	}
+}
+
+// tunedHTTPTransport returns an *http.Transport sized for sustained
+// 100-200 req/min against a single Routable host. The Go default of
+// MaxIdleConnsPerHost=2 forces TCP/TLS reconnects under steady load; at
+// 200k tx/wk we'd churn dozens of handshakes per minute and add
+// avoidable latency to every Routable call. Bumping to 64 idle conns
+// per host keeps the pool warm without monopolising the host.
+func tunedHTTPTransport() *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConnsPerHost = 64
+	t.MaxConnsPerHost = 0 // unbounded — engine concurrency caps the upper bound
+	t.IdleConnTimeout = 90 * time.Second
+	return t
 }
 
 func (c *client) buildURL(path string, query url.Values) string {
@@ -105,6 +142,14 @@ func paginationQuery(page, pageSize int) url.Values {
 // Routable error envelope. The httpwrapper maps 4xx/5xx to typed sentinels
 // (ErrStatusCodeClientError/ServerError/TooManyRequests) which callers can
 // classify with errors.Is.
+//
+// On rate-limit responses (429, or 5xx with IETF RateLimit headers) we
+// upgrade the error to a *plugins.RateLimitedError carrying the parsed
+// wait hint. The engine's temporalPluginErrorCheck reads it and feeds it
+// into Temporal's NextRetryDelay so the next attempt waits at least the
+// duration the upstream asked for. Wrapping plugins.ErrUpstreamRatelimit
+// keeps every existing errors.Is(_, plugins.ErrUpstreamRatelimit) call
+// site green.
 func (c *client) do(ctx context.Context, method, path string, query url.Values, body any, idempotencyKey string, out any) (int, error) {
 	reqBody := io.Reader(http.NoBody)
 	if body != nil {
@@ -114,6 +159,9 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 		}
 		reqBody = buf
 	}
+
+	hint := &rateLimitHint{}
+	ctx = context.WithValue(ctx, rateLimitHintCtxKey{}, hint)
 
 	req, err := http.NewRequestWithContext(ctx, method, c.buildURL(path, query), reqBody)
 	if err != nil {
@@ -125,18 +173,22 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 
 	var apiErr ErrorResponse
 	statusCode, doErr := c.httpClient.Do(ctx, req, out, &apiErr)
-	if doErr != nil {
-		// Only attach the Routable error envelope when the response carried
-		// one. Transport errors (DNS, timeout, connection refused) leave
-		// apiErr at its zero value, in which case appending the formatted
-		// envelope just produces a misleading "routable api error: empty
-		// body" suffix that hurts log triage.
-		if apiErr.hasContent() {
-			return statusCode, fmt.Errorf("%w: %s", doErr, apiErr.Error())
-		}
-		return statusCode, doErr
+	if doErr == nil {
+		return statusCode, nil
 	}
-	return statusCode, nil
+
+	// Only attach the Routable error envelope when the response carried
+	// one. Transport errors (DNS, timeout, connection refused) leave
+	// apiErr at its zero value, in which case appending the formatted
+	// envelope just produces a misleading "routable api error: empty
+	// body" suffix that hurts log triage.
+	if apiErr.hasContent() {
+		doErr = fmt.Errorf("%w: %s", doErr, apiErr.Error())
+	}
+	if hint.rateLimited {
+		return statusCode, plugins.NewRateLimitedError(hint.retryAfter, doErr)
+	}
+	return statusCode, doErr
 }
 
 func (c *client) ListAccounts(ctx context.Context, page, pageSize int) (*ListAccountsResponse, error) {

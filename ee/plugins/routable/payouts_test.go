@@ -8,6 +8,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
+	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -53,8 +54,8 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 
 	It("returns PollingPayoutID for non-terminal payables", func(ctx SpecContext) {
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
-			Expect(req.Type).To(Equal(defaultPayableType))
-			Expect(req.DeliveryMethod).To(Equal(defaultDeliveryMethod))
+			Expect(req.Type).To(Equal(mappers.DefaultPayableType))
+			Expect(req.DeliveryMethod).To(Equal(mappers.DefaultDeliveryMethod))
 			Expect(req.PayToCompany).To(Equal("co_1"))
 			Expect(req.WithdrawFromAccount).To(Equal("acc_1"))
 			Expect(req.Amount).To(Equal("123.45"))
@@ -111,10 +112,10 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 	It("respects metadata overrides for type, delivery_method, and acting_team_member", func(ctx SpecContext) {
 		piWithOverrides := pi()
 		piWithOverrides.Metadata = map[string]string{
-			MetadataKeyType:             "wire",
-			MetadataKeyDeliveryMethod:   "wire",
-			MetadataKeyActingTeamMember: "tm_override",
-			MetadataKeyExternalID:       "ext_42",
+			mappers.MetadataKeyType:             "wire",
+			mappers.MetadataKeyDeliveryMethod:   "wire",
+			mappers.MetadataKeyActingTeamMember: "tm_override",
+			mappers.MetadataKeyExternalID:       "ext_42",
 		}
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
 			Expect(req.Type).To(Equal("wire"))
@@ -132,12 +133,44 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		bad.SourceAccount = nil
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
 		Expect(err).To(HaveOccurred())
+
+		bad = pi()
+		bad.DestinationAccount = nil
+		_, err = plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
+		Expect(err).To(HaveOccurred(), "missing DestinationAccount must also be rejected before any network call")
+	})
+
+	// Idempotency contract: every POST /v1/payables MUST carry
+	// Idempotency-Key = pi.Reference, on BOTH the payout and the transfer
+	// surface. Routable's idempotency window (24h) plus Temporal's
+	// at-least-once activity execution means a missing or non-stable key
+	// causes duplicate payables = duplicate disbursements at scale. Pin
+	// the contract narrowly here so a future refactor of initiatePayable
+	// trips on this single assertion.
+	Describe("idempotency contract", func() {
+		It("uses pi.Reference as the Idempotency-Key on createPayout", func(ctx SpecContext) {
+			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+				Expect(req.IdempotencyKey).To(Equal("pi_1"))
+				return &client.Payable{ID: "pa_idem", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+			})
+			_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
+			Expect(err).To(BeNil())
+		})
+
+		It("uses pi.Reference as the Idempotency-Key on createTransfer", func(ctx SpecContext) {
+			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+				Expect(req.IdempotencyKey).To(Equal("pi_1"))
+				return &client.Payable{ID: "pa_idem", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+			})
+			_, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: pi()})
+			Expect(err).To(BeNil())
+		})
 	})
 
 	It("falls back to the per-request metadata acting_team_member when the config is empty", func(ctx SpecContext) {
 		plg.config = Config{} // no connector-level default
 		piWithTM := pi()
-		piWithTM.Metadata = map[string]string{MetadataKeyActingTeamMember: "tm_from_metadata"}
+		piWithTM.Metadata = map[string]string{mappers.MetadataKeyActingTeamMember: "tm_from_metadata"}
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
 			Expect(req.ActingTeamMember).To(Equal("tm_from_metadata"))
 			return &client.Payable{ID: "pa_md", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
@@ -169,12 +202,33 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(*resp.Error).To(ContainSubstring("FAILED"))
 	})
 
+	// Routable's eventual-consistency window: a 202 from POST /v1/payables
+	// can be followed by N seconds of GET /v1/payables/{id} returning 404
+	// before the row is fully indexed. The plugin must surface this as
+	// "not yet, retry on schedule" — empty response, no error — so the
+	// engine's PollPayoutStatus workflow keeps polling under its standard
+	// retry policy. Returning an error here would burn the retry budget
+	// and falsely fail the payout.
 	It("returns an empty response (engine retries later) on 404 ErrPayableNotFound", func(ctx SpecContext) {
 		mock.EXPECT().GetPayable(gomock.Any(), "pa_pending").Return(nil, client.ErrPayableNotFound)
 		resp, err := plg.pollPayableStatus(ctx, "pa_pending")
 		Expect(err).To(BeNil())
 		Expect(resp.Payment).To(BeNil())
 		Expect(resp.Error).To(BeNil())
+	})
+
+	It("keeps returning the empty response across successive 404s during the eventual-consistency window", func(ctx SpecContext) {
+		// Three consecutive 404s (Routable's typical post-202 latency
+		// window). Each must surface as the same "not yet" empty
+		// response so the engine just keeps polling — no accumulating
+		// error state, no transition to a terminal failure.
+		mock.EXPECT().GetPayable(gomock.Any(), "pa_window").Return(nil, client.ErrPayableNotFound).Times(3)
+		for i := 0; i < 3; i++ {
+			resp, err := plg.pollPayableStatus(ctx, "pa_window")
+			Expect(err).To(BeNil(), "poll %d must NOT return an error", i+1)
+			Expect(resp.Payment).To(BeNil())
+			Expect(resp.Error).To(BeNil())
+		}
 	})
 
 	It("propagates other client errors", func(ctx SpecContext) {

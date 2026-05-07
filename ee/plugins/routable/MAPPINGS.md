@@ -24,6 +24,16 @@ Defined in [`config.go`](config.go), exposed through [`/openapi/v3/v3-connectors
 | `actingTeamMember` | **no** | `""` | Default Routable team member ID for `POST /v1/payables`. Optional at the connector level: callers may override (or supply) it per-request via the metadata key [`com.routable.spec/acting_team_member`](#5-payment-initiation-metadata-keys-payouts--transfers). If neither config nor metadata sets it, payable creation fails with a clear validation error before the request is sent. |
 | `pollingPeriod` | no | `30m` | Polling cadence for sync tasks (accounts, balances, external accounts, payments). Minimum 20 minutes. |
 
+### 1.1 Concurrency & immutability
+
+The `Plugin` struct has four fields (`name`, `logger`, `client`, `config`), all set in [`New`](plugin.go) and never written afterwards. The `client` and the underlying `httpwrapper.Client` are themselves stateless beyond the HTTP connection pool. The engine may invoke any capability (`FetchNext*`, `CreateTransfer`, `CreatePayout`, `Poll*Status`) concurrently across worker goroutines without synchronisation: the plugin is safe for concurrent access by construction.
+
+Pagination state (`paymentsState`, `pageState`) lives entirely in the engine-managed checkpoint passed in via `req.State` and returned via `resp.NewState`; the plugin keeps no in-memory cycle accumulators, so a worker crash mid-cycle resumes deterministically from the last persisted checkpoint with no double-billed or skipped rows. Per-page slices are bounded by `req.PageSize` (≤ `PAGE_SIZE = 100`).
+
+### 1.2 Credential validation
+
+[`Install`](plugin.go) issues a tiny `GET /v1/settings/accounts?page=1&page_size=1` probe before returning the workflow. A bad `apiKey` (401/403) surfaces as an install-time error rather than as the first FETCH_ACCOUNTS run failing later in the worker — at 200k tx/wk the operator gets the failure feedback during the install API call instead of after the engine has scheduled thousands of doomed activities.
+
 ---
 
 ## 2. Capabilities and workflow
@@ -122,9 +132,15 @@ Defined in [`state.go`](state.go) (`pageState`) and [`payments.go`](payments.go)
 |---|---|---|
 | Settings accounts | `{ page }` (1-indexed) | `page`, `page_size` |
 | Companies | `{ page }` | `page`, `page_size` |
-| Payments | `{ phase: "" \| "receivables", page, lastSeenAt }` | `page`, `page_size`, `status_changed_at.gte` |
+| Payments | `{ phase: "" \| "receivables", page, cycleLowerBound, cycleMaxSeen }` | `page`, `page_size`, `status_changed_at.gte=cycleLowerBound` |
 
-The payments fetcher exhausts payables, then receivables, then advances the `lastSeenAt` watermark (the latest `status_changed_at` observed) and resets to a new cycle. This avoids re-pulling payables and receivables that have not changed since the previous cycle.
+The payments fetcher walks payables, then receivables, then closes the cycle and promotes its watermark for the next cycle. The cursor enforces three invariants the engine relies on at 200k/wk volume:
+
+1. **Resumable** — `paymentsState` is opaque JSON checkpointed by the engine after every page; a worker crash mid-cycle resumes at the next page with the same `cycleLowerBound` as before, so no row is double-billed and no row is silently dropped.
+2. **Lossless** — `cycleLowerBound` is **immutable for the full duration of a cycle**. Mutating it mid-cycle (the legacy `lastSeenAt` design) caused page=2 to use a tighter floor than page=1, dropping any row whose `status_changed_at` landed between the two timestamps but whose page was paginated late. `cycleMaxSeen` is a write-only accumulator that never drives a request; it is promoted to the next cycle's `cycleLowerBound` only on cycle commit, and only when **non-zero** (an empty cycle preserves the previous floor — never regress to epoch).
+3. **Tiebreaker** — Routable's `status_changed_at.gte` filter is inclusive, so rows whose timestamp equals the floor get re-emitted at every cycle boundary. The engine framework dedupes by `PSPPayment.Reference`, so this is wasted traffic but never a correctness problem. A `(status_changed_at, id)` tiebreaker would eliminate the replay; tracked as a follow-up.
+
+Legacy `lastSeenAt` state on disk is migrated to `cycleLowerBound` on first decode (see [`decodePaymentsState`](payments.go)) so existing connector installs roll forward without operator intervention.
 
 ---
 
@@ -230,7 +246,29 @@ Both are intentional: the PI captures the user's intent, the Payment captures Ro
 
 3. **PI-side raw lookup** (when you only have the Routable UUID and want the originating PI ref): scan the Payment's metadata as in (2), or hit `/v3/payments/{id}` directly.
 
-The metadata aliases are populated by [`payableMetadata`/`receivableMetadata`](metadata.go); the constants `MetadataKeyPaymentInitiationReference` and `MetadataKeyRoutablePayableID` are stable contract.
+The metadata aliases are populated by [`PayableMetadata`/`ReceivableMetadata`](mappers/metadata.go); the constants `MetadataKeyPaymentInitiationReference` and `MetadataKeyRoutablePayableID` are stable contract.
+
+#### Payout lifecycle under retries
+
+```mermaid
+flowchart TD
+  pi["PaymentInitiation\nReference=pi.Reference"]
+  workflow["Temporal CreatePayoutWorkflow"]
+  plugin["Plugin.CreatePayout"]
+  routable["POST /v1/payables\nIdempotency-Key=pi.Reference"]
+  retry{"5xx / 429 / network / timeout?"}
+  poll["Plugin.PollPayoutStatus\n(engine-driven backoff)"]
+  done["Terminal status\n(SUCCEEDED / FAILED / CANCELLED / EXPIRED / REFUNDED)"]
+
+  pi --> workflow --> plugin --> routable
+  routable -->|"202 / pending"| poll
+  routable -->|"5xx / 429 / timeout"| retry
+  retry -->|"yes, with NextRetryDelay hint"| plugin
+  poll -->|"pending"| poll
+  poll -->|"terminal"| done
+```
+
+Routable's `RateLimit` / `Retry-After` headers are parsed in [`client/ratelimit.go`](client/ratelimit.go) and surfaced as `*plugins.RateLimitedError`. The engine reads the hint and feeds it into Temporal's per-error `NextRetryDelay` (see [`internal/connectors/engine/activities/errors.go`](../../../internal/connectors/engine/activities/errors.go)) so the next retry waits at least the duration the upstream asked for, falling back to the engine's static floor when no hint is present.
 
 ### 5.6 Transfers vs Payments — what shows up where
 
@@ -255,7 +293,58 @@ Rows whose `pi_ref` is `null` were created outside Formance (Routable UI or anot
 
 ---
 
-## 6. Quick-reference index
+## 6. Ops capacity & cost model
+
+The connector is built for sustained throughput of ~200,000 transactions per week (~28.6k/day, ~20/min steady, bursty up to ~60/min). The numbers below are estimates for capacity planning, **not SLAs**. Confirm with `@formancehq/backend` and your Temporal namespace metrics before sizing for go-live.
+
+### 6.1 Routable RPS budget
+
+| Source | Rate (steady) | Notes |
+|---|---|---|
+| `POST /v1/payables` (createPayout / createTransfer) | ~20/min | One per payment-initiation. Idempotency-Key keyed on `pi.Reference`. |
+| `GET /v1/payables/{id}` (PollPayoutStatus) | ~60/min | Assume ~3 polls/payment until terminal × 20 payments/min. |
+| `GET /v1/payables` + `GET /v1/receivables` (FETCH_PAYMENTS pagination) | ~3.5/min | ~70 pages × 3 cycles/h ÷ 60. |
+| `GET /v1/settings/accounts` + `GET /v1/companies` (FETCH_ACCOUNTS / FETCH_EXTERNAL_ACCOUNTS) | ~0.2/min | A few pages every 20-min cycle. |
+| **Total** | **~80-100 req/min steady, peak ~200 req/min** | Must fit inside Routable's published rate limit. Webhooks (§6.4) eliminate ~75% of the poll traffic. |
+
+`PAGE_SIZE = 100` (Routable's documented max) keeps pagination requests at a minimum. Polling cadence is bounded by `MinimumPollingPeriod = 20m` ([`internal/connectors/plugins/sharedconfig/polling_period.go`](../../../internal/connectors/plugins/sharedconfig/polling_period.go)); we cannot poll faster without an engine-level change (§6.4).
+
+### 6.2 Temporal workflow / activity volume
+
+Each payment-initiation drives one `CreatePayoutWorkflow` plus one `PollPayoutStatus` schedule until terminal. Each periodic capability drives one workflow per cycle, with one activity per page.
+
+| Source | Workflow starts / day | Activity executions / day |
+|---|---|---|
+| `CreatePayoutWorkflow` | ~28,571 | ~6 activities each ⇒ ~171k |
+| `PollPayoutStatus` | ~28,571 | ~4 polls/payment ⇒ ~114k |
+| `FetchPaymentsWorkflow` | 72 (one per cycle, 20m period) | ~70 pages × ~4 activities ⇒ ~20k |
+| `FetchAccounts` / `FetchBalances` / `FetchExternalAccounts` | ~216 total | ~650 |
+| **Daily total** | **~57.4k** | **~306k** |
+| **Weekly total** | **~402k** | **~2.14M** |
+| **Monthly total** | **~1.72M** | **~9.18M** |
+
+### 6.3 Temporal Cloud Action estimate
+
+Temporal Cloud bills by Action (workflow events: start, completion, activity scheduled/completed, timer fired, signal, …). Empirically a typical Payments workflow emits ~3.5 Actions per workflow start and ~2 per activity execution.
+
+- Per day: 57.4k × 3.5 + 306k × 2 ≈ **0.81M Actions**
+- Per week: ≈ **5.7M Actions**
+- Per month: ≈ **24.4M Actions**
+
+At Temporal Cloud's public list pricing of ~$25 per 1M Actions (subject to plan/discount), this lands at **~$600/month** for the connector at full 200k/wk volume — not including the latency-SLA / namespace baseline. Webhooks (§6.4) cut the `PollPayoutStatus` line by ~75-80%, saving roughly $200/month and ~5M Actions/month on their own.
+
+### 6.4 Levers
+
+| Knob | Effect | Status |
+|---|---|---|
+| `pollingPeriod` config (default 30m, floor 20m) | Doubling halves periodic-fetch Actions; trades freshness for cost. | Operator-facing today. |
+| `PAGE_SIZE` (currently 100) | Doubling halves pagination requests linearly. | At Routable's documented max. |
+| Webhooks for `payable.status_updated` | Replaces ~80% of `PollPayoutStatus` traffic with push events. ~5M Actions/month and ~60 req/min savings at full volume. | **Follow-up PR.** |
+| Per-capability schedules | Run `FETCH_ACCOUNTS` / `FETCH_BALANCES` / `FETCH_EXTERNAL_ACCOUNTS` at 1h while keeping `FETCH_PAYMENTS` at 20m — cuts ~75% of their Actions. | **Follow-up engine PR** (touches [`sharedconfig/polling_period.go`](../../../internal/connectors/plugins/sharedconfig/polling_period.go) and the workflow scheduler). |
+
+---
+
+## 7. Quick-reference index
 
 | Concern | File |
 |---|---|
@@ -264,23 +353,24 @@ Rows whose `pi_ref` is `null` were created outside Formance (Routable UI or anot
 | Periodic task graph | [`workflow.go`](workflow.go) |
 | Config schema (`apiKey`, `endpoint`, `actingTeamMember`, `pollingPeriod`) | [`config.go`](config.go) |
 | State / cursors | [`state.go`](state.go), [`payments.go`](payments.go) |
-| Settings accounts → `PSPAccount` (internal) | [`accounts.go`](accounts.go) |
-| Settings account → `PSPBalance` | [`balances.go`](balances.go) |
-| Companies → `PSPAccount` (external) | [`external_accounts.go`](external_accounts.go) |
-| Payables/receivables → `PSPPayment` | [`payments.go`](payments.go) |
-| Create payout (Routable payable) | [`payouts.go`](payouts.go) |
-| Create transfer (Routable payable, type override) | [`transfers.go`](transfers.go) |
-| Status mapping | [`status.go`](status.go) |
-| Scheme mapping | [`scheme.go`](scheme.go) |
-| Decimal ↔ minor units | [`amounts.go`](amounts.go) |
-| Metadata key constants & helpers | [`metadata.go`](metadata.go) |
+| Settings accounts → `PSPAccount` (internal) | [`accounts.go`](accounts.go) + [`mappers/account.go`](mappers/account.go) |
+| Settings account → `PSPBalance` | [`balances.go`](balances.go) + [`mappers/balance.go`](mappers/balance.go) |
+| Companies → `PSPAccount` (external) | [`external_accounts.go`](external_accounts.go) + [`mappers/external_account.go`](mappers/external_account.go) |
+| Payables/receivables → `PSPPayment` | [`payments.go`](payments.go) + [`mappers/payable.go`](mappers/payable.go), [`mappers/receivable.go`](mappers/receivable.go) |
+| Create payout (Routable payable) | [`payouts.go`](payouts.go), [`payable_create.go`](payable_create.go) |
+| Create transfer (Routable payable, type override) | [`transfers.go`](transfers.go), [`payable_create.go`](payable_create.go) |
+| Status mapping | [`mappers/status.go`](mappers/status.go) |
+| Scheme mapping | [`mappers/scheme.go`](mappers/scheme.go) |
+| Decimal ↔ minor units | [`mappers/amounts.go`](mappers/amounts.go) |
+| Metadata key constants & helpers | [`mappers/metadata.go`](mappers/metadata.go) |
 | Routable HTTP client (interface + impl) | [`client/client.go`](client/client.go) |
 | Routable request/response shapes | [`client/types.go`](client/types.go) |
 | Routable error envelope | [`client/error.go`](client/error.go) |
+| Rate-limit header parsing (IETF + RFC 9110) | [`client/ratelimit.go`](client/ratelimit.go) |
 
 ---
 
-## 7. References
+## 8. References
 
 - Routable API docs: <https://developers.routable.com/reference>
 - Routable idempotency: <https://developers.routable.com/docs/idempotency-keys>

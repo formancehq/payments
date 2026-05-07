@@ -1,4 +1,4 @@
-package routable
+package mappers
 
 import (
 	"testing"
@@ -6,10 +6,11 @@ import (
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 )
 
-// TestPayableMetadata_AliasKeys locks in the correlation contract documented
-// in MAPPING.md §5.5: every synced Payment must carry the Routable payable
-// UUID under MetadataKeyRoutablePayableID, and the originating PI reference
-// under MetadataKeyPaymentInitiationReference (when external_id is present).
+// TestPayableMetadata_AliasKeys locks in the correlation contract
+// documented in MAPPINGS.md §5.5: every synced Payment must carry the
+// Routable payable UUID under MetadataKeyRoutablePayableID, and the
+// originating PI reference under MetadataKeyPaymentInitiationReference
+// (when external_id is present).
 func TestPayableMetadata_AliasKeys(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -39,15 +40,16 @@ func TestPayableMetadata_AliasKeys(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := payableMetadata(tc.payable)
+			m := PayableMetadata(tc.payable)
 			if got := m[MetadataKeyRoutablePayableID]; got != tc.wantPayable {
 				t.Errorf("payable_id = %q, want %q", got, tc.wantPayable)
 			}
 			if got := m[MetadataKeyPaymentInitiationReference]; got != tc.wantPIRef {
 				t.Errorf("payment_initiation_reference = %q, want %q", got, tc.wantPIRef)
 			}
-			// external_id legacy key must remain present alongside the alias for
-			// backwards compatibility with anything reading the Routable wire term.
+			// external_id legacy key must remain present alongside the
+			// alias for backwards compatibility with anything reading
+			// the Routable wire term.
 			if got := m[MetadataKeyExternalID]; got != tc.wantPIRef {
 				t.Errorf("external_id = %q, want %q (must equal alias)", got, tc.wantPIRef)
 			}
@@ -55,8 +57,8 @@ func TestPayableMetadata_AliasKeys(t *testing.T) {
 	}
 }
 
-// TestReceivableMetadata_AliasKeys mirrors the payable contract for the inbound
-// path so the correlation works regardless of payment direction.
+// TestReceivableMetadata_AliasKeys mirrors the payable contract for the
+// inbound path so the correlation works regardless of payment direction.
 func TestReceivableMetadata_AliasKeys(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -86,7 +88,7 @@ func TestReceivableMetadata_AliasKeys(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			m := receivableMetadata(tc.receivable)
+			m := ReceivableMetadata(tc.receivable)
 			if got := m[MetadataKeyRoutablePayableID]; got != tc.wantPayable {
 				t.Errorf("payable_id = %q, want %q", got, tc.wantPayable)
 			}
