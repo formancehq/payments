@@ -19,6 +19,23 @@ const (
 	MetadataKeyActingTeamMember = MetadataPrefix + "acting_team_member"
 )
 
+// Self-describing aliases written on synced PSPPayment metadata so dashboards
+// and operators don't have to know Routable's wire vocabulary to correlate a
+// Payment with the originating Formance Transfer (PaymentInitiation).
+//
+// MetadataKeyPaymentInitiationReference mirrors MetadataKeyExternalID when set
+// — same value, more obvious name. Present only when the payable was created
+// via Formance (we always set Routable's external_id to pi.Reference).
+//
+// MetadataKeyRoutablePayableID mirrors the Routable payable UUID. The same
+// value lives on PSPPayment.Reference today, but persisting it under a
+// stable, well-known metadata key keeps the wire identifier discoverable
+// even if Reference is ever repurposed by a downstream change.
+const (
+	MetadataKeyPaymentInitiationReference = MetadataPrefix + "payment_initiation_reference"
+	MetadataKeyRoutablePayableID          = MetadataPrefix + "payable_id"
+)
+
 // Default Routable payable type/delivery_method when the caller does not
 // provide overrides. ach + ach_standard is the most common money-out path
 // and the safest default for an out-of-the-box experience.
@@ -81,28 +98,36 @@ func settingsAccountMetadata(a client.Account) map[string]string {
 }
 
 // payableMetadata captures the few bookkeeping fields Routable returns on a
-// payable that we want to keep on the Formance PSPPayment.
+// payable that we want to keep on the Formance PSPPayment. Includes the
+// self-describing aliases (payment_initiation_reference, payable_id) so a
+// reviewer scanning Payment.metadata can correlate to a Transfer without
+// knowing Routable's wire vocabulary.
 func payableMetadata(p client.Payable) map[string]string {
 	return stripEmpty(map[string]string{
-		MetadataPrefix + "type":            p.Type,
-		MetadataPrefix + "delivery_method": p.DeliveryMethod,
-		MetadataPrefix + "status":          p.Status,
-		MetadataPrefix + "external_id":     p.ExternalID,
-		MetadataPrefix + "memo":            p.Memo,
-		MetadataPrefix + "reference":       p.Reference,
+		MetadataPrefix + "type":               p.Type,
+		MetadataPrefix + "delivery_method":    p.DeliveryMethod,
+		MetadataPrefix + "status":             p.Status,
+		MetadataKeyExternalID:                 p.ExternalID,
+		MetadataKeyPaymentInitiationReference: p.ExternalID,
+		MetadataKeyRoutablePayableID:          p.ID,
+		MetadataPrefix + "memo":               p.Memo,
+		MetadataPrefix + "reference":          p.Reference,
 	})
 }
 
 // receivableMetadata captures the few bookkeeping fields Routable returns on
-// a receivable that we want to keep on the Formance PSPPayment.
+// a receivable that we want to keep on the Formance PSPPayment. Mirrors the
+// payable-side aliasing so the correlation contract is symmetrical.
 func receivableMetadata(r client.Receivable) map[string]string {
 	return stripEmpty(map[string]string{
-		MetadataPrefix + "type":            r.Type,
-		MetadataPrefix + "delivery_method": r.DeliveryMethod,
-		MetadataPrefix + "status":          r.Status,
-		MetadataPrefix + "external_id":     r.ExternalID,
-		MetadataPrefix + "memo":            r.Memo,
-		MetadataPrefix + "reference":       r.Reference,
+		MetadataPrefix + "type":               r.Type,
+		MetadataPrefix + "delivery_method":    r.DeliveryMethod,
+		MetadataPrefix + "status":             r.Status,
+		MetadataKeyExternalID:                 r.ExternalID,
+		MetadataKeyPaymentInitiationReference: r.ExternalID,
+		MetadataKeyRoutablePayableID:          r.ID,
+		MetadataPrefix + "memo":               r.Memo,
+		MetadataPrefix + "reference":          r.Reference,
 	})
 }
 
