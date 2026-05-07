@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: b2a8396780edd89fe9da1e4b470130c6
+  docChecksum: b33e18bfe10f6dee41329897b2ba5f0c
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -10,6 +10,7 @@ management:
 features:
   go:
     additionalDependencies: 0.1.0
+    additionalProperties: 0.1.2
     bigint: 0.0.2
     constsAndDefaults: 0.1.11
     core: 3.7.2
@@ -110,6 +111,8 @@ generatedFiles:
   - /models/components/updatetransferinitiationstatusrequest.go
   - /models/components/v3account.go
   - /models/components/v3accountscursorresponse.go
+  - /models/components/v3accountsfilter.go
+  - /models/components/v3accountsquerybuilder.go
   - /models/components/v3accounttypeenum.go
   - /models/components/v3address.go
   - /models/components/v3addressrequest.go
@@ -121,6 +124,8 @@ generatedFiles:
   - /models/components/v3bankaccount.go
   - /models/components/v3bankaccountrelatedaccount.go
   - /models/components/v3bankaccountscursorresponse.go
+  - /models/components/v3bankaccountsfilter.go
+  - /models/components/v3bankaccountsquerybuilder.go
   - /models/components/v3bankingbridgeconfig.go
   - /models/components/v3bankingcircleconfig.go
   - /models/components/v3coinbaseprimeconfig.go
@@ -133,11 +138,17 @@ generatedFiles:
   - /models/components/v3connectorscheduleinstancescursorresponse.go
   - /models/components/v3connectorscheduleresponse.go
   - /models/components/v3connectorschedulescursorresponse.go
+  - /models/components/v3connectorschedulesfilter.go
+  - /models/components/v3connectorschedulesquerybuilder.go
   - /models/components/v3connectorscursorresponse.go
+  - /models/components/v3connectorsfilter.go
+  - /models/components/v3connectorsquerybuilder.go
   - /models/components/v3contactdetails.go
   - /models/components/v3contactdetailsrequest.go
   - /models/components/v3conversion.go
   - /models/components/v3conversionscursorresponse.go
+  - /models/components/v3conversionsfilter.go
+  - /models/components/v3conversionsquerybuilder.go
   - /models/components/v3conversionstatusenum.go
   - /models/components/v3createaccountrequest.go
   - /models/components/v3createaccountresponse.go
@@ -179,11 +190,17 @@ generatedFiles:
   - /models/components/v3mangopayconfig.go
   - /models/components/v3modulrconfig.go
   - /models/components/v3moneycorpconfig.go
+  - /models/components/v3openbankingconnectionattemptsfilter.go
+  - /models/components/v3openbankingconnectionattemptsquerybuilder.go
   - /models/components/v3openbankingconnectionattemptstatusenum.go
+  - /models/components/v3openbankingconnectionsfilter.go
+  - /models/components/v3openbankingconnectionsquerybuilder.go
   - /models/components/v3order.go
   - /models/components/v3orderadjustment.go
   - /models/components/v3orderdirectionenum.go
   - /models/components/v3orderscursorresponse.go
+  - /models/components/v3ordersfilter.go
+  - /models/components/v3ordersquerybuilder.go
   - /models/components/v3orderstatusenum.go
   - /models/components/v3ordertypeenum.go
   - /models/components/v3payment.go
@@ -191,8 +208,12 @@ generatedFiles:
   - /models/components/v3paymentinitiation.go
   - /models/components/v3paymentinitiationadjustment.go
   - /models/components/v3paymentinitiationadjustmentscursorresponse.go
+  - /models/components/v3paymentinitiationadjustmentsfilter.go
+  - /models/components/v3paymentinitiationadjustmentsquerybuilder.go
   - /models/components/v3paymentinitiationrelatedpaymentscursorresponse.go
   - /models/components/v3paymentinitiationscursorresponse.go
+  - /models/components/v3paymentinitiationsfilter.go
+  - /models/components/v3paymentinitiationsquerybuilder.go
   - /models/components/v3paymentinitiationstatusenum.go
   - /models/components/v3paymentinitiationtypeenum.go
   - /models/components/v3paymentscursorresponse.go
@@ -207,8 +228,12 @@ generatedFiles:
   - /models/components/v3paymentserviceuserlinkattempt.go
   - /models/components/v3paymentserviceuserlinkattemptscursorresponse.go
   - /models/components/v3paymentserviceuserscursorresponse.go
+  - /models/components/v3paymentserviceusersfilter.go
+  - /models/components/v3paymentserviceusersquerybuilder.go
   - /models/components/v3paymentserviceuserupdatelinkrequest.go
   - /models/components/v3paymentserviceuserupdatelinkresponse.go
+  - /models/components/v3paymentsfilter.go
+  - /models/components/v3paymentsquerybuilder.go
   - /models/components/v3paymentstatusenum.go
   - /models/components/v3paymenttypeenum.go
   - /models/components/v3plaidconfig.go
@@ -216,6 +241,8 @@ generatedFiles:
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
+  - /models/components/v3poolsfilter.go
+  - /models/components/v3poolsquerybuilder.go
   - /models/components/v3pooltypeenum.go
   - /models/components/v3powensconfig.go
   - /models/components/v3qontoconfig.go
@@ -460,6 +487,8 @@ generatedFiles:
   - docs/models/components/v3accountraw.md
   - docs/models/components/v3accountscursorresponse.md
   - docs/models/components/v3accountscursorresponsecursor.md
+  - docs/models/components/v3accountsfilter.md
+  - docs/models/components/v3accountsquerybuilder.md
   - docs/models/components/v3accounttypeenum.md
   - docs/models/components/v3address.md
   - docs/models/components/v3addressrequest.md
@@ -474,6 +503,8 @@ generatedFiles:
   - docs/models/components/v3bankaccountrelatedaccount.md
   - docs/models/components/v3bankaccountscursorresponse.md
   - docs/models/components/v3bankaccountscursorresponsecursor.md
+  - docs/models/components/v3bankaccountsfilter.md
+  - docs/models/components/v3bankaccountsquerybuilder.md
   - docs/models/components/v3bankingbridgeconfig.md
   - docs/models/components/v3bankingcircleconfig.md
   - docs/models/components/v3coinbaseprimeconfig.md
@@ -489,13 +520,19 @@ generatedFiles:
   - docs/models/components/v3connectorscheduleresponse.md
   - docs/models/components/v3connectorschedulescursorresponse.md
   - docs/models/components/v3connectorschedulescursorresponsecursor.md
+  - docs/models/components/v3connectorschedulesfilter.md
+  - docs/models/components/v3connectorschedulesquerybuilder.md
   - docs/models/components/v3connectorscursorresponse.md
   - docs/models/components/v3connectorscursorresponsecursor.md
+  - docs/models/components/v3connectorsfilter.md
+  - docs/models/components/v3connectorsquerybuilder.md
   - docs/models/components/v3contactdetails.md
   - docs/models/components/v3contactdetailsrequest.md
   - docs/models/components/v3conversion.md
   - docs/models/components/v3conversionscursorresponse.md
   - docs/models/components/v3conversionscursorresponsecursor.md
+  - docs/models/components/v3conversionsfilter.md
+  - docs/models/components/v3conversionsquerybuilder.md
   - docs/models/components/v3conversionstatusenum.md
   - docs/models/components/v3createaccountrequest.md
   - docs/models/components/v3createaccountresponse.md
@@ -540,13 +577,19 @@ generatedFiles:
   - docs/models/components/v3mangopayconfig.md
   - docs/models/components/v3modulrconfig.md
   - docs/models/components/v3moneycorpconfig.md
+  - docs/models/components/v3openbankingconnectionattemptsfilter.md
+  - docs/models/components/v3openbankingconnectionattemptsquerybuilder.md
   - docs/models/components/v3openbankingconnectionattemptstatusenum.md
+  - docs/models/components/v3openbankingconnectionsfilter.md
+  - docs/models/components/v3openbankingconnectionsquerybuilder.md
   - docs/models/components/v3order.md
   - docs/models/components/v3orderadjustment.md
   - docs/models/components/v3orderadjustmentraw.md
   - docs/models/components/v3orderdirectionenum.md
   - docs/models/components/v3orderscursorresponse.md
   - docs/models/components/v3orderscursorresponsecursor.md
+  - docs/models/components/v3ordersfilter.md
+  - docs/models/components/v3ordersquerybuilder.md
   - docs/models/components/v3orderstatusenum.md
   - docs/models/components/v3ordertypeenum.md
   - docs/models/components/v3payment.md
@@ -556,10 +599,14 @@ generatedFiles:
   - docs/models/components/v3paymentinitiationadjustment.md
   - docs/models/components/v3paymentinitiationadjustmentscursorresponse.md
   - docs/models/components/v3paymentinitiationadjustmentscursorresponsecursor.md
+  - docs/models/components/v3paymentinitiationadjustmentsfilter.md
+  - docs/models/components/v3paymentinitiationadjustmentsquerybuilder.md
   - docs/models/components/v3paymentinitiationrelatedpaymentscursorresponse.md
   - docs/models/components/v3paymentinitiationrelatedpaymentscursorresponsecursor.md
   - docs/models/components/v3paymentinitiationscursorresponse.md
   - docs/models/components/v3paymentinitiationscursorresponsecursor.md
+  - docs/models/components/v3paymentinitiationsfilter.md
+  - docs/models/components/v3paymentinitiationsquerybuilder.md
   - docs/models/components/v3paymentinitiationstatusenum.md
   - docs/models/components/v3paymentinitiationtypeenum.md
   - docs/models/components/v3paymentscursorresponse.md
@@ -581,8 +628,12 @@ generatedFiles:
   - docs/models/components/v3paymentserviceuserlinkattemptscursorresponsecursor.md
   - docs/models/components/v3paymentserviceuserscursorresponse.md
   - docs/models/components/v3paymentserviceuserscursorresponsecursor.md
+  - docs/models/components/v3paymentserviceusersfilter.md
+  - docs/models/components/v3paymentserviceusersquerybuilder.md
   - docs/models/components/v3paymentserviceuserupdatelinkrequest.md
   - docs/models/components/v3paymentserviceuserupdatelinkresponse.md
+  - docs/models/components/v3paymentsfilter.md
+  - docs/models/components/v3paymentsquerybuilder.md
   - docs/models/components/v3paymentstatusenum.md
   - docs/models/components/v3paymenttypeenum.md
   - docs/models/components/v3plaidconfig.md
@@ -591,6 +642,8 @@ generatedFiles:
   - docs/models/components/v3poolbalancesresponse.md
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3poolsfilter.md
+  - docs/models/components/v3poolsquerybuilder.md
   - docs/models/components/v3pooltypeenum.md
   - docs/models/components/v3powensconfig.md
   - docs/models/components/v3qontoconfig.md

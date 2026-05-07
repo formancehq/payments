@@ -47,7 +47,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3AccountsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -166,7 +166,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3BankAccountsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -274,7 +274,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3ConnectorsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -462,7 +462,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3ConnectorSchedulesQueryBuilder"
       responses:
         "200":
           description: OK
@@ -566,7 +566,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3OrdersQueryBuilder"
       responses:
         "200":
           description: OK
@@ -649,7 +649,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3ConversionsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -746,7 +746,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3PaymentsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -861,7 +861,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3PaymentInitiationsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -1045,7 +1045,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3PaymentInitiationAdjustmentsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -1138,7 +1138,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3PaymentServiceUsersQueryBuilder"
       responses:
         "200":
           description: OK
@@ -1222,7 +1222,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3OpenBankingConnectionsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -1338,7 +1338,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3OpenBankingConnectionsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -1374,7 +1374,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3OpenBankingConnectionAttemptsQueryBuilder"
       responses:
         "200":
           description: OK
@@ -1579,7 +1579,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/V3QueryBuilder"
+              $ref: "#/components/schemas/V3PoolsQueryBuilder"
       responses:
         "200":
           description: OK

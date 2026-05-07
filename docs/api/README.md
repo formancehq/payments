@@ -142,7 +142,18 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "id": "string",
+    "reference": "string",
+    "connector_id": "string",
+    "type": "UNKNOWN",
+    "default_asset": "string",
+    "name": "string",
+    "psu_id": "string",
+    "open_banking_connection_id": "string"
+  }
+}
 ```
 
 <h3 id="list-all-accounts-parameters">Parameters</h3>
@@ -151,7 +162,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3AccountsQueryBuilder](#schemav3accountsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -419,7 +430,14 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "name": "string",
+    "country": "string",
+    "id": "string",
+    "psu_id": "string"
+  }
+}
 ```
 
 <h3 id="list-all-bank-accounts-parameters">Parameters</h3>
@@ -428,7 +446,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3BankAccountsQueryBuilder](#schemav3bankaccountsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -672,7 +690,13 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "provider": "string",
+    "name": "string",
+    "id": "string"
+  }
+}
 ```
 
 <h3 id="list-all-connectors-parameters">Parameters</h3>
@@ -681,7 +705,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3ConnectorsQueryBuilder](#schemav3connectorsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -1061,7 +1085,12 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "id": "string",
+    "connector_id": "string"
+  }
+}
 ```
 
 <h3 id="list-all-connector-schedules-parameters">Parameters</h3>
@@ -1071,7 +1100,7 @@ Accept: application/json
 |connectorID|path|string|true|The connector ID|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3ConnectorSchedulesQueryBuilder](#schemav3connectorschedulesquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -1264,7 +1293,23 @@ the exchange.
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "direction": "UNKNOWN",
+    "source_asset": "string",
+    "destination_asset": "string",
+    "type": "UNKNOWN",
+    "status": "UNKNOWN",
+    "time_in_force": "UNKNOWN",
+    "base_quantity_ordered": 0,
+    "base_quantity_filled": 0,
+    "limit_price": 0,
+    "fee": 0
+  }
+}
 ```
 
 <h3 id="list-orders-ingested-from-exchange-style-connectors-parameters">Parameters</h3>
@@ -1273,7 +1318,7 @@ the exchange.
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3OrdersQueryBuilder](#schemav3ordersquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -1491,7 +1536,20 @@ such as `connectorID`, `reference`, `status`, `sourceAsset`,
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "source_asset": "string",
+    "destination_asset": "string",
+    "status": "UNKNOWN",
+    "source_account_id": "string",
+    "destination_account_id": "string",
+    "source_amount": 0,
+    "destination_amount": 0
+  }
+}
 ```
 
 <h3 id="list-currency-and-asset-conversions-ingested-from-connectors-parameters">Parameters</h3>
@@ -1500,7 +1558,7 @@ such as `connectorID`, `reference`, `status`, `sourceAsset`,
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3ConversionsQueryBuilder](#schemav3conversionsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -1762,7 +1820,23 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "type": "UNKNOWN",
+    "asset": "string",
+    "scheme": "string",
+    "status": "UNKNOWN",
+    "source_account_id": "string",
+    "destination_account_id": "string",
+    "psu_id": "string",
+    "open_banking_connection_id": "string",
+    "initial_amount": 0,
+    "amount": 0
+  }
+}
 ```
 
 <h3 id="list-all-payments-parameters">Parameters</h3>
@@ -1771,7 +1845,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3PaymentsQueryBuilder](#schemav3paymentsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -2065,7 +2139,19 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "type": "UNKNOWN",
+    "asset": "string",
+    "source_account_id": "string",
+    "destination_account_id": "string",
+    "status": "UNKNOWN",
+    "amount": 0
+  }
+}
 ```
 
 <h3 id="list-all-payment-initiations-parameters">Parameters</h3>
@@ -2074,7 +2160,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3PaymentInitiationsQueryBuilder](#schemav3paymentinitiationsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -2453,7 +2539,11 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "status": "UNKNOWN"
+  }
+}
 ```
 
 <h3 id="list-all-payment-initiation-adjustments-parameters">Parameters</h3>
@@ -2463,7 +2553,7 @@ Accept: application/json
 |paymentInitiationID|path|string|true|The payment initiation ID|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3PaymentInitiationAdjustmentsQueryBuilder](#schemav3paymentinitiationadjustmentsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -2698,7 +2788,11 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "id": "string"
+  }
+}
 ```
 
 <h3 id="list-all-payment-service-users-parameters">Parameters</h3>
@@ -2707,7 +2801,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3PaymentServiceUsersQueryBuilder](#schemav3paymentserviceusersquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -2896,7 +2990,12 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "connection_id": "string",
+    "status": "ACTIVE"
+  }
+}
 ```
 
 <h3 id="list-all-connections-for-a-payment-service-user-parameters">Parameters</h3>
@@ -2906,7 +3005,7 @@ Accept: application/json
 |paymentServiceUserID|path|string|true|The payment service user ID|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3OpenBankingConnectionsQueryBuilder](#schemav3openbankingconnectionsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -3120,7 +3219,12 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "connection_id": "string",
+    "status": "ACTIVE"
+  }
+}
 ```
 
 <h3 id="list-enabled-connections-for-a-payment-service-user-on-a-connector-(i.e.-the-various-banks-psuser-has-enabled-on-the-connector)-parameters">Parameters</h3>
@@ -3131,7 +3235,7 @@ Accept: application/json
 |connectorID|path|string|true|The connector ID|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3OpenBankingConnectionsQueryBuilder](#schemav3openbankingconnectionsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -3198,7 +3302,12 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "id": "string",
+    "status": "pending"
+  }
+}
 ```
 
 <h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector.
@@ -3211,7 +3320,7 @@ allows-to-check-if-users-used-the-link-and-completed-the-oauth-flow.
 |connectorID|path|string|true|The connector ID|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3OpenBankingConnectionAttemptsQueryBuilder](#schemav3openbankingconnectionattemptsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -3589,7 +3698,13 @@ Accept: application/json
 > Body parameter
 
 ```json
-{}
+{
+  "$match": {
+    "name": "string",
+    "id": "string",
+    "account_id": "string"
+  }
+}
 ```
 
 <h3 id="list-all-pools-parameters">Parameters</h3>
@@ -3598,7 +3713,7 @@ Accept: application/json
 |---|---|---|---|---|
 |pageSize|query|integer(int64)|false|The number of items to return|
 |cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+|body|body|[V3PoolsQueryBuilder](#schemav3poolsquerybuilder)|false|none|
 
 #### Detailed descriptions
 
@@ -7877,6 +7992,839 @@ Query and dynamic pools are available from Connectivity v3.1
 |*anonymous*|MISSING_OR_INVALID_BODY|
 |*anonymous*|CONFLICT|
 |*anonymous*|NOT_FOUND|
+
+<h2 id="tocS_V3AccountsFilter">V3AccountsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3accountsfilter"></a>
+<a id="schema_V3AccountsFilter"></a>
+<a id="tocSv3accountsfilter"></a>
+<a id="tocsv3accountsfilter"></a>
+
+```json
+{
+  "id": "string",
+  "reference": "string",
+  "connector_id": "string",
+  "type": "UNKNOWN",
+  "default_asset": "string",
+  "name": "string",
+  "psu_id": "string",
+  "open_banking_connection_id": "string"
+}
+
+```
+
+Filterable properties for /v3/accounts.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|false|none|none|
+|reference|string|false|none|none|
+|connector_id|string|false|none|none|
+|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|false|none|none|
+|default_asset|string|false|none|none|
+|name|string|false|none|none|
+|psu_id|string|false|none|none|
+|open_banking_connection_id|string|false|none|none|
+
+<h2 id="tocS_V3AccountsQueryBuilder">V3AccountsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3accountsquerybuilder"></a>
+<a id="schema_V3AccountsQueryBuilder"></a>
+<a id="tocSv3accountsquerybuilder"></a>
+<a id="tocsv3accountsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "id": "string",
+    "reference": "string",
+    "connector_id": "string",
+    "type": "UNKNOWN",
+    "default_asset": "string",
+    "name": "string",
+    "psu_id": "string",
+    "open_banking_connection_id": "string"
+  }
+}
+
+```
+
+Query body for /v3/accounts. Filterable keys are listed on V3AccountsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3AccountsFilter](#schemav3accountsfilter)|false|none|Filterable properties for /v3/accounts.|
+
+<h2 id="tocS_V3BankAccountsFilter">V3BankAccountsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3bankaccountsfilter"></a>
+<a id="schema_V3BankAccountsFilter"></a>
+<a id="tocSv3bankaccountsfilter"></a>
+<a id="tocsv3bankaccountsfilter"></a>
+
+```json
+{
+  "name": "string",
+  "country": "string",
+  "id": "string",
+  "psu_id": "string"
+}
+
+```
+
+Filterable properties for /v3/bank-accounts.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|name|string|false|none|none|
+|country|string|false|none|none|
+|id|string|false|none|none|
+|psu_id|string|false|none|none|
+
+<h2 id="tocS_V3BankAccountsQueryBuilder">V3BankAccountsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3bankaccountsquerybuilder"></a>
+<a id="schema_V3BankAccountsQueryBuilder"></a>
+<a id="tocSv3bankaccountsquerybuilder"></a>
+<a id="tocsv3bankaccountsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "name": "string",
+    "country": "string",
+    "id": "string",
+    "psu_id": "string"
+  }
+}
+
+```
+
+Query body for /v3/bank-accounts. Filterable keys are listed on V3BankAccountsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3BankAccountsFilter](#schemav3bankaccountsfilter)|false|none|Filterable properties for /v3/bank-accounts.|
+
+<h2 id="tocS_V3ConnectorsFilter">V3ConnectorsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorsfilter"></a>
+<a id="schema_V3ConnectorsFilter"></a>
+<a id="tocSv3connectorsfilter"></a>
+<a id="tocsv3connectorsfilter"></a>
+
+```json
+{
+  "provider": "string",
+  "name": "string",
+  "id": "string"
+}
+
+```
+
+Filterable properties for /v3/connectors.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|provider|string|false|none|Connector provider name. Compared case-insensitively.|
+|name|string|false|none|none|
+|id|string|false|none|none|
+
+<h2 id="tocS_V3ConnectorsQueryBuilder">V3ConnectorsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorsquerybuilder"></a>
+<a id="schema_V3ConnectorsQueryBuilder"></a>
+<a id="tocSv3connectorsquerybuilder"></a>
+<a id="tocsv3connectorsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "provider": "string",
+    "name": "string",
+    "id": "string"
+  }
+}
+
+```
+
+Query body for /v3/connectors. Filterable keys are listed on V3ConnectorsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3ConnectorsFilter](#schemav3connectorsfilter)|false|none|Filterable properties for /v3/connectors.|
+
+<h2 id="tocS_V3ConnectorSchedulesFilter">V3ConnectorSchedulesFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorschedulesfilter"></a>
+<a id="schema_V3ConnectorSchedulesFilter"></a>
+<a id="tocSv3connectorschedulesfilter"></a>
+<a id="tocsv3connectorschedulesfilter"></a>
+
+```json
+{
+  "id": "string",
+  "connector_id": "string"
+}
+
+```
+
+Filterable properties for /v3/connectors/{connectorID}/schedules.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|false|none|none|
+|connector_id|string|false|none|none|
+
+<h2 id="tocS_V3ConnectorSchedulesQueryBuilder">V3ConnectorSchedulesQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorschedulesquerybuilder"></a>
+<a id="schema_V3ConnectorSchedulesQueryBuilder"></a>
+<a id="tocSv3connectorschedulesquerybuilder"></a>
+<a id="tocsv3connectorschedulesquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "id": "string",
+    "connector_id": "string"
+  }
+}
+
+```
+
+Query body for /v3/connectors/{connectorID}/schedules. Filterable keys are listed on V3ConnectorSchedulesFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3ConnectorSchedulesFilter](#schemav3connectorschedulesfilter)|false|none|Filterable properties for /v3/connectors/{connectorID}/schedules.|
+
+<h2 id="tocS_V3ConversionsFilter">V3ConversionsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversionsfilter"></a>
+<a id="schema_V3ConversionsFilter"></a>
+<a id="tocSv3conversionsfilter"></a>
+<a id="tocsv3conversionsfilter"></a>
+
+```json
+{
+  "reference": "string",
+  "id": "string",
+  "connector_id": "string",
+  "source_asset": "string",
+  "destination_asset": "string",
+  "status": "UNKNOWN",
+  "source_account_id": "string",
+  "destination_account_id": "string",
+  "source_amount": 0,
+  "destination_amount": 0
+}
+
+```
+
+Filterable properties for /v3/conversions.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|reference|string|false|none|none|
+|id|string|false|none|none|
+|connector_id|string|false|none|none|
+|source_asset|string|false|none|none|
+|destination_asset|string|false|none|none|
+|status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|false|none|Lifecycle of a conversion.<br>`PENDING` — accepted by the PSP, not yet settled.<br>`COMPLETED` — settled, terminal.<br>`FAILED` — rejected or reverted, terminal. See `error`.|
+|source_account_id|string|false|none|none|
+|destination_account_id|string|false|none|none|
+|source_amount|integer(bigint)|false|none|none|
+|destination_amount|integer(bigint)|false|none|none|
+
+<h2 id="tocS_V3ConversionsQueryBuilder">V3ConversionsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3conversionsquerybuilder"></a>
+<a id="schema_V3ConversionsQueryBuilder"></a>
+<a id="tocSv3conversionsquerybuilder"></a>
+<a id="tocsv3conversionsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "source_asset": "string",
+    "destination_asset": "string",
+    "status": "UNKNOWN",
+    "source_account_id": "string",
+    "destination_account_id": "string",
+    "source_amount": 0,
+    "destination_amount": 0
+  }
+}
+
+```
+
+Query body for /v3/conversions. Filterable keys are listed on V3ConversionsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3ConversionsFilter](#schemav3conversionsfilter)|false|none|Filterable properties for /v3/conversions.|
+
+<h2 id="tocS_V3OpenBankingConnectionAttemptsFilter">V3OpenBankingConnectionAttemptsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3openbankingconnectionattemptsfilter"></a>
+<a id="schema_V3OpenBankingConnectionAttemptsFilter"></a>
+<a id="tocSv3openbankingconnectionattemptsfilter"></a>
+<a id="tocsv3openbankingconnectionattemptsfilter"></a>
+
+```json
+{
+  "id": "string",
+  "status": "pending"
+}
+
+```
+
+Filterable properties for /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/attempts.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|false|none|none|
+|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|false|none|none|
+
+<h2 id="tocS_V3OpenBankingConnectionAttemptsQueryBuilder">V3OpenBankingConnectionAttemptsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3openbankingconnectionattemptsquerybuilder"></a>
+<a id="schema_V3OpenBankingConnectionAttemptsQueryBuilder"></a>
+<a id="tocSv3openbankingconnectionattemptsquerybuilder"></a>
+<a id="tocsv3openbankingconnectionattemptsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "id": "string",
+    "status": "pending"
+  }
+}
+
+```
+
+Query body for /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/attempts. Filterable keys are listed on V3OpenBankingConnectionAttemptsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3OpenBankingConnectionAttemptsFilter](#schemav3openbankingconnectionattemptsfilter)|false|none|Filterable properties for /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/attempts.|
+
+<h2 id="tocS_V3OpenBankingConnectionsFilter">V3OpenBankingConnectionsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3openbankingconnectionsfilter"></a>
+<a id="schema_V3OpenBankingConnectionsFilter"></a>
+<a id="tocSv3openbankingconnectionsfilter"></a>
+<a id="tocsv3openbankingconnectionsfilter"></a>
+
+```json
+{
+  "connection_id": "string",
+  "status": "ACTIVE"
+}
+
+```
+
+Filterable properties for /v3/payment-service-users/{paymentServiceUserID}/connections.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|connection_id|string|false|none|none|
+|status|[V3ConnectionStatusEnum](#schemav3connectionstatusenum)|false|none|none|
+
+<h2 id="tocS_V3OpenBankingConnectionsQueryBuilder">V3OpenBankingConnectionsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3openbankingconnectionsquerybuilder"></a>
+<a id="schema_V3OpenBankingConnectionsQueryBuilder"></a>
+<a id="tocSv3openbankingconnectionsquerybuilder"></a>
+<a id="tocsv3openbankingconnectionsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "connection_id": "string",
+    "status": "ACTIVE"
+  }
+}
+
+```
+
+Query body for /v3/payment-service-users/{paymentServiceUserID}/connections. Filterable keys are listed on V3OpenBankingConnectionsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3OpenBankingConnectionsFilter](#schemav3openbankingconnectionsfilter)|false|none|Filterable properties for /v3/payment-service-users/{paymentServiceUserID}/connections.|
+
+<h2 id="tocS_V3OrdersFilter">V3OrdersFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3ordersfilter"></a>
+<a id="schema_V3OrdersFilter"></a>
+<a id="tocSv3ordersfilter"></a>
+<a id="tocsv3ordersfilter"></a>
+
+```json
+{
+  "reference": "string",
+  "id": "string",
+  "connector_id": "string",
+  "direction": "UNKNOWN",
+  "source_asset": "string",
+  "destination_asset": "string",
+  "type": "UNKNOWN",
+  "status": "UNKNOWN",
+  "time_in_force": "UNKNOWN",
+  "base_quantity_ordered": 0,
+  "base_quantity_filled": 0,
+  "limit_price": 0,
+  "fee": 0
+}
+
+```
+
+Filterable properties for /v3/orders.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|reference|string|false|none|none|
+|id|string|false|none|none|
+|connector_id|string|false|none|none|
+|direction|[V3OrderDirectionEnum](#schemav3orderdirectionenum)|false|none|Whether an order buys or sells the base asset.|
+|source_asset|string|false|none|none|
+|destination_asset|string|false|none|none|
+|type|[V3OrderTypeEnum](#schemav3ordertypeenum)|false|none|Exchange order type. Determines which price fields are meaningful on<br>`V3Order`: LIMIT-family types use `limitPrice`; STOP-family types use<br>`stopPrice`; TWAP/VWAP are time-weighted execution algorithms.|
+|status|[V3OrderStatusEnum](#schemav3orderstatusenum)|false|none|Lifecycle of an order on the exchange.<br>`PENDING` — accepted by the exchange, not yet working.<br>`OPEN` — live on the book, no fills yet.<br>`PARTIALLY_FILLED` — live on the book, some base quantity filled.<br>`FILLED` — fully filled, terminal.<br>`CANCELLED` — cancelled by the user or system, terminal.<br>`FAILED` — rejected by the exchange, terminal. See `error` for details.<br>`EXPIRED` — `timeInForce` elapsed before full fill, terminal.|
+|time_in_force|[V3TimeInForceEnum](#schemav3timeinforceenum)|false|none|How long an order is valid on the exchange.<br>`GOOD_UNTIL_CANCELLED` — rests until explicitly cancelled.<br>`GOOD_UNTIL_DATE_TIME` — rests until `expiresAt`.<br>`IMMEDIATE_OR_CANCEL` — fill immediately, cancel any unfilled portion.<br>`FILL_OR_KILL` — fill fully and immediately, or cancel entirely.|
+|base_quantity_ordered|integer(bigint)|false|none|none|
+|base_quantity_filled|integer(bigint)|false|none|none|
+|limit_price|integer(bigint)|false|none|none|
+|fee|integer(bigint)|false|none|none|
+
+<h2 id="tocS_V3OrdersQueryBuilder">V3OrdersQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3ordersquerybuilder"></a>
+<a id="schema_V3OrdersQueryBuilder"></a>
+<a id="tocSv3ordersquerybuilder"></a>
+<a id="tocsv3ordersquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "direction": "UNKNOWN",
+    "source_asset": "string",
+    "destination_asset": "string",
+    "type": "UNKNOWN",
+    "status": "UNKNOWN",
+    "time_in_force": "UNKNOWN",
+    "base_quantity_ordered": 0,
+    "base_quantity_filled": 0,
+    "limit_price": 0,
+    "fee": 0
+  }
+}
+
+```
+
+Query body for /v3/orders. Filterable keys are listed on V3OrdersFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3OrdersFilter](#schemav3ordersfilter)|false|none|Filterable properties for /v3/orders.|
+
+<h2 id="tocS_V3PaymentInitiationAdjustmentsFilter">V3PaymentInitiationAdjustmentsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentinitiationadjustmentsfilter"></a>
+<a id="schema_V3PaymentInitiationAdjustmentsFilter"></a>
+<a id="tocSv3paymentinitiationadjustmentsfilter"></a>
+<a id="tocsv3paymentinitiationadjustmentsfilter"></a>
+
+```json
+{
+  "status": "UNKNOWN"
+}
+
+```
+
+Filterable properties for /v3/payment-initiations/{paymentInitiationID}/adjustments.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|false|none|none|
+
+<h2 id="tocS_V3PaymentInitiationAdjustmentsQueryBuilder">V3PaymentInitiationAdjustmentsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentinitiationadjustmentsquerybuilder"></a>
+<a id="schema_V3PaymentInitiationAdjustmentsQueryBuilder"></a>
+<a id="tocSv3paymentinitiationadjustmentsquerybuilder"></a>
+<a id="tocsv3paymentinitiationadjustmentsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "status": "UNKNOWN"
+  }
+}
+
+```
+
+Query body for /v3/payment-initiations/{paymentInitiationID}/adjustments. Filterable keys are listed on V3PaymentInitiationAdjustmentsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3PaymentInitiationAdjustmentsFilter](#schemav3paymentinitiationadjustmentsfilter)|false|none|Filterable properties for /v3/payment-initiations/{paymentInitiationID}/adjustments.|
+
+<h2 id="tocS_V3PaymentInitiationReversalsFilter">V3PaymentInitiationReversalsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentinitiationreversalsfilter"></a>
+<a id="schema_V3PaymentInitiationReversalsFilter"></a>
+<a id="tocSv3paymentinitiationreversalsfilter"></a>
+<a id="tocsv3paymentinitiationreversalsfilter"></a>
+
+```json
+{
+  "reference": "string",
+  "id": "string",
+  "connector_id": "string",
+  "asset": "string",
+  "payment_initiation_id": "string",
+  "amount": 0
+}
+
+```
+
+Filterable properties for /v3/payment-initiation-reversals.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|reference|string|false|none|none|
+|id|string|false|none|none|
+|connector_id|string|false|none|none|
+|asset|string|false|none|none|
+|payment_initiation_id|string|false|none|none|
+|amount|integer(bigint)|false|none|none|
+
+<h2 id="tocS_V3PaymentInitiationReversalsQueryBuilder">V3PaymentInitiationReversalsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentinitiationreversalsquerybuilder"></a>
+<a id="schema_V3PaymentInitiationReversalsQueryBuilder"></a>
+<a id="tocSv3paymentinitiationreversalsquerybuilder"></a>
+<a id="tocsv3paymentinitiationreversalsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "asset": "string",
+    "payment_initiation_id": "string",
+    "amount": 0
+  }
+}
+
+```
+
+Query body for /v3/payment-initiation-reversals. Filterable keys are listed on V3PaymentInitiationReversalsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3PaymentInitiationReversalsFilter](#schemav3paymentinitiationreversalsfilter)|false|none|Filterable properties for /v3/payment-initiation-reversals.|
+
+<h2 id="tocS_V3PaymentInitiationsFilter">V3PaymentInitiationsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentinitiationsfilter"></a>
+<a id="schema_V3PaymentInitiationsFilter"></a>
+<a id="tocSv3paymentinitiationsfilter"></a>
+<a id="tocsv3paymentinitiationsfilter"></a>
+
+```json
+{
+  "reference": "string",
+  "id": "string",
+  "connector_id": "string",
+  "type": "UNKNOWN",
+  "asset": "string",
+  "source_account_id": "string",
+  "destination_account_id": "string",
+  "status": "UNKNOWN",
+  "amount": 0
+}
+
+```
+
+Filterable properties for /v3/payment-initiations.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|reference|string|false|none|none|
+|id|string|false|none|none|
+|connector_id|string|false|none|none|
+|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|false|none|none|
+|asset|string|false|none|none|
+|source_account_id|string|false|none|none|
+|destination_account_id|string|false|none|none|
+|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|false|none|Latest adjustment status of the payment initiation.|
+|amount|integer(bigint)|false|none|none|
+
+<h2 id="tocS_V3PaymentInitiationsQueryBuilder">V3PaymentInitiationsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentinitiationsquerybuilder"></a>
+<a id="schema_V3PaymentInitiationsQueryBuilder"></a>
+<a id="tocSv3paymentinitiationsquerybuilder"></a>
+<a id="tocsv3paymentinitiationsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "type": "UNKNOWN",
+    "asset": "string",
+    "source_account_id": "string",
+    "destination_account_id": "string",
+    "status": "UNKNOWN",
+    "amount": 0
+  }
+}
+
+```
+
+Query body for /v3/payment-initiations. Filterable keys are listed on V3PaymentInitiationsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3PaymentInitiationsFilter](#schemav3paymentinitiationsfilter)|false|none|Filterable properties for /v3/payment-initiations.|
+
+<h2 id="tocS_V3PaymentServiceUsersFilter">V3PaymentServiceUsersFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceusersfilter"></a>
+<a id="schema_V3PaymentServiceUsersFilter"></a>
+<a id="tocSv3paymentserviceusersfilter"></a>
+<a id="tocsv3paymentserviceusersfilter"></a>
+
+```json
+{
+  "id": "string"
+}
+
+```
+
+Filterable properties for /v3/payment-service-users.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|false|none|none|
+
+<h2 id="tocS_V3PaymentServiceUsersQueryBuilder">V3PaymentServiceUsersQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceusersquerybuilder"></a>
+<a id="schema_V3PaymentServiceUsersQueryBuilder"></a>
+<a id="tocSv3paymentserviceusersquerybuilder"></a>
+<a id="tocsv3paymentserviceusersquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "id": "string"
+  }
+}
+
+```
+
+Query body for /v3/payment-service-users. Filterable keys are listed on V3PaymentServiceUsersFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3PaymentServiceUsersFilter](#schemav3paymentserviceusersfilter)|false|none|Filterable properties for /v3/payment-service-users.|
+
+<h2 id="tocS_V3PaymentsFilter">V3PaymentsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentsfilter"></a>
+<a id="schema_V3PaymentsFilter"></a>
+<a id="tocSv3paymentsfilter"></a>
+<a id="tocsv3paymentsfilter"></a>
+
+```json
+{
+  "reference": "string",
+  "id": "string",
+  "connector_id": "string",
+  "type": "UNKNOWN",
+  "asset": "string",
+  "scheme": "string",
+  "status": "UNKNOWN",
+  "source_account_id": "string",
+  "destination_account_id": "string",
+  "psu_id": "string",
+  "open_banking_connection_id": "string",
+  "initial_amount": 0,
+  "amount": 0
+}
+
+```
+
+Filterable properties for /v3/payments.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|reference|string|false|none|none|
+|id|string|false|none|none|
+|connector_id|string|false|none|none|
+|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|false|none|none|
+|asset|string|false|none|none|
+|scheme|string|false|none|none|
+|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|false|none|none|
+|source_account_id|string|false|none|none|
+|destination_account_id|string|false|none|none|
+|psu_id|string|false|none|none|
+|open_banking_connection_id|string|false|none|none|
+|initial_amount|integer(bigint)|false|none|none|
+|amount|integer(bigint)|false|none|none|
+
+<h2 id="tocS_V3PaymentsQueryBuilder">V3PaymentsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentsquerybuilder"></a>
+<a id="schema_V3PaymentsQueryBuilder"></a>
+<a id="tocSv3paymentsquerybuilder"></a>
+<a id="tocsv3paymentsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "reference": "string",
+    "id": "string",
+    "connector_id": "string",
+    "type": "UNKNOWN",
+    "asset": "string",
+    "scheme": "string",
+    "status": "UNKNOWN",
+    "source_account_id": "string",
+    "destination_account_id": "string",
+    "psu_id": "string",
+    "open_banking_connection_id": "string",
+    "initial_amount": 0,
+    "amount": 0
+  }
+}
+
+```
+
+Query body for /v3/payments. Filterable keys are listed on V3PaymentsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3PaymentsFilter](#schemav3paymentsfilter)|false|none|Filterable properties for /v3/payments.|
+
+<h2 id="tocS_V3PoolsFilter">V3PoolsFilter</h2>
+<!-- backwards compatibility -->
+<a id="schemav3poolsfilter"></a>
+<a id="schema_V3PoolsFilter"></a>
+<a id="tocSv3poolsfilter"></a>
+<a id="tocsv3poolsfilter"></a>
+
+```json
+{
+  "name": "string",
+  "id": "string",
+  "account_id": "string"
+}
+
+```
+
+Filterable properties for /v3/pools.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|name|string|false|none|none|
+|id|string|false|none|none|
+|account_id|string|false|none|Filters pools that contain the given account in their members.|
+
+<h2 id="tocS_V3PoolsQueryBuilder">V3PoolsQueryBuilder</h2>
+<!-- backwards compatibility -->
+<a id="schemav3poolsquerybuilder"></a>
+<a id="schema_V3PoolsQueryBuilder"></a>
+<a id="tocSv3poolsquerybuilder"></a>
+<a id="tocsv3poolsquerybuilder"></a>
+
+```json
+{
+  "$match": {
+    "name": "string",
+    "id": "string",
+    "account_id": "string"
+  }
+}
+
+```
+
+Query body for /v3/pools. Filterable keys are listed on V3PoolsFilter.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|$match|[V3PoolsFilter](#schemav3poolsfilter)|false|none|Filterable properties for /v3/pools.|
 
 <h2 id="tocS_V3ConnectorConfig">V3ConnectorConfig</h2>
 <!-- backwards compatibility -->

@@ -14,6 +14,7 @@ import (
 	"github.com/formancehq/go-libs/v3/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage/filters"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
@@ -284,45 +285,25 @@ func NewListPaymentInitiationsQuery(opts bunpaginate.PaginatedQueryOptions[Payme
 func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, string, []any, error) {
 	join := ""
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "reference",
-			key == "id",
-			key == "connector_id",
-			key == "type",
-			key == "asset",
-			key == "source_account_id",
-			key == "destination_account_id":
-			if operator != "$match" {
-				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
-			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-
-		case key == "status":
-			if operator != "$match" {
-				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
-			}
-
+		if clause, args, ok, err := matchMetadataKey("metadata", key, operator, value); ok {
+			return clause, args, err
+		}
+		if err := filters.PaymentInitiations.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		}
+		switch key {
+		case "status":
 			// we only care about the latest adjustment, so we need to sort the adjustments
 			join = `JOIN payment_initiation_adjustments AS current_adj
 ON (current_adj.payment_initiation_id = payment_initiation.id)
 LEFT OUTER JOIN payment_initiation_adjustments newer_adj
 ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort_id < newer_adj.sort_id)`
-
 			return fmt.Sprintf("current_adj.%s = ? AND newer_adj.id IS NULL", key), []any{value}, nil
-		case key == "amount":
+		case "amount":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
-		case metadataRegex.Match([]byte(key)):
-			if operator != "$match" {
-				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
-			}
-			match := metadataRegex.FindAllStringSubmatch(key, 3)
-
-			key := "metadata"
-			return key + " @> ?", []any{map[string]any{
-				match[0][1]: value,
-			}}, nil
+		default:
+			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		}
-		return "", nil, e(fmt.Sprintf("unknown key '%s' when building query", key), ErrValidation)
 	}))
 
 	return join, where, args, err
@@ -707,24 +688,13 @@ func NewListPaymentInitiationAdjustmentsQuery(opts bunpaginate.PaginatedQueryOpt
 
 func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (string, []any, error) {
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "status":
-			if operator != "$match" {
-				return "", nil, e("'status' column can only be used with $match", ErrValidation)
-			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-		case metadataRegex.Match([]byte(key)):
-			if operator != "$match" {
-				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
-			}
-			match := metadataRegex.FindAllStringSubmatch(key, 3)
-			key := "metadata"
-			return key + " @> ?", []any{map[string]any{
-				match[0][1]: value,
-			}}, nil
-		default:
-			return "", nil, e(fmt.Sprintf("unknown key '%s' when building query", key), ErrValidation)
+		if clause, args, ok, err := matchMetadataKey("metadata", key, operator, value); ok {
+			return clause, args, err
 		}
+		if err := filters.PaymentInitiationAdjustments.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		}
+		return fmt.Sprintf("%s = ?", key), []any{value}, nil
 	}))
 	return where, args, err
 }

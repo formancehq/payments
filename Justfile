@@ -32,7 +32,11 @@ compile-connector-capabilities:
     @rm ./compile-capabilities
 
 [group('openapi')]
-compile-api-yaml: compile-connector-configs
+compile-filters:
+    @go run {{justfile_directory()}}/tools/compile-filters --output {{justfile_directory()}}/openapi/v3/v3-filters.generated.yaml
+
+[group('openapi')]
+compile-api-yaml: compile-connector-configs compile-filters
     @npx openapi-merge-cli --config {{justfile_directory()}}/openapi/openapi-merge.json
     @yq -oy {{justfile_directory()}}/openapi.json > openapi.yaml
     @rm {{justfile_directory()}}/openapi.json

@@ -11,8 +11,8 @@ type V3ListPoolsRequest struct {
 	PageSize *int64 `queryParam:"style=form,explode=true,name=pageSize"`
 	// Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
 	//
-	Cursor      *string        `queryParam:"style=form,explode=true,name=cursor"`
-	RequestBody map[string]any `request:"mediaType=application/json"`
+	Cursor              *string                         `queryParam:"style=form,explode=true,name=cursor"`
+	V3PoolsQueryBuilder *components.V3PoolsQueryBuilder `request:"mediaType=application/json"`
 }
 
 func (o *V3ListPoolsRequest) GetPageSize() *int64 {
@@ -29,11 +29,11 @@ func (o *V3ListPoolsRequest) GetCursor() *string {
 	return o.Cursor
 }
 
-func (o *V3ListPoolsRequest) GetRequestBody() map[string]any {
+func (o *V3ListPoolsRequest) GetV3PoolsQueryBuilder() *components.V3PoolsQueryBuilder {
 	if o == nil {
 		return nil
 	}
-	return o.RequestBody
+	return o.V3PoolsQueryBuilder
 }
 
 type V3ListPoolsResponse struct {

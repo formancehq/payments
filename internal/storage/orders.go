@@ -13,6 +13,7 @@ import (
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage/filters"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/uptrace/bun"
 )
@@ -259,37 +260,17 @@ func NewListOrdersQuery(opts bunpaginate.PaginatedQueryOptions[OrderQuery]) List
 
 func (s *store) ordersQueryContext(qb query.Builder) (string, []any, error) {
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "reference",
-			key == "id",
-			key == "connector_id",
-			key == "direction",
-			key == "source_asset",
-			key == "destination_asset",
-			key == "type",
-			key == "status",
-			key == "time_in_force":
-			if operator != "$match" {
-				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
-			}
-			return fmt.Sprintf("o.%s = ?", key), []any{value}, nil
-
-		case key == "base_quantity_ordered",
-			key == "base_quantity_filled",
-			key == "limit_price",
-			key == "fee":
+		if clause, args, ok, err := matchMetadataKey("o.metadata", key, operator, value); ok {
+			return clause, args, err
+		}
+		if err := filters.Orders.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		}
+		switch key {
+		case "base_quantity_ordered", "base_quantity_filled", "limit_price", "fee":
 			return fmt.Sprintf("o.%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
-		case metadataRegex.Match([]byte(key)):
-			if operator != "$match" {
-				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
-			}
-			match := metadataRegex.FindAllStringSubmatch(key, 3)
-
-			return "o.metadata @> ?", []any{map[string]any{
-				match[0][1]: value,
-			}}, nil
 		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+			return fmt.Sprintf("o.%s = ?", key), []any{value}, nil
 		}
 	}))
 

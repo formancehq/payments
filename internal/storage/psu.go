@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage/filters"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -168,25 +169,13 @@ func NewListPSUQuery(opts bunpaginate.PaginatedQueryOptions[PSUQuery]) ListPSUsQ
 
 func (s *store) paymentServiceUsersQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "id":
-			if operator != "$match" {
-				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
-			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-		case metadataRegex.Match([]byte(key)):
-			if operator != "$match" {
-				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
-			}
-			match := metadataRegex.FindAllStringSubmatch(key, 3)
-
-			key := "metadata"
-			return key + " @> ?", []any{map[string]any{
-				match[0][1]: value,
-			}}, nil
-		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+		if clause, args, ok, err := matchMetadataKey("metadata", key, operator, value); ok {
+			return clause, args, err
 		}
+		if err := filters.PaymentServiceUsers.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		}
+		return fmt.Sprintf("%s = ?", key), []any{value}, nil
 	}))
 }
 

@@ -13,6 +13,7 @@ import (
 	internalTime "github.com/formancehq/go-libs/v3/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage/filters"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -547,38 +548,17 @@ func NewListPaymentsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentQuery]) 
 
 func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "reference",
-			key == "id",
-			key == "connector_id",
-			key == "type",
-			key == "asset",
-			key == "scheme",
-			key == "status",
-			key == "source_account_id",
-			key == "destination_account_id",
-			key == "psu_id",
-			key == "open_banking_connection_id":
-			if operator != "$match" {
-				return "", nil, e(fmt.Sprintf("'%s' column can only be used with $match", key), ErrValidation)
-			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-
-		case key == "initial_amount",
-			key == "amount":
+		if clause, args, ok, err := matchMetadataKey("metadata", key, operator, value); ok {
+			return clause, args, err
+		}
+		if err := filters.Payments.Allows(key, operator); err != nil {
+			return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
+		}
+		switch key {
+		case "initial_amount", "amount":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
-		case metadataRegex.Match([]byte(key)):
-			if operator != "$match" {
-				return "", nil, e("'metadata' column can only be used with $match", ErrValidation)
-			}
-			match := metadataRegex.FindAllStringSubmatch(key, 3)
-
-			key := "metadata"
-			return key + " @> ?", []any{map[string]any{
-				match[0][1]: value,
-			}}, nil
 		default:
-			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		}
 	}))
 

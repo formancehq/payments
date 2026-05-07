@@ -13,6 +13,9 @@
         "inputFile": "./v3/v3-schemas.yaml"
       },
       {
+        "inputFile": "./v3/v3-filters.generated.yaml"
+      },
+      {
         "inputFile": "./v3/v3-connectors-config.yaml"
       }
     ],
