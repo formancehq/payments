@@ -10,17 +10,11 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// initiatePayable is the shared CreatePayable plumbing used by both
-// CreateTransfer and CreatePayout. Both flows produce a Routable
-// payable; the only thing that differs at the call site is which engine
-// response envelope wraps the result. Returns the parsed Payable
-// alongside the upstream HTTP status so callers can branch cleanly on
-// 201 (sync, full payable) vs 202 (async, just {id}).
+// initiatePayable is shared by createPayout and createTransfer. It
+// returns the parsed Payable alongside the upstream HTTP status so
+// callers can branch on 201 (sync, full payable) vs 202 (async, just
+// {id}); see MAPPINGS.md §5.4.
 func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitiation) (*client.Payable, int, error) {
-	// Validation lives at the choke point so neither createPayout nor
-	// createTransfer needs to remember to call validatePaymentInitiation
-	// first. CodeRabbit rightly flagged the previous caller-side
-	// duplication.
 	if err := validatePaymentInitiation(pi); err != nil {
 		return nil, 0, err
 	}
@@ -41,18 +35,15 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 	}
 	amount := mappers.FromMinorUnits(pi.Amount, precision)
 
-	// Routable's v1 schema marks line_items[0].description as required,
-	// so we always populate it: caller-supplied override > PI description
-	// > a synthesized fallback referencing the PI reference.
+	// Routable's v1 schema marks line_items[0].description as required;
+	// always populate (override > PI description > synthesized fallback).
 	lineDescription := mappers.FieldOr(pi.Metadata, mappers.MetadataKeyLineDescription, pi.Description)
 	if lineDescription == "" {
 		lineDescription = "Payment " + pi.Reference
 	}
 
-	// SendOn is required by Routable's v1 schema even when sending
-	// immediately. nil pointer => JSON null => "send now". An explicit
-	// YYYY-MM-DD value can be supplied via metadata for future-dated
-	// payables once we wire that key.
+	// SendOn nil => JSON null => "send now". An explicit YYYY-MM-DD can
+	// be wired through metadata for future-dated payables.
 	var sendOn *string
 
 	req := client.CreatePayableRequest{
@@ -75,20 +66,16 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		IdempotencyKey:   pi.Reference,
 	}
 
-	// Per-payout init log. At 200k tx/wk this fires ~20×/min sustained;
-	// keep at Debug to avoid log-volume blow-up. Operators triage
-	// individual payouts via the engine's payment-initiation record
-	// (which already carries pi.Reference); error paths below stay at
-	// Info/Error level for the genuinely interesting events.
+	// Debug-level: at 200k tx/wk this fires ~20×/min. Operators triage
+	// per-payout from the engine's payment-initiation record.
 	p.logger.Debugf("initiating routable payable: type=%s delivery=%s amount=%s %s reference=%s",
 		req.Type, req.DeliveryMethod, req.Amount, req.CurrencyCode, req.Reference)
 	payable, status, err := p.client.CreatePayable(ctx, req)
 	if err != nil {
 		return nil, status, err
 	}
-	// Defensive: a non-error response with no ID is a Routable contract
-	// violation. Surface explicitly rather than letting a downstream
-	// nil-deref or empty PollingPayoutID propagate.
+	// A 2xx with no ID is a Routable contract violation; surface it
+	// rather than producing an empty PollingPayoutID.
 	if payable == nil || payable.ID == "" {
 		return nil, status, errors.New("routable returned an empty payable")
 	}

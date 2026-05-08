@@ -8,20 +8,14 @@ import (
 	"github.com/formancehq/go-libs/v3/currency"
 )
 
-// supportedCurrencies is the ISO 4217 currency table reused across plugins.
-// Routable supports a subset in practice (USD-dominant, plus FX payables);
-// we let the standard helper pick precisions for any code Routable returns.
 var supportedCurrencies = currency.ISO4217Currencies
 
-// FormatAsset wraps currency.FormatAsset so callers in this package use a
-// single source of truth for the supported currency table.
 func FormatAsset(code string) string {
 	return currency.FormatAsset(supportedCurrencies, strings.ToUpper(strings.TrimSpace(code)))
 }
 
-// PrecisionFor returns the ISO 4217 minor-unit precision for code (2 for
-// USD, 0 for JPY, 3 for KWD, ...). When Routable returns an unrecognised
-// code we fail loudly so the caller decides whether to skip or escalate.
+// PrecisionFor errors on unrecognised codes so callers can decide
+// whether to skip the row or escalate, rather than silently defaulting.
 func PrecisionFor(code string) (int, error) {
 	c := strings.ToUpper(strings.TrimSpace(code))
 	if p, ok := supportedCurrencies[c]; ok {
@@ -30,9 +24,9 @@ func PrecisionFor(code string) (int, error) {
 	return 0, fmt.Errorf("unsupported currency %q", code)
 }
 
-// ToMinorUnits converts a decimal Routable amount string ("100.50") to a
-// *big.Int in minor units ("10050" for USD). Negative inputs are preserved.
-// We round half-up at the configured precision.
+// ToMinorUnits parses a decimal string ("100.50") to *big.Int minor units.
+// Half-up rounding is defensive — Routable returns amounts at the
+// configured precision in practice.
 func ToMinorUnits(amount string, precision int) (*big.Int, error) {
 	if strings.TrimSpace(amount) == "" {
 		return nil, fmt.Errorf("empty amount")
@@ -65,7 +59,6 @@ func ToMinorUnits(amount string, precision int) (*big.Int, error) {
 	return out, nil
 }
 
-// FromMinorUnits is the inverse of ToMinorUnits ("10050" → "100.50" for USD).
 func FromMinorUnits(amount *big.Int, precision int) string {
 	if amount == nil {
 		return "0"
@@ -90,9 +83,8 @@ func FromMinorUnits(amount *big.Int, precision int) string {
 	return out
 }
 
-// SplitAsset splits a Formance asset string ("USD/2") into its currency
-// code and precision parts. We accept the prefixed form and the bare
-// currency code so PSPPaymentInitiation values from older callers work.
+// SplitAsset accepts both "USD/2" and bare "USD" so older callers keep
+// working.
 func SplitAsset(asset string) (string, int, error) {
 	for i := 0; i < len(asset); i++ {
 		if asset[i] == '/' {

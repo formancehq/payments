@@ -9,10 +9,9 @@ import (
 )
 
 // CompanyToPSPAccount maps a Routable company onto an external PSPAccount.
-// The Generic-Connector adapter used to fan out to GET
-// /v1/companies/{id}/payment-methods per row; the dedicated plugin
-// deliberately does not — payment-method resolution is deferred to
-// payable creation, which is the only place it actually matters.
+// We deliberately do NOT fan out to GET /v1/companies/{id}/payment-methods
+// per row; payment-method resolution is deferred to payable creation,
+// which is the only place it actually matters.
 func CompanyToPSPAccount(co client.Company) (models.PSPAccount, error) {
 	raw, err := json.Marshal(co)
 	if err != nil {

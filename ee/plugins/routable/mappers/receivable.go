@@ -9,9 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// ReceivableToPSPPayment converts a Routable receivable into a PSPPayment
-// of PAYIN type. Mirror of PayableToPSPPayment with source/destination
-// flipped.
 func ReceivableToPSPPayment(r client.Receivable) (models.PSPPayment, error) {
 	raw, err := json.Marshal(r)
 	if err != nil {
@@ -48,7 +45,6 @@ func ReceivableToPSPPayment(r client.Receivable) (models.PSPPayment, error) {
 	return payment, nil
 }
 
-// ReceivablesToPSPPayments mirrors PayablesToPSPPayments for receivables.
 func ReceivablesToPSPPayments(in []client.Receivable, watermark time.Time, skip func(id string, err error)) ([]models.PSPPayment, time.Time) {
 	out := make([]models.PSPPayment, 0, len(in))
 	for _, r := range in {

@@ -9,9 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// PayableToPSPPayment converts a Routable payable into a PSPPayment of
-// PAYOUT type. Returns an error so the caller decides whether to skip
-// the row (e.g. unsupported currency) or surface it.
 func PayableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
 	raw, err := json.Marshal(pa)
 	if err != nil {
@@ -48,10 +45,9 @@ func PayableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
 	return payment, nil
 }
 
-// PayablesToPSPPayments runs PayableToPSPPayment over each input row and
-// tracks the latest status_changed_at observed (used by the cycle cursor).
-// Skips invoke skip(id, err) so callers can log + count rather than abort
-// the whole page on one bad row.
+// PayablesToPSPPayments tracks the latest status_changed_at observed for
+// the cycle cursor and routes per-row mapping errors to skip(id, err) so
+// callers can log + count without aborting the whole page.
 func PayablesToPSPPayments(in []client.Payable, watermark time.Time, skip func(id string, err error)) ([]models.PSPPayment, time.Time) {
 	out := make([]models.PSPPayment, 0, len(in))
 	for _, pa := range in {
@@ -68,7 +64,6 @@ func PayablesToPSPPayments(in []client.Payable, watermark time.Time, skip func(i
 	return out, watermark
 }
 
-// LaterOf returns whichever of a or b is later (or zero when both are zero).
 func LaterOf(a, b time.Time) time.Time {
 	if a.IsZero() {
 		return b
@@ -79,8 +74,8 @@ func LaterOf(a, b time.Time) time.Time {
 	return b
 }
 
-// StatusChangedAtOrCreated picks status_changed_at when set, otherwise
-// the created_at — Routable can return a nil status_changed_at on draft rows.
+// StatusChangedAtOrCreated falls back to created_at because Routable
+// returns a nil status_changed_at on draft rows.
 func StatusChangedAtOrCreated(statusChangedAt *time.Time, createdAt time.Time) time.Time {
 	if statusChangedAt != nil && !statusChangedAt.IsZero() {
 		return *statusChangedAt

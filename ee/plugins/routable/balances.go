@@ -10,12 +10,9 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// fetchNextBalances looks up the freshly-listed settings account so the
-// engine sees a current balance. Routable does not expose a streaming
-// balance endpoint; type_details.available_amount is the source of truth.
-//
-// We refetch the account by ID to surface the latest balance even if the
-// engine reuses a stale FromPayload from a previous accounts cycle.
+// fetchNextBalances refetches the account by ID so the engine sees a
+// fresh available_amount even when FromPayload is stale from a previous
+// accounts cycle. Routable has no streaming balance endpoint.
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if req.FromPayload == nil {
 		return models.FetchNextBalancesResponse{}, fmt.Errorf("missing from payload when fetching balances")

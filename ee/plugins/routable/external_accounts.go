@@ -9,8 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// fetchNextExternalAccounts pages through Routable companies and emits
-// each one as an EXTERNAL PSPAccount.
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	state, err := decodePageState(req.State)
 	if err != nil {
