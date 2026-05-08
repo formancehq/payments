@@ -27,6 +27,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBankingbr
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3BitstampConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestBitstamp(components.V3BitstampConfig{/* values here */})
+```
+
 ### V3CoinbaseprimeConfig
 
 ```go

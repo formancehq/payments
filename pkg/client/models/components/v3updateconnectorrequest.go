@@ -16,6 +16,7 @@ const (
 	V3UpdateConnectorRequestTypeAtlar         V3UpdateConnectorRequestType = "Atlar"
 	V3UpdateConnectorRequestTypeBankingbridge V3UpdateConnectorRequestType = "Bankingbridge"
 	V3UpdateConnectorRequestTypeBankingcircle V3UpdateConnectorRequestType = "Bankingcircle"
+	V3UpdateConnectorRequestTypeBitstamp      V3UpdateConnectorRequestType = "Bitstamp"
 	V3UpdateConnectorRequestTypeCoinbaseprime V3UpdateConnectorRequestType = "Coinbaseprime"
 	V3UpdateConnectorRequestTypeColumn        V3UpdateConnectorRequestType = "Column"
 	V3UpdateConnectorRequestTypeCurrencycloud V3UpdateConnectorRequestType = "Currencycloud"
@@ -53,6 +54,7 @@ type V3UpdateConnectorRequest struct {
 	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 	V3BankingbridgeConfig *V3BankingbridgeConfig `queryParam:"inline"`
+	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
 
@@ -104,6 +106,18 @@ func CreateV3UpdateConnectorRequestBankingcircle(bankingcircle V3BankingcircleCo
 	return V3UpdateConnectorRequest{
 		V3BankingcircleConfig: &bankingcircle,
 		Type:                  typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestBitstamp(bitstamp V3BitstampConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeBitstamp
+
+	typStr := string(typ)
+	bitstamp.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3BitstampConfig: &bitstamp,
+		Type:             typ,
 	}
 }
 
@@ -347,6 +361,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3UpdateConnectorRequestTypeBankingcircle
 		return nil
+	case "Bitstamp":
+		v3BitstampConfig := new(V3BitstampConfig)
+		if err := utils.UnmarshalJSON(data, &v3BitstampConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Bitstamp) type V3BitstampConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3BitstampConfig = v3BitstampConfig
+		u.Type = V3UpdateConnectorRequestTypeBitstamp
+		return nil
 	case "Coinbaseprime":
 		v3CoinbaseprimeConfig := new(V3CoinbaseprimeConfig)
 		if err := utils.UnmarshalJSON(data, &v3CoinbaseprimeConfig, "", true, false); err != nil {
@@ -567,6 +590,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3BankingbridgeConfig != nil {
 		return utils.MarshalJSON(u.V3BankingbridgeConfig, "", true)
+	}
+
+	if u.V3BitstampConfig != nil {
+		return utils.MarshalJSON(u.V3BitstampConfig, "", true)
 	}
 
 	if u.V3CoinbaseprimeConfig != nil {
