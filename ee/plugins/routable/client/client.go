@@ -32,7 +32,14 @@ type Client interface {
 
 	ListPayables(ctx context.Context, page, pageSize int, statusChangedAtGte time.Time) (*ListPayablesResponse, error)
 	GetPayable(ctx context.Context, id string) (*Payable, error)
-	CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, error)
+	// CreatePayable returns the parsed Payable, the HTTP status code, and
+	// any error. Callers branch on the status code: 201 means Routable
+	// echoed the full payable model (sync); 202 means the payable was
+	// accepted but only `{id, status}` was returned and the caller must
+	// poll. Mapping a 202 payable as if it were complete throws away
+	// information and surfaces as a misleading "unsupported currency"
+	// error downstream — surface the status here instead.
+	CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, int, error)
 
 	ListReceivables(ctx context.Context, page, pageSize int, statusChangedAtGte time.Time) (*ListReceivablesResponse, error)
 }
@@ -245,15 +252,16 @@ func (c *client) GetPayable(ctx context.Context, id string) (*Payable, error) {
 	return &resp, nil
 }
 
-func (c *client) CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, error) {
+func (c *client) CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, int, error) {
 	if err := validateCreatePayable(req); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	var resp Payable
-	if _, err := c.do(ctx, http.MethodPost, "/v1/payables", nil, req, req.IdempotencyKey, &resp); err != nil {
-		return nil, fmt.Errorf("creating payable: %w", err)
+	status, err := c.do(ctx, http.MethodPost, "/v1/payables", nil, req, req.IdempotencyKey, &resp)
+	if err != nil {
+		return nil, status, fmt.Errorf("creating payable: %w", err)
 	}
-	return &resp, nil
+	return &resp, status, nil
 }
 
 func validateCreatePayable(req CreatePayableRequest) error {

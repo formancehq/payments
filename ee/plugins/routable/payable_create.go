@@ -11,24 +11,33 @@ import (
 )
 
 // initiatePayable is the shared CreatePayable plumbing used by both
-// CreateTransfer and CreatePayout. Both flows produce a Routable payable;
-// the only thing that differs at the call site is which engine response
-// envelope wraps the result.
-func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitiation) (*client.Payable, error) {
+// CreateTransfer and CreatePayout. Both flows produce a Routable
+// payable; the only thing that differs at the call site is which engine
+// response envelope wraps the result. Returns the parsed Payable
+// alongside the upstream HTTP status so callers can branch cleanly on
+// 201 (sync, full payable) vs 202 (async, just {id}).
+func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitiation) (*client.Payable, int, error) {
+	// Validation lives at the choke point so neither createPayout nor
+	// createTransfer needs to remember to call validatePaymentInitiation
+	// first. CodeRabbit rightly flagged the previous caller-side
+	// duplication.
+	if err := validatePaymentInitiation(pi); err != nil {
+		return nil, 0, err
+	}
 	if pi.SourceAccount == nil || pi.SourceAccount.Reference == "" {
-		return nil, errors.New("missing source account reference")
+		return nil, 0, errors.New("missing source account reference")
 	}
 	if pi.DestinationAccount == nil || pi.DestinationAccount.Reference == "" {
-		return nil, errors.New("missing destination account reference")
+		return nil, 0, errors.New("missing destination account reference")
 	}
 
 	currencyCode, _, err := mappers.SplitAsset(pi.Asset)
 	if err != nil {
-		return nil, fmt.Errorf("invalid asset %q: %w", pi.Asset, err)
+		return nil, 0, fmt.Errorf("invalid asset %q: %w", pi.Asset, err)
 	}
 	precision, err := mappers.PrecisionFor(currencyCode)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	amount := mappers.FromMinorUnits(pi.Amount, precision)
 
@@ -73,7 +82,17 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 	// Info/Error level for the genuinely interesting events.
 	p.logger.Debugf("initiating routable payable: type=%s delivery=%s amount=%s %s reference=%s",
 		req.Type, req.DeliveryMethod, req.Amount, req.CurrencyCode, req.Reference)
-	return p.client.CreatePayable(ctx, req)
+	payable, status, err := p.client.CreatePayable(ctx, req)
+	if err != nil {
+		return nil, status, err
+	}
+	// Defensive: a non-error response with no ID is a Routable contract
+	// violation. Surface explicitly rather than letting a downstream
+	// nil-deref or empty PollingPayoutID propagate.
+	if payable == nil || payable.ID == "" {
+		return nil, status, errors.New("routable returned an empty payable")
+	}
+	return payable, status, nil
 }
 
 func validatePaymentInitiation(pi models.PSPPaymentInitiation) error {

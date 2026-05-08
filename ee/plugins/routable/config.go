@@ -2,6 +2,7 @@ package routable
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
@@ -59,10 +60,13 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
 
+	// Trim before validating so `"apiKey": "   "` doesn't slip past the
+	// `required` rule and surface as an opaque 401 from the credential
+	// probe at install-time.
 	cfg := Config{
-		APIKey:           raw.APIKey,
-		Endpoint:         raw.Endpoint,
-		ActingTeamMember: raw.ActingTeamMember,
+		APIKey:           strings.TrimSpace(raw.APIKey),
+		Endpoint:         strings.TrimSpace(raw.Endpoint),
+		ActingTeamMember: strings.TrimSpace(raw.ActingTeamMember),
 		PollingPeriod:    pp,
 	}
 	if err := validator.New(validator.WithRequiredStructEnabled()).Struct(cfg); err != nil {

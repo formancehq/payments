@@ -165,13 +165,13 @@ Comparison is case-insensitive and trims whitespace.
 
 ## 5. Payment initiation metadata keys (payouts + transfers)
 
-`CreatePayout` and `CreateTransfer` translate a `PSPPaymentInitiation` (defined in [`internal/models/payment_initiations.go`](../../../internal/models/payment_initiations.go)) into a Routable `POST /v1/payables` body. The implementation lives in [`payouts.go`](payouts.go) (`initiatePayable`).
+`CreatePayout` and `CreateTransfer` translate a `PSPPaymentInitiation` (defined in [`internal/models/payment_initiations.go`](../../../internal/models/payment_initiations.go)) into a Routable `POST /v1/payables` body. The implementation lives in [`payable_create.go`](payable_create.go) (`initiatePayable`), shared by both flows.
 
 Most of the request body is derived from the structured `PSPPaymentInitiation` fields. A small set of Routable-specific knobs is exposed via metadata; every key is namespaced under `com.routable.spec/`.
 
 ### 5.1 Routable-specific metadata keys
 
-All keys are defined as constants in [`metadata.go`](metadata.go) so producers can reference them without string typos.
+All keys are defined as constants in [`mappers/metadata.go`](mappers/metadata.go) so producers can reference them without string typos.
 
 | Metadata key | Const | Required | Default | Maps to Routable field | Purpose |
 |---|---|---|---|---|---|
@@ -203,12 +203,13 @@ All keys are defined as constants in [`metadata.go`](metadata.go) so producers c
 
 ### 5.4 Response handling
 
-After `POST /v1/payables` returns:
+Routable's `POST /v1/payables` answers in two distinct shapes; the plugin branches on the **HTTP status code**, not on the body, because a 202 echoes only `{id, status: pending}` and trying to map it as a complete payable would surface as a misleading `unsupported currency ""` error.
 
-| Routable response status | Engine response | Behaviour |
+| Routable response | Plugin engine response | Behaviour |
 |---|---|---|
-| Terminal (`completed`, `failed`, `cancelled`, `expired`) | `Payment` populated, no polling ID | Workflow ends immediately. |
-| Non-terminal (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = Routable payable ID | Engine schedules `PollPayoutStatus`/`PollTransferStatus` against `GET /v1/payables/{id}` until terminal. |
+| `202 Accepted` (async) — body is `{id, status: pending}` | `PollingPayoutID` / `PollingTransferID` = Routable payable ID; no `Payment` field | Engine schedules `PollPayoutStatus`/`PollTransferStatus` against `GET /v1/payables/{id}` until terminal. No mapping is attempted on the half-empty body. |
+| `201 Created` (sync) with terminal status (`completed`, `failed`, `cancelled`, `expired`) | `Payment` populated, no polling ID | Workflow ends immediately with the terminal payment. |
+| `201 Created` (sync) with non-terminal status (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = `Payment.Reference` | Engine schedules polling; the initial sync mapping is discarded but its `Reference` carries forward as the polling token. |
 
 `PollPayoutStatus` (and the shared `pollPayableStatus` it delegates to) treats `404 Not Found` as a transient state (eventual consistency after `202 Accepted`) and asks the engine to retry, instead of failing the workflow. See [`payouts.go`](payouts.go) and [`client/client.go`](client/client.go) (`ErrPayableNotFound`).
 

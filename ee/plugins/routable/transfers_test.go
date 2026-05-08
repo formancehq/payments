@@ -2,6 +2,7 @@ package routable
 
 import (
 	"math/big"
+	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -51,6 +52,7 @@ var _ = Describe("Routable createTransfer", func() {
 	It("marks the response Payment as TRANSFER even though the rail is a Routable payable", func(ctx SpecContext) {
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
 			&client.Payable{ID: "pa_t", Status: "completed", Amount: "50.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
+			http.StatusCreated,
 			nil,
 		)
 		resp, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: pi()})
@@ -59,9 +61,10 @@ var _ = Describe("Routable createTransfer", func() {
 		Expect(resp.Payment.Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 	})
 
-	It("returns PollingTransferID for non-terminal payables", func(ctx SpecContext) {
+	It("returns PollingTransferID for sync 201 responses with a non-terminal status", func(ctx SpecContext) {
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
 			&client.Payable{ID: "pa_t2", Status: "pending", Amount: "50.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
+			http.StatusCreated,
 			nil,
 		)
 		resp, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: pi()})
@@ -69,5 +72,21 @@ var _ = Describe("Routable createTransfer", func() {
 		Expect(resp.Payment).To(BeNil())
 		Expect(resp.PollingTransferID).NotTo(BeNil())
 		Expect(*resp.PollingTransferID).To(Equal("pa_t2"))
+	})
+
+	// Async 202 path: Routable echoes only {id}. The plugin must return
+	// PollingTransferID without trying to map the half-empty payable
+	// (which would error out on the missing currency / amount).
+	It("returns PollingTransferID for async 202 responses with no mapping attempted", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
+			&client.Payable{ID: "pa_t3"}, // 202 body: just {id}, no amount/currency
+			http.StatusAccepted,
+			nil,
+		)
+		resp, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: pi()})
+		Expect(err).To(BeNil(), "must NOT error on the missing currency in a 202 body")
+		Expect(resp.Payment).To(BeNil())
+		Expect(resp.PollingTransferID).NotTo(BeNil())
+		Expect(*resp.PollingTransferID).To(Equal("pa_t3"))
 	})
 })

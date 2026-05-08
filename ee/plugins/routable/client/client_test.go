@@ -88,9 +88,12 @@ func TestCreatePayableSendsIdempotencyKey(t *testing.T) {
 		ActingTeamMember:    "tm_1",
 		IdempotencyKey:      "pi_42",
 	}
-	resp, err := c.CreatePayable(context.Background(), req)
+	resp, status, err := c.CreatePayable(context.Background(), req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != http.StatusCreated {
+		t.Errorf("status = %d, want 201", status)
 	}
 	if resp.ID != "pa_1" {
 		t.Fatalf("unexpected payable id: %s", resp.ID)
@@ -105,9 +108,72 @@ func TestCreatePayableSendsIdempotencyKey(t *testing.T) {
 
 func TestCreatePayableValidatesInputBeforeNetwork(t *testing.T) {
 	c := New("routable-test", "test-key", "http://invalid")
-	if _, err := c.CreatePayable(context.Background(), CreatePayableRequest{Type: ""}); err == nil {
+	if _, _, err := c.CreatePayable(context.Background(), CreatePayableRequest{Type: ""}); err == nil {
 		t.Fatal("expected validation error before any network call")
 	}
+}
+
+// 201 vs 202: the upstream HTTP status determines whether the caller
+// reads the full payable (201) or just the polling ID (202). The plugin
+// branches on this — the test pins both shapes so a regression in the
+// status propagation is caught at the client boundary.
+func TestCreatePayableReturnsStatusCode(t *testing.T) {
+	t.Parallel()
+
+	t.Run("201 Created with full payable model", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(w, `{"object":"Payable","id":"pa_sync","status":"completed","amount":"10.00","currency_code":"USD","created_at":"2025-01-01T00:00:00Z"}`)
+		})
+		defer srv.Close()
+
+		req := CreatePayableRequest{
+			Type: "ach", DeliveryMethod: "ach_standard",
+			PayToCompany: "co_1", WithdrawFromAccount: "acc_1",
+			Amount: "10.00", CurrencyCode: "USD",
+			LineItems:        []PayableLineItem{{UnitPrice: "10.00", Amount: "10.00", Quantity: 1, Description: "x"}},
+			ActingTeamMember: "tm_1", IdempotencyKey: "pi_sync",
+		}
+		got, status, err := c.CreatePayable(context.Background(), req)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if status != http.StatusCreated {
+			t.Errorf("status = %d, want 201", status)
+		}
+		if got.ID != "pa_sync" || got.Amount != "10.00" {
+			t.Errorf("unexpected payable: %+v", got)
+		}
+	})
+
+	t.Run("202 Accepted with id-only payload", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			_, _ = io.WriteString(w, `{"id":"pa_async","status":"pending"}`)
+		})
+		defer srv.Close()
+
+		req := CreatePayableRequest{
+			Type: "ach", DeliveryMethod: "ach_standard",
+			PayToCompany: "co_1", WithdrawFromAccount: "acc_1",
+			Amount: "10.00", CurrencyCode: "USD",
+			LineItems:        []PayableLineItem{{UnitPrice: "10.00", Amount: "10.00", Quantity: 1, Description: "x"}},
+			ActingTeamMember: "tm_1", IdempotencyKey: "pi_async",
+		}
+		got, status, err := c.CreatePayable(context.Background(), req)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if status != http.StatusAccepted {
+			t.Errorf("status = %d, want 202", status)
+		}
+		if got.ID != "pa_async" {
+			t.Errorf("ID = %q, want pa_async", got.ID)
+		}
+		if got.Amount != "" || got.CurrencyCode != "" {
+			t.Errorf("202 body should not carry amount/currency, got %+v", got)
+		}
+	})
 }
 
 func TestErrorSuffixOnlyWhenAPIBodyPresent(t *testing.T) {
@@ -283,7 +349,7 @@ func TestValidateCreatePayableRequiredFields(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req := base
 			tc.mut(&req)
-			_, err := c.CreatePayable(context.Background(), req)
+			_, _, err := c.CreatePayable(context.Background(), req)
 			if err == nil {
 				t.Fatalf("expected validation error for %s", tc.name)
 			}

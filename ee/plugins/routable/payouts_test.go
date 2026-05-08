@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -53,7 +54,7 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 	}
 
 	It("returns PollingPayoutID for non-terminal payables", func(ctx SpecContext) {
-		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
 			Expect(req.Type).To(Equal(mappers.DefaultPayableType))
 			Expect(req.DeliveryMethod).To(Equal(mappers.DefaultDeliveryMethod))
 			Expect(req.PayToCompany).To(Equal("co_1"))
@@ -66,7 +67,7 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 			// non-empty AND send_on present (null = send-now).
 			Expect(req.LineItems).To(HaveLen(1))
 			Expect(req.LineItems[0].Description).NotTo(BeEmpty())
-			return &client.Payable{ID: "pa_1", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+			return &client.Payable{ID: "pa_1", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 		})
 
 		resp, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
@@ -82,9 +83,9 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		bare.Metadata = nil   // no metadata override either
 
 		var captured client.CreatePayableRequest
-		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
 			captured = req
-			return &client.Payable{ID: "pa_b", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+			return &client.Payable{ID: "pa_b", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 		})
 
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bare})
@@ -100,6 +101,7 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 	It("returns the Payment immediately when the response is terminal", func(ctx SpecContext) {
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
 			&client.Payable{ID: "pa_2", Status: "completed", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
+			http.StatusCreated,
 			nil,
 		)
 		resp, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
@@ -107,6 +109,38 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(resp.PollingPayoutID).To(BeNil())
 		Expect(resp.Payment).NotTo(BeNil())
 		Expect(resp.Payment.Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
+	})
+
+	// Async 202 path: Routable echoes only {id}. The plugin must return
+	// PollingPayoutID without trying to map the half-empty payable
+	// (which would error out on the missing currency / amount).
+	// Regression for the bug Quentin flagged on the polling design.
+	It("returns PollingPayoutID for async 202 responses without attempting to map", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
+			&client.Payable{ID: "pa_async"}, // 202 body: just {id}
+			http.StatusAccepted,
+			nil,
+		)
+		resp, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
+		Expect(err).To(BeNil(), "must NOT error on the missing currency in a 202 body")
+		Expect(resp.Payment).To(BeNil())
+		Expect(resp.PollingPayoutID).NotTo(BeNil())
+		Expect(*resp.PollingPayoutID).To(Equal("pa_async"))
+	})
+
+	// Defensive contract: a 2xx non-error response with no ID is a
+	// Routable contract violation; surface it as an error rather than
+	// returning an empty PollingPayoutID that the engine would dutifully
+	// keep polling forever.
+	It("rejects an empty payable ID from upstream", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
+			&client.Payable{ID: ""},
+			http.StatusAccepted,
+			nil,
+		)
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("empty payable"))
 	})
 
 	It("respects metadata overrides for type, delivery_method, and acting_team_member", func(ctx SpecContext) {
@@ -117,12 +151,12 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 			mappers.MetadataKeyActingTeamMember: "tm_override",
 			mappers.MetadataKeyExternalID:       "ext_42",
 		}
-		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
 			Expect(req.Type).To(Equal("wire"))
 			Expect(req.DeliveryMethod).To(Equal("wire"))
 			Expect(req.ActingTeamMember).To(Equal("tm_override"))
 			Expect(req.ExternalID).To(Equal("ext_42"))
-			return &client.Payable{ID: "pa_3", Status: "processing", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+			return &client.Payable{ID: "pa_3", Status: "processing", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 		})
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: piWithOverrides})
 		Expect(err).To(BeNil())
@@ -149,18 +183,18 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 	// trips on this single assertion.
 	Describe("idempotency contract", func() {
 		It("uses pi.Reference as the Idempotency-Key on createPayout", func(ctx SpecContext) {
-			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
 				Expect(req.IdempotencyKey).To(Equal("pi_1"))
-				return &client.Payable{ID: "pa_idem", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+				return &client.Payable{ID: "pa_idem", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 			})
 			_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
 			Expect(err).To(BeNil())
 		})
 
 		It("uses pi.Reference as the Idempotency-Key on createTransfer", func(ctx SpecContext) {
-			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
 				Expect(req.IdempotencyKey).To(Equal("pi_1"))
-				return &client.Payable{ID: "pa_idem", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+				return &client.Payable{ID: "pa_idem", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 			})
 			_, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: pi()})
 			Expect(err).To(BeNil())
@@ -171,9 +205,9 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		plg.config = Config{} // no connector-level default
 		piWithTM := pi()
 		piWithTM.Metadata = map[string]string{mappers.MetadataKeyActingTeamMember: "tm_from_metadata"}
-		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, error) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
 			Expect(req.ActingTeamMember).To(Equal("tm_from_metadata"))
-			return &client.Payable{ID: "pa_md", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, nil
+			return &client.Payable{ID: "pa_md", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 		})
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: piWithTM})
 		Expect(err).To(BeNil())
