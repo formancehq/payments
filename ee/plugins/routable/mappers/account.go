@@ -8,10 +8,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// SettingsAccountToPSPAccount maps a Routable settings account onto a
-// Formance internal PSPAccount. Routable carries the currency on
-// type_details; we surface it as DefaultAsset only when we recognize the
-// code.
 func SettingsAccountToPSPAccount(a client.Account) (models.PSPAccount, error) {
 	raw, err := json.Marshal(a)
 	if err != nil {

@@ -20,10 +20,7 @@ func init() {
 	}, capabilities, Config{}, PAGE_SIZE)
 }
 
-// Plugin is the dedicated Routable PSP plugin. It replaces the standalone
-// connector-routable "protocol conversion" service that exposed Routable to
-// Formance through the Generic Connector. By talking native PSP types we
-// avoid the metadata-blob workarounds that Generic forced on us.
+// Plugin is the dedicated Routable PSP plugin.
 type Plugin struct {
 	models.Plugin
 
@@ -57,12 +54,8 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 
 func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
 	p.logger.Infof("installing routable connector %q (endpoint=%s, polling=%s)", p.name, p.config.resolvedEndpoint(), p.config.PollingPeriod.Duration())
-	// Credential probe: hit the smallest read-only endpoint so a bad
-	// API key surfaces as an install-time error rather than as the
-	// first FETCH_ACCOUNTS run failing in the worker. ListAccounts is
-	// cheap (page_size=1) and idempotent. 401/403 reaches the engine
-	// as httpwrapper.ErrStatusCodeClientError, which the activity
-	// translator already maps to a non-retryable INVALID_ARGUMENT.
+	// Credential probe: 401/403 surfaces as install error rather than
+	// as the first FETCH_ACCOUNTS run failing in the worker.
 	if _, err := p.client.ListAccounts(ctx, 1, 1); err != nil {
 		return models.InstallResponse{}, fmt.Errorf("verifying routable credentials: %w", err)
 	}

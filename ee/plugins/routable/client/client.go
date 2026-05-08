@@ -67,13 +67,10 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-// recordRateLimitHint inspects a response for IETF RateLimit / RFC 9110
-// Retry-After signals and writes the parsed wait into the rateLimitHint
-// the caller seeded on the request context. We intentionally signal-flag
-// 429 unconditionally and 5xx only when the server explicitly attached a
-// rate-limit header (per IETF §6, RateLimit headers can accompany any
-// status code; their presence on a 5xx is the server telling us the
-// failure is quota- or capacity-driven, not a generic outage).
+// recordRateLimitHint flags 429 unconditionally as rate-limited, and 5xx
+// only when the server attached a RateLimit header (per IETF §6, those
+// headers can accompany any status code; their presence on a 5xx is the
+// server signalling quota/capacity, not a generic outage).
 func recordRateLimitHint(ctx context.Context, resp *http.Response) {
 	hint, ok := ctx.Value(rateLimitHintCtxKey{}).(*rateLimitHint)
 	if !ok || hint == nil {
@@ -90,9 +87,8 @@ func recordRateLimitHint(ctx context.Context, resp *http.Response) {
 	}
 }
 
-// New builds a Routable client wired with the standard Formance HTTP
-// wrapper (otel + metrics + error mapping). connectorName is used as the
-// metrics label so per-connector dashboards continue to work unchanged.
+// New wires the Routable client through Formance's standard HTTP layer
+// (otel + metrics + error mapping). connectorName is the metrics label.
 func New(connectorName, apiKey, endpoint string) Client {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 	if endpoint == "" {
@@ -112,12 +108,9 @@ func New(connectorName, apiKey, endpoint string) Client {
 	}
 }
 
-// tunedHTTPTransport returns an *http.Transport sized for sustained
-// 100-200 req/min against a single Routable host. The Go default of
-// MaxIdleConnsPerHost=2 forces TCP/TLS reconnects under steady load; at
-// 200k tx/wk we'd churn dozens of handshakes per minute and add
-// avoidable latency to every Routable call. Bumping to 64 idle conns
-// per host keeps the pool warm without monopolising the host.
+// tunedHTTPTransport keeps the connection pool warm at sustained
+// 100-200 req/min. Default MaxIdleConnsPerHost=2 churns TCP/TLS
+// handshakes at 200k tx/wk; 64 keeps reuse high without hogging the host.
 func tunedHTTPTransport() *http.Transport {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.MaxIdleConnsPerHost = 64
@@ -145,18 +138,10 @@ func paginationQuery(page, pageSize int) url.Values {
 	return q
 }
 
-// do executes a request and unmarshals the success body or surfaces the
-// Routable error envelope. The httpwrapper maps 4xx/5xx to typed sentinels
-// (ErrStatusCodeClientError/ServerError/TooManyRequests) which callers can
-// classify with errors.Is.
-//
-// On rate-limit responses (429, or 5xx with IETF RateLimit headers) we
-// upgrade the error to a *plugins.RateLimitedError carrying the parsed
-// wait hint. The engine's temporalPluginErrorCheck reads it and feeds it
-// into Temporal's NextRetryDelay so the next attempt waits at least the
-// duration the upstream asked for. Wrapping plugins.ErrUpstreamRatelimit
-// keeps every existing errors.Is(_, plugins.ErrUpstreamRatelimit) call
-// site green.
+// do unmarshals the success body or the Routable error envelope, and
+// upgrades 429 / 5xx-with-RateLimit-header into a *plugins.RateLimitedError
+// carrying the parsed wait hint (consumed by the engine's
+// temporalPluginErrorCheck → Temporal NextRetryDelay).
 func (c *client) do(ctx context.Context, method, path string, query url.Values, body any, idempotencyKey string, out any) (int, error) {
 	reqBody := io.Reader(http.NoBody)
 	if body != nil {

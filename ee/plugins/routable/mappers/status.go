@@ -6,9 +6,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// PayableStatus maps Routable status strings onto PaymentStatus. Unknown
-// values fall through to UNKNOWN so the engine logs them rather than
-// silently coercing them to a wrong state.
+// PayableStatus maps Routable status strings; unknown values fall
+// through to UNKNOWN so the engine logs them rather than coercing them.
 func PayableStatus(s string) models.PaymentStatus {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "draft", "ready_to_send", "pending", "scheduled",
@@ -27,9 +26,6 @@ func PayableStatus(s string) models.PaymentStatus {
 	}
 }
 
-// IsTerminalStatus returns true once the payable has reached a state from
-// which it will not advance, which is the signal PollPayoutStatus uses to
-// stop polling.
 func IsTerminalStatus(s models.PaymentStatus) bool {
 	switch s {
 	case models.PAYMENT_STATUS_SUCCEEDED,

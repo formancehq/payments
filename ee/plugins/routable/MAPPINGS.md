@@ -146,7 +146,7 @@ Legacy `lastSeenAt` state on disk is migrated to `cycleLowerBound` on first deco
 
 ## 4. Status mapping
 
-Implemented in [`status.go`](status.go) (`payableStatus`). Lifted from the rules already validated in `connector-routable/internal/mapper/status.go`, retargeted to the `models.PaymentStatus` enum.
+Implemented in [`mappers/status.go`](mappers/status.go) (`PayableStatus`).
 
 | Routable `status` | Formance `models.PaymentStatus` |
 |---|---|

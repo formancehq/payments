@@ -10,37 +10,23 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// paymentsState pages through payables and then receivables under a single
-// cycle. The two timestamps capture the cursor invariant the previous
-// design got wrong:
+// paymentsState carries the cycle cursor across fetcher invocations.
+// The three invariants it enforces — CycleLowerBound immutable for the
+// duration of a cycle, CycleMaxSeen as a write-only watermark, and
+// boundary-row replay tolerated via engine-side Reference dedup — are
+// documented in MAPPINGS.md §3.6. The previous mid-cycle mutation
+// pattern silently dropped rows; the test suite pins the regression.
 //
-//   - CycleLowerBound is the status_changed_at.gte floor used by every
-//     payables and receivables request in the current cycle. It is held
-//     IMMUTABLE for the cycle's full duration. Mutating it mid-cycle (the
-//     old behaviour) caused page=2 to use a tighter lower bound than
-//     page=1, so any row that landed between the two timestamps but only
-//     appeared on a later page would be silently dropped.
-//   - CycleMaxSeen accumulates the latest status_changed_at observed
-//     across every page of the cycle. It is never used to drive a
-//     request. Once receivables exhausts, it is promoted to
-//     CycleLowerBound for the next cycle and reset.
-//
-// Routable's status_changed_at.gte filter is inclusive, so rows whose
-// timestamp equals the cycle floor get re-emitted at every cycle boundary.
-// The engine framework dedupes by PSPPayment.Reference, so this is wasted
-// traffic but never a correctness problem. A `(timestamp, id)` tiebreaker
-// would eliminate the replay; out of scope for this PR.
-//
-// The legacy LastSeenAt field is kept on the wire so existing persisted
-// state migrates cleanly: on first load we promote it to CycleLowerBound.
+// LastSeenAt is kept on the wire only to migrate persisted state from
+// the previous design — on first decode it is promoted to
+// CycleLowerBound and zeroed.
 type paymentsState struct {
 	Phase           paymentsPhase `json:"phase"`
 	Page            int           `json:"page"`
 	CycleLowerBound time.Time     `json:"cycleLowerBound,omitempty"`
 	CycleMaxSeen    time.Time     `json:"cycleMaxSeen,omitempty"`
 
-	// Deprecated: pre-cycle-immutable state. Promoted to CycleLowerBound
-	// on first decode after the upgrade and zeroed thereafter.
+	// Deprecated: pre-cycle-immutable state. See decodePaymentsState.
 	LastSeenAt time.Time `json:"lastSeenAt,omitempty"`
 }
 
@@ -58,10 +44,6 @@ func (s paymentsState) nextPage() int {
 	return s.Page
 }
 
-// fetchNextPayments merges Routable payables (PAYOUT) and receivables
-// (PAYIN) into a single PSPPayment stream. A cycle paginates payables to
-// completion, then receivables to completion, then commits the cycle's
-// max-seen timestamp as the next cycle's lower bound.
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	state, err := decodePaymentsState(req.State)
 	if err != nil {
@@ -91,11 +73,8 @@ func (p *Plugin) fetchPayablesPage(ctx context.Context, req models.FetchNextPaym
 	if resp.Links.HasMore() {
 		next.Page = state.nextPage() + 1
 	} else {
-		// payables exhausted for this cycle: switch to receivables on
-		// the next call. CycleLowerBound stays put — receivables must
-		// use the SAME floor as payables did, otherwise we skip
-		// receivables that changed between the cycle's start and the
-		// latest payable seen.
+		// Switch to receivables on the next call. CycleLowerBound
+		// stays put: receivables must use the SAME floor as payables.
 		next.Phase = phaseReceivables
 		next.Page = 1
 	}
@@ -124,12 +103,9 @@ func (p *Plugin) fetchReceivablesPage(ctx context.Context, req models.FetchNextP
 		next.Page = state.nextPage() + 1
 	} else {
 		// Cycle complete: promote CycleMaxSeen to CycleLowerBound for
-		// the next cycle, reset Phase and Page. HasMore=false ends the
-		// run.
-		// Empty-cycle guard: if we saw no rows in BOTH phases this
-		// cycle, maxSeen is zero. Promoting that would regress the
-		// floor and trigger a full historical refetch on the next
-		// cycle. Preserve the previous CycleLowerBound instead.
+		// the next cycle. Empty-cycle guard: if both phases saw no
+		// rows, maxSeen is zero — preserve the previous floor instead
+		// of regressing to epoch. (Pinned by the empty-cycle test.)
 		nextLowerBound := maxSeen
 		if nextLowerBound.IsZero() {
 			nextLowerBound = state.CycleLowerBound
@@ -157,10 +133,7 @@ func decodePaymentsState(raw json.RawMessage) (paymentsState, error) {
 	if err := json.Unmarshal(raw, &s); err != nil {
 		return s, fmt.Errorf("decoding payments state: %w", err)
 	}
-	// Migrate legacy state (pre cycle-immutable cursor): promote
-	// LastSeenAt to CycleLowerBound on first decode and zero it. Drops
-	// the deprecated field from subsequent serializations without losing
-	// the watermark.
+	// Migrate legacy LastSeenAt → CycleLowerBound on first decode.
 	if s.CycleLowerBound.IsZero() && !s.LastSeenAt.IsZero() {
 		s.CycleLowerBound = s.LastSeenAt
 	}
