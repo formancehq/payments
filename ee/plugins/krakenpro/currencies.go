@@ -17,25 +17,22 @@ var fiatCurrenciesFallback = map[string]int{
 // cryptoCurrenciesPrecision provides well-known crypto asset precisions.
 // Kraken does not expose precision via API, so we use a static map.
 var cryptoCurrenciesPrecision = map[string]int{
-	"BTC":  8,
-	"ETH":  18,
-	"XRP":  6,
-	"LTC":  8,
-	"BCH":  8,
-	"ADA":  6,
-	"DOT":  10,
-	"LINK": 18,
-	"XLM":  7,
-	"DOGE": 8,
-	"SOL":  9,
-	"AVAX": 18,
+	"BTC":   8,
+	"ETH":   18,
+	"XRP":   6,
+	"LTC":   8,
+	"BCH":   8,
+	"ADA":   6,
+	"DOT":   10,
+	"LINK":  18,
+	"XLM":   7,
+	"DOGE":  8,
+	"SOL":   9,
+	"AVAX":  18,
 	"MATIC": 18,
-	"ATOM": 6,
-	"UNI":  18,
-	"USDT": 6,
-	"USDC": 6,
-	"DAI":  18,
+	"ATOM":  6,
+	"UNI":   18,
+	"USDT":  6,
+	"USDC":  6,
+	"DAI":   18,
 }
-
-// defaultPrecision is used for assets not in the known maps.
-const defaultPrecision = 8

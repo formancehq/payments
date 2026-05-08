@@ -30,7 +30,6 @@ var _ = Describe("Krakenpro Accounts", func() {
 				APIKey: "test-api-key",
 			},
 			accountRef: "kraken-test12345",
-			currencies: map[string]int{"USD": 2, "BTC": 8},
 		}
 	})
 
@@ -46,11 +45,11 @@ var _ = Describe("Krakenpro Accounts", func() {
 			Expect(resp.Accounts).To(HaveLen(1))
 			Expect(resp.Accounts[0].Reference).To(Equal("kraken-test12345"))
 			Expect(*resp.Accounts[0].Name).To(Equal("Kraken Pro"))
-			Expect(resp.Accounts[0].Metadata["provider"]).To(Equal("krakenpro"))
+			Expect(resp.Accounts[0].Metadata[MetadataPrefix+"provider"]).To(Equal("krakenpro"))
 			Expect(resp.HasMore).To(BeFalse())
 		})
 
-		It("should return no accounts on subsequent calls", func(ctx SpecContext) {
+		It("should return the single account without pagination state", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
 				State:    json.RawMessage(`{"fetched": true}`),
 				PageSize: 25,
@@ -58,7 +57,8 @@ var _ = Describe("Krakenpro Accounts", func() {
 
 			resp, err := p.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Accounts).To(BeEmpty())
+			Expect(resp.Accounts).To(HaveLen(1))
+			Expect(resp.NewState).To(BeNil())
 			Expect(resp.HasMore).To(BeFalse())
 		})
 	})

@@ -30,7 +30,6 @@ var _ = Describe("Krakenpro Payments", func() {
 				APIKey: "test-api-key",
 			},
 			accountRef: "kraken-test12345",
-			currencies: map[string]int{"USD": 2, "BTC": 8, "ETH": 18},
 		}
 	})
 
@@ -70,8 +69,8 @@ var _ = Describe("Krakenpro Payments", func() {
 			Expect(payment.Reference).To(Equal("L1234-ABCDE"))
 			Expect(payment.Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(payment.Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
-			Expect(payment.Metadata["type"]).To(Equal("deposit"))
-			Expect(payment.Metadata["refid"]).To(Equal("TJKLMN-12345"))
+			Expect(payment.Metadata[MetadataPrefix+"type"]).To(Equal("deposit"))
+			Expect(payment.Metadata[MetadataPrefix+"refid"]).To(Equal("TJKLMN-12345"))
 			Expect(payment.Raw).ToNot(BeNil())
 			Expect(resp.HasMore).To(BeFalse())
 		})
@@ -109,7 +108,7 @@ var _ = Describe("Krakenpro Payments", func() {
 
 			payment := resp.Payments[0]
 			Expect(payment.Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
-			Expect(payment.Metadata["fee"]).To(Equal("5.00"))
+			Expect(payment.Metadata[MetadataPrefix+"fee"]).To(Equal("5.00"))
 		})
 
 		It("should handle offset pagination", func(ctx SpecContext) {
@@ -152,6 +151,42 @@ var _ = Describe("Krakenpro Payments", func() {
 			Expect(newState.Offset).To(Equal(50))
 			Expect(newState.LastSeenTime).ToNot(BeZero())
 		})
+
+		It("should skip unsupported assets", func(ctx SpecContext) {
+			m.EXPECT().GetLedgers(gomock.Any(), 0, gomock.Any()).Return(
+				&client.LedgersResponse{
+					Error: nil,
+					Result: client.LedgersResult{
+						Ledgers: map[string]client.LedgerEntry{
+							"LUNSUPPORTED": {
+								Time:   1617331200.0,
+								Type:   "deposit",
+								Asset:  "UNKNOWN",
+								Amount: "1.23",
+							},
+							"LUSD": {
+								Time:   1617331200.0,
+								Type:   "deposit",
+								Asset:  "ZUSD",
+								Amount: "10.00",
+							},
+						},
+						Count: 2,
+					},
+				},
+				nil,
+			)
+
+			req := models.FetchNextPaymentsRequest{
+				State:    json.RawMessage(`{}`),
+				PageSize: 50,
+			}
+
+			resp, err := p.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Reference).To(Equal("LUSD"))
+		})
 	})
 
 	Context("ledger type mapping", func() {
@@ -169,7 +204,7 @@ var _ = Describe("Krakenpro Payments", func() {
 			Entry("receive → PAYIN", "receive", models.PAYMENT_TYPE_PAYIN),
 			Entry("settled → OTHER", "settled", models.PaymentType(models.PAYMENT_TYPE_OTHER)),
 			Entry("adjustment → OTHER", "adjustment", models.PaymentType(models.PAYMENT_TYPE_OTHER)),
-			Entry("staking → PAYIN", "staking", models.PAYMENT_TYPE_PAYIN),
+			Entry("staking → TRANSFER", "staking", models.PAYMENT_TYPE_TRANSFER),
 			Entry("sale → PAYOUT", "sale", models.PAYMENT_TYPE_PAYOUT),
 			Entry("dividend → PAYIN", "dividend", models.PAYMENT_TYPE_PAYIN),
 			Entry("nft_trade → TRANSFER", "nft_trade", models.PAYMENT_TYPE_TRANSFER),

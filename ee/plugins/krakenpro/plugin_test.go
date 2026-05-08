@@ -79,14 +79,15 @@ var _ = Describe("Krakenpro Plugin", func() {
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
 
-			// Verify currencies were loaded
-			Expect(p.currencies).To(HaveKey("BTC"))
-			Expect(p.currencies["BTC"]).To(Equal(8))
-			Expect(p.currencies).To(HaveKey("ETH"))
-			Expect(p.currencies["ETH"]).To(Equal(18))
-			// Fiat fallback should also be present
-			Expect(p.currencies).To(HaveKey("USD"))
-			Expect(p.currencies["USD"]).To(Equal(2))
+			precision, ok := precisionForAsset("BTC")
+			Expect(ok).To(BeTrue())
+			Expect(precision).To(Equal(8))
+			precision, ok = precisionForAsset("ETH")
+			Expect(ok).To(BeTrue())
+			Expect(precision).To(Equal(18))
+			precision, ok = precisionForAsset("USD")
+			Expect(ok).To(BeTrue())
+			Expect(precision).To(Equal(2))
 			// Account ref should be derived
 			Expect(p.accountRef).To(HavePrefix("kraken-"))
 		})

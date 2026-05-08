@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
-	"sync"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
@@ -16,7 +15,12 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "krakenpro"
+const (
+	ProviderName   = "krakenpro"
+	MetadataPrefix = "com.krakenpro.spec/"
+)
+
+var krakenCurrencies = buildCurrencies()
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
@@ -31,9 +35,7 @@ type Plugin struct {
 	logger     logging.Logger
 	client     client.Client
 	config     Config
-	currOnce   sync.Once
-	currencies map[string]int // normalized asset → decimal precision
-	accountRef string         // derived non-secret account reference
+	accountRef string
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -75,7 +77,6 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		return models.InstallResponse{}, fmt.Errorf("validating credentials: %w", err)
 	}
 
-	p.loadCurrencies()
 	// Derive a non-secret account reference from the API key
 	h := sha256.Sum256([]byte(p.config.APIKey))
 	p.accountRef = "kraken-" + hex.EncodeToString(h[:])[:12]
@@ -84,40 +85,28 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	}, nil
 }
 
-func (p *Plugin) loadCurrencies() {
+func buildCurrencies() map[string]int {
 	currencies := make(map[string]int, len(fiatCurrenciesFallback)+len(cryptoCurrenciesPrecision))
 
 	maps.Copy(currencies, fiatCurrenciesFallback)
 	maps.Copy(currencies, cryptoCurrenciesPrecision)
 
-	p.currencies = currencies
-	p.logger.Infof("loaded %d currencies for krakenpro", len(currencies))
+	return currencies
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	return models.UninstallResponse{}, nil
 }
 
-// ensureCurrencies lazily loads currencies using sync.Once for thread safety.
-func (p *Plugin) ensureCurrencies() {
-	p.currOnce.Do(p.loadCurrencies)
-}
-
-// getPrecision returns the decimal precision for a normalized asset code.
-// Returns defaultPrecision for unknown assets and logs a warning.
-func (p *Plugin) getPrecision(normalizedAsset string) int {
-	if precision, ok := p.currencies[normalizedAsset]; ok {
-		return precision
-	}
-	p.logger.Infof("unknown asset %q, using default precision %d", normalizedAsset, defaultPrecision)
-	return defaultPrecision
+func precisionForAsset(normalizedAsset string) (int, bool) {
+	precision, ok := krakenCurrencies[normalizedAsset]
+	return precision, ok
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
 	}
-	p.ensureCurrencies()
 	return p.fetchNextAccounts(ctx, req)
 }
 
@@ -125,7 +114,6 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
-	p.ensureCurrencies()
 	return p.fetchNextBalances(ctx, req)
 }
 
@@ -133,7 +121,6 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
-	p.ensureCurrencies()
 	return p.fetchNextPayments(ctx, req)
 }
 

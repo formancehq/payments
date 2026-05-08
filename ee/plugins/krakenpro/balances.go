@@ -2,7 +2,6 @@ package krakenpro
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
@@ -12,16 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var from models.PSPAccount
-	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, fmt.Errorf("missing from payload when fetching balances")
-	}
-	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
-
 	response, err := p.client.GetBalance(ctx)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
@@ -55,20 +45,21 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			continue
 		}
 
-		precision := p.getPrecision(normalized)
-
-		amount, err := currency.GetAmountWithPrecisionFromString(truncateToPrecision(amountStr, precision), precision)
-		if err != nil {
-			p.logger.Infof("skipping balance for %s: %v", normalized, err)
+		precision, ok := precisionForAsset(normalized)
+		if !ok {
+			p.logger.Infof("skipping balance for %s: unsupported asset", normalized)
 			continue
 		}
 
-		// Use the normalized code to format the asset, falling back to the
-		// raw precision when the code is not in the currency library's map.
-		asset := currency.FormatAsset(p.currencies, normalized)
+		amount, err := currency.GetAmountWithPrecisionFromString(truncateToPrecision(amountStr, precision), precision)
+		if err != nil {
+			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", normalized, err)
+		}
+
+		asset := currency.FormatAsset(krakenCurrencies, normalized)
 
 		balances = append(balances, models.PSPBalance{
-			AccountReference: from.Reference,
+			AccountReference: p.accountRef,
 			Asset:            asset,
 			Amount:           amount,
 			CreatedAt:        now,
@@ -80,4 +71,3 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		HasMore:  false,
 	}, nil
 }
-

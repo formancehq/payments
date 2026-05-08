@@ -14,9 +14,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-
 type paymentsState struct {
-	Offset    int   `json:"offset"`
+	Offset       int   `json:"offset"`
 	LastSeenTime int64 `json:"lastSeenTime,omitempty"`
 }
 
@@ -93,7 +92,11 @@ func (p *Plugin) ledgerEntryToPayment(ledgerID string, entry client.LedgerEntry)
 		return nil, nil
 	}
 
-	precision := p.getPrecision(normalized)
+	precision, ok := precisionForAsset(normalized)
+	if !ok {
+		p.logger.Infof("skipping ledger %s: unsupported asset %q", ledgerID, normalized)
+		return nil, nil
+	}
 
 	// Parse amount (can be negative for debits)
 	amountStr := strings.TrimPrefix(entry.Amount, "-")
@@ -103,7 +106,7 @@ func (p *Plugin) ledgerEntryToPayment(ledgerID string, entry client.LedgerEntry)
 		return nil, fmt.Errorf("failed to parse amount: %w", err)
 	}
 
-	asset := currency.FormatAsset(p.currencies, normalized)
+	asset := currency.FormatAsset(krakenCurrencies, normalized)
 
 	raw, err := json.Marshal(entry)
 	if err != nil {
@@ -142,25 +145,25 @@ func (p *Plugin) ledgerEntryToPayment(ledgerID string, entry client.LedgerEntry)
 
 func buildLedgerMetadata(ledgerID string, entry client.LedgerEntry) map[string]string {
 	metadata := map[string]string{
-		"ledger_id":   ledgerID,
-		"type":        entry.Type,
-		"raw_asset":   entry.Asset,
-		"raw_amount":  entry.Amount,
+		MetadataPrefix + "ledger_id":  ledgerID,
+		MetadataPrefix + "type":       entry.Type,
+		MetadataPrefix + "raw_asset":  entry.Asset,
+		MetadataPrefix + "raw_amount": entry.Amount,
 	}
 
 	if entry.RefID != "" {
-		metadata["refid"] = entry.RefID
+		metadata[MetadataPrefix+"refid"] = entry.RefID
 	}
 	if entry.Subtype != "" {
-		metadata["subtype"] = entry.Subtype
+		metadata[MetadataPrefix+"subtype"] = entry.Subtype
 	}
 	if entry.Fee != "" {
 		if f, ok := new(big.Float).SetString(entry.Fee); ok && f.Sign() != 0 {
-			metadata["fee"] = entry.Fee
+			metadata[MetadataPrefix+"fee"] = entry.Fee
 		}
 	}
 	if entry.Balance != "" {
-		metadata["post_balance"] = entry.Balance
+		metadata[MetadataPrefix+"post_balance"] = entry.Balance
 	}
 
 	return metadata
@@ -189,7 +192,7 @@ func ledgerTypeToPaymentType(ledgerType string) models.PaymentType {
 	case "adjustment":
 		return models.PAYMENT_TYPE_OTHER
 	case "staking":
-		return models.PAYMENT_TYPE_PAYIN
+		return models.PAYMENT_TYPE_TRANSFER
 	case "sale":
 		return models.PAYMENT_TYPE_PAYOUT
 	case "dividend":

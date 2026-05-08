@@ -30,15 +30,11 @@ var _ = Describe("Krakenpro Balances", func() {
 				APIKey: "test-api-key",
 			},
 			accountRef: "kraken-test12345",
-			currencies: map[string]int{"USD": 2, "BTC": 8, "ETH": 18},
 		}
 	})
 
 	Context("fetch next balances", func() {
 		It("should return balances for all assets", func(ctx SpecContext) {
-			account := models.PSPAccount{Reference: "test-api-key"}
-			fromPayload, _ := json.Marshal(account)
-
 			m.EXPECT().GetBalance(gomock.Any()).Return(
 				&client.BalanceResponse{
 					Error: nil,
@@ -51,8 +47,7 @@ var _ = Describe("Krakenpro Balances", func() {
 			)
 
 			req := models.FetchNextBalancesRequest{
-				FromPayload: fromPayload,
-				State:       json.RawMessage(`{}`),
+				State: json.RawMessage(`{}`),
 			}
 
 			resp, err := p.FetchNextBalances(ctx, req)
@@ -63,15 +58,12 @@ var _ = Describe("Krakenpro Balances", func() {
 			// Balances should be sorted by asset key
 			// BTC (from XXBT) comes before USD (from ZUSD) alphabetically by original key
 			for _, bal := range resp.Balances {
-				Expect(bal.AccountReference).To(Equal("test-api-key"))
+				Expect(bal.AccountReference).To(Equal("kraken-test12345"))
 				Expect(bal.Amount).ToNot(BeNil())
 			}
 		})
 
 		It("should skip zero balances", func(ctx SpecContext) {
-			account := models.PSPAccount{Reference: "test-api-key"}
-			fromPayload, _ := json.Marshal(account)
-
 			m.EXPECT().GetBalance(gomock.Any()).Return(
 				&client.BalanceResponse{
 					Error: nil,
@@ -84,8 +76,7 @@ var _ = Describe("Krakenpro Balances", func() {
 			)
 
 			req := models.FetchNextBalancesRequest{
-				FromPayload: fromPayload,
-				State:       json.RawMessage(`{}`),
+				State: json.RawMessage(`{}`),
 			}
 
 			resp, err := p.FetchNextBalances(ctx, req)
@@ -93,29 +84,36 @@ var _ = Describe("Krakenpro Balances", func() {
 			Expect(resp.Balances).To(HaveLen(1))
 		})
 
-		It("should handle missing from payload", func(ctx SpecContext) {
+		It("should skip unsupported assets", func(ctx SpecContext) {
+			m.EXPECT().GetBalance(gomock.Any()).Return(
+				&client.BalanceResponse{
+					Error: nil,
+					Result: map[string]string{
+						"UNKNOWN": "1.23",
+						"ZUSD":    "10.00",
+					},
+				},
+				nil,
+			)
+
 			req := models.FetchNextBalancesRequest{
-				FromPayload: nil,
-				State:       json.RawMessage(`{}`),
+				State: json.RawMessage(`{}`),
 			}
 
-			_, err := p.FetchNextBalances(ctx, req)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("missing from payload"))
+			resp, err := p.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Balances).To(HaveLen(1))
+			Expect(resp.Balances[0].Asset).To(Equal("USD/2"))
 		})
 
 		It("should handle API error", func(ctx SpecContext) {
-			account := models.PSPAccount{Reference: "test-api-key"}
-			fromPayload, _ := json.Marshal(account)
-
 			m.EXPECT().GetBalance(gomock.Any()).Return(
 				nil,
 				&client.KrakenError{Errors: []string{"EAPI:Invalid key"}},
 			)
 
 			req := models.FetchNextBalancesRequest{
-				FromPayload: fromPayload,
-				State:       json.RawMessage(`{}`),
+				State: json.RawMessage(`{}`),
 			}
 
 			_, err := p.FetchNextBalances(ctx, req)
