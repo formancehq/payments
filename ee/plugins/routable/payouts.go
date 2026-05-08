@@ -4,35 +4,46 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
-// createPayout maps a PSPPaymentInitiation onto a Routable payable. The
-// engine keeps polling via PollPayoutStatus when we return PollingPayoutID,
-// which is how we honour Routable's async 202 contract without blocking.
+// createPayout maps a PSPPaymentInitiation onto a Routable payable.
+// Routable's POST /v1/payables answers in two distinct shapes:
+//
+//   - 201 Created — full payable model echoed back (sync path).
+//   - 202 Accepted — only {id, status: pending} (async path).
+//
+// We branch on the HTTP status rather than guessing from a half-mapped
+// Payment. The 202 path returns PollingPayoutID immediately so the
+// engine schedules PollPayoutStatus; mapping the half-empty payable
+// would just throw a misleading "unsupported currency" error.
 func (p *Plugin) createPayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	pi := req.PaymentInitiation
-	if err := validatePaymentInitiation(pi); err != nil {
-		return models.CreatePayoutResponse{}, err
-	}
-
-	payable, err := p.initiatePayable(ctx, pi)
+	payable, status, err := p.initiatePayable(ctx, req.PaymentInitiation)
 	if err != nil {
 		return models.CreatePayoutResponse{}, err
 	}
 
+	if status == http.StatusAccepted {
+		id := payable.ID
+		return models.CreatePayoutResponse{PollingPayoutID: &id}, nil
+	}
+
+	// 201 Created (or any other 2xx): map the full payable.
 	payment, err := mappers.PayableToPSPPayment(*payable)
 	if err != nil {
 		return models.CreatePayoutResponse{}, fmt.Errorf("mapping payable response: %w", err)
 	}
-
 	if mappers.IsTerminalStatus(payment.Status) {
 		return models.CreatePayoutResponse{Payment: &payment}, nil
 	}
-	id := payable.ID
+	// Sync response, but Routable started us on a non-terminal status —
+	// hand the engine a polling token so it converges to the terminal
+	// state through PollPayoutStatus.
+	id := payment.Reference
 	return models.CreatePayoutResponse{PollingPayoutID: &id}, nil
 }
 

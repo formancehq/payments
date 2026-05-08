@@ -42,12 +42,13 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // CreatePayable mocks base method.
-func (m *MockClient) CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, error) {
+func (m *MockClient) CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePayable", ctx, req)
 	ret0, _ := ret[0].(*Payable)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CreatePayable indicates an expected call of CreatePayable.

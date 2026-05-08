@@ -46,7 +46,10 @@ func TestFromMinorUnits(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.minor, func(t *testing.T) {
-			n, _ := new(big.Int).SetString(c.minor, 10)
+			n, ok := new(big.Int).SetString(c.minor, 10)
+			if !ok {
+				t.Fatalf("invalid test fixture %q: SetString failed", c.minor)
+			}
 			got := FromMinorUnits(n, c.precision)
 			if got != c.want {
 				t.Fatalf("FromMinorUnits(%s, %d) = %s, want %s", c.minor, c.precision, got, c.want)

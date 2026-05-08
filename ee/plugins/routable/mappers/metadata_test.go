@@ -41,18 +41,7 @@ func TestPayableMetadata_AliasKeys(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			m := PayableMetadata(tc.payable)
-			if got := m[MetadataKeyRoutablePayableID]; got != tc.wantPayable {
-				t.Errorf("payable_id = %q, want %q", got, tc.wantPayable)
-			}
-			if got := m[MetadataKeyPaymentInitiationReference]; got != tc.wantPIRef {
-				t.Errorf("payment_initiation_reference = %q, want %q", got, tc.wantPIRef)
-			}
-			// external_id legacy key must remain present alongside the
-			// alias for backwards compatibility with anything reading
-			// the Routable wire term.
-			if got := m[MetadataKeyExternalID]; got != tc.wantPIRef {
-				t.Errorf("external_id = %q, want %q (must equal alias)", got, tc.wantPIRef)
-			}
+			assertAliasMetadata(t, m, tc.wantPIRef, tc.wantPayable)
 		})
 	}
 }
@@ -89,15 +78,40 @@ func TestReceivableMetadata_AliasKeys(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			m := ReceivableMetadata(tc.receivable)
-			if got := m[MetadataKeyRoutablePayableID]; got != tc.wantPayable {
-				t.Errorf("payable_id = %q, want %q", got, tc.wantPayable)
-			}
-			if got := m[MetadataKeyPaymentInitiationReference]; got != tc.wantPIRef {
-				t.Errorf("payment_initiation_reference = %q, want %q", got, tc.wantPIRef)
-			}
-			if got := m[MetadataKeyExternalID]; got != tc.wantPIRef {
-				t.Errorf("external_id = %q, want %q (must equal alias)", got, tc.wantPIRef)
-			}
+			assertAliasMetadata(t, m, tc.wantPIRef, tc.wantPayable)
 		})
+	}
+}
+
+// assertAliasMetadata pins the correlation contract precisely:
+//   - payable_id MUST be present and equal to wantPayable.
+//   - When wantPIRef != "", payment_initiation_reference and external_id
+//     MUST both be present and equal to wantPIRef.
+//   - When wantPIRef == "" (Routable-UI-initiated row), both alias and
+//     legacy keys MUST be ABSENT (not present-with-empty-string), since
+//     stripEmpty drops empty values. CodeRabbit flagged that comparing
+//     value-only would let a missing key and an empty-string value both
+//     pass — this helper closes the gap.
+func assertAliasMetadata(t *testing.T, m map[string]string, wantPIRef, wantPayable string) {
+	t.Helper()
+
+	got, ok := m[MetadataKeyRoutablePayableID]
+	if !ok {
+		t.Fatalf("payable_id alias missing entirely from metadata: %v", m)
+	}
+	if got != wantPayable {
+		t.Errorf("payable_id = %q, want %q", got, wantPayable)
+	}
+
+	for _, key := range []string{MetadataKeyPaymentInitiationReference, MetadataKeyExternalID} {
+		got, present := m[key]
+		switch {
+		case wantPIRef == "" && present:
+			t.Errorf("%s should be ABSENT when external_id is empty (stripEmpty contract); got %q", key, got)
+		case wantPIRef != "" && !present:
+			t.Errorf("%s should be present when external_id is set (want %q); not found in %v", key, wantPIRef, m)
+		case wantPIRef != "" && got != wantPIRef:
+			t.Errorf("%s = %q, want %q", key, got, wantPIRef)
+		}
 	}
 }
