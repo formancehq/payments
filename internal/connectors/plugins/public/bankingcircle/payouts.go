@@ -85,6 +85,12 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		account = pi.DestinationAccount.Metadata[models.AccountIBANMetadataKey]
 	}
 
+	chargeBearer := models.ExtractNamespacedMetadata(pi.Metadata, client.BankingCircleChargeBearerMetadataKey)
+	if chargeBearer == "" {
+		chargeBearer = "SHA"
+	}
+	clearingNetwork := models.ExtractNamespacedMetadata(pi.Metadata, client.BankingCircleClearingNetworkMetadataKey)
+
 	resp, err := p.client.InitiateTransferOrPayouts(ctx, &client.PaymentRequest{
 		IdempotencyKey:         pi.Reference,
 		RequestedExecutionDate: pi.CreatedAt,
@@ -99,13 +105,14 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 			Currency: curr,
 			Amount:   json.Number(amount),
 		},
-		ChargeBearer: "SHA",
+		ChargeBearer: chargeBearer,
 		CreditorAccount: &client.PaymentAccount{
 			Account:              account,
 			FinancialInstitution: pi.DestinationAccount.Metadata[models.AccountSwiftBicCodeMetadataKey],
 			Country:              pi.DestinationAccount.Metadata[models.AccountBankAccountCountryMetadataKey],
 		},
-		CreditorName: *pi.DestinationAccount.Name,
+		CreditorName:    *pi.DestinationAccount.Name,
+		ClearingNetwork: clearingNetwork,
 	})
 	if err != nil {
 		return nil, err

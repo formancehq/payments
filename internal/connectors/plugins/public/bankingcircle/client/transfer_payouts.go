@@ -28,6 +28,7 @@ type PaymentRequest struct {
 	ChargeBearer           string          `json:"chargeBearer"`
 	CreditorAccount        *PaymentAccount `json:"creditorAccount"`
 	CreditorName           string          `json:"creditorName"`
+	ClearingNetwork        string          `json:"clearingNetwork,omitempty"`
 }
 
 type PaymentResponse struct {
