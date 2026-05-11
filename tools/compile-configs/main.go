@@ -240,6 +240,10 @@ func readConfig(basePath string, name string, caserName string) (V3Config, error
 						if strings.Contains(fields[1], "required") {
 							required = append(required, name)
 						}
+					case "format":
+						propCopy := properties[name]
+						propCopy.Format = strings.Trim(fields[1], "\"")
+						properties[name] = propCopy
 					}
 				}
 			}

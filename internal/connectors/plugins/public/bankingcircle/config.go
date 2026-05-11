@@ -11,11 +11,11 @@ import (
 
 type Config struct {
 	Username              string                     `json:"username" yaml:"username" validate:"required"`
-	Password              string                     `json:"password" yaml:"password" validate:"required"`
+	Password              string                     `json:"password" yaml:"password" validate:"required" format:"password"`
 	Endpoint              string                     `json:"endpoint" yaml:"endpoint" validate:"required"`
 	AuthorizationEndpoint string                     `json:"authorizationEndpoint" yaml:"authorizationEndpoint" validate:"required"`
-	UserCertificate       string                     `json:"userCertificate" yaml:"userCertificate" validate:"required"`
-	UserCertificateKey    string                     `json:"userCertificateKey" yaml:"userCertificateKey" validate:"required"`
+	UserCertificate       string                     `json:"userCertificate" yaml:"userCertificate" validate:"required" format:"password"`
+	UserCertificateKey    string                     `json:"userCertificateKey" yaml:"userCertificateKey" validate:"required" format:"password"`
 	PollingPeriod         sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 

@@ -6410,6 +6410,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         companyID:
           type: string
         liveEndpointPrefix:
@@ -6429,6 +6430,7 @@ components:
           default: Adyen
         webhookPassword:
           type: string
+          format: password
         webhookUsername:
           type: string
     V3AtlarConfig:
@@ -6441,6 +6443,7 @@ components:
       properties:
         accessKey:
           type: string
+          format: password
         baseUrl:
           type: string
         name:
@@ -6458,6 +6461,7 @@ components:
           default: Atlar
         secret:
           type: string
+          format: password
     V3BankingbridgeConfig:
       type: object
       required:
@@ -6512,6 +6516,7 @@ components:
           x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
         password:
           type: string
+          format: password
         pollingPeriod:
           type: string
           default: 30m
@@ -6520,8 +6525,10 @@ components:
           default: Bankingcircle
         userCertificate:
           type: string
+          format: password
         userCertificateKey:
           type: string
+          format: password
         username:
           type: string
     V3CoinbaseprimeConfig:
@@ -6563,6 +6570,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         endpoint:
           type: string
         name:
@@ -6588,6 +6596,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         endpoint:
           type: string
         loginID:
@@ -6665,6 +6674,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         endpoint:
           type: string
         name:
@@ -6717,6 +6727,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         clientID:
           type: string
         endpoint:
@@ -6744,8 +6755,10 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         apiSecret:
           type: string
+          format: password
         endpoint:
           type: string
         name:
@@ -6771,6 +6784,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         clientID:
           type: string
         endpoint:
@@ -6860,6 +6874,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         clientID:
           type: string
         endpoint:
@@ -6879,6 +6894,7 @@ components:
           default: Qonto
         stagingToken:
           type: string
+          format: password
     V3StripeConfig:
       type: object
       required:
@@ -6887,6 +6903,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         name:
           type: string
         pageSize:
@@ -6936,6 +6953,7 @@ components:
       properties:
         apiKey:
           type: string
+          format: password
         name:
           type: string
         pageSize:

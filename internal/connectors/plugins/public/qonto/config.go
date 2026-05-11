@@ -11,9 +11,9 @@ import (
 
 type Config struct {
 	ClientID      string                     `json:"clientID" validate:"required"`
-	APIKey        string                     `json:"apiKey" validate:"required"`
+	APIKey        string                     `json:"apiKey" validate:"required" format:"password"`
 	Endpoint      string                     `json:"endpoint" validate:"required,url"`
-	StagingToken  string                     `json:"stagingToken" validate:"omitempty"`
+	StagingToken  string                     `json:"stagingToken" validate:"omitempty" format:"password"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 

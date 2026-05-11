@@ -11,8 +11,8 @@ import (
 
 type Config struct {
 	BaseURL       string                     `json:"baseUrl" validate:"required"`
-	AccessKey     string                     `json:"accessKey" validate:"required"`
-	Secret        string                     `json:"secret" validate:"required"`
+	AccessKey     string                     `json:"accessKey" validate:"required" format:"password"`
+	Secret        string                     `json:"secret" validate:"required" format:"password"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }
 

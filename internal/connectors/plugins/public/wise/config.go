@@ -15,7 +15,7 @@ import (
 )
 
 type Config struct {
-	APIKey           string                     `json:"apiKey" validate:"required"`
+	APIKey           string                     `json:"apiKey" validate:"required" format:"password"`
 	WebhookPublicKey string                     `json:"webhookPublicKey" validate:"required"`
 	PollingPeriod    sharedconfig.PollingPeriod `json:"pollingPeriod"`
 

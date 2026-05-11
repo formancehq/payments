@@ -10,8 +10,8 @@ import (
 )
 
 type Config struct {
-	APIKey        string                     `json:"apiKey" validate:"required"`
-	APISecret     string                     `json:"apiSecret" validate:"required"`
+	APIKey        string                     `json:"apiKey" validate:"required" format:"password"`
+	APISecret     string                     `json:"apiSecret" validate:"required" format:"password"`
 	Endpoint      string                     `json:"endpoint" validate:"required"`
 	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
 }

@@ -746,14 +746,14 @@ Accept: application/json
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Adyen",
-  "webhookPassword": "string",
+  "webhookPassword": "pa$$word",
   "webhookUsername": "string"
 }
 ```
@@ -922,14 +922,14 @@ Accept: application/json
 ```json
 {
   "data": {
-    "apiKey": "string",
+    "apiKey": "pa$$word",
     "companyID": "string",
     "liveEndpointPrefix": "string",
     "name": "string",
     "pageSize": 25,
     "pollingPeriod": "30m",
     "provider": "Adyen",
-    "webhookPassword": "string",
+    "webhookPassword": "pa$$word",
     "webhookUsername": "string"
   }
 }
@@ -968,14 +968,14 @@ Update connector config
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Adyen",
-  "webhookPassword": "string",
+  "webhookPassword": "pa$$word",
   "webhookUsername": "string"
 }
 ```
@@ -4657,14 +4657,14 @@ None ( Scopes: payments:read )
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Adyen",
-  "webhookPassword": "string",
+  "webhookPassword": "pa$$word",
   "webhookUsername": "string"
 }
 
@@ -4797,14 +4797,14 @@ None ( Scopes: payments:read )
 ```json
 {
   "data": {
-    "apiKey": "string",
+    "apiKey": "pa$$word",
     "companyID": "string",
     "liveEndpointPrefix": "string",
     "name": "string",
     "pageSize": 25,
     "pollingPeriod": "30m",
     "provider": "Adyen",
-    "webhookPassword": "string",
+    "webhookPassword": "pa$$word",
     "webhookUsername": "string"
   }
 }
@@ -4826,14 +4826,14 @@ None ( Scopes: payments:read )
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Adyen",
-  "webhookPassword": "string",
+  "webhookPassword": "pa$$word",
   "webhookUsername": "string"
 }
 
@@ -7887,14 +7887,14 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Adyen",
-  "webhookPassword": "string",
+  "webhookPassword": "pa$$word",
   "webhookUsername": "string"
 }
 
@@ -8031,14 +8031,14 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Adyen",
-  "webhookPassword": "string",
+  "webhookPassword": "pa$$word",
   "webhookUsername": "string"
 }
 
@@ -8048,14 +8048,14 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |companyID|string|true|none|none|
 |liveEndpointPrefix|string|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
-|webhookPassword|string|false|none|none|
+|webhookPassword|string(password)|false|none|none|
 |webhookUsername|string|false|none|none|
 
 <h2 id="tocS_V3AtlarConfig">V3AtlarConfig</h2>
@@ -8067,13 +8067,13 @@ xor
 
 ```json
 {
-  "accessKey": "string",
+  "accessKey": "pa$$word",
   "baseUrl": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Atlar",
-  "secret": "string"
+  "secret": "pa$$word"
 }
 
 ```
@@ -8082,13 +8082,13 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|accessKey|string|true|none|none|
+|accessKey|string(password)|true|none|none|
 |baseUrl|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
-|secret|string|true|none|none|
+|secret|string(password)|true|none|none|
 
 <h2 id="tocS_V3BankingbridgeConfig">V3BankingbridgeConfig</h2>
 <!-- backwards compatibility -->
@@ -8137,11 +8137,11 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
-  "password": "string",
+  "password": "pa$$word",
   "pollingPeriod": "30m",
   "provider": "Bankingcircle",
-  "userCertificate": "string",
-  "userCertificateKey": "string",
+  "userCertificate": "pa$$word",
+  "userCertificateKey": "pa$$word",
   "username": "string"
 }
 
@@ -8155,11 +8155,11 @@ xor
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
-|password|string|true|none|none|
+|password|string(password)|true|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
-|userCertificate|string|true|none|none|
-|userCertificateKey|string|true|none|none|
+|userCertificate|string(password)|true|none|none|
+|userCertificateKey|string(password)|true|none|none|
 |username|string|true|none|none|
 
 <h2 id="tocS_V3CoinbaseprimeConfig">V3CoinbaseprimeConfig</h2>
@@ -8205,7 +8205,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
@@ -8219,7 +8219,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
@@ -8235,7 +8235,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "endpoint": "string",
   "loginID": "string",
   "name": "string",
@@ -8250,7 +8250,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |endpoint|string|true|none|none|
 |loginID|string|true|none|none|
 |name|string|true|none|none|
@@ -8331,7 +8331,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
@@ -8345,7 +8345,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
@@ -8393,7 +8393,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
@@ -8408,7 +8408,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
@@ -8425,8 +8425,8 @@ xor
 
 ```json
 {
-  "apiKey": "string",
-  "apiSecret": "string",
+  "apiKey": "pa$$word",
+  "apiSecret": "pa$$word",
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
@@ -8440,8 +8440,8 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
-|apiSecret|string|true|none|none|
+|apiKey|string(password)|true|none|none|
+|apiSecret|string(password)|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
@@ -8457,7 +8457,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
@@ -8472,7 +8472,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
@@ -8559,14 +8559,14 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Qonto",
-  "stagingToken": "string"
+  "stagingToken": "pa$$word"
 }
 
 ```
@@ -8575,14 +8575,14 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
-|stagingToken|string|false|none|none|
+|stagingToken|string(password)|false|none|none|
 
 <h2 id="tocS_V3StripeConfig">V3StripeConfig</h2>
 <!-- backwards compatibility -->
@@ -8593,7 +8593,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
@@ -8606,7 +8606,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
@@ -8653,7 +8653,7 @@ xor
 
 ```json
 {
-  "apiKey": "string",
+  "apiKey": "pa$$word",
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "30m",
@@ -8667,7 +8667,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|apiKey|string|true|none|none|
+|apiKey|string(password)|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
