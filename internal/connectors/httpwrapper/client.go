@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
@@ -57,7 +59,8 @@ type Client interface {
 type client struct {
 	httpClient *http.Client
 
-	httpErrorCheckerFn func(statusCode int) error
+	httpErrorCheckerFn    func(statusCode int) error
+	disableRateLimitHints bool
 }
 
 func NewClient(config *Config) Client {
@@ -85,8 +88,9 @@ func NewClient(config *Config) Client {
 	}
 
 	return &client{
-		httpErrorCheckerFn: config.HttpErrorCheckerFn,
-		httpClient:         httpClient,
+		httpErrorCheckerFn:    config.HttpErrorCheckerFn,
+		httpClient:            httpClient,
+		disableRateLimitHints: config.DisableRateLimitHints,
 	}
 }
 
@@ -97,9 +101,14 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 	}
 
 	reqErr := c.httpErrorCheckerFn(resp.StatusCode)
+	rateLimited, retryAfter := false, time.Duration(0)
+	if !c.disableRateLimitHints {
+		rateLimited, retryAfter = classifyRateLimitResponse(resp)
+	}
+
 	// the caller doesn't care about the response body so we return early
 	if resp.Body == nil || (reqErr == nil && expectedBody == nil) || (reqErr != nil && errorBody == nil) {
-		return resp.StatusCode, reqErr
+		return resp.StatusCode, c.maybeWrapRateLimit(reqErr, rateLimited, retryAfter)
 	}
 
 	defer func() {
@@ -116,10 +125,16 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 	}
 
 	if reqErr != nil {
-		if err = json.Unmarshal(rawBody, errorBody); err != nil {
-			return resp.StatusCode, fmt.Errorf("failed to unmarshal error response (%w) with status %d: %w", err, resp.StatusCode, reqErr)
+		// Empty error bodies are common on bare 429s and some 5xx
+		// responses; skip the unmarshal in that case so we don't lose
+		// the rate-limit classification to a "unexpected end of JSON
+		// input" failure.
+		if len(rawBody) > 0 {
+			if err = json.Unmarshal(rawBody, errorBody); err != nil {
+				return resp.StatusCode, fmt.Errorf("failed to unmarshal error response (%w) with status %d: %w", err, resp.StatusCode, reqErr)
+			}
 		}
-		return resp.StatusCode, reqErr
+		return resp.StatusCode, c.maybeWrapRateLimit(reqErr, rateLimited, retryAfter)
 	}
 
 	// TODO: assuming json bodies for now, but may need to handle other body types
@@ -127,4 +142,16 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 		return resp.StatusCode, fmt.Errorf("failed to unmarshal response with status %d: %w", resp.StatusCode, err)
 	}
 	return resp.StatusCode, nil
+}
+
+// maybeWrapRateLimit upgrades a status-driven error into
+// *plugins.RateLimitedError when the response was classified as
+// rate-limited. The wrapping keeps errors.Is(err, ErrUpstreamRatelimit)
+// AND errors.Is(err, ErrStatusCode*) both satisfied, so existing
+// connector code that branches on either sentinel keeps working.
+func (c *client) maybeWrapRateLimit(reqErr error, rateLimited bool, retryAfter time.Duration) error {
+	if !rateLimited || reqErr == nil {
+		return reqErr
+	}
+	return plugins.NewRateLimitedError(retryAfter, reqErr)
 }

@@ -55,10 +55,18 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 
 	// Potentially retry
 	case errors.Is(err, plugins.ErrUpstreamRatelimit):
+		// Honor the upstream's wait hint when the plugin parsed one
+		// from RFC 9110 Retry-After or draft-ietf-httpapi-ratelimit-headers.
+		// Falls back to the static engine delay when no hint is available
+		// (or when the hint is shorter than the configured floor).
+		// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay
+		nextDelay := a.rateLimitingRetryDelay
+		var rl *plugins.RateLimitedError
+		if errors.As(err, &rl) && rl.RetryAfter > nextDelay {
+			nextDelay = rl.RetryAfter
+		}
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
-			// temporal already implements a backoff strategy, but let's add an extra delay before the next retry
-			// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay
-			NextRetryDelay: a.rateLimitingRetryDelay,
+			NextRetryDelay: nextDelay,
 		})
 	case errors.Is(err, plugins.ErrUpstreamTimeout):
 		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeTimeout, cause)

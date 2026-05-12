@@ -13,6 +13,12 @@ func translateError(err error) error {
 	switch {
 	case errors.Is(err, plugins.ErrNotImplemented):
 		return err
+	// Already a typed RateLimitedError (httpwrapper default-on path):
+	// preserve it as-is so the engine's temporalPluginErrorCheck can
+	// extract RetryAfter via errors.As. Skipping the wrap also avoids
+	// a redundant ErrUpstreamRatelimit in the error chain.
+	case isRateLimited(err):
+		return err
 	case errors.Is(err, models.ErrMissingFromPayloadInRequest),
 		errors.Is(err, models.ErrMissingAccountInRequest),
 		errors.Is(err, models.ErrInvalidRequest),
@@ -43,4 +49,9 @@ func translateError(err error) error {
 	default:
 		return err
 	}
+}
+
+func isRateLimited(err error) bool {
+	var rl *plugins.RateLimitedError
+	return errors.As(err, &rl)
 }
