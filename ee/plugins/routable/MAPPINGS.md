@@ -264,12 +264,12 @@ flowchart TD
   pi --> workflow --> plugin --> routable
   routable -->|"202 / pending"| poll
   routable -->|"5xx / 429 / timeout"| retry
-  retry -->|"yes, with NextRetryDelay hint"| plugin
+  retry -->|"yes"| plugin
   poll -->|"pending"| poll
   poll -->|"terminal"| done
 ```
 
-Routable's `RateLimit` / `Retry-After` headers are parsed in [`client/ratelimit.go`](client/ratelimit.go) and surfaced as `*plugins.RateLimitedError`. The engine reads the hint and feeds it into Temporal's per-error `NextRetryDelay` (see [`internal/connectors/engine/activities/errors.go`](../../../internal/connectors/engine/activities/errors.go)) so the next retry waits at least the duration the upstream asked for, falling back to the engine's static floor when no hint is present.
+Retries on 5xx / 429 / network / timeout are handled by the engine's standard backoff (`--temporal-rate-limiting-retry-delay` floor); Routable's `RateLimit` / `RateLimit-Policy` headers are emitted on every response and can be honoured by a future shared rate-limit parser in `httpwrapper` (see follow-up roadmap in §6).
 
 ### 5.6 Transfers vs Payments — what shows up where
 
@@ -306,9 +306,13 @@ The connector is built for sustained throughput of ~200,000 transactions per wee
 | `GET /v1/payables/{id}` (PollPayoutStatus) | ~60/min | Assume ~3 polls/payment until terminal × 20 payments/min. |
 | `GET /v1/payables` + `GET /v1/receivables` (FETCH_PAYMENTS pagination) | ~3.5/min | ~70 pages × 3 cycles/h ÷ 60. |
 | `GET /v1/settings/accounts` + `GET /v1/companies` (FETCH_ACCOUNTS / FETCH_EXTERNAL_ACCOUNTS) | ~0.2/min | A few pages every 20-min cycle. |
-| **Total** | **~80-100 req/min steady, peak ~200 req/min** | Must fit inside Routable's published rate limit. Webhooks (§6.4) eliminate ~75% of the poll traffic. |
+| **Total** | **~80-100 req/min steady, peak ~200 req/min** | Must fit inside Routable's published rate limit envelope (see §6.1.1). Webhooks (§6.4) eliminate ~75% of the poll traffic. |
 
 `PAGE_SIZE = 100` (Routable's documented max) keeps pagination requests at a minimum. Polling cadence is bounded by `MinimumPollingPeriod = 20m` ([`internal/connectors/plugins/sharedconfig/polling_period.go`](../../../internal/connectors/plugins/sharedconfig/polling_period.go)); we cannot poll faster without an engine-level change (§6.4).
+
+#### 6.1.1 Rate-limit envelope (informational)
+
+Routable returns the IETF draft `RateLimit` and `RateLimit-Policy` headers on every response (documented at <https://developers.routable.com/reference/create-payable>). They advertise two policies: `"fetch"` for most endpoints (60s window) and `"change"` for write-heavy endpoints such as `POST /v1/payables`. Routable does **not** send RFC 9110 `Retry-After`. This connector does not parse those headers today; on 429 / 5xx the engine applies its default backoff via `--temporal-rate-limiting-retry-delay`. Surfacing the hint into Temporal's `NextRetryDelay` is tracked as a follow-up across `httpwrapper` (shared) — see the follow-up roadmap.
 
 ### 6.2 Temporal workflow / activity volume
 
@@ -342,6 +346,7 @@ At Temporal Cloud's public list pricing of ~$25 per 1M Actions (subject to plan/
 | `PAGE_SIZE` (currently 100) | Doubling halves pagination requests linearly. | At Routable's documented max. |
 | Webhooks for `payable.status_updated` | Replaces ~80% of `PollPayoutStatus` traffic with push events. ~5M Actions/month and ~60 req/min savings at full volume. | **Follow-up PR.** |
 | Per-capability schedules | Run `FETCH_ACCOUNTS` / `FETCH_BALANCES` / `FETCH_EXTERNAL_ACCOUNTS` at 1h while keeping `FETCH_PAYMENTS` at 20m — cuts ~75% of their Actions. | **Follow-up engine PR** (touches [`sharedconfig/polling_period.go`](../../../internal/connectors/plugins/sharedconfig/polling_period.go) and the workflow scheduler). |
+| Honour `RateLimit` / `Retry-After` hints in Temporal `NextRetryDelay` | Reduces 429 churn and respects Routable's documented quota windows precisely instead of falling back to the engine's static delay. Shared infra (every connector benefits). | **Follow-up PR** on `internal/connectors/httpwrapper` + `plugins/errors.go` + `engine/activities/errors.go`. |
 
 ---
 
@@ -367,7 +372,6 @@ At Temporal Cloud's public list pricing of ~$25 per 1M Actions (subject to plan/
 | Routable HTTP client (interface + impl) | [`client/client.go`](client/client.go) |
 | Routable request/response shapes | [`client/types.go`](client/types.go) |
 | Routable error envelope | [`client/error.go`](client/error.go) |
-| Rate-limit header parsing (IETF + RFC 9110) | [`client/ratelimit.go`](client/ratelimit.go) |
 
 ---
 
