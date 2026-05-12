@@ -15,7 +15,6 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -60,31 +59,7 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	resp, err := t.underlying.RoundTrip(req)
-	if err == nil && resp != nil {
-		recordRateLimitHint(req.Context(), resp)
-	}
-	return resp, err
-}
-
-// recordRateLimitHint flags 429 unconditionally as rate-limited, and 5xx
-// only when the server attached a RateLimit header (per IETF §6, those
-// headers can accompany any status code; their presence on a 5xx is the
-// server signalling quota/capacity, not a generic outage).
-func recordRateLimitHint(ctx context.Context, resp *http.Response) {
-	hint, ok := ctx.Value(rateLimitHintCtxKey{}).(*rateLimitHint)
-	if !ok || hint == nil {
-		return
-	}
-	wait, hasSignal := parseRateLimitHeaders(resp.Header, time.Now())
-	switch {
-	case resp.StatusCode == http.StatusTooManyRequests:
-		hint.rateLimited = true
-		hint.retryAfter = wait
-	case resp.StatusCode >= http.StatusInternalServerError && hasSignal:
-		hint.rateLimited = true
-		hint.retryAfter = wait
-	}
+	return t.underlying.RoundTrip(req)
 }
 
 // New wires the Routable client through Formance's standard HTTP layer
@@ -138,10 +113,7 @@ func paginationQuery(page, pageSize int) url.Values {
 	return q
 }
 
-// do unmarshals the success body or the Routable error envelope, and
-// upgrades 429 / 5xx-with-RateLimit-header into a *plugins.RateLimitedError
-// carrying the parsed wait hint (consumed by the engine's
-// temporalPluginErrorCheck → Temporal NextRetryDelay).
+// do unmarshals the success body or the Routable error envelope.
 func (c *client) do(ctx context.Context, method, path string, query url.Values, body any, idempotencyKey string, out any) (int, error) {
 	reqBody := io.Reader(http.NoBody)
 	if body != nil {
@@ -151,9 +123,6 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 		}
 		reqBody = buf
 	}
-
-	hint := &rateLimitHint{}
-	ctx = context.WithValue(ctx, rateLimitHintCtxKey{}, hint)
 
 	req, err := http.NewRequestWithContext(ctx, method, c.buildURL(path, query), reqBody)
 	if err != nil {
@@ -169,16 +138,12 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 		return statusCode, nil
 	}
 
-	// Only attach the Routable error envelope when the response carried
-	// one. Transport errors (DNS, timeout, connection refused) leave
-	// apiErr at its zero value, in which case appending the formatted
-	// envelope just produces a misleading "routable api error: empty
-	// body" suffix that hurts log triage.
+	// Attach the Routable error envelope when the response carried one.
+	// Transport errors (DNS, timeout, connection refused) leave apiErr
+	// at its zero value, in which case appending the formatted envelope
+	// just produces a misleading "empty body" suffix.
 	if apiErr.hasContent() {
-		doErr = fmt.Errorf("%w: %s", doErr, apiErr.Error())
-	}
-	if hint.rateLimited {
-		return statusCode, plugins.NewRateLimitedError(hint.retryAfter, doErr)
+		return statusCode, fmt.Errorf("%w: %s", doErr, apiErr.Error())
 	}
 	return statusCode, doErr
 }
