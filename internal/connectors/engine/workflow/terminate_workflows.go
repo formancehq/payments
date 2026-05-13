@@ -28,7 +28,7 @@ func (w Workflow) runTerminateWorkflows(
 				Namespace:     w.temporalNamespace,
 				PageSize:      100,
 				NextPageToken: nextPageToken,
-				Query:         fmt.Sprintf("Stack=\"%s\" and TaskQueue=\"%s\"", w.stack, terminateWorkflows.ConnectorID.String()),
+				Query:         fmt.Sprintf("Stack=\"%s\" and ConnectorID=\"%s\"", w.stack, terminateWorkflows.ConnectorID.String()),
 			},
 		)
 		if err != nil {
