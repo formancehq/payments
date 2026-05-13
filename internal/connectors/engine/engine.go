@@ -540,6 +540,17 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 	return task, nil
 }
 
+func (e *engine) getPayoutTaskQueue(connectorID models.ConnectorID) string {
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		return GetDefaultTaskQueue(e.stack)
+	}
+	if _, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+		return GetPayoutTaskQueue(e.stack, connectorID)
+	}
+	return GetDefaultTaskQueue(e.stack)
+}
+
 func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateTransfer")
 	defer span.End()
@@ -567,7 +578,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			TaskQueue:                                e.getPayoutTaskQueue(piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -685,7 +696,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			TaskQueue:                                e.getPayoutTaskQueue(piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{

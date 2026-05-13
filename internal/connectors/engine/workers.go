@@ -156,9 +156,16 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
 	if !connector.ScheduledForDeletion {
-		err = w.AddWorker(GetDefaultTaskQueue(w.stack))
-		if err != nil {
+		if err = w.AddWorker(GetDefaultTaskQueue(w.stack)); err != nil {
 			return err
+		}
+
+		if plugin, getErr := w.connectors.Get(connector.ID); getErr == nil {
+			if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+				if err := w.AddPayoutWorker(GetPayoutTaskQueue(w.stack, connector.ID), throttle.PayoutsPerSecond()); err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil
@@ -188,6 +195,14 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
+	if plugin, getErr := w.connectors.Get(connectorID); getErr == nil {
+		if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+			if err := w.AddPayoutWorker(GetPayoutTaskQueue(w.stack, connectorID), throttle.PayoutsPerSecond()); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -212,6 +227,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 
 func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
 	w.logger.Debugf("worker got delete notification for %q", connectorID.String())
+	w.stopWorker(GetPayoutTaskQueue(w.stack, connectorID))
 	w.connectors.Unload(connectorID)
 
 	return nil
@@ -229,6 +245,59 @@ func (w *WorkerPool) Close() {
 
 func (w *WorkerPool) AddDefaultWorker() error {
 	return w.AddWorker(GetDefaultTaskQueue(w.stack))
+}
+
+// AddPayoutWorker creates a dedicated Temporal worker for payout and transfer
+// workflows with TaskQueueActivitiesPerSecond set to payoutsPerSecond.
+func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) error {
+	w.rwMutex.Lock()
+	defer w.rwMutex.Unlock()
+
+	if _, ok := w.workers[name]; ok {
+		return nil
+	}
+
+	opts := w.options
+	opts.TaskQueueActivitiesPerSecond = payoutsPerSecond
+
+	wkr := worker.New(w.temporalClient, name, opts)
+
+	for _, set := range w.workflows {
+		for _, wf := range set {
+			wkr.RegisterWorkflowWithOptions(wf.Func, temporalworkflow.RegisterOptions{
+				Name: wf.Name,
+			})
+		}
+	}
+
+	for _, set := range w.activities {
+		for _, act := range set {
+			wkr.RegisterActivityWithOptions(act.Func, activity.RegisterOptions{
+				Name: act.Name,
+			})
+		}
+	}
+
+	go func() {
+		if err := wkr.Start(); err != nil {
+			w.logger.Errorf("payout worker loop stopped: %v", err)
+		}
+	}()
+
+	w.workers[name] = Worker{worker: wkr}
+	w.logger.Infof("payout worker %s started (%.2f activities/s)", name, payoutsPerSecond)
+
+	return nil
+}
+
+func (w *WorkerPool) stopWorker(name string) {
+	w.rwMutex.Lock()
+	defer w.rwMutex.Unlock()
+
+	if wkr, ok := w.workers[name]; ok {
+		wkr.worker.Stop()
+		delete(w.workers, name)
+	}
 }
 
 // AddWorker instantiates a temporal worker
@@ -323,6 +392,13 @@ func (w *WorkerPool) createSchedule(ctx context.Context, scheduleIDSuffix, workf
 		return fmt.Errorf("%s: %w", errorMsg, err)
 	}
 	return nil
+}
+
+func (w *WorkerPool) HasWorker(name string) bool {
+	w.rwMutex.RLock()
+	defer w.rwMutex.RUnlock()
+	_, ok := w.workers[name]
+	return ok
 }
 
 func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {

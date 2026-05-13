@@ -219,3 +219,14 @@ func craftUpdatedConnection(
 func (w Workflow) getDefaultTaskQueue() string {
 	return fmt.Sprintf("%s-default", w.stack)
 }
+
+func (w Workflow) getPayoutTaskQueue(connectorID models.ConnectorID) string {
+	plugin, err := w.connectors.Get(connectorID)
+	if err != nil {
+		return w.getDefaultTaskQueue()
+	}
+	if _, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+		return fmt.Sprintf("%s-%s-payout", w.stack, connectorID.String())
+	}
+	return w.getDefaultTaskQueue()
+}
