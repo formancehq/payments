@@ -123,6 +123,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigStripe(components.V3Strip
 v3ConnectorConfig := components.CreateV3ConnectorConfigTink(components.V3TinkConfig{/* values here */})
 ```
 
+### V3UniversalConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigUniversal(components.V3UniversalConfig{/* values here */})
+```
+
 ### V3WiseConfig
 
 ```go

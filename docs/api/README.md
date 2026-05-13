@@ -8002,6 +8002,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3UniversalConfig](#schemav3universalconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3WiseConfig](#schemav3wiseconfig)|false|none|none|
 
 xor
@@ -8681,6 +8687,40 @@ xor
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+
+<h2 id="tocS_V3UniversalConfig">V3UniversalConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3universalconfig"></a>
+<a id="schema_V3UniversalConfig"></a>
+<a id="tocSv3universalconfig"></a>
+<a id="tocsv3universalconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "capabilityOverrides": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": 25,
+  "pollingPeriod": "30m",
+  "provider": "Universal",
+  "webhookSharedSecret": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|capabilityOverrides|string|false|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+|webhookSharedSecret|string|false|none|none|
 
 <h2 id="tocS_V3WiseConfig">V3WiseConfig</h2>
 <!-- backwards compatibility -->

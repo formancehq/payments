@@ -24,6 +24,7 @@ components:
                     Qonto: '#/components/schemas/V3QontoConfig'
                     Stripe: '#/components/schemas/V3StripeConfig'
                     Tink: '#/components/schemas/V3TinkConfig'
+                    Universal: '#/components/schemas/V3UniversalConfig'
                     Wise: '#/components/schemas/V3WiseConfig'
             oneOf:
                 - $ref: '#/components/schemas/V3AdyenConfig'
@@ -42,6 +43,7 @@ components:
                 - $ref: '#/components/schemas/V3QontoConfig'
                 - $ref: '#/components/schemas/V3StripeConfig'
                 - $ref: '#/components/schemas/V3TinkConfig'
+                - $ref: '#/components/schemas/V3UniversalConfig'
                 - $ref: '#/components/schemas/V3WiseConfig'
                 - $ref: '#/components/schemas/V3BankingbridgeConfig'
                 - $ref: '#/components/schemas/V3BitstampConfig'
@@ -599,6 +601,34 @@ components:
                 provider:
                     type: string
                     default: Tink
+        V3UniversalConfig:
+            type: object
+            required:
+                - name
+                - endpoint
+                - apiKey
+            properties:
+                apiKey:
+                    type: string
+                capabilityOverrides:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: 25
+                    deprecated: true
+                    x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+                pollingPeriod:
+                    type: string
+                    default: 30m
+                provider:
+                    type: string
+                    default: Universal
+                webhookSharedSecret:
+                    type: string
         V3WiseConfig:
             type: object
             required:

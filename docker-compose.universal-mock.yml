@@ -1,0 +1,69 @@
+###############################################################################
+# Local stack: Payments + Universal mock counterparty.
+#
+# Layers on top of the repo-root docker-compose.yml + docker-compose.dev-override.yml.
+# Mirrors the path conventions of the other docker-compose.*.yml files at the
+# repo root so build context / volume paths resolve cleanly.
+#
+# Usage from the repo root:
+#
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker-compose.dev-override.yml \
+#     -f docker-compose.universal-mock.yml \
+#     up -d --build
+#
+# Then:
+#   ./internal/connectors/plugins/public/universal/mock/install.sh
+###############################################################################
+services:
+  # Stand-in for any counterparty implementing the Universal Connector
+  # contract. See internal/connectors/plugins/public/universal/mock/README.md
+  # for what it serves and how to drive it.
+  #
+  # No `build:` section — the image is already built by payments /
+  # payments-worker via dev-override (`payments-dev:latest`). We just
+  # reuse it with a different command. This avoids any build-context
+  # path resolution issues and saves one image build per cycle.
+  universal-mock:
+    image: payments-dev:latest
+    pull_policy: never
+    command: go run ./internal/connectors/plugins/public/universal/mock
+    depends_on:
+      payments:
+        condition: service_started
+    ports:
+      - "8090:8080"
+    volumes:
+      - .:/app:delegated
+      - go-cache:/home/appuser/.cache/go-build
+    working_dir: /app
+    environment:
+      MOCK_PORT: "8080"
+      MOCK_API_KEY: dev-key
+      MOCK_WEBHOOK_SECRET: dev-secret
+      MOCK_WEBHOOK_SIGNATURE: hmac-sha256
+      MOCK_EVOLVE_ON_POLL: "true"
+      MOCK_AUTO_EVOLVE_BATCH: "20"
+      # MOCK_AUTO_EVOLVE_INTERVAL=0 (the default) keeps the wall-clock
+      # ticker off — we let the engine's polls drive evolution. Set to
+      # e.g. "10s" for pure-demo runs without an installed engine.
+
+  # Override payments / payments-worker so the engine tells the
+  # counterparty to deliver webhooks via the docker-internal gateway
+  # hostname (http://gateway:80). Important: the engine builds callback
+  # URLs as `<STACK_PUBLIC_URL>/api/payments/v3/connectors/webhooks/...`
+  # — the `/api/payments` prefix is the path the gateway strips before
+  # reverse-proxying to the payments service. So the public URL MUST
+  # point at the gateway (not at the payments service directly),
+  # otherwise the path won't route and the counterparty's webhooks 404.
+  payments:
+    environment:
+      STACK_PUBLIC_URL: http://gateway:80
+
+  payments-worker:
+    environment:
+      STACK_PUBLIC_URL: http://gateway:80
+
+volumes:
+  go-cache:

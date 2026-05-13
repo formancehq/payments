@@ -32,6 +32,7 @@ const (
 	V3ConnectorConfigTypeQonto         V3ConnectorConfigType = "Qonto"
 	V3ConnectorConfigTypeStripe        V3ConnectorConfigType = "Stripe"
 	V3ConnectorConfigTypeTink          V3ConnectorConfigType = "Tink"
+	V3ConnectorConfigTypeUniversal     V3ConnectorConfigType = "Universal"
 	V3ConnectorConfigTypeWise          V3ConnectorConfigType = "Wise"
 )
 
@@ -52,6 +53,7 @@ type V3ConnectorConfig struct {
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
+	V3UniversalConfig     *V3UniversalConfig     `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 	V3BankingbridgeConfig *V3BankingbridgeConfig `queryParam:"inline"`
 	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
@@ -301,6 +303,18 @@ func CreateV3ConnectorConfigTink(tink V3TinkConfig) V3ConnectorConfig {
 	}
 }
 
+func CreateV3ConnectorConfigUniversal(universal V3UniversalConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeUniversal
+
+	typStr := string(typ)
+	universal.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3UniversalConfig: &universal,
+		Type:              typ,
+	}
+}
+
 func CreateV3ConnectorConfigWise(wise V3WiseConfig) V3ConnectorConfig {
 	typ := V3ConnectorConfigTypeWise
 
@@ -505,6 +519,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3TinkConfig = v3TinkConfig
 		u.Type = V3ConnectorConfigTypeTink
 		return nil
+	case "Universal":
+		v3UniversalConfig := new(V3UniversalConfig)
+		if err := utils.UnmarshalJSON(data, &v3UniversalConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Universal) type V3UniversalConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3UniversalConfig = v3UniversalConfig
+		u.Type = V3ConnectorConfigTypeUniversal
+		return nil
 	case "Wise":
 		v3WiseConfig := new(V3WiseConfig)
 		if err := utils.UnmarshalJSON(data, &v3WiseConfig, "", true, false); err != nil {
@@ -582,6 +605,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3TinkConfig != nil {
 		return utils.MarshalJSON(u.V3TinkConfig, "", true)
+	}
+
+	if u.V3UniversalConfig != nil {
+		return utils.MarshalJSON(u.V3UniversalConfig, "", true)
 	}
 
 	if u.V3WiseConfig != nil {

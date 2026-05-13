@@ -1,0 +1,729 @@
+openapi: 3.1.0
+info:
+  title: Formance Universal Connector — counterparty contract
+  version: "v1.0.0"
+  summary: |
+    Wire contract every counterparty (PSP, in-house service, sandbox) MUST
+    implement to be installed via the Formance CE Universal Connector.
+
+    Every endpoint is OPTIONAL except `GET /v1/capabilities`. The
+    counterparty advertises which primitives it supports there; the
+    Universal Connector builds the install-time Temporal workflow tree from
+    that response and rejects calls to undeclared primitives at runtime.
+
+    See the companion docs co-located with this file:
+      - data-model.md       — wire schema reference
+      - adjustments.md      — adjustment semantics on payments / orders /
+                              payment-initiations
+      - state-machines.md   — payment / order / conversion lifecycles
+      - webhooks.md         — comprehensive webhook guide (subscription,
+                              signing, verification, retries, recipes)
+      - universal-events.md — webhook event catalogue (quick reference)
+
+servers:
+  - url: https://your-counterparty.example.com
+    description: Production endpoint declared at install time.
+  - url: http://localhost:8080
+    description: Local mock fixture (see ../mock/).
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: capabilities
+  - name: accounts
+  - name: balances
+  - name: external-accounts
+  - name: payments
+  - name: orders
+  - name: conversions
+  - name: others
+  - name: payouts
+  - name: transfers
+  - name: bank-accounts
+  - name: webhooks
+
+paths:
+  /v1/capabilities:
+    get:
+      tags: [capabilities]
+      summary: Advertise supported primitives + transport features
+      description: |
+        REQUIRED. Returned at install time so the Universal Connector knows
+        which periodic Temporal workflows to schedule and which features
+        (pagination strategy, webhook signing, idempotency header) to use
+        for every subsequent request.
+      operationId: getCapabilities
+      responses:
+        "200":
+          description: Capabilities envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Capabilities" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/accounts:
+    get:
+      tags: [accounts]
+      summary: List internal accounts
+      operationId: listAccounts
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/UpdatedAtFrom"
+      responses:
+        "200":
+          description: Accounts page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountsPage" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/external-accounts:
+    get:
+      tags: [external-accounts]
+      summary: List external accounts (counterparty-owned beneficiaries)
+      operationId: listExternalAccounts
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/UpdatedAtFrom"
+      responses:
+        "200":
+          description: External accounts page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountsPage" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/accounts/{accountId}/balances:
+    get:
+      tags: [balances]
+      summary: Latest balances for one account
+      operationId: getAccountBalances
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Balance snapshot.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BalancesResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/payments:
+    get:
+      tags: [payments]
+      summary: List payments observed by the counterparty
+      description: |
+        Payments includes ingest from the PSP regardless of who initiated it
+        (counterparty, third party, or Formance). `updatedAt` MUST be honest
+        and monotonic per record so Formance can use `updatedAtFrom` for
+        incremental polling.
+      operationId: listPayments
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/UpdatedAtFrom"
+      responses:
+        "200":
+          description: Payments page (with optional deletions).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaymentsPage" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/orders:
+    get:
+      tags: [orders]
+      summary: List trading orders
+      operationId: listOrders
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/UpdatedAtFrom"
+      responses:
+        "200":
+          description: Orders page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrdersPage" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/conversions:
+    get:
+      tags: [conversions]
+      summary: List asset conversions (FX, stablecoin swaps)
+      operationId: listConversions
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/UpdatedAtFrom"
+      responses:
+        "200":
+          description: Conversions page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversionsPage" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/others/{name}:
+    get:
+      tags: [others]
+      summary: List opaque counterparty entities by name
+      operationId: listOthers
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/UpdatedAtFrom"
+      responses:
+        "200":
+          description: Others page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OthersPage" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/payouts:
+    post:
+      tags: [payouts]
+      summary: Initiate a payout
+      operationId: createPayout
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InitiationRequest" }
+      responses:
+        "200":
+          description: Terminal-or-polling envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InitiationResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/payouts/{id}:
+    get:
+      tags: [payouts]
+      summary: Fetch the latest state of a polling payout
+      operationId: getPayout
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Payout poll envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InitiationResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/payouts/{id}/reverse:
+    post:
+      tags: [payouts]
+      summary: Reverse a previously-initiated payout
+      operationId: reversePayout
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReverseRequest" }
+      responses:
+        "200":
+          description: Reversal envelope (must include payment).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InitiationResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/transfers:
+    post:
+      tags: [transfers]
+      summary: Initiate an internal transfer
+      operationId: createTransfer
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InitiationRequest" }
+      responses:
+        "200":
+          description: Terminal-or-polling envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InitiationResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/transfers/{id}:
+    get:
+      tags: [transfers]
+      summary: Fetch the latest state of a polling transfer
+      operationId: getTransfer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Transfer poll envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InitiationResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/transfers/{id}/reverse:
+    post:
+      tags: [transfers]
+      summary: Reverse a previously-initiated transfer
+      operationId: reverseTransfer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReverseRequest" }
+      responses:
+        "200":
+          description: Reversal envelope (must include payment).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InitiationResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/bank-accounts:
+    post:
+      tags: [bank-accounts]
+      summary: Create a bank account on the counterparty
+      operationId: createBankAccount
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BankAccountRequest" }
+      responses:
+        "200":
+          description: Created bank-account + the related counterparty Account it surfaces as.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BankAccountResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/webhooks:
+    post:
+      tags: [webhooks]
+      summary: Subscribe Formance to an event topic
+      operationId: createWebhookSubscription
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WebhookSubscriptionRequest" }
+      responses:
+        "200":
+          description: Subscription created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscriptionResponse" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/webhooks/{id}:
+    delete:
+      tags: [webhooks]
+      summary: Cancel a webhook subscription
+      operationId: deleteWebhookSubscription
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Subscription removed.
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      schema: { type: string }
+      description: Opaque pagination token. Honored when capabilities.features.pagination == "cursor".
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1 }
+      description: 1-based page number. Honored when capabilities.features.pagination == "page".
+    PageSize:
+      in: query
+      name: pageSize
+      schema: { type: integer, minimum: 1, maximum: 1000 }
+    UpdatedAtFrom:
+      in: query
+      name: updatedAtFrom
+      schema: { type: string, format: date-time }
+      description: |
+        RFC3339 UTC. Returns records whose updatedAt is strictly greater than
+        this value. Combine with cursor / page for paging within a window.
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema: { type: string }
+
+  responses:
+    Error:
+      description: |
+        Error envelope. Counterparties MAY use either the legacy
+        `{message, errors[]}` shape or RFC 7807 `application/problem+json`
+        — the connector's hand-rolled error type accepts both.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Capabilities:
+      type: object
+      required: [supported, features]
+      properties:
+        supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - FETCH_ACCOUNTS
+              - FETCH_BALANCES
+              - FETCH_EXTERNAL_ACCOUNTS
+              - FETCH_PAYMENTS
+              - FETCH_OTHERS
+              - FETCH_ORDERS
+              - FETCH_CONVERSIONS
+              - CREATE_WEBHOOKS
+              - TRANSLATE_WEBHOOKS
+              - CREATE_BANK_ACCOUNT
+              - CREATE_TRANSFER
+              - CREATE_PAYOUT
+              - ALLOW_FORMANCE_ACCOUNT_CREATION
+              - ALLOW_FORMANCE_PAYMENT_CREATION
+        features:
+          $ref: "#/components/schemas/Features"
+
+    Features:
+      type: object
+      required: [pagination, webhookSignature]
+      properties:
+        pagination:
+          type: string
+          enum: [cursor, page, none]
+        webhookSignature:
+          type: string
+          enum: [hmac-sha256, none]
+        idempotencyHeader:
+          type: string
+          description: Override of the canonical Idempotency-Key header name. Empty = use default.
+
+    Account:
+      type: object
+      required: [reference, createdAt]
+      properties:
+        reference:    { type: string }
+        createdAt:    { type: string, format: date-time }
+        name:         { type: string, nullable: true }
+        defaultAsset:
+          type: string
+          nullable: true
+          description: UMN asset string with precision (e.g. "USD/2", "BTC/8").
+        metadata:
+          type: object
+          additionalProperties: { type: string }
+
+    AccountsPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:      { type: array, items: { $ref: "#/components/schemas/Account" } }
+        nextCursor: { type: string }
+        hasMore:    { type: boolean }
+
+    Balance:
+      type: object
+      required: [accountReference, createdAt, amount, asset]
+      properties:
+        accountReference: { type: string }
+        createdAt:        { type: string, format: date-time }
+        amount:
+          type: string
+          description: Decimal-string of integer minor units. No floats.
+        asset: { type: string }
+
+    BalancesResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Balance" }
+
+    Payment:
+      type: object
+      required: [reference, createdAt, updatedAt, type, status, amount, asset]
+      properties:
+        reference:                   { type: string }
+        parentReference:             { type: string }
+        createdAt:                   { type: string, format: date-time }
+        updatedAt:                   { type: string, format: date-time }
+        type:                        { type: string, enum: [PAYIN, PAYOUT, TRANSFER, OTHER] }
+        status:                      { type: string }
+        scheme:                      { type: string }
+        amount:                      { type: string, description: "Decimal-string minor units." }
+        asset:                       { type: string }
+        sourceAccountReference:      { type: string, nullable: true }
+        destinationAccountReference: { type: string, nullable: true }
+        metadata:                    { type: object, additionalProperties: { type: string } }
+
+    PaymentsPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Payment" } }
+        paymentsToDelete:
+          type: array
+          items:
+            type: object
+            properties:
+              reference: { type: string }
+        nextCursor: { type: string }
+        hasMore:    { type: boolean }
+
+    Order:
+      type: object
+      required: [reference, createdAt, updatedAt, direction, type, status, sourceAsset, destinationAsset, baseQuantityOrdered]
+      properties:
+        reference:                   { type: string }
+        clientOrderID:               { type: string }
+        createdAt:                   { type: string, format: date-time }
+        updatedAt:                   { type: string, format: date-time }
+        direction:                   { type: string, enum: [BUY, SELL] }
+        type:                        { type: string, enum: [MARKET, LIMIT, STOP_LIMIT] }
+        status:                      { type: string, enum: [PENDING, OPEN, PARTIALLY_FILLED, FILLED, CANCELLED, FAILED, EXPIRED] }
+        sourceAsset:                 { type: string }
+        destinationAsset:            { type: string }
+        baseQuantityOrdered:         { type: string }
+        baseQuantityFilled:          { type: string }
+        limitPrice:                  { type: string }
+        stopPrice:                   { type: string }
+        timeInForce:                 { type: string, enum: [GTC, IOC, FOK, GTD] }
+        expiresAt:                   { type: string, format: date-time, nullable: true }
+        quoteAmount:                 { type: string }
+        quoteAsset:                  { type: string }
+        fee:                         { type: string }
+        feeAsset:                    { type: string, nullable: true }
+        averageFillPrice:            { type: string }
+        priceAsset:                  { type: string, nullable: true }
+        sourceAccountReference:      { type: string, nullable: true }
+        destinationAccountReference: { type: string, nullable: true }
+        metadata:                    { type: object, additionalProperties: { type: string } }
+
+    OrdersPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:      { type: array, items: { $ref: "#/components/schemas/Order" } }
+        nextCursor: { type: string }
+        hasMore:    { type: boolean }
+
+    Conversion:
+      type: object
+      required: [reference, createdAt, status, sourceAsset, destinationAsset, sourceAmount]
+      properties:
+        reference:                   { type: string }
+        createdAt:                   { type: string, format: date-time }
+        status:                      { type: string, enum: [PENDING, COMPLETED, FAILED] }
+        sourceAsset:                 { type: string }
+        destinationAsset:            { type: string }
+        sourceAmount:                { type: string }
+        destinationAmount:           { type: string }
+        fee:                         { type: string }
+        feeAsset:                    { type: string, nullable: true }
+        sourceAccountReference:      { type: string, nullable: true }
+        destinationAccountReference: { type: string, nullable: true }
+        metadata:                    { type: object, additionalProperties: { type: string } }
+
+    ConversionsPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:      { type: array, items: { $ref: "#/components/schemas/Conversion" } }
+        nextCursor: { type: string }
+        hasMore:    { type: boolean }
+
+    Other:
+      type: object
+      required: [id, data]
+      properties:
+        id:   { type: string }
+        data: { description: "Counterparty-defined opaque payload — forwarded as-is." }
+
+    OthersPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:      { type: array, items: { $ref: "#/components/schemas/Other" } }
+        nextCursor: { type: string }
+        hasMore:    { type: boolean }
+
+    InitiationRequest:
+      type: object
+      required: [reference, amount, asset, sourceAccountReference, destinationAccountReference]
+      properties:
+        reference:                   { type: string }
+        description:                 { type: string }
+        amount:                      { type: string }
+        asset:                       { type: string }
+        sourceAccountReference:      { type: string }
+        destinationAccountReference: { type: string }
+        metadata:                    { type: object, additionalProperties: { type: string } }
+
+    InitiationResponse:
+      type: object
+      required: [mode]
+      description: |
+        Terminal: include the `payment` (its status decides success / failure).
+        Polling: include `pollingID` and the engine will call GET /v1/payouts/{id}
+        or GET /v1/transfers/{id} until terminal.
+      properties:
+        mode:      { type: string, enum: [terminal, polling] }
+        pollingID: { type: string }
+        payment:   { $ref: "#/components/schemas/Payment" }
+        error:     { type: string, description: "Synchronous failure message — counterparty validation rejected the initiation outright." }
+
+    ReverseRequest:
+      type: object
+      required: [reference, amount, asset]
+      properties:
+        reference:   { type: string }
+        description: { type: string }
+        amount:      { type: string }
+        asset:       { type: string }
+        metadata:    { type: object, additionalProperties: { type: string } }
+
+    BankAccountRequest:
+      type: object
+      required: [id, createdAt, name]
+      properties:
+        id:            { type: string, format: uuid }
+        createdAt:     { type: string, format: date-time }
+        name:          { type: string }
+        accountNumber: { type: string, nullable: true }
+        iban:          { type: string, nullable: true }
+        swiftBicCode:  { type: string, nullable: true }
+        country:       { type: string, nullable: true }
+        metadata:      { type: object, additionalProperties: { type: string } }
+
+    BankAccountResponse:
+      type: object
+      required: [relatedAccount]
+      properties:
+        relatedAccount: { $ref: "#/components/schemas/Account" }
+
+    WebhookSubscriptionRequest:
+      type: object
+      required: [name, callbackUrl]
+      properties:
+        name:        { type: string }
+        callbackUrl: { type: string, format: uri }
+        metadata:    { type: object, additionalProperties: { type: string } }
+
+    WebhookSubscriptionResponse:
+      type: object
+      required: [id, name]
+      properties:
+        id:   { type: string }
+        name: { type: string }
+
+    Error:
+      description: Accepts both legacy and RFC 7807 envelopes via `oneOf`.
+      oneOf:
+        - type: object
+          properties:
+            message: { type: string }
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:   { type: string }
+                  message: { type: string }
+        - type: object
+          properties:
+            type:     { type: string, format: uri }
+            title:    { type: string }
+            status:   { type: integer }
+            detail:   { type: string }
+            instance: { type: string }
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:   { type: string }
+                  detail: { type: string }

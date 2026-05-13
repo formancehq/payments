@@ -123,6 +123,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestStripe(comp
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestTink(components.V3TinkConfig{/* values here */})
 ```
 
+### V3UniversalConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestUniversal(components.V3UniversalConfig{/* values here */})
+```
+
 ### V3WiseConfig
 
 ```go

@@ -166,6 +166,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestTink() *comp
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestUniversal() *components.V3UniversalConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3UniversalConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestWise() *components.V3WiseConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3WiseConfig

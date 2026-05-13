@@ -166,6 +166,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestTink() *componen
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestUniversal() *components.V3UniversalConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3UniversalConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestWise() *components.V3WiseConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3WiseConfig

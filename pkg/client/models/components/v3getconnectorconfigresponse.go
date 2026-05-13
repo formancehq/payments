@@ -93,6 +93,10 @@ func (o *V3GetConnectorConfigResponse) GetDataTink() *V3TinkConfig {
 	return o.GetData().V3TinkConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataUniversal() *V3UniversalConfig {
+	return o.GetData().V3UniversalConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataWise() *V3WiseConfig {
 	return o.GetData().V3WiseConfig
 }
