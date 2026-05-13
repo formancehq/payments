@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	SearchAttributeScheduleID = "PaymentScheduleID"
-	SearchAttributeStack      = "Stack"
+	SearchAttributeScheduleID  = "PaymentScheduleID"
+	SearchAttributeStack       = "Stack"
+	SearchAttributeConnectorID = "ConnectorID"
 )
 
 type FromPayload struct {
