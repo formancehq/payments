@@ -2325,6 +2325,7 @@ paths:
       summary: Create a formance pool object
       operationId: v3CreatePool
       x-speakeasy-name-override: CreatePool
+      x-formance-resource: true
       requestBody:
         content:
           application/json:
@@ -6164,19 +6165,32 @@ components:
     V3CreatePoolRequest:
       type: object
       description: Query and dynamic pools are available from Connectivity v3.1
+      x-formance-name: name
       required:
         - name
       properties:
         name:
           type: string
+          x-formance-immutable: true
         query:
           description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
           type: object
           additionalProperties: true
+          x-formance-raw-json: true
         accountIDs:
           type: array
           items:
             type: string
+          # GAP: array-of-refs is not yet expressible in the x-formance-* taxonomy.
+          # Each element is a payments-owned account identifier (composite
+          # connector-scoped string, e.g. "<connectorID>/<accountReference>").
+          # Conceptually this is an `x-formance-ref` of module=payments,
+          # kind=Account, as=id — but applied per-element. Until the spec
+          # extends `x-formance-ref` to cover `type: array` properties (or
+          # introduces `x-formance-ref-items`), this property carries
+          # `x-formance-no-ref: true` to satisfy the lint and the gap is
+          # documented in the spike report.
+          x-formance-no-ref: true
     V3CreatePoolResponse:
       type: object
       required:
@@ -6185,6 +6199,7 @@ components:
         data:
           description: The ID of the created pool
           type: string
+          x-formance-computed: true
     V3UpdatePoolQueryRequest:
       type: object
       required:
@@ -6247,20 +6262,28 @@ components:
       properties:
         id:
           type: string
+          x-formance-computed: true
         name:
           type: string
+          x-formance-immutable: true
         createdAt:
           type: string
           format: date-time
+          x-formance-computed: true
         type:
           $ref: '#/components/schemas/V3PoolTypeEnum'
         query:
           type: object
           additionalProperties: true
+          x-formance-raw-json: true
         poolAccounts:
           type: array
           items:
             $ref: '#/components/schemas/V3AccountID'
+          # GAP: same array-of-refs limitation as V3CreatePoolRequest.accountIDs.
+          # Server-observed projection of the pool's member accounts; manifest
+          # authoring uses `accountIDs` on the request.
+          x-formance-no-ref: true
     V3PoolBalances:
       type: array
       items:
