@@ -96,6 +96,66 @@ func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowExecutionsList_E
 	s.ErrorContains(err, "error-test")
 }
 
+func (s *UnitTestSuite) Test_TerminateWorkflows_SkipsUninstallConnectorWorkflow() {
+	s.env.OnActivity(activities.TemporalWorkflowExecutionsListActivity, mock.Anything, mock.Anything).Once().Return(
+		&workflowservice.ListWorkflowExecutionsResponse{
+			Executions: []*workflow.WorkflowExecutionInfo{
+				{
+					Execution: &common.WorkflowExecution{
+						WorkflowId: "uninstall-workflow",
+						RunId:      "run-1",
+					},
+					Type:   &common.WorkflowType{Name: RunUninstallConnector},
+					Status: enums.WORKFLOW_EXECUTION_STATUS_RUNNING,
+				},
+				{
+					Execution: &common.WorkflowExecution{
+						WorkflowId: "other-workflow",
+						RunId:      "run-2",
+					},
+					Type:   &common.WorkflowType{Name: "SomeOtherWorkflow"},
+					Status: enums.WORKFLOW_EXECUTION_STATUS_RUNNING,
+				},
+			},
+		},
+		nil,
+	)
+	// Only "other-workflow" must be terminated; the uninstall workflow is skipped.
+	s.env.OnActivity(activities.TemporalWorkflowTerminateActivity, mock.Anything, "other-workflow", "run-2", "uninstalling connector").Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunTerminateWorkflows, TerminateWorkflows{
+		ConnectorID: s.connectorID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
+func (s *UnitTestSuite) Test_TerminateWorkflows_SkipsResetConnectorWorkflow() {
+	s.env.OnActivity(activities.TemporalWorkflowExecutionsListActivity, mock.Anything, mock.Anything).Once().Return(
+		&workflowservice.ListWorkflowExecutionsResponse{
+			Executions: []*workflow.WorkflowExecutionInfo{
+				{
+					Execution: &common.WorkflowExecution{
+						WorkflowId: "reset-workflow",
+						RunId:      "run-1",
+					},
+					Type:   &common.WorkflowType{Name: RunResetConnector},
+					Status: enums.WORKFLOW_EXECUTION_STATUS_RUNNING,
+				},
+			},
+		},
+		nil,
+	)
+	// No workflows to terminate — the reset workflow is skipped.
+	s.env.ExecuteWorkflow(RunTerminateWorkflows, TerminateWorkflows{
+		ConnectorID: s.connectorID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
 func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowTerminate_Error() {
 	s.env.OnActivity(activities.TemporalWorkflowExecutionsListActivity, mock.Anything, mock.Anything).Once().Return(
 		&workflowservice.ListWorkflowExecutionsResponse{

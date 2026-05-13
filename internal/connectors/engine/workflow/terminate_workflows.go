@@ -42,6 +42,12 @@ func (w Workflow) runTerminateWorkflows(
 				continue
 			}
 
+			// Never terminate the uninstall or reset workflows — they are
+			// responsible for driving the teardown and must not be cut short.
+			if e.Type != nil && (e.Type.Name == RunUninstallConnector || e.Type.Name == RunResetConnector) {
+				continue
+			}
+
 			wg.Add(1)
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
