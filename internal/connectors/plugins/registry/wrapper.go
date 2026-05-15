@@ -546,3 +546,14 @@ func (i *impl) BootstrapOnInstall() []models.TaskType {
 	}
 	return nil
 }
+
+// PayoutsPerSecond forwards to the wrapped plugin if it opts in via
+// models.PluginWithPayoutThrottle; otherwise it returns 0. Callers must
+// check the returned value is > 0 before treating the plugin as throttled,
+// because this method is present on every wrapper regardless of inner type.
+func (i *impl) PayoutsPerSecond() float64 {
+	if p, ok := i.plugin.(models.PluginWithPayoutThrottle); ok {
+		return p.PayoutsPerSecond()
+	}
+	return 0
+}

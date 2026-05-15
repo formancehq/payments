@@ -161,7 +161,7 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 		}
 
 		if plugin, getErr := w.connectors.Get(connector.ID); getErr == nil {
-			if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+			if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
 				if err := w.AddPayoutWorker(GetPayoutTaskQueue(w.stack, connector.ID), throttle.PayoutsPerSecond()); err != nil {
 					return err
 				}
@@ -196,7 +196,7 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 	}
 
 	if plugin, getErr := w.connectors.Get(connectorID); getErr == nil {
-		if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+		if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
 			if err := w.AddPayoutWorker(GetPayoutTaskQueue(w.stack, connectorID), throttle.PayoutsPerSecond()); err != nil {
 				return err
 			}

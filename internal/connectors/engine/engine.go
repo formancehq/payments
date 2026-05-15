@@ -549,7 +549,7 @@ func (e *engine) getPayoutTaskQueue(connectorID models.ConnectorID) string {
 	if err != nil {
 		return GetDefaultTaskQueue(e.stack)
 	}
-	if _, ok := plugin.(models.PluginWithPayoutThrottle); ok {
+	if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
 		return GetPayoutTaskQueue(e.stack, connectorID)
 	}
 	return GetDefaultTaskQueue(e.stack)
