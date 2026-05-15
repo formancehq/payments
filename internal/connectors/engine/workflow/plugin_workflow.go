@@ -143,7 +143,8 @@ func (w Workflow) runNextTasksV3_1(
 					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
+						SearchAttributeStack:       w.stack,
+						SearchAttributeConnectorID: connectorID.String(),
 					},
 				},
 			),
@@ -216,8 +217,9 @@ func (w Workflow) scheduleNextWorkflow(
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_BUFFER_ONE,
 			TriggerImmediately: true,
 			SearchAttributes: map[string]any{
-				SearchAttributeScheduleID: scheduleID,
-				SearchAttributeStack:      w.stack,
+				SearchAttributeScheduleID:  scheduleID,
+				SearchAttributeStack:       w.stack,
+				SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 	)
@@ -274,7 +276,8 @@ func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID m
 					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
+						SearchAttributeStack:       w.stack,
+						SearchAttributeConnectorID: connectorID.String(),
 					},
 				},
 			),

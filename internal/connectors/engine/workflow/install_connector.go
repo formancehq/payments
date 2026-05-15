@@ -147,8 +147,9 @@ func (w Workflow) installConnector(
 					},
 					TriggerImmediately: true,
 					SearchAttributes: map[string]interface{}{
-						SearchAttributeScheduleID: bootstrapScheduleID,
-						SearchAttributeStack:      w.stack,
+						SearchAttributeScheduleID:  bootstrapScheduleID,
+						SearchAttributeStack:       w.stack,
+						SearchAttributeConnectorID: installConnector.ConnectorID.String(),
 					},
 				},
 			); err != nil {
@@ -169,7 +170,8 @@ func (w Workflow) installConnector(
 					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
+						SearchAttributeStack:       w.stack,
+						SearchAttributeConnectorID: installConnector.ConnectorID.String(),
 					},
 				},
 			),
@@ -193,7 +195,8 @@ func (w Workflow) installConnector(
 					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
+						SearchAttributeStack:       w.stack,
+						SearchAttributeConnectorID: installConnector.ConnectorID.String(),
 					},
 				},
 			),
@@ -228,7 +231,8 @@ func (w Workflow) scheduleConnectorHealthCheck(
 			TaskQueue:             w.getDefaultTaskQueue(),
 			ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 			SearchAttributes: map[string]interface{}{
-				SearchAttributeStack: w.stack,
+				SearchAttributeStack:       w.stack,
+				SearchAttributeConnectorID: installConnector.ConnectorID.String(),
 			},
 		}),
 		RunScheduleConnectorHealthCheck,

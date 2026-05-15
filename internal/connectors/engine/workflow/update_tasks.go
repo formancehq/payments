@@ -54,15 +54,19 @@ func (w Workflow) updateTask(ctx workflow.Context, task models.Task) error {
 	// Task events are now sent via outbox pattern in TasksUpsert
 	// (unless it's a rerun from a previous version, in which case:)
 	if !IsEventOutboxPatternEnabled(ctx) {
+		searchAttrs := map[string]interface{}{
+			SearchAttributeStack: w.stack,
+		}
+		if task.ConnectorID != nil {
+			searchAttrs[SearchAttributeConnectorID] = task.ConnectorID.String()
+		}
 		if err := workflow.ExecuteChildWorkflow(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
 					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
+					SearchAttributes:  searchAttrs,
 				},
 			),
 			RunSendEvents, //nolint:staticcheck // ignore deprecation

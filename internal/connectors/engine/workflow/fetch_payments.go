@@ -118,7 +118,8 @@ func (w Workflow) fetchNextPayments(
 								TaskQueue:         w.getDefaultTaskQueue(),
 								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 								SearchAttributes: map[string]interface{}{
-									SearchAttributeStack: w.stack,
+									SearchAttributeStack:       w.stack,
+									SearchAttributeConnectorID: fetchNextPayments.ConnectorID.String(),
 								},
 							},
 						),

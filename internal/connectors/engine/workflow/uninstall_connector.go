@@ -85,7 +85,8 @@ func (w Workflow) uninstallConnector(
 				TaskQueue:         uninstallConnector.DefaultWorkerName,
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
+					SearchAttributeStack:       w.stack,
+					SearchAttributeConnectorID: uninstallConnector.ConnectorID.String(),
 				},
 			},
 		),
@@ -107,7 +108,8 @@ func (w Workflow) uninstallConnector(
 				TaskQueue:         uninstallConnector.DefaultWorkerName,
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
+					SearchAttributeStack:       w.stack,
+					SearchAttributeConnectorID: uninstallConnector.ConnectorID.String(),
 				},
 			},
 		),

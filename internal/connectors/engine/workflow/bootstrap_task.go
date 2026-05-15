@@ -44,7 +44,8 @@ func (w Workflow) runBootstrapTask(
 					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
 					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
+						SearchAttributeStack:       w.stack,
+						SearchAttributeConnectorID: req.ConnectorID.String(),
 					},
 				},
 			),
