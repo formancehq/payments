@@ -795,6 +795,10 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
 	defer span.End()
 
+	if _, err := e.storage.ConnectorsGet(ctx, webhook.ConnectorID); err != nil {
+		return err
+	}
+
 	if _, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
