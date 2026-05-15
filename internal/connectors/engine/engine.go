@@ -1261,6 +1261,11 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 }
 
 func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webhook models.Webhook) ([]models.Webhook, *models.WebhookConfig, error) {
+	// if the connector has already been uninstalled we want to return a 404 error
+	if _, err := e.storage.ConnectorsGet(ctx, webhook.ConnectorID); err != nil {
+		return nil, nil, err
+	}
+
 	plugin, err := e.connectors.Get(webhook.ConnectorID)
 	if err != nil {
 		return nil, nil, err

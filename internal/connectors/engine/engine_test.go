@@ -1143,4 +1143,32 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
+	Context("handle webhook", func() {
+		var (
+			connectorID models.ConnectorID
+			webhook     models.Webhook
+		)
+
+		BeforeEach(func() {
+			connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+			webhook = models.Webhook{
+				ID:          uuid.New().String(),
+				ConnectorID: connectorID,
+			}
+		})
+
+		It("should return storage.ErrNotFound when connector does not exist in database", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(nil, storage.ErrNotFound)
+			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should propagate storage errors from connector lookup", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage error")
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(nil, expectedErr)
+			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(expectedErr))
+		})
+	})
 })
