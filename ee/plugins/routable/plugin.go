@@ -52,6 +52,11 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 	return p.config
 }
 
+// https://developers.routable.com/docs/rate-limiting
+func (p *Plugin) PayoutsPerSecond() float64 {
+	return float64(1.5)
+}
+
 func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
 	p.logger.Infof("installing routable connector %q (endpoint=%s, polling=%s)", p.name, p.config.resolvedEndpoint(), p.config.PollingPeriod.Duration())
 	// Credential probe: 401/403 surfaces as install error rather than
