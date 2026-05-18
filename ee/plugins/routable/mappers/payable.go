@@ -25,7 +25,8 @@ func PayableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
 
 	payment := models.PSPPayment{
 		Reference: pa.ID,
-		CreatedAt: pa.CreatedAt,
+		// status_changed_at drives engine adjustment timestamps.
+		CreatedAt: StatusChangedAtOrCreated(pa.StatusChangedAt, pa.CreatedAt),
 		Type:      models.PAYMENT_TYPE_PAYOUT,
 		Amount:    amount,
 		Asset:     FormatAsset(pa.CurrencyCode),

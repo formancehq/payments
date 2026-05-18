@@ -13,7 +13,7 @@ func PayableStatus(s string) models.PaymentStatus {
 	case "draft", "ready_to_send", "pending", "scheduled",
 		"initiated", "processing", "in_transit", "awaiting_delivery":
 		return models.PAYMENT_STATUS_PENDING
-	case "completed", "paid", "delivered":
+	case "completed", "paid", "externally_paid", "delivered":
 		return models.PAYMENT_STATUS_SUCCEEDED
 	case "failed", "returned", "nsf":
 		return models.PAYMENT_STATUS_FAILED
