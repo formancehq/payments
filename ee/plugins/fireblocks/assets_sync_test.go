@@ -25,13 +25,19 @@ var _ = Describe("Fireblocks assets helpers", func() {
 
 	Describe("canonicalAsset", func() {
 		It("appends precision when non-zero", func() {
-			Expect(canonicalAsset("USDT", 6)).To(Equal("USDT/6"))
+			Expect(canonicalAsset("USDT", 6, false)).To(Equal("USDT/6"))
 		})
 		It("omits suffix when precision is zero", func() {
-			Expect(canonicalAsset("JPY", 0)).To(Equal("JPY"))
+			Expect(canonicalAsset("JPY", 0, false)).To(Equal("JPY"))
 		})
 		It("returns empty when sanitisation fails", func() {
-			Expect(canonicalAsset("...", 2)).To(BeEmpty())
+			Expect(canonicalAsset("...", 2, false)).To(BeEmpty())
+		})
+		It("appends _TEST for testnet assets", func() {
+			Expect(canonicalAsset("ETH", 18, true)).To(Equal("ETH_TEST/18"))
+		})
+		It("trims long bases so the _TEST suffix still fits Ledger's 17-char cap", func() {
+			Expect(canonicalAsset("ABCDEFGHIJKLMNOPQ", 18, true)).To(Equal("ABCDEFGHIJKL_TEST/18"))
 		})
 	})
 
@@ -48,7 +54,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 					Decimals:  6,
 					Standards: []string{"ERC20"},
 				},
-			})
+			}, false)
 			Expect(ok).To(BeTrue())
 			Expect(info.Asset).To(Equal("USDT/6"))
 			Expect(info.Precision).To(Equal(6))
@@ -66,7 +72,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 				DisplaySymbol: "USD",
 				AssetClass:    client.AssetClassFiat,
 				Decimals:      &d,
-			})
+			}, false)
 			Expect(ok).To(BeTrue())
 			Expect(info.Asset).To(Equal("USD/2"))
 		})
@@ -79,7 +85,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 					Symbol:   "USDC",
 					Decimals: 6,
 				},
-			})
+			}, false)
 			Expect(ok).To(BeTrue())
 			Expect(info.Asset).To(Equal("USDC/6"))
 		})
@@ -90,7 +96,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 				DisplaySymbol: "1INCH",
 				AssetClass:    client.AssetClassFT,
 				Onchain:       &client.AssetOnchain{Decimals: 18},
-			})
+			}, false)
 			Expect(ok).To(BeTrue())
 			Expect(info.Asset).To(Equal("INCH/18"))
 		})
@@ -105,10 +111,24 @@ var _ = Describe("Fireblocks assets helpers", func() {
 					Verified: true,
 					Features: []string{"STABLECOIN"},
 				},
-			})
+			}, false)
 			Expect(ok).To(BeTrue())
 			Expect(info.Metadata[MetadataPrefix+"verified"]).To(Equal("true"))
 			Expect(info.Metadata[MetadataPrefix+"features"]).To(Equal("STABLECOIN"))
+			Expect(info.Metadata).ToNot(HaveKey(MetadataPrefix + "testnet"))
+		})
+
+		It("segregates testnet assets and stamps the testnet metadata flag", func() {
+			info, ok := buildAssetInfo(client.Asset{
+				LegacyID:      "ETH_TEST5",
+				DisplaySymbol: "ETH",
+				BlockchainID:  "chain-eth-sepolia",
+				AssetClass:    client.AssetClassNative,
+				Onchain:       &client.AssetOnchain{Decimals: 18},
+			}, true)
+			Expect(ok).To(BeTrue())
+			Expect(info.Asset).To(Equal("ETH_TEST/18"))
+			Expect(info.Metadata).To(HaveKeyWithValue(MetadataPrefix+"testnet", "true"))
 		})
 
 		It("skips deprecated assets", func() {
@@ -118,7 +138,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 				AssetClass:    client.AssetClassFT,
 				Onchain:       &client.AssetOnchain{Decimals: 18},
 				Metadata:      &client.AssetSpecMetadata{Deprecated: true},
-			})
+			}, false)
 			Expect(ok).To(BeFalse())
 		})
 
@@ -129,7 +149,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 					DisplaySymbol: "X",
 					AssetClass:    class,
 					Onchain:       &client.AssetOnchain{Decimals: 0},
-				})
+				}, false)
 				Expect(ok).To(BeFalse())
 			},
 			Entry("NFT", client.AssetClassNFT),
@@ -142,7 +162,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 				LegacyID:      "X",
 				DisplaySymbol: "X",
 				AssetClass:    client.AssetClassFT,
-			})
+			}, false)
 			Expect(ok).To(BeFalse())
 		})
 
@@ -152,7 +172,7 @@ var _ = Describe("Fireblocks assets helpers", func() {
 				DisplaySymbol: "123",
 				AssetClass:    client.AssetClassFT,
 				Onchain:       &client.AssetOnchain{Decimals: 0},
-			})
+			}, false)
 			Expect(ok).To(BeFalse())
 		})
 	})

@@ -59,6 +59,17 @@ func (p *Plugin) lookupAsset(legacyID string) (assetInfo, bool) {
 }
 
 func (p *Plugin) loadAssets(ctx context.Context) error {
+	blockchains, err := p.client.ListBlockchains(ctx)
+	if err != nil {
+		return fmt.Errorf("listing blockchains: %w", err)
+	}
+	testnetByBlockchain := make(map[string]bool, len(blockchains))
+	for _, b := range blockchains {
+		if b.Onchain != nil && b.Onchain.Test {
+			testnetByBlockchain[b.ID] = true
+		}
+	}
+
 	rawAssets, err := p.client.ListAssets(ctx)
 	if err != nil {
 		return err
@@ -67,7 +78,7 @@ func (p *Plugin) loadAssets(ctx context.Context) error {
 	out := make(map[string]assetInfo, len(rawAssets))
 	var skipped int
 	for _, a := range rawAssets {
-		info, ok := buildAssetInfo(a)
+		info, ok := buildAssetInfo(a, testnetByBlockchain[a.BlockchainID])
 		if !ok {
 			p.logger.Infof("skipping fireblocks asset legacyId=%q id=%q class=%q",
 				a.LegacyID, a.ID, a.AssetClass)
@@ -89,14 +100,17 @@ func (p *Plugin) loadAssets(ctx context.Context) error {
 	p.assetsLastSync = time.Now()
 	p.assetsMu.Unlock()
 
-	p.logger.Infof("loaded %d fireblocks assets (%d skipped)", len(out), skipped)
+	p.logger.Infof("loaded %d fireblocks assets (%d skipped, %d testnet blockchains)",
+		len(out), skipped, len(testnetByBlockchain))
 	return nil
 }
 
 // buildAssetInfo turns a Fireblocks Asset into the cached entry. Returns
 // ok=false for assets that must not be ingested (deprecated, NFT/SFT/VIRTUAL,
-// unknown decimals, sanitization yields empty symbol).
-func buildAssetInfo(a client.Asset) (assetInfo, bool) {
+// unknown decimals, sanitization yields empty symbol). isTestnet stamps the
+// canonical asset with a `_TEST` suffix so testnet holdings never aggregate
+// with their mainnet equivalents.
+func buildAssetInfo(a client.Asset, isTestnet bool) (assetInfo, bool) {
 	if a.Metadata != nil && a.Metadata.Deprecated {
 		return assetInfo{}, false
 	}
@@ -121,7 +135,7 @@ func buildAssetInfo(a client.Asset) (assetInfo, bool) {
 		symbol = a.LegacyID
 	}
 
-	asset := canonicalAsset(symbol, precision)
+	asset := canonicalAsset(symbol, precision, isTestnet)
 	if asset == "" {
 		return assetInfo{}, false
 	}
@@ -131,7 +145,7 @@ func buildAssetInfo(a client.Asset) (assetInfo, bool) {
 		Precision:    precision,
 		BlockchainID: a.BlockchainID,
 		LegacyID:     a.LegacyID,
-		Metadata:     buildAssetMetadata(a),
+		Metadata:     buildAssetMetadata(a, isTestnet),
 	}, true
 }
 
@@ -178,13 +192,23 @@ func sanitizeSymbol(symbol string) string {
 	return b.String()
 }
 
-// canonicalAsset assembles "<sanitized>/<precision>" (or just "<sanitized>"
-// when precision is 0), and returns "" when sanitization fails so callers can
-// skip cleanly.
-func canonicalAsset(symbol string, precision int) string {
+// canonicalAsset assembles "<sanitized>[_TEST]/<precision>" (or the bare base
+// when precision is 0). isTestnet appends a `_TEST` segment so testnet and
+// mainnet assets never collide downstream; the base is trimmed to keep the
+// whole identifier within Ledger's 17-char limit before the optional suffix.
+func canonicalAsset(symbol string, precision int, isTestnet bool) string {
 	s := sanitizeSymbol(symbol)
 	if s == "" {
 		return ""
+	}
+	if isTestnet {
+		const testSuffix = "_TEST"
+		// 17 max for "<base>" + 5 for "_TEST" would overflow Ledger's regex;
+		// the suffix takes priority so we trim the base instead.
+		if max := 17 - len(testSuffix); len(s) > max {
+			s = s[:max]
+		}
+		s += testSuffix
 	}
 	if precision == 0 {
 		return s
@@ -195,7 +219,7 @@ func canonicalAsset(symbol string, precision int) string {
 // buildAssetMetadata captures the Fireblocks-side context that's worth
 // surfacing alongside each balance/payment. Optional fields are omitted when
 // empty / default so the map stays small.
-func buildAssetMetadata(a client.Asset) map[string]string {
+func buildAssetMetadata(a client.Asset, isTestnet bool) map[string]string {
 	m := map[string]string{}
 	setIfPresent := func(key, value string) {
 		if value != "" {
@@ -224,6 +248,9 @@ func buildAssetMetadata(a client.Asset) map[string]string {
 		if len(a.Metadata.Features) > 0 {
 			m[MetadataPrefix+"features"] = strings.Join(a.Metadata.Features, ",")
 		}
+	}
+	if isTestnet {
+		m[MetadataPrefix+"testnet"] = "true"
 	}
 
 	return m
