@@ -35,6 +35,7 @@ func (w Workflow) runTerminateWorkflows(
 			return err
 		}
 
+		currentInfo := workflow.GetInfo(ctx)
 		wg := workflow.NewWaitGroup(ctx)
 		errChan := make(chan error, len(resp.Executions))
 		for _, e := range resp.Executions {
@@ -44,7 +45,13 @@ func (w Workflow) runTerminateWorkflows(
 
 			// Never terminate the uninstall or reset workflows — they are
 			// responsible for driving the teardown and must not be cut short.
-			if e.Type != nil && (e.Type.Name == RunUninstallConnector || e.Type.Name == RunResetConnector) {
+			if e.Type != nil && (e.Type.Name == RunUninstallConnector || e.Type.Name == RunResetConnector || e.Type.Name == RunTerminateSchedules) {
+				continue
+			}
+
+			// Never terminate ourselves.
+			if e.Execution != nil && e.Execution.WorkflowId == currentInfo.WorkflowExecution.ID &&
+				e.Execution.RunId == currentInfo.WorkflowExecution.RunID {
 				continue
 			}
 
