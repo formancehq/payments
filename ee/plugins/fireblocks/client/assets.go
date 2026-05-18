@@ -8,16 +8,41 @@ import (
 )
 
 type Asset struct {
-	ID       string        `json:"id"`
-	LegacyID string        `json:"legacyId"`
-	Decimals *int          `json:"decimals"` // For fiat assets (when provided)
-	Onchain  *AssetOnchain `json:"onchain"`  // For crypto assets
+	ID            string             `json:"id"`
+	LegacyID      string             `json:"legacyId"`
+	DisplayName   string             `json:"displayName"`
+	DisplaySymbol string             `json:"displaySymbol"`
+	BlockchainID  string             `json:"blockchainId"`
+	AssetClass    string             `json:"assetClass"`
+	Decimals      *int               `json:"decimals"` // populated for FIAT assets
+	Onchain       *AssetOnchain      `json:"onchain"`  // populated for NATIVE/FT assets
+	Metadata      *AssetSpecMetadata `json:"metadata"`
 }
 
 type AssetOnchain struct {
-	Decimals int    `json:"decimals"`
-	Symbol   string `json:"symbol"`
+	Symbol    string   `json:"symbol"`
+	Name      string   `json:"name"`
+	Address   string   `json:"address"`
+	Decimals  int      `json:"decimals"`
+	Standards []string `json:"standards"`
 }
+
+type AssetSpecMetadata struct {
+	Scope      string   `json:"scope"`
+	Verified   bool     `json:"verified"`
+	Deprecated bool     `json:"deprecated"`
+	Features   []string `json:"features"`
+}
+
+// Asset classes returned by /v1/assets; we only ingest fungible/native/fiat.
+const (
+	AssetClassNative  = "NATIVE"
+	AssetClassFT      = "FT"
+	AssetClassFiat    = "FIAT"
+	AssetClassNFT     = "NFT"
+	AssetClassSFT     = "SFT"
+	AssetClassVirtual = "VIRTUAL"
+)
 
 type AssetsPaging struct {
 	Next string `json:"next"`

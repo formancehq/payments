@@ -24,9 +24,11 @@ var _ = Describe("Fireblocks Plugin Balances", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			client:         m,
-			assetDecimals:  map[string]int{"USD": 2},
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client: m,
+			assets: map[string]assetInfo{
+				"USD": {Asset: "USD/2", Precision: 2, LegacyID: "USD"},
+			},
 			assetsLastSync: time.Now(),
 		}
 	})

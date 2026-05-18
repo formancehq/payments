@@ -24,9 +24,12 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			client:         m,
-			assetDecimals:  map[string]int{"BTC": 8, "USD": 2},
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client: m,
+			assets: map[string]assetInfo{
+				"BTC": {Asset: "BTC/8", Precision: 8, LegacyID: "BTC"},
+				"USD": {Asset: "USD/2", Precision: 2, LegacyID: "USD"},
+			},
 			assetsLastSync: time.Now(),
 		}
 	})
@@ -93,8 +96,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(first.Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 		Expect(*first.SourceAccountReference).To(Equal("src"))
 		Expect(*first.DestinationAccountReference).To(Equal("dst"))
-		Expect(first.Metadata["txHash"]).To(Equal("hash"))
-		Expect(first.Metadata["networkFee"]).To(Equal("0.01"))
+		Expect(first.Metadata[MetadataPrefix+"tx_hash"]).To(Equal("hash"))
+		Expect(first.Metadata[MetadataPrefix+"network_fee"]).To(Equal("0.01"))
 
 	second := resp.Payments[1]
 	Expect(second.Reference).To(Equal("c"))

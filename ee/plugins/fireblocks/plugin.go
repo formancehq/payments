@@ -7,14 +7,21 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
-const ProviderName = "fireblocks"
-const assetRefreshInterval = 24 * time.Hour
+const (
+	ProviderName = "fireblocks"
+	// MetadataPrefix namespaces every Fireblocks-specific key written to
+	// PSPAccount / PSPBalance / PSPPayment metadata, matching the
+	// `com.<provider>.spec/` convention used by sibling EE connectors.
+	MetadataPrefix = "com.fireblocks.spec/"
+
+	assetRefreshInterval = 24 * time.Hour
+)
 
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
@@ -34,7 +41,9 @@ type Plugin struct {
 	assetsMu        sync.RWMutex
 	assetsRefreshMu sync.Mutex
 	assetsLastSync  time.Time
-	assetDecimals   map[string]int
+	// assets maps the uppercased Fireblocks legacyId to its canonical
+	// Formance asset form plus per-asset metadata. Populated by loadAssets.
+	assets map[string]assetInfo
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
