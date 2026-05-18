@@ -40,13 +40,10 @@ func (w Workflow) runBootstrapTask(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					WorkflowID:        fmt.Sprintf("bootstrap-fetch-accounts-%s-%s", w.stack, req.ConnectorID.String()),
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: req.ConnectorID.String(),
-					},
+					WorkflowID:           fmt.Sprintf("bootstrap-fetch-accounts-%s-%s", w.stack, req.ConnectorID.String()),
+					TaskQueue:            w.getDefaultTaskQueue(),
+					ParentClosePolicy:    enums.PARENT_CLOSE_POLICY_TERMINATE,
+					SearchAttributes:     w.SearchAttributes(ctx, &req.ConnectorID),
 				},
 			),
 			RunFetchNextAccounts,

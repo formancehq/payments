@@ -179,19 +179,10 @@ func (w Workflow) createTransfer(
 							},
 						},
 						TaskQueue: w.getDefaultTaskQueue(),
-						TypedSearchAttributes: temporal.NewSearchAttributes(
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeConnectorID).ValueSet(createTransfer.ConnectorID.String()),
-						),
 					},
 					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 					TriggerImmediately: true,
-					SearchAttributes: map[string]any{
-						SearchAttributeScheduleID:  scheduleID,
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: createTransfer.ConnectorID.String(),
-					},
+					SearchAttributes:   w.ScheduleSearchAttributes(ctx, &createTransfer.ConnectorID, scheduleID),
 				},
 			)
 			if err != nil {

@@ -80,12 +80,9 @@ func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpen
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: fetchOpenBankingData.ConnectorID.String(),
-					},
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes:      w.SearchAttributes(ctx, &fetchOpenBankingData.ConnectorID),
 				},
 			),
 			RunFetchNextAccounts,
@@ -117,12 +114,9 @@ func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpe
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: fetchOpenBankingData.ConnectorID.String(),
-					},
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes:      w.SearchAttributes(ctx, &fetchOpenBankingData.ConnectorID),
 				},
 			),
 			RunFetchNextPayments,

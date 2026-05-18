@@ -77,12 +77,9 @@ func (w Workflow) deletePSUConnector(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getDefaultTaskQueue(),
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack:       w.stack,
-					SearchAttributeConnectorID: deletePSUConnector.ConnectorID.String(),
-				},
+				TaskQueue:             w.getDefaultTaskQueue(),
+				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes:      w.SearchAttributes(ctx, &deletePSUConnector.ConnectorID),
 			},
 		),
 		RunDeleteOpenBankingConnectionData,

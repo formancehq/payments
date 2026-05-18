@@ -50,13 +50,10 @@ func (w Workflow) bootstrapTasks(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					WorkflowID:        fmt.Sprintf("bootstrap-task-%s-%s-%d", w.stack, req.ConnectorID.String(), taskType),
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: req.ConnectorID.String(),
-					},
+					WorkflowID:            fmt.Sprintf("bootstrap-task-%s-%s-%d", w.stack, req.ConnectorID.String(), taskType),
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_TERMINATE,
+					SearchAttributes:      w.SearchAttributes(ctx, &req.ConnectorID),
 				},
 			),
 			RunBootstrapTask,
@@ -88,10 +85,7 @@ func (w Workflow) startPeriodicSchedulesForBootstrap(
 		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 		TaskQueue:             w.getDefaultTaskQueue(),
 		ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-		SearchAttributes: map[string]interface{}{
-			SearchAttributeStack:       w.stack,
-			SearchAttributeConnectorID: connectorID.String(),
-		},
+		SearchAttributes:      w.SearchAttributes(ctx, &connectorID),
 	}
 
 	if err := workflow.ExecuteChildWorkflow(

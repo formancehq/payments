@@ -177,19 +177,10 @@ func (w Workflow) createPayout(
 							},
 						},
 						TaskQueue: w.getDefaultTaskQueue(),
-						TypedSearchAttributes: temporal.NewSearchAttributes(
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeConnectorID).ValueSet(createPayout.ConnectorID.String()),
-						),
 					},
 					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 					TriggerImmediately: true,
-					SearchAttributes: map[string]any{
-						SearchAttributeScheduleID:  scheduleID,
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: createPayout.ConnectorID.String(),
-					},
+					SearchAttributes:   w.ScheduleSearchAttributes(ctx, &createPayout.ConnectorID, scheduleID),
 				},
 			)
 			if err != nil {

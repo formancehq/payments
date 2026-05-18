@@ -45,11 +45,7 @@ func (w Workflow) runScheduleConnectorHealthCheck(ctx workflow.Context, req Sche
 			},
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_BUFFER_ONE,
 			TriggerImmediately: false,
-			SearchAttributes: map[string]interface{}{
-				SearchAttributeScheduleID:  scheduleID,
-				SearchAttributeStack:       w.stack,
-				SearchAttributeConnectorID: req.ConnectorID.String(),
-			},
+			SearchAttributes:   w.ScheduleSearchAttributes(ctx, &req.ConnectorID, scheduleID),
 		},
 	)
 }

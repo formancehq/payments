@@ -115,12 +115,9 @@ func (w Workflow) fetchNextPayments(
 						workflow.WithChildOptions(
 							ctx,
 							workflow.ChildWorkflowOptions{
-								TaskQueue:         w.getDefaultTaskQueue(),
-								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-								SearchAttributes: map[string]interface{}{
-									SearchAttributeStack:       w.stack,
-									SearchAttributeConnectorID: fetchNextPayments.ConnectorID.String(),
-								},
+								TaskQueue:             w.getDefaultTaskQueue(),
+								ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+								SearchAttributes:      w.SearchAttributes(ctx, &fetchNextPayments.ConnectorID),
 							},
 						),
 						RunUpdatePaymentInitiationFromPayment, // nolint:staticcheck // ignore deprecation

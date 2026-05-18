@@ -140,12 +140,9 @@ func (w Workflow) runNextTasksV3_1(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: connectorID.String(),
-					},
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes:      w.SearchAttributes(ctx, &connectorID),
 				},
 			),
 			nextWorkflow,
@@ -216,11 +213,7 @@ func (w Workflow) scheduleNextWorkflow(
 			// allow the workflow from the outdated schedule to finish running before starting a new one with the new workflow
 			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_BUFFER_ONE,
 			TriggerImmediately: true,
-			SearchAttributes: map[string]any{
-				SearchAttributeScheduleID:  scheduleID,
-				SearchAttributeStack:       w.stack,
-				SearchAttributeConnectorID: connectorID.String(),
-			},
+			SearchAttributes:   w.ScheduleSearchAttributes(ctx, &connectorID, scheduleID),
 		},
 	)
 	if err != nil {
@@ -273,12 +266,9 @@ func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID m
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack:       w.stack,
-						SearchAttributeConnectorID: connectorID.String(),
-					},
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes:      w.SearchAttributes(ctx, &connectorID),
 				},
 			),
 			RunNextTasks, //nolint:staticcheck // ignore deprecated
