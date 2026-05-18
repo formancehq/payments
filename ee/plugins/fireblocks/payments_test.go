@@ -224,6 +224,53 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("vault-1"))
 	})
 
+	It("copies cached asset metadata onto each payment", func(ctx SpecContext) {
+		plg.assets = map[string]assetInfo{
+			"USDT_ERC20": {
+				Asset:        "USDT/6",
+				Precision:    6,
+				LegacyID:     "USDT_ERC20",
+				BlockchainID: "chain-eth",
+				Metadata: map[string]string{
+					MetadataPrefix + "legacy_id":        "USDT_ERC20",
+					MetadataPrefix + "display_symbol":   "USDT",
+					MetadataPrefix + "contract_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+					MetadataPrefix + "token_standard":   "ERC20",
+					MetadataPrefix + "blockchain_id":    "chain-eth",
+				},
+			},
+		}
+
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:         "tx-1",
+				AssetID:    "USDT_ERC20",
+				AmountInfo: client.AmountInfo{Amount: "1"},
+				Operation:  "TRANSFER",
+				Status:     "COMPLETED",
+				CreatedAt:  7000,
+				TxHash:     "0xhash",
+				FeeInfo:    client.FeeInfo{NetworkFee: "0.0002"},
+				Note:       "treasury rebalance",
+				SubStatus:  "CONFIRMED_ON_BLOCKCHAIN",
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		md := resp.Payments[0].Metadata
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"legacy_id", "USDT_ERC20"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"contract_address", "0xdAC17F958D2ee523a2206206994597C13D831ec7"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"token_standard", "ERC20"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"blockchain_id", "chain-eth"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"tx_hash", "0xhash"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"network_fee", "0.0002"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"note", "treasury rebalance"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"sub_status", "CONFIRMED_ON_BLOCKCHAIN"))
+		Expect(resp.Payments[0].Asset).To(Equal("USDT/6"))
+	})
+
 	It("advances state even when transactions are skipped", func(ctx SpecContext) {
 		state, err := json.Marshal(paymentsState{LastCreatedAt: 2000, LastTxID: "z"})
 		Expect(err).To(BeNil())
