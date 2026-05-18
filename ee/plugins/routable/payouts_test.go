@@ -162,16 +162,35 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(err).To(BeNil())
 	})
 
-	It("rejects payment initiations with no source/destination", func(ctx SpecContext) {
+	// Validation errors must wrap ErrInvalidRequest so Temporal stops
+	// retrying invalid PIs.
+	It("rejects payment initiations with no source/destination and wraps ErrInvalidRequest", func(ctx SpecContext) {
 		bad := pi()
 		bad.SourceAccount = nil
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
 		Expect(err).To(HaveOccurred())
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue(), "missing SourceAccount must wrap ErrInvalidRequest")
 
 		bad = pi()
 		bad.DestinationAccount = nil
 		_, err = plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
 		Expect(err).To(HaveOccurred(), "missing DestinationAccount must also be rejected before any network call")
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue(), "missing DestinationAccount must wrap ErrInvalidRequest")
+
+		bad = pi()
+		bad.Reference = ""
+		_, err = plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue(), "missing Reference must wrap ErrInvalidRequest")
+
+		bad = pi()
+		bad.Asset = ""
+		_, err = plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue(), "missing Asset must wrap ErrInvalidRequest")
+
+		bad = pi()
+		bad.Asset = "ZZZ/2"
+		_, err = plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: bad})
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue(), "unsupported currency must wrap ErrInvalidRequest")
 	})
 
 	// Idempotency contract: every POST /v1/payables MUST carry
@@ -224,16 +243,27 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(resp.Error).To(BeNil())
 	})
 
-	It("returns an Error string for failed terminal states", func(ctx SpecContext) {
-		mock.EXPECT().GetPayable(gomock.Any(), "pa_x").Return(
-			&client.Payable{ID: "pa_x", Status: "failed", Amount: "10.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
-			nil,
-		)
-		resp, err := plg.pollPayableStatus(ctx, "pa_x")
-		Expect(err).To(BeNil())
-		Expect(resp.Payment).To(BeNil())
-		Expect(resp.Error).NotTo(BeNil())
-		Expect(*resp.Error).To(ContainSubstring("FAILED"))
+	// Terminal failures return Payment (not Error) so the engine links
+	// PI ↔ Payment regardless of outcome.
+	It("returns the Payment (not an Error) for failed/cancelled/expired terminal states", func(ctx SpecContext) {
+		for _, tc := range []struct {
+			raw    string
+			mapped models.PaymentStatus
+		}{
+			{"failed", models.PAYMENT_STATUS_FAILED},
+			{"canceled", models.PAYMENT_STATUS_CANCELLED},
+			{"expired", models.PAYMENT_STATUS_EXPIRED},
+		} {
+			mock.EXPECT().GetPayable(gomock.Any(), "pa_"+tc.raw).Return(
+				&client.Payable{ID: "pa_" + tc.raw, Status: tc.raw, Amount: "10.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
+				nil,
+			)
+			resp, err := plg.pollPayableStatus(ctx, "pa_"+tc.raw)
+			Expect(err).To(BeNil())
+			Expect(resp.Error).To(BeNil(), "must NOT surface terminal failure via response.Error (orphans the Payment)")
+			Expect(resp.Payment).NotTo(BeNil(), "must return the Payment so engine can link PI ↔ Payment")
+			Expect(resp.Payment.Status).To(Equal(tc.mapped))
+		}
 	})
 
 	// Routable's eventual-consistency window: a 202 from POST /v1/payables

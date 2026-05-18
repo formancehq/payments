@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 // initiatePayable is shared by createPayout and createTransfer. It
@@ -15,23 +16,27 @@ import (
 // callers can branch on 201 (sync, full payable) vs 202 (async, just
 // {id}); see MAPPINGS.md §5.4.
 func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitiation) (*client.Payable, int, error) {
+	// Wrap validation errors so Temporal treats them as non-retriable.
 	if err := validatePaymentInitiation(pi); err != nil {
-		return nil, 0, err
+		return nil, 0, errorsutils.NewWrappedError(err, models.ErrInvalidRequest)
 	}
 	if pi.SourceAccount == nil || pi.SourceAccount.Reference == "" {
-		return nil, 0, errors.New("missing source account reference")
+		return nil, 0, errorsutils.NewWrappedError(
+			errors.New("missing source account reference"), models.ErrInvalidRequest)
 	}
 	if pi.DestinationAccount == nil || pi.DestinationAccount.Reference == "" {
-		return nil, 0, errors.New("missing destination account reference")
+		return nil, 0, errorsutils.NewWrappedError(
+			errors.New("missing destination account reference"), models.ErrInvalidRequest)
 	}
 
 	currencyCode, _, err := mappers.SplitAsset(pi.Asset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("invalid asset %q: %w", pi.Asset, err)
+		return nil, 0, errorsutils.NewWrappedError(
+			fmt.Errorf("invalid asset %q: %w", pi.Asset, err), models.ErrInvalidRequest)
 	}
 	precision, err := mappers.PrecisionFor(currencyCode)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errorsutils.NewWrappedError(err, models.ErrInvalidRequest)
 	}
 	amount := mappers.FromMinorUnits(pi.Amount, precision)
 

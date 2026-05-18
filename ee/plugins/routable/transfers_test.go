@@ -1,6 +1,7 @@
 package routable
 
 import (
+	"errors"
 	"math/big"
 	"net/http"
 	"time"
@@ -72,6 +73,20 @@ var _ = Describe("Routable createTransfer", func() {
 		Expect(resp.Payment).To(BeNil())
 		Expect(resp.PollingTransferID).NotTo(BeNil())
 		Expect(*resp.PollingTransferID).To(Equal("pa_t2"))
+	})
+
+	// Same ErrInvalidRequest wrapping contract as createPayout (shared
+	// initiatePayable choke point).
+	It("wraps validation errors with ErrInvalidRequest on createTransfer", func(ctx SpecContext) {
+		bad := pi()
+		bad.SourceAccount = nil
+		_, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: bad})
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
+
+		bad = pi()
+		bad.DestinationAccount = nil
+		_, err = plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: bad})
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
 	})
 
 	// Async 202 path: Routable echoes only {id}. The plugin must return

@@ -60,13 +60,7 @@ func (p *Plugin) pollPayableStatus(ctx context.Context, payableID string) (model
 	if !mappers.IsTerminalStatus(payment.Status) {
 		return models.PollPayoutStatusResponse{}, nil
 	}
-
-	if payment.Status == models.PAYMENT_STATUS_FAILED ||
-		payment.Status == models.PAYMENT_STATUS_CANCELLED ||
-		payment.Status == models.PAYMENT_STATUS_EXPIRED {
-		errMsg := fmt.Sprintf("routable payable %s ended in %s", payableID, payment.Status)
-		return models.PollPayoutStatusResponse{Error: &errMsg}, nil
-	}
-
+	// Return the Payment for every terminal state so the engine can link
+	// it to the PI; response.Error alone would orphan failed Payments.
 	return models.PollPayoutStatusResponse{Payment: &payment}, nil
 }

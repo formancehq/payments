@@ -257,6 +257,47 @@ func TestPayableToPSPPayment_BadAmountErrors(t *testing.T) {
 	}
 }
 
+// CreatedAt feeds adjustment timestamps; prefer status_changed_at when
+// present, fall back to created_at (nil on draft rows).
+func TestPayableToPSPPayment_PrefersStatusChangedAt(t *testing.T) {
+	created := time.Date(2025, 5, 1, 12, 0, 0, 0, time.UTC)
+	changed := time.Date(2025, 6, 1, 9, 30, 0, 0, time.UTC)
+
+	withChanged, err := PayableToPSPPayment(client.Payable{
+		ID: "pa_a", Status: "completed", Amount: "1.00", CurrencyCode: "USD",
+		CreatedAt: created, StatusChangedAt: &changed,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !withChanged.CreatedAt.Equal(changed) {
+		t.Errorf("CreatedAt = %v, want StatusChangedAt %v", withChanged.CreatedAt, changed)
+	}
+
+	withoutChanged, err := PayableToPSPPayment(client.Payable{
+		ID: "pa_b", Status: "draft", Amount: "1.00", CurrencyCode: "USD",
+		CreatedAt: created, StatusChangedAt: nil,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !withoutChanged.CreatedAt.Equal(created) {
+		t.Errorf("CreatedAt = %v, want CreatedAt fallback %v", withoutChanged.CreatedAt, created)
+	}
+
+	zero := time.Time{}
+	withZero, err := PayableToPSPPayment(client.Payable{
+		ID: "pa_c", Status: "draft", Amount: "1.00", CurrencyCode: "USD",
+		CreatedAt: created, StatusChangedAt: &zero,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !withZero.CreatedAt.Equal(created) {
+		t.Errorf("CreatedAt = %v, want CreatedAt fallback %v (zero StatusChangedAt)", withZero.CreatedAt, created)
+	}
+}
+
 // PayablesToPSPPayments: skips bad rows via the skip callback (so the
 // caller can log + count) and tracks the latest StatusChangedAt observed.
 func TestPayablesToPSPPayments_SkipsBadRowsAndTracksWatermark(t *testing.T) {
