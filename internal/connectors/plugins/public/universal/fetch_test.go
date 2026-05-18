@@ -143,6 +143,27 @@ var _ = Describe("Universal *Plugin — fetch primitives", func() {
 			Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
 		})
 	})
+
+	Context("fetchPaginated — atomic state advancement", func() {
+		It("does not advance LastUpdatedAt when conversion fails mid-batch", func(ctx SpecContext) {
+			universal.InjectDeclared(plg, []models.Capability{models.CAPABILITY_FETCH_PAYMENTS})
+			t1 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+			t2 := time.Date(2026, 1, 1, 0, 0, 5, 0, time.UTC)
+			mc.EXPECT().ListPayments(gomock.Any(), gomock.Any()).Return(&client.PaymentsPage{
+				Items: []client.Payment{
+					{Reference: "p1", CreatedAt: t1, UpdatedAt: t1, Type: "PAYIN", Status: "SUCCEEDED", Amount: "100", Asset: "EUR/2"},
+					// Second row is unmappable (bad amount) — the
+					// whole batch MUST fail and the returned
+					// (nil) state forces the engine to retry from
+					// the previous watermark.
+					{Reference: "p2", CreatedAt: t2, UpdatedAt: t2, Type: "PAYIN", Status: "PENDING", Amount: "not-a-number", Asset: "EUR/2"},
+				},
+			}, nil)
+			res, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 100})
+			Expect(err).NotTo(BeNil())
+			Expect(res.NewState).To(BeNil(), "partial-failure must NOT surface a state — engine should retry with prior watermark")
+		})
+	})
 })
 
 func pStr(s string) *string { return &s }

@@ -142,6 +142,7 @@ func TestAccountToPSPAccountRoundtrip(t *testing.T) {
 	asset := "EUR/2"
 	psp, err := mappers.AccountToPSPAccount(client.Account{
 		Reference: "a1", CreatedAt: now, Name: &name, DefaultAsset: &asset,
+		Metadata: map[string]string{"foo": "bar"},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -151,6 +152,60 @@ func TestAccountToPSPAccountRoundtrip(t *testing.T) {
 	}
 	if len(psp.Raw) == 0 {
 		t.Fatal("Raw should not be empty")
+	}
+	if psp.Metadata["foo"] != "bar" {
+		t.Fatal("counterparty metadata must be preserved")
+	}
+	if psp.Metadata[mappers.MetadataPrefix+"contract"] != mappers.ContractVersion {
+		t.Fatalf("contract version stamp missing: %+v", psp.Metadata)
+	}
+}
+
+func TestAccountToPSPAccountDefaultsCreatedAt(t *testing.T) {
+	t.Parallel()
+	psp, err := mappers.AccountToPSPAccount(client.Account{Reference: "a1"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if psp.CreatedAt.IsZero() {
+		t.Fatal("CreatedAt must fall back to a non-zero value when wire is zero")
+	}
+}
+
+func TestMappersRejectMissingReference(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		fn   func() error
+	}{
+		{"account", func() error { _, err := mappers.AccountToPSPAccount(client.Account{}); return err }},
+		{"payment", func() error { _, err := mappers.PaymentToPSPPayment(client.Payment{}); return err }},
+		{"order", func() error { _, err := mappers.OrderToPSPOrder(client.Order{}); return err }},
+		{"conversion", func() error { _, err := mappers.ConversionToPSPConversion(client.Conversion{}); return err }},
+		{"other", func() error { _, err := mappers.OtherToPSPOther(client.Other{}); return err }},
+		{"balance.accountReference", func() error { _, err := mappers.BalanceToPSPBalance(client.Balance{}); return err }},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if err := tc.fn(); err == nil {
+				t.Fatalf("%s mapper must reject missing reference", tc.name)
+			}
+		})
+	}
+}
+
+func TestBalanceRejectsMissingAmountOrAsset(t *testing.T) {
+	t.Parallel()
+	if _, err := mappers.BalanceToPSPBalance(client.Balance{AccountReference: "a1"}); err == nil {
+		t.Fatal("missing amount must error")
+	}
+	if _, err := mappers.BalanceToPSPBalance(client.Balance{AccountReference: "a1", Amount: "100"}); err == nil {
+		t.Fatal("missing asset must error")
+	}
+	if _, err := mappers.BalanceToPSPBalance(client.Balance{AccountReference: "a1", Amount: "100", Asset: "EUR/2"}); err != nil {
+		t.Fatalf("valid balance unexpectedly errored: %v", err)
 	}
 }
 

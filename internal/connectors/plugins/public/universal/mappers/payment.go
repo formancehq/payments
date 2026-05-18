@@ -10,9 +10,12 @@ import (
 // PaymentToPSPPayment translates a wire Payment. Unknown enums degrade
 // to *_OTHER — safer than failing a batch on one vendor-specific status.
 func PaymentToPSPPayment(p client.Payment) (models.PSPPayment, error) {
+	if err := requireRef("payment", p.Reference); err != nil {
+		return models.PSPPayment{}, err
+	}
 	amount, err := ParseAmount(p.Amount)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("payment amount: %w", err)
+		return models.PSPPayment{}, fmt.Errorf("payment %s amount: %w", p.Reference, err)
 	}
 	r, err := Raw(p)
 	if err != nil {
@@ -29,7 +32,7 @@ func PaymentToPSPPayment(p client.Payment) (models.PSPPayment, error) {
 		Status:                      PaymentStatus(p.Status),
 		SourceAccountReference:      p.SourceAccountReference,
 		DestinationAccountReference: p.DestinationAccountReference,
-		Metadata:                    p.Metadata,
+		Metadata:                    stampVersion(p.Metadata),
 		Raw:                         r,
 	}, nil
 }

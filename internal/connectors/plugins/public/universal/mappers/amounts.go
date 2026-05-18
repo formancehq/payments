@@ -6,9 +6,21 @@ package mappers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
+)
+
+// ContractVersion is the universal-openapi.yaml major version this
+// plugin implements. Stamped onto every PSP record's Metadata under
+// MetadataPrefix so audit / replay can correlate stored records with
+// the contract that produced them.
+const (
+	ContractVersion = "v1"
+	MetadataPrefix  = "com.universal.spec/"
+	metaVersionKey  = MetadataPrefix + "contract"
 )
 
 // ParseAmount turns the contract's decimal-string minor-unit into
@@ -41,4 +53,26 @@ func DefaultTime(primary, fallback time.Time) time.Time {
 		return primary
 	}
 	return fallback
+}
+
+// requireRef enforces the engine invariant that every PSP record has a
+// non-empty Reference. `kind` is the primitive name used in the
+// surfaced error so failures point straight at the bad row.
+func requireRef(kind, ref string) error {
+	if strings.TrimSpace(ref) == "" {
+		return fmt.Errorf("%s: %w", kind, errors.New("missing reference"))
+	}
+	return nil
+}
+
+// stampVersion returns the input metadata with the contract version
+// stamped under MetadataPrefix. Always returns a non-nil map so callers
+// don't need to handle the nil-vs-empty distinction.
+func stampVersion(in map[string]string) map[string]string {
+	out := make(map[string]string, len(in)+1)
+	for k, v := range in {
+		out[k] = v
+	}
+	out[metaVersionKey] = ContractVersion
+	return out
 }

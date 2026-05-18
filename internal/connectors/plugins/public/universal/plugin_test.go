@@ -155,6 +155,42 @@ var _ = Describe("Universal *Plugin", func() {
 		})
 	})
 
+	Context("uninstall", func() {
+		It("deletes every stashed webhook subscription via the contract DELETE", func(ctx SpecContext) {
+			gomock.InOrder(
+				mc.EXPECT().DeleteWebhookSubscription(gomock.Any(), "sub_account.created").Return(nil),
+				mc.EXPECT().DeleteWebhookSubscription(gomock.Any(), "sub_payment.updated").Return(nil),
+			)
+			_, err := plg.Uninstall(ctx, models.UninstallRequest{
+				ConnectorID: "conn-1",
+				WebhookConfigs: []models.PSPWebhookConfig{
+					{Name: "account.created", Metadata: map[string]string{"com.universal.spec/subscription_id": "sub_account.created"}},
+					{Name: "payment.updated", Metadata: map[string]string{"com.universal.spec/subscription_id": "sub_payment.updated"}},
+				},
+			})
+			Expect(err).To(BeNil())
+		})
+
+		It("skips configs that have no stashed subscription id (legacy / partial install)", func(ctx SpecContext) {
+			_, err := plg.Uninstall(ctx, models.UninstallRequest{
+				WebhookConfigs: []models.PSPWebhookConfig{{Name: "balance.updated"}},
+			})
+			Expect(err).To(BeNil())
+		})
+
+		It("returns the counterparty error so the engine retries the uninstall", func(ctx SpecContext) {
+			boom := errors.New("counterparty 500")
+			mc.EXPECT().DeleteWebhookSubscription(gomock.Any(), "sub_payment.updated").Return(boom)
+			_, err := plg.Uninstall(ctx, models.UninstallRequest{
+				WebhookConfigs: []models.PSPWebhookConfig{
+					{Name: "payment.updated", Metadata: map[string]string{"com.universal.spec/subscription_id": "sub_payment.updated"}},
+				},
+			})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, boom)).To(BeTrue())
+		})
+	})
+
 	Context("guards on uninstalled plugin", func() {
 		It("FetchNextAccounts returns ErrNotYetInstalled", func(ctx SpecContext) {
 			_, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{})

@@ -63,9 +63,24 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}, nil
 }
 
-func (p *Plugin) Name() string                            { return p.name }
-func (p *Plugin) Config() models.PluginInternalConfig     { return p.config }
-func (p *Plugin) UseAccountLookup(l models.AccountLookup) { p.accountLookup = l }
+func (p *Plugin) Name() string                        { return p.name }
+func (p *Plugin) Config() models.PluginInternalConfig { return p.config }
+
+// UseAccountLookup is engine-injected after construction. Lock so a
+// concurrent FetchNextBalances during pod startup can never observe a
+// torn pointer.
+func (p *Plugin) UseAccountLookup(l models.AccountLookup) {
+	p.mu.Lock()
+	p.accountLookup = l
+	p.mu.Unlock()
+}
+
+// lookup returns the engine-injected AccountLookup under the read lock.
+func (p *Plugin) lookup() models.AccountLookup {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.accountLookup
+}
 
 // BootstrapOnInstall forces FETCH_ACCOUNTS to complete before periodic
 // schedules start, but only when ORDERS or CONVERSIONS are declared —
@@ -134,8 +149,25 @@ func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.I
 	return models.InstallResponse{Workflow: workflow(set)}, nil
 }
 
-func (p *Plugin) Uninstall(_ context.Context, _ models.UninstallRequest) (models.UninstallResponse, error) {
-	p.logger.WithField("connector", p.name).Info("universal connector uninstalling")
+// Uninstall tears down counterparty-side state owned by this connector.
+// Today that's only webhook subscriptions; the engine deletes its own
+// schedules and the connector row separately. We always try the
+// cleanup so stale subscriptions don't keep firing to a dead endpoint
+// (the engine retries Uninstall on partial failure; DELETE is
+// idempotent on the counterparty side).
+func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	if p.client == nil {
+		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+	}
+	logger := p.logger.WithFields(map[string]any{
+		"connector":    p.name,
+		"webhook_subs": len(req.WebhookConfigs),
+	})
+	if err := p.deleteWebhooks(ctx, req.WebhookConfigs); err != nil {
+		logger.Errorf("universal connector uninstall: webhook cleanup failed: %s", err)
+		return models.UninstallResponse{}, err
+	}
+	logger.Info("universal connector uninstalled")
 	return models.UninstallResponse{}, nil
 }
 

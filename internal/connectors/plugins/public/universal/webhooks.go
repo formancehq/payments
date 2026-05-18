@@ -39,6 +39,11 @@ type supportedWebhook struct {
 	URLPath string
 }
 
+// metaSubscriptionIDKey stashes the counterparty's subscription id on
+// PSPWebhookConfig.Metadata at CreateWebhooks time so Uninstall can
+// DELETE each subscription without an extra list call.
+const metaSubscriptionIDKey = mappers.MetadataPrefix + "subscription_id"
+
 // supportedWebhooks is the canonical event catalogue. Order events and
 // conversion events are intentionally absent: models.WebhookResponse has
 // no Order/Conversion field — see contract/webhooks.md.
@@ -99,7 +104,13 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		// PSPWebhookConfig never carries the secret — Formance stores
 		// it server-side as part of the connector config and we read
 		// it back via p.config.WebhookSharedSecret in VerifyWebhook.
-		configs = append(configs, models.PSPWebhookConfig{Name: w.Name, URLPath: w.URLPath})
+		// Metadata carries the counterparty subscription id so
+		// Uninstall can DELETE without an extra list call.
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:     w.Name,
+			URLPath:  w.URLPath,
+			Metadata: map[string]string{metaSubscriptionIDKey: resp.ID},
+		})
 		raw, err := json.Marshal(resp)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
@@ -122,6 +133,25 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 // install where the counterparty advertised HMAC but no secret was
 // provided, so a non-empty secret here is the install-time proof that
 // signatures are expected.
+// deleteWebhooks tears down every subscription this connector
+// registered at install. Best-effort: an error on one subscription
+// short-circuits and is surfaced to the engine which will retry the
+// Uninstall workflow — DELETE is idempotent server-side so a partial
+// teardown converges on retry. Counterparties that haven't declared
+// CREATE_WEBHOOKS skip the loop entirely.
+func (p *Plugin) deleteWebhooks(ctx context.Context, configs []models.PSPWebhookConfig) error {
+	for _, c := range configs {
+		id := c.Metadata[metaSubscriptionIDKey]
+		if id == "" {
+			continue
+		}
+		if err := p.client.DeleteWebhookSubscription(ctx, id); err != nil {
+			return fmt.Errorf("delete webhook subscription %s (%s): %w", c.Name, id, err)
+		}
+	}
+	return nil
+}
+
 func (p *Plugin) VerifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if p.client == nil {
 		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled

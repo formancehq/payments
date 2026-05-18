@@ -8,6 +8,9 @@ import (
 )
 
 func OtherToPSPOther(o client.Other) (models.PSPOther, error) {
+	if err := requireRef("other", o.ID); err != nil {
+		return models.PSPOther{}, err
+	}
 	data, err := json.Marshal(o.Data)
 	if err != nil {
 		return models.PSPOther{}, err

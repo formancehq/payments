@@ -92,6 +92,21 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlying.RoundTrip(req)
 }
 
+// pooledTransport clones http.DefaultTransport and lifts the per-host
+// connection cap. The stdlib default (`MaxIdleConnsPerHost = 2`) is
+// fine for browsers and rare-call SDKs; a Formance connector
+// consistently hammers a single counterparty host from many Temporal
+// activities in parallel, so 2 idle conns leads to constant TCP/TLS
+// re-handshake churn at 20k tx/day and up.
+func pooledTransport() *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 200
+	t.MaxIdleConnsPerHost = 64
+	t.MaxConnsPerHost = 0 // unbounded; pooled idle is the throttle
+	t.IdleConnTimeout = 90 * time.Second
+	return t
+}
+
 // New constructs a Client. httpwrapper.NewClient wraps the transport
 // once in otelhttp; do not pre-wrap here.
 func New(connectorName, endpoint, apiKey string) Client {
@@ -99,7 +114,7 @@ func New(connectorName, endpoint, apiKey string) Client {
 		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
 			Timeout: defaultTimeout,
 			Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
-				Transport: &authTransport{apiKey: apiKey, underlying: http.DefaultTransport},
+				Transport: &authTransport{apiKey: apiKey, underlying: pooledTransport()},
 			}),
 		}),
 		endpoint:          strings.TrimSuffix(endpoint, "/"),

@@ -42,7 +42,7 @@ var _ = Describe("Universal *Plugin — webhooks", func() {
 	AfterEach(func() { ctrl.Finish() })
 
 	Context("CreateWebhooks", func() {
-		It("registers one subscription per supported event", func(ctx SpecContext) {
+		It("registers one subscription per supported event and stashes subscription IDs in metadata", func(ctx SpecContext) {
 			mc.EXPECT().CreateWebhookSubscription(gomock.Any(), gomock.Any(), gomock.Any()).
 				DoAndReturn(func(_, _ any, req *client.WebhookSubscriptionRequest) (*client.WebhookSubscriptionResponse, error) {
 					return &client.WebhookSubscriptionResponse{ID: "sub_" + req.Name, Name: req.Name}, nil
@@ -55,6 +55,10 @@ var _ = Describe("Universal *Plugin — webhooks", func() {
 			Expect(err).To(BeNil())
 			Expect(res.Configs).NotTo(BeEmpty())
 			Expect(res.Others).To(HaveLen(len(res.Configs)))
+			for _, c := range res.Configs {
+				Expect(c.Metadata).NotTo(BeNil(), "Metadata must carry the subscription ID for Uninstall")
+				Expect(c.Metadata["com.universal.spec/subscription_id"]).To(Equal("sub_" + c.Name))
+			}
 		})
 
 		It("rejects HTTP base URL on a public hostname", func(ctx SpecContext) {

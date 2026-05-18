@@ -12,10 +12,13 @@ import (
 // fails the row rather than degrading to a silent zero (silent zeros
 // would create misleading entries in the order adjustment history).
 func OrderToPSPOrder(o client.Order) (models.PSPOrder, error) {
+	if err := requireRef("order", o.Reference); err != nil {
+		return models.PSPOrder{}, err
+	}
 	parse := func(label, raw string) (*big.Int, error) {
 		v, err := ParseAmount(raw)
 		if err != nil {
-			return nil, fmt.Errorf("order %s: %w", label, err)
+			return nil, fmt.Errorf("order %s %s: %w", o.Reference, label, err)
 		}
 		return v, nil
 	}
@@ -69,7 +72,7 @@ func OrderToPSPOrder(o client.Order) (models.PSPOrder, error) {
 		PriceAsset:                  o.PriceAsset,
 		SourceAccountReference:      o.SourceAccountReference,
 		DestinationAccountReference: o.DestinationAccountReference,
-		Metadata:                    o.Metadata,
+		Metadata:                    stampVersion(o.Metadata),
 		Raw:                         r,
 	}, nil
 }

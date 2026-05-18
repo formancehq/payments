@@ -75,11 +75,11 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 }
 
 // listAccountsForBalances prefers the engine-injected AccountLookup
-// (durable across pods); falls back to /v1/accounts page-1 for tests and
-// small installations.
+// (durable across pods); falls back to /v1/accounts page-1 for tests
+// and small installations.
 func (p *Plugin) listAccountsForBalances(ctx context.Context) ([]models.PSPAccount, error) {
-	if p.accountLookup != nil {
-		return p.accountLookup.ListAccountsByConnector(ctx)
+	if lk := p.lookup(); lk != nil {
+		return lk.ListAccountsByConnector(ctx)
 	}
 	page, err := p.client.ListAccounts(ctx, client.Pagination{PageSize: PAGE_SIZE})
 	if err != nil {

@@ -8,17 +8,20 @@ import (
 )
 
 func ConversionToPSPConversion(c client.Conversion) (models.PSPConversion, error) {
+	if err := requireRef("conversion", c.Reference); err != nil {
+		return models.PSPConversion{}, err
+	}
 	src, err := ParseAmount(c.SourceAmount)
 	if err != nil {
-		return models.PSPConversion{}, fmt.Errorf("conversion sourceAmount: %w", err)
+		return models.PSPConversion{}, fmt.Errorf("conversion %s sourceAmount: %w", c.Reference, err)
 	}
 	dst, err := ParseAmount(c.DestinationAmount)
 	if err != nil {
-		return models.PSPConversion{}, fmt.Errorf("conversion destinationAmount: %w", err)
+		return models.PSPConversion{}, fmt.Errorf("conversion %s destinationAmount: %w", c.Reference, err)
 	}
 	fee, err := ParseAmount(c.Fee)
 	if err != nil {
-		return models.PSPConversion{}, fmt.Errorf("conversion fee: %w", err)
+		return models.PSPConversion{}, fmt.Errorf("conversion %s fee: %w", c.Reference, err)
 	}
 	r, err := Raw(c)
 	if err != nil {
@@ -36,7 +39,7 @@ func ConversionToPSPConversion(c client.Conversion) (models.PSPConversion, error
 		Status:                      ConversionStatus(c.Status),
 		SourceAccountReference:      c.SourceAccountReference,
 		DestinationAccountReference: c.DestinationAccountReference,
-		Metadata:                    c.Metadata,
+		Metadata:                    stampVersion(c.Metadata),
 		Raw:                         r,
 	}, nil
 }

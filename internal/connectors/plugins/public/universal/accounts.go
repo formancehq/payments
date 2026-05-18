@@ -28,11 +28,15 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	return models.FetchNextAccountsResponse{Accounts: res, NewState: state, HasMore: hasMore}, nil
 }
 
-// fetchPaginated centralises every FetchNext* concern: capability guard,
-// install check, pagination state, per-item translation and high-water
-// `updatedAtFrom` advancement. Callers pass a `timestampOf` extractor so
-// the helper can advance LastUpdatedAt for every primitive (without it,
-// the next poll re-fetches the whole window — see Coinbase #707).
+// fetchPaginated centralises every FetchNext* concern: capability
+// guard, install check, pagination state, per-item translation and
+// high-water `updatedAtFrom` advancement.
+//
+// `timestampOf` lets the helper advance LastUpdatedAt for every
+// primitive (without it the next poll re-fetches the whole window —
+// see Coinbase #707). The watermark is computed in a local and only
+// committed to the returned state once the whole batch has converted
+// successfully so a partial failure can never advance past unseen rows.
 func fetchPaginated[Wire any, PSP any](
 	p *Plugin,
 	ctx context.Context,
@@ -70,6 +74,7 @@ func fetchPaginated[Wire any, PSP any](
 	}
 
 	converted := make([]PSP, 0, len(items))
+	highWater := st.LastUpdatedAt
 	for _, w := range items {
 		c, err := convert(w)
 		if err != nil {
@@ -77,12 +82,13 @@ func fetchPaginated[Wire any, PSP any](
 		}
 		converted = append(converted, c)
 		if timestampOf != nil {
-			if t := timestampOf(w); t.After(st.LastUpdatedAt) {
-				st.LastUpdatedAt = t
+			if t := timestampOf(w); t.After(highWater) {
+				highWater = t
 			}
 		}
 	}
 
+	st.LastUpdatedAt = highWater
 	st.NextCursor = nextCursor
 	if nextCursor == "" {
 		st.PageNumber++
