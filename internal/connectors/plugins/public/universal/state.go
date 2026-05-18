@@ -5,18 +5,10 @@ import (
 	"time"
 )
 
-// fetchState is the JSON state struct used by every paginated FetchNext*
-// method. It supports both pagination strategies the contract advertises in
-// /v1/capabilities's features.pagination:
-//
-//   - "cursor": opaque NextCursor returned by the counterparty
-//   - "page":   1-based PageNumber, incremented locally
-//   - "none":   neither — every poll fetches the full set, the engine dedups
-//
-// LastUpdatedAt is sent on every poll (when set) so the counterparty can
-// efficiently filter to records that changed since the last successful run.
-// It is not used for pagination — only for incremental fetching — so it can
-// be combined with either pagination strategy.
+// fetchState is the JSON state shared by every paginated FetchNext*.
+// NextCursor/PageNumber cover both contract pagination strategies (cursor
+// or 1-based page); LastUpdatedAt is the incremental high-water mark sent
+// as `updatedAtFrom` on every poll and advanced by fetchPaginated.
 type fetchState struct {
 	NextCursor    string    `json:"nextCursor,omitempty"`
 	PageNumber    int       `json:"pageNumber,omitempty"`

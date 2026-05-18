@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/mappers"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
@@ -35,7 +37,7 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 		Metadata:                    pi.Metadata,
 	})
 	if err != nil {
-		return models.CreateTransferResponse{}, fmt.Errorf("creating transfer %s: %w", pi.Reference, err)
+		return models.CreateTransferResponse{}, fmt.Errorf("create transfer %s: %w", pi.Reference, err)
 	}
 	return interpretInitiationResponse[models.CreateTransferResponse](resp.Mode, resp.PollingID, resp.Payment, resp.Error,
 		func(payment *models.PSPPayment, polling *string) models.CreateTransferResponse {
@@ -65,10 +67,10 @@ func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransfer
 		Metadata:    rev.Metadata,
 	})
 	if err != nil {
-		return models.ReverseTransferResponse{}, fmt.Errorf("reversing transfer %s: %w", rev.Reference, err)
+		return models.ReverseTransferResponse{}, fmt.Errorf("reverse transfer %s: %w", rev.Reference, err)
 	}
 	if resp.Payment == nil {
-		return models.ReverseTransferResponse{}, errors.New("counterparty did not return a payment for transfer reverse")
+		return models.ReverseTransferResponse{}, fmt.Errorf("counterparty did not return a payment for transfer reverse %s", rev.Reference)
 	}
 	pp, err := mappers.PaymentToPSPPayment(*resp.Payment)
 	if err != nil {
@@ -85,9 +87,13 @@ func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransfer
 	if err := declared.require(models.CAPABILITY_CREATE_TRANSFER); err != nil {
 		return models.PollTransferStatusResponse{}, err
 	}
-	resp, err := p.client.GetTransfer(ctx, req.TransferID)
+	id := strings.TrimSpace(req.TransferID)
+	if id == "" {
+		return models.PollTransferStatusResponse{}, errorsutils.NewWrappedError(errors.New("PollTransferStatus requires a non-empty TransferID"), models.ErrInvalidRequest)
+	}
+	resp, err := p.client.GetTransfer(ctx, id)
 	if err != nil {
-		return models.PollTransferStatusResponse{}, err
+		return models.PollTransferStatusResponse{}, fmt.Errorf("get transfer %s: %w", id, err)
 	}
 	return pollResp[models.PollTransferStatusResponse](resp.Payment, resp.Error,
 		func(payment *models.PSPPayment, errStr *string) models.PollTransferStatusResponse {

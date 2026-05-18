@@ -7,11 +7,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// PaymentToPSPPayment translates a wire Payment into the engine's
-// PSPPayment. Unknown enum values intentionally map to the "_OTHER"
-// constants — the engine treats those as "we ingested it but don't know
-// what kind it is", which is strictly safer than failing the whole batch
-// for a single new vendor-specific status.
+// PaymentToPSPPayment translates a wire Payment. Unknown enums degrade
+// to *_OTHER — safer than failing a batch on one vendor-specific status.
 func PaymentToPSPPayment(p client.Payment) (models.PSPPayment, error) {
 	amount, err := ParseAmount(p.Amount)
 	if err != nil {
@@ -37,10 +34,8 @@ func PaymentToPSPPayment(p client.Payment) (models.PSPPayment, error) {
 	}, nil
 }
 
-// PaymentStatus uses the canonical models.PaymentStatus.Scan codepath so
-// every status string the engine knows about is mapped automatically.
-// Anything else degrades to PAYMENT_STATUS_OTHER — see the Routable
-// mapper for the same rationale.
+// PaymentStatus delegates to models.PaymentStatus.Scan so every known
+// status maps automatically; anything else → PAYMENT_STATUS_OTHER.
 func PaymentStatus(s string) models.PaymentStatus {
 	var status models.PaymentStatus
 	if err := status.Scan(s); err != nil {

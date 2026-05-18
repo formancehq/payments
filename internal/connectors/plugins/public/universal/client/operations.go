@@ -6,11 +6,6 @@ import (
 	"net/url"
 )
 
-// All HTTP operations live here so the per-primitive plugin files only deal
-// with translation, not transport. Each method is a one-liner over c.do that
-// builds the URL, optionally adds pagination, and routes the result through
-// the universal Error envelope.
-
 func (c *client) GetCapabilities(ctx context.Context) (*CapabilitiesResponse, error) {
 	out := &CapabilitiesResponse{}
 	return out, c.do(ctx, http.MethodGet, c.url("/v1/capabilities"), "", nil, out)

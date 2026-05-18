@@ -48,12 +48,21 @@ func TestErrorIsMappingToSentinels(t *testing.T) {
 		name   string
 		status int
 		want   error
+		not    error // optional negative assertion
 	}{
-		{"429 → ratelimit", http.StatusTooManyRequests, plugins.ErrUpstreamRatelimit},
-		{"408 → timeout", http.StatusRequestTimeout, plugins.ErrUpstreamTimeout},
-		{"504 → timeout", http.StatusGatewayTimeout, plugins.ErrUpstreamTimeout},
-		{"400 → invalid client request", http.StatusBadRequest, plugins.ErrInvalidClientRequest},
-		{"500 → server error", http.StatusInternalServerError, httpwrapper.ErrStatusCodeServerError},
+		{"429 → ratelimit", http.StatusTooManyRequests, plugins.ErrUpstreamRatelimit, plugins.ErrInvalidClientRequest},
+		{"408 → timeout, NOT generic 4xx", http.StatusRequestTimeout, plugins.ErrUpstreamTimeout, plugins.ErrInvalidClientRequest},
+		{"421 → timeout, NOT generic 4xx", http.StatusMisdirectedRequest, plugins.ErrUpstreamTimeout, plugins.ErrInvalidClientRequest},
+		{"504 → timeout", http.StatusGatewayTimeout, plugins.ErrUpstreamTimeout, plugins.ErrInvalidClientRequest},
+		{"423 → retry-after, NOT generic 4xx", http.StatusLocked, plugins.ErrUpstreamRetryAfter, plugins.ErrInvalidClientRequest},
+		{"425 → retry-after, NOT generic 4xx", http.StatusTooEarly, plugins.ErrUpstreamRetryAfter, plugins.ErrInvalidClientRequest},
+		{"400 → invalid client request", http.StatusBadRequest, plugins.ErrInvalidClientRequest, nil},
+		{"401 → invalid client request", http.StatusUnauthorized, plugins.ErrInvalidClientRequest, nil},
+		{"403 → invalid client request", http.StatusForbidden, plugins.ErrInvalidClientRequest, nil},
+		{"404 → invalid client request", http.StatusNotFound, plugins.ErrInvalidClientRequest, nil},
+		{"422 → invalid client request", http.StatusUnprocessableEntity, plugins.ErrInvalidClientRequest, nil},
+		{"500 → server error", http.StatusInternalServerError, httpwrapper.ErrStatusCodeServerError, plugins.ErrInvalidClientRequest},
+		{"502 → server error", http.StatusBadGateway, httpwrapper.ErrStatusCodeServerError, plugins.ErrInvalidClientRequest},
 	}
 	for _, c := range cases {
 		c := c
@@ -62,6 +71,9 @@ func TestErrorIsMappingToSentinels(t *testing.T) {
 			e := &Error{HTTPStatus: c.status}
 			if !errors.Is(e, c.want) {
 				t.Fatalf("status %d expected to satisfy %v", c.status, c.want)
+			}
+			if c.not != nil && errors.Is(e, c.not) {
+				t.Fatalf("status %d unexpectedly satisfies %v", c.status, c.not)
 			}
 		})
 	}

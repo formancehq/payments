@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -128,6 +129,79 @@ var _ = Describe("Universal *Plugin — webhooks", func() {
 				Body: body,
 			}})
 			Expect(err).NotTo(BeNil())
+		})
+
+		It("rejects when timestamp is outside tolerance", func(ctx SpecContext) {
+			body := []byte(`{"id":"evt-99","type":"payment.updated"}`)
+			ts := time.Now().UTC().Add(-1 * time.Hour).Format(time.RFC3339)
+			_, err := plg.VerifyWebhook(ctx, models.VerifyWebhookRequest{Webhook: models.PSPWebhook{
+				Headers: map[string][]string{
+					"X-Universal-Signature": {sign(secret, ts, body)},
+					"X-Universal-Timestamp": {ts},
+				},
+				Body: body,
+			}})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrWebhookVerification)).To(BeTrue())
+		})
+
+		It("errors when signed body is unparseable (would otherwise lose engine idempotency on retry)", func(ctx SpecContext) {
+			body := []byte(`not json`)
+			ts := time.Now().UTC().Format(time.RFC3339)
+			_, err := plg.VerifyWebhook(ctx, models.VerifyWebhookRequest{Webhook: models.PSPWebhook{
+				Headers: map[string][]string{
+					"X-Universal-Signature": {sign(secret, ts, body)},
+					"X-Universal-Timestamp": {ts},
+				},
+				Body: body,
+			}})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrWebhookVerification)).To(BeTrue())
+		})
+
+		It("errors when signed body is valid JSON but missing event id", func(ctx SpecContext) {
+			body := []byte(`{"type":"payment.updated"}`)
+			ts := time.Now().UTC().Format(time.RFC3339)
+			_, err := plg.VerifyWebhook(ctx, models.VerifyWebhookRequest{Webhook: models.PSPWebhook{
+				Headers: map[string][]string{
+					"X-Universal-Signature": {sign(secret, ts, body)},
+					"X-Universal-Timestamp": {ts},
+				},
+				Body: body,
+			}})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrWebhookVerification)).To(BeTrue())
+		})
+	})
+
+	Context("VerifyWebhook — no configured secret", func() {
+		var plgNoSecret *universal.Plugin
+		BeforeEach(func() {
+			var err error
+			plgNoSecret, err = universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k"}`))
+			Expect(err).To(BeNil())
+			universal.InjectClient(plgNoSecret, mc)
+		})
+
+		It("accepts unsigned deliveries (counterparty advertised no HMAC)", func(ctx SpecContext) {
+			res, err := plgNoSecret.VerifyWebhook(ctx, models.VerifyWebhookRequest{Webhook: models.PSPWebhook{
+				Headers: map[string][]string{},
+				Body:    []byte(`{}`),
+			}})
+			Expect(err).To(BeNil())
+			Expect(res.WebhookIdempotencyKey).To(BeNil())
+		})
+
+		It("rejects a delivery that carries a signature header (spoof / drift)", func(ctx SpecContext) {
+			_, err := plgNoSecret.VerifyWebhook(ctx, models.VerifyWebhookRequest{Webhook: models.PSPWebhook{
+				Headers: map[string][]string{
+					"X-Universal-Signature": {"deadbeef"},
+					"X-Universal-Timestamp": {time.Now().UTC().Format(time.RFC3339)},
+				},
+				Body: []byte(`{}`),
+			}})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrWebhookVerification)).To(BeTrue())
 		})
 	})
 

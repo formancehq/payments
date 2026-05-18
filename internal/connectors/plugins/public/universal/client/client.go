@@ -1,8 +1,6 @@
-// Package client is the hand-rolled HTTP client used by the Universal CE
-// Connector to talk to a counterparty implementing the universal-openapi.yaml
-// v1 contract. Every operation is wrapped through httpwrapper so we get OTel
-// spans, default-transport TLS verification, the standard error-status
-// mapping, and metrics tagged by the "universal" connector name.
+// Package client is the HTTP client for the universal-openapi.yaml v1
+// contract. Wrapped through httpwrapper for OTel spans, retryable
+// status-code mapping, and per-connector metrics.
 package client
 
 import (
@@ -22,14 +20,12 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 
-// Client is the contract surface every per-primitive method depends on.
-// Hand-rolled to keep the universal package free of generated code (no
-// go.mod replace directive) and to map cleanly onto the operations
-// described in contract/universal-openapi.yaml.
+// Client mirrors contract/universal-openapi.yaml. Hand-rolled (no
+// generated code) so the universal package needs no go.mod replace.
 type Client interface {
-	// SetIdempotencyHeader switches the header name used on every
-	// mutating POST. Called once from plugin.Install when the
-	// counterparty advertises features.idempotencyHeader.
+	// SetIdempotencyHeader overrides the canonical header name on
+	// mutating POSTs. Called from plugin.Install when the counterparty
+	// advertises features.idempotencyHeader.
 	SetIdempotencyHeader(name string)
 
 	GetCapabilities(ctx context.Context) (*CapabilitiesResponse, error)
@@ -57,9 +53,9 @@ type Client interface {
 	DeleteWebhookSubscription(ctx context.Context, id string) error
 }
 
-// Pagination carries everything a paginated list endpoint needs. The
-// counterparty announces which knobs it supports in /v1/capabilities; we send
-// all of them and let the server pick what it cares about.
+// Pagination carries every paginated list knob. We send all of them on
+// every request; the counterparty picks what it cares about per its
+// features.pagination advertisement.
 type Pagination struct {
 	Cursor        string
 	PageNumber    int
@@ -67,10 +63,9 @@ type Pagination struct {
 	UpdatedAtFrom time.Time
 }
 
-// IdempotencyHeader is the canonical header name we use on every mutating
-// POST. Counterparties can declare an alternative via /v1/capabilities's
-// features.idempotencyHeader; the plugin sends both the canonical name and
-// the announced override when they differ.
+// IdempotencyHeader is the canonical header on mutating POSTs. When the
+// counterparty advertises an alias via features.idempotencyHeader, do()
+// sends BOTH so retries dedup either way.
 const (
 	IdempotencyHeader = "Idempotency-Key"
 	defaultTimeout    = 30 * time.Second
@@ -83,9 +78,7 @@ type client struct {
 	idempotencyHeader string
 }
 
-// authTransport is intentionally tiny: bearer-only, no logging of the token.
-// Constant-time isn't relevant on this side (we control the secret), and we
-// rely on the default http.Transport for TLS verification.
+// authTransport stamps the bearer token. Token is never logged.
 type authTransport struct {
 	apiKey     string
 	underlying http.RoundTripper
@@ -99,6 +92,8 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlying.RoundTrip(req)
 }
 
+// New constructs a Client. httpwrapper.NewClient wraps the transport
+// once in otelhttp; do not pre-wrap here.
 func New(connectorName, endpoint, apiKey string) Client {
 	return &client{
 		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
@@ -113,9 +108,6 @@ func New(connectorName, endpoint, apiKey string) Client {
 	}
 }
 
-// SetIdempotencyHeader overrides the header name used on POST requests. The
-// plugin calls this once after install if /v1/capabilities returned a
-// non-empty features.idempotencyHeader override.
 func (c *client) SetIdempotencyHeader(name string) {
 	if name == "" {
 		return
@@ -145,10 +137,9 @@ func (c *client) addPagination(u string, p Pagination) string {
 	return u + "?" + q.Encode()
 }
 
-// do issues a request and unmarshals into out. The error envelope honors both
-// RFC 7807 (application/problem+json) and the legacy {message, errors[]}
-// shape via *Error's UnmarshalJSON. Successful no-content responses are
-// treated as success regardless of out being nil.
+// do issues a request and unmarshals into out. The error envelope
+// accepts both RFC 7807 and the legacy `{message, errors}` shape — see
+// Error.
 func (c *client) do(ctx context.Context, method, url string, idemKey string, body, out any) error {
 	var reader io.Reader
 	if body != nil {
@@ -168,8 +159,6 @@ func (c *client) do(ctx context.Context, method, url string, idemKey string, bod
 	}
 	if idemKey != "" {
 		req.Header.Set(c.idempotencyHeader, idemKey)
-		// Always send the canonical name too, so counterparties that use the
-		// default still dedup correctly when an override was declared.
 		if c.idempotencyHeader != IdempotencyHeader {
 			req.Header.Set(IdempotencyHeader, idemKey)
 		}

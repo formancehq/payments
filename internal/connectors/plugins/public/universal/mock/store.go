@@ -9,15 +9,14 @@ import (
 	"time"
 )
 
-// store is a single-tenant, in-memory data layer. Everything is keyed by
-// the entity's primary reference. A single sync.RWMutex protects all maps —
-// fine for the fixture's purpose; multi-tenancy will replace this with a
-// per-tenant struct.
+// store is the single-tenant, in-memory data layer. One sync.RWMutex
+// covers everything (fine for the fixture; a per-tenant struct will
+// replace this when multi-tenancy lands).
 //
 // Adjustment evolution is driven by per-record "lanes" — pre-planned
-// sequences of next statuses. EvolveSteps pops one entry off the next
-// non-empty lane on every call, bumps updatedAt, and the engine sees a
-// fresh PaymentAdjustment / OrderAdjustment on the following poll.
+// status sequences. EvolveSteps pops the next entry off each lane,
+// bumps updatedAt, and the engine sees a fresh adjustment on the next
+// poll.
 type store struct {
 	mu               sync.RWMutex
 	cfg              mockConfig
@@ -30,12 +29,8 @@ type store struct {
 	conversions      []conversion
 	others           map[string][]other
 
-	// Per-record evolution lanes. Each entry is a queue of next statuses
-	// (and, for orders, fill-quantity bumps) that get popped on every
-	// EvolveSteps call. Empty queue ⇒ record is terminal for evolution
-	// purposes. Round-robin cursors below ensure progress spreads
-	// evenly across the dataset rather than draining one record before
-	// touching the next.
+	// Per-record evolution queues. Round-robin cursors below spread
+	// progress evenly across the dataset.
 	paymentLanes    map[string][]string
 	orderLanes      map[string][]orderStep
 	conversionLanes map[string][]string
@@ -44,9 +39,9 @@ type store struct {
 	evolveOrderCursor      int
 	evolveConversionCursor int
 
-	// Idempotency dedups POST requests by Idempotency-Key (one map per
-	// resource family is overkill but keeps the store readable).
-	idemPayout       map[string]string // key -> payout ID (or terminal sentinel)
+	// Idempotency dedup by Idempotency-Key — one map per resource
+	// family keeps the store readable.
+	idemPayout       map[string]string
 	idemTransfer     map[string]string
 	idemBankAccount  map[string]string
 	idemWebhookSubID map[string]string
@@ -56,20 +51,16 @@ type store struct {
 	webhookSubs      map[string]webhookSub // sub.ID -> sub
 }
 
-// orderStep is one entry in an order's evolution lane: the status the
-// order should transition to and the resulting fill (as a percentage of
-// `BaseQuantityOrdered`, 0–100). The percentage representation lets us
-// keep the lane definition human-readable while still emitting concrete
-// minor-unit fill quantities the engine can compare for adjustment
-// dedup purposes.
+// orderStep is one transition in an order's lane: target status + fill
+// expressed as percent-of-ordered (0..100). The percentage keeps the
+// lane definition human-readable; runtime computes minor-unit fill.
 type orderStep struct {
 	status  string
 	fillPct int
 }
 
-// Seed sizes are tuned so the engine's default PAGE_SIZE (100) needs at
-// least two pages on the largest endpoints — exercising the cursor-based
-// pagination state machine end-to-end on the plugin side.
+// Seed sizes tuned so the engine's PAGE_SIZE (100) needs at least two
+// pages on the largest endpoint — exercises cursor pagination end-to-end.
 const (
 	seedInternalAccounts = 5
 	seedExternalAccounts = 5
@@ -111,12 +102,8 @@ func newStore(cfg mockConfig, logger *slog.Logger) *store {
 	return s
 }
 
-// paymentLaneTemplates is the catalogue of trajectories every seeded
-// payment can follow. Each lane is a complete adjustment story —
-// distributing the catalogue across the 250 seeded payments guarantees
-// every PaymentStatus transition the engine's
-// FromPaymentDataToPaymentInitiationAdjustment table can produce gets
-// exercised somewhere in the dataset.
+// paymentLaneTemplates: every trajectory the engine's adjustment table
+// can produce, rotated across the seed so each lane runs somewhere.
 var paymentLaneTemplates = [][]string{
 	// Card-style auth/capture flows
 	{"AUTHORISATION", "CAPTURE", "SUCCEEDED"},
@@ -135,10 +122,9 @@ var paymentLaneTemplates = [][]string{
 	{"SUCCEEDED", "DISPUTE", "DISPUTE_LOST"},
 }
 
-// orderLaneTemplates covers every OrderStatus terminal + the partial-fill
-// progression. PARTIALLY_FILLED appears more than once in the FILL trajectory
-// so the engine's per-fill OrderAdjustment dedup (which keys on
-// BaseQuantityFilled) is exercised even when status doesn't change.
+// orderLaneTemplates: every OrderStatus terminal + repeated
+// PARTIALLY_FILLED with growing fills (exercises the engine's per-fill
+// adjustment dedup which keys on BaseQuantityFilled).
 var orderLaneTemplates = [][]orderStep{
 	{{"OPEN", 0}, {"PARTIALLY_FILLED", 25}, {"PARTIALLY_FILLED", 50}, {"PARTIALLY_FILLED", 75}, {"FILLED", 100}},
 	{{"OPEN", 0}, {"FILLED", 100}},
@@ -147,17 +133,16 @@ var orderLaneTemplates = [][]orderStep{
 	{{"FAILED", 0}},
 }
 
-// conversionLaneTemplates: simple single-step terminals — conversions are
-// latest-wins in the engine and don't carry an adjustment array.
+// conversionLaneTemplates: single-step terminals (conversions are
+// latest-wins, no adjustment array).
 var conversionLaneTemplates = [][]string{
 	{"COMPLETED"},
 	{"FAILED"},
 }
 
-// seed populates the store with deterministic but realistic-looking
-// fixtures. Timestamps are monotonic per record (CreatedAt and UpdatedAt
-// strictly increasing across the seed slice) so `updatedAtFrom` cursoring
-// on the engine side behaves as it would against a real PSP.
+// seed populates deterministic fixtures with strictly-increasing
+// CreatedAt/UpdatedAt so the engine's `updatedAtFrom` cursor behaves
+// like it would against a real PSP.
 func (s *store) seed() {
 	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	tick := func(i int) time.Time { return base.Add(time.Duration(i) * time.Minute) }
@@ -189,11 +174,8 @@ func (s *store) seed() {
 		})
 	}
 
-	// Every payment, order and conversion starts in PENDING and is
-	// assigned a lane chosen round-robin from the catalogue. EvolveSteps
-	// pops one entry off the lane per call so the engine sees a fresh
-	// adjustment each time, and the dataset eventually reaches every
-	// terminal status in the engine's enum.
+	// Every payment / order / conversion starts PENDING and gets a
+	// lane round-robin from the catalogue above.
 	types := []string{"PAYIN", "PAYOUT", "TRANSFER"}
 	for i := 0; i < seedPayments; i++ {
 		t := tick(i)
@@ -221,17 +203,16 @@ func (s *store) seed() {
 		ordered := int64(1_000_000 + i*100)
 		oref := fmt.Sprintf("ord_%05d", i)
 		s.orders = append(s.orders, order{
-			Reference:                   oref,
-			CreatedAt:                   t,
-			UpdatedAt:                   t,
-			Direction:                   directions[i%len(directions)],
-			Type:                        "MARKET",
-			Status:                      "PENDING",
-			// MARKET orders are canonically immediate-or-cancel.
-			// The engine's storage column is `time_in_force NOT NULL`
-			// so we MUST emit a real value — `TIME_IN_FORCE_UNKNOWN`
-			// (the default for an empty wire field) is rejected with a
-			// SQL error by the engine's bun layer.
+			Reference: oref,
+			CreatedAt: t,
+			UpdatedAt: t,
+			Direction: directions[i%len(directions)],
+			Type:      "MARKET",
+			Status:    "PENDING",
+			// MARKET is canonically IOC. Empty maps to
+			// TIME_IN_FORCE_UNKNOWN whose Value() returns (nil, err) —
+			// the engine's `time_in_force NOT NULL` column then fails
+			// the INSERT.
 			TimeInForce:                 "IOC",
 			SourceAsset:                 "EUR/2",
 			DestinationAsset:            "BTC/8",
@@ -274,35 +255,21 @@ func (s *store) seed() {
 
 func ptr[T any](v T) *T { return &v }
 
-// EvolveResult identifies a single advance: which kind of record
-// changed and its primary reference. Returned by EvolveSteps so the
-// caller (typically the server) can push a matching webhook event for
-// every transition when a subscription exists.
+// EvolveResult identifies one advanced record so the caller can fan a
+// matching webhook event out when a subscription exists.
 type EvolveResult struct {
 	Kind      string // "payment" | "order" | "conversion"
 	Reference string
 }
 
-// EvolveSteps advances up to `n` records by popping one entry off each
-// non-empty payment / order / conversion lane, bumping updatedAt, and
-// returning the per-record results. It rotates across primitive types
-// so a single Evolve(N) call exercises payment + order + conversion
-// state machines in parallel rather than draining one before touching
-// the next.
+// EvolveSteps advances up to `n` records, rotating across primitive
+// kinds so a single call exercises every state machine in parallel.
+// Each record gets a strictly-monotonic UpdatedAt (microsecond cursor)
+// so the engine's `updatedAtFrom` never skips an adjustment.
 //
-// Each advance gets a strictly-monotonic timestamp: a shared `now` cursor
-// is incremented by one microsecond per record. Without this, the engine's
-// `updatedAtFrom` high-water cursor would skip records that share an
-// identical UpdatedAt — effectively losing adjustments.
-//
-// Driven by:
-//   - The background ticker spawned in main() when MOCK_AUTO_EVOLVE_INTERVAL > 0.
-//   - The explicit POST /_admin/evolve?n=K endpoint (tests + manual control).
-//   - Each paginated GET when evolveOnPoll is enabled and no webhook
-//     subscriptions are registered.
-//
-// Returns the slice of advanced records (length may be lower than n if
-// every lane is exhausted). Safe to call concurrently.
+// Driven by: the auto-evolve ticker, POST /_admin/evolve, or each
+// paginated GET when evolveOnPoll is on AND no webhooks are registered.
+// Safe to call concurrently.
 func (s *store) EvolveSteps(n int) []EvolveResult {
 	if n <= 0 {
 		return nil
@@ -339,10 +306,8 @@ func (s *store) EvolveSteps(n int) []EvolveResult {
 	return results
 }
 
-// timeCursor produces a strictly-monotonic series of timestamps starting
-// at `t`, each one microsecond apart. Lets one EvolveSteps call stamp
-// every advanced record with a distinct UpdatedAt so the engine's
-// high-water cursor never skips an adjustment.
+// timeCursor emits microsecond-spaced monotonic timestamps so one
+// EvolveSteps batch never collides on UpdatedAt.
 type timeCursor struct{ t time.Time }
 
 func newTimeCursor(t time.Time) *timeCursor { return &timeCursor{t: t} }
@@ -352,12 +317,9 @@ func (c *timeCursor) next() time.Time {
 	return c.t
 }
 
-// evolveOnePaymentLocked pops one status off the next non-empty payment
-// lane and applies it. Cursor-driven round-robin so successive calls
-// touch different records — auto-evolve produces uniform progress
-// instead of fully draining record 0 before touching record 1. Returns
-// the affected payment's reference + true; ("", false) when every lane
-// is drained.
+// evolveOnePaymentLocked pops one status off the next non-empty lane
+// (cursor-driven round-robin). Returns ("", false) when every lane is
+// drained.
 func (s *store) evolveOnePaymentLocked(now time.Time) (string, bool) {
 	for tries := 0; tries < len(s.payments); tries++ {
 		i := (s.evolvePaymentCursor + tries) % len(s.payments)
@@ -377,11 +339,8 @@ func (s *store) evolveOnePaymentLocked(now time.Time) (string, bool) {
 	return "", false
 }
 
-// evolveOneOrderLocked pops one orderStep off the next non-empty order
-// lane (cursor-driven round-robin). Fill quantity is computed as
-// percent-of-ordered so the engine's adjustment dedup (which keys on
-// BaseQuantityFilled) treats two PARTIALLY_FILLED entries with different
-// fills as distinct adjustments.
+// evolveOneOrderLocked pops one orderStep and computes the resulting
+// BaseQuantityFilled in minor units (percent-of-ordered).
 func (s *store) evolveOneOrderLocked(now time.Time) (string, bool) {
 	for tries := 0; tries < len(s.orders); tries++ {
 		i := (s.evolveOrderCursor + tries) % len(s.orders)
@@ -405,9 +364,7 @@ func (s *store) evolveOneOrderLocked(now time.Time) (string, bool) {
 }
 
 // evolveOneConversionLocked pops one status off the next non-empty
-// conversion lane (cursor-driven). Conversions don't carry adjustment
-// history in the engine, but evolving them still validates the
-// FetchNextConversions path observes the new status.
+// conversion lane.
 func (s *store) evolveOneConversionLocked(now time.Time) (string, bool) {
 	for tries := 0; tries < len(s.conversions); tries++ {
 		i := (s.evolveConversionCursor + tries) % len(s.conversions)
@@ -427,10 +384,9 @@ func (s *store) evolveOneConversionLocked(now time.Time) (string, bool) {
 	return "", false
 }
 
-// pollEntry is the polling state machine the mock uses to demonstrate the
-// terminal-or-polling pattern. We start in PENDING; after `transitionsLeft`
-// polls we flip to SUCCEEDED. This is enough to exercise the
-// PluginPollPayoutStatus Temporal workflow end-to-end.
+// pollEntry is the per-initiation state machine: PENDING for
+// `transitionsLeft` polls, then `terminalStatus`. Exercises Temporal's
+// PollPayoutStatus / PollTransferStatus workflows.
 type pollEntry struct {
 	id              string
 	reference       string
@@ -449,13 +405,9 @@ type webhookSub struct {
 	CallbackURL string
 }
 
-// --- pagination helpers ------------------------------------------------------
-
-// paginate slices `items` into a single page using either the opaque
-// cursor (a base64-encoded integer offset, easy to debug) or a 1-based
-// page number. Returns the page contents, the cursor for the next page
-// (empty if exhausted), and whether more rows remain. pageSize 0 falls
-// back to 100 to match the engine's default PAGE_SIZE.
+// paginate slices `items` into one page using either the base64-encoded
+// integer cursor or a 1-based page number. pageSize 0 falls back to 100
+// (engine default PAGE_SIZE).
 func paginate[T any](items []T, cursor string, page, pageSize int) ([]T, string, bool) {
 	if pageSize <= 0 {
 		pageSize = 100
@@ -503,8 +455,6 @@ type listOpts struct {
 	pageSize      int
 	updatedAtFrom time.Time
 }
-
-// --- paginated read helpers --------------------------------------------------
 
 func (s *store) listAccounts(opts listOpts) ([]account, string, bool) {
 	s.mu.RLock()
@@ -557,7 +507,18 @@ func (s *store) listOrders(opts listOpts) ([]order, string, bool) {
 func (s *store) listConversions(opts listOpts) ([]conversion, string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return paginate(s.conversions, opts.cursor, opts.page, opts.pageSize)
+	filtered := s.conversions
+	if !opts.updatedAtFrom.IsZero() {
+		filtered = filtered[:0:0]
+		for _, c := range s.conversions {
+			// Conversions only carry CreatedAt on the wire — see
+			// contract/data-model.md.
+			if c.CreatedAt.After(opts.updatedAtFrom) {
+				filtered = append(filtered, c)
+			}
+		}
+	}
+	return paginate(filtered, opts.cursor, opts.page, opts.pageSize)
 }
 
 func (s *store) listOthers(name string, opts listOpts) ([]other, string, bool) {
@@ -566,10 +527,8 @@ func (s *store) listOthers(name string, opts listOpts) ([]other, string, bool) {
 	return paginate(s.others[name], opts.cursor, opts.page, opts.pageSize)
 }
 
-// filterAccountsByUpdatedAt approximates an "updated since" filter for
-// accounts (which only carry CreatedAt on the wire). The contract treats
-// CreatedAt as the freshness anchor for accounts since they are largely
-// append-only.
+// filterAccountsByUpdatedAt — accounts only carry CreatedAt on the
+// wire; contract uses CreatedAt as freshness anchor (append-only).
 func filterAccountsByUpdatedAt(in []account, since time.Time) []account {
 	if since.IsZero() {
 		return in
@@ -583,18 +542,11 @@ func filterAccountsByUpdatedAt(in []account, since time.Time) []account {
 	return out
 }
 
-// --- payout mutate -----------------------------------------------------------
-
-// initiatePayout returns either a terminal payment (≤ €100) or a polling ID
-// that progresses to SUCCEEDED after a few polls (> €100). This single rule
-// covers both branches of the contract's terminal-or-polling envelope and
-// gives Temporal something to actually schedule.
-//
-// The synthesized Payment is also appended to s.payments so a subsequent
-// /v1/payments poll surfaces it — exactly how a real PSP behaves: a payout
-// is also a transaction. The Payment.Reference matches the engine-side
-// initiation reference so the engine can correlate the
-// PaymentInitiationAdjustment trail with the PaymentAdjustment trail.
+// initiatePayout routes ≤ €100 → terminal, > €100 → polling. The
+// synthesized Payment is upserted into s.payments so the next
+// /v1/payments poll surfaces it — mirrors how a real PSP exposes
+// payouts as transactions. Reference matches the initiation reference
+// so engine adjustments correlate.
 func (s *store) initiatePayout(idemKey string, req initiationRequest) initiationResponse {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -605,8 +557,7 @@ func (s *store) initiateTransferLocked(idemKey string, req initiationRequest) in
 	return s.initiateLocked(idemKey, req, "TRANSFER", s.idemTransfer, s.pollingTransfers, "ptransfer_")
 }
 
-// initiateLocked is the shared implementation used by both payouts and
-// transfers. The caller MUST hold s.mu.Lock().
+// initiateLocked — shared payout/transfer impl. Caller MUST hold s.mu.
 func (s *store) initiateLocked(
 	idemKey string,
 	req initiationRequest,
@@ -622,7 +573,7 @@ func (s *store) initiateLocked(
 		return initiationResponse{Mode: "polling", PollingID: existing}
 	}
 
-	if mustParseInt(req.Amount) <= 10000 { // ≤ €100.00 minor units → terminal
+	if mustParseInt(req.Amount) <= 10000 {
 		idem[idemKey] = req.Reference
 		pay := terminalPayment(req, paymentType)
 		s.upsertPaymentLocked(pay)
@@ -637,18 +588,14 @@ func (s *store) initiateLocked(
 		transitionsLeft: 3, terminalStatus: "SUCCEEDED",
 		createdAt: time.Now().UTC(),
 	}
-	// Surface the in-flight payout/transfer in /v1/payments as PENDING
-	// straight away so the engine's periodic FetchNextPayments picks it
-	// up alongside the PollPayoutStatus workflow.
+	// Surface the in-flight payout in /v1/payments as PENDING so the
+	// next FetchNextPayments picks it up alongside Poll*.
 	s.upsertPaymentLocked(pollPayment(polling[id], paymentType, "PENDING"))
 	return initiationResponse{Mode: "polling", PollingID: id}
 }
 
-// upsertPaymentLocked inserts or updates a payment by Reference and pushes
-// it to the front of s.payments. Always bumps UpdatedAt to *now* so the
-// engine's `updatedAtFrom` cursor sees it on the next poll. nil payments
-// are ignored (e.g. an "intermediate" poll that returns no payment yet).
-// Caller MUST hold s.mu.Lock().
+// upsertPaymentLocked inserts or replaces by Reference, bumps UpdatedAt
+// to now so `updatedAtFrom` sees it next poll. Caller MUST hold s.mu.
 func (s *store) upsertPaymentLocked(p *payment) {
 	if p == nil || p.Reference == "" {
 		return
@@ -674,13 +621,8 @@ func (s *store) pollPayout(id string) initiationResponse {
 	return resp
 }
 
-// --- transfer mutate ---------------------------------------------------------
-//
-// Transfers and payouts share the same envelope but are tracked separately
-// so the engine's per-primitive idempotency / polling state never leaks
-// across primitives — exactly how a real PSP would behave when both
-// CREATE_TRANSFER and CREATE_PAYOUT are advertised.
-
+// Transfers share the envelope but track idempotency / polling in
+// their own maps so per-primitive state never leaks across primitives.
 func (s *store) initiateTransfer(idemKey string, req initiationRequest) initiationResponse {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -695,9 +637,7 @@ func (s *store) pollTransfer(id string) initiationResponse {
 	return resp
 }
 
-// advancePoll is the shared poll state machine: PENDING for `transitionsLeft`
-// calls, then the entry's terminal status. Lifted out of pollPayout so
-// pollTransfer reuses the exact same logic.
+// advancePoll: PENDING for `transitionsLeft` calls, then terminalStatus.
 func advancePoll(m map[string]*pollEntry, id, paymentType string) initiationResponse {
 	entry, ok := m[id]
 	if !ok {
@@ -710,20 +650,16 @@ func advancePoll(m map[string]*pollEntry, id, paymentType string) initiationResp
 	return initiationResponse{Mode: "polling", PollingID: id, Payment: pollPayment(entry, paymentType, entry.terminalStatus)}
 }
 
-// addExternalAccount appends a counterparty-side account so subsequent
-// /v1/external-accounts polls surface it. Used by handleCreateBankAccount
-// to mimic real PSP behaviour where created bank accounts join the
-// fetchable beneficiary list.
+// addExternalAccount appends a counterparty-side account — created
+// bank accounts join the fetchable beneficiary list like a real PSP.
 func (s *store) addExternalAccount(a account) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.externalAccounts = append(s.externalAccounts, a)
 }
 
-// resolveBankAccount returns the cached external-account reference for an
-// idempotent re-POST. Returns ("", false) if this is a fresh bank-account
-// creation. The caller persists via addExternalAccount + records the
-// mapping under idemBankAccount.
+// resolveBankAccount returns the cached external-account reference for
+// an idempotent re-POST.
 func (s *store) resolveBankAccount(idemKey string) (string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -737,8 +673,7 @@ func (s *store) recordBankAccount(idemKey, ref string) {
 	s.idemBankAccount[idemKey] = ref
 }
 
-// firstPaymentRef returns the first seeded payment's reference (used by
-// the webhook trigger to surface a realistic payment.* event).
+// firstPaymentRef — first seeded payment reference (admin trigger).
 func (s *store) firstPaymentRef() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -766,8 +701,7 @@ func (s *store) firstAccount() (account, bool) {
 	return s.accounts[0], true
 }
 
-// findWebhookCallback looks up the registered callback URL for an event
-// name. Returns ("", false) if no subscription is active for that event.
+// findWebhookCallback — registered callback URL for an event, or "" / false.
 func (s *store) findWebhookCallback(name string) (string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -779,23 +713,16 @@ func (s *store) findWebhookCallback(name string) (string, bool) {
 	return "", false
 }
 
-// webhooksRegistered reports whether the engine has subscribed to any
-// event topic. Drives the gating logic for poll-driven evolution: when
-// webhooks are active, polls are slow heartbeats and the counterparty is
-// expected to push state changes — so polls don't auto-evolve.
+// webhooksRegistered gates poll-driven evolution: with webhooks on,
+// polls are heartbeats and the counterparty pushes state changes.
 func (s *store) webhooksRegistered() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.webhookSubs) > 0
 }
 
-// findPayment is the read-only lookup used by the server's webhook
-// auto-emission path: when EvolveSteps reports "payment X just
-// transitioned", the server materialises the payload by re-fetching
-// the record (post-mutation snapshot) and pushes it. There is no
-// findOrder/findConversion equivalent because the universal contract
-// doesn't expose order or conversion events as webhooks (the engine's
-// WebhookResponse has no surface for them).
+// findPayment — post-mutation snapshot for webhook auto-emission. No
+// order/conversion equivalent: contract has no webhook for them.
 func (s *store) findPayment(ref string) (payment, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

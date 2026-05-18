@@ -2,6 +2,7 @@ package universal
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
@@ -19,6 +20,7 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return r.Items, r.NextCursor, r.HasMore, nil
 		},
 		mappers.AccountToPSPAccount,
+		func(a client.Account) time.Time { return a.CreatedAt },
 	)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
@@ -27,14 +29,10 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 }
 
 // fetchPaginated centralises every FetchNext* concern: capability guard,
-// "not installed" check, pagination state encode/decode, and per-item
-// translation. Each per-primitive file stays a thin wrapper that picks
-// the list endpoint and the wire→PSP translator from the mappers
-// package.
-//
-// Cursor-based and page-based pagination are both honoured: if the
-// counterparty returns a NextCursor we use it; otherwise we increment a
-// PageNumber locally. The engine's pageSize is honoured (0 → PAGE_SIZE).
+// install check, pagination state, per-item translation and high-water
+// `updatedAtFrom` advancement. Callers pass a `timestampOf` extractor so
+// the helper can advance LastUpdatedAt for every primitive (without it,
+// the next poll re-fetches the whole window — see Coinbase #707).
 func fetchPaginated[Wire any, PSP any](
 	p *Plugin,
 	ctx context.Context,
@@ -43,6 +41,7 @@ func fetchPaginated[Wire any, PSP any](
 	capability models.Capability,
 	list func(context.Context, client.Pagination) ([]Wire, string, bool, error),
 	convert func(Wire) (PSP, error),
+	timestampOf func(Wire) time.Time,
 ) ([]PSP, []byte, bool, error) {
 	declared, ok := p.declaredSet()
 	if !ok {
@@ -77,6 +76,11 @@ func fetchPaginated[Wire any, PSP any](
 			return nil, nil, false, err
 		}
 		converted = append(converted, c)
+		if timestampOf != nil {
+			if t := timestampOf(w); t.After(st.LastUpdatedAt) {
+				st.LastUpdatedAt = t
+			}
+		}
 	}
 
 	st.NextCursor = nextCursor

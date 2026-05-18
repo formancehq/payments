@@ -2,6 +2,7 @@ package universal
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/mappers"
@@ -18,6 +19,7 @@ func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrders
 			return r.Items, r.NextCursor, r.HasMore, nil
 		},
 		mappers.OrderToPSPOrder,
+		func(o client.Order) time.Time { return o.UpdatedAt },
 	)
 	if err != nil {
 		return models.FetchNextOrdersResponse{}, err

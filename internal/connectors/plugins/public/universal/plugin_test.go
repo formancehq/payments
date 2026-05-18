@@ -115,6 +115,44 @@ var _ = Describe("Universal *Plugin", func() {
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("boom"))
 		})
+
+		It("rejects install when counterparty declares zero capabilities", func(ctx SpecContext) {
+			mc.EXPECT().GetCapabilities(gomock.Any()).Return(&client.CapabilitiesResponse{Supported: []string{}}, nil)
+			_, err := plg.Install(ctx, models.InstallRequest{})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrInvalidConfig)).To(BeTrue())
+		})
+
+		It("rejects install when overrides narrow to empty (operator typo)", func(ctx SpecContext) {
+			plgOv, err := universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"FETCH_PAYMENTS"}`))
+			Expect(err).To(BeNil())
+			mcOv := client.NewMockClient(ctrl)
+			mcOv.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
+			universal.InjectClient(plgOv, mcOv)
+			mcOv.EXPECT().GetCapabilities(gomock.Any()).Return(&client.CapabilitiesResponse{
+				Supported: []string{"FETCH_ACCOUNTS"},
+			}, nil)
+			_, err = plgOv.Install(ctx, models.InstallRequest{})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrInvalidConfig)).To(BeTrue())
+			Expect(err.Error()).To(ContainSubstring("FETCH_PAYMENTS"))
+		})
+
+		It("honours valid overrides that intersect with declared", func(ctx SpecContext) {
+			plgOv, err := universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"FETCH_ACCOUNTS"}`))
+			Expect(err).To(BeNil())
+			mcOv := client.NewMockClient(ctrl)
+			mcOv.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
+			universal.InjectClient(plgOv, mcOv)
+			mcOv.EXPECT().GetCapabilities(gomock.Any()).Return(&client.CapabilitiesResponse{
+				Supported: []string{"FETCH_ACCOUNTS", "FETCH_PAYMENTS"},
+			}, nil)
+			res, err := plgOv.Install(ctx, models.InstallRequest{})
+			Expect(err).To(BeNil())
+			names := taskNames(res.Workflow)
+			Expect(names).To(ContainElement("fetch_accounts"))
+			Expect(names).NotTo(ContainElement("fetch_payments"))
+		})
 	})
 
 	Context("guards on uninstalled plugin", func() {

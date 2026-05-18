@@ -2,6 +2,7 @@ package universal
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/mappers"
@@ -18,6 +19,7 @@ func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return r.Items, r.NextCursor, r.HasMore, nil
 		},
 		mappers.AccountToPSPAccount,
+		func(a client.Account) time.Time { return a.CreatedAt },
 	)
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err

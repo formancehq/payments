@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
@@ -27,7 +28,7 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 		return models.CreatePayoutResponse{}, err
 	}
 
-	wire := &client.PayoutRequest{
+	resp, err := p.client.CreatePayout(ctx, pi.Reference, &client.PayoutRequest{
 		Reference:                   pi.Reference,
 		Description:                 pi.Description,
 		Amount:                      pi.Amount.String(),
@@ -35,10 +36,9 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 		SourceAccountReference:      pi.SourceAccount.Reference,
 		DestinationAccountReference: pi.DestinationAccount.Reference,
 		Metadata:                    pi.Metadata,
-	}
-	resp, err := p.client.CreatePayout(ctx, pi.Reference, wire)
+	})
 	if err != nil {
-		return models.CreatePayoutResponse{}, fmt.Errorf("creating payout %s: %w", pi.Reference, err)
+		return models.CreatePayoutResponse{}, fmt.Errorf("create payout %s: %w", pi.Reference, err)
 	}
 	return interpretInitiationResponse[models.CreatePayoutResponse](resp.Mode, resp.PollingID, resp.Payment, resp.Error,
 		func(payment *models.PSPPayment, polling *string) models.CreatePayoutResponse {
@@ -68,7 +68,7 @@ func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequ
 		Metadata:    rev.Metadata,
 	})
 	if err != nil {
-		return models.ReversePayoutResponse{}, fmt.Errorf("reversing payout %s: %w", rev.Reference, err)
+		return models.ReversePayoutResponse{}, fmt.Errorf("reverse payout %s: %w", rev.Reference, err)
 	}
 	if resp.Payment == nil {
 		return models.ReversePayoutResponse{}, fmt.Errorf("counterparty did not return a payment for payout reverse %s", rev.Reference)
@@ -88,9 +88,13 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 	if err := declared.require(models.CAPABILITY_CREATE_PAYOUT); err != nil {
 		return models.PollPayoutStatusResponse{}, err
 	}
-	resp, err := p.client.GetPayout(ctx, req.PayoutID)
+	id := strings.TrimSpace(req.PayoutID)
+	if id == "" {
+		return models.PollPayoutStatusResponse{}, errorsutils.NewWrappedError(errors.New("PollPayoutStatus requires a non-empty PayoutID"), models.ErrInvalidRequest)
+	}
+	resp, err := p.client.GetPayout(ctx, id)
 	if err != nil {
-		return models.PollPayoutStatusResponse{}, err
+		return models.PollPayoutStatusResponse{}, fmt.Errorf("get payout %s: %w", id, err)
 	}
 	return pollResp[models.PollPayoutStatusResponse](resp.Payment, resp.Error,
 		func(payment *models.PSPPayment, errStr *string) models.PollPayoutStatusResponse {
@@ -98,11 +102,10 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 		})
 }
 
-// interpretInitiationResponse turns the contract's terminal-or-polling envelope
-// into the engine's ResponseT shape. If Mode is "polling" the engine schedules
-// PollPayoutStatus / PollTransferStatus via Temporal until terminal. The
-// "terminal" branch must include a Payment; an explicit Error string is also
-// honoured for synchronous failures.
+// interpretInitiationResponse turns the contract's terminal-or-polling
+// envelope into the engine's ResponseT. "polling" → engine schedules
+// PollPayout/Transfer via Temporal; "terminal" → final state. An explicit
+// Error string is treated as a synchronous failure (non-retryable).
 func interpretInitiationResponse[ResponseT any](
 	mode string,
 	pollingID string,
@@ -135,10 +138,9 @@ func interpretInitiationResponse[ResponseT any](
 	}
 }
 
-// pollResp normalises a poll result into the engine's PollResponse contract.
-// Both nil → keep polling; payment set → terminal success; error set →
-// terminal failure (engine writes the error onto the payment-initiation
-// adjustment trail).
+// pollResp normalises a poll into the engine's PollResponse: both nil →
+// keep polling, payment → terminal success, error → terminal failure
+// (engine writes the error onto the payment-initiation adjustment trail).
 func pollResp[ResponseT any](
 	payment *client.Payment,
 	errStr string,

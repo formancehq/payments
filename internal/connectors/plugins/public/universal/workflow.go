@@ -2,21 +2,15 @@ package universal
 
 import "github.com/formancehq/payments/internal/models"
 
-// workflow assembles the install-time ConnectorTasksTree from the capability
-// set the counterparty actually declared. The engine schedules a periodic
-// Temporal workflow per task in the returned tree.
+// workflow assembles the install-time ConnectorTasksTree from the
+// per-install capability set.
 //
-// Dependencies modelled:
-//
-//   - FETCH_BALANCES depends on FETCH_ACCOUNTS (balances are scoped to an
-//     account). If FETCH_BALANCES is declared without FETCH_ACCOUNTS we drop
-//     it: the engine has nothing to attach balances to.
-//   - FETCH_ORDERS / FETCH_CONVERSIONS reference accounts at runtime via
-//     UseAccountLookup. We keep them as siblings of FETCH_ACCOUNTS in the
-//     tree, but BootstrapOnInstall (see plugin.go) ensures FETCH_ACCOUNTS
-//     runs to completion before any of them get to read.
-//   - TASK_CREATE_WEBHOOKS is added iff CREATE_WEBHOOKS is declared so the
-//     engine can register the webhook receivers at install.
+//   - FETCH_BALANCES nests under FETCH_ACCOUNTS (balances are
+//     account-scoped); dropped if FETCH_ACCOUNTS isn't declared.
+//   - FETCH_ORDERS / FETCH_CONVERSIONS sit as siblings — they resolve
+//     accounts at runtime via UseAccountLookup. BootstrapOnInstall in
+//     plugin.go forces FETCH_ACCOUNTS to complete first.
+//   - TASK_CREATE_WEBHOOKS is added when CREATE_WEBHOOKS is declared.
 func workflow(declared capabilitySet) models.ConnectorTasksTree {
 	tree := models.ConnectorTasksTree{}
 

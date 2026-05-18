@@ -5,20 +5,18 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// Test-only helpers. The `_test.go` suffix keeps them out of production
-// builds while still being exported to *_test.go files in this package's
-// black-box test suite (`package universal_test`).
+// Test-only helpers — production builds never see them. All three lock
+// p.mu so `go test -race` stays clean when specs interleave injections
+// with concurrent plugin reads.
 
-// InjectClient swaps the plugin's HTTP client for a mock so specs can drive
-// FetchNext* / Create* / Webhook code paths without standing up an
-// httptest.Server for every assertion.
+// InjectClient swaps the plugin's HTTP client for a mock.
 func InjectClient(p *Plugin, c client.Client) {
+	p.mu.Lock()
 	p.client = c
+	p.mu.Unlock()
 }
 
-// InjectFeatures forces the post-install Features (e.g. WebhookSignature)
-// so tests can exercise webhook verification without a full Install
-// round-trip.
+// InjectFeatures forces the post-install Features.
 func InjectFeatures(p *Plugin, f client.Features) {
 	p.mu.Lock()
 	p.features = f
@@ -26,7 +24,7 @@ func InjectFeatures(p *Plugin, f client.Features) {
 }
 
 // InjectDeclared forces the install-time capability set + the bootstrap
-// flag so per-primitive tests can run without going through Install.
+// flag so per-primitive tests skip Install.
 func InjectDeclared(p *Plugin, caps []models.Capability) {
 	set := newCapabilitySet(caps)
 	p.mu.Lock()

@@ -1,29 +1,19 @@
 package client
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 )
 
-// Error is the universal-contract error envelope. It accepts both shapes the
-// Phase-1.5 traps section of the connector skill calls out:
-//
-//   1. RFC 7807 (application/problem+json):
-//      { "type": "...", "title": "...", "status": 400, "detail": "...",
-//        "instance": "...", "errors": [{ "path": "...", "detail": "..." }] }
-//
-//   2. Legacy:
-//      { "message": "...", "errors": [{ "field": "...", "message": "..." }] }
-//
-// We unmarshal opportunistically: a request that returns either shape ends up
-// in the same Go struct so callers don't need to care which envelope was
-// served. The HTTPStatus and Underlying fields are stamped by client.do
-// after the fact.
+// Error is the universal-contract error envelope. It accepts both shapes:
+// RFC 7807 (`application/problem+json`) and the legacy `{message, errors}`
+// shape — same struct, tags overlap, no custom UnmarshalJSON needed.
+// HTTPStatus and Underlying are stamped by client.do after the fact.
 type Error struct {
 	HTTPStatus int   `json:"-"`
 	Underlying error `json:"-"`
@@ -70,49 +60,50 @@ func (e *Error) Error() string {
 	if len(parts) == 1 && e.Underlying != nil {
 		parts = append(parts, e.Underlying.Error())
 	}
-	return joinNonEmpty(parts, " - ")
+	return strings.Join(filterEmpty(parts), " - ")
 }
 
 func (e *Error) Unwrap() error { return e.Underlying }
 
-// Is collapses the universal Error into the canonical plugin sentinels so
-// engine activities can map the failure to retryable/non-retryable behaviour.
-// We never expose raw upstream payloads through these — only the sentinel.
+// Is collapses the wire status onto plugin sentinels so engine activities
+// classify retryable vs terminal failures consistently. Mirrors the
+// registry's translateError + httpwrapper.defaultHttpErrorCheckerFn so an
+// upstream change shows up in one place. 408/421/423/425 are explicitly
+// NOT generic-4xx — they map to ErrUpstreamTimeout/ErrUpstreamRetryAfter
+// so Temporal retries them instead of marking the activity terminal.
 func (e *Error) Is(target error) bool {
 	switch {
 	case errors.Is(target, plugins.ErrUpstreamRatelimit):
 		return e.HTTPStatus == http.StatusTooManyRequests
 	case errors.Is(target, plugins.ErrUpstreamTimeout):
-		return e.HTTPStatus == http.StatusRequestTimeout || e.HTTPStatus == http.StatusGatewayTimeout
+		switch e.HTTPStatus {
+		case http.StatusRequestTimeout, http.StatusMisdirectedRequest, http.StatusGatewayTimeout:
+			return true
+		}
+		return false
+	case errors.Is(target, plugins.ErrUpstreamRetryAfter):
+		return e.HTTPStatus == http.StatusLocked || e.HTTPStatus == http.StatusTooEarly
 	case errors.Is(target, plugins.ErrInvalidClientRequest):
-		return e.HTTPStatus >= 400 && e.HTTPStatus < 500 && e.HTTPStatus != http.StatusTooManyRequests
+		if e.HTTPStatus < http.StatusBadRequest || e.HTTPStatus >= http.StatusInternalServerError {
+			return false
+		}
+		switch e.HTTPStatus {
+		case http.StatusRequestTimeout, http.StatusMisdirectedRequest, http.StatusLocked, http.StatusTooEarly, http.StatusTooManyRequests:
+			return false
+		}
+		return true
 	case errors.Is(target, httpwrapper.ErrStatusCodeServerError):
-		return e.HTTPStatus >= 500
+		return e.HTTPStatus >= http.StatusInternalServerError
 	}
 	return false
 }
 
-func joinNonEmpty(parts []string, sep string) string {
-	out := parts[:0]
-	for _, p := range parts {
-		if p != "" {
-			out = append(out, p)
+func filterEmpty(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if s != "" {
+			out = append(out, s)
 		}
 	}
-	switch len(out) {
-	case 0:
-		return ""
-	case 1:
-		return out[0]
-	}
-	res := out[0]
-	for _, p := range out[1:] {
-		res += sep + p
-	}
-	return res
+	return out
 }
-
-// stub usage of json.Unmarshal so the file imports json if we later need
-// custom unmarshalling (currently the standard tag-driven path covers both
-// envelope shapes — a single struct with all fields set as omitempty).
-var _ = json.Unmarshal

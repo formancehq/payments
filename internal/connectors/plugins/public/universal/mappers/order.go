@@ -8,9 +8,9 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// OrderToPSPOrder parses every numeric field eagerly so a malformed amount
-// fails the row rather than silently producing a zero — silent zeros would
-// create misleading adjustments in the engine's order history.
+// OrderToPSPOrder parses every numeric field eagerly: a malformed amount
+// fails the row rather than degrading to a silent zero (silent zeros
+// would create misleading entries in the order adjustment history).
 func OrderToPSPOrder(o client.Order) (models.PSPOrder, error) {
 	parse := func(label, raw string) (*big.Int, error) {
 		v, err := ParseAmount(raw)

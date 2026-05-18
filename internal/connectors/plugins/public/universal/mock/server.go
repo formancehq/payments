@@ -14,9 +14,13 @@ import (
 	"time"
 )
 
-// server is the HTTP front for the mock counterparty. It wires every
-// contract endpoint to the in-memory store, plus a single bearer-auth
-// middleware applied to every route except the trivial /healthz.
+// webhookHTTP is the dedicated client for outbound webhook deliveries.
+// Bounded timeout so a stalled consumer can't tie up the mock for the
+// connect timeout's eternity.
+var webhookHTTP = &http.Client{Timeout: 10 * time.Second}
+
+// server fronts the contract endpoints with bearer-auth on every route
+// except /healthz.
 type server struct {
 	cfg    mockConfig
 	store  *store
@@ -24,10 +28,9 @@ type server struct {
 	logger *slog.Logger
 }
 
-// newServer wires routes and returns the server itself. Use Handler()
-// to obtain the auth-wrapped http.Handler ready to plug into
-// http.Server. Tests in the same package construct via newServer to
-// reach internal helpers (evolveAndDeliver, etc.) directly.
+// newServer returns a wired server. Use Handler() to get the
+// auth+logging-wrapped http.Handler. Tests construct via newServer to
+// reach internal helpers (evolveAndDeliver, …) directly.
 func newServer(cfg mockConfig, st *store, logger *slog.Logger) *server {
 	if logger == nil {
 		logger = newLogger("info")
@@ -37,9 +40,8 @@ func newServer(cfg mockConfig, st *store, logger *slog.Logger) *server {
 	return s
 }
 
-// Handler returns the bearer-auth-wrapped + request-logged http.Handler.
-// Layering, outside-in: logging → auth → mux. So unauthenticated
-// requests still produce a "← response" log line.
+// Handler — outside-in: logging → auth → mux. Unauth requests still
+// produce a response log line.
 func (s *server) Handler() http.Handler {
 	return s.loggingMiddleware(s.requireAuth(s.mux))
 }
@@ -73,25 +75,13 @@ func (s *server) routes() {
 	s.mux.HandleFunc("POST /v1/webhooks", s.handleCreateWebhookSub)
 	s.mux.HandleFunc("DELETE /v1/webhooks/{id}", s.handleDeleteWebhookSub)
 
-	// Debug endpoints (NOT in the contract):
-	//
-	//   POST /_admin/trigger-webhook?name=<event>
-	//     Pushes one synthetic, signed event of the given type to the
-	//     registered callback URL so the VerifyWebhook + TranslateWebhook
-	//     code path can be exercised end-to-end without waiting for the
-	//     mock to autonomously emit.
-	//
-	//   POST /_admin/evolve?n=<int>
-	//     Advances up to N non-terminal payments / orders one step
-	//     through their state machine, bumping `updatedAt`. Drives the
-	//     engine's PaymentAdjustment / OrderAdjustment derivation
-	//     end-to-end on subsequent FetchNext* polls.
+	// Out-of-contract admin endpoints — see mock/README.md.
 	s.mux.HandleFunc("POST /_admin/trigger-webhook", s.handleAdminTrigger)
 	s.mux.HandleFunc("POST /_admin/evolve", s.handleAdminEvolve)
 }
 
-// requireAuth is a tiny bearer-auth middleware. We never log the token
-// itself; we log the auth outcome so misconfigurations are obvious.
+// requireAuth — bearer-auth middleware. Token is never logged; outcome
+// is.
 func (s *server) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/healthz" {
@@ -111,11 +101,8 @@ func (s *server) requireAuth(next http.Handler) http.Handler {
 	})
 }
 
-// ---- handlers --------------------------------------------------------------
-
 func (s *server) handleCapabilities(w http.ResponseWriter, r *http.Request) {
-	// Surface the install discovery as a high-signal log line; this
-	// is THE event that signals "someone is installing the connector".
+	// High-signal: "someone is installing the connector".
 	reqLogger(r.Context(), s.logger).Info("capabilities discovery",
 		"supported_count", len(s.cfg.capabilities),
 		"signature_scheme", s.cfg.webhookSignature,
@@ -180,21 +167,8 @@ func (s *server) handleListOthers(w http.ResponseWriter, r *http.Request) {
 }
 
 // maybeEvolveOnPoll advances `evolveBatch` records when poll-driven
-// evolution is enabled AND the engine has not registered any webhook
-// subscriptions. The gating matters for two reasons:
-//
-//  1. With webhooks active, the engine relies on pushed events for
-//     low-latency state propagation; polls become slow heartbeats and
-//     should not be the source of state mutations.
-//
-//  2. With no webhooks, polls are the engine's only signal — so each
-//     poll evolves the dataset, which means each poll cycle the engine
-//     observes a new batch of adjustments to derive.
-//
-// Evolution happens BEFORE serving the response so the engine sees the
-// new state on the same poll. With the engine's 20-minute minimum
-// polling period, this matches how a real PSP would surface a steady
-// drip of status changes between polls.
+// evolution is on AND no webhooks are registered. Evolution happens
+// before the response so the same poll observes the new state.
 func (s *server) maybeEvolveOnPoll(ctx context.Context) {
 	if !s.cfg.evolveOnPoll {
 		return
@@ -212,17 +186,9 @@ func (s *server) maybeEvolveOnPoll(ctx context.Context) {
 	}
 }
 
-// evolveAndDeliver advances `n` records and, for every transition, pushes
-// a matching webhook event (e.g. "payment.updated") to the registered
-// callback if a subscription exists. This is the auto-emit path that
-// closes the loop in webhook-mode: any state change driven by
-// /_admin/evolve or the background ticker reaches the engine
-// immediately rather than waiting for the next poll.
-//
-// Returns the number of records advanced (== number of evolution
-// results) and, separately, the number of webhooks that were actually
-// dispatched (≤ advanced; the count is lower when there's no
-// subscription for the corresponding event type).
+// evolveAndDeliver advances `n` records and pushes a webhook for each
+// transition with an active subscription. Returns (advanced, delivered)
+// — delivered ≤ advanced (no-subscription transitions are skipped).
 func (s *server) evolveAndDeliver(ctx context.Context, n int) (advanced, delivered int) {
 	logger := reqLogger(ctx, s.logger)
 	results := s.store.EvolveSteps(n)
@@ -250,13 +216,9 @@ func (s *server) evolveAndDeliver(ctx context.Context, n int) (advanced, deliver
 	return advanced, delivered
 }
 
-// eventForResult turns an EvolveResult into the event name + typed
-// resource payload the engine's TranslateWebhook expects. Returns
-// ("", nil) for kinds the universal contract doesn't expose as a
-// webhook event (orders, conversions — see contract/webhooks.md
-// "Subscribed events" for why), or when the post-mutation lookup
-// fails (record was somehow removed between evolve and dispatch —
-// shouldn't happen, but a safety net).
+// eventForResult: EvolveResult → (event name, resource). ("", nil) for
+// kinds not exposed as webhooks (orders/conversions — see
+// contract/webhooks.md).
 func (s *server) eventForResult(r EvolveResult) (string, map[string]any) {
 	switch r.Kind {
 	case "payment":
@@ -266,16 +228,14 @@ func (s *server) eventForResult(r EvolveResult) (string, map[string]any) {
 		}
 		return "payment.updated", map[string]any{"payment": p}
 	}
-	// Order / conversion evolutions intentionally don't auto-emit:
-	// the engine's WebhookResponse has no Order or Conversion field,
-	// so subscribing to them at install would be misleading.
+	// Order/conversion evolutions don't auto-emit: WebhookResponse has
+	// no Order/Conversion field.
 	return "", nil
 }
 
-// deliverWebhook signs and POSTs one event to the given callback URL.
-// Reuses the same envelope + HMAC scheme as /_admin/trigger-webhook so
-// the engine's VerifyWebhook + TranslateWebhook code path doesn't see a
-// distinction between manual triggers and auto-emitted events.
+// deliverWebhook signs and POSTs one event. Same envelope + HMAC as
+// /_admin/trigger-webhook so VerifyWebhook+TranslateWebhook see no
+// distinction between manual and auto-emitted events.
 func (s *server) deliverWebhook(ctx context.Context, callbackURL, eventName string, resource map[string]any) error {
 	body, err := json.Marshal(map[string]any{
 		"id":        "evt_" + time.Now().UTC().Format("20060102T150405.000000"),
@@ -295,7 +255,7 @@ func (s *server) deliverWebhook(ctx context.Context, callbackURL, eventName stri
 	req.Header.Set("X-Universal-Timestamp", timestamp)
 	req.Header.Set("X-Universal-Signature", signHMAC(s.cfg.webhookSecret, timestamp, body))
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := webhookHTTP.Do(req)
 	if err != nil {
 		return err
 	}
@@ -306,10 +266,8 @@ func (s *server) deliverWebhook(ctx context.Context, callbackURL, eventName stri
 	return nil
 }
 
-// parseListOpts extracts the cursor/page/pageSize/updatedAtFrom query
-// parameters every paginated GET shares. Bad values silently default —
-// counterparties wouldn't surface query-string parse errors either, and
-// the engine treats an empty page as "no more rows".
+// parseListOpts extracts the shared pagination/filter query knobs. Bad
+// values silently default (real PSPs don't surface parse errors either).
 func parseListOpts(r *http.Request) listOpts {
 	q := r.URL.Query()
 	opts := listOpts{cursor: q.Get("cursor")}
@@ -399,10 +357,8 @@ func (s *server) handleReverseTransfer(w http.ResponseWriter, _ *http.Request) {
 }
 
 // reversalResponse synthesises a terminal REFUNDED payment for the
-// reverse-payout / reverse-transfer endpoints. Callers don't need the
-// request body to be inspected because the engine only cares that a
-// REFUNDED PSPPayment came back; its amount/asset/refs come from the
-// engine-side PaymentInitiationReversal aggregate.
+// reverse endpoints — engine only needs the REFUNDED status; the rest
+// of the fields come from the engine-side PaymentInitiationReversal.
 func reversalResponse(paymentType string) initiationResponse {
 	now := time.Now().UTC()
 	return initiationResponse{
@@ -436,7 +392,7 @@ func (s *server) handleCreateBankAccount(w http.ResponseWriter, r *http.Request)
 	ref := "acct_ext_ba_" + req.ID
 	asset := "EUR/2"
 	if req.IBAN != nil && len(*req.IBAN) >= 2 {
-		// Cheap mapping: country code → asset. Good enough for fixtures.
+		// IBAN country-code → asset is a fixture-only approximation.
 		switch (*req.IBAN)[:2] {
 		case "GB":
 			asset = "GBP/2"
@@ -493,13 +449,9 @@ func (s *server) handleDeleteWebhookSub(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// handleAdminTrigger pushes one signed event to the registered callback URL
-// for the given subscription name. The payload is materialised from seed
-// data so the engine's TranslateWebhook code path actually has a typed
-// resource to convert (Payment, Account, ...) — verifying the full
-// VerifyWebhook → TranslateWebhook → engine-store loop end-to-end.
-//
-// Explicitly not part of the contract; lives behind /_admin/.
+// handleAdminTrigger pushes one signed seed-backed event so the
+// VerifyWebhook → TranslateWebhook → engine-store loop runs end-to-end.
+// Out-of-contract.
 func (s *server) handleAdminTrigger(w http.ResponseWriter, r *http.Request) {
 	logger := reqLogger(r.Context(), s.logger)
 	name := r.URL.Query().Get("name")
@@ -529,11 +481,8 @@ func (s *server) handleAdminTrigger(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// materialiseEventResource builds a `resource` payload that matches the
-// shape contract/universal-events.md declares for the given event name —
-// using seed data so the engine sees a realistic record. Unknown event
-// names fail loudly so a debug typo doesn't silently push a malformed
-// event the engine would then reject.
+// materialiseEventResource builds the resource payload for an event
+// per contract/universal-events.md, sourced from seed data.
 func (s *server) materialiseEventResource(name string) (map[string]any, error) {
 	switch name {
 	case "account.created", "account.updated":
@@ -584,11 +533,8 @@ func (s *server) materialiseEventResource(name string) (map[string]any, error) {
 
 func errMissingSeed(kind string) error { return fmt.Errorf("no seeded %s to emit", kind) }
 
-// handleAdminEvolve advances N non-terminal payments / orders through
-// their state machines so the engine's adjustment derivation can be
-// observed end-to-end. Defaults to n=1; reports the count actually
-// advanced (may be lower if everything is already terminal) and the
-// number of webhook events auto-emitted to registered subscriptions.
+// handleAdminEvolve advances N records (default 1) and reports both
+// the advanced count and the webhook auto-emissions.
 func (s *server) handleAdminEvolve(w http.ResponseWriter, r *http.Request) {
 	n := 1
 	if raw := r.URL.Query().Get("n"); raw != "" {
@@ -603,8 +549,6 @@ func (s *server) handleAdminEvolve(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]int{"advanced": advanced, "webhooksDelivered": delivered})
 }
 
-// ---- helpers ---------------------------------------------------------------
-
 func signHMAC(secret, timestamp string, body []byte) string {
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(timestamp))
@@ -616,9 +560,8 @@ func signHMAC(secret, timestamp string, body []byte) string {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	// json encode failure on a writer at this stage means the connection
-	// died mid-write; nothing useful we can do, slog noise on every
-	// dropped connection isn't actionable. Discard.
+	// Encode failure here means the connection died mid-write; logging
+	// every dropped connection isn't actionable.
 	_ = json.NewEncoder(w).Encode(v)
 }
 

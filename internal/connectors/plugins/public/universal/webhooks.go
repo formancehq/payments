@@ -19,42 +19,49 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// Header names the contract reserves for delivered webhook signatures. Both
-// headers are required when the counterparty advertised
-// features.webhookSignature == "hmac-sha256". Timestamp is RFC3339 UTC; the
-// signed payload is "<timestamp>.<body>".
+// Contract: counterparties advertising `features.webhookSignature ==
+// "hmac-sha256"` MUST sign every delivery with these two headers. Signed
+// payload is "<timestamp>.<body>"; timestamp is RFC3339 UTC.
 const (
 	WebhookHeaderSignature = "X-Universal-Signature"
 	WebhookHeaderTimestamp = "X-Universal-Timestamp"
 
-	// signatureTolerance bounds clock skew between Formance and the
-	// counterparty when verifying delivered webhooks. 5 minutes matches
-	// what every other Formance connector uses (see Increase).
+	// 5-minute skew tolerance matches Increase and the other Formance
+	// connectors.
 	signatureTolerance = 5 * time.Minute
 )
 
-// supportedWebhooks lists every event the contract subscribes to at
-// install. Each entry maps the canonical event name → the URL suffix
-// that the engine will route inbound deliveries on
-// (see internal/api/v3/router.go and engine.HandleWebhook).
-//
-// Order and conversion events are deliberately absent: the engine's
-// models.WebhookResponse struct exposes no Order/Conversion fields, so
-// TranslateWebhook has no way to surface those resources to the engine.
-// Orders and conversions are kept on the periodic `FetchNextOrders` /
-// `FetchNextConversions` poll — see contract/state-machines.md for the
-// rationale. Counterparties that want lower latency for those should
-// shorten the connector's pollingPeriod (subject to the 20-minute floor).
-var supportedWebhooks = map[string]string{
-	"account.created":          "/account/created",
-	"account.updated":          "/account/updated",
-	"external_account.created": "/external_account/created",
-	"balance.updated":          "/balance/updated",
-	"payment.created":          "/payment/created",
-	"payment.updated":          "/payment/updated",
-	"payment.deleted":          "/payment/deleted",
-	"payment.cancelled":        "/payment/cancelled",
+// supportedWebhook is one entry in the install-time subscription list.
+// Slice (vs map) keeps iteration order stable so subscription IDs in the
+// counterparty stay deterministic across restarts.
+type supportedWebhook struct {
+	Name    string
+	URLPath string
 }
+
+// supportedWebhooks is the canonical event catalogue. Order events and
+// conversion events are intentionally absent: models.WebhookResponse has
+// no Order/Conversion field — see contract/webhooks.md.
+var supportedWebhooks = []supportedWebhook{
+	{"account.created", "/account/created"},
+	{"account.updated", "/account/updated"},
+	{"external_account.created", "/external_account/created"},
+	{"balance.updated", "/balance/updated"},
+	{"payment.created", "/payment/created"},
+	{"payment.updated", "/payment/updated"},
+	{"payment.deleted", "/payment/deleted"},
+	{"payment.cancelled", "/payment/cancelled"},
+}
+
+// supportedWebhookNames is the membership check used by TranslateWebhook
+// (O(1) lookup against the canonical catalogue).
+var supportedWebhookNames = func() map[string]struct{} {
+	m := make(map[string]struct{}, len(supportedWebhooks))
+	for _, w := range supportedWebhooks {
+		m[w.Name] = struct{}{}
+	}
+	return m
+}()
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	declared, ok := p.declaredSet()
@@ -74,28 +81,25 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	configs := make([]models.PSPWebhookConfig, 0, len(supportedWebhooks))
 	others := make([]models.PSPOther, 0, len(supportedWebhooks))
 
-	for eventType, urlPath := range supportedWebhooks {
-		callback, err := url.JoinPath(req.WebhookBaseUrl, urlPath)
+	for _, w := range supportedWebhooks {
+		callback, err := url.JoinPath(req.WebhookBaseUrl, w.URLPath)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
 		}
 
-		idemKey := fmt.Sprintf("%s:%s", req.ConnectorID, eventType)
+		idemKey := fmt.Sprintf("%s:%s", req.ConnectorID, w.Name)
 		resp, err := p.client.CreateWebhookSubscription(ctx, idemKey, &client.WebhookSubscriptionRequest{
-			Name:        eventType,
+			Name:        w.Name,
 			CallbackURL: callback,
 		})
 		if err != nil {
-			return models.CreateWebhooksResponse{}, fmt.Errorf("subscribing %s: %w", eventType, err)
+			return models.CreateWebhooksResponse{}, fmt.Errorf("subscribing %s: %w", w.Name, err)
 		}
 
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    eventType,
-			URLPath: urlPath,
-			// We never store the secret here — Formance keeps it on the
-			// connector config server-side and we read it back via
-			// p.config.WebhookSharedSecret in VerifyWebhook.
-		})
+		// PSPWebhookConfig never carries the secret — Formance stores
+		// it server-side as part of the connector config and we read
+		// it back via p.config.WebhookSharedSecret in VerifyWebhook.
+		configs = append(configs, models.PSPWebhookConfig{Name: w.Name, URLPath: w.URLPath})
 		raw, err := json.Marshal(resp)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
@@ -111,68 +115,68 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return models.CreateWebhooksResponse{Configs: configs, Others: others}, nil
 }
 
+// VerifyWebhook authenticates inbound deliveries. Runs in the engine's
+// HTTP server process — Install never ran there, so we cannot consult
+// declaredSet; gate on `client` (constructor-set, available in every
+// process) and on the persisted WebhookSharedSecret. Install rejects an
+// install where the counterparty advertised HMAC but no secret was
+// provided, so a non-empty secret here is the install-time proof that
+// signatures are expected.
 func (p *Plugin) VerifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
-	// Only check `client` (set in New, available in every process) — we
-	// can NOT consult declaredSet here because VerifyWebhook is
-	// dispatched in the engine's HTTP server process, while Install runs
-	// in the worker process. The two processes hold separate plugin
-	// instances, so `declared` is always nil here. The engine would not
-	// have routed this webhook to us at all unless a WebhookConfig was
-	// previously stored at install — its presence is the implicit
-	// capability proof.
 	if p.client == nil {
 		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
 	}
 
-	// HMAC verification when the user provided a shared secret. The
-	// `features.WebhookSignature` value from /v1/capabilities only
-	// reaches the worker process — in the server process we infer
-	// "verify if a secret was provided, skip otherwise". Production
-	// installs MUST set the secret; absence yields a logged warning so
-	// misconfiguration is visible.
-	secret := p.config.WebhookSharedSecret
-	if secret == "" {
-		p.logger.WithField("connector", p.name).Info("universal webhook signature verification skipped (no webhookSharedSecret configured)")
-		return models.VerifyWebhookResponse{WebhookIdempotencyKey: nil}, nil
-	}
-
 	signature := headerValue(req.Webhook.Headers, WebhookHeaderSignature)
 	timestamp := headerValue(req.Webhook.Headers, WebhookHeaderTimestamp)
+	secret := p.config.WebhookSharedSecret
+
+	if secret == "" {
+		// A signature header without a configured secret is spoofing or
+		// drift — reject rather than silently accept.
+		if signature != "" || timestamp != "" {
+			return models.VerifyWebhookResponse{}, fmt.Errorf("%w: signature header present but no webhookSharedSecret configured", models.ErrWebhookVerification)
+		}
+		p.logger.WithField("connector", p.name).Debug("universal webhook accepted unsigned (no secret configured)")
+		return models.VerifyWebhookResponse{}, nil
+	}
+
 	if signature == "" || timestamp == "" {
-		return models.VerifyWebhookResponse{}, errors.New("missing webhook signature or timestamp header")
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: missing %s or %s header", models.ErrWebhookVerification, WebhookHeaderSignature, WebhookHeaderTimestamp)
 	}
 
 	ts, err := time.Parse(time.RFC3339, timestamp)
 	if err != nil {
-		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid timestamp: %w", err)
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: invalid timestamp: %w", models.ErrWebhookVerification, err)
 	}
 	if delta := time.Since(ts); delta > signatureTolerance || delta < -signatureTolerance {
-		return models.VerifyWebhookResponse{}, errors.New("timestamp outside tolerance window")
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: timestamp outside %s tolerance window", models.ErrWebhookVerification, signatureTolerance)
 	}
 
 	if !verifyHMACSHA256(secret, timestamp, req.Webhook.Body, signature) {
-		return models.VerifyWebhookResponse{}, errors.New("invalid webhook signature")
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: invalid signature", models.ErrWebhookVerification)
 	}
 
-	// Idempotency-key surface to the engine: every event ID dedups across
-	// retries. If the body fails to parse we let TranslateWebhook surface
-	// the error — VerifyWebhook only attests authenticity.
+	// Body MUST parse here. An unparseable body with a valid HMAC is a
+	// contract violation and silently dropping the event-ID would lose
+	// engine idempotency on retry.
 	var ev client.WebhookEvent
-	if err := json.Unmarshal(req.Webhook.Body, &ev); err == nil && ev.ID != "" {
-		return models.VerifyWebhookResponse{WebhookIdempotencyKey: &ev.ID}, nil
+	if err := json.Unmarshal(req.Webhook.Body, &ev); err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: signed body is not a valid WebhookEvent (len=%d): %w", models.ErrWebhookVerification, len(req.Webhook.Body), err)
 	}
-	return models.VerifyWebhookResponse{}, nil
+	if ev.ID == "" {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: signed body missing event id", models.ErrWebhookVerification)
+	}
+	return models.VerifyWebhookResponse{WebhookIdempotencyKey: &ev.ID}, nil
 }
 
+// TranslateWebhook runs in the engine's HTTP server process — see
+// VerifyWebhook for why we gate on `client` only.
 func (p *Plugin) TranslateWebhook(_ context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	// As with VerifyWebhook above: TranslateWebhook runs in the engine's
-	// HTTP server process where Install never ran. Gate on `client` only
-	// (constructor-set, available everywhere); the engine wouldn't have
-	// dispatched the event at all without a stored WebhookConfig.
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
 	}
-	if _, ok := supportedWebhooks[req.Name]; !ok {
+	if _, ok := supportedWebhookNames[req.Name]; !ok {
 		return models.TranslateWebhookResponse{}, fmt.Errorf("unknown webhook event %q", req.Name)
 	}
 
@@ -188,10 +192,9 @@ func (p *Plugin) TranslateWebhook(_ context.Context, req models.TranslateWebhook
 	return models.TranslateWebhookResponse{Responses: []models.WebhookResponse{resp}}, nil
 }
 
-// translateResource maps a parsed WebhookEvent to the engine's WebhookResponse
-// shape. The dispatch is by event name so the counterparty can use whichever
-// resource subset matches that event; we validate the expected resource is
-// present so a malformed payload fails loudly.
+// translateResource dispatches by event name to the matching resource on
+// WebhookResponse. Missing resource on the wire fails loudly so a
+// malformed delivery doesn't silently produce a no-op.
 func translateResource(name string, r client.WebhookResource) (models.WebhookResponse, error) {
 	switch name {
 	case "account.created", "account.updated":
@@ -245,12 +248,12 @@ func translateResource(name string, r client.WebhookResource) (models.WebhookRes
 	}
 }
 
+// headerValue is a case-insensitive header lookup: prefer the direct hit,
+// fall back to a scan if the transport hasn't canonicalised keys yet.
 func headerValue(headers map[string][]string, key string) string {
 	if vs := headers[key]; len(vs) > 0 {
 		return vs[0]
 	}
-	// HTTP headers are case-insensitive; fall back to a slow scan when the
-	// transport already canonicalised them.
 	for k, vs := range headers {
 		if strings.EqualFold(k, key) && len(vs) > 0 {
 			return vs[0]
@@ -259,13 +262,9 @@ func headerValue(headers map[string][]string, key string) string {
 	return ""
 }
 
-// validateWebhookBaseURL enforces HTTPS on any base URL the engine
-// hands us, unless the hostname is unambiguously local. This mirrors
-// what most real PSPs do for development tunnels: HTTPS in production,
-// HTTP allowed only for `localhost`, loopback IPs, or unqualified
-// hostnames (e.g. docker-compose service names like `payments`,
-// `payments:8080`). Anything with a dot in the host that isn't `.local`
-// or `.localhost` MUST be HTTPS.
+// validateWebhookBaseURL enforces HTTPS unless the hostname is
+// unambiguously local: `localhost`, loopback IPs, bare docker-service
+// names (no dot), `.local`, `.localhost`. Anything else MUST be HTTPS.
 func validateWebhookBaseURL(raw string) error {
 	if strings.HasPrefix(raw, "https://") {
 		return nil
@@ -289,12 +288,9 @@ func isLocalHostname(host string) bool {
 	case "localhost", "127.0.0.1", "::1":
 		return true
 	}
-	// Bare hostnames (no dot) are docker-internal service names —
-	// not reachable from the public internet, safe to ship over HTTP.
 	if !strings.Contains(host, ".") {
 		return true
 	}
-	// Conventional local TLDs.
 	return strings.HasSuffix(host, ".local") || strings.HasSuffix(host, ".localhost")
 }
 

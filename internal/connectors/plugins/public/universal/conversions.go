@@ -2,6 +2,7 @@ package universal
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/mappers"
@@ -18,6 +19,7 @@ func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextC
 			return r.Items, r.NextCursor, r.HasMore, nil
 		},
 		mappers.ConversionToPSPConversion,
+		func(c client.Conversion) time.Time { return c.CreatedAt },
 	)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, err

@@ -2,6 +2,7 @@ package universal_test
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -51,10 +52,12 @@ var _ = Describe("Universal *Plugin — fetch primitives", func() {
 			Expect(res.Accounts[0].Reference).To(Equal("a1"))
 			Expect(res.HasMore).To(BeTrue())
 			var st struct {
-				NextCursor string `json:"nextCursor"`
+				NextCursor    string    `json:"nextCursor"`
+				LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 			}
 			Expect(json.Unmarshal(res.NewState, &st)).To(BeNil())
 			Expect(st.NextCursor).To(Equal("c2"))
+			Expect(st.LastUpdatedAt).To(Equal(now), "LastUpdatedAt must advance to CreatedAt for incremental polling")
 		})
 	})
 
@@ -83,12 +86,13 @@ var _ = Describe("Universal *Plugin — fetch primitives", func() {
 	})
 
 	Context("FetchNextOrders", func() {
-		It("maps order direction + status", func(ctx SpecContext) {
+		It("maps order direction + status and advances LastUpdatedAt", func(ctx SpecContext) {
 			universal.InjectDeclared(plg, []models.Capability{models.CAPABILITY_FETCH_ORDERS})
+			upd := time.Date(2026, 2, 1, 10, 0, 0, 0, time.UTC)
 			mc.EXPECT().ListOrders(gomock.Any(), gomock.Any()).Return(&client.OrdersPage{
 				Items: []client.Order{
 					{
-						Reference: "o1", CreatedAt: time.Now().UTC(),
+						Reference: "o1", CreatedAt: time.Now().UTC(), UpdatedAt: upd,
 						Direction: "BUY", Type: "MARKET", Status: "FILLED",
 						SourceAsset: "EUR/2", DestinationAsset: "BTC/8",
 						BaseQuantityOrdered: "1000",
@@ -101,15 +105,21 @@ var _ = Describe("Universal *Plugin — fetch primitives", func() {
 			Expect(res.Orders).To(HaveLen(1))
 			Expect(res.Orders[0].Direction).To(Equal(models.ORDER_DIRECTION_BUY))
 			Expect(res.Orders[0].Status).To(Equal(models.ORDER_STATUS_FILLED))
+			var st struct {
+				LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+			}
+			Expect(json.Unmarshal(res.NewState, &st)).To(BeNil())
+			Expect(st.LastUpdatedAt).To(Equal(upd))
 		})
 	})
 
 	Context("FetchNextConversions", func() {
-		It("translates conversion fields", func(ctx SpecContext) {
+		It("translates conversion fields and advances LastUpdatedAt", func(ctx SpecContext) {
 			universal.InjectDeclared(plg, []models.Capability{models.CAPABILITY_FETCH_CONVERSIONS})
+			created := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 			mc.EXPECT().ListConversions(gomock.Any(), gomock.Any()).Return(&client.ConversionsPage{
 				Items: []client.Conversion{
-					{Reference: "c1", CreatedAt: time.Now().UTC(), Status: "COMPLETED",
+					{Reference: "c1", CreatedAt: created, Status: "COMPLETED",
 						SourceAsset: "USDC/6", DestinationAsset: "USD/2", SourceAmount: "1000000"},
 				},
 			}, nil)
@@ -117,6 +127,20 @@ var _ = Describe("Universal *Plugin — fetch primitives", func() {
 			Expect(err).To(BeNil())
 			Expect(res.Conversions).To(HaveLen(1))
 			Expect(res.Conversions[0].Status).To(Equal(models.CONVERSION_STATUS_COMPLETED))
+			var st struct {
+				LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+			}
+			Expect(json.Unmarshal(res.NewState, &st)).To(BeNil())
+			Expect(st.LastUpdatedAt).To(Equal(created))
+		})
+	})
+
+	Context("FetchNextOthers", func() {
+		It("rejects empty Name with ErrInvalidRequest", func(ctx SpecContext) {
+			universal.InjectDeclared(plg, []models.Capability{models.CAPABILITY_FETCH_OTHERS})
+			_, err := plg.FetchNextOthers(ctx, models.FetchNextOthersRequest{Name: "  "})
+			Expect(err).NotTo(BeNil())
+			Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
 		})
 	})
 })

@@ -11,10 +11,9 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// balancesState tracks which account we are currently iterating balances
-// for. Balances are not paginated globally on the contract — they are scoped
-// per account — so we walk accounts via the engine's AccountLookup (or, when
-// it isn't wired, fall back to a single page of /v1/accounts).
+// balancesState walks the account list (contract scopes balances per
+// account; there is no global balances list). AccountLookup is preferred;
+// the /v1/accounts fallback is for installations without it.
 type balancesState struct {
 	NextAccountIdx int `json:"nextAccountIdx"`
 }
@@ -75,13 +74,9 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 	return models.FetchNextBalancesResponse{Balances: balances, NewState: newState, HasMore: hasMore}, nil
 }
 
-// listAccountsForBalances resolves the account set we should fetch balances
-// for. Preference order:
-//
-//   1. AccountLookup (engine-injected, durable across pods).
-//   2. Fall back to /v1/accounts page-1: useful in tests and small
-//      installations; not paginated on purpose because that's exactly what
-//      AccountLookup is for.
+// listAccountsForBalances prefers the engine-injected AccountLookup
+// (durable across pods); falls back to /v1/accounts page-1 for tests and
+// small installations.
 func (p *Plugin) listAccountsForBalances(ctx context.Context) ([]models.PSPAccount, error) {
 	if p.accountLookup != nil {
 		return p.accountLookup.ListAccountsByConnector(ctx)
