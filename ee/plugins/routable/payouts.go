@@ -56,11 +56,6 @@ func (p *Plugin) pollPayableStatus(ctx context.Context, payableID string) (model
 	if err != nil {
 		return models.PollPayoutStatusResponse{}, fmt.Errorf("mapping payable: %w", err)
 	}
-
-	if !mappers.IsTerminalStatus(payment.Status) {
-		return models.PollPayoutStatusResponse{}, nil
-	}
-	// Return the Payment for every terminal state so the engine can link
-	// it to the PI; response.Error alone would orphan failed Payments.
+	// Link PI ↔ Payment now; FETCH_PAYMENTS picks up further transitions.
 	return models.PollPayoutStatusResponse{Payment: &payment}, nil
 }

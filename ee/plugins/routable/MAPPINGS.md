@@ -151,7 +151,7 @@ Implemented in [`mappers/status.go`](mappers/status.go) (`PayableStatus`).
 | Routable `status` | Formance `models.PaymentStatus` |
 |---|---|
 | `draft`, `ready_to_send`, `pending`, `scheduled`, `initiated`, `processing`, `in_transit`, `awaiting_delivery` | `PAYMENT_STATUS_PENDING` |
-| `completed`, `paid`, `delivered` | `PAYMENT_STATUS_SUCCEEDED` |
+| `completed`, `paid`, `externally_paid`, `delivered` | `PAYMENT_STATUS_SUCCEEDED` |
 | `failed`, `returned`, `nsf` | `PAYMENT_STATUS_FAILED` |
 | `stopped`, `canceled`, `cancelled`, `voided` | `PAYMENT_STATUS_CANCELLED` |
 | `expired` | `PAYMENT_STATUS_EXPIRED` |
@@ -159,7 +159,7 @@ Implemented in [`mappers/status.go`](mappers/status.go) (`PayableStatus`).
 
 Comparison is case-insensitive and trims whitespace.
 
-`isTerminalStatus` in the same file controls when [`PollPayoutStatus`/`PollTransferStatus`](payouts.go) stop polling — it returns true for `SUCCEEDED`, `FAILED`, `CANCELLED`, `EXPIRED`, and `REFUNDED`.
+`IsTerminalStatus` (defined in the same file) drives the 201 sync-vs-poll branch in [`createPayout`/`createTransfer`](payouts.go): a terminal 201 response returns the Payment directly; non-terminal returns a polling ID. `PollPayoutStatus`/`PollTransferStatus` always return the Payment once the payable exists upstream — subsequent transitions are picked up by the `FETCH_PAYMENTS` cursor (see §3.6).
 
 ---
 
@@ -207,11 +207,11 @@ Routable's `POST /v1/payables` answers in two distinct shapes; the plugin branch
 
 | Routable response | Plugin engine response | Behaviour |
 |---|---|---|
-| `202 Accepted` (async) — body is `{id, status: pending}` | `PollingPayoutID` / `PollingTransferID` = Routable payable ID; no `Payment` field | Engine schedules `PollPayoutStatus`/`PollTransferStatus` against `GET /v1/payables/{id}` until terminal. No mapping is attempted on the half-empty body. |
+| `202 Accepted` (async) — body is `{id, status: pending}` | `PollingPayoutID` / `PollingTransferID` = Routable payable ID; no `Payment` field | Engine schedules `PollPayoutStatus`/`PollTransferStatus` against `GET /v1/payables/{id}`. The first successful poll returns the Payment, linking PI ↔ Payment and ending the schedule. No mapping is attempted on the half-empty 202 body. |
 | `201 Created` (sync) with terminal status (`completed`, `failed`, `cancelled`, `expired`) | `Payment` populated, no polling ID | Workflow ends immediately with the terminal payment. |
-| `201 Created` (sync) with non-terminal status (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = `Payment.Reference` | Engine schedules polling; the initial sync mapping is discarded but its `Reference` carries forward as the polling token. |
+| `201 Created` (sync) with non-terminal status (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = `Payment.Reference` | Engine schedules a polling round; the first poll returns the Payment, links it to the PI, and ends. The initial sync mapping is discarded — its `Reference` carries forward as the polling token. |
 
-`PollPayoutStatus` (and the shared `pollPayableStatus` it delegates to) treats `404 Not Found` as a transient state (eventual consistency after `202 Accepted`) and asks the engine to retry, instead of failing the workflow. See [`payouts.go`](payouts.go) and [`client/client.go`](client/client.go) (`ErrPayableNotFound`).
+Once a Payment is linked, subsequent status transitions (PENDING → PROCESSING → SUCCEEDED, etc.) are picked up by the `FETCH_PAYMENTS` cursor (§3.6) rather than by re-polling. `PollPayoutStatus` returns an empty response only when `GET /v1/payables/{id}` returns 404 — Routable's eventual-consistency window after a 202; see [`client.go`](client/client.go) (`ErrPayableNotFound`).
 
 ### 5.5 Correlating a Transfer (PaymentInitiation) with the synced Payment
 
@@ -258,15 +258,18 @@ flowchart TD
   plugin["Plugin.CreatePayout"]
   routable["POST /v1/payables\nIdempotency-Key=pi.Reference"]
   retry{"5xx / 429 / network / timeout?"}
-  poll["Plugin.PollPayoutStatus\n(engine-driven backoff)"]
-  done["Terminal status\n(SUCCEEDED / FAILED / CANCELLED / EXPIRED / REFUNDED)"]
+  poll["Plugin.PollPayoutStatus\n(retries on 404 only)"]
+  linked["Payment linked to PI\n(status carried by Payment.Status)"]
+  fetch["FETCH_PAYMENTS cursor\npicks up further transitions"]
 
   pi --> workflow --> plugin --> routable
-  routable -->|"202 / pending"| poll
   routable -->|"5xx / 429 / timeout"| retry
   retry -->|"yes"| plugin
-  poll -->|"pending"| poll
-  poll -->|"terminal"| done
+  routable -->|"202 / 201 non-terminal"| poll
+  routable -->|"201 terminal"| linked
+  poll -->|"404 (eventual consistency)"| poll
+  poll -->|"payable visible"| linked
+  linked --> fetch
 ```
 
 Retries on 5xx / 429 / network / timeout are handled by the engine's standard backoff (`--temporal-rate-limiting-retry-delay` floor); Routable's `RateLimit` / `RateLimit-Policy` headers are emitted on every response and can be honoured by a future shared rate-limit parser in `httpwrapper` (see follow-up roadmap in §6).
@@ -303,7 +306,7 @@ The connector is built for sustained throughput of ~200,000 transactions per wee
 | Source | Rate (steady) | Notes |
 |---|---|---|
 | `POST /v1/payables` (createPayout / createTransfer) | ~20/min | One per payment-initiation. Idempotency-Key keyed on `pi.Reference`. |
-| `GET /v1/payables/{id}` (PollPayoutStatus) | ~60/min | Assume ~3 polls/payment until terminal × 20 payments/min. |
+| `GET /v1/payables/{id}` (PollPayoutStatus) | ~20/min | One poll per payment to link PI ↔ Payment; further transitions flow through `FETCH_PAYMENTS` (§3.6). |
 | `GET /v1/payables` + `GET /v1/receivables` (FETCH_PAYMENTS pagination) | ~3.5/min | ~70 pages × 3 cycles/h ÷ 60. |
 | `GET /v1/settings/accounts` + `GET /v1/companies` (FETCH_ACCOUNTS / FETCH_EXTERNAL_ACCOUNTS) | ~0.2/min | A few pages every 20-min cycle. |
 | **Total** | **~80-100 req/min steady, peak ~200 req/min** | Must fit inside Routable's published rate limit envelope (see §6.1.1). Webhooks (§6.4) eliminate ~75% of the poll traffic. |
@@ -316,27 +319,27 @@ Routable returns the IETF draft `RateLimit` and `RateLimit-Policy` headers on ev
 
 ### 6.2 Temporal workflow / activity volume
 
-Each payment-initiation drives one `CreatePayoutWorkflow` plus one `PollPayoutStatus` schedule until terminal. Each periodic capability drives one workflow per cycle, with one activity per page.
+Each payment-initiation drives one `CreatePayoutWorkflow` plus one `PollPayoutStatus` workflow (single iteration: poll returns the Payment and ends the schedule; further transitions flow through `FetchPaymentsWorkflow`). Each periodic capability drives one workflow per cycle, with one activity per page.
 
 | Source | Workflow starts / day | Activity executions / day |
 |---|---|---|
 | `CreatePayoutWorkflow` | ~28,571 | ~6 activities each ⇒ ~171k |
-| `PollPayoutStatus` | ~28,571 | ~4 polls/payment ⇒ ~114k |
+| `PollPayoutStatus` | ~28,571 | ~1 poll/payment ⇒ ~28,571 |
 | `FetchPaymentsWorkflow` | 72 (one per cycle, 20m period) | ~70 pages × ~4 activities ⇒ ~20k |
 | `FetchAccounts` / `FetchBalances` / `FetchExternalAccounts` | ~216 total | ~650 |
-| **Daily total** | **~57.4k** | **~306k** |
-| **Weekly total** | **~402k** | **~2.14M** |
-| **Monthly total** | **~1.72M** | **~9.18M** |
+| **Daily total** | **~57.4k** | **~220k** |
+| **Weekly total** | **~402k** | **~1.54M** |
+| **Monthly total** | **~1.72M** | **~6.6M** |
 
 ### 6.3 Temporal Cloud Action estimate
 
 Temporal Cloud bills by Action (workflow events: start, completion, activity scheduled/completed, timer fired, signal, …). Empirically a typical Payments workflow emits ~3.5 Actions per workflow start and ~2 per activity execution.
 
-- Per day: 57.4k × 3.5 + 306k × 2 ≈ **0.81M Actions**
-- Per week: ≈ **5.7M Actions**
-- Per month: ≈ **24.4M Actions**
+- Per day: 57.4k × 3.5 + 220k × 2 ≈ **0.64M Actions**
+- Per week: ≈ **4.5M Actions**
+- Per month: ≈ **19.3M Actions**
 
-At Temporal Cloud's public list pricing of ~$25 per 1M Actions (subject to plan/discount), this lands at **~$600/month** for the connector at full 200k/wk volume — not including the latency-SLA / namespace baseline. Webhooks (§6.4) cut the `PollPayoutStatus` line by ~75-80%, saving roughly $200/month and ~5M Actions/month on their own.
+At Temporal Cloud's public list pricing of ~$25 per 1M Actions (subject to plan/discount), this lands at **~$480/month** for the connector at full 200k/wk volume — not including the latency-SLA / namespace baseline. Webhooks (§6.4) can replace the link-poll and most `FetchPaymentsWorkflow` traffic, cutting another ~30-40% off the bill.
 
 ### 6.4 Levers
 
@@ -344,9 +347,121 @@ At Temporal Cloud's public list pricing of ~$25 per 1M Actions (subject to plan/
 |---|---|---|
 | `pollingPeriod` config (default 30m, floor 20m) | Doubling halves periodic-fetch Actions; trades freshness for cost. | Operator-facing today. |
 | `PAGE_SIZE` (currently 100) | Doubling halves pagination requests linearly. | At Routable's documented max. |
-| Webhooks for `payable.status_updated` | Replaces ~80% of `PollPayoutStatus` traffic with push events. ~5M Actions/month and ~60 req/min savings at full volume. | **Follow-up PR.** |
+| Webhooks for `payable.status_updated` | Replaces the link-poll and most `FetchPaymentsWorkflow` status-transition reads with push events. ~30-40% Action savings at full volume. | **Follow-up PR.** |
 | Per-capability schedules | Run `FETCH_ACCOUNTS` / `FETCH_BALANCES` / `FETCH_EXTERNAL_ACCOUNTS` at 1h while keeping `FETCH_PAYMENTS` at 20m — cuts ~75% of their Actions. | **Follow-up engine PR** (touches [`sharedconfig/polling_period.go`](../../../internal/connectors/plugins/sharedconfig/polling_period.go) and the workflow scheduler). |
 | Honour `RateLimit` / `Retry-After` hints in Temporal `NextRetryDelay` | Reduces 429 churn and respects Routable's documented quota windows precisely instead of falling back to the engine's static delay. Shared infra (every connector benefits). | **Follow-up PR** on `internal/connectors/httpwrapper` + `plugins/errors.go` + `engine/activities/errors.go`. |
+
+### 6.5 Scenario: 1M payable backfill + 300k counterparties + 120k batched payouts/week
+
+A common high-volume profile: an existing tenant migrating to Routable with a large historical book of payables plus an established counterparty roster, then a weekly batch payout cycle on top. Numbers below are sizing estimates, not SLAs.
+
+**Inputs**
+
+| Variable | Value | Notes |
+|---|---|---|
+| Payable history | 1,000,000 | One-time backfill at install. Bounded by `status_changed_at.gte` cursor; first walk runs from epoch unless tuned (see §6.5.4). |
+| External counterparties | 300,000 | Re-walked every cycle. The Routable API has no time-based filter on `/v1/companies` — confirmed against the [OpenAPI spec](https://developers.routable.com/reference/list-companies): supported parameters are `page`, `page_size`, `company_status`, `company_customer_id`, `company_external_id`, `company_search`, `company_vendor_id`, `tax_form_status`. Each cycle is a full sweep. |
+| Weekly payouts | 120,000 | Sent as a batch (e.g. Monday morning), not spread evenly. |
+| Routable write cap | **100 req/min** | `POST /v1/payables`. Documented in the `RateLimit-Policy` `change` window (§6.1.1). |
+| Routable read cap | **600 req/min** | All `GET` endpoints. Documented `RateLimit-Policy` `fetch` window. |
+| Engine config | `PAGE_SIZE=100`, `pollingPeriod=20m` (floor) | See [`config.go`](config.go), [`sharedconfig/polling_period.go`](../../../internal/connectors/plugins/sharedconfig/polling_period.go). |
+
+#### 6.5.1 Phase 1 — Install (one-time backfill)
+
+The first sync cycle walks every existing row. All endpoints in this phase are READS and share the 600/min read budget.
+
+| Endpoint | Items | Pages (`PAGE_SIZE=100`) | Notes |
+|---|---|---|---|
+| `GET /v1/settings/accounts` | ~tens | 1-2 | Own org bank accounts. |
+| `GET /v1/settings/accounts/{id}/balance` | ~tens | one call/account | Triggered by `FETCH_BALANCES` after `FETCH_ACCOUNTS`. |
+| `GET /v1/companies` | 300,000 | **3,000** | Full walk; no incremental cursor. |
+| `GET /v1/payables` | 1,000,000 | **10,000** | Bounded by `status_changed_at` cursor — first walk goes from epoch. |
+| `GET /v1/receivables` | scenario-dependent | ~0-1,000 | Mostly empty for payouts-only tenants. |
+| **Backfill reads total** | | **~13,100-14,100** | |
+
+**At 600 req/min read cap**, theoretical minimum walltime is `14,100 / 600 ≈ 24 min`. In practice the engine paginates serially within each FETCH activity (single page per activity invocation, ~300-500ms each), and `fetch_external_accounts` + `fetch_payments` run as parallel siblings — so the critical path is `fetch_payments` at roughly `10,000 × 0.4s ≈ 67 min`. Realistic install window: **1-2 hours**, comfortably inside the read cap (no 429 backoff expected).
+
+**Writes during install: zero** (no `POST /v1/payables` until the first weekly batch).
+
+#### 6.5.2 Phase 2 — Running (steady state + weekly batch)
+
+##### 6.5.2.a Writes — the binding constraint for batch payouts
+
+`120,000 payables / week` is the operative number for the write budget:
+
+| Send distribution | Effective write rate | Fits in 100/min cap? |
+|---|---|---|
+| Spread evenly across 168h | ~12 req/min | Yes, ~12% of budget |
+| Compressed into 24h | ~83 req/min | Yes, ~83% of budget — close to ceiling |
+| Compressed into 8h | ~250 req/min | **No — 2.5× cap, throttled** |
+| Compressed into 1h | ~2,000 req/min | **No — 20× cap, throttled** |
+
+**At the 100/min write cap, sending 120,000 payables takes a minimum of `120,000 / 100 / 60 = 20 hours` of continuous writes.** This is a hard floor imposed by Routable's quota — the connector cannot compress a weekly batch below 20h regardless of Temporal worker concurrency. Schedule the batch over a window of at least one day; do not assume "Monday morning all at once".
+
+> The engine retries 429 responses with `--temporal-rate-limiting-retry-delay` backoff (default 5s). When the rate-limit-hint follow-up (§6.4) lands, the engine will honour Routable's exact `RateLimit` reset window instead, reducing wasted activity executions during batch send.
+
+##### 6.5.2.b Reads — counterparty re-walk dominates
+
+| Source | Volume / window | Sustained rate | % of 600/min cap |
+|---|---|---|---|
+| `GET /v1/companies` — full re-walk every cycle | 300k counterparties = 3,000 pages every 20m | **150/min** | 25% |
+| `GET /v1/payables` (incremental via `status_changed_at`) | ~120k new + status-changed rows/wk ≈ ~24k/day ≈ ~300 pages/day spread across 72 cycles | ~3/min | 0.5% |
+| `GET /v1/receivables` (incremental) | scenario-dependent, typically negligible for payout-only | <1/min | <0.2% |
+| `GET /v1/payables/{id}` — link-poll for the 120k batch | One poll per payable to link PI ↔ Payment; subsequent transitions captured by `FETCH_PAYMENTS` | ~12/min steady (120k ÷ 7d ÷ 24h ÷ 60m), peak ~50/min during the post-batch ramp | 2-8% |
+| `GET /v1/settings/accounts` + balances | a handful per cycle | <1/min | <0.2% |
+| **Read total** | | **~160-200/min steady, peak ~250/min** | **~27-42%** |
+
+##### 6.5.2.c Bottleneck summary
+
+| Phase | Bottleneck | Headroom | Mitigation |
+|---|---|---|---|
+| Install | `fetch_payments` page-by-page walltime (not rate-limited) | ~1-2h critical path | Acceptable as one-time cost. Run off-hours. |
+| Running — batch writes | **20h hard floor** at 100 req/min for 120k payouts | None — Routable-imposed | Schedule batch over ≥24h. Plan operationally — no engine knob fixes this. |
+| Running — counterparty re-walk | ~2 req/min average (full walk capped at once per 24h) | 0.3% of read budget | Built-in 24h throttle (see §6.5.5). Hardcoded for now; promotable to config later if operators need finer control. |
+| Running — post-batch link-poll burst | ~50 req/min for a few hours after batch ramp (one poll per payable to link, then `FETCH_PAYMENTS` handles transitions) | ~8% of read budget | None needed; engine retry backoff smooths it. Webhooks (§6.4 follow-up) replace this entirely. |
+
+#### 6.5.3 Feasibility verdict
+
+The connector handles this profile **with one operational caveat**:
+
+**Plan the weekly batch over a ≥24h window.** Sending 120k payables faster than ~100/min is physically impossible against Routable's write cap. Operationally, treat "Monday morning batch" as "starts Monday, finishes Tuesday".
+
+The counterparty re-walk overhead is handled automatically by the built-in 24h throttle (§6.5.5): ~2 req/min average against the 600/min cap, no operator action required.
+
+With that single planning caveat, the connector runs comfortably inside both Routable rate-limit envelopes (~83% peak on writes during batch, well under 25% peak on reads) and the existing Temporal capacity model in §6.2-6.3 still applies (volume here is 60% of the §6 baseline of 200k/wk).
+
+#### 6.5.4 Tuning the historical backfill window
+
+Routable's `/v1/payables` supports both `created_at.{gte,lte}` and `status_changed_at.{gte,lte}` (see the [list-payables OpenAPI spec](https://developers.routable.com/reference/list-payables)). The connector uses `status_changed_at.gte` for the live cursor (see [`client.go:178`](client/client.go)), but on first install `CycleLowerBound` is zero — so the initial walk goes from epoch.
+
+For a 1M-row history, the right lookback depends on what the historical data is used for:
+
+| Lookback | Rows ingested (rough) | Pages | Install walltime | When to pick |
+|---|---|---|---|---|
+| Full history (current default) | ~1,000,000 | ~10,000 | ~1-2h | Tax / SOX / regulatory retention, full audit trail. One-time cost is fine. |
+| 12 months | ~600-800k | ~6-8k | ~45 min | Trend reporting across a full audit cycle. |
+| **90 days** ✅ | ~70-100k | ~700-1,000 | **~7-10 min** | Operational baseline: in-flight payables plus a quarter of settled history. Covers ACH's 1-3 day settlement window with comfortable lookback. |
+| 30 days | ~25-40k | ~250-400 | ~3 min | Lean install; rely on the Routable UI for anything older. |
+| 0 (forward-only) | 0 | 0 | instant | Start fresh; never touch existing payables. |
+
+**Recommendation for most deployments**: 90 days. It catches every in-flight payable, all recent settlement audit trails, and keeps install under 10 min. Anything older is rarely queried operationally and is one click away in the Routable UI.
+
+**How to apply the bound** — no config field today; two paths:
+- **Plugin-level (lean)**: add `historicalLookback time.Duration` to [`Config`](config.go) (default `0` = current behaviour). On the very first `decodePaymentsState`, when `CycleLowerBound` is zero AND `historicalLookback > 0`, seed `CycleLowerBound = time.Now().Add(-historicalLookback)`. ~10 LoC across [`config.go`](config.go) and [`payments.go`](payments.go); backward-compatible.
+- **Engine-level**: use `FetchNextPaymentsRequest.FromPayload` to inject the initial cursor from the install request. Cross-cutting (every plugin gets new semantics) — only justified if multiple connectors need the same knob.
+
+Either way, this is a config knob, not a code change to the cursor logic itself: the same cursor invariants (§3.6) continue to hold from whatever floor the operator picks.
+
+#### 6.5.5 Counterparty walk throttle (24h, built-in)
+
+The connector caps `/v1/companies` walks to once per 24h. The engine still schedules `FETCH_EXTERNAL_ACCOUNTS` every `PollingPeriod`; the plugin returns immediately (empty result, `HasMore=false`) when the previous walk completed less than 24h ago. See [`external_accounts.go`](external_accounts.go) (constant `externalAccountsRefreshInterval`) and [`state.go`](state.go) (`pageState.LastCompletedAt`).
+
+| Walk cadence | Routable reads on `/v1/companies` | Detection latency for new counterparties |
+|---|---|---|
+| **24h (this connector)** | **~3,000 / day (≈2 req/min)** | **≤24h** |
+| Without throttle (every 20m) | ~216,000 / day (≈150 req/min) | ≤20m |
+
+The throttle is enforced at the cycle boundary only — once a walk starts, it paginates to completion regardless of the timer. The value is hardcoded for this iteration; promote to operator-facing config (e.g. `externalAccountsRefreshInterval` on the install payload) if a deployment needs finer control.
 
 ---
 
