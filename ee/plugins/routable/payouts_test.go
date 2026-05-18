@@ -301,14 +301,16 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("returns nothing while still pending", func(ctx SpecContext) {
+	// Link PI ↔ Payment as soon as the payable is visible, regardless of status.
+	It("returns the Payment immediately when the payable is still pending", func(ctx SpecContext) {
 		mock.EXPECT().GetPayable(gomock.Any(), "pa_z").Return(
 			&client.Payable{ID: "pa_z", Status: "pending", Amount: "10.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
 			nil,
 		)
 		resp, err := plg.pollPayableStatus(ctx, "pa_z")
 		Expect(err).To(BeNil())
-		Expect(resp.Payment).To(BeNil())
+		Expect(resp.Payment).NotTo(BeNil())
+		Expect(resp.Payment.Status).To(Equal(models.PAYMENT_STATUS_PENDING))
 		Expect(resp.Error).To(BeNil())
 	})
 })
