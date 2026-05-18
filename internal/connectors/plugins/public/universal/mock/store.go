@@ -49,6 +49,10 @@ type store struct {
 	pollingPayouts   map[string]*pollEntry // pollingID -> entry
 	pollingTransfers map[string]*pollEntry
 	webhookSubs      map[string]webhookSub // sub.ID -> sub
+	// webhookSubSeq is a monotonic counter so two installs subscribing
+	// to the same event name get distinct sub_<name>_<n> ids and don't
+	// overwrite each other in webhookSubs.
+	webhookSubSeq int
 }
 
 // orderStep is one transition in an order's lane: target status + fill
@@ -637,7 +641,15 @@ func (s *store) pollTransfer(id string) initiationResponse {
 	return resp
 }
 
-// advancePoll: PENDING for `transitionsLeft` calls, then terminalStatus.
+// advancePoll: returns Payment=nil for `transitionsLeft` calls
+// ("still polling"), then a terminal Payment with terminalStatus.
+//
+// Contract: the engine's poll-payout workflow treats `Payment != nil`
+// as a terminal result (see internal/connectors/engine/workflow/poll_payout.go).
+// Returning a PENDING payment during the transition window would
+// trick the engine into committing the polling workflow on the very
+// first poll with a payment still in PENDING — which is exactly the
+// race we want to test the engine against.
 func advancePoll(m map[string]*pollEntry, id, paymentType string) initiationResponse {
 	entry, ok := m[id]
 	if !ok {
@@ -645,32 +657,37 @@ func advancePoll(m map[string]*pollEntry, id, paymentType string) initiationResp
 	}
 	if entry.transitionsLeft > 0 {
 		entry.transitionsLeft--
-		return initiationResponse{Mode: "polling", PollingID: id, Payment: pollPayment(entry, paymentType, "PENDING")}
+		return initiationResponse{Mode: "polling", PollingID: id, Payment: nil}
 	}
 	return initiationResponse{Mode: "polling", PollingID: id, Payment: pollPayment(entry, paymentType, entry.terminalStatus)}
 }
 
-// addExternalAccount appends a counterparty-side account — created
-// bank accounts join the fetchable beneficiary list like a real PSP.
-func (s *store) addExternalAccount(a account) {
+// createBankAccountLocked is the atomic dedup-or-create primitive used
+// by handleCreateBankAccount. Returns the resulting external account
+// and whether the call deduplicated against a prior Idempotency-Key.
+// Holding s.mu across the check + append eliminates the race where
+// two concurrent POSTs with the same key both inserted.
+func (s *store) createBankAccountLocked(idemKey, id, name, asset string) (account, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.externalAccounts = append(s.externalAccounts, a)
-}
-
-// resolveBankAccount returns the cached external-account reference for
-// an idempotent re-POST.
-func (s *store) resolveBankAccount(idemKey string) (string, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	ref, ok := s.idemBankAccount[idemKey]
-	return ref, ok
-}
-
-func (s *store) recordBankAccount(idemKey, ref string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	if existing, ok := s.idemBankAccount[idemKey]; ok {
+		return account{
+			Reference:    existing,
+			CreatedAt:    time.Now().UTC(),
+			Name:         &name,
+			DefaultAsset: &asset,
+		}, true
+	}
+	ref := "acct_ext_ba_" + id
+	created := account{
+		Reference:    ref,
+		CreatedAt:    time.Now().UTC(),
+		Name:         &name,
+		DefaultAsset: &asset,
+	}
+	s.externalAccounts = append(s.externalAccounts, created)
 	s.idemBankAccount[idemKey] = ref
+	return created, false
 }
 
 // firstPaymentRef — first seeded payment reference (admin trigger).

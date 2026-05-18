@@ -54,6 +54,10 @@ tests:
     ./...
 
 [group('test')]
+test-universal-e2e:
+  ./internal/connectors/plugins/public/universal/mock/e2e.sh
+
+[group('test')]
 generate-sdk: openapi
     @export PATH=$PATH:$(go env GOPATH)/bin && cd pkg/client && speakeasy run --skip-versioning
 

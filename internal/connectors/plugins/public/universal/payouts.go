@@ -104,8 +104,13 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 
 // interpretInitiationResponse turns the contract's terminal-or-polling
 // envelope into the engine's ResponseT. "polling" → engine schedules
-// PollPayout/Transfer via Temporal; "terminal" → final state. An explicit
-// Error string is treated as a synchronous failure (non-retryable).
+// PollPayout/Transfer via Temporal; "terminal" → final state. An
+// explicit Error string is treated as a synchronous failure
+// (non-retryable, ErrInvalidRequest).
+//
+// Malformed envelopes (missing pollingID, missing payment, unknown
+// mode) are surfaced as ErrInvalidRequest too — the counterparty
+// served something the contract forbids; retrying won't help.
 func interpretInitiationResponse[ResponseT any](
 	mode string,
 	pollingID string,
@@ -120,13 +125,13 @@ func interpretInitiationResponse[ResponseT any](
 	switch mode {
 	case "polling":
 		if pollingID == "" {
-			return zero, errors.New("polling response missing pollingID")
+			return zero, errorsutils.NewWrappedError(errors.New("polling response missing pollingID"), models.ErrInvalidRequest)
 		}
 		id := pollingID
 		return build(nil, &id), nil
 	case "terminal", "":
 		if payment == nil {
-			return zero, errors.New("terminal response missing payment")
+			return zero, errorsutils.NewWrappedError(errors.New("terminal response missing payment"), models.ErrInvalidRequest)
 		}
 		pp, err := mappers.PaymentToPSPPayment(*payment)
 		if err != nil {
@@ -134,7 +139,7 @@ func interpretInitiationResponse[ResponseT any](
 		}
 		return build(&pp, nil), nil
 	default:
-		return zero, fmt.Errorf("unknown response mode %q", mode)
+		return zero, errorsutils.NewWrappedError(fmt.Errorf("unknown response mode %q", mode), models.ErrInvalidRequest)
 	}
 }
 

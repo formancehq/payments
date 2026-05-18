@@ -20,12 +20,13 @@ import (
 var webhookHTTP = &http.Client{Timeout: 10 * time.Second}
 
 // server fronts the contract endpoints with bearer-auth on every route
-// except /healthz.
+// except /healthz and /v1/stream (auth happens inside the WS handshake).
 type server struct {
 	cfg    mockConfig
 	store  *store
 	mux    *http.ServeMux
 	logger *slog.Logger
+	hub    *streamHub
 }
 
 // newServer returns a wired server. Use Handler() to get the
@@ -35,7 +36,13 @@ func newServer(cfg mockConfig, st *store, logger *slog.Logger) *server {
 	if logger == nil {
 		logger = newLogger("info")
 	}
-	s := &server{cfg: cfg, store: st, mux: http.NewServeMux(), logger: logger}
+	s := &server{
+		cfg:    cfg,
+		store:  st,
+		mux:    http.NewServeMux(),
+		logger: logger,
+		hub:    newStreamHub(logger),
+	}
 	s.routes()
 	return s
 }
@@ -75,16 +82,24 @@ func (s *server) routes() {
 	s.mux.HandleFunc("POST /v1/webhooks", s.handleCreateWebhookSub)
 	s.mux.HandleFunc("DELETE /v1/webhooks/{id}", s.handleDeleteWebhookSub)
 
+	// WebSocket stream (optional, gated on MOCK_EVENT_STREAM=wss).
+	// Auth happens inside the handshake — the requireAuth middleware
+	// is bypassed because browsers can't set Authorization on WS, so
+	// we accept either the header (when present) or apiKey in the
+	// signed hello.
+	s.mux.HandleFunc("GET /v1/stream", s.handleStream)
+
 	// Out-of-contract admin endpoints — see mock/README.md.
 	s.mux.HandleFunc("POST /_admin/trigger-webhook", s.handleAdminTrigger)
 	s.mux.HandleFunc("POST /_admin/evolve", s.handleAdminEvolve)
 }
 
 // requireAuth — bearer-auth middleware. Token is never logged; outcome
-// is.
+// is. /healthz and /v1/stream bypass: stream auth happens inside the
+// signed handshake instead (browser WS can't set headers).
 func (s *server) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/healthz" {
+		if r.URL.Path == "/healthz" || r.URL.Path == "/v1/stream" {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -106,12 +121,15 @@ func (s *server) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 	reqLogger(r.Context(), s.logger).Info("capabilities discovery",
 		"supported_count", len(s.cfg.capabilities),
 		"signature_scheme", s.cfg.webhookSignature,
+		"event_stream", s.cfg.eventStream,
 	)
 	writeJSON(w, http.StatusOK, capabilities{
 		Supported: s.cfg.capabilities,
 		Features: features{
 			Pagination:       "cursor",
 			WebhookSignature: s.cfg.webhookSignature,
+			EventStream:      s.cfg.eventStream,
+			StreamEvents:     s.cfg.streamEvents,
 		},
 	})
 }
@@ -186,19 +204,41 @@ func (s *server) maybeEvolveOnPoll(ctx context.Context) {
 	}
 }
 
-// evolveAndDeliver advances `n` records and pushes a webhook for each
-// transition with an active subscription. Returns (advanced, delivered)
-// — delivered ≤ advanced (no-subscription transitions are skipped).
+// evolveAndDeliver advances `n` records and pushes each transition over
+// the active push transports. Stream subscribers receive a WS frame;
+// when at least one WS subscriber is active for the event, we SKIP the
+// HTTP webhook callback for that event so end-to-end tests can assert
+// "WS replaced webhook for this install". Returns (advanced, delivered)
+// where delivered counts the HTTP-callback deliveries (the WS broadcast
+// count is reported by the hub via metrics).
 func (s *server) evolveAndDeliver(ctx context.Context, n int) (advanced, delivered int) {
 	logger := reqLogger(ctx, s.logger)
 	results := s.store.EvolveSteps(n)
 	advanced = len(results)
-	if s.cfg.webhookSignature == "" || advanced == 0 {
-		return advanced, 0
+	if advanced == 0 {
+		return 0, 0
 	}
 	for _, r := range results {
 		eventName, resource := s.eventForResult(r)
 		if eventName == "" {
+			continue
+		}
+		ev := s.buildEvent(eventName, resource)
+
+		// Stream-first: a connected WS subscriber for this event
+		// short-circuits the HTTP callback path so we never deliver
+		// both to the same install.
+		if s.hub != nil {
+			if n := s.hub.Broadcast(ctx, eventName, ev); n > 0 {
+				logger.Debug("stream broadcast", "event", eventName, "ref", r.Reference, "subscribers", n)
+				continue
+			}
+		}
+
+		// "" and "none" both mean "no HMAC signing advertised" per
+		// the contract — either way we don't drive the auto-emit
+		// HTTP webhook path (the engine wouldn't verify).
+		if s.cfg.webhookSignature == "" || s.cfg.webhookSignature == "none" {
 			continue
 		}
 		callback, ok := s.store.findWebhookCallback(eventName)
@@ -206,7 +246,7 @@ func (s *server) evolveAndDeliver(ctx context.Context, n int) (advanced, deliver
 			logger.Debug("auto-emit skipped (no subscription)", "event", eventName, "ref", r.Reference)
 			continue
 		}
-		if err := s.deliverWebhook(ctx, callback, eventName, resource); err != nil {
+		if err := s.deliverWebhookEvent(ctx, callback, ev); err != nil {
 			logger.Warn("auto-emit failed", "event", eventName, "ref", r.Reference, "error", err)
 			continue
 		}
@@ -214,6 +254,19 @@ func (s *server) evolveAndDeliver(ctx context.Context, n int) (advanced, deliver
 		delivered++
 	}
 	return advanced, delivered
+}
+
+// buildEvent materialises a WebhookEvent envelope from the
+// already-computed event name + resource. Used by both the stream
+// broadcast and HTTP webhook paths so both transports ship byte-for-byte
+// identical payloads.
+func (s *server) buildEvent(eventName string, resource map[string]any) map[string]any {
+	return map[string]any{
+		"id":        "evt_" + time.Now().UTC().Format("20060102T150405.000000"),
+		"type":      eventName,
+		"createdAt": time.Now().UTC().Format(time.RFC3339),
+		"resource":  resource,
+	}
 }
 
 // eventForResult: EvolveResult → (event name, resource). ("", nil) for
@@ -233,16 +286,16 @@ func (s *server) eventForResult(r EvolveResult) (string, map[string]any) {
 	return "", nil
 }
 
-// deliverWebhook signs and POSTs one event. Same envelope + HMAC as
-// /_admin/trigger-webhook so VerifyWebhook+TranslateWebhook see no
-// distinction between manual and auto-emitted events.
+// deliverWebhook signs and POSTs an event built ad-hoc from a resource
+// (used by /_admin/trigger-webhook). Same envelope + HMAC as the
+// auto-evolve path so VerifyWebhook+TranslateWebhook can't tell the
+// difference.
 func (s *server) deliverWebhook(ctx context.Context, callbackURL, eventName string, resource map[string]any) error {
-	body, err := json.Marshal(map[string]any{
-		"id":        "evt_" + time.Now().UTC().Format("20060102T150405.000000"),
-		"type":      eventName,
-		"createdAt": time.Now().UTC().Format(time.RFC3339),
-		"resource":  resource,
-	})
+	return s.deliverWebhookEvent(ctx, callbackURL, s.buildEvent(eventName, resource))
+}
+
+func (s *server) deliverWebhookEvent(ctx context.Context, callbackURL string, ev map[string]any) error {
+	body, err := json.Marshal(ev)
 	if err != nil {
 		return err
 	}
@@ -292,6 +345,10 @@ func (s *server) handleCreatePayout(w http.ResponseWriter, r *http.Request) {
 	if !readJSON(w, r, &req) {
 		return
 	}
+	if err := validateInitiationRequest(req); err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	idem := r.Header.Get("Idempotency-Key")
 	if idem == "" {
 		writeErr(w, http.StatusBadRequest, "missing Idempotency-Key")
@@ -326,6 +383,10 @@ func (s *server) handleReversePayout(w http.ResponseWriter, _ *http.Request) {
 func (s *server) handleCreateTransfer(w http.ResponseWriter, r *http.Request) {
 	var req initiationRequest
 	if !readJSON(w, r, &req) {
+		return
+	}
+	if err := validateInitiationRequest(req); err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	idem := r.Header.Get("Idempotency-Key")
@@ -382,14 +443,6 @@ func (s *server) handleCreateBankAccount(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	logger := reqLogger(r.Context(), s.logger)
-	if existing, ok := s.store.resolveBankAccount(idem); ok {
-		logger.Info("bank account dedup hit", "idem", idem, "reference", existing)
-		writeJSON(w, http.StatusOK, bankAccountResponse{
-			RelatedAccount: account{Reference: existing, CreatedAt: time.Now().UTC(), Name: &req.Name},
-		})
-		return
-	}
-	ref := "acct_ext_ba_" + req.ID
 	asset := "EUR/2"
 	if req.IBAN != nil && len(*req.IBAN) >= 2 {
 		// IBAN country-code → asset is a fixture-only approximation.
@@ -402,13 +455,15 @@ func (s *server) handleCreateBankAccount(w http.ResponseWriter, r *http.Request)
 			asset = "JPY/0"
 		}
 	}
-	created := account{
-		Reference: ref, CreatedAt: time.Now().UTC(),
-		Name: &req.Name, DefaultAsset: &asset,
+	// One critical section across the dedup-check, append, and
+	// record so concurrent callers with the same Idempotency-Key
+	// can't both pass the check and double-insert.
+	created, dedup := s.store.createBankAccountLocked(idem, req.ID, req.Name, asset)
+	if dedup {
+		logger.Info("bank account dedup hit", "idem", idem, "reference", created.Reference)
+	} else {
+		logger.Info("bank account created", "reference", created.Reference, "asset", asset, "name", req.Name)
 	}
-	s.store.addExternalAccount(created)
-	s.store.recordBankAccount(idem, ref)
-	logger.Info("bank account created", "reference", ref, "asset", asset, "name", req.Name)
 	writeJSON(w, http.StatusOK, bankAccountResponse{RelatedAccount: created})
 }
 
@@ -430,7 +485,12 @@ func (s *server) handleCreateWebhookSub(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, webhookSubscriptionResponse{ID: existing, Name: req.Name})
 		return
 	}
-	id := "sub_" + req.Name
+	// Subscription IDs must be globally unique even when two installs
+	// register the same event — keyed only on `name` we'd silently
+	// overwrite the previous callback. A monotonic counter under the
+	// store lock gives uniqueness with no extra deps.
+	s.store.webhookSubSeq++
+	id := fmt.Sprintf("sub_%s_%d", req.Name, s.store.webhookSubSeq)
 	s.store.idemWebhookSubID[idem] = id
 	s.store.webhookSubs[id] = webhookSub{ID: id, Name: req.Name, CallbackURL: req.CallbackURL}
 	logger.Info("webhook subscription created",
@@ -547,6 +607,26 @@ func (s *server) handleAdminEvolve(w http.ResponseWriter, r *http.Request) {
 		"requested", n, "advanced", advanced, "webhooks_delivered", delivered,
 	)
 	writeJSON(w, http.StatusOK, map[string]int{"advanced": advanced, "webhooksDelivered": delivered})
+}
+
+// validateInitiationRequest enforces minimal sanity on incoming
+// payout/transfer bodies so the store never sees a malformed amount
+// (which mustParseInt silently maps to 0 — a deceptively "valid"
+// terminal small-amount payment in the test fixture).
+func validateInitiationRequest(req initiationRequest) error {
+	if req.Reference == "" {
+		return fmt.Errorf("reference is required")
+	}
+	if _, err := strconv.ParseInt(req.Amount, 10, 64); err != nil {
+		return fmt.Errorf("amount %q is not a decimal integer", req.Amount)
+	}
+	if req.Asset == "" {
+		return fmt.Errorf("asset is required")
+	}
+	if req.SourceAccountReference == "" || req.DestinationAccountReference == "" {
+		return fmt.Errorf("source and destination account references are required")
+	}
+	return nil
 }
 
 func signHMAC(secret, timestamp string, body []byte) string {

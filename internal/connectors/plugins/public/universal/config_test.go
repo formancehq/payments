@@ -6,6 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal"
+	"github.com/formancehq/payments/internal/models"
 )
 
 // Black-box tests for config parsing — particularly the comma-separated
@@ -33,7 +34,7 @@ func TestConfig_CapabilityOverridesParsing(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			plg, err := universal.New("u", logger, json.RawMessage(tc.json))
+			plg, err := universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(tc.json))
 			if err != nil {
 				t.Fatalf("New: %v", err)
 			}

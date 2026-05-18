@@ -32,7 +32,7 @@ var _ = Describe("Universal *Plugin — webhooks", func() {
 		mc = client.NewMockClient(ctrl)
 		mc.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
 		var err error
-		plg, err = universal.New("universal-test", logger, cfg)
+		plg, err = universal.New(models.ConnectorID{}, "universal-test", logger, cfg)
 		Expect(err).To(BeNil())
 		universal.InjectClient(plg, mc)
 		universal.InjectDeclared(plg, []models.Capability{models.CAPABILITY_CREATE_WEBHOOKS, models.CAPABILITY_TRANSLATE_WEBHOOKS})
@@ -182,7 +182,7 @@ var _ = Describe("Universal *Plugin — webhooks", func() {
 		var plgNoSecret *universal.Plugin
 		BeforeEach(func() {
 			var err error
-			plgNoSecret, err = universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k"}`))
+			plgNoSecret, err = universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k"}`))
 			Expect(err).To(BeNil())
 			universal.InjectClient(plgNoSecret, mc)
 		})

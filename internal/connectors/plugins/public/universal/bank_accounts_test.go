@@ -29,7 +29,7 @@ var _ = Describe("Universal *Plugin — bank accounts + extra create paths", fun
 		mc = client.NewMockClient(ctrl)
 		mc.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
 		var err error
-		plg, err = universal.New("u", logger, cfg)
+		plg, err = universal.New(models.ConnectorID{}, "u", logger, cfg)
 		Expect(err).To(BeNil())
 		universal.InjectClient(plg, mc)
 	})

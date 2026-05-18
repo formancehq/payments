@@ -45,6 +45,13 @@ services:
       MOCK_WEBHOOK_SIGNATURE: hmac-sha256
       MOCK_EVOLVE_ON_POLL: "true"
       MOCK_AUTO_EVOLVE_BATCH: "20"
+      # The next three are interpolated from the host env so the E2E
+      # harness (mock/e2e.sh) can flip them per-scenario via
+      # `MOCK_EVENT_STREAM=wss MOCK_LOG_LEVEL=debug docker compose ... up`.
+      # Defaults preserve the original interactive-demo behaviour.
+      MOCK_EVENT_STREAM: "${MOCK_EVENT_STREAM:-}"
+      MOCK_STREAM_EVENTS: "${MOCK_STREAM_EVENTS:-}"
+      MOCK_LOG_LEVEL: "${MOCK_LOG_LEVEL:-info}"
       # MOCK_AUTO_EVOLVE_INTERVAL=0 (the default) keeps the wall-clock
       # ticker off — we let the engine's polls drive evolution. Set to
       # e.g. "10s" for pure-demo runs without an installed engine.
@@ -64,6 +71,15 @@ services:
   payments-worker:
     environment:
       STACK_PUBLIC_URL: http://gateway:80
+
+  # The Temporal UI host port (8081 in docker-compose.yml) clashes with
+  # any other dev container on that port (e.g. the routable connector
+  # binds 8081). The E2E suite doesn't use the UI — assertions only look
+  # at container logs and the v3 API — so clear the host-port binding
+  # here. The service still runs internally on the docker network for
+  # any operator who wants to `docker exec` into it.
+  temporal-ui:
+    ports: !reset []
 
 volumes:
   go-cache:

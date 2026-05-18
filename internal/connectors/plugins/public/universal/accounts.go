@@ -54,6 +54,10 @@ func fetchPaginated[Wire any, PSP any](
 	if err := declared.require(capability); err != nil {
 		return nil, nil, false, err
 	}
+	// Pod-restart recovery: re-establishes the WS supervisor after the
+	// engine re-instantiated Plugin via OnStart (which doesn't replay
+	// CreateWebhooks). No-op when stream is off or already running.
+	p.ensureStreamRunning()
 
 	st, err := decodeState(rawState)
 	if err != nil {

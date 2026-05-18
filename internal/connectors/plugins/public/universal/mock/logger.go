@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -113,7 +115,9 @@ func (s *server) loggingMiddleware(next http.Handler) http.Handler {
 
 // statusCapture is a minimal http.ResponseWriter wrapper that remembers
 // the status code so the logging middleware can include it in the
-// "← response" log line.
+// "← response" log line. Implements http.Hijacker by forwarding so the
+// WebSocket upgrade on /v1/stream can take over the underlying TCP
+// connection.
 type statusCapture struct {
 	http.ResponseWriter
 	status int
@@ -134,6 +138,18 @@ func (w *statusCapture) Write(b []byte) (int, error) {
 		w.wrote = true
 	}
 	return w.ResponseWriter.Write(b)
+}
+
+// Hijack forwards to the inner ResponseWriter so net/http's WS upgrade
+// path can take over the connection. Returns an error if the underlying
+// writer doesn't support hijacking (HTTP/2 over TLS, mostly).
+func (w *statusCapture) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	w.wrote = true
+	return h.Hijack()
 }
 
 // Defensive sink for any code that wants to silently log to a writer

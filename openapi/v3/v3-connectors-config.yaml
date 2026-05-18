@@ -627,6 +627,8 @@ components:
                 provider:
                     type: string
                     default: Universal
+                streamEndpoint:
+                    type: string
                 webhookSharedSecret:
                     type: string
         V3WiseConfig:

@@ -1,0 +1,48 @@
+name: Universal Connector E2E
+
+on:
+  # Manual trigger for ad-hoc runs.
+  workflow_dispatch:
+  # Nightly so a slow-cooking regression surfaces on its own without a PR.
+  schedule:
+    - cron: "0 4 * * *"
+  # Opt-in PR runs: tag the PR with `e2e` and the suite kicks in.
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+concurrency:
+  group: universal-e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    # Only run on PRs that carry the `e2e` label, on the nightly schedule, or
+    # on manual dispatch — never on every push to a branch.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e'))
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
+    timeout-minutes: 25
+    steps:
+      - uses: namespacelabs/nscloud-checkout-action@v8
+        with:
+          fetch-depth: 0
+      - name: Setup Env (Nix + Docker)
+        uses: ./.github/actions/default
+        with:
+          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - name: Install python websocket-client (for replay scenario)
+        run: pip install --quiet websocket-client
+      - name: Run E2E suite
+        run: >-
+          nix --extra-experimental-features "nix-command"
+              --extra-experimental-features "flakes"
+              develop --impure --command just test-universal-e2e
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-e2e-artifacts
+          path: internal/connectors/plugins/public/universal/mock/e2e/artifacts
+          if-no-files-found: ignore

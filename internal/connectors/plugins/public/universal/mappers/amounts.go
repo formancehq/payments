@@ -6,7 +6,6 @@ package mappers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -60,7 +59,7 @@ func DefaultTime(primary, fallback time.Time) time.Time {
 // surfaced error so failures point straight at the bad row.
 func requireRef(kind, ref string) error {
 	if strings.TrimSpace(ref) == "" {
-		return fmt.Errorf("%s: %w", kind, errors.New("missing reference"))
+		return fmt.Errorf("%s: missing reference", kind)
 	}
 	return nil
 }

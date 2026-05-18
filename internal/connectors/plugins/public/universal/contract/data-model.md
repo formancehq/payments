@@ -288,3 +288,18 @@ Response body:
 
 See [`universal-events.md`](universal-events.md) for the full event catalogue
 and signing rules.
+
+### Real-time stream (optional)
+
+A counterparty advertising `features.eventStream == "wss"` MUST also
+expose `GET /v1/stream` (WebSocket upgrade, subprotocol
+`formance-universal-v1`). Each frame is the same `WebhookEvent`
+envelope as the HTTP webhook body — so the engine pipeline is byte-for-
+byte identical regardless of transport. The hello handshake is signed
+with the connector's `webhookSharedSecret` (same secret as HTTP webhook
+HMAC) over `<timestamp>.<nonce>.<canonicalEventsJSON>`; the
+counterparty rejects timestamps outside ±5min skew, nonces seen in the
+last 10min, or bad signatures with WS close 1008. See
+[`webhooks.md`](webhooks.md) "WebSocket transport" for the full
+contract and counterparty obligations (nonce cache, connect rate limit,
+stable event ids for cross-pod dedup).

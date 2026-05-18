@@ -15,6 +15,7 @@ type V3UniversalConfig struct {
 	PageSize            *int64  `default:"25" json:"pageSize"`
 	PollingPeriod       *string `default:"30m" json:"pollingPeriod"`
 	Provider            *string `default:"Universal" json:"provider"`
+	StreamEndpoint      *string `json:"streamEndpoint,omitempty"`
 	WebhookSharedSecret *string `json:"webhookSharedSecret,omitempty"`
 }
 
@@ -76,6 +77,13 @@ func (o *V3UniversalConfig) GetProvider() *string {
 		return nil
 	}
 	return o.Provider
+}
+
+func (o *V3UniversalConfig) GetStreamEndpoint() *string {
+	if o == nil {
+		return nil
+	}
+	return o.StreamEndpoint
 }
 
 func (o *V3UniversalConfig) GetWebhookSharedSecret() *string {

@@ -393,6 +393,59 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /v1/stream:
+    get:
+      tags: [webhooks]
+      summary: WebSocket event stream
+      operationId: openStream
+      description: |
+        OPTIONAL. Required only when features.eventStream == "wss". The
+        connector upgrades the connection (subprotocol
+        "formance-universal-v1") and sends a signed hello frame:
+
+        ```json
+        {
+          "type": "hello",
+          "apiKey": "<bearer>",
+          "timestamp": "<RFC3339 UTC>",
+          "nonce": "<128-bit hex>",
+          "events": ["payment.updated", "balance.updated", ...],
+          "signature": "<hex(HMAC-SHA256(secret, timestamp.nonce.canonicalEvents))>"
+        }
+        ```
+
+        The counterparty MUST validate, in this order:
+          1. apiKey matches the connector's bearer
+          2. timestamp within +/- 5min skew (constant-time RFC3339)
+          3. nonce has not been seen in the last 10min
+          4. signature matches under the connector's webhookSharedSecret
+
+        On any failure: close 1008 (Policy Violation) with a descriptive
+        reason. On success: send `{"type":"hello-ack","accepted":[...],
+        "serverTime":"<RFC3339 UTC>"}` and start broadcasting matching
+        events as WebhookEvent envelopes. The same envelope as the HTTP
+        webhook body, so TranslateWebhook needs no additional logic.
+
+        Keepalive: client sends `{"type":"ping"}` every 30 s; server
+        responds with `{"type":"pong"}`.
+
+        Reconnect: client uses full-jitter exponential backoff
+        (cap 60 s) and a fresh nonce on every attempt. The counterparty
+        SHOULD rate-limit per-installation connect attempts (e.g. 1
+        every 10 s) to defend against reconnect storms during rolling
+        deploys.
+
+        Auth model differs from HTTP webhooks by design — WS-layer TLS
+        plus the signed handshake covers integrity; per-frame HMAC is
+        not used.
+      responses:
+        "101":
+          description: Switching Protocols (WebSocket upgrade).
+        "401":
+          description: Bearer rejected before upgrade.
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -480,6 +533,26 @@ components:
         idempotencyHeader:
           type: string
           description: Override of the canonical Idempotency-Key header name. Empty = use default.
+        eventStream:
+          type: string
+          enum: ["", "wss"]
+          description: |
+            Advertises real-time push transport. "" = HTTP webhooks only;
+            "wss" = the counterparty also exposes /v1/stream as a signed
+            WebSocket. The plugin opts in at install when "wss"; it always
+            keeps the periodic FetchNext* polls as the recovery safety net.
+            Requires webhookSharedSecret on the connector config — the
+            same secret signs both webhook bodies and WS handshake frames.
+        streamEvents:
+          type: array
+          description: |
+            Event names the counterparty publishes over /v1/stream. The
+            sentinel ["*"] means "everything I publish on webhooks I also
+            publish on the stream". Required when eventStream == "wss";
+            empty intersection with the engine's routable events fails
+            install with ErrInvalidConfig.
+          items:
+            type: string
 
     Account:
       type: object

@@ -8704,6 +8704,7 @@ xor
   "pageSize": 25,
   "pollingPeriod": "30m",
   "provider": "Universal",
+  "streamEndpoint": "string",
   "webhookSharedSecret": "string"
 }
 
@@ -8720,6 +8721,7 @@ xor
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+|streamEndpoint|string|false|none|none|
 |webhookSharedSecret|string|false|none|none|
 
 <h2 id="tocS_V3WiseConfig">V3WiseConfig</h2>

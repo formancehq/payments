@@ -28,7 +28,7 @@ var _ = Describe("Universal *Plugin — payouts/transfers", func() {
 		mc = client.NewMockClient(ctrl)
 		mc.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
 		var err error
-		plg, err = universal.New("universal-test", logger, cfg)
+		plg, err = universal.New(models.ConnectorID{}, "universal-test", logger, cfg)
 		Expect(err).To(BeNil())
 		universal.InjectClient(plg, mc)
 		universal.InjectDeclared(plg, []models.Capability{models.CAPABILITY_CREATE_PAYOUT, models.CAPABILITY_CREATE_TRANSFER})

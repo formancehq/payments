@@ -37,12 +37,15 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
 		ErrorLog:          log.New(discardWriter, "", 0), // route net/http internal errors through slog instead
 	}
 	logger.Info("mock universal counterparty starting",
 		"port", cfg.port,
 		"capabilities", strings.Join(cfg.capabilities, ","),
 		"signature_scheme", cfg.webhookSignature,
+		"event_stream", cfg.eventStream,
+		"stream_events", strings.Join(cfg.streamEvents, ","),
 		"evolve_on_poll", cfg.evolveOnPoll,
 		"evolve_batch", cfg.evolveBatch,
 		"auto_evolve_interval", cfg.evolveInterval.String(),
@@ -106,6 +109,13 @@ type mockConfig struct {
 	webhookSignature string   // "hmac-sha256" | "none"
 	capabilities     []string // empty ⇒ full superset
 
+	// eventStream advertises real-time push over WebSocket. Counterparty
+	// declares "" (off) or "wss" at /v1/capabilities; clients opt in at
+	// install. streamEvents lists what the counterparty publishes on
+	// the stream (["*"] = "everything I publish on webhooks").
+	eventStream  string
+	streamEvents []string
+
 	evolveOnPoll   bool
 	evolveInterval time.Duration
 	evolveBatch    int
@@ -119,6 +129,7 @@ func loadConfig() mockConfig {
 		apiKey:           envOr("MOCK_API_KEY", "dev-key"),
 		webhookSecret:    envOr("MOCK_WEBHOOK_SECRET", "dev-secret"),
 		webhookSignature: envOr("MOCK_WEBHOOK_SIGNATURE", "hmac-sha256"),
+		eventStream:      envOr("MOCK_EVENT_STREAM", ""),
 		evolveOnPoll:     envOr("MOCK_EVOLVE_ON_POLL", "true") != "false",
 		evolveInterval:   parseDuration(envOr("MOCK_AUTO_EVOLVE_INTERVAL", "0")),
 		evolveBatch:      parseInt(envOr("MOCK_AUTO_EVOLVE_BATCH", "10"), 10),
@@ -128,6 +139,15 @@ func loadConfig() mockConfig {
 		c.capabilities = strings.Split(raw, ",")
 	} else {
 		c.capabilities = defaultCapabilities()
+	}
+	if raw := os.Getenv("MOCK_STREAM_EVENTS"); raw != "" {
+		c.streamEvents = strings.Split(raw, ",")
+	} else if c.eventStream == "wss" {
+		// Default: advertise the wildcard so any plugin opting into the
+		// stream gets every webhook-routable event without per-deploy
+		// configuration. Operators can pin the explicit list via env
+		// when they want to test a narrower subscription.
+		c.streamEvents = []string{"*"}
 	}
 	return c
 }

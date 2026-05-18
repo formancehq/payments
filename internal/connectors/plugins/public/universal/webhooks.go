@@ -10,9 +10,11 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/universal/mappers"
@@ -29,6 +31,12 @@ const (
 	// 5-minute skew tolerance matches Increase and the other Formance
 	// connectors.
 	signatureTolerance = 5 * time.Minute
+
+	// maxWebhookBodySize caps the JSON payload we will unmarshal. 1 MiB
+	// is generous for WebhookEvent envelopes (typical < 4 KiB);
+	// anything larger is either a misconfiguration or a deliberate
+	// memory-pressure attack and is rejected before allocation.
+	maxWebhookBodySize = 1 << 20
 )
 
 // supportedWebhook is one entry in the install-time subscription list.
@@ -123,16 +131,84 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		"count":     len(configs),
 	}).Info("registered universal webhook subscriptions")
 
+	// If the counterparty advertised eventStream=wss, opt into the
+	// real-time push transport. The supervisor runs alongside HTTP
+	// webhook delivery — the engine dedups by event ID, so a frame
+	// delivered on both transports is processed once.
+	if err := p.maybeStartStream(ctx, req.WebhookBaseUrl); err != nil {
+		return models.CreateWebhooksResponse{}, fmt.Errorf("start stream supervisor: %w", err)
+	}
+
 	return models.CreateWebhooksResponse{Configs: configs, Others: others}, nil
 }
 
-// VerifyWebhook authenticates inbound deliveries. Runs in the engine's
-// HTTP server process — Install never ran there, so we cannot consult
-// declaredSet; gate on `client` (constructor-set, available in every
-// process) and on the persisted WebhookSharedSecret. Install rejects an
-// install where the counterparty advertised HMAC but no secret was
-// provided, so a non-empty secret here is the install-time proof that
-// signatures are expected.
+// maybeStartStream spawns the WebSocket supervisor when the counterparty
+// declared features.eventStream=="wss" at install time. Idempotent and
+// race-safe: the check-construct-assign-Start sequence runs under
+// p.mu so a CreateWebhooks call concurrent with the lazy
+// ensureStreamRunning recovery path can never produce two supervisors.
+// Returns install-time validation errors wrapped with
+// models.ErrInvalidConfig so the engine surfaces them as
+// non-retryable.
+func (p *Plugin) maybeStartStream(_ context.Context, gatewayBaseURL string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.features.EventStream != "wss" || p.stream != nil {
+		return nil
+	}
+
+	sup, err := newStreamSupervisor(
+		p.logger,
+		p.name,
+		p.config,
+		p.features,
+		gatewayBaseURL,
+		supportedWebhooks,
+		newHTTPDispatcher(),
+	)
+	if err != nil {
+		return fmt.Errorf("%w: %w", models.ErrInvalidConfig, err)
+	}
+	// context.Background() ties the supervisor's lifetime to the
+	// process, not to the inbound RPC ctx (which is for the
+	// CreateWebhooks call). Stop() in Uninstall is the only way out.
+	sup.Start(context.Background())
+	p.stream = sup
+	return nil
+}
+
+// ensureStreamRunning is the recovery-path equivalent of
+// maybeStartStream: called from every guarded FetchNext* so a pod
+// restart (which re-instantiates Plugin via engine.OnStart but does
+// NOT re-invoke CreateWebhooks) re-establishes the supervisor on the
+// first poll. Derives the gateway base URL from STACK_PUBLIC_URL +
+// connectorID using the same helper the engine uses
+// (utils.GetWebhookBaseURL). Best-effort: failure here is logged but
+// never propagates — the fetch must still succeed (HTTP webhooks
+// remain a safety net).
+func (p *Plugin) ensureStreamRunning() {
+	p.mu.RLock()
+	feature := p.features.EventStream
+	already := p.stream != nil
+	p.mu.RUnlock()
+	if feature != "wss" || already {
+		return
+	}
+	stackURL := os.Getenv("STACK_PUBLIC_URL")
+	if stackURL == "" {
+		p.logger.WithField("connector", p.name).Errorf("stream supervisor cannot be lazily started: STACK_PUBLIC_URL is empty")
+		return
+	}
+	gatewayBaseURL, err := utils.GetWebhookBaseURL(stackURL, p.connectorID)
+	if err != nil {
+		p.logger.WithField("connector", p.name).Errorf("derive gateway base URL: %s", err)
+		return
+	}
+	if err := p.maybeStartStream(context.Background(), gatewayBaseURL); err != nil {
+		p.logger.WithField("connector", p.name).Errorf("lazy stream supervisor start: %s", err)
+	}
+}
+
 // deleteWebhooks tears down every subscription this connector
 // registered at install. Best-effort: an error on one subscription
 // short-circuits and is surfaced to the engine which will retry the
@@ -152,9 +228,21 @@ func (p *Plugin) deleteWebhooks(ctx context.Context, configs []models.PSPWebhook
 	return nil
 }
 
+// VerifyWebhook authenticates inbound deliveries. Runs in the engine's
+// HTTP server process — Install never ran there, so we cannot consult
+// declaredSet; gate on `client` (constructor-set, available in every
+// process) and on the persisted WebhookSharedSecret. Install rejects
+// an install where the counterparty advertised HMAC but no secret was
+// provided, so a non-empty secret here is the install-time proof that
+// signatures are expected. Bodies larger than maxWebhookBodySize are
+// rejected before any allocation — defence in depth on top of the
+// engine's HTTP middleware.
 func (p *Plugin) VerifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if p.client == nil {
 		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+	if len(req.Webhook.Body) > maxWebhookBodySize {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: body size %d exceeds %d", models.ErrWebhookVerification, len(req.Webhook.Body), maxWebhookBodySize)
 	}
 
 	signature := headerValue(req.Webhook.Headers, WebhookHeaderSignature)
@@ -205,6 +293,9 @@ func (p *Plugin) VerifyWebhook(_ context.Context, req models.VerifyWebhookReques
 func (p *Plugin) TranslateWebhook(_ context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+	if len(req.Webhook.Body) > maxWebhookBodySize {
+		return models.TranslateWebhookResponse{}, fmt.Errorf("body size %d exceeds %d", len(req.Webhook.Body), maxWebhookBodySize)
 	}
 	if _, ok := supportedWebhookNames[req.Name]; !ok {
 		return models.TranslateWebhookResponse{}, fmt.Errorf("unknown webhook event %q", req.Name)

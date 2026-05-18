@@ -17,8 +17,8 @@ import (
 const ProviderName = "universal"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, rm)
+	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(connectorID, name, logger, rm)
 	}, capabilities, Config{}, PAGE_SIZE)
 }
 
@@ -28,10 +28,11 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name   string
-	logger logging.Logger
-	client client.Client
-	config Config
+	connectorID models.ConnectorID
+	name        string
+	logger      logging.Logger
+	client      client.Client
+	config      Config
 
 	mu                 sync.RWMutex
 	declared           capabilitySet
@@ -40,6 +41,13 @@ type Plugin struct {
 	// accountLookup is engine-injected via UseAccountLookup; orders &
 	// conversions use it to resolve PSPAccount references at runtime.
 	accountLookup models.AccountLookup
+	// stream is the optional WebSocket supervisor. Lifecycle is bound
+	// to CreateWebhooks (start) and Uninstall (stop); see stream.go.
+	// On pod restart the engine re-instantiates Plugin via New() but
+	// does NOT re-invoke CreateWebhooks — every guarded FetchNext*
+	// method calls ensureStreamRunning() to lazily restart the
+	// supervisor using STACK_PUBLIC_URL as the gateway base URL.
+	stream *streamSupervisor
 }
 
 var (
@@ -48,18 +56,19 @@ var (
 	_ models.PluginWithBootstrapOnInstall = &Plugin{}
 )
 
-func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+func New(connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	cfg, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
-		name:   name,
-		logger: logger,
-		client: client.New(ProviderName, cfg.Endpoint, cfg.APIKey),
-		config: cfg,
+		Plugin:      plugins.NewBasePlugin(),
+		connectorID: connectorID,
+		name:        name,
+		logger:      logger,
+		client:      client.New(ProviderName, cfg.Endpoint, cfg.APIKey),
+		config:      cfg,
 	}, nil
 }
 
@@ -121,8 +130,11 @@ func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.I
 		return models.InstallResponse{}, errors.Wrap(models.ErrInvalidConfig, "capabilityOverrides narrowed declared set to empty")
 	}
 
-	if caps.Features.WebhookSignature == "hmac-sha256" && p.config.WebhookSharedSecret == "" {
-		return models.InstallResponse{}, errors.Wrap(models.ErrInvalidConfig, "counterparty requires HMAC webhook signatures but webhookSharedSecret is empty")
+	// The shared secret powers both transports — HMAC over each HTTP
+	// webhook body AND the signed (re)connect handshake on the WS
+	// stream. Either feature being on requires the secret to be set.
+	if (caps.Features.WebhookSignature == "hmac-sha256" || caps.Features.EventStream == "wss") && p.config.WebhookSharedSecret == "" {
+		return models.InstallResponse{}, errors.Wrap(models.ErrInvalidConfig, "counterparty requires a signed transport (webhookSignature or eventStream) but webhookSharedSecret is empty")
 	}
 
 	// do() always sends the canonical Idempotency-Key AND any
@@ -150,11 +162,11 @@ func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.I
 }
 
 // Uninstall tears down counterparty-side state owned by this connector.
-// Today that's only webhook subscriptions; the engine deletes its own
-// schedules and the connector row separately. We always try the
-// cleanup so stale subscriptions don't keep firing to a dead endpoint
-// (the engine retries Uninstall on partial failure; DELETE is
-// idempotent on the counterparty side).
+// Order: (1) stop the WS supervisor so we send a clean WS close BEFORE
+// the counterparty teardown, (2) DELETE every webhook subscription.
+// The engine retries Uninstall on partial failure; DELETE is
+// idempotent on the counterparty side, and stopping an already-stopped
+// supervisor is a no-op.
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	if p.client == nil {
 		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
@@ -163,6 +175,15 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 		"connector":    p.name,
 		"webhook_subs": len(req.WebhookConfigs),
 	})
+
+	p.mu.Lock()
+	sup := p.stream
+	p.stream = nil
+	p.mu.Unlock()
+	if sup != nil {
+		sup.Stop()
+	}
+
 	if err := p.deleteWebhooks(ctx, req.WebhookConfigs); err != nil {
 		logger.Errorf("universal connector uninstall: webhook cleanup failed: %s", err)
 		return models.UninstallResponse{}, err

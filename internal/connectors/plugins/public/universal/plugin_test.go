@@ -34,7 +34,7 @@ var _ = Describe("Universal *Plugin", func() {
 		mc = client.NewMockClient(ctrl)
 		mc.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
 		var err error
-		plg, err = universal.New("universal-test", logger, cfg)
+		plg, err = universal.New(models.ConnectorID{}, "universal-test", logger, cfg)
 		Expect(err).To(BeNil())
 		universal.InjectClient(plg, mc)
 	})
@@ -43,18 +43,18 @@ var _ = Describe("Universal *Plugin", func() {
 
 	Context("config validation", func() {
 		It("rejects empty payload", func() {
-			_, err := universal.New("u", logger, json.RawMessage(`{}`))
+			_, err := universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(`{}`))
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("validation"))
 		})
 
 		It("rejects bad endpoint URL", func() {
-			_, err := universal.New("u", logger, json.RawMessage(`{"endpoint":"not-a-url","apiKey":"k"}`))
+			_, err := universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(`{"endpoint":"not-a-url","apiKey":"k"}`))
 			Expect(err).NotTo(BeNil())
 		})
 
 		It("rejects unknown capability override", func() {
-			_, err := universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"NONSENSE"}`))
+			_, err := universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"NONSENSE"}`))
 			Expect(err).NotTo(BeNil())
 		})
 	})
@@ -124,7 +124,7 @@ var _ = Describe("Universal *Plugin", func() {
 		})
 
 		It("rejects install when overrides narrow to empty (operator typo)", func(ctx SpecContext) {
-			plgOv, err := universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"FETCH_PAYMENTS"}`))
+			plgOv, err := universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"FETCH_PAYMENTS"}`))
 			Expect(err).To(BeNil())
 			mcOv := client.NewMockClient(ctrl)
 			mcOv.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()
@@ -139,7 +139,7 @@ var _ = Describe("Universal *Plugin", func() {
 		})
 
 		It("honours valid overrides that intersect with declared", func(ctx SpecContext) {
-			plgOv, err := universal.New("u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"FETCH_ACCOUNTS"}`))
+			plgOv, err := universal.New(models.ConnectorID{}, "u", logger, json.RawMessage(`{"endpoint":"https://x","apiKey":"k","capabilityOverrides":"FETCH_ACCOUNTS"}`))
 			Expect(err).To(BeNil())
 			mcOv := client.NewMockClient(ctrl)
 			mcOv.EXPECT().SetIdempotencyHeader(gomock.Any()).AnyTimes()

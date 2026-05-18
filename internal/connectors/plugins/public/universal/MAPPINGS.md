@@ -12,7 +12,8 @@ actually consumes.
 |------------------------|---------------|----------|------------------------------------------------------------------------------------------------------------------------------------|
 | `endpoint`             | string (URL)  | yes      | Base URL of the counterparty implementing universal-openapi.yaml. Must be HTTPS in production.                                     |
 | `apiKey`               | string        | yes      | Bearer token. Sent on every request as `Authorization: Bearer <key>`. Never logged.                                                |
-| `webhookSharedSecret`  | string        | optional | HMAC-SHA256 secret for verifying inbound webhooks. **Required** when the counterparty advertises `features.webhookSignature == "hmac-sha256"`. |
+| `webhookSharedSecret`  | string        | optional | HMAC-SHA256 secret. **Required** when the counterparty advertises `features.webhookSignature == "hmac-sha256"` OR `features.eventStream == "wss"` (same secret signs both transports). |
+| `streamEndpoint`       | string (URL)  | optional | WS dial target. Empty → derived from `endpoint` by swapping http→ws / https→wss and appending `/v1/stream`. Use to point at a different host (e.g. dedicated stream gateway).  |
 | `pollingPeriod`        | duration str. | optional | Defaults to `sharedconfig.DefaultPollingPeriod` (30m). Floor `sharedconfig.MinimumPollingPeriod` (20m).                             |
 | `capabilityOverrides`  | string array  | optional | Allow-list to **narrow** the counterparty-declared set. Validated against the `Capability` enum.                                   |
 

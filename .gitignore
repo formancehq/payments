@@ -20,3 +20,6 @@ coverage.txt
 .direnv/
 worktrees/
 tmp/
+/mock
+/payments-ee
+internal/connectors/plugins/public/universal/mock/e2e/artifacts/

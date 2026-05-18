@@ -17,9 +17,11 @@ type capabilities struct {
 }
 
 type features struct {
-	Pagination        string `json:"pagination"`
-	WebhookSignature  string `json:"webhookSignature"`
-	IdempotencyHeader string `json:"idempotencyHeader,omitempty"`
+	Pagination        string   `json:"pagination"`
+	WebhookSignature  string   `json:"webhookSignature"`
+	IdempotencyHeader string   `json:"idempotencyHeader,omitempty"`
+	EventStream       string   `json:"eventStream,omitempty"`
+	StreamEvents      []string `json:"streamEvents,omitempty"`
 }
 
 type account struct {

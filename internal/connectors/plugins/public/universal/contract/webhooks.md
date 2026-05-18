@@ -411,6 +411,90 @@ Verify your signing matches the plugin's by replicating the recipe in
 `TestAdminTriggerDeliversSignedPayload` and
 `TestAutoEmitWebhookOnEvolveDeliversSignedEvents` as worked examples.
 
+## WebSocket transport (`features.eventStream == "wss"`)
+
+For counterparties that want lower-latency push than HTTP webhooks, the
+contract reserves `GET /v1/stream` as a WebSocket endpoint. Frames are
+the same `WebhookEvent` envelope as HTTP webhooks — TranslateWebhook is
+reused without modification. See [`universal-openapi.yaml`](universal-openapi.yaml)
+operation `openStream` for the wire contract.
+
+### When to use it
+
+- Real-time PSPs that already publish events on WebSockets natively (most
+  crypto exchanges, some FX venues).
+- Anywhere webhook delivery latency over the public internet would miss
+  business SLAs (sub-second status propagation).
+- Anywhere the counterparty controls connectivity to Formance (outbound-
+  only connections; no inbound HTTP exposure required).
+
+HTTP webhooks remain available and complementary: the periodic
+`FetchNext*` polls continue to backfill any events lost during a WS
+outage. The two transports never deliver to the same install
+simultaneously — when the supervisor is connected, the mock (and any
+contract-conformant counterparty) routes events to the stream
+**instead of** the HTTP callback for that subscription.
+
+### Handshake auth
+
+Every connect AND reconnect is signed. One signing primitive across HTTP
+webhooks and WS handshakes — same `WebhookSharedSecret`, same HMAC-SHA256
+algorithm, same 5-minute timestamp tolerance.
+
+Signed payload: `<timestamp>.<nonce>.<canonicalEventsJSON>`. The
+counterparty must:
+
+1. Match `apiKey` against the bearer.
+2. Reject `timestamp` outside ±5 min skew.
+3. Reject `nonce` if seen in the last 10 min (TTL cache).
+4. Recompute the HMAC with the connector's `WebhookSharedSecret` and
+   constant-time compare.
+
+Any failure → close 1008 (Policy Violation) with a descriptive reason so
+the client's reconnect logs are diagnosable. The client backs off on
+1008 just like on transport errors; persistent 1008 indicates operator
+misconfiguration (wrong secret on the connector vs counterparty).
+
+### Subscription model
+
+The plugin sends an explicit `events: [...]` list in the hello frame.
+It is derived from the intersection of:
+
+- `features.streamEvents` declared at `/v1/capabilities` (the sentinel
+  `["*"]` means "everything I publish on webhooks I also publish on the
+  stream").
+- The plugin's static `supportedWebhookNames` map (everything the engine
+  can route via `TranslateWebhook`).
+
+Empty intersection while `features.eventStream == "wss"` fails install
+with `ErrInvalidConfig` — silent "nothing to subscribe to" is exactly
+the kind of misconfiguration that should bite at install, not on the
+first event.
+
+### Multi-pod safety
+
+The plugin opens one WS per worker pod. Counterparties that advertise
+`wss` MUST emit a stable event `id` so the engine's
+`WebhookIdempotencyKey` dedup absorbs duplicate deliveries from N pods
+without double-processing. This is the cheap version of leader election;
+Phase 2 may add a Postgres advisory lock for cost reduction once the
+pattern is in production.
+
+### Counterparty obligations (MUST)
+
+- Validate timestamp tolerance, nonce freshness, signature.
+- Close with 1008 on auth failure (so the client backs off).
+- Track nonces for ≥ 10 min.
+- Rate-limit per-installation connect attempts (e.g. 1 / 10 s) to defend
+  against reconnect storms during rolling deploys.
+- Emit stable event ids for cross-pod dedup.
+
+### Implementation references
+
+- Plugin WS client: [`../client/stream.go`](../client/stream.go) — `DialStream`, `SignHello`, `StreamClient`.
+- Plugin supervisor: [`../stream.go`](../stream.go) — `streamSupervisor`, `resolveSubscribeList`, `backoff`.
+- Mock WS server: [`../mock/stream.go`](../mock/stream.go) — `handleStream`, `acceptHello`, `streamHub`, `nonceCache`.
+
 ## Implementation references
 
 - Plugin webhook code: [`../webhooks.go`](../webhooks.go) — `CreateWebhooks`, `VerifyWebhook`, `TranslateWebhook`, `verifyHMACSHA256`, `headerValue`.

@@ -75,23 +75,43 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 }
 
 // listAccountsForBalances prefers the engine-injected AccountLookup
-// (durable across pods); falls back to /v1/accounts page-1 for tests
-// and small installations.
+// (durable across pods, no per-call paging). When the engine doesn't
+// inject one (tests, small installs, BootstrapOnInstall race window),
+// we fall back to walking /v1/accounts in full — bounded by
+// maxAccountFallback so a misconfigured counterparty can't OOM the
+// worker.
 func (p *Plugin) listAccountsForBalances(ctx context.Context) ([]models.PSPAccount, error) {
 	if lk := p.lookup(); lk != nil {
 		return lk.ListAccountsByConnector(ctx)
 	}
-	page, err := p.client.ListAccounts(ctx, client.Pagination{PageSize: PAGE_SIZE})
-	if err != nil {
-		return nil, err
-	}
-	out := make([]models.PSPAccount, 0, len(page.Items))
-	for _, a := range page.Items {
-		pa, err := mappers.AccountToPSPAccount(a)
+	var out []models.PSPAccount
+	cursor := ""
+	for page := 1; page <= maxAccountFallback/PAGE_SIZE+1; page++ {
+		res, err := p.client.ListAccounts(ctx, client.Pagination{
+			PageSize:   PAGE_SIZE,
+			Cursor:     cursor,
+			PageNumber: page,
+		})
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, pa)
+		for _, a := range res.Items {
+			pa, err := mappers.AccountToPSPAccount(a)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, pa)
+		}
+		if !res.HasMore || len(out) >= maxAccountFallback {
+			break
+		}
+		cursor = res.NextCursor
 	}
 	return out, nil
 }
+
+// maxAccountFallback caps the fallback walk so a misconfigured
+// counterparty (HasMore stuck on true) can't pin the worker. Real
+// installs should wire AccountLookup before scale; the fallback is
+// for small installs and tests.
+const maxAccountFallback = 5_000

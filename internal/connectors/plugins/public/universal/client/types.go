@@ -15,6 +15,20 @@ type Features struct {
 	Pagination        string `json:"pagination"`        // "cursor" | "page" | "none"
 	WebhookSignature  string `json:"webhookSignature"`  // "hmac-sha256" | "none"
 	IdempotencyHeader string `json:"idempotencyHeader"` // override; empty means default "Idempotency-Key"
+
+	// EventStream advertises a real-time push transport.
+	// "" (default) → HTTP webhooks only.
+	// "wss"        → counterparty also exposes /v1/stream as a
+	//                signed WebSocket; client opts in at install.
+	EventStream string `json:"eventStream"`
+
+	// StreamEvents lists the event names the counterparty publishes
+	// over the stream. Sentinel ["*"] means "every event I publish on
+	// webhooks I also publish on the stream". Empty + EventStream=wss
+	// fails install (no events to subscribe to is a misconfiguration).
+	// Always intersected with the plugin's supportedWebhookNames so we
+	// never subscribe to an event the engine can't route.
+	StreamEvents []string `json:"streamEvents,omitempty"`
 }
 
 // Account is the wire shape for both internal accounts (GET /v1/accounts) and

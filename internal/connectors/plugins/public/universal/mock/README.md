@@ -426,3 +426,51 @@ compatibility (single-tenant becomes "default tenant") while introducing:
 
 Until then, this binary is **deliberately simple** — its only job is to
 unblock end-to-end tests and demos.
+
+## End-to-end harness
+
+`e2e.sh` orchestrates the whole stack (Formance + universal-mock) and
+runs the six contract scenarios sequentially against a fresh install:
+
+| # | Name                          | What it proves                                              |
+|---|-------------------------------|-------------------------------------------------------------|
+| 01 | webhook-happy                | Regression for HTTP-webhook delivery (current behaviour)    |
+| 02 | websocket-happy              | wss install → events arrive via WS instead of HTTP webhook |
+| 03 | websocket-reconnect-mock     | Plugin reconnects after counterparty restart, fresh nonce  |
+| 04 | websocket-reconnect-pod      | Lazy supervisor restart after payments-worker restart      |
+| 05 | websocket-replay-rejected    | Counterparty rejects replayed signed hello (close 1008)    |
+| 06 | webhook-fallback             | Install with no `eventStream` advertised → webhooks only   |
+| 07 | write-primitives             | `POST /v3/payment-initiations` (PAYOUT + TRANSFER) → terminal PROCESSED → matching payments in `/v3/payments`; orders ingested into `/v3/orders`. Polling path + reversal covered by Go unit tests — see scenario header for the why. |
+
+Run from the repo root:
+
+```bash
+# Whole suite (default ~3 min):
+just test-universal-e2e
+
+# Subset:
+./internal/connectors/plugins/public/universal/mock/e2e.sh --scenarios=01,02
+
+# Leave the stack up after a failed run for manual poking:
+./internal/connectors/plugins/public/universal/mock/e2e.sh --keep
+
+# Trace every command in a scenario (bash -x):
+./internal/connectors/plugins/public/universal/mock/e2e.sh --verbose
+```
+
+Each scenario lives in `e2e/scenarios/` and is a self-contained shell
+script (`set -euo pipefail`); the shared helpers are in `e2e/lib.sh`.
+On failure, container logs land in `e2e/artifacts/<scenario>/` for
+triage. CI runs the same suite via `.github/workflows/universal-e2e.yml`
+on a nightly cron and on any PR labelled `e2e`.
+
+Scenario 05 requires `python3` + `websocket-client`. The harness probes
+`/usr/bin/python3`, `/opt/homebrew/bin/python3`, and bare `python3` in
+that order. To enable it inside the Nix dev shell:
+
+```bash
+nix develop -c python3 -m pip install --user --break-system-packages websocket-client
+```
+
+Without it the scenario logs a warning and exits 0 (so laptop runs on a
+fresh checkout still report a green suite).

@@ -45,6 +45,9 @@ func OrderToPSPOrder(o client.Order) (models.PSPOrder, error) {
 		*f.target = v
 	}
 
+	if baseOrdered == nil || baseOrdered.Sign() <= 0 {
+		return models.PSPOrder{}, fmt.Errorf("order %s baseQuantityOrdered: must be positive, got %q", o.Reference, o.BaseQuantityOrdered)
+	}
 	r, err := Raw(o)
 	if err != nil {
 		return models.PSPOrder{}, err

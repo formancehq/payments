@@ -17,9 +17,15 @@ const PAGE_SIZE = 100
 // Endpoint must point at a counterparty server implementing
 // contract/universal-openapi.yaml (v1). APIKey is sent as a Bearer token.
 //
-// WebhookSharedSecret is required only when the counterparty's
-// /v1/capabilities response sets features.webhookSignature to "hmac-sha256";
-// it is otherwise ignored. The plugin never logs nor surfaces these secrets.
+// WebhookSharedSecret is required when the counterparty's
+// /v1/capabilities response sets features.webhookSignature to "hmac-sha256"
+// OR features.eventStream to "wss" — both transports share the same HMAC
+// scheme, so one secret covers both. The plugin never logs nor surfaces
+// these secrets.
+//
+// StreamEndpoint is an optional override for the WebSocket dial target.
+// When empty and the counterparty advertises features.eventStream == "wss",
+// the supervisor derives it from Endpoint by swapping http→ws / https→wss.
 //
 // CapabilityOverrides is an optional allow-list to *narrow* what the
 // counterparty advertised: any capability listed here that the counterparty
@@ -34,6 +40,7 @@ type Config struct {
 	Endpoint            string                     `json:"endpoint" validate:"required,url"`
 	APIKey              string                     `json:"apiKey" validate:"required"`
 	WebhookSharedSecret string                     `json:"webhookSharedSecret" validate:"omitempty"`
+	StreamEndpoint      string                     `json:"streamEndpoint" validate:"omitempty,url"`
 	PollingPeriod       sharedconfig.PollingPeriod `json:"pollingPeriod"`
 	CapabilityOverrides string                     `json:"capabilityOverrides" validate:"omitempty"`
 }
@@ -60,6 +67,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		Endpoint            string `json:"endpoint"`
 		APIKey              string `json:"apiKey"`
 		WebhookSharedSecret string `json:"webhookSharedSecret"`
+		StreamEndpoint      string `json:"streamEndpoint"`
 		PollingPeriod       string `json:"pollingPeriod"`
 		CapabilityOverrides string `json:"capabilityOverrides"`
 	}
@@ -80,6 +88,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		Endpoint:            raw.Endpoint,
 		APIKey:              raw.APIKey,
 		WebhookSharedSecret: raw.WebhookSharedSecret,
+		StreamEndpoint:      raw.StreamEndpoint,
 		PollingPeriod:       pp,
 		CapabilityOverrides: raw.CapabilityOverrides,
 	}
