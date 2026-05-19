@@ -60,9 +60,7 @@ func (w Workflow) updateTask(ctx workflow.Context, task models.Task) error {
 				workflow.ChildWorkflowOptions{
 					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
+					SearchAttributes:  w.SearchAttributes(ctx, task.ConnectorID),
 				},
 			),
 			RunSendEvents, //nolint:staticcheck // ignore deprecation

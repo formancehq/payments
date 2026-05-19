@@ -26,6 +26,16 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
+// basicPlugin satisfies models.Plugin (via embedding) but does not implement
+// PluginWithPayoutThrottle, so OnStart should not create a payout worker for it.
+type basicPlugin struct{ models.Plugin }
+
+// payoutPlugin satisfies both models.Plugin and models.PluginWithPayoutThrottle.
+// OnStart should create a dedicated payout worker for connectors that return it.
+type payoutPlugin struct{ models.Plugin }
+
+func (p *payoutPlugin) PayoutsPerSecond() float64 { return 10.0 }
+
 var _ = Describe("Worker Tests", func() {
 	Context("on start", func() {
 		var (
@@ -94,8 +104,27 @@ var _ = Describe("Worker Tests", func() {
 			}, nil)
 			manager.EXPECT().Load(conns[0], false, false).Return("name", json.RawMessage(`{}`), nil)
 			manager.EXPECT().Load(conns[1], false, false).Return("name", json.RawMessage(`{}`), nil)
+			// onStartPlugin checks each loaded plugin for PluginWithPayoutThrottle;
+			// basicPlugin does not implement it so no payout worker should be created.
+			manager.EXPECT().Get(conns[0].ID).Return(&basicPlugin{}, nil)
+			manager.EXPECT().Get(conns[1].ID).Return(&basicPlugin{}, nil)
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
+		})
+
+		It("should start a payout worker when a plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{
+				Data: []models.Connector{conns[0]},
+			}, nil)
+			manager.EXPECT().Load(conns[0], false, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Get(conns[0].ID).Return(&payoutPlugin{}, nil)
+
+			err := pool.OnStart(ctx)
+			Expect(err).To(BeNil())
+
+			payoutQueue := engine.GetPayoutTaskQueue("stackname", conns[0].ID)
+			Expect(pool.HasWorker(payoutQueue)).To(BeTrue())
 		})
 	})
 

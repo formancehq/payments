@@ -7,7 +7,8 @@ import (
 
 var (
 	SearchAttributes = map[string]enums.IndexedValueType{
-		workflow.SearchAttributeScheduleID: enums.INDEXED_VALUE_TYPE_KEYWORD,
-		workflow.SearchAttributeStack:      enums.INDEXED_VALUE_TYPE_KEYWORD,
+		workflow.SearchAttributeScheduleID:  enums.INDEXED_VALUE_TYPE_KEYWORD,
+		workflow.SearchAttributeStack:       enums.INDEXED_VALUE_TYPE_KEYWORD,
+		workflow.SearchAttributeConnectorID: enums.INDEXED_VALUE_TYPE_KEYWORD,
 	}
 )

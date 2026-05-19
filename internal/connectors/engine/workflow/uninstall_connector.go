@@ -82,11 +82,9 @@ func (w Workflow) uninstallConnector(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         uninstallConnector.DefaultWorkerName,
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
+				TaskQueue:             uninstallConnector.DefaultWorkerName,
+				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes:      w.SearchAttributes(ctx, &uninstallConnector.ConnectorID),
 			},
 		),
 		RunTerminateSchedules,
@@ -104,11 +102,9 @@ func (w Workflow) uninstallConnector(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         uninstallConnector.DefaultWorkerName,
-				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				SearchAttributes: map[string]interface{}{
-					SearchAttributeStack: w.stack,
-				},
+				TaskQueue:             uninstallConnector.DefaultWorkerName,
+				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes:      w.SearchAttributes(ctx, &uninstallConnector.ConnectorID),
 			},
 		),
 		RunTerminateWorkflows,

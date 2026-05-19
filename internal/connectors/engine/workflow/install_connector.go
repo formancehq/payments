@@ -146,10 +146,7 @@ func (w Workflow) installConnector(
 						TaskQueue: w.getDefaultTaskQueue(),
 					},
 					TriggerImmediately: true,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeScheduleID: bootstrapScheduleID,
-						SearchAttributeStack:      w.stack,
-					},
+					SearchAttributes:   w.ScheduleSearchAttributes(ctx, &installConnector.ConnectorID, bootstrapScheduleID),
 				},
 			); err != nil {
 				return errors.Wrap(err, "creating bootstrap schedule")
@@ -168,9 +165,7 @@ func (w Workflow) installConnector(
 					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
+					SearchAttributes:      w.SearchAttributes(ctx, &installConnector.ConnectorID),
 				},
 			),
 			RunNextTasksV3_1,
@@ -192,9 +187,7 @@ func (w Workflow) installConnector(
 					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
+					SearchAttributes:      w.SearchAttributes(ctx, &installConnector.ConnectorID),
 				},
 			),
 			RunNextTasks, //nolint:staticcheck // ignore deprecation
@@ -227,9 +220,7 @@ func (w Workflow) scheduleConnectorHealthCheck(
 			WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			TaskQueue:             w.getDefaultTaskQueue(),
 			ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-			SearchAttributes: map[string]interface{}{
-				SearchAttributeStack: w.stack,
-			},
+			SearchAttributes:      w.SearchAttributes(ctx, &installConnector.ConnectorID),
 		}),
 		RunScheduleConnectorHealthCheck,
 		ScheduleConnectorHealthCheck(installConnector),
