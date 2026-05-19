@@ -24,15 +24,28 @@ type AccountBalance struct {
 // instant buy/sell and are surfaced in PairRates so the conversion
 // mapper has the rate without re-parsing Raw.
 type UserTransaction struct {
-	ID              int64       `json:"id"`
-	Datetime        string      `json:"datetime"`
-	Type            string      `json:"type"`
-	Fee             string      `json:"fee"`
-	OrderID         json.Number `json:"order_id,omitempty"`
-	SelfTrade       bool        `json:"self_trade,omitempty"`
-	SelfTradeOrder  json.Number `json:"self_trade_order_id,omitempty"`
+	ID             int64       `json:"id"`
+	Datetime       string      `json:"datetime"`
+	Type           string      `json:"type"`
+	Fee            string      `json:"fee"`
+	OrderID        json.Number `json:"order_id,omitempty"`
+	SelfTrade      bool        `json:"self_trade,omitempty"`
+	SelfTradeOrder json.Number `json:"self_trade_order_id,omitempty"`
+	// Derivatives markers — present only on derivatives-account rows;
+	// the spot-only mapper inspects these to skip + Warn rather than
+	// silently mis-classifying. See MAPPINGS.md §8.
+	MarginMode    string `json:"margin_mode,omitempty"`
+	LeverageRate  string `json:"leverage_rate,omitempty"`
+
 	CurrencyAmounts map[string]string
 	PairRates       map[string]string
+}
+
+// HasDerivativesMarker reports whether the row carries any of the
+// known derivatives-specific fields. Used by mappers to enforce the
+// spot-only stance.
+func (ut UserTransaction) HasDerivativesMarker() bool {
+	return ut.MarginMode != "" || ut.LeverageRate != ""
 }
 
 // userTxKnownKeys are the documented top-level keys on user_transactions
