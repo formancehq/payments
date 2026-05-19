@@ -3,28 +3,19 @@ package fireblocks
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
 )
 
-// assetInfo is the per-asset cache entry built from /v1/assets at install /
-// refresh time. The map is keyed by uppercased legacyId.
+// assetInfo is the per-asset cache entry built from /v1/assets at refresh time.
 type assetInfo struct {
-	// Asset is the canonical Formance asset string ("USDT/6", "ETH/18", ...).
-	Asset string
-	// Precision is the decimals count used to scale string amounts.
-	Precision int
-	// BlockchainID is captured separately (in addition to being included in
-	// Metadata) so balance aggregation can join chain ids for collapsed entries.
+	Asset        string // canonical Formance asset, e.g. "USDT/6"
+	Precision    int
 	BlockchainID string
-	// LegacyID is preserved for the same reason — needed by aggregation.
-	LegacyID string
-	// Metadata is the per-asset slice of MetadataPrefix-namespaced kv pairs
-	// to copy onto every PSPBalance / PSPPayment that uses this asset.
-	Metadata map[string]string
+	LegacyID     string
+	Metadata     map[string]string // copied onto every PSPPayment using this asset
 }
 
 func (p *Plugin) ensureAssetsFresh(ctx context.Context) error {
@@ -48,9 +39,7 @@ func (p *Plugin) ensureAssetsFresh(ctx context.Context) error {
 	return p.loadAssets(ctx)
 }
 
-// lookupAsset resolves a Fireblocks legacyId (case-insensitive) against the
-// cached asset map. Callers should treat a `false` second return as "skip
-// this entry with a log" — never as a fatal error.
+// lookupAsset resolves a Fireblocks legacyId (case-insensitive) against the cache.
 func (p *Plugin) lookupAsset(legacyID string) (assetInfo, bool) {
 	p.assetsMu.RLock()
 	defer p.assetsMu.RUnlock()
@@ -86,9 +75,7 @@ func (p *Plugin) loadAssets(ctx context.Context) error {
 			continue
 		}
 		if a.LegacyID == "" {
-			// Without a legacyId vault accounts cannot reference this asset
-			// (vaults use legacyIds, never UUIDs), so caching it would be dead
-			// weight. Fireblocks docs explicitly say "use only the legacy ID".
+			// Vaults reference assets by legacyId only.
 			skipped++
 			continue
 		}
@@ -249,7 +236,3 @@ func buildAssetMetadata(a client.Asset, isTestnet bool) map[string]string {
 
 	return m
 }
-
-// boolStr renders a bool as the strings "true"/"false" used by the metadata
-// payload. Pulled out for symmetry with the int/string conversions below.
-func boolStr(b bool) string { return strconv.FormatBool(b) }

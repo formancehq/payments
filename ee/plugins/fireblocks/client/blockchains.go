@@ -7,9 +7,8 @@ import (
 	"net/url"
 )
 
-// Blockchain mirrors the subset of /v1/blockchains we need to detect
-// testnet assets. The `onchain.test` boolean is Fireblocks' authoritative
-// signal — far more reliable than parsing legacyId suffixes.
+// Blockchain mirrors the subset of /v1/blockchains we need to detect testnet
+// assets via the authoritative `onchain.test` boolean.
 type Blockchain struct {
 	ID            string              `json:"id"`
 	LegacyID      string              `json:"legacyId"`

@@ -65,18 +65,18 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}, nil
 }
 
-// buildAccountMetadata surfaces vault-level context that the engine drops
-// otherwise. Booleans are emitted only when true so the map stays small.
+// buildAccountMetadata surfaces vault-level context. Booleans are emitted only
+// when true so the map stays small; nil is returned when nothing applies.
 func buildAccountMetadata(a client.VaultAccount) map[string]string {
 	m := map[string]string{}
 	if a.CustomerRefID != "" {
 		m[MetadataPrefix+"customer_ref_id"] = a.CustomerRefID
 	}
 	if a.HiddenOnUI {
-		m[MetadataPrefix+"hidden_on_ui"] = boolStr(true)
+		m[MetadataPrefix+"hidden_on_ui"] = "true"
 	}
 	if a.AutoFuel {
-		m[MetadataPrefix+"auto_fuel"] = boolStr(true)
+		m[MetadataPrefix+"auto_fuel"] = "true"
 	}
 	if len(m) == 0 {
 		return nil

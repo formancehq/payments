@@ -3,6 +3,7 @@ package fireblocks
 import (
 	"context"
 	"encoding/json"
+	"maps"
 	"strings"
 	"time"
 
@@ -153,14 +154,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 }
 
 // buildPaymentMetadata seeds the payment metadata with the per-asset slice
-// from the cache, then layers transaction-level details under MetadataPrefix.
-// Returns a fresh map (never nil) so downstream destination_ids writes can
-// happen unconditionally.
+// from the cache and layers tx-level details under MetadataPrefix. Always
+// returns a non-nil map so downstream writes can happen unconditionally.
 func buildPaymentMetadata(tx client.Transaction, info assetInfo) map[string]string {
 	out := make(map[string]string, len(info.Metadata)+4)
-	for k, v := range info.Metadata {
-		out[k] = v
-	}
+	maps.Copy(out, info.Metadata)
 	if tx.TxHash != "" {
 		out[MetadataPrefix+"tx_hash"] = tx.TxHash
 	}

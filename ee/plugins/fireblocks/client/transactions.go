@@ -44,10 +44,8 @@ type FeeInfo struct {
 }
 
 func (c *client) ListTransactions(ctx context.Context, createdAfter int64, limit int) ([]Transaction, error) {
-	// Fireblocks defaults `after` to "last 90 days" when omitted, which silently
-	// drops older transactions on the initial sync. Always pin to a positive
-	// timestamp (1 ms past epoch on the first call) so we get the full history
-	// and let our own cursor advance from there.
+	// Fireblocks defaults `after` to "last 90 days" when omitted; pin to 1 ms
+	// past epoch on the first call so we fetch the full history.
 	if createdAfter <= 0 {
 		createdAfter = 1
 	}

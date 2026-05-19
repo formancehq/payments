@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 	"strings"
 	"time"
 
@@ -68,8 +69,6 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	balances := make([]models.PSPBalance, 0, len(agg))
 	for _, entry := range agg {
 		if len(entry.legacyIDs) > 1 {
-			// PSPBalance has no Metadata/Raw field, so the merge is only
-			// observable via this log line plus the summed Amount.
 			p.logger.Infof("aggregated %d fireblocks legacyIds [%s] into %s on vault %s",
 				len(entry.legacyIDs), strings.Join(entry.legacyIDs, ","),
 				entry.info.Asset, from.Reference)
@@ -95,13 +94,8 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 }
 
 func appendUnique(s []string, v string) []string {
-	if v == "" {
+	if v == "" || slices.Contains(s, v) {
 		return s
-	}
-	for _, existing := range s {
-		if existing == v {
-			return s
-		}
 	}
 	return append(s, v)
 }

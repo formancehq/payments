@@ -14,10 +14,7 @@ import (
 )
 
 const (
-	ProviderName = "fireblocks"
-	// MetadataPrefix namespaces every Fireblocks-specific key written to
-	// PSPAccount / PSPBalance / PSPPayment metadata, matching the
-	// `com.<provider>.spec/` convention used by sibling EE connectors.
+	ProviderName   = "fireblocks"
 	MetadataPrefix = "com.fireblocks.spec/"
 
 	assetRefreshInterval = 24 * time.Hour
@@ -41,9 +38,7 @@ type Plugin struct {
 	assetsMu        sync.RWMutex
 	assetsRefreshMu sync.Mutex
 	assetsLastSync  time.Time
-	// assets maps the uppercased Fireblocks legacyId to its canonical
-	// Formance asset form plus per-asset metadata. Populated by loadAssets.
-	assets map[string]assetInfo
+	assets          map[string]assetInfo // keyed by uppercased legacyId
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
