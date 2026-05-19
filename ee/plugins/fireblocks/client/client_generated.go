@@ -85,6 +85,21 @@ func (mr *MockClientMockRecorder) ListAssets(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAssets", reflect.TypeOf((*MockClient)(nil).ListAssets), ctx)
 }
 
+// ListBlockchains mocks base method.
+func (m *MockClient) ListBlockchains(ctx context.Context) ([]Blockchain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListBlockchains", ctx)
+	ret0, _ := ret[0].([]Blockchain)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListBlockchains indicates an expected call of ListBlockchains.
+func (mr *MockClientMockRecorder) ListBlockchains(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBlockchains", reflect.TypeOf((*MockClient)(nil).ListBlockchains), ctx)
+}
+
 // ListTransactions mocks base method.
 func (m *MockClient) ListTransactions(ctx context.Context, createdAfter int64, limit int) ([]Transaction, error) {
 	m.ctrl.T.Helper()

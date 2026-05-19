@@ -98,26 +98,31 @@ var _ = Describe("Fireblocks Plugin", func() {
 			ctrl.Finish()
 		})
 
-		It("loads asset decimals and returns workflow", func(ctx SpecContext) {
+		It("loads assets keyed by uppercased legacyId and returns workflow", func(ctx SpecContext) {
 			decimals2 := 2
 			decimals0 := 0
+			m.EXPECT().ListBlockchains(gomock.Any()).Return([]client.Blockchain{
+				{ID: "chain-eth", Onchain: &client.BlockchainOnchain{Test: false}},
+				{ID: "chain-eth-sepolia", Onchain: &client.BlockchainOnchain{Test: true}},
+			}, nil)
 			m.EXPECT().ListAssets(gomock.Any()).Return([]client.Asset{
-				{LegacyID: "", Decimals: &decimals2},                               // skipped: empty identifiers
-				{LegacyID: "BTC_TEST", Onchain: &client.AssetOnchain{Decimals: 8}}, // included with underscore
-				{LegacyID: "USD", Decimals: &decimals2},                            // included
-				{ID: "asset-id-only", Decimals: &decimals2},                        // included via ID fallback
-				{LegacyID: "JPY", Decimals: &decimals0},                            // included with 0 decimals
-				{LegacyID: "NEG", Onchain: &client.AssetOnchain{Decimals: -1}},     // skipped: negative decimals
+				{LegacyID: "", DisplaySymbol: "X", AssetClass: client.AssetClassFiat, Decimals: &decimals2}, // skipped: no legacyId
+				{LegacyID: "BTC", DisplaySymbol: "BTC", AssetClass: client.AssetClassNative, BlockchainID: "chain-eth", Onchain: &client.AssetOnchain{Decimals: 8}},
+				{LegacyID: "USD", DisplaySymbol: "USD", AssetClass: client.AssetClassFiat, Decimals: &decimals2},
+				{LegacyID: "JPY", DisplaySymbol: "JPY", AssetClass: client.AssetClassFiat, Decimals: &decimals0},
+				{LegacyID: "ETH_TEST5", DisplaySymbol: "ETH", AssetClass: client.AssetClassNative, BlockchainID: "chain-eth-sepolia", Onchain: &client.AssetOnchain{Decimals: 18}},
+				{LegacyID: "NEG", DisplaySymbol: "NEG", AssetClass: client.AssetClassNative, Onchain: &client.AssetOnchain{Decimals: -1}}, // skipped: negative
 			}, nil)
 
 			res, err := plg.Install(ctx, models.InstallRequest{})
 			Expect(err).To(BeNil())
 			Expect(res.Workflow).To(Equal(workflow()))
-			Expect(plg.assetDecimals).To(HaveLen(4))
-			Expect(plg.assetDecimals["BTC_TEST"]).To(Equal(8))
-			Expect(plg.assetDecimals["USD"]).To(Equal(2))
-			Expect(plg.assetDecimals["asset-id-only"]).To(Equal(2))
-			Expect(plg.assetDecimals["JPY"]).To(Equal(0))
+			Expect(plg.assets).To(HaveLen(4))
+			Expect(plg.assets["BTC"].Asset).To(Equal("BTC/8"))
+			Expect(plg.assets["USD"].Asset).To(Equal("USD/2"))
+			Expect(plg.assets["JPY"].Asset).To(Equal("JPY"))
+			Expect(plg.assets["ETH_TEST5"].Asset).To(Equal("ETH_TEST/18"))
+			Expect(plg.assets["ETH_TEST5"].Metadata).To(HaveKeyWithValue(MetadataPrefix+"testnet", "true"))
 		})
 	})
 })

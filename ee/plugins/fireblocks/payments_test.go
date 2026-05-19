@@ -24,9 +24,12 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{
-			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			client:         m,
-			assetDecimals:  map[string]int{"BTC": 8, "USD": 2},
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client: m,
+			assets: map[string]assetInfo{
+				"BTC": {Asset: "BTC/8", Precision: 8, LegacyID: "BTC"},
+				"USD": {Asset: "USD/2", Precision: 2, LegacyID: "USD"},
+			},
 			assetsLastSync: time.Now(),
 		}
 	})
@@ -93,8 +96,8 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(first.Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 		Expect(*first.SourceAccountReference).To(Equal("src"))
 		Expect(*first.DestinationAccountReference).To(Equal("dst"))
-		Expect(first.Metadata["txHash"]).To(Equal("hash"))
-		Expect(first.Metadata["networkFee"]).To(Equal("0.01"))
+		Expect(first.Metadata[MetadataPrefix+"tx_hash"]).To(Equal("hash"))
+		Expect(first.Metadata[MetadataPrefix+"network_fee"]).To(Equal("0.01"))
 
 	second := resp.Payments[1]
 	Expect(second.Reference).To(Equal("c"))
@@ -220,6 +223,105 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(resp.Payments[0].SourceAccountReference).To(BeNil())
 		Expect(*resp.Payments[0].DestinationAccountReference).To(Equal("vault-1"))
 	})
+
+	It("copies cached asset metadata onto each payment", func(ctx SpecContext) {
+		plg.assets = map[string]assetInfo{
+			"USDT_ERC20": {
+				Asset:        "USDT/6",
+				Precision:    6,
+				LegacyID:     "USDT_ERC20",
+				BlockchainID: "chain-eth",
+				Metadata: map[string]string{
+					MetadataPrefix + "legacy_id":        "USDT_ERC20",
+					MetadataPrefix + "display_symbol":   "USDT",
+					MetadataPrefix + "contract_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+					MetadataPrefix + "token_standard":   "ERC20",
+					MetadataPrefix + "blockchain_id":    "chain-eth",
+				},
+			},
+		}
+
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:         "tx-1",
+				AssetID:    "USDT_ERC20",
+				AmountInfo: client.AmountInfo{Amount: "1"},
+				Operation:  "TRANSFER",
+				Status:     "COMPLETED",
+				CreatedAt:  7000,
+				TxHash:     "0xhash",
+				FeeInfo:    client.FeeInfo{NetworkFee: "0.0002"},
+				Note:       "treasury rebalance",
+				SubStatus:  "CONFIRMED_ON_BLOCKCHAIN",
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		md := resp.Payments[0].Metadata
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"legacy_id", "USDT_ERC20"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"contract_address", "0xdAC17F958D2ee523a2206206994597C13D831ec7"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"token_standard", "ERC20"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"blockchain_id", "chain-eth"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"tx_hash", "0xhash"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"network_fee", "0.0002"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"note", "treasury rebalance"))
+		Expect(md).To(HaveKeyWithValue(MetadataPrefix+"sub_status", "CONFIRMED_ON_BLOCKCHAIN"))
+		Expect(resp.Payments[0].Asset).To(Equal("USDT/6"))
+	})
+
+	It("emits non-nil metadata even when the cached asset has no metadata slice", func(ctx SpecContext) {
+		plg.assets = map[string]assetInfo{
+			"BTC": {Asset: "BTC/8", Precision: 8, LegacyID: "BTC"}, // no Metadata
+		}
+
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:         "tx-empty-md",
+				AssetID:    "BTC",
+				AmountInfo: client.AmountInfo{Amount: "1"},
+				Operation:  "TRANSFER",
+				Status:     "COMPLETED",
+				CreatedAt:  8000,
+				Source:     client.TransferPeer{ID: "vault-1", Type: "VAULT_ACCOUNT"},
+				Destinations: []client.TransferPeer{
+					{ID: "ext-1", Type: "EXTERNAL_WALLET"},
+					{ID: "vault-2", Type: "VAULT_ACCOUNT"},
+				},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Metadata).ToNot(BeNil())
+		Expect(resp.Payments[0].Metadata).To(HaveKeyWithValue(MetadataPrefix+"destination_ids", "ext-1,vault-2"))
+	})
+
+	DescribeTable("matchPaymentStatus maps Fireblocks statuses",
+		func(fbStatus string, want models.PaymentStatus) {
+			Expect(matchPaymentStatus(fbStatus)).To(Equal(want))
+		},
+		Entry("COMPLETED", "COMPLETED", models.PAYMENT_STATUS_SUCCEEDED),
+		Entry("SUBMITTED", "SUBMITTED", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_AML_SCREENING", "PENDING_AML_SCREENING", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_ENRICHMENT", "PENDING_ENRICHMENT", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_AUTHORIZATION", "PENDING_AUTHORIZATION", models.PAYMENT_STATUS_PENDING),
+		Entry("QUEUED", "QUEUED", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_SIGNATURE", "PENDING_SIGNATURE", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_3RD_PARTY_MANUAL_APPROVAL", "PENDING_3RD_PARTY_MANUAL_APPROVAL", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_3RD_PARTY", "PENDING_3RD_PARTY", models.PAYMENT_STATUS_PENDING),
+		Entry("CONFIRMING", "CONFIRMING", models.PAYMENT_STATUS_PENDING),
+		Entry("BROADCASTING", "BROADCASTING", models.PAYMENT_STATUS_PENDING),
+		Entry("CANCELLING", "CANCELLING", models.PAYMENT_STATUS_CANCELLED),
+		Entry("CANCELLED", "CANCELLED", models.PAYMENT_STATUS_CANCELLED),
+		Entry("FAILED", "FAILED", models.PAYMENT_STATUS_FAILED),
+		Entry("BLOCKED", "BLOCKED", models.PAYMENT_STATUS_FAILED),
+		Entry("REJECTED", "REJECTED", models.PAYMENT_STATUS_FAILED),
+		Entry("unknown falls through to OTHER", "SOMETHING_NEW", models.PaymentStatus(models.PAYMENT_STATUS_OTHER)),
+		Entry("empty string falls through to OTHER", "", models.PaymentStatus(models.PAYMENT_STATUS_OTHER)),
+	)
 
 	It("advances state even when transactions are skipped", func(ctx SpecContext) {
 		state, err := json.Marshal(paymentsState{LastCreatedAt: 2000, LastTxID: "z"})
