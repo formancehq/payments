@@ -4,211 +4,90 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
-type paymentsState struct {
-	// Bitstamp pagination is based on monotonically increasing transaction IDs.
-	// Historical transaction updates are not revisited by since_id; Bitstamp's
-	// user_transactions endpoint is treated here as settled transaction history.
-	LastTransactionID int64 `json:"lastTransactionID"`
-}
-
-const bitstampDatetimeLayout = "2006-01-02 15:04:05.000000"
-
-// Bitstamp user_transactions type values.
-const (
-	txTypeDeposit              = "0"
-	txTypeWithdrawal           = "1"
-	txTypeMarketTrade          = "2"
-	txTypeSubAccountTransfer   = "14"
-	txTypeStakingCredit        = "25"
-	txTypeStakingSent          = "26"
-	txTypeStakingReward        = "27"
-	txTypeReferralReward       = "32"
-	txTypeSettlementTransfer   = "33"
-	txTypeInterAccountTransfer = "35"
-	txTypeBuySell              = "36"
-)
-
+// fetchNextPayments paginates /api/v2/user_transactions/ via since_id,
+// delegating row-level mapping to mappers.UserTransactionToPSPPayment.
+// Trades (type 2) and instant buy/sell (type 36) are surfaced via the
+// orders and conversions capabilities respectively; they skip here.
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	var oldState paymentsState
-	if req.State != nil {
-		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
-		}
-	}
-
 	currencies, err := p.getCurrencies(ctx)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	var sinceID *int64
-	if oldState.LastTransactionID > 0 {
-		sinceID = &oldState.LastTransactionID
+	var state paymentsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &state); err != nil {
+			return models.FetchNextPaymentsResponse{}, fmt.Errorf("unmarshal payments state: %w", err)
+		}
 	}
-	transactions, err := p.client.GetUserTransactions(ctx, sinceID, req.PageSize)
+
+	limit := effectivePageSize(req.PageSize)
+	transactions, err := p.client.GetUserTransactions(ctx, sinceIDFor(state.LastTransactionID), limit)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, fmt.Errorf("fetch payments: %w", err)
 	}
 
 	payments := make([]models.PSPPayment, 0, len(transactions))
-	lastTransactionID := oldState.LastTransactionID
+	lastSeen := state.LastTransactionID
 	for _, tx := range transactions {
-		if tx.ID > lastTransactionID {
-			lastTransactionID = tx.ID
+		if tx.ID > lastSeen {
+			lastSeen = tx.ID
 		}
-
-		payment, err := p.transactionToPayment(tx, currencies)
+		res, err := mappers.UserTransactionToPSPPayment(currencies, tx)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to convert transaction %d: %w", tx.ID, err)
+			return models.FetchNextPaymentsResponse{}, fmt.Errorf("map payment %d: %w", tx.ID, err)
 		}
-		if payment == nil {
+		if res.DerivativesRow {
+			// Spot-only connector — surface this loudly via Error so a
+			// derivatives-enabled account is not silently mis-classified.
+			p.logger.WithField("txID", tx.ID).Errorf("skipping derivatives-marked row on spot-only connector")
 			continue
 		}
-		payments = append(payments, *payment)
+		if res.Skip || res.Payment == nil {
+			continue
+		}
+		if res.UnknownType {
+			p.logger.WithField("txID", tx.ID).WithField("txType", tx.Type).
+				Infof("emitting payment with PAYMENT_TYPE_OTHER for previously-unseen Bitstamp tx type")
+		}
+		payments = append(payments, *res.Payment)
 	}
 
-	newState := paymentsState{LastTransactionID: lastTransactionID}
-	payload, err := json.Marshal(newState)
+	payload, err := json.Marshal(paymentsState{LastTransactionID: lastSeen})
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, fmt.Errorf("marshal payments state: %w", err)
 	}
 
 	return models.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
-		HasMore:  len(transactions) == req.PageSize,
+		// limit (not req.PageSize) so a zero req.PageSize cannot make
+		// HasMore=true on an empty cycle (PR #679 CodeRabbit guard).
+		HasMore: len(transactions) == limit,
 	}, nil
 }
 
-func (p *Plugin) transactionToPayment(tx client.UserTransaction, currencies map[string]int) (*models.PSPPayment, error) {
-	if isOrderTransaction(tx) {
-		p.logger.Infof("skipping transaction %d: order transaction type %s", tx.ID, tx.Type)
-		return nil, nil
+// effectivePageSize guards against the engine passing a non-positive
+// PageSize, which would otherwise make HasMore=true when the page is
+// empty (the CodeRabbit infinite-loop finding on PR #679 payments.go).
+func effectivePageSize(requested int) int {
+	if requested <= 0 {
+		return PAGE_SIZE
 	}
-
-	asset, amount, ok, err := resolveAssetAndAmount(currencies, tx.CurrencyAmounts)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		p.logger.Infof("skipping transaction %d: expected exactly one matching currency amount", tx.ID)
-		return nil, nil
-	}
-
-	raw, err := json.Marshal(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	paymentType := transactionTypeToPaymentType(tx.Type)
-
-	// All Bitstamp user_transactions are completed — the API only returns
-	// settled transactions, unlike Coinbase Prime which returns all states.
-	status := models.PAYMENT_STATUS_SUCCEEDED
-
-	createdAt, err := time.Parse(bitstampDatetimeLayout, tx.Datetime)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse datetime %q: %w", tx.Datetime, err)
-	}
-
-	metadata := buildTransactionMetadata(tx)
-
-	payment := models.PSPPayment{
-		Reference: strconv.FormatInt(tx.ID, 10),
-		CreatedAt: createdAt,
-		Type:      paymentType,
-		Amount:    amount,
-		Asset:     asset,
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    status,
-		Metadata:  metadata,
-		Raw:       raw,
-	}
-
-	return &payment, nil
+	return requested
 }
 
-// resolveAssetAndAmount accepts only payment-like transactions with exactly
-// one non-zero known currency amount. Orders/conversions expose multiple assets
-// and are filtered before this point.
-func resolveAssetAndAmount(currencies map[string]int, amounts map[string]string) (string, *big.Int, bool, error) {
-	var selectedSymbol string
-	var selectedPrecision int
-	var selectedRawVal string
-	count := 0
-
-	for key, val := range amounts {
-		symbol := normalizeCurrency(key)
-		precision, ok := currencies[symbol]
-		if !ok {
-			continue
-		}
-
-		cleanVal := strings.TrimPrefix(val, "-")
-		if isZeroAmount(cleanVal) {
-			continue
-		}
-
-		count++
-		if count > 1 {
-			return "", nil, false, nil
-		}
-		selectedSymbol = symbol
-		selectedPrecision = precision
-		selectedRawVal = cleanVal
+// sinceIDFor returns a *int64 suitable for the client's since_id
+// argument: nil on a cold start (state.LastTransactionID == 0) so the
+// initial cycle walks from the earliest available row.
+func sinceIDFor(lastID int64) *int64 {
+	if lastID <= 0 {
+		return nil
 	}
-
-	if count == 0 {
-		return "", nil, false, nil
-	}
-
-	asset := currency.FormatAsset(currencies, selectedSymbol)
-	amount, err := currency.GetAmountWithPrecisionFromString(selectedRawVal, selectedPrecision)
-	if err != nil {
-		return "", nil, false, fmt.Errorf("failed to parse amount for %s: %w", selectedSymbol, err)
-	}
-
-	return asset, amount, true, nil
-}
-
-func buildTransactionMetadata(tx client.UserTransaction) map[string]string {
-	metadata := make(map[string]string)
-	metadata[MetadataPrefix+"type"] = tx.Type
-
-	if !isZeroAmount(tx.Fee) {
-		metadata[MetadataPrefix+"fee"] = tx.Fee
-	}
-
-	return metadata
-}
-
-func isOrderTransaction(tx client.UserTransaction) bool {
-	return tx.Type == txTypeMarketTrade || tx.Type == txTypeBuySell
-}
-
-func transactionTypeToPaymentType(txType string) models.PaymentType {
-	switch txType {
-	case txTypeDeposit:
-		return models.PAYMENT_TYPE_PAYIN
-	case txTypeWithdrawal:
-		return models.PAYMENT_TYPE_PAYOUT
-	case txTypeSubAccountTransfer, txTypeSettlementTransfer, txTypeInterAccountTransfer:
-		return models.PAYMENT_TYPE_TRANSFER
-	case txTypeStakingReward, txTypeReferralReward:
-		return models.PAYMENT_TYPE_PAYIN
-	case txTypeStakingCredit, txTypeStakingSent:
-		return models.PAYMENT_TYPE_TRANSFER
-	default:
-		return models.PAYMENT_TYPE_OTHER
-	}
+	return &lastID
 }

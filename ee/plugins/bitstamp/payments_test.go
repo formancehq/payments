@@ -56,7 +56,8 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err.Error()).To(ContainSubstring("test error"))
+			Expect(err.Error()).To(ContainSubstring("fetch payments"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -55,7 +56,10 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			// Orchestrator wraps client errors with a single line of
+			// context per the EN-1015 quality bar; assert on the chain.
+			Expect(err.Error()).To(ContainSubstring("test error"))
+			Expect(err.Error()).To(ContainSubstring("fetch accounts"))
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
@@ -81,7 +85,7 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 
 			// Verify BTC account
 			Expect(resp.Accounts[0].Reference).To(Equal("BTC"))
-			Expect(resp.Accounts[0].CreatedAt).To(Equal(bitstampLaunchDate))
+			Expect(resp.Accounts[0].CreatedAt).To(Equal(mappers.BitstampGenesis))
 			Expect(resp.Accounts[0].Name).To(BeNil())
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 

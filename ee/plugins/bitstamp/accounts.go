@@ -2,17 +2,17 @@ package bitstamp
 
 import (
 	"context"
-	"encoding/json"
-	"time"
+	"fmt"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
-// bitstampLaunchDate is used as a fixed CreatedAt for accounts since Bitstamp
-// does not provide account creation dates.
-var bitstampLaunchDate = time.Date(2011, 8, 2, 0, 0, 0, 0, time.UTC)
-
+// fetchNextAccounts emits one PSPAccount per Bitstamp currency with
+// any non-zero balance. The full AccountBalance JSON is preserved on
+// PSPAccount.Raw so the nested fetch_balances task can derive the
+// per-account balance without a second API call (see balances.go).
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	currencies, err := p.getCurrencies(ctx)
 	if err != nil {
@@ -21,44 +21,39 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	balances, err := p.client.GetAccountBalances(ctx)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, fmt.Errorf("fetch accounts: %w", err)
 	}
 
 	accounts := make([]models.PSPAccount, 0, len(balances))
 	for _, bal := range balances {
-		symbol := normalizeCurrency(bal.Currency)
-		if symbol == "" {
+		if isEmptyBalance(bal) {
 			continue
 		}
-
-		// Skip zero-balance currencies.
-		if isZeroAmount(bal.Available) && isZeroAmount(bal.Total) && isZeroAmount(bal.Reserved) {
-			continue
-		}
-
-		raw, err := json.Marshal(bal)
+		account, err := mappers.AccountBalanceToPSPAccount(currencies, bal)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, fmt.Errorf("map account %s: %w", bal.Currency, err)
 		}
-
-		var defaultAsset *string
-		if _, ok := currencies[symbol]; ok {
-			asset := currency.FormatAsset(currencies, symbol)
-			defaultAsset = &asset
+		if account == nil {
+			continue
 		}
-
-		accounts = append(accounts, models.PSPAccount{
-			Reference:    symbol,
-			CreatedAt:    bitstampLaunchDate,
-			DefaultAsset: defaultAsset,
-			Raw:          raw,
-		})
+		accounts = append(accounts, *account)
 	}
 
-	// Bitstamp returns all balances in a single call — no pagination needed.
+	// Bitstamp returns all balances in a single call; no pagination
+	// cursor is needed and HasMore is always false. The accounts task
+	// is therefore stateless, which is exactly what the nested
+	// fetch_balances Qonto pattern requires.
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
-		NewState: nil,
 		HasMore:  false,
 	}, nil
+}
+
+// isEmptyBalance reports whether a Bitstamp balance row carries no
+// funds at all. We skip these here rather than in the mapper so the
+// mapper stays a pure value transform (testable in isolation).
+func isEmptyBalance(b client.AccountBalance) bool {
+	return mappers.IsZeroAmount(b.Available) &&
+		mappers.IsZeroAmount(b.Total) &&
+		mappers.IsZeroAmount(b.Reserved)
 }

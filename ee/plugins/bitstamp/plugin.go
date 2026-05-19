@@ -9,14 +9,19 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 const (
-	ProviderName   = "bitstamp"
-	MetadataPrefix = "com.bitstamp.spec/"
+	ProviderName = "bitstamp"
+
+	// MetadataPrefix is re-exported from the mappers package so
+	// orchestrator-side code doesn't have to import mappers just for
+	// the prefix. The canonical declaration is mappers.MetadataPrefix.
+	MetadataPrefix = mappers.MetadataPrefix
 
 	currencyRefreshInterval = 24 * time.Hour
 )
@@ -88,7 +93,7 @@ func (p *Plugin) loadCurrencies(ctx context.Context) error {
 
 	currencyMap := make(map[string]int, len(currencies))
 	for _, c := range currencies {
-		symbol := normalizeCurrency(c.Currency)
+		symbol := mappers.NormalizeCurrency(c.Currency)
 		if symbol == "" {
 			continue
 		}

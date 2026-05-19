@@ -1,7 +1,7 @@
 package bitstamp
 
 import (
-	"errors"
+	"encoding/json"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -40,77 +40,65 @@ var _ = Describe("Bitstamp Plugin Balances", func() {
 		ctrl.Finish()
 	})
 
+	// Balances is FromPayload-driven post-EN-1015 (Qonto pattern):
+	// the engine passes the parent PSPAccount on req.FromPayload and
+	// the task derives the balance from the AccountBalance snapshot
+	// already on PSPAccount.Raw — no extra GetAccountBalances call.
+
 	Context("fetching next balances", func() {
-		It("should return an error - get balances error", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
+		mkParent := func(bal client.AccountBalance) []byte {
+			raw, err := json.Marshal(bal)
+			Expect(err).ToNot(HaveOccurred())
+			asset := "BTC/8"
+			parent := models.PSPAccount{
+				Reference:    "BTC",
+				DefaultAsset: &asset,
+				Raw:          raw,
+			}
+			payload, err := json.Marshal(parent)
+			Expect(err).ToNot(HaveOccurred())
+			return payload
+		}
 
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				nil,
-				errors.New("test error"),
-			)
+		It("derives the balance from FromPayload without calling the API", func(ctx SpecContext) {
+			payload := mkParent(client.AccountBalance{
+				Currency:  "btc",
+				Total:     "1.50000000",
+				Available: "1.00000000",
+				Reserved:  "0.50000000",
+			})
+			// NO m.EXPECT() call — the assertion is precisely that
+			// no Bitstamp HTTP call is made during the balances task.
 
-			resp, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
-
-		It("should fetch balances successfully", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
-
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				[]client.AccountBalance{
-					{Currency: "btc", Total: "1.50000000", Available: "1.00000000", Reserved: "0.50000000"},
-					{Currency: "usd", Total: "5000.00", Available: "4500.00", Reserved: "500.00"},
-				},
-				nil,
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{FromPayload: payload})
 			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(HaveLen(2))
+			Expect(resp.Balances).To(HaveLen(1))
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.Balances[0].AccountReference).To(Equal("BTC"))
 			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
-			// 1.00000000 BTC = 100000000 satoshis
 			Expect(resp.Balances[0].Amount.Int64()).To(Equal(int64(100000000)))
-			Expect(resp.Balances[1].AccountReference).To(Equal("USD"))
-			Expect(resp.Balances[1].Asset).To(Equal("USD/2"))
-			Expect(resp.Balances[1].Amount.Int64()).To(Equal(int64(450000)))
 		})
 
-		It("should skip unknown currencies", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
+		It("errors when FromPayload is missing", func(ctx SpecContext) {
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
+			Expect(err).To(MatchError(models.ErrMissingFromPayloadInRequest))
+			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+		})
 
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				[]client.AccountBalance{
-					{Currency: "unknown", Total: "1.00000000", Available: "1.00000000", Reserved: "0"},
-					{Currency: "btc", Total: "1.00000000", Available: "1.00000000", Reserved: "0"},
-				},
-				nil,
-			)
+		It("errors on invalid FromPayload JSON", func(ctx SpecContext) {
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{
+				FromPayload: []byte(`{not-json`),
+			})
+			Expect(err).To(HaveOccurred())
+			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+		})
 
-			resp, err := plg.FetchNextBalances(ctx, req)
+		It("skips unsupported currencies silently rather than erroring", func(ctx SpecContext) {
+			payload := mkParent(client.AccountBalance{Currency: "xyz", Available: "1.0"})
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{FromPayload: payload})
 			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(HaveLen(1))
-			Expect(resp.Balances[0].AccountReference).To(Equal("BTC"))
+			Expect(resp.Balances).To(BeEmpty())
 			Expect(resp.HasMore).To(BeFalse())
-		})
-
-		It("should handle lowercase to uppercase currency matching", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
-
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				[]client.AccountBalance{
-					{Currency: "eth", Total: "10.5", Available: "10.5", Reserved: "0"},
-				},
-				nil,
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(HaveLen(1))
-			Expect(resp.Balances[0].Asset).To(Equal("ETH/18"))
 		})
 	})
 })
