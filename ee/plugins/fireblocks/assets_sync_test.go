@@ -36,8 +36,8 @@ var _ = Describe("Fireblocks assets helpers", func() {
 		It("appends _TEST for testnet assets", func() {
 			Expect(canonicalAsset("ETH", 18, true)).To(Equal("ETH_TEST/18"))
 		})
-		It("trims long bases so the _TEST suffix still fits Ledger's 17-char cap", func() {
-			Expect(canonicalAsset("ABCDEFGHIJKLMNOPQ", 18, true)).To(Equal("ABCDEFGHIJKL_TEST/18"))
+		It("preserves the full 17-char base when appending _TEST", func() {
+			Expect(canonicalAsset("ABCDEFGHIJKLMNOPQ", 18, true)).To(Equal("ABCDEFGHIJKLMNOPQ_TEST/18"))
 		})
 	})
 

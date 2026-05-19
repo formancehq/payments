@@ -194,21 +194,15 @@ func sanitizeSymbol(symbol string) string {
 
 // canonicalAsset assembles "<sanitized>[_TEST]/<precision>" (or the bare base
 // when precision is 0). isTestnet appends a `_TEST` segment so testnet and
-// mainnet assets never collide downstream; the base is trimmed to keep the
-// whole identifier within Ledger's 17-char limit before the optional suffix.
+// mainnet assets never collide downstream. Ledger's regex permits the base
+// (capped at 17 chars by sanitizeSymbol) and the suffix independently.
 func canonicalAsset(symbol string, precision int, isTestnet bool) string {
 	s := sanitizeSymbol(symbol)
 	if s == "" {
 		return ""
 	}
 	if isTestnet {
-		const testSuffix = "_TEST"
-		// 17 max for "<base>" + 5 for "_TEST" would overflow Ledger's regex;
-		// the suffix takes priority so we trim the base instead.
-		if max := 17 - len(testSuffix); len(s) > max {
-			s = s[:max]
-		}
-		s += testSuffix
+		s += "_TEST"
 	}
 	if precision == 0 {
 		return s
