@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -41,6 +42,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			Reference: account.ID,
 			CreatedAt: createdAt,
 			Name:      &account.Name,
+			Metadata:  buildAccountMetadata(account),
 			Raw:       raw,
 		})
 	}
@@ -61,4 +63,23 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+// buildAccountMetadata surfaces vault-level context. Booleans are emitted only
+// when true so the map stays small; nil is returned when nothing applies.
+func buildAccountMetadata(a client.VaultAccount) map[string]string {
+	m := map[string]string{}
+	if a.CustomerRefID != "" {
+		m[MetadataPrefix+"customer_ref_id"] = a.CustomerRefID
+	}
+	if a.HiddenOnUI {
+		m[MetadataPrefix+"hidden_on_ui"] = "true"
+	}
+	if a.AutoFuel {
+		m[MetadataPrefix+"auto_fuel"] = "true"
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
 }

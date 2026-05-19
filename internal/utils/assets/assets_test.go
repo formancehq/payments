@@ -6,9 +6,13 @@ func TestIsValid_ValidAssets(t *testing.T) {
 	cases := []string{
 		"A",
 		"BTC",
-		"ETH_TEST",
-		"ETH-AETH_SEPOLIA",
+		"USD",
 		"USD/2",
+		"USD/1234",
+		"EUR/00",
+		"USD123",
+		"EUR_COL",
+		"EUR_COL/12",
 	}
 	for _, c := range cases {
 		c := c
@@ -30,6 +34,12 @@ func TestIsValid_InvalidAssets(t *testing.T) {
 		"USD/ABC",            // non-digit version
 		"USD/1234567",        // version too long (7 digits)
 		"A12345678901234567", // 18 chars before slash
+		"ETH_TEST5",          // digit in suffix segment
+		"ETH-AETH_SEPOLIA",   // hyphen not allowed
+		"MATIC_POLYGON_MUMBAI", // multiple underscore segments
+		"EUR_",               // empty suffix segment
+		"_C",                 // leading underscore
+		"A_/2",               // empty suffix segment before /
 	}
 	for _, c := range cases {
 		c := c

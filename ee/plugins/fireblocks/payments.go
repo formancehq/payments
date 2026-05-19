@@ -3,6 +3,7 @@ package fireblocks
 import (
 	"context"
 	"encoding/json"
+	"maps"
 	"strings"
 	"time"
 
@@ -44,7 +45,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	payments := make([]models.PSPPayment, 0, len(transactions))
-	assetDecimals := p.getAssetDecimals()
 	newState := paymentsState{
 		LastCreatedAt: oldState.LastCreatedAt,
 		LastTxID:      oldState.LastTxID,
@@ -75,15 +75,16 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			continue
 		}
 
-		precision, err := currency.GetPrecision(assetDecimals, tx.AssetID)
-		if err != nil {
+		info, ok := p.lookupAsset(tx.AssetID)
+		if !ok {
 			p.logger.Errorf("skipping transaction %s: unknown asset %q", tx.ID, tx.AssetID)
 			continue
 		}
 
-		amount, err := currency.GetAmountWithPrecisionFromString(tx.AmountInfo.Amount, precision)
+		amount, err := currency.GetAmountWithPrecisionFromString(tx.AmountInfo.Amount, info.Precision)
 		if err != nil {
-			p.logger.Errorf("skipping transaction %s: failed to parse amount %q for asset %q", tx.ID, tx.AmountInfo.Amount, tx.AssetID)
+			p.logger.Errorf("skipping transaction %s: unparseable amount %q for asset %q",
+				tx.ID, tx.AmountInfo.Amount, tx.AssetID)
 			continue
 		}
 
@@ -97,10 +98,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			CreatedAt: time.UnixMilli(tx.CreatedAt),
 			Type:      matchPaymentType(tx),
 			Amount:    amount,
-			Asset:     currency.FormatAsset(assetDecimals, tx.AssetID),
+			Asset:     info.Asset,
 			Scheme:    models.PAYMENT_SCHEME_OTHER,
 			Status:    matchPaymentStatus(tx.Status),
 			Raw:       raw,
+			Metadata:  buildPaymentMetadata(tx, info),
 		}
 
 		if tx.Source.ID != "" && isPeerType(tx.Source.Type, peerTypeVaultAccount) {
@@ -108,7 +110,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			payment.SourceAccountReference = &sourceRef
 		}
 
-		metadata := map[string]string{}
 		if len(tx.Destinations) > 0 {
 			if len(tx.Destinations) == 1 && tx.Destinations[0].ID != "" {
 				if isPeerType(tx.Destinations[0].Type, peerTypeVaultAccount) {
@@ -123,7 +124,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 					}
 				}
 				if len(ids) > 0 {
-					metadata["destinationIds"] = strings.Join(ids, ",")
+					payment.Metadata[MetadataPrefix+"destination_ids"] = strings.Join(ids, ",")
 				}
 			}
 		} else if tx.Destination.ID != "" && isPeerType(tx.Destination.Type, peerTypeVaultAccount) {
@@ -131,22 +132,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			payment.DestinationAccountReference = &destRef
 		}
 
-		if tx.TxHash != "" {
-			metadata["txHash"] = tx.TxHash
+		if err := payment.Validate(); err != nil {
+			p.logger.Infof("dropping invalid payment %s: %s", tx.ID, err)
+			continue
 		}
-		if tx.FeeInfo.NetworkFee != "" {
-			metadata["networkFee"] = tx.FeeInfo.NetworkFee
-		}
-		if tx.Note != "" {
-			metadata["note"] = tx.Note
-		}
-		if tx.SubStatus != "" {
-			metadata["subStatus"] = tx.SubStatus
-		}
-		if len(metadata) > 0 {
-			payment.Metadata = metadata
-		}
-
 		payments = append(payments, payment)
 	}
 
@@ -162,6 +151,27 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+// buildPaymentMetadata seeds the payment metadata with the per-asset slice
+// from the cache and layers tx-level details under MetadataPrefix. Always
+// returns a non-nil map so downstream writes can happen unconditionally.
+func buildPaymentMetadata(tx client.Transaction, info assetInfo) map[string]string {
+	out := make(map[string]string, len(info.Metadata)+4)
+	maps.Copy(out, info.Metadata)
+	if tx.TxHash != "" {
+		out[MetadataPrefix+"tx_hash"] = tx.TxHash
+	}
+	if tx.FeeInfo.NetworkFee != "" {
+		out[MetadataPrefix+"network_fee"] = tx.FeeInfo.NetworkFee
+	}
+	if tx.Note != "" {
+		out[MetadataPrefix+"note"] = tx.Note
+	}
+	if tx.SubStatus != "" {
+		out[MetadataPrefix+"sub_status"] = tx.SubStatus
+	}
+	return out
 }
 
 // isPeerType checks if a peer type string matches the expected PeerType (case-insensitive).
