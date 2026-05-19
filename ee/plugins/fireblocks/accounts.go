@@ -65,8 +65,9 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}, nil
 }
 
-// buildAccountMetadata surfaces vault-level context. Booleans are emitted only
-// when true so the map stays small; nil is returned when nothing applies.
+// buildAccountMetadata surfaces vault-level context. Each key is emitted only
+// when the source field is non-zero (non-empty string, true bool); nil is
+// returned when nothing applies.
 func buildAccountMetadata(a client.VaultAccount) map[string]string {
 	m := map[string]string{}
 	if a.CustomerRefID != "" {

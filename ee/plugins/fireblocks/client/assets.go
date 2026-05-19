@@ -72,7 +72,7 @@ func (c *client) ListAssets(ctx context.Context) ([]Asset, error) {
 		var errResponse fireblocksError
 		_, err = c.httpClient.Do(ctx, req, &response, &errResponse)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list assets: %w", err)
+			return nil, errResponse.wrap("failed to list assets", err)
 		}
 
 		allAssets = append(allAssets, response.Data...)

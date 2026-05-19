@@ -46,13 +46,13 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	for _, a := range vaultAccount.Assets {
 		info, ok := p.lookupAsset(a.ID)
 		if !ok {
-			p.logger.Infof("skipping balance: unknown asset %q on vault %s", a.ID, from.Reference)
+			p.logger.Infof("skipping balance: unknown asset %q on account %s", a.ID, from.Reference)
 			continue
 		}
 
 		amount, err := currency.GetAmountWithPrecisionFromString(a.Available, info.Precision)
 		if err != nil {
-			p.logger.Infof("skipping balance: asset %q on vault %s, unparseable available %q",
+			p.logger.Infof("skipping balance: asset %q on account %s, unparseable available %q",
 				a.ID, from.Reference, a.Available)
 			continue
 		}
@@ -69,7 +69,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	balances := make([]models.PSPBalance, 0, len(agg))
 	for _, entry := range agg {
 		if len(entry.legacyIDs) > 1 {
-			p.logger.Infof("aggregated %d fireblocks legacyIds [%s] into %s on vault %s",
+			p.logger.Infof("aggregated %d fireblocks legacyIds [%s] into %s on account %s",
 				len(entry.legacyIDs), strings.Join(entry.legacyIDs, ","),
 				entry.info.Asset, from.Reference)
 		}
@@ -80,7 +80,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			Asset:            entry.info.Asset,
 		}
 		if err := balance.Validate(); err != nil {
-			p.logger.Infof("dropping invalid balance for vault %s asset %s: %s",
+			p.logger.Infof("dropping invalid balance for account %s asset %s: %s",
 				from.Reference, entry.info.Asset, err)
 			continue
 		}

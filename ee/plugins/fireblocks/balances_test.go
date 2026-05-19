@@ -69,6 +69,32 @@ var _ = Describe("Fireblocks Plugin Balances", func() {
 		Expect(resp.Balances[0].CreatedAt.IsZero()).To(BeFalse())
 	})
 
+	It("keeps same-symbol different-precision assets in separate balance rows", func(ctx SpecContext) {
+		// Aggregation key is the canonical "<symbol>/<precision>" string; WBTC at
+		// 8 decimals and WBTC at 18 decimals must not share a bucket.
+		plg.assets = map[string]assetInfo{
+			"WBTC8":  {Asset: "WBTC/8", Precision: 8, LegacyID: "WBTC8"},
+			"WBTC18": {Asset: "WBTC/18", Precision: 18, LegacyID: "WBTC18"},
+		}
+
+		from, err := json.Marshal(models.PSPAccount{Reference: "acc-1"})
+		Expect(err).To(BeNil())
+
+		m.EXPECT().GetVaultAccount(gomock.Any(), "acc-1").Return(&client.VaultAccount{
+			ID: "acc-1",
+			Assets: []client.VaultAsset{
+				{ID: "WBTC8", Available: "1"},
+				{ID: "WBTC18", Available: "1"},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{FromPayload: from})
+		Expect(err).To(BeNil())
+		Expect(resp.Balances).To(HaveLen(2))
+		Expect([]string{resp.Balances[0].Asset, resp.Balances[1].Asset}).
+			To(ConsistOf("WBTC/8", "WBTC/18"))
+	})
+
 	It("aggregates same-canonical-asset entries across chains", func(ctx SpecContext) {
 		// Two distinct Fireblocks legacyIds (USDT_ERC20 / USDT_TRX) both
 		// canonicalise to USDT/6 — the plugin must sum them within a vault.

@@ -61,7 +61,7 @@ func (c *client) ListTransactions(ctx context.Context, createdAfter int64, limit
 	var errResponse fireblocksError
 	_, err = c.httpClient.Do(ctx, req, &response, &errResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list transactions: %w", err)
+		return nil, errResponse.wrap("failed to list transactions", err)
 	}
 
 	return response, nil

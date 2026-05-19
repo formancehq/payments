@@ -53,7 +53,7 @@ func (c *client) ListBlockchains(ctx context.Context) ([]Blockchain, error) {
 		var resp BlockchainsResponse
 		var errResp fireblocksError
 		if _, err := c.httpClient.Do(ctx, req, &resp, &errResp); err != nil {
-			return nil, fmt.Errorf("failed to list blockchains: %w", err)
+			return nil, errResp.wrap("failed to list blockchains", err)
 		}
 
 		all = append(all, resp.Data...)

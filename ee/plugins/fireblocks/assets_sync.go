@@ -87,8 +87,13 @@ func (p *Plugin) loadAssets(ctx context.Context) error {
 	p.assetsLastSync = time.Now()
 	p.assetsMu.Unlock()
 
-	p.logger.Infof("loaded %d fireblocks assets (%d skipped, %d testnet blockchains)",
-		len(out), skipped, len(testnetByBlockchain))
+	if len(out) == 0 {
+		p.logger.Errorf("loaded 0 fireblocks assets (%d skipped) — Fireblocks may have changed the legacyId surface or the workspace is empty",
+			skipped)
+	} else {
+		p.logger.Infof("loaded %d fireblocks assets (%d skipped, %d testnet blockchains)",
+			len(out), skipped, len(testnetByBlockchain))
+	}
 	return nil
 }
 
