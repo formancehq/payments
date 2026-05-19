@@ -1,9 +1,13 @@
 package fireblocks
 
 import (
+	"time"
+
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 )
 
 var _ = Describe("Fireblocks assets helpers", func() {
@@ -177,3 +181,58 @@ var _ = Describe("Fireblocks assets helpers", func() {
 		})
 	})
 })
+
+var _ = Describe("Fireblocks ensureAssetsFresh", func() {
+	var (
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			client: m,
+		}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	It("is a no-op when the cache is populated within the TTL", func(ctx SpecContext) {
+		plg.assets = map[string]assetInfo{"USD": {Asset: "USD/2", Precision: 2}}
+		plg.assetsLastSync = time.Now()
+
+		Expect(plg.ensureAssetsFresh(ctx)).To(Succeed())
+	})
+
+	It("loads assets on first call when the cache is empty", func(ctx SpecContext) {
+		m.EXPECT().ListBlockchains(gomock.Any()).Return(nil, nil)
+		m.EXPECT().ListAssets(gomock.Any()).Return([]client.Asset{
+			{LegacyID: "USD", DisplaySymbol: "USD", AssetClass: client.AssetClassFiat, Decimals: pointerInt(2)},
+		}, nil)
+
+		Expect(plg.ensureAssetsFresh(ctx)).To(Succeed())
+		Expect(plg.assets).To(HaveKey("USD"))
+		Expect(plg.assetsLastSync.IsZero()).To(BeFalse())
+	})
+
+	It("refreshes when assetsLastSync is older than the TTL", func(ctx SpecContext) {
+		plg.assets = map[string]assetInfo{"USD": {Asset: "USD/2", Precision: 2}}
+		plg.assetsLastSync = time.Now().Add(-2 * assetRefreshInterval)
+
+		m.EXPECT().ListBlockchains(gomock.Any()).Return(nil, nil)
+		m.EXPECT().ListAssets(gomock.Any()).Return([]client.Asset{
+			{LegacyID: "EUR", DisplaySymbol: "EUR", AssetClass: client.AssetClassFiat, Decimals: pointerInt(2)},
+		}, nil)
+
+		Expect(plg.ensureAssetsFresh(ctx)).To(Succeed())
+		Expect(plg.assets).To(HaveKey("EUR"))
+		Expect(plg.assets).ToNot(HaveKey("USD"))
+	})
+})
+
+func pointerInt(v int) *int { return &v }

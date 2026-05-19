@@ -271,6 +271,58 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(resp.Payments[0].Asset).To(Equal("USDT/6"))
 	})
 
+	It("emits non-nil metadata even when the cached asset has no metadata slice", func(ctx SpecContext) {
+		plg.assets = map[string]assetInfo{
+			"BTC": {Asset: "BTC/8", Precision: 8, LegacyID: "BTC"}, // no Metadata
+		}
+
+		m.EXPECT().ListTransactions(gomock.Any(), int64(0), 1).Return([]client.Transaction{
+			{
+				ID:         "tx-empty-md",
+				AssetID:    "BTC",
+				AmountInfo: client.AmountInfo{Amount: "1"},
+				Operation:  "TRANSFER",
+				Status:     "COMPLETED",
+				CreatedAt:  8000,
+				Source:     client.TransferPeer{ID: "vault-1", Type: "VAULT_ACCOUNT"},
+				Destinations: []client.TransferPeer{
+					{ID: "ext-1", Type: "EXTERNAL_WALLET"},
+					{ID: "vault-2", Type: "VAULT_ACCOUNT"},
+				},
+			},
+		}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{PageSize: 1})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1))
+		Expect(resp.Payments[0].Metadata).ToNot(BeNil())
+		Expect(resp.Payments[0].Metadata).To(HaveKeyWithValue(MetadataPrefix+"destination_ids", "ext-1,vault-2"))
+	})
+
+	DescribeTable("matchPaymentStatus maps Fireblocks statuses",
+		func(fbStatus string, want models.PaymentStatus) {
+			Expect(matchPaymentStatus(fbStatus)).To(Equal(want))
+		},
+		Entry("COMPLETED", "COMPLETED", models.PAYMENT_STATUS_SUCCEEDED),
+		Entry("SUBMITTED", "SUBMITTED", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_AML_SCREENING", "PENDING_AML_SCREENING", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_ENRICHMENT", "PENDING_ENRICHMENT", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_AUTHORIZATION", "PENDING_AUTHORIZATION", models.PAYMENT_STATUS_PENDING),
+		Entry("QUEUED", "QUEUED", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_SIGNATURE", "PENDING_SIGNATURE", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_3RD_PARTY_MANUAL_APPROVAL", "PENDING_3RD_PARTY_MANUAL_APPROVAL", models.PAYMENT_STATUS_PENDING),
+		Entry("PENDING_3RD_PARTY", "PENDING_3RD_PARTY", models.PAYMENT_STATUS_PENDING),
+		Entry("CONFIRMING", "CONFIRMING", models.PAYMENT_STATUS_PENDING),
+		Entry("BROADCASTING", "BROADCASTING", models.PAYMENT_STATUS_PENDING),
+		Entry("CANCELLING", "CANCELLING", models.PAYMENT_STATUS_CANCELLED),
+		Entry("CANCELLED", "CANCELLED", models.PAYMENT_STATUS_CANCELLED),
+		Entry("FAILED", "FAILED", models.PAYMENT_STATUS_FAILED),
+		Entry("BLOCKED", "BLOCKED", models.PAYMENT_STATUS_FAILED),
+		Entry("REJECTED", "REJECTED", models.PAYMENT_STATUS_FAILED),
+		Entry("unknown falls through to OTHER", "SOMETHING_NEW", models.PaymentStatus(models.PAYMENT_STATUS_OTHER)),
+		Entry("empty string falls through to OTHER", "", models.PaymentStatus(models.PAYMENT_STATUS_OTHER)),
+	)
+
 	It("advances state even when transactions are skipped", func(ctx SpecContext) {
 		state, err := json.Marshal(paymentsState{LastCreatedAt: 2000, LastTxID: "z"})
 		Expect(err).To(BeNil())
