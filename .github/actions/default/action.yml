@@ -4,6 +4,10 @@ inputs:
   token:
     description: 'A Github PAT'
     required: true
+  nscloud-cache:
+    description: 'Enable Namespace.so Git caching (requires namespace-profile-* runner)'
+    required: false
+    default: 'true'
 runs:
   using: composite
   steps:
@@ -13,6 +17,7 @@ runs:
       shell: bash
       run: nix develop --install
     - uses: namespacelabs/nscloud-cache-action@v1
+      if: inputs.nscloud-cache != 'false'
       with:
         path: |
           ~/.cache/go-build
