@@ -44,6 +44,14 @@ type fireblocksError struct {
 	Code    int    `json:"code"`
 }
 
+// wrap formats a client error, surfacing the upstream Fireblocks message when set.
+func (e fireblocksError) wrap(prefix string, base error) error {
+	if e.Message != "" {
+		return fmt.Errorf("%s: %w (fireblocks: %s)", prefix, base, e.Message)
+	}
+	return fmt.Errorf("%s: %w", prefix, base)
+}
+
 func (c *client) GetVaultAccountsPaged(ctx context.Context, cursor string, limit int) (*VaultAccountsPagedResponse, error) {
 	endpoint := fmt.Sprintf("%s/v1/vault/accounts_paged?limit=%d", c.baseURL, limit)
 	if cursor != "" {
@@ -59,7 +67,7 @@ func (c *client) GetVaultAccountsPaged(ctx context.Context, cursor string, limit
 	var errResponse fireblocksError
 	_, err = c.httpClient.Do(ctx, req, &response, &errResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vault accounts: %w", err)
+		return nil, errResponse.wrap("failed to get vault accounts", err)
 	}
 
 	return &response, nil
@@ -77,7 +85,7 @@ func (c *client) GetVaultAccount(ctx context.Context, vaultAccountID string) (*V
 	var errResponse fireblocksError
 	_, err = c.httpClient.Do(ctx, req, &response, &errResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vault account: %w", err)
+		return nil, errResponse.wrap("failed to get vault account", err)
 	}
 
 	return &response, nil

@@ -4,13 +4,11 @@ import (
 	"regexp"
 )
 
-// Pattern allows uppercase letters, digits, and underscores for asset identifiers
-// (underscores are common in crypto assets like BTC_TEST, ETH_TEST5, etc.)
-// (Hyphen "-" has been found in some crypto like ETH-AETH_SEPOLIA)
-const Pattern = `[A-Z][A-Z0-9_-]{0,16}(\/\d{1,6})?`
+// Pattern mirrors Ledger's canonical asset regex (formancehq/ledger/pkg/assets).
+const Pattern = `[A-Z][A-Z0-9]{0,16}(_[A-Z]{1,16})?(\/\d{1,6})?`
 
 var Regexp = regexp.MustCompile("^" + Pattern + "$")
 
 func IsValid(v string) bool {
-	return Regexp.Match([]byte(v))
+	return Regexp.MatchString(v)
 }
