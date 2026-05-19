@@ -111,6 +111,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestPowens(co
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestQonto(components.V3QontoConfig{/* values here */})
 ```
 
+### V3RoutableConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestRoutable(components.V3RoutableConfig{/* values here */})
+```
+
 ### V3StripeConfig
 
 ```go

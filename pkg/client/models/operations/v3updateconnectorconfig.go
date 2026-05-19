@@ -152,6 +152,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestQonto() *com
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestRoutable() *components.V3RoutableConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3RoutableConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestStripe() *components.V3StripeConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3StripeConfig

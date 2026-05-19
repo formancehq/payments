@@ -85,6 +85,10 @@ func (o *V3GetConnectorConfigResponse) GetDataQonto() *V3QontoConfig {
 	return o.GetData().V3QontoConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataRoutable() *V3RoutableConfig {
+	return o.GetData().V3RoutableConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataStripe() *V3StripeConfig {
 	return o.GetData().V3StripeConfig
 }

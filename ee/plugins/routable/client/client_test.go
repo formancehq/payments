@@ -1,0 +1,371 @@
+package client
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+)
+
+// newTestServer spins up a Routable-shaped httptest server that asserts the
+// authentication header the client must send and routes requests through a
+// per-test handler. Returning a fresh Client wired to the test server keeps
+// each test isolated.
+func newTestServer(t *testing.T, handler http.HandlerFunc) (Client, *httptest.Server) {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
+			t.Errorf("expected Bearer auth header, got %q", got)
+		}
+		handler(w, r)
+	}))
+	return New("routable-test", "test-key", srv.URL), srv
+}
+
+func TestListAccounts(t *testing.T) {
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/settings/accounts" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("page") != "1" || r.URL.Query().Get("page_size") != "25" {
+			t.Errorf("unexpected pagination: %s", r.URL.RawQuery)
+		}
+		_, _ = io.WriteString(w, `{"object":"List","results":[{"id":"acc_1","name":"Operating","type_details":{"available_amount":"100.00"},"created_at":"2025-01-01T00:00:00Z"}],"links":{"next":"/v1/settings/accounts?page=2"}}`)
+	})
+	defer srv.Close()
+
+	resp, err := c.ListAccounts(context.Background(), 1, 25)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Results) != 1 || resp.Results[0].ID != "acc_1" {
+		t.Fatalf("unexpected results: %+v", resp.Results)
+	}
+	if !resp.Links.HasMore() {
+		t.Fatalf("expected HasMore=true")
+	}
+}
+
+func TestGetPayableNotFound(t *testing.T) {
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = io.WriteString(w, `{"object":"Error","message":"not found"}`)
+	})
+	defer srv.Close()
+
+	_, err := c.GetPayable(context.Background(), "pa_missing")
+	if !errors.Is(err, ErrPayableNotFound) {
+		t.Fatalf("expected ErrPayableNotFound, got %v", err)
+	}
+}
+
+func TestCreatePayableSendsIdempotencyKey(t *testing.T) {
+	var captured struct {
+		Key  string
+		Body CreatePayableRequest
+	}
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		captured.Key = r.Header.Get("Idempotency-Key")
+		_ = json.NewDecoder(r.Body).Decode(&captured.Body)
+		w.WriteHeader(http.StatusCreated)
+		_, _ = io.WriteString(w, `{"object":"Payable","id":"pa_1","status":"pending","amount":"10.00","currency_code":"USD","created_at":"2025-01-01T00:00:00Z"}`)
+	})
+	defer srv.Close()
+
+	req := CreatePayableRequest{
+		Type:                "ach",
+		DeliveryMethod:      "ach_standard",
+		PayToCompany:        "co_1",
+		WithdrawFromAccount: "acc_1",
+		Amount:              "10.00",
+		CurrencyCode:        "USD",
+		LineItems:           []PayableLineItem{{UnitPrice: "10.00", Amount: "10.00", Quantity: 1}},
+		ActingTeamMember:    "tm_1",
+		IdempotencyKey:      "pi_42",
+	}
+	resp, status, err := c.CreatePayable(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status != http.StatusCreated {
+		t.Errorf("status = %d, want 201", status)
+	}
+	if resp.ID != "pa_1" {
+		t.Fatalf("unexpected payable id: %s", resp.ID)
+	}
+	if captured.Key != "pi_42" {
+		t.Fatalf("expected idempotency key 'pi_42', got %q", captured.Key)
+	}
+	if captured.Body.PayToCompany != "co_1" {
+		t.Fatalf("body not forwarded: %+v", captured.Body)
+	}
+}
+
+func TestCreatePayableValidatesInputBeforeNetwork(t *testing.T) {
+	c := New("routable-test", "test-key", "http://invalid")
+	if _, _, err := c.CreatePayable(context.Background(), CreatePayableRequest{Type: ""}); err == nil {
+		t.Fatal("expected validation error before any network call")
+	}
+}
+
+// 201 vs 202: the upstream HTTP status determines whether the caller
+// reads the full payable (201) or just the polling ID (202). The plugin
+// branches on this — the test pins both shapes so a regression in the
+// status propagation is caught at the client boundary.
+func TestCreatePayableReturnsStatusCode(t *testing.T) {
+	t.Parallel()
+
+	t.Run("201 Created with full payable model", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(w, `{"object":"Payable","id":"pa_sync","status":"completed","amount":"10.00","currency_code":"USD","created_at":"2025-01-01T00:00:00Z"}`)
+		})
+		defer srv.Close()
+
+		req := CreatePayableRequest{
+			Type: "ach", DeliveryMethod: "ach_standard",
+			PayToCompany: "co_1", WithdrawFromAccount: "acc_1",
+			Amount: "10.00", CurrencyCode: "USD",
+			LineItems:        []PayableLineItem{{UnitPrice: "10.00", Amount: "10.00", Quantity: 1, Description: "x"}},
+			ActingTeamMember: "tm_1", IdempotencyKey: "pi_sync",
+		}
+		got, status, err := c.CreatePayable(context.Background(), req)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if status != http.StatusCreated {
+			t.Errorf("status = %d, want 201", status)
+		}
+		if got.ID != "pa_sync" || got.Amount != "10.00" {
+			t.Errorf("unexpected payable: %+v", got)
+		}
+	})
+
+	t.Run("202 Accepted with id-only payload", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			_, _ = io.WriteString(w, `{"id":"pa_async","status":"pending"}`)
+		})
+		defer srv.Close()
+
+		req := CreatePayableRequest{
+			Type: "ach", DeliveryMethod: "ach_standard",
+			PayToCompany: "co_1", WithdrawFromAccount: "acc_1",
+			Amount: "10.00", CurrencyCode: "USD",
+			LineItems:        []PayableLineItem{{UnitPrice: "10.00", Amount: "10.00", Quantity: 1, Description: "x"}},
+			ActingTeamMember: "tm_1", IdempotencyKey: "pi_async",
+		}
+		got, status, err := c.CreatePayable(context.Background(), req)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if status != http.StatusAccepted {
+			t.Errorf("status = %d, want 202", status)
+		}
+		if got.ID != "pa_async" {
+			t.Errorf("ID = %q, want pa_async", got.ID)
+		}
+		if got.Amount != "" || got.CurrencyCode != "" {
+			t.Errorf("202 body should not carry amount/currency, got %+v", got)
+		}
+	})
+}
+
+func TestErrorSuffixOnlyWhenAPIBodyPresent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("with API body", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"object":"Error","code":"invalid","message":"bad amount"}`)
+		})
+		defer srv.Close()
+
+		_, err := c.ListAccounts(context.Background(), 1, 25)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !strings.Contains(err.Error(), "bad amount") {
+			t.Fatalf("expected error to surface API message, got %q", err.Error())
+		}
+	})
+
+	t.Run("without API body", func(t *testing.T) {
+		c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			// no JSON body
+		})
+		defer srv.Close()
+
+		_, err := c.ListAccounts(context.Background(), 1, 25)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		// We must not pollute the message with the placeholder "empty body" suffix.
+		if strings.Contains(err.Error(), "routable api error: empty body") {
+			t.Fatalf("error should not include placeholder suffix, got %q", err.Error())
+		}
+	})
+}
+
+func TestListPayablesPassesStatusChangedAtGte(t *testing.T) {
+	when := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		got := r.URL.Query().Get("status_changed_at.gte")
+		if !strings.HasPrefix(got, "2025-01-02T03:04:05") {
+			t.Errorf("missing/bad status_changed_at.gte: %q", got)
+		}
+		_, _ = io.WriteString(w, `{"object":"List","results":[]}`)
+	})
+	defer srv.Close()
+
+	if _, err := c.ListPayables(context.Background(), 1, 50, when); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestListReceivablesPassesStatusChangedAtGte(t *testing.T) {
+	when := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/receivables" {
+			t.Errorf("path = %q, want /v1/receivables", r.URL.Path)
+		}
+		if got := r.URL.Query().Get("status_changed_at.gte"); !strings.HasPrefix(got, "2025-01-02T03:04:05") {
+			t.Errorf("missing/bad status_changed_at.gte: %q", got)
+		}
+		_, _ = io.WriteString(w, `{"object":"List","results":[{"id":"re_1","status":"pending","amount":"5.00","currency_code":"USD","created_at":"2025-01-02T00:00:00Z"}]}`)
+	})
+	defer srv.Close()
+
+	resp, err := c.ListReceivables(context.Background(), 1, 50, when)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Results) != 1 || resp.Results[0].ID != "re_1" {
+		t.Fatalf("unexpected results: %+v", resp.Results)
+	}
+}
+
+// ListReceivables without the gte filter must NOT send the empty
+// status_changed_at.gte query param (Routable rejects it).
+func TestListReceivablesOmitsEmptyGte(t *testing.T) {
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Has("status_changed_at.gte") {
+			t.Errorf("empty gte must be omitted, got %q", r.URL.RawQuery)
+		}
+		_, _ = io.WriteString(w, `{"object":"List","results":[]}`)
+	})
+	defer srv.Close()
+
+	if _, err := c.ListReceivables(context.Background(), 1, 50, time.Time{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestListCompanies(t *testing.T) {
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/companies" {
+			t.Errorf("path = %q, want /v1/companies", r.URL.Path)
+		}
+		if r.URL.Query().Get("page") != "2" || r.URL.Query().Get("page_size") != "50" {
+			t.Errorf("unexpected pagination: %s", r.URL.RawQuery)
+		}
+		_, _ = io.WriteString(w, `{"object":"List","results":[{"id":"co_1","display_name":"Acme","created_at":"2025-01-01T00:00:00Z"}],"links":{"next":"/v1/companies?page=3"}}`)
+	})
+	defer srv.Close()
+
+	resp, err := c.ListCompanies(context.Background(), 2, 50)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Results) != 1 || resp.Results[0].ID != "co_1" {
+		t.Fatalf("unexpected results: %+v", resp.Results)
+	}
+	if !resp.Links.HasMore() {
+		t.Fatalf("expected HasMore=true")
+	}
+}
+
+func TestGetAccount(t *testing.T) {
+	c, srv := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/settings/accounts/acc_1" {
+			t.Errorf("path = %q, want /v1/settings/accounts/acc_1", r.URL.Path)
+		}
+		_, _ = io.WriteString(w, `{"id":"acc_1","name":"Operating","currency_code":"USD","created_at":"2025-01-01T00:00:00Z","type_details":{"available_amount":"1000.00"}}`)
+	})
+	defer srv.Close()
+
+	got, err := c.GetAccount(context.Background(), "acc_1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.ID != "acc_1" || got.Name != "Operating" {
+		t.Fatalf("unexpected account: %+v", got)
+	}
+}
+
+// GetAccount with empty id must short-circuit before any network call —
+// guards against a bug where the engine handed us a zero-value reference.
+func TestGetAccountRejectsEmptyID(t *testing.T) {
+	c := New("routable-test", "test-key", "http://invalid-on-purpose")
+	_, err := c.GetAccount(context.Background(), "")
+	if err == nil {
+		t.Fatal("expected error for empty id")
+	}
+}
+
+// CreatePayable validation: every required field that's missing must
+// surface a distinct error message before the request hits the wire.
+func TestValidateCreatePayableRequiredFields(t *testing.T) {
+	base := CreatePayableRequest{
+		Type:                "ach",
+		DeliveryMethod:      "ach_standard",
+		PayToCompany:        "co_1",
+		WithdrawFromAccount: "acc_1",
+		Amount:              "10.00",
+		LineItems:           []PayableLineItem{{UnitPrice: "10.00", Amount: "10.00", Quantity: 1}},
+		ActingTeamMember:    "tm_1",
+	}
+	cases := []struct {
+		name string
+		mut  func(*CreatePayableRequest)
+		want string
+	}{
+		{"missing type", func(r *CreatePayableRequest) { r.Type = "" }, "type is required"},
+		{"missing delivery_method", func(r *CreatePayableRequest) { r.DeliveryMethod = "" }, "delivery_method is required"},
+		{"missing pay_to_company", func(r *CreatePayableRequest) { r.PayToCompany = "" }, "pay_to_company is required"},
+		{"missing withdraw_from_account", func(r *CreatePayableRequest) { r.WithdrawFromAccount = "" }, "withdraw_from_account is required"},
+		{"missing amount", func(r *CreatePayableRequest) { r.Amount = "" }, "amount is required"},
+		{"empty line_items", func(r *CreatePayableRequest) { r.LineItems = nil }, "line item is required"},
+		{"missing acting_team_member", func(r *CreatePayableRequest) { r.ActingTeamMember = "" }, "acting_team_member is required"},
+	}
+	c := New("routable-test", "test-key", "http://invalid-on-purpose")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := base
+			tc.mut(&req)
+			_, _, err := c.CreatePayable(context.Background(), req)
+			if err == nil {
+				t.Fatalf("expected validation error for %s", tc.name)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("error = %q, want contains %q", err.Error(), tc.want)
+			}
+		})
+	}
+}
+
+// GetPayable must reject empty IDs before any network call (mirror of
+// GetAccount).
+func TestGetPayableRejectsEmptyID(t *testing.T) {
+	c := New("routable-test", "test-key", "http://invalid-on-purpose")
+	_, err := c.GetPayable(context.Background(), "")
+	if err == nil {
+		t.Fatal("expected error for empty id")
+	}
+}

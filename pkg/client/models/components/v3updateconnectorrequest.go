@@ -30,6 +30,7 @@ const (
 	V3UpdateConnectorRequestTypePlaid         V3UpdateConnectorRequestType = "Plaid"
 	V3UpdateConnectorRequestTypePowens        V3UpdateConnectorRequestType = "Powens"
 	V3UpdateConnectorRequestTypeQonto         V3UpdateConnectorRequestType = "Qonto"
+	V3UpdateConnectorRequestTypeRoutable      V3UpdateConnectorRequestType = "Routable"
 	V3UpdateConnectorRequestTypeStripe        V3UpdateConnectorRequestType = "Stripe"
 	V3UpdateConnectorRequestTypeTink          V3UpdateConnectorRequestType = "Tink"
 	V3UpdateConnectorRequestTypeWise          V3UpdateConnectorRequestType = "Wise"
@@ -57,6 +58,7 @@ type V3UpdateConnectorRequest struct {
 	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
+	V3RoutableConfig      *V3RoutableConfig      `queryParam:"inline"`
 
 	Type V3UpdateConnectorRequestType
 }
@@ -277,6 +279,18 @@ func CreateV3UpdateConnectorRequestQonto(qonto V3QontoConfig) V3UpdateConnectorR
 	}
 }
 
+func CreateV3UpdateConnectorRequestRoutable(routable V3RoutableConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeRoutable
+
+	typStr := string(typ)
+	routable.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3RoutableConfig: &routable,
+		Type:             typ,
+	}
+}
+
 func CreateV3UpdateConnectorRequestStripe(stripe V3StripeConfig) V3UpdateConnectorRequest {
 	typ := V3UpdateConnectorRequestTypeStripe
 
@@ -487,6 +501,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3QontoConfig = v3QontoConfig
 		u.Type = V3UpdateConnectorRequestTypeQonto
 		return nil
+	case "Routable":
+		v3RoutableConfig := new(V3RoutableConfig)
+		if err := utils.UnmarshalJSON(data, &v3RoutableConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Routable) type V3RoutableConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3RoutableConfig = v3RoutableConfig
+		u.Type = V3UpdateConnectorRequestTypeRoutable
+		return nil
 	case "Stripe":
 		v3StripeConfig := new(V3StripeConfig)
 		if err := utils.UnmarshalJSON(data, &v3StripeConfig, "", true, false); err != nil {
@@ -602,6 +625,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3FireblocksConfig != nil {
 		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
+	if u.V3RoutableConfig != nil {
+		return utils.MarshalJSON(u.V3RoutableConfig, "", true)
 	}
 
 	return nil, errors.New("could not marshal union type V3UpdateConnectorRequest: all fields are null")
