@@ -22,6 +22,14 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
+// throttlePlugin satisfies both models.Plugin (via embedding) and
+// models.PluginWithPayoutThrottle so tests can exercise the payout-queue path.
+type throttlePlugin struct {
+	models.Plugin
+}
+
+func (throttlePlugin) PayoutsPerSecond() float64 { return 5.0 }
+
 func TestEngine(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Engine Suite")
@@ -1104,6 +1112,144 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(BeNil())
 			Expect(attemptID).NotTo(BeEmpty())
 			Expect(link).To(Equal("https://example.com/update-link"))
+		})
+	})
+
+	Context("creating a transfer", func() {
+		var (
+			connID models.ConnectorID
+			piID   models.PaymentInitiationID
+		)
+
+		BeforeEach(func() {
+			connID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+			piID = models.PaymentInitiationID{
+				Reference:   "pi-ref",
+				ConnectorID: connID,
+			}
+		})
+
+		It("should return storage error when task cannot be upserted", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage err")
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(expectedErr)
+			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return workflow error when workflow execution fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("workflow err")
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(nil, expectedErr)
+			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return task without waiting when waitResult is false", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(wr, nil)
+			// wr.Get must NOT be called when waitResult is false.
+
+			task, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+			Expect(task.ID.Reference).To(ContainSubstring("create-transfer"))
+			Expect(task.ID.Reference).To(ContainSubstring(stackName))
+			Expect(task.ID.ConnectorID).To(Equal(connID))
+			Expect(task.ConnectorID).To(Equal(&connID))
+			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
+		})
+
+		It("should wait for workflow result when waitResult is true", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(nil)
+
+			task, err := eng.CreateTransfer(ctx, piID, 0, true)
+			Expect(err).To(BeNil())
+			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
+		})
+
+		It("should propagate workflow error when waitResult is true and workflow fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("workflow run err")
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(expectedErr)
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, true)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("uses default task queue when connector plugin is not found", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("not found"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("uses default task queue when plugin does not implement PluginWithPayoutThrottle", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(models.NewMockPlugin(gomock.NewController(GinkgoT())), nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("uses payout task queue when plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
+			payoutQueue := engine.GetPayoutTaskQueue(stackName, connID)
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(throttlePlugin{}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", payoutQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("passes ConnectorID and PaymentInitiationID in the workflow args", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(
+				gomock.Any(),
+				gomock.Any(),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).DoAndReturn(func(_ interface{}, _ interface{}, _ interface{}, req workflow.CreateTransfer) (client.WorkflowRun, error) {
+				Expect(req.ConnectorID).To(Equal(connID))
+				Expect(req.PaymentInitiationID).To(Equal(piID))
+				return nil, nil
+			})
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
 		})
 	})
 

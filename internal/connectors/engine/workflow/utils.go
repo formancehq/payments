@@ -13,6 +13,24 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+func (w Workflow) SearchAttributes(ctx workflow.Context, connectorID *models.ConnectorID) map[string]interface{} {
+	m := map[string]interface{}{
+		SearchAttributeStack: w.stack,
+	}
+	if IsConnectorIDSearchAttributeEnabled(ctx) && connectorID != nil {
+		m[SearchAttributeConnectorID] = connectorID.String()
+	}
+	return m
+}
+
+func (w Workflow) ScheduleSearchAttributes(ctx workflow.Context, connectorID *models.ConnectorID, scheduleID string) map[string]interface{} {
+	m := w.SearchAttributes(ctx, connectorID)
+	if scheduleID != "" {
+		m[SearchAttributeScheduleID] = scheduleID
+	}
+	return m
+}
+
 func (w Workflow) storePIPaymentWithStatus(
 	ctx workflow.Context,
 	payment models.Payment,

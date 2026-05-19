@@ -247,7 +247,8 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 		workflow.RunUninstallConnector,
@@ -307,7 +308,8 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 		workflow.RunResetConnector,
@@ -379,7 +381,8 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: true,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connector.ID.String(),
 			},
 		},
 		workflow.RunUpdateSchedulePollingPeriod,
@@ -514,7 +517,8 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 		workflow.RunCreateBankAccount,
@@ -538,6 +542,17 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 	}
 
 	return task, nil
+}
+
+func (e *engine) getPayoutTaskQueue(connectorID models.ConnectorID) string {
+	plugin, err := e.connectors.Get(connectorID)
+	if err != nil {
+		return GetDefaultTaskQueue(e.stack)
+	}
+	if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
+		return GetPayoutTaskQueue(e.stack, connectorID)
+	}
+	return GetDefaultTaskQueue(e.stack)
 }
 
 func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
@@ -567,11 +582,12 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			TaskQueue:                                e.getPayoutTaskQueue(piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: piID.ConnectorID.String(),
 			},
 		},
 		workflow.RunCreateTransfer,
@@ -630,7 +646,8 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: reversal.ConnectorID.String(),
 			},
 		},
 		workflow.RunReverseTransfer,
@@ -685,11 +702,12 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			TaskQueue:                                e.getPayoutTaskQueue(piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: piID.ConnectorID.String(),
 			},
 		},
 		workflow.RunCreatePayout,
@@ -749,7 +767,8 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: reversal.ConnectorID.String(),
 			},
 		},
 		workflow.RunReversePayout,
@@ -911,7 +930,8 @@ func (e *engine) DeletePaymentServiceUserConnector(ctx context.Context, psuID uu
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 		workflow.RunDeletePSUConnector,
@@ -959,7 +979,8 @@ func (e *engine) DeletePaymentServiceUserConnection(ctx context.Context, connect
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 		workflow.RunDeleteConnection,
@@ -1191,7 +1212,8 @@ func (e *engine) CompletePaymentServiceUserLink(ctx context.Context, connectorID
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
 			},
 		},
 		workflow.RunCompleteUserLink,
@@ -1234,7 +1256,8 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 					WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 					WorkflowExecutionErrorWhenAlreadyStarted: false,
 					SearchAttributes: map[string]interface{}{
-						workflow.SearchAttributeStack: e.stack,
+						workflow.SearchAttributeStack:       e.stack,
+						workflow.SearchAttributeConnectorID: w.ConnectorID.String(),
 					},
 				},
 				workflow.RunHandleWebhooks,
@@ -1653,7 +1676,8 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connector.ID.String(),
 			},
 		},
 		workflow.RunInstallConnector,
