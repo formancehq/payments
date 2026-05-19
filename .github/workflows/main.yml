@@ -112,13 +112,12 @@ jobs:
       - GoReleaser
       - Tests
     steps:
-      - uses: 'namespacelabs/nscloud-checkout-action@v8'
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v6
       - name: Setup Env
         uses: ./.github/actions/default
         with:
           token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+          nscloud-cache: 'false'
       - name: Tailscale
         uses: tailscale/github-action@v4
         with:
