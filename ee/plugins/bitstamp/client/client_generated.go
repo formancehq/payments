@@ -70,6 +70,51 @@ func (mr *MockClientMockRecorder) GetCurrencies(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrencies", reflect.TypeOf((*MockClient)(nil).GetCurrencies), ctx)
 }
 
+// GetOpenOrders mocks base method.
+func (m *MockClient) GetOpenOrders(ctx context.Context) ([]OpenOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOpenOrders", ctx)
+	ret0, _ := ret[0].([]OpenOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOpenOrders indicates an expected call of GetOpenOrders.
+func (mr *MockClientMockRecorder) GetOpenOrders(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrders", reflect.TypeOf((*MockClient)(nil).GetOpenOrders), ctx)
+}
+
+// GetOpenOrdersForMarket mocks base method.
+func (m *MockClient) GetOpenOrdersForMarket(ctx context.Context, currencyPair string) ([]OpenOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOpenOrdersForMarket", ctx, currencyPair)
+	ret0, _ := ret[0].([]OpenOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOpenOrdersForMarket indicates an expected call of GetOpenOrdersForMarket.
+func (mr *MockClientMockRecorder) GetOpenOrdersForMarket(ctx, currencyPair any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrdersForMarket", reflect.TypeOf((*MockClient)(nil).GetOpenOrdersForMarket), ctx, currencyPair)
+}
+
+// GetOrderStatus mocks base method.
+func (m *MockClient) GetOrderStatus(ctx context.Context, orderID string) (OrderStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderStatus", ctx, orderID)
+	ret0, _ := ret[0].(OrderStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderStatus indicates an expected call of GetOrderStatus.
+func (mr *MockClientMockRecorder) GetOrderStatus(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderStatus", reflect.TypeOf((*MockClient)(nil).GetOrderStatus), ctx, orderID)
+}
+
 // GetUserTransactions mocks base method.
 func (m *MockClient) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
 	m.ctrl.T.Helper()
