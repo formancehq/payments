@@ -113,8 +113,6 @@ jobs:
       - Tests
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v8'
-        with:
-          fetch-depth: 0
       - name: Setup Env
         uses: ./.github/actions/default
         with:
