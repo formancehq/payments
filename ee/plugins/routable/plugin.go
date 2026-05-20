@@ -44,6 +44,8 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}, nil
 }
 
+func (p *Plugin) PayoutsPerSecond() float64 { return 1.5 }
+
 func (p *Plugin) Name() string {
 	return p.name
 }
