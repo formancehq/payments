@@ -1627,10 +1627,8 @@ components:
           type: string
         contactDetails:
           $ref: '#/components/schemas/V3ContactDetailsRequest'
-          nullable: true
         address:
           $ref: '#/components/schemas/V3AddressRequest'
-          nullable: true
         bankAccountIDs:
           type: array
           items:
@@ -1829,10 +1827,8 @@ components:
           format: date-time
         contactDetails:
           $ref: '#/components/schemas/V3ContactDetails'
-          nullable: true
         address:
           $ref: '#/components/schemas/V3Address'
-          nullable: true
         bankAccountIDs:
           type: array
           items:

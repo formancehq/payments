@@ -111,6 +111,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigPowens(components.V3Powen
 v3ConnectorConfig := components.CreateV3ConnectorConfigQonto(components.V3QontoConfig{/* values here */})
 ```
 
+### V3RoutableConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigRoutable(components.V3RoutableConfig{/* values here */})
+```
+
 ### V3StripeConfig
 
 ```go
