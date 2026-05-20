@@ -233,6 +233,32 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			Expect(state.TrackedOrders).To(HaveKey("301"))
 		})
 
+		It("evicts retention-expired entries when order_status fails so they do not loop forever", func(ctx SpecContext) {
+			// A stale ID past the 30-day window: API will keep failing
+			// the order_status call, so the cleanup path must run even
+			// on error or the entry leaks (unbounded state + permanent
+			// error log spam).
+			old := time.Now().UTC().Add(-orderRetentionMax - time.Minute)
+			initial := ordersState{TrackedOrders: map[string]trackedOrder{
+				"500": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: old, LimitPrice: "60000.00"},
+			}}
+			rawState, _ := json.Marshal(initial)
+
+			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{
+				{ID: "500", Type: "0", Price: "60000.00", Amount: "0.5", CurrencyPair: "btcusd"},
+			}, nil)
+			m.EXPECT().GetOrderStatus(gomock.Any(), "500").
+				Return(client.OrderStatus{}, errors.New("order not found"))
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.Orders).To(BeEmpty())
+
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.TrackedOrders).ToNot(HaveKey("500"), "retention-expired entry must be evicted on error")
+		})
+
 		It("handles MARKET subtype where the order never appeared in open_orders/", func(ctx SpecContext) {
 			// MARKET orders that fully fill within one cycle bypass
 			// open_orders/. The orchestrator must still emit a sensible

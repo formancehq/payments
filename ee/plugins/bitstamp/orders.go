@@ -53,8 +53,16 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 		status, err := p.client.GetOrderStatus(ctx, id)
 		if err != nil {
-			// One bad order_status call must not poison the cycle —
-			// a stale ID past 30-day retention will fail this way too.
+			// A stale ID past 30-day retention will reliably fail this
+			// call — evict on the spot to avoid permanent retry storms
+			// and unbounded state growth (logs at Info because the
+			// failure is expected for retention-expired IDs).
+			if retentionExpired {
+				p.logger.WithField("orderID", id).
+					Infof("evicting retention-expired order after order_status error: %v", err)
+				delete(tracked, id)
+				continue
+			}
 			p.logger.WithField("orderID", id).Errorf("failed to get order status: %v", err)
 			continue
 		}

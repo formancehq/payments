@@ -212,3 +212,44 @@ func TestBuildEnrichmentForCurrency(t *testing.T) {
 		t.Errorf("Market: min=%q type=%q", got.MinOrderValue, got.MarketType)
 	}
 }
+
+// TestBuildEnrichmentForCurrency_DeterministicRepresentative locks the
+// representative-pick contract: regardless of source order, the same
+// (BaseCurrency-matching) row with the lexicographically smallest
+// (CounterCurrency|MarketType) wins. This prevents account-metadata
+// flapping across cycles if the PSP returns the slice reordered.
+func TestBuildEnrichmentForCurrency_DeterministicRepresentative(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	p := newTestPlugin(t, client.NewMockClient(ctrl))
+
+	markets := []client.Market{
+		{BaseCurrency: "BTC", CounterCurrency: "USDT", MarketType: "SPOT", MinimumOrderValue: "20"},
+		{BaseCurrency: "BTC", CounterCurrency: "EUR", MarketType: "SPOT", MinimumOrderValue: "15"},
+		{BaseCurrency: "BTC", CounterCurrency: "USD", MarketType: "SPOT", MinimumOrderValue: "10"},
+	}
+	fees := []client.TradingFee{
+		{CurrencyPair: "btcusdt", Fees: client.TradingFeeRate{Maker: "0.500", Taker: "0.600"}},
+		{CurrencyPair: "btceur", Fees: client.TradingFeeRate{Maker: "0.300", Taker: "0.400"}},
+		{CurrencyPair: "btcusd", Fees: client.TradingFeeRate{Maker: "0.100", Taker: "0.200"}},
+	}
+
+	want := struct{ minOrder, makerFee, takerFee string }{
+		minOrder: "15", makerFee: "0.300", takerFee: "0.400", // BTC/EUR wins by stable key
+	}
+
+	for _, perm := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}, {0, 2, 1}} {
+		p.enrichment.markets = []client.Market{markets[perm[0]], markets[perm[1]], markets[perm[2]]}
+		p.enrichment.tradingFees = []client.TradingFee{fees[perm[0]], fees[perm[1]], fees[perm[2]]}
+
+		got := p.buildEnrichmentForCurrency(p.currencies, client.Currency{Currency: "BTC"}, "BTC")
+		if got.MinOrderValue != want.minOrder {
+			t.Errorf("perm %v: MinOrderValue=%q want %q", perm, got.MinOrderValue, want.minOrder)
+		}
+		if got.MakerFee != want.makerFee || got.TakerFee != want.takerFee {
+			t.Errorf("perm %v: fees maker=%q taker=%q want %q/%q",
+				perm, got.MakerFee, got.TakerFee, want.makerFee, want.takerFee)
+		}
+	}
+}

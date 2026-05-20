@@ -115,7 +115,7 @@ func ResolveTwoAssetConversion(currencies map[string]int, amounts map[string]str
 			continue
 		}
 		raw := strings.TrimSpace(val)
-		if IsZeroAmount(AbsAmount(raw)) {
+		if IsZeroAmount(raw) {
 			continue
 		}
 		leg := TwoAssetLeg{Symbol: symbol, Precision: precision, Asset: FormatAsset(currencies, symbol)}

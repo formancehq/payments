@@ -140,36 +140,50 @@ func (p *Plugin) buildEnrichmentForCurrency(currencies map[string]int, currentCu
 		}
 	}
 
-	// First matching row is a representative snapshot, not the
-	// authoritative per-pair fee schedule (those live in the cache
-	// and can be queried independently). A ticker anchors many
-	// pairs with varying tier rates.
-	for _, m := range p.enrichment.markets {
+	// Representative snapshot (not authoritative per-pair). Pick the
+	// lexicographically-first match by stable key so the value does
+	// not flap if the API returns rows in a different order between
+	// cycles. Authoritative per-pair data lives in the cache and can
+	// be queried independently.
+	var repMarket *client.Market
+	for i := range p.enrichment.markets {
+		m := &p.enrichment.markets[i]
 		if strings.ToUpper(m.BaseCurrency) != symbol {
 			continue
 		}
-		if enrich.MinOrderValue == "" {
-			enrich.MinOrderValue = m.MinimumOrderValue
+		if repMarket == nil || marketKey(*m) < marketKey(*repMarket) {
+			repMarket = m
 		}
-		if enrich.MarketType == "" {
-			enrich.MarketType = m.MarketType
-		}
-		break
 	}
-	for _, f := range p.enrichment.tradingFees {
+	if repMarket != nil {
+		enrich.MinOrderValue = repMarket.MinimumOrderValue
+		enrich.MarketType = repMarket.MarketType
+	}
+
+	var repFee *client.TradingFee
+	for i := range p.enrichment.tradingFees {
+		f := &p.enrichment.tradingFees[i]
 		base, _, ok := splitURLSymbol(f.CurrencyPair, currencies)
 		if !ok || base != symbol {
 			continue
 		}
-		if enrich.MakerFee == "" {
-			enrich.MakerFee = f.Fees.Maker
+		if repFee == nil || f.CurrencyPair < repFee.CurrencyPair {
+			repFee = f
 		}
-		if enrich.TakerFee == "" {
-			enrich.TakerFee = f.Fees.Taker
-		}
-		break
+	}
+	if repFee != nil {
+		enrich.MakerFee = repFee.Fees.Maker
+		enrich.TakerFee = repFee.Fees.Taker
 	}
 	return enrich
+}
+
+// marketKey produces a stable composite ordering key for selecting
+// a representative Market row. CounterCurrency disambiguates pairs
+// sharing the same base (BTC/USD vs BTC/EUR vs BTC/USDT); MarketType
+// tiebreaks SPOT vs other flavours on the same pair.
+func marketKey(m client.Market) string {
+	return m.CounterCurrency + "|" + m.MarketType
 }
 
 // splitURLSymbol parses Bitstamp's lowercase concat pair (e.g.

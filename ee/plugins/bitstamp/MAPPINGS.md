@@ -61,7 +61,7 @@ The config is deliberately minimal — no `accountScope`, `enableDerivatives`, `
 
 Declared in [`workflow.go`](workflow.go). Four periodic root tasks:
 
-```
+```text
 fetch_accounts (periodic)
   └── fetch_balances (FromPayload — no extra API call)
 

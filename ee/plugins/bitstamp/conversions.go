@@ -41,7 +41,7 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 			continue
 		}
 		if res.DerivativesRow {
-			p.logger.WithField("txID", tx.ID).Errorf("skipping derivatives-marked row on spot-only connector")
+			p.logger.WithField("txID", tx.ID).Infof("skipping derivatives-marked row on spot-only connector")
 			continue
 		}
 		if res.Skip || res.Conversion == nil {
