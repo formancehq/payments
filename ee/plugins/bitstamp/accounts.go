@@ -2,17 +2,16 @@ package bitstamp
 
 import (
 	"context"
-	"encoding/json"
-	"time"
+	"fmt"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
-// bitstampLaunchDate is used as a fixed CreatedAt for accounts since Bitstamp
-// does not provide account creation dates.
-var bitstampLaunchDate = time.Date(2011, 8, 2, 0, 0, 0, 0, time.UTC)
-
+// fetchNextAccounts emits one PSPAccount per Bitstamp currency with
+// any non-zero balance, folding in per-currency enrichment metadata
+// from the install-time caches. See MAPPINGS §4.1.
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	currencies, err := p.getCurrencies(ctx)
 	if err != nil {
@@ -21,44 +20,48 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	balances, err := p.client.GetAccountBalances(ctx)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to fetch accounts: %w", err)
+	}
+
+	// Enrichment is best-effort: failures log and continue. Accounts
+	// ship without the missing metadata rather than failing the cycle.
+	if err := p.ensureEnrichment(ctx); err != nil {
+		p.logger.WithField("error", err.Error()).
+			Errorf("accounts cycle: enrichment refresh incomplete")
+	}
+
+	currencyIndex, err := p.currenciesIndex(ctx)
+	if err != nil {
+		p.logger.WithField("error", err.Error()).
+			Errorf("currencies index refresh failed; accounts ship without networks metadata")
+		currencyIndex = map[string]client.Currency{}
 	}
 
 	accounts := make([]models.PSPAccount, 0, len(balances))
 	for _, bal := range balances {
-		symbol := normalizeCurrency(bal.Currency)
-		if symbol == "" {
+		if isEmptyBalance(bal) {
 			continue
 		}
-
-		// Skip zero-balance currencies.
-		if isZeroAmount(bal.Available) && isZeroAmount(bal.Total) && isZeroAmount(bal.Reserved) {
-			continue
-		}
-
-		raw, err := json.Marshal(bal)
+		symbol := mappers.NormalizeCurrency(bal.Currency)
+		enrich := p.buildEnrichmentForCurrency(currencies, currencyIndex[symbol], symbol)
+		account, err := mappers.AccountBalanceToPSPAccountEnriched(currencies, bal, enrich)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to map account %s: %w", bal.Currency, err)
 		}
-
-		var defaultAsset *string
-		if _, ok := currencies[symbol]; ok {
-			asset := currency.FormatAsset(currencies, symbol)
-			defaultAsset = &asset
+		if account == nil {
+			continue
 		}
-
-		accounts = append(accounts, models.PSPAccount{
-			Reference:    symbol,
-			CreatedAt:    bitstampLaunchDate,
-			DefaultAsset: defaultAsset,
-			Raw:          raw,
-		})
+		accounts = append(accounts, *account)
 	}
 
-	// Bitstamp returns all balances in a single call — no pagination needed.
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
-		NewState: nil,
 		HasMore:  false,
 	}, nil
+}
+
+func isEmptyBalance(b client.AccountBalance) bool {
+	return mappers.IsZeroAmount(b.Available) &&
+		mappers.IsZeroAmount(b.Total) &&
+		mappers.IsZeroAmount(b.Reserved)
 }

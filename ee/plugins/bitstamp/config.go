@@ -9,6 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Config is the Bitstamp connector config. See MAPPINGS §2 for the
+// rationale on the deliberately minimal surface (no accountScope,
+// derivatives, or per-source toggles — the PSP is the source of truth).
 type Config struct {
 	APIKey        string                     `json:"apiKey" validate:"required"`
 	APISecret     string                     `json:"apiSecret" validate:"required"`

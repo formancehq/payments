@@ -55,6 +55,21 @@ func (mr *MockClientMockRecorder) GetAccountBalances(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountBalances", reflect.TypeOf((*MockClient)(nil).GetAccountBalances), ctx)
 }
 
+// GetCryptoTransactions mocks base method.
+func (m *MockClient) GetCryptoTransactions(ctx context.Context, opts CryptoTransactionsOptions) (CryptoTransactionsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCryptoTransactions", ctx, opts)
+	ret0, _ := ret[0].(CryptoTransactionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCryptoTransactions indicates an expected call of GetCryptoTransactions.
+func (mr *MockClientMockRecorder) GetCryptoTransactions(ctx, opts any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoTransactions", reflect.TypeOf((*MockClient)(nil).GetCryptoTransactions), ctx, opts)
+}
+
 // GetCurrencies mocks base method.
 func (m *MockClient) GetCurrencies(ctx context.Context) ([]Currency, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +85,96 @@ func (mr *MockClientMockRecorder) GetCurrencies(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrencies", reflect.TypeOf((*MockClient)(nil).GetCurrencies), ctx)
 }
 
+// GetMarkets mocks base method.
+func (m *MockClient) GetMarkets(ctx context.Context) ([]Market, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarkets", ctx)
+	ret0, _ := ret[0].([]Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarkets indicates an expected call of GetMarkets.
+func (mr *MockClientMockRecorder) GetMarkets(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarkets", reflect.TypeOf((*MockClient)(nil).GetMarkets), ctx)
+}
+
+// GetMyMarkets mocks base method.
+func (m *MockClient) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMyMarkets", ctx)
+	ret0, _ := ret[0].([]MyMarket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMyMarkets indicates an expected call of GetMyMarkets.
+func (mr *MockClientMockRecorder) GetMyMarkets(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyMarkets", reflect.TypeOf((*MockClient)(nil).GetMyMarkets), ctx)
+}
+
+// GetOpenOrders mocks base method.
+func (m *MockClient) GetOpenOrders(ctx context.Context) ([]OpenOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOpenOrders", ctx)
+	ret0, _ := ret[0].([]OpenOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOpenOrders indicates an expected call of GetOpenOrders.
+func (mr *MockClientMockRecorder) GetOpenOrders(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrders", reflect.TypeOf((*MockClient)(nil).GetOpenOrders), ctx)
+}
+
+// GetOpenOrdersForMarket mocks base method.
+func (m *MockClient) GetOpenOrdersForMarket(ctx context.Context, currencyPair string) ([]OpenOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOpenOrdersForMarket", ctx, currencyPair)
+	ret0, _ := ret[0].([]OpenOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOpenOrdersForMarket indicates an expected call of GetOpenOrdersForMarket.
+func (mr *MockClientMockRecorder) GetOpenOrdersForMarket(ctx, currencyPair any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrdersForMarket", reflect.TypeOf((*MockClient)(nil).GetOpenOrdersForMarket), ctx, currencyPair)
+}
+
+// GetOrderStatus mocks base method.
+func (m *MockClient) GetOrderStatus(ctx context.Context, orderID string) (OrderStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderStatus", ctx, orderID)
+	ret0, _ := ret[0].(OrderStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderStatus indicates an expected call of GetOrderStatus.
+func (mr *MockClientMockRecorder) GetOrderStatus(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderStatus", reflect.TypeOf((*MockClient)(nil).GetOrderStatus), ctx, orderID)
+}
+
+// GetTradingFees mocks base method.
+func (m *MockClient) GetTradingFees(ctx context.Context) ([]TradingFee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTradingFees", ctx)
+	ret0, _ := ret[0].([]TradingFee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTradingFees indicates an expected call of GetTradingFees.
+func (mr *MockClientMockRecorder) GetTradingFees(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradingFees", reflect.TypeOf((*MockClient)(nil).GetTradingFees), ctx)
+}
+
 // GetUserTransactions mocks base method.
 func (m *MockClient) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
 	m.ctrl.T.Helper()
@@ -83,4 +188,49 @@ func (m *MockClient) GetUserTransactions(ctx context.Context, sinceID *int64, li
 func (mr *MockClientMockRecorder) GetUserTransactions(ctx, sinceID, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTransactions", reflect.TypeOf((*MockClient)(nil).GetUserTransactions), ctx, sinceID, limit)
+}
+
+// GetWithdrawalFees mocks base method.
+func (m *MockClient) GetWithdrawalFees(ctx context.Context) ([]WithdrawalFee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithdrawalFees", ctx)
+	ret0, _ := ret[0].([]WithdrawalFee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWithdrawalFees indicates an expected call of GetWithdrawalFees.
+func (mr *MockClientMockRecorder) GetWithdrawalFees(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalFees", reflect.TypeOf((*MockClient)(nil).GetWithdrawalFees), ctx)
+}
+
+// GetWithdrawalRequestByID mocks base method.
+func (m *MockClient) GetWithdrawalRequestByID(ctx context.Context, id int64) (WithdrawalRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithdrawalRequestByID", ctx, id)
+	ret0, _ := ret[0].(WithdrawalRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWithdrawalRequestByID indicates an expected call of GetWithdrawalRequestByID.
+func (mr *MockClientMockRecorder) GetWithdrawalRequestByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalRequestByID", reflect.TypeOf((*MockClient)(nil).GetWithdrawalRequestByID), ctx, id)
+}
+
+// GetWithdrawalRequests mocks base method.
+func (m *MockClient) GetWithdrawalRequests(ctx context.Context, limit, offset int) ([]WithdrawalRequest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithdrawalRequests", ctx, limit, offset)
+	ret0, _ := ret[0].([]WithdrawalRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWithdrawalRequests indicates an expected call of GetWithdrawalRequests.
+func (mr *MockClientMockRecorder) GetWithdrawalRequests(ctx, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalRequests", reflect.TypeOf((*MockClient)(nil).GetWithdrawalRequests), ctx, limit, offset)
 }

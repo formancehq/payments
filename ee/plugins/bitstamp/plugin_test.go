@@ -66,6 +66,12 @@ var _ = Describe("Bitstamp Plugin", func() {
 				},
 				nil,
 			)
+			// Install also runs the enrichment refresh in parallel; the
+			// caches are best-effort, so empty returns are acceptable.
+			m.EXPECT().GetMarkets(gomock.Any()).Return(nil, nil).AnyTimes()
+			m.EXPECT().GetMyMarkets(gomock.Any()).Return(nil, nil).AnyTimes()
+			m.EXPECT().GetTradingFees(gomock.Any()).Return(nil, nil).AnyTimes()
+			m.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil).AnyTimes()
 
 			req := models.InstallRequest{}
 			res, err := p.Install(ctx, req)
@@ -179,6 +185,53 @@ var _ = Describe("Bitstamp Plugin", func() {
 			req := models.FetchNextPaymentsRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+	})
+
+	Context("fetch next orders", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextOrdersRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+	})
+
+	Context("fetch next conversions", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextConversionsRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextConversions(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+	})
+
+	Context("capabilities", func() {
+		It("declares fetch accounts, balances, payments, orders, conversions", func() {
+			Expect(capabilities).To(ContainElements(
+				models.CAPABILITY_FETCH_ACCOUNTS,
+				models.CAPABILITY_FETCH_BALANCES,
+				models.CAPABILITY_FETCH_PAYMENTS,
+				models.CAPABILITY_FETCH_ORDERS,
+				models.CAPABILITY_FETCH_CONVERSIONS,
+			))
+		})
+	})
+
+	Context("workflow", func() {
+		It("nests balances under accounts and keeps orders + conversions as siblings", func() {
+			tree := workflow()
+			Expect(tree).To(HaveLen(4))
+			Expect(tree[0].TaskType).To(Equal(models.TASK_FETCH_ACCOUNTS))
+			Expect(tree[0].Periodically).To(BeTrue())
+			Expect(tree[0].NextTasks).To(HaveLen(1))
+			Expect(tree[0].NextTasks[0].TaskType).To(Equal(models.TASK_FETCH_BALANCES))
+			Expect(tree[0].NextTasks[0].Periodically).To(BeFalse())
+
+			rootTypes := []models.TaskType{tree[1].TaskType, tree[2].TaskType, tree[3].TaskType}
+			Expect(rootTypes).To(ConsistOf(
+				models.TASK_FETCH_PAYMENTS,
+				models.TASK_FETCH_ORDERS,
+				models.TASK_FETCH_CONVERSIONS,
+			))
 		})
 	})
 
