@@ -13,20 +13,14 @@ import (
 // Cap /v1/companies walks to once per 24h; see MAPPINGS.md §6.5.5.
 const externalAccountsRefreshInterval = 24 * time.Hour
 
-var now = time.Now
-
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	state, err := decodePageState(req.State)
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
-	if state.isStartOfCycle() && now().Sub(state.LastCompletedAt) < externalAccountsRefreshInterval {
-		payload, err := json.Marshal(state)
-		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, fmt.Errorf("marshaling state: %w", err)
-		}
-		return models.FetchNextExternalAccountsResponse{NewState: payload, HasMore: false}, nil
+	if state.isStartOfCycle() && time.Since(state.LastCompletedAt) < externalAccountsRefreshInterval {
+		return models.FetchNextExternalAccountsResponse{NewState: req.State, HasMore: false}, nil
 	}
 
 	resp, err := p.client.ListCompanies(ctx, state.nextPage(), req.PageSize)
@@ -47,7 +41,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	newState := pageState{Page: state.nextPage() + 1, LastCompletedAt: state.LastCompletedAt}
 	if !resp.Links.HasMore() {
 		newState.Page = 1
-		newState.LastCompletedAt = now().UTC()
+		newState.LastCompletedAt = time.Now().UTC()
 	}
 	payload, err := json.Marshal(newState)
 	if err != nil {

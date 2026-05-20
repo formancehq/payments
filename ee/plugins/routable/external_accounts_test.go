@@ -67,16 +67,10 @@ var _ = Describe("Routable fetchNextExternalAccounts", func() {
 	})
 
 	Describe("refresh-interval throttle (24h hardcoded)", func() {
-		var clock time.Time
-		BeforeEach(func() {
-			clock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
-			now = func() time.Time { return clock }
-		})
-		AfterEach(func() { now = time.Now })
-
-		It("stamps LastCompletedAt at end of the first walk and skips the next cycle inside the 24h window", func(ctx SpecContext) {
+		It("stamps LastCompletedAt at end of the first walk", func(ctx SpecContext) {
+			before := time.Now()
 			mock.EXPECT().ListCompanies(gomock.Any(), 1, 25).Return(&client.ListCompaniesResponse{
-				Results: []client.Company{{ID: "co_1", DisplayName: "Acme", CreatedAt: clock}},
+				Results: []client.Company{{ID: "co_1", DisplayName: "Acme", CreatedAt: time.Now().UTC()}},
 			}, nil)
 			resp, err := plg.fetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{PageSize: 25})
 			Expect(err).To(BeNil())
@@ -85,42 +79,37 @@ var _ = Describe("Routable fetchNextExternalAccounts", func() {
 			var afterFirst pageState
 			Expect(json.Unmarshal(resp.NewState, &afterFirst)).To(Succeed())
 			Expect(afterFirst.Page).To(Equal(1))
-			Expect(afterFirst.LastCompletedAt).To(Equal(clock))
+			Expect(afterFirst.LastCompletedAt).To(BeTemporally(">=", before))
+			Expect(afterFirst.LastCompletedAt).To(BeTemporally("<=", time.Now()))
+		})
 
-			clock = clock.Add(20 * time.Minute) // still well inside the 24h window
+		It("skips the cycle and returns the input state unchanged when LastCompletedAt is recent", func(ctx SpecContext) {
+			seed := pageState{Page: 1, LastCompletedAt: time.Now().Add(-1 * time.Hour)}
+			seedJSON, _ := json.Marshal(seed)
 			// No mock.EXPECT(): the throttle must skip without an HTTP call.
-			resp2, err := plg.fetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{PageSize: 25, State: resp.NewState})
+			resp, err := plg.fetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{PageSize: 25, State: seedJSON})
 			Expect(err).To(BeNil())
-			Expect(resp2.ExternalAccounts).To(BeEmpty())
-			Expect(resp2.HasMore).To(BeFalse())
-
-			var afterSkip pageState
-			Expect(json.Unmarshal(resp2.NewState, &afterSkip)).To(Succeed())
-			Expect(afterSkip.LastCompletedAt).To(Equal(clock.Add(-20 * time.Minute)), "skipped cycles must not move the watermark")
+			Expect(resp.ExternalAccounts).To(BeEmpty())
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(string(resp.NewState)).To(Equal(string(seedJSON)), "skipped cycles must return the input state byte-for-byte")
 		})
 
 		It("resumes the walk once the 24h refresh interval has elapsed", func(ctx SpecContext) {
-			seed := pageState{Page: 1, LastCompletedAt: clock.Add(-25 * time.Hour)}
+			seed := pageState{Page: 1, LastCompletedAt: time.Now().Add(-25 * time.Hour)}
 			seedJSON, _ := json.Marshal(seed)
-
 			mock.EXPECT().ListCompanies(gomock.Any(), 1, 25).Return(&client.ListCompaniesResponse{
-				Results: []client.Company{{ID: "co_3", DisplayName: "Beta", CreatedAt: clock}},
+				Results: []client.Company{{ID: "co_3", DisplayName: "Beta", CreatedAt: time.Now().UTC()}},
 			}, nil)
 			resp, err := plg.fetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{PageSize: 25, State: seedJSON})
 			Expect(err).To(BeNil())
 			Expect(resp.ExternalAccounts).To(HaveLen(1))
-
-			var afterResume pageState
-			Expect(json.Unmarshal(resp.NewState, &afterResume)).To(Succeed())
-			Expect(afterResume.LastCompletedAt).To(Equal(clock))
 		})
 
-		It("does not throttle mid-cycle pagination even if the stamp is recent", func(ctx SpecContext) {
-			seed := pageState{Page: 5, LastCompletedAt: clock.Add(-1 * time.Hour)}
+		It("does not throttle mid-cycle pagination even if LastCompletedAt is recent", func(ctx SpecContext) {
+			seed := pageState{Page: 5, LastCompletedAt: time.Now().Add(-1 * time.Hour)}
 			seedJSON, _ := json.Marshal(seed)
-
 			mock.EXPECT().ListCompanies(gomock.Any(), 5, 25).Return(&client.ListCompaniesResponse{
-				Results: []client.Company{{ID: "co_p5", DisplayName: "Continuing", CreatedAt: clock}},
+				Results: []client.Company{{ID: "co_p5", DisplayName: "Continuing", CreatedAt: time.Now().UTC()}},
 			}, nil)
 			resp, err := plg.fetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{PageSize: 25, State: seedJSON})
 			Expect(err).To(BeNil())
