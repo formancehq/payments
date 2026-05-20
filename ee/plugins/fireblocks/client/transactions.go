@@ -44,10 +44,13 @@ type FeeInfo struct {
 }
 
 func (c *client) ListTransactions(ctx context.Context, createdAfter int64, limit int) ([]Transaction, error) {
-	endpoint := fmt.Sprintf("%s/v1/transactions?limit=%d&orderBy=createdAt&sort=ASC", c.baseURL, limit)
-	if createdAfter > 0 {
-		endpoint = fmt.Sprintf("%s&after=%d", endpoint, createdAfter)
+	// Fireblocks defaults `after` to "last 90 days" when omitted; pin to 1 ms
+	// past epoch on the first call so we fetch the full history.
+	if createdAfter <= 0 {
+		createdAfter = 1
 	}
+	endpoint := fmt.Sprintf("%s/v1/transactions?limit=%d&orderBy=createdAt&sort=ASC&after=%d",
+		c.baseURL, limit, createdAfter)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -58,7 +61,7 @@ func (c *client) ListTransactions(ctx context.Context, createdAfter int64, limit
 	var errResponse fireblocksError
 	_, err = c.httpClient.Do(ctx, req, &response, &errResponse)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list transactions: %w", err)
+		return nil, errResponse.wrap("failed to list transactions", err)
 	}
 
 	return response, nil

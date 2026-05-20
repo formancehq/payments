@@ -13,6 +13,7 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	ListAssets(ctx context.Context) ([]Asset, error)
+	ListBlockchains(ctx context.Context) ([]Blockchain, error)
 	GetVaultAccountsPaged(ctx context.Context, cursor string, limit int) (*VaultAccountsPagedResponse, error)
 	GetVaultAccount(ctx context.Context, vaultAccountID string) (*VaultAccount, error)
 	ListTransactions(ctx context.Context, createdAfter int64, limit int) ([]Transaction, error)
