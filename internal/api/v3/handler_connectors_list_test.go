@@ -53,15 +53,18 @@ var _ = Describe("API v3 Connectors List", func() {
 			assertExpectedResponse(w.Result(), http.StatusOK, "cursor")
 		})
 
-		It("should inline capabilities for every row", func(ctx SpecContext) {
-			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
+		It("should inline capabilities for every row, normalising legacy providers", func(ctx SpecContext) {
+			// Storage holds the legacy v2 uppercase form; the registry is keyed
+			// on the v3 lowercase form. The handler must bridge the two via
+			// models.ToV3Provider so legacy rows still pick up capabilities.
+			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: "STRIPE"}
 			caps := []models.Capability{
 				models.CAPABILITY_FETCH_ACCOUNTS,
 				models.CAPABILITY_CREATE_TRANSFER,
 			}
 			m.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
 				&paginate.Cursor[models.Connector]{Data: []models.Connector{{
-					ConnectorBase: models.ConnectorBase{ID: connectorID, Provider: "stripe"},
+					ConnectorBase: models.ConnectorBase{ID: connectorID, Provider: "STRIPE"},
 					Config:        json.RawMessage(`{}`),
 				}}},
 				nil,

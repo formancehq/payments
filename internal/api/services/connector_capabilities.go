@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
@@ -22,10 +21,11 @@ func (s *Service) ConnectorsCapabilitiesGet(ctx context.Context, connectorID mod
 	caps, err := registry.GetCapabilities(connector.Provider)
 	if err != nil {
 		// Storage holds a row for a plugin no longer registered in this binary
-		// (older build or feature flag turned off). Surface as 404 rather than
-		// leaking the registry's internal error.
+		// (older build or feature flag turned off). Surface as 404 without the
+		// registry's internal error message: the caller already has the
+		// connectorID and "not found" is the only relevant signal.
 		if errors.Is(err, registry.ErrPluginNotFound) {
-			return nil, fmt.Errorf("%w: %w", err, ErrNotFound)
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}

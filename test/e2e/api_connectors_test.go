@@ -479,9 +479,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			id := uuid.New()
 			connectorID, err := installV3Connector(ctx, app.GetValue(), nil, id)
 			Expect(err).To(BeNil())
-			DeferCleanup(func() {
-				_, _ = app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorID)
-			})
+			DeferCleanup(func() { uninstallConnector(ctx, app.GetValue(), connectorID) })
 
 			resp, err := app.GetValue().SDK().Payments.V3.GetConnectorCapabilities(ctx, connectorID)
 			Expect(err).To(BeNil())
@@ -493,17 +491,18 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			id := uuid.New()
 			connectorID, err := installV3Connector(ctx, app.GetValue(), nil, id)
 			Expect(err).To(BeNil())
-			DeferCleanup(func() {
-				_, _ = app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorID)
-			})
+			DeferCleanup(func() { uninstallConnector(ctx, app.GetValue(), connectorID) })
 
 			resp, err := app.GetValue().SDK().Payments.V3.ListConnectors(ctx, nil, nil, nil)
 			Expect(err).To(BeNil())
 			Expect(resp.V3ConnectorsCursorResponse).NotTo(BeNil())
 			data := resp.V3ConnectorsCursorResponse.Cursor.Data
 			Expect(data).ToNot(BeEmpty())
+			// Assert against a real capability rather than non-nil: the wire
+			// contract guarantees an empty slice when the plugin is unknown,
+			// so non-nil alone would pass on a broken per-row lookup.
 			for _, c := range data {
-				Expect(c.Capabilities).ToNot(BeNil())
+				Expect(c.Capabilities).To(ContainElement(components.V3CapabilityFetchAccounts))
 			}
 		})
 	})

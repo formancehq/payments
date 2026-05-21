@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
@@ -153,14 +154,15 @@ func GetCapabilities(provider string) ([]models.Capability, error) {
 
 // GetAllCapabilities mirrors GetConfigs: dummypay is the only PSP we expose
 // solely to power debug/dev builds, so it must stay hidden from the public
-// catalog.
+// catalog. Each slice is cloned so callers cannot mutate the internal plugin
+// registration through the returned map.
 func GetAllCapabilities(debug bool) map[string][]models.Capability {
 	caps := make(map[string][]models.Capability, len(pluginsRegistry))
 	for key, info := range pluginsRegistry {
 		if !debug && key == DummyPSPName {
 			continue
 		}
-		caps[key] = info.capabilities
+		caps[key] = slices.Clone(info.capabilities)
 	}
 	return caps
 }

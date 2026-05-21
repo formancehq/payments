@@ -43,7 +43,11 @@ func connectorsList(backend backend.Backend) http.HandlerFunc {
 		// O(plugins) and amortised across N rows, beating N separate lookups.
 		caps := backend.ConnectorsCapabilities()
 		api.RenderCursor(w, *paginate.MapCursor(connectors, func(c models.Connector) v3Connector {
-			return newV3Connector(c, caps[c.Provider])
+			// Look up via the same v3 form we emit on the wire so legacy
+			// uppercase storage values ("STRIPE", "DUMMY-PAY") still map to
+			// their lowercase registry keys.
+			provider := models.ToV3Provider(c.Provider)
+			return newV3Connector(c, provider, caps[provider])
 		}))
 	}
 }
@@ -64,7 +68,7 @@ type v3Connector struct {
 	UpdatedAt            *time.Time          `json:"updatedAt,omitempty"`
 }
 
-func newV3Connector(c models.Connector, caps []models.Capability) v3Connector {
+func newV3Connector(c models.Connector, provider string, caps []models.Capability) v3Connector {
 	if caps == nil {
 		// Keep the wire contract stable: required:true in OpenAPI means we
 		// always emit an array, even for connectors whose plugin is no longer
@@ -76,7 +80,7 @@ func newV3Connector(c models.Connector, caps []models.Capability) v3Connector {
 		Reference:            c.ID.Reference.String(),
 		Name:                 c.Name,
 		CreatedAt:            c.CreatedAt,
-		Provider:             models.ToV3Provider(c.Provider),
+		Provider:             provider,
 		Config:               c.Config,
 		ScheduledForDeletion: c.ScheduledForDeletion,
 		Capabilities:         caps,

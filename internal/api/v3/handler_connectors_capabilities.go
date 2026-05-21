@@ -31,8 +31,9 @@ func connectorsCapabilities(backend backend.Backend) http.HandlerFunc {
 	// Catalog is constant per process: compute body + ETag once per handler
 	// instance and serve 304s for matching If-None-Match.
 	cache := sync.OnceValues(func() (capabilitiesCatalog, error) {
+		catalog := backend.ConnectorsCapabilities()
 		body, err := json.Marshal(api.BaseResponse[map[string][]models.Capability]{
-			Data: new(backend.ConnectorsCapabilities()),
+			Data: &catalog,
 		})
 		if err != nil {
 			return capabilitiesCatalog{}, err
