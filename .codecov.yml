@@ -2,6 +2,7 @@ ignore:
   - "pkg/client"
   - "pkg/events"
   - "pkg/testserver"
+  - "pkg/testpsp"
   - "test"
   - "tools"
   - "openapi"
