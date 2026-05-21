@@ -367,6 +367,51 @@ components:
             results.
           type: string
 
+    V3Capability:
+      type: string
+      description: >
+        Plugin capability advertised by a connector. Distinct from the
+        Formance gateway "module capabilities" (which are version-gated);
+        these reflect what the underlying PSP integration actually exposes.
+      enum:
+        - FETCH_ACCOUNTS
+        - FETCH_BALANCES
+        - FETCH_EXTERNAL_ACCOUNTS
+        - FETCH_PAYMENTS
+        - FETCH_OTHERS
+        - FETCH_ORDERS
+        - FETCH_CONVERSIONS
+        - CREATE_WEBHOOKS
+        - TRANSLATE_WEBHOOKS
+        - CREATE_BANK_ACCOUNT
+        - CREATE_TRANSFER
+        - CREATE_PAYOUT
+        - ALLOW_FORMANCE_ACCOUNT_CREATION
+        - ALLOW_FORMANCE_PAYMENT_CREATION
+
+    V3ConnectorCapabilitiesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          description: Map of provider name to the capabilities its plugin advertises.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/V3Capability'
+
+    V3ConnectorCapabilityResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3Capability'
+
     V3ConnectorConfigsResponse:
       type: object
       required:
@@ -511,6 +556,7 @@ components:
         - provider
         - scheduledForDeletion
         - config
+        - capabilities
       properties:
         id:
           type: string
@@ -527,6 +573,11 @@ components:
           type: boolean
         config:
           type: object
+        capabilities:
+          type: array
+          description: Plugin capabilities advertised by the connector's provider.
+          items:
+            $ref: '#/components/schemas/V3Capability'
         updatedAt:
           type: string
           format: date-time

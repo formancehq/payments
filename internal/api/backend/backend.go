@@ -35,6 +35,8 @@ type Backend interface {
 	ConnectorsConfigs() registry.Configs
 	ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error)
 	ConnectorsConfigUpdate(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error
+	ConnectorsCapabilities() map[string][]models.Capability
+	ConnectorsCapabilitiesGet(ctx context.Context, connectorID models.ConnectorID) ([]models.Capability, error)
 	ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*paginate.Cursor[models.Connector], error)
 	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
 	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)

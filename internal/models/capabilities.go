@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -84,6 +85,25 @@ func (t Capability) Value() (driver.Value, error) {
 		return nil, fmt.Errorf("unknown capability")
 	}
 	return res, nil
+}
+
+// MarshalJSON keeps the wire format aligned with the database representation
+// (String()/Value()): API consumers should be able to round-trip a value they
+// saw on the wire back into storage without translation.
+func (t Capability) MarshalJSON() ([]byte, error) {
+	v, err := t.Value()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(v)
+}
+
+func (t *Capability) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	return t.Scan(s)
 }
 
 func (t *Capability) Scan(value interface{}) error {

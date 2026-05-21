@@ -140,5 +140,17 @@ var _ = Describe("Register Plugin", func() {
 			Expect(err).To(BeNil())
 			Expect(pluginType).To(Equal(models.PluginTypePSP))
 		})
+
+		It("hides dummypay capabilities when not in debug mode", func(ctx SpecContext) {
+			caps := GetAllCapabilities(false)
+			_, ok := caps[DummyPSPName]
+			Expect(ok).To(BeFalse())
+			Expect(caps).To(HaveKey(name))
+		})
+
+		It("shows dummypay capabilities when in debug mode", func(ctx SpecContext) {
+			caps := GetAllCapabilities(true)
+			Expect(caps).To(HaveKey(DummyPSPName))
+		})
 	})
 })

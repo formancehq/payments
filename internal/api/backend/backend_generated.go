@@ -180,6 +180,35 @@ func (mr *MockBackendMockRecorder) BankAccountsUpdateMetadata(ctx, id, metadata 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BankAccountsUpdateMetadata", reflect.TypeOf((*MockBackend)(nil).BankAccountsUpdateMetadata), ctx, id, metadata)
 }
 
+// ConnectorsCapabilities mocks base method.
+func (m *MockBackend) ConnectorsCapabilities() map[string][]models.Capability {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsCapabilities")
+	ret0, _ := ret[0].(map[string][]models.Capability)
+	return ret0
+}
+
+// ConnectorsCapabilities indicates an expected call of ConnectorsCapabilities.
+func (mr *MockBackendMockRecorder) ConnectorsCapabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsCapabilities", reflect.TypeOf((*MockBackend)(nil).ConnectorsCapabilities))
+}
+
+// ConnectorsCapabilitiesGet mocks base method.
+func (m *MockBackend) ConnectorsCapabilitiesGet(ctx context.Context, connectorID models.ConnectorID) ([]models.Capability, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsCapabilitiesGet", ctx, connectorID)
+	ret0, _ := ret[0].([]models.Capability)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorsCapabilitiesGet indicates an expected call of ConnectorsCapabilitiesGet.
+func (mr *MockBackendMockRecorder) ConnectorsCapabilitiesGet(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsCapabilitiesGet", reflect.TypeOf((*MockBackend)(nil).ConnectorsCapabilitiesGet), ctx, connectorID)
+}
+
 // ConnectorsConfig mocks base method.
 func (m *MockBackend) ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error) {
 	m.ctrl.T.Helper()

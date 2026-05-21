@@ -19,9 +19,11 @@
 * [ListConnectors](#listconnectors) - List all connectors
 * [InstallConnector](#installconnector) - Install a connector
 * [ListConnectorConfigs](#listconnectorconfigs) - List all connector configurations
+* [ListConnectorCapabilities](#listconnectorcapabilities) - List the plugin capabilities advertised by every supported provider
 * [UninstallConnector](#uninstallconnector) - Uninstall a connector
 * [GetConnectorConfig](#getconnectorconfig) - Get a connector configuration by ID
 * [V3UpdateConnectorConfig](#v3updateconnectorconfig) - Update the config of a connector
+* [GetConnectorCapabilities](#getconnectorcapabilities) - Get the plugin capabilities of an installed connector
 * [ResetConnector](#resetconnector) - Reset a connector. Be aware that this will delete all data and stop all existing tasks like payment initiations and bank account creations.
 * [ListConnectorSchedules](#listconnectorschedules) - List all connector schedules
 * [GetConnectorSchedule](#getconnectorschedule) - Get a connector schedule by ID
@@ -712,6 +714,59 @@ func main() {
 | ------------------ | ------------------ | ------------------ |
 | sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
 
+## ListConnectorCapabilities
+
+Returns the static map of provider name to the list of plugin capabilities (`FETCH_ACCOUNTS`, `CREATE_TRANSFER`, ...) compiled into this binary. The catalog is immutable for the lifetime of the process and is therefore safe to cache: the response carries a strong ETag and a `Cache-Control: public, max-age=3600, must-revalidate` directive. Stateless consumers (e.g. console) should set `If-None-Match` on subsequent requests to receive a `304 Not Modified`.
+
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.ListConnectorCapabilities(ctx, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.V3ConnectorCapabilitiesResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `ctx`                                                                    | [context.Context](https://pkg.go.dev/context#Context)                    | :heavy_check_mark:                                                       | The context to use for the request.                                      |
+| `ifNoneMatch`                                                            | **string*                                                                | :heavy_minus_sign:                                                       | ETag from a previous response; a matching value yields 304 Not Modified. |
+| `opts`                                                                   | [][operations.Option](../../models/operations/option.md)                 | :heavy_minus_sign:                                                       | The options for this request.                                            |
+
+### Response
+
+**[*operations.V3ListConnectorCapabilitiesResponse](../../models/operations/v3listconnectorcapabilitiesresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
 ## UninstallConnector
 
 Uninstall a connector
@@ -862,6 +917,59 @@ func main() {
 ### Response
 
 **[*operations.V3UpdateConnectorConfigResponse](../../models/operations/v3updateconnectorconfigresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## GetConnectorCapabilities
+
+Returns the list of plugin capabilities advertised by the provider backing this installed connector (`FETCH_ACCOUNTS`, `CREATE_TRANSFER`, ...). The same values are also inlined on each row of `v3ListConnectors`; prefer that endpoint when listing multiple connectors.
+
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.GetConnectorCapabilities(ctx, "<id>")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.V3ConnectorCapabilityResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
+| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
+| `connectorID`                                            | *string*                                                 | :heavy_check_mark:                                       | The connector ID                                         |
+| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+
+### Response
+
+**[*operations.V3GetConnectorCapabilitiesResponse](../../models/operations/v3getconnectorcapabilitiesresponse.md), error**
 
 ### Errors
 

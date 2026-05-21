@@ -151,6 +151,20 @@ func GetCapabilities(provider string) ([]models.Capability, error) {
 	return info.capabilities, nil
 }
 
+// GetAllCapabilities mirrors GetConfigs: dummypay is the only PSP we expose
+// solely to power debug/dev builds, so it must stay hidden from the public
+// catalog.
+func GetAllCapabilities(debug bool) map[string][]models.Capability {
+	caps := make(map[string][]models.Capability, len(pluginsRegistry))
+	for key, info := range pluginsRegistry {
+		if !debug && key == DummyPSPName {
+			continue
+		}
+		caps[key] = info.capabilities
+	}
+	return caps
+}
+
 func GetConfigs(debug bool) Configs {
 	confs := make(Configs)
 	for key, info := range pluginsRegistry {

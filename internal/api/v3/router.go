@@ -83,11 +83,13 @@ func newRouter(backend backend.Backend, a jwt.Authenticator, debug bool) *chi.Mu
 				r.Post("/install/{connector}", connectorsInstall(backend))
 
 				r.Get("/configs", connectorsConfigs(backend))
+				r.Get("/capabilities", connectorsCapabilities(backend))
 
 				r.Route("/{connectorID}", func(r chi.Router) {
 					r.Delete("/", connectorsUninstall(backend))
 					r.Get("/config", connectorsConfig(backend))
 					r.Patch("/config", connectorsConfigUpdate(backend))
+					r.Get("/capabilities", connectorsCapabilitiesGet(backend))
 					r.Post("/reset", connectorsReset(backend))
 
 					r.Get("/schedules", schedulesList(backend))

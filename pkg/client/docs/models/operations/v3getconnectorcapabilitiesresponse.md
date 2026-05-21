@@ -1,0 +1,10 @@
+# V3GetConnectorCapabilitiesResponse
+
+
+## Fields
+
+| Field                                                                                                 | Type                                                                                                  | Required                                                                                              | Description                                                                                           |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `HTTPMeta`                                                                                            | [components.HTTPMetadata](../../models/components/httpmetadata.md)                                    | :heavy_check_mark:                                                                                    | N/A                                                                                                   |
+| `V3ConnectorCapabilityResponse`                                                                       | [*components.V3ConnectorCapabilityResponse](../../models/components/v3connectorcapabilityresponse.md) | :heavy_minus_sign:                                                                                    | OK                                                                                                    |
+| `V3ErrorResponse`                                                                                     | [*components.V3ErrorResponse](../../models/components/v3errorresponse.md)                             | :heavy_minus_sign:                                                                                    | Error                                                                                                 |

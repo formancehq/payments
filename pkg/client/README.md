@@ -197,9 +197,11 @@ func main() {
 * [ListConnectors](docs/sdks/v3/README.md#listconnectors) - List all connectors
 * [InstallConnector](docs/sdks/v3/README.md#installconnector) - Install a connector
 * [ListConnectorConfigs](docs/sdks/v3/README.md#listconnectorconfigs) - List all connector configurations
+* [ListConnectorCapabilities](docs/sdks/v3/README.md#listconnectorcapabilities) - List the plugin capabilities advertised by every supported provider
 * [UninstallConnector](docs/sdks/v3/README.md#uninstallconnector) - Uninstall a connector
 * [GetConnectorConfig](docs/sdks/v3/README.md#getconnectorconfig) - Get a connector configuration by ID
 * [V3UpdateConnectorConfig](docs/sdks/v3/README.md#v3updateconnectorconfig) - Update the config of a connector
+* [GetConnectorCapabilities](docs/sdks/v3/README.md#getconnectorcapabilities) - Get the plugin capabilities of an installed connector
 * [ResetConnector](docs/sdks/v3/README.md#resetconnector) - Reset a connector. Be aware that this will delete all data and stop all existing tasks like payment initiations and bank account creations.
 * [ListConnectorSchedules](docs/sdks/v3/README.md#listconnectorschedules) - List all connector schedules
 * [GetConnectorSchedule](docs/sdks/v3/README.md#getconnectorschedule) - Get a connector schedule by ID

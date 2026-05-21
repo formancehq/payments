@@ -707,6 +707,9 @@ Accept: application/json
         "provider": "string",
         "scheduledForDeletion": true,
         "config": {},
+        "capabilities": [
+          "FETCH_ACCOUNTS"
+        ],
         "updatedAt": "2019-08-24T14:15:22Z"
       }
     ]
@@ -843,6 +846,69 @@ Accept: application/json
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorConfigsResponse](#schemav3connectorconfigsresponse)|
 |default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## List the plugin capabilities advertised by every supported provider
+
+<a id="opIdv3ListConnectorCapabilities"></a>
+
+> Code samples
+
+```http
+GET /v3/connectors/capabilities HTTP/1.1
+
+Accept: application/json
+If-None-Match: string
+
+```
+
+`GET /v3/connectors/capabilities`
+
+Returns the static map of provider name to the list of plugin capabilities (`FETCH_ACCOUNTS`, `CREATE_TRANSFER`, ...) compiled into this binary. The catalog is immutable for the lifetime of the process and is therefore safe to cache: the response carries a strong ETag and a `Cache-Control: public, max-age=3600, must-revalidate` directive. Stateless consumers (e.g. console) should set `If-None-Match` on subsequent requests to receive a `304 Not Modified`.
+
+<h3 id="list-the-plugin-capabilities-advertised-by-every-supported-provider-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|If-None-Match|header|string|false|ETag from a previous response; a matching value yields 304 Not Modified.|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": {
+    "property1": [
+      "FETCH_ACCOUNTS"
+    ],
+    "property2": [
+      "FETCH_ACCOUNTS"
+    ]
+  }
+}
+```
+
+<h3 id="list-the-plugin-capabilities-advertised-by-every-supported-provider-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorCapabilitiesResponse](#schemav3connectorcapabilitiesresponse)|
+|304|[Not Modified](https://tools.ietf.org/html/rfc7232#section-4.1)|Not Modified|None|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+### Response Headers
+
+|Status|Header|Type|Format|Description|
+|---|---|---|---|---|
+|200|ETag|string||Opaque, strong validator for the catalog body.|
+|200|Cache-Control|string||none|
+|304|ETag|string||none|
+|304|Cache-Control|string||none|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -997,6 +1063,53 @@ Update connector config
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
 None ( Scopes: payments:write )
+</aside>
+
+## Get the plugin capabilities of an installed connector
+
+<a id="opIdv3GetConnectorCapabilities"></a>
+
+> Code samples
+
+```http
+GET /v3/connectors/{connectorID}/capabilities HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/connectors/{connectorID}/capabilities`
+
+Returns the list of plugin capabilities advertised by the provider backing this installed connector (`FETCH_ACCOUNTS`, `CREATE_TRANSFER`, ...). The same values are also inlined on each row of `v3ListConnectors`; prefer that endpoint when listing multiple connectors.
+
+<h3 id="get-the-plugin-capabilities-of-an-installed-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|connectorID|path|string|true|The connector ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": [
+    "FETCH_ACCOUNTS"
+  ]
+}
+```
+
+<h3 id="get-the-plugin-capabilities-of-an-installed-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorCapabilityResponse](#schemav3connectorcapabilityresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
 </aside>
 
 ## Reset a connector. Be aware that this will delete all data and stop all existing tasks like payment initiations and bank account creations.
@@ -4737,6 +4850,95 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |data|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to reset the connector. You can use the task API to check the status of the task and get the results.|
 
+<h2 id="tocS_V3Capability">V3Capability</h2>
+<!-- backwards compatibility -->
+<a id="schemav3capability"></a>
+<a id="schema_V3Capability"></a>
+<a id="tocSv3capability"></a>
+<a id="tocsv3capability"></a>
+
+```json
+"FETCH_ACCOUNTS"
+
+```
+
+Plugin capability advertised by a connector. Distinct from the Formance gateway "module capabilities" (which are version-gated); these reflect what the underlying PSP integration actually exposes.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|Plugin capability advertised by a connector. Distinct from the Formance gateway "module capabilities" (which are version-gated); these reflect what the underlying PSP integration actually exposes.|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|FETCH_ACCOUNTS|
+|*anonymous*|FETCH_BALANCES|
+|*anonymous*|FETCH_EXTERNAL_ACCOUNTS|
+|*anonymous*|FETCH_PAYMENTS|
+|*anonymous*|FETCH_OTHERS|
+|*anonymous*|FETCH_ORDERS|
+|*anonymous*|FETCH_CONVERSIONS|
+|*anonymous*|CREATE_WEBHOOKS|
+|*anonymous*|TRANSLATE_WEBHOOKS|
+|*anonymous*|CREATE_BANK_ACCOUNT|
+|*anonymous*|CREATE_TRANSFER|
+|*anonymous*|CREATE_PAYOUT|
+|*anonymous*|ALLOW_FORMANCE_ACCOUNT_CREATION|
+|*anonymous*|ALLOW_FORMANCE_PAYMENT_CREATION|
+
+<h2 id="tocS_V3ConnectorCapabilitiesResponse">V3ConnectorCapabilitiesResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorcapabilitiesresponse"></a>
+<a id="schema_V3ConnectorCapabilitiesResponse"></a>
+<a id="tocSv3connectorcapabilitiesresponse"></a>
+<a id="tocsv3connectorcapabilitiesresponse"></a>
+
+```json
+{
+  "data": {
+    "property1": [
+      "FETCH_ACCOUNTS"
+    ],
+    "property2": [
+      "FETCH_ACCOUNTS"
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|object|true|none|Map of provider name to the capabilities its plugin advertises.|
+|» **additionalProperties**|[[V3Capability](#schemav3capability)]|false|none|[Plugin capability advertised by a connector. Distinct from the Formance gateway "module capabilities" (which are version-gated); these reflect what the underlying PSP integration actually exposes.<br>]|
+
+<h2 id="tocS_V3ConnectorCapabilityResponse">V3ConnectorCapabilityResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorcapabilityresponse"></a>
+<a id="schema_V3ConnectorCapabilityResponse"></a>
+<a id="tocSv3connectorcapabilityresponse"></a>
+<a id="tocsv3connectorcapabilityresponse"></a>
+
+```json
+{
+  "data": [
+    "FETCH_ACCOUNTS"
+  ]
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[[V3Capability](#schemav3capability)]|true|none|[Plugin capability advertised by a connector. Distinct from the Formance gateway "module capabilities" (which are version-gated); these reflect what the underlying PSP integration actually exposes.<br>]|
+
 <h2 id="tocS_V3ConnectorConfigsResponse">V3ConnectorConfigsResponse</h2>
 <!-- backwards compatibility -->
 <a id="schemav3connectorconfigsresponse"></a>
@@ -4866,6 +5068,9 @@ None ( Scopes: payments:read )
         "provider": "string",
         "scheduledForDeletion": true,
         "config": {},
+        "capabilities": [
+          "FETCH_ACCOUNTS"
+        ],
         "updatedAt": "2019-08-24T14:15:22Z"
       }
     ]
@@ -5008,6 +5213,9 @@ None ( Scopes: payments:read )
   "provider": "string",
   "scheduledForDeletion": true,
   "config": {},
+  "capabilities": [
+    "FETCH_ACCOUNTS"
+  ],
   "updatedAt": "2019-08-24T14:15:22Z"
 }
 
@@ -5024,6 +5232,7 @@ None ( Scopes: payments:read )
 |provider|string|true|none|none|
 |scheduledForDeletion|boolean|true|none|none|
 |config|object|true|none|none|
+|capabilities|[[V3Capability](#schemav3capability)]|true|none|Plugin capabilities advertised by the connector's provider.|
 |updatedAt|string(date-time)¦null|false|none|none|
 
 <h2 id="tocS_V3ConnectorBase">V3ConnectorBase</h2>

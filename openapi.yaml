@@ -1171,6 +1171,55 @@ paths:
       security:
         - Authorization:
             - payments:read
+  /v3/connectors/capabilities:
+    get:
+      tags:
+        - payments.v3
+      summary: List the plugin capabilities advertised by every supported provider
+      description: |
+        Returns the static map of provider name to the list of plugin capabilities (`FETCH_ACCOUNTS`, `CREATE_TRANSFER`, ...) compiled into this binary. The catalog is immutable for the lifetime of the process and is therefore safe to cache: the response carries a strong ETag and a `Cache-Control: public, max-age=3600, must-revalidate` directive. Stateless consumers (e.g. console) should set `If-None-Match` on subsequent requests to receive a `304 Not Modified`.
+      operationId: v3ListConnectorCapabilities
+      x-speakeasy-name-override: ListConnectorCapabilities
+      parameters:
+        - in: header
+          name: If-None-Match
+          required: false
+          schema:
+            type: string
+          description: ETag from a previous response; a matching value yields 304 Not Modified.
+      responses:
+        "200":
+          description: OK
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: Opaque, strong validator for the catalog body.
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorCapabilitiesResponse'
+        "304":
+          description: Not Modified
+          headers:
+            ETag:
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
   /v3/connectors/{connectorID}:
     delete:
       tags:
@@ -1242,6 +1291,33 @@ paths:
       security:
         - Authorization:
             - payments:write
+  /v3/connectors/{connectorID}/capabilities:
+    get:
+      tags:
+        - payments.v3
+      summary: Get the plugin capabilities of an installed connector
+      description: |
+        Returns the list of plugin capabilities advertised by the provider backing this installed connector (`FETCH_ACCOUNTS`, `CREATE_TRANSFER`, ...). The same values are also inlined on each row of `v3ListConnectors`; prefer that endpoint when listing multiple connectors.
+      operationId: v3GetConnectorCapabilities
+      x-speakeasy-name-override: GetConnectorCapabilities
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorCapabilityResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
   /v3/connectors/{connectorID}/reset:
     post:
       tags:
@@ -4597,6 +4673,46 @@ components:
           description: |
             Since this call is asynchronous, the response will contain the ID of the task that was created to reset the connector. You can use the task API to check the status of the task and get the results.
           type: string
+    V3Capability:
+      type: string
+      description: |
+        Plugin capability advertised by a connector. Distinct from the Formance gateway "module capabilities" (which are version-gated); these reflect what the underlying PSP integration actually exposes.
+      enum:
+        - FETCH_ACCOUNTS
+        - FETCH_BALANCES
+        - FETCH_EXTERNAL_ACCOUNTS
+        - FETCH_PAYMENTS
+        - FETCH_OTHERS
+        - FETCH_ORDERS
+        - FETCH_CONVERSIONS
+        - CREATE_WEBHOOKS
+        - TRANSLATE_WEBHOOKS
+        - CREATE_BANK_ACCOUNT
+        - CREATE_TRANSFER
+        - CREATE_PAYOUT
+        - ALLOW_FORMANCE_ACCOUNT_CREATION
+        - ALLOW_FORMANCE_PAYMENT_CREATION
+    V3ConnectorCapabilitiesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          description: Map of provider name to the capabilities its plugin advertises.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/V3Capability'
+    V3ConnectorCapabilityResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3Capability'
     V3ConnectorConfigsResponse:
       type: object
       required:
@@ -4734,6 +4850,7 @@ components:
         - provider
         - scheduledForDeletion
         - config
+        - capabilities
       properties:
         id:
           type: string
@@ -4750,6 +4867,11 @@ components:
           type: boolean
         config:
           type: object
+        capabilities:
+          type: array
+          description: Plugin capabilities advertised by the connector's provider.
+          items:
+            $ref: '#/components/schemas/V3Capability'
         updatedAt:
           type: string
           format: date-time
