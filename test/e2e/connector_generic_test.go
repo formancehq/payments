@@ -87,6 +87,14 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 			for _, account := range pspServer.Accounts {
 				Expect(refs).To(ContainElement(account.ID))
 			}
+
+			Eventually(func() int64 {
+				return pspServer.AccountsCalled()
+			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+				Should(BeNumerically(">=", 2))
+
+			latestAccount := pspServer.Accounts[len(pspServer.Accounts)-1]
+			Expect(pspServer.LastSeenAccountPagingParamCreatedAtFrom()).To(Equal(latestAccount.CreatedAt))
 		})
 
 		It("calls psp side /beneficiaries and emits external account events", func() {
@@ -102,6 +110,14 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 			for _, ben := range pspServer.Beneficiaries {
 				Expect(refs).To(ContainElement(ben.ID))
 			}
+
+			Eventually(func() int64 {
+				return pspServer.BeneficiariesCalled()
+			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+				Should(BeNumerically(">=", 2))
+
+			latestBeneficiary := pspServer.Beneficiaries[len(pspServer.Beneficiaries)-1]
+			Expect(pspServer.LastSeenBeneficiaryPagingParamCreatedAtFrom()).To(Equal(latestBeneficiary.CreatedAt))
 		})
 
 		It("calls psp side /accounts/{id}/balances and emits balance events", func() {
@@ -140,6 +156,14 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 			for _, tx := range pspServer.Transactions {
 				Expect(refs).To(ContainElement(tx.ID))
 			}
+
+			Eventually(func() int64 {
+				return pspServer.TransactionsCalled()
+			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+				Should(BeNumerically(">=", 2))
+
+			latestTransaction := pspServer.Transactions[len(pspServer.Transactions)-1]
+			Expect(pspServer.LastSeenTransactionPagingParamUpdatedAtFrom()).To(Equal(latestTransaction.UpdatedAt))
 		})
 	})
 })

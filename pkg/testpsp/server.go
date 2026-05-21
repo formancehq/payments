@@ -57,6 +57,10 @@ type Server struct {
 	balancesCalled      atomic.Int64
 	transactionsCalled  atomic.Int64
 	beneficiariesCalled atomic.Int64
+
+	lastAccountCreatedAtFromNano     atomic.Int64
+	lastBeneficiaryCreatedAtFromNano atomic.Int64
+	lastTransactionUpdatedAtFromNano atomic.Int64
 }
 
 func NewServer() *Server {
@@ -108,16 +112,48 @@ func NewServer() *Server {
 	return s
 }
 
-func (s *Server) URL() string      { return s.httpServer.URL }
-func (s *Server) Close()           { s.httpServer.Close() }
+func (s *Server) URL() string                { return s.httpServer.URL }
+func (s *Server) Close()                     { s.httpServer.Close() }
 func (s *Server) AccountsCalled() int64      { return s.accountsCalled.Load() }
 func (s *Server) BalancesCalled() int64      { return s.balancesCalled.Load() }
 func (s *Server) TransactionsCalled() int64  { return s.transactionsCalled.Load() }
 func (s *Server) BeneficiariesCalled() int64 { return s.beneficiariesCalled.Load() }
 
+func (s *Server) LastSeenAccountPagingParamCreatedAtFrom() time.Time {
+	return time.Unix(0, s.lastAccountCreatedAtFromNano.Load()).UTC()
+}
+
+func (s *Server) LastSeenBeneficiaryPagingParamCreatedAtFrom() time.Time {
+	return time.Unix(0, s.lastBeneficiaryCreatedAtFromNano.Load()).UTC()
+}
+
+func (s *Server) LastSeenTransactionPagingParamUpdatedAtFrom() time.Time {
+	return time.Unix(0, s.lastTransactionUpdatedAtFromNano.Load()).UTC()
+}
+
+func parseTimeParam(r *http.Request, name string) (time.Time, bool) {
+	v := r.URL.Query().Get(name)
+	if v == "" {
+		return time.Time{}, false
+	}
+	t, err := time.Parse(time.RFC3339Nano, v)
+	if err != nil {
+		t, err = time.Parse(time.RFC3339, v)
+		if err != nil {
+			return time.Time{}, false
+		}
+	}
+	return t, true
+}
+
 func (s *Server) handleAccounts(w http.ResponseWriter, r *http.Request) {
 	s.accountsCalled.Add(1)
 	w.Header().Set("Content-Type", "application/json")
+	if t, ok := parseTimeParam(r, "createdAtFrom"); ok {
+		s.lastAccountCreatedAtFromNano.Store(t.UnixNano())
+		_ = json.NewEncoder(w).Encode([]AccountData{})
+		return
+	}
 	_ = json.NewEncoder(w).Encode(s.Accounts)
 }
 
@@ -141,11 +177,21 @@ func (s *Server) handleAccountSub(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleTransactions(w http.ResponseWriter, r *http.Request) {
 	s.transactionsCalled.Add(1)
 	w.Header().Set("Content-Type", "application/json")
+	if t, ok := parseTimeParam(r, "updatedAtFrom"); ok {
+		s.lastTransactionUpdatedAtFromNano.Store(t.UnixNano())
+		_ = json.NewEncoder(w).Encode([]TransactionData{})
+		return
+	}
 	_ = json.NewEncoder(w).Encode(s.Transactions)
 }
 
-func (s *Server) handleBeneficiaries(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleBeneficiaries(w http.ResponseWriter, r *http.Request) {
 	s.beneficiariesCalled.Add(1)
 	w.Header().Set("Content-Type", "application/json")
+	if t, ok := parseTimeParam(r, "createdAtFrom"); ok {
+		s.lastBeneficiaryCreatedAtFromNano.Store(t.UnixNano())
+		_ = json.NewEncoder(w).Encode([]BeneficiaryData{})
+		return
+	}
 	_ = json.NewEncoder(w).Encode(s.Beneficiaries)
 }
