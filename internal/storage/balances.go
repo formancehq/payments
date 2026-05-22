@@ -303,7 +303,7 @@ func (s *store) BalancesGetFromAccountIDs(ctx context.Context, accountIDs []mode
 		Model((*balance)(nil)).
 		DistinctOn("account_id, asset").
 		Column("account_id", "asset", "created_at", "sort_id", "balance").
-		Where("account_id IN (?)", bun.In(accountIDs)).
+		Where("account_id IN (?)", bun.List(accountIDs)).
 		Order("account_id desc", "asset desc", "created_at desc", "sort_id desc")
 
 	if at != nil && !at.IsZero() {
