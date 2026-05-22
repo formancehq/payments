@@ -34,8 +34,8 @@ func TestPaymentID(t *testing.T) {
 		assert.NotEmpty(t, result)
 		decoded, err := models.PaymentIDFromString(result)
 		require.NoError(t, err)
-		assert.Equal(t, id.PaymentReference.Reference, decoded.PaymentReference.Reference)
-		assert.Equal(t, id.PaymentReference.Type, decoded.PaymentReference.Type)
+		assert.Equal(t, id.Reference, decoded.Reference)
+		assert.Equal(t, id.Type, decoded.Type)
 		assert.Equal(t, id.ConnectorID.Provider, decoded.ConnectorID.Provider)
 		assert.Equal(t, id.ConnectorID.Reference.String(), decoded.ConnectorID.Reference.String())
 	})
@@ -64,8 +64,8 @@ func TestPaymentID(t *testing.T) {
 
 			// Then
 			require.NoError(t, err)
-			assert.Equal(t, original.PaymentReference.Reference, id.PaymentReference.Reference)
-			assert.Equal(t, original.PaymentReference.Type, id.PaymentReference.Type)
+			assert.Equal(t, original.Reference, id.Reference)
+			assert.Equal(t, original.Type, id.Type)
 			assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 			assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		})
@@ -105,7 +105,7 @@ func TestPaymentID(t *testing.T) {
 
 			// Then
 			require.NoError(t, err)
-			assert.Equal(t, models.PAYMENT_TYPE_UNKNOWN, id.PaymentReference.Type)
+			assert.Equal(t, models.PAYMENT_TYPE_UNKNOWN, id.Type)
 		})
 
 		t.Run("empty string", func(t *testing.T) {
@@ -143,8 +143,8 @@ func TestPaymentID(t *testing.T) {
 		id := models.MustPaymentIDFromString(idStr)
 
 		// Then
-		assert.Equal(t, original.PaymentReference.Reference, id.PaymentReference.Reference)
-		assert.Equal(t, original.PaymentReference.Type, id.PaymentReference.Type)
+		assert.Equal(t, original.Reference, id.Reference)
+		assert.Equal(t, original.Type, id.Type)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 	})
@@ -197,8 +197,8 @@ func TestPaymentID(t *testing.T) {
 
 			// Then
 			require.NoError(t, err)
-			assert.Equal(t, original.PaymentReference.Reference, id1.PaymentReference.Reference)
-			assert.Equal(t, original.PaymentReference.Type, id1.PaymentReference.Type)
+			assert.Equal(t, original.Reference, id1.Reference)
+			assert.Equal(t, original.Type, id1.Type)
 		})
 
 		t.Run("invalid type", func(t *testing.T) {
