@@ -55,7 +55,7 @@ func TestEnsureEnrichment_HappyPath_PopulatesEveryCache(t *testing.T) {
 	}, nil)
 
 	p := newTestPlugin(t, c)
-	if err := p.ensureEnrichment(t.Context()); err != nil {
+	if err := p.ensureEnrichment(t.Context(), map[string]bool{}); err != nil {
 		t.Fatalf("ensureEnrichment: %v", err)
 	}
 
@@ -81,7 +81,7 @@ func TestEnsureEnrichment_PartialFailureReturnsSentinel(t *testing.T) {
 	c.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil)
 
 	p := newTestPlugin(t, c)
-	err := p.ensureEnrichment(t.Context())
+	err := p.ensureEnrichment(t.Context(), map[string]bool{})
 	if err == nil {
 		t.Fatal("expected ErrPartialEnrichment, got nil")
 	}
@@ -107,14 +107,15 @@ func TestEnsureEnrichment_TTLShortCircuitsOnFreshCache(t *testing.T) {
 	c.EXPECT().GetWithdrawalFees(gomock.Any()).Return([]client.WithdrawalFee{{Currency: "btc"}}, nil)
 
 	p := newTestPlugin(t, c)
-	if err := p.ensureEnrichment(t.Context()); err != nil {
+	skipMap := map[string]bool{}
+	if err := p.ensureEnrichment(t.Context(), skipMap); err != nil {
 		t.Fatalf("first ensureEnrichment: %v", err)
 	}
 
 	// Second call within the TTL window must NOT invoke any client
 	// method — the mock controller will fail with "unexpected call"
 	// if it does (we set exactly one expectation per method above).
-	if err := p.ensureEnrichment(t.Context()); err != nil {
+	if err := p.ensureEnrichment(t.Context(), skipMap); err != nil {
 		t.Fatalf("second ensureEnrichment: %v", err)
 	}
 }
@@ -132,13 +133,14 @@ func TestEnsureEnrichment_DerivativesErrorTriggersSkipCache(t *testing.T) {
 	c.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil)
 
 	p := newTestPlugin(t, c)
+	skipMap := map[string]bool{}
 	// Derivatives error must be swallowed (returned nil) so the
 	// install / cycle is not blocked.
-	if err := p.ensureEnrichment(t.Context()); err != nil {
+	if err := p.ensureEnrichment(t.Context(), skipMap); err != nil {
 		t.Fatalf("derivatives error must be swallowed, got %v", err)
 	}
-	if !p.shouldSkipEndpoint("/api/v2/my_markets/") {
-		t.Error("my_markets must be flagged in the skip cache")
+	if !skipMap["/api/v2/my_markets/"] {
+		t.Error("my_markets must be flagged in the skip map")
 	}
 }
 

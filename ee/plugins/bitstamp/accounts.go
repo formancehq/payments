@@ -2,6 +2,7 @@ package bitstamp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
@@ -11,8 +12,18 @@ import (
 
 // fetchNextAccounts emits one PSPAccount per Bitstamp currency with
 // any non-zero balance, folding in per-currency enrichment metadata
-// from the install-time caches. See MAPPINGS §4.1.
+// from the in-process caches. See MAPPINGS §4.1.
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+	var state accountsState
+	if len(req.State) > 0 {
+		if err := json.Unmarshal(req.State, &state); err != nil {
+			return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to unmarshal accounts state: %w", err)
+		}
+	}
+	if state.SkipEnrichmentEndpoints == nil {
+		state.SkipEnrichmentEndpoints = map[string]bool{}
+	}
+
 	currencies, err := p.getCurrencies(ctx)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
@@ -25,7 +36,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	// Enrichment is best-effort: failures log and continue. Accounts
 	// ship without the missing metadata rather than failing the cycle.
-	if err := p.ensureEnrichment(ctx); err != nil {
+	// Skip flags for unavailable endpoints are persisted via NewState.
+	if err := p.ensureEnrichment(ctx, state.SkipEnrichmentEndpoints); err != nil {
 		p.logger.WithField("error", err.Error()).
 			Errorf("accounts cycle: enrichment refresh incomplete")
 	}
@@ -54,8 +66,14 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		accounts = append(accounts, *account)
 	}
 
+	newState, err := json.Marshal(state)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to marshal accounts state: %w", err)
+	}
+
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
+		NewState: newState,
 		HasMore:  false,
 	}, nil
 }

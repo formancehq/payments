@@ -2,7 +2,6 @@ package bitstamp
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -48,65 +47,15 @@ var _ = Describe("Bitstamp Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			ctrl := gomock.NewController(GinkgoT())
-			defer ctrl.Finish()
-
-			m := client.NewMockClient(ctrl)
 			p := &Plugin{
 				Plugin: plugins.NewBasePlugin(),
-				client: m,
 				logger: logger,
 			}
-
-			m.EXPECT().GetCurrencies(gomock.Any()).Return(
-				[]client.Currency{
-					{Name: "Bitcoin", Currency: "BTC", Decimals: 8, Type: "crypto"},
-					{Name: "Ethereum", Currency: "ETH", Decimals: 18, Type: "crypto"},
-					{Name: "US Dollar", Currency: "USD", Decimals: 2, Type: "fiat"},
-				},
-				nil,
-			)
-			// Install also runs the enrichment refresh in parallel; the
-			// caches are best-effort, so empty returns are acceptable.
-			m.EXPECT().GetMarkets(gomock.Any()).Return(nil, nil).AnyTimes()
-			m.EXPECT().GetMyMarkets(gomock.Any()).Return(nil, nil).AnyTimes()
-			m.EXPECT().GetTradingFees(gomock.Any()).Return(nil, nil).AnyTimes()
-			m.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil).AnyTimes()
-
 			req := models.InstallRequest{}
 			res, err := p.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
-
-			Expect(p.currencies).To(HaveKey("BTC"))
-			Expect(p.currencies["BTC"]).To(Equal(8))
-			Expect(p.currencies).To(HaveKey("ETH"))
-			Expect(p.currencies["ETH"]).To(Equal(18))
-			Expect(p.currencies).To(HaveKey("USD"))
-			Expect(p.currencies["USD"]).To(Equal(2))
-		})
-
-		It("should return error when currencies fetch fails", func(ctx SpecContext) {
-			ctrl := gomock.NewController(GinkgoT())
-			defer ctrl.Finish()
-
-			m := client.NewMockClient(ctrl)
-			p := &Plugin{
-				Plugin: plugins.NewBasePlugin(),
-				client: m,
-				logger: logger,
-			}
-
-			m.EXPECT().GetCurrencies(gomock.Any()).Return(
-				nil,
-				fmt.Errorf("connection refused"),
-			)
-
-			req := models.InstallRequest{}
-			_, err := p.Install(ctx, req)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("loading currencies"))
 		})
 	})
 

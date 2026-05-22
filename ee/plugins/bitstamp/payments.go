@@ -3,7 +3,6 @@ package bitstamp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 
@@ -13,9 +12,6 @@ import (
 )
 
 const (
-	pathCryptoTransactions = "/api/v2/crypto-transactions/"
-	pathWithdrawalRequests = "/api/v2/withdrawal-requests/"
-
 	withdrawalRequestsPageSize = 1000
 	cryptoTransactionsPageSize = 1000
 )
@@ -116,28 +112,19 @@ func (p *Plugin) pollUserTransactions(
 	return payments, len(transactions) == limit, nil
 }
 
-// pollCryptoTransactions polls /crypto-transactions/ on Main-account
-// scopes. Sub-account scopes trigger the try-and-skip cache so we
-// don't churn on a 4xx on every cycle.
+// pollCryptoTransactions polls /crypto-transactions/ for on-chain
+// deposit, withdrawal, and Ripple IOU activity.
 func (p *Plugin) pollCryptoTransactions(
 	ctx context.Context,
 	currencies map[string]int,
 	state *cryptoTransactionsState,
 ) (payments []models.PSPPayment, hasMore bool, err error) {
-	if p.shouldSkipEndpoint(pathCryptoTransactions) {
-		return nil, false, nil
-	}
 	opts := client.CryptoTransactionsOptions{
 		Limit:       cryptoTransactionsPageSize,
 		IncludeIOUs: true,
 	}
 	resp, err := p.client.GetCryptoTransactions(ctx, opts)
 	if err != nil {
-		var derivErr *client.DerivativesUnsupportedError
-		if errors.As(err, &derivErr) {
-			p.markEndpointSkipped(pathCryptoTransactions, derivErr.Error())
-			return nil, false, nil
-		}
 		return nil, false, err
 	}
 	payments = make([]models.PSPPayment, 0, len(resp.Deposits)+len(resp.Withdrawals)+len(resp.RippleIOUTransactions))
@@ -198,8 +185,7 @@ func (p *Plugin) pollCryptoTransactions(
 }
 
 // pollWithdrawalRequests polls /withdrawal-requests/ for the fiat
-// withdrawal lifecycle. Like crypto-transactions, the endpoint is
-// behind try-and-skip in case the key isn't authorised for it.
+// withdrawal lifecycle.
 //
 // Bitstamp requires BOTH limit AND offset (the client guards
 // against the missing-pair error). We always ask for the page
@@ -211,16 +197,8 @@ func (p *Plugin) pollWithdrawalRequests(
 	currencies map[string]int,
 	state *withdrawalRequestsState,
 ) (payments []models.PSPPayment, hasMore bool, err error) {
-	if p.shouldSkipEndpoint(pathWithdrawalRequests) {
-		return nil, false, nil
-	}
 	rows, err := p.client.GetWithdrawalRequests(ctx, withdrawalRequestsPageSize, 0)
 	if err != nil {
-		var derivErr *client.DerivativesUnsupportedError
-		if errors.As(err, &derivErr) {
-			p.markEndpointSkipped(pathWithdrawalRequests, derivErr.Error())
-			return nil, false, nil
-		}
 		return nil, false, err
 	}
 	payments = make([]models.PSPPayment, 0, len(rows))

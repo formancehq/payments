@@ -41,44 +41,19 @@ type Plugin struct {
 
 	// Currencies cache: precision map (hot path) + full Currency slice
 	// (Networks for enrichment). Both populated by loadCurrencies under
-	// a 24h TTL. Double-checked locking on currRefreshMu.
-	currMu          sync.RWMutex
+	// a 24h TTL. Double-checked locking on currRefreshMu. The cache is
+	// acceptable because getCurrencies refreshes it inline on any call.
+	currMu         sync.RWMutex
 	currRefreshMu  sync.Mutex
 	currLastSync   time.Time
 	currencies     map[string]int // ticker → decimal precision
 	currenciesFull []client.Currency
 
-	// derivSkip: process-lifetime set of endpoint paths that returned
-	// DerivativesUnsupportedError on this scope. Once flagged, the
-	// endpoint is never re-polled — there is no portable way to
-	// detect when permissions change.
-	derivSkipMu sync.RWMutex
-	derivSkip   map[string]struct{}
-
-	// enrichment: install-time caches for markets / my_markets /
+	// enrichment: in-process caches for markets / my_markets /
 	// trading + withdrawal fees. Refreshed in parallel under a 24h TTL.
+	// Acceptable because ensureEnrichment refreshes inline on any call.
+	// Which endpoints to skip is persisted via FetchNextAccounts state.
 	enrichment enrichmentState
-}
-
-func (p *Plugin) shouldSkipEndpoint(path string) bool {
-	p.derivSkipMu.RLock()
-	defer p.derivSkipMu.RUnlock()
-	_, skip := p.derivSkip[path]
-	return skip
-}
-
-func (p *Plugin) markEndpointSkipped(path, reason string) {
-	p.derivSkipMu.Lock()
-	defer p.derivSkipMu.Unlock()
-	if _, already := p.derivSkip[path]; already {
-		return
-	}
-	if p.derivSkip == nil {
-		p.derivSkip = map[string]struct{}{}
-	}
-	p.derivSkip[path] = struct{}{}
-	p.logger.WithField("endpoint", path).WithField("reason", reason).
-		Infof("marking endpoint as not-supported for this account scope; future cycles will skip it")
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -112,21 +87,8 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 	return p.config
 }
 
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	if err := p.loadCurrencies(ctx); err != nil {
-		return models.InstallResponse{}, fmt.Errorf("loading currencies: %w", err)
-	}
-	// Enrichment failures are non-blocking — the connector continues
-	// without the optional metadata. ErrPartialEnrichment is logged
-	// inside ensureEnrichment + surfaced for ops visibility but does
-	// NOT fail the install.
-	if err := p.ensureEnrichment(ctx); err != nil {
-		p.logger.WithField("error", err.Error()).
-			Errorf("install-time enrichment incomplete; accounts will ship without enrichment metadata")
-	}
-	return models.InstallResponse{
-		Workflow: workflow(),
-	}, nil
+func (p *Plugin) Install(_ context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
+	return models.InstallResponse{Workflow: workflow()}, nil
 }
 
 func (p *Plugin) loadCurrencies(ctx context.Context) error {

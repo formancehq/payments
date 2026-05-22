@@ -13,6 +13,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+
 const enrichmentRefreshInterval = 24 * time.Hour
 
 const (
@@ -41,28 +42,32 @@ type enrichmentState struct {
 	withdrawalFeesSync time.Time
 }
 
-func (p *Plugin) ensureEnrichment(ctx context.Context) error {
-	g, ctx := errgroup.WithContext(ctx)
+// ensureEnrichment refreshes the four enrichment caches in parallel.
+// skipMap is read+written under a local mutex so callers can persist
+// newly-discovered skip decisions via FetchNextAccounts NewState.
+func (p *Plugin) ensureEnrichment(ctx context.Context, skipMap map[string]bool) error {
+	var mu sync.Mutex
+	g, gCtx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		return refreshCache(ctx, p, pathMarkets,
+		return refreshCache(gCtx, p, pathMarkets, skipMap, &mu,
 			&p.enrichment.marketsSync,
 			p.client.GetMarkets,
 			func(v []client.Market) { p.enrichment.markets = v })
 	})
 	g.Go(func() error {
-		return refreshCache(ctx, p, pathMyMarkets,
+		return refreshCache(gCtx, p, pathMyMarkets, skipMap, &mu,
 			&p.enrichment.myMarketsSync,
 			p.client.GetMyMarkets,
 			func(v []client.MyMarket) { p.enrichment.myMarkets = v })
 	})
 	g.Go(func() error {
-		return refreshCache(ctx, p, pathFeesTrading,
+		return refreshCache(gCtx, p, pathFeesTrading, skipMap, &mu,
 			&p.enrichment.tradingFeesSync,
 			p.client.GetTradingFees,
 			func(v []client.TradingFee) { p.enrichment.tradingFees = v })
 	})
 	g.Go(func() error {
-		return refreshCache(ctx, p, pathFeesWithdrawal,
+		return refreshCache(gCtx, p, pathFeesWithdrawal, skipMap, &mu,
 			&p.enrichment.withdrawalFeesSync,
 			p.client.GetWithdrawalFees,
 			func(v []client.WithdrawalFee) { p.enrichment.withdrawalFees = v })
@@ -76,31 +81,43 @@ func (p *Plugin) ensureEnrichment(ctx context.Context) error {
 	return nil
 }
 
-// refreshCache is the generic single-source refresh path: TTL gate,
-// skip-cache gate (so endpoints flagged DerivativesUnsupported never
-// re-poll), client call, derivatives-error swallow, write under lock.
+// refreshCache is the generic single-source refresh path: skip-map
+// gate, TTL gate, client call, derivatives-error skip, write under lock.
+// skipMap and skipMu are owned by ensureEnrichment so writes are safe
+// across the errgroup goroutines.
 func refreshCache[T any](
 	ctx context.Context,
 	p *Plugin,
 	path string,
-	sync *time.Time,
+	skipMap map[string]bool,
+	skipMu *sync.Mutex,
+	syncTime *time.Time,
 	fetch func(context.Context) ([]T, error),
 	store func([]T),
 ) error {
-	if p.shouldSkipEndpoint(path) {
+	skipMu.Lock()
+	skip := skipMap[path]
+	skipMu.Unlock()
+	if skip {
 		return nil
 	}
+
 	p.enrichment.mu.RLock()
-	fresh := !sync.IsZero() && time.Since(*sync) < enrichmentRefreshInterval
+	fresh := !syncTime.IsZero() && time.Since(*syncTime) < enrichmentRefreshInterval
 	p.enrichment.mu.RUnlock()
 	if fresh {
 		return nil
 	}
+
 	rows, err := fetch(ctx)
 	if err != nil {
 		var derivErr *client.DerivativesUnsupportedError
 		if errors.As(err, &derivErr) {
-			p.markEndpointSkipped(path, derivErr.Error())
+			skipMu.Lock()
+			skipMap[path] = true
+			skipMu.Unlock()
+			p.logger.WithField("endpoint", path).WithField("reason", derivErr.Error()).
+				Infof("marking enrichment endpoint as not-supported; future cycles will skip it")
 			return nil
 		}
 		return fmt.Errorf("failed to refresh %s: %w", path, err)
@@ -110,7 +127,7 @@ func refreshCache[T any](
 	}
 	p.enrichment.mu.Lock()
 	store(rows)
-	*sync = time.Now()
+	*syncTime = time.Now()
 	p.enrichment.mu.Unlock()
 	return nil
 }

@@ -438,31 +438,20 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(refs["wr:42"]).To(BeTrue(), "fiat withdrawal request")
 		})
 
-		It("marks crypto-transactions as skipped when the PSP returns DerivativesUnsupportedError", func(ctx SpecContext) {
+		It("fails the cycle when crypto-transactions returns an error", func(ctx SpecContext) {
 			ctrl.Finish()
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.client = m
 
-			// Default empties for user_transactions and withdrawal_requests.
-			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(nil, nil).AnyTimes()
-			m.EXPECT().GetWithdrawalRequests(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(nil, nil).AnyTimes()
-
-			// First cycle: crypto-transactions returns the typed error.
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
 			m.EXPECT().GetCryptoTransactions(gomock.Any(), gomock.Any()).
-				Return(client.CryptoTransactionsResponse{},
-					&client.DerivativesUnsupportedError{Endpoint: "/api/v2/crypto-transactions/", Message: "Trade account does not support"})
+				Return(client.CryptoTransactionsResponse{}, errors.New("crypto-tx error"))
 
-			_, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: emptyState, PageSize: 100})
-			Expect(err).To(BeNil(), "typed derivatives error must not bubble up — orchestrator swallows + caches")
-
-			// Second cycle: must NOT call GetCryptoTransactions again.
-			// If it did, gomock would fail with "unexpected call" because
-			// we set exactly one expectation above.
-			_, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: emptyState, PageSize: 100})
-			Expect(err).To(BeNil())
+			resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: emptyState, PageSize: 100})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("crypto-tx error"))
+			Expect(resp.NewState).To(BeEmpty())
 		})
 
 		It("emits the full crypto-transactions union (deposits + withdrawals + IOUs) and advances per-bucket watermarks", func(ctx SpecContext) {
