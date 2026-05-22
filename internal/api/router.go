@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/go-libs/v3/auth"
 	"github.com/formancehq/go-libs/v3/health"
 	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v5/pkg/audit/httpaudit"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -38,6 +40,7 @@ func NewRouter(
 	info api.ServiceInfo,
 	healthController *health.HealthController,
 	a auth.Authenticator,
+	publisher message.Publisher,
 	debug bool,
 	versions ...Version) *chi.Mux {
 	r := chi.NewRouter()
@@ -48,6 +51,7 @@ func NewRouter(
 		})
 	})
 	r.Use(service.OTLPMiddleware("payments", debug))
+	r.Use(httpaudit.Middleware(publisher, "audit-events", "payments", nil))
 	r.Use(middleware.Recoverer)
 	r.Get("/_healthcheck", healthController.Check)
 	r.Get("/_info", api.InfoHandler(info))
