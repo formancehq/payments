@@ -584,7 +584,7 @@ func newV2ConnectorConfigFn() func(id uuid.UUID) *components.DummyPayConfig {
 		dir, err := os.MkdirTemp("", "dummypay")
 		Expect(err).To(BeNil())
 		GinkgoT().Cleanup(func() {
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 		})
 
 		return &components.DummyPayConfig{
