@@ -174,7 +174,7 @@ func (s *store) OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, even
 	_, err = tx.NewUpdate().
 		TableExpr("outbox_events").
 		Set("status = ?", models.OUTBOX_STATUS_PROCESSED).
-		Where("id IN (?)", bun.In(eventIDs)).
+		Where("id IN (?)", bun.List(eventIDs)).
 		Exec(ctx)
 	if err != nil {
 		return e("failed to mark published events as processed", err)
