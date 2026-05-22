@@ -79,7 +79,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	if err := db.Ping(); err != nil {
 		log.Fatalf("db ping: %v", err)
 	}

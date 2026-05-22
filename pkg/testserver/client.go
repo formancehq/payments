@@ -88,7 +88,7 @@ func (c *Client) PollTask(ctx context.Context, t T) func(id string) func() model
 			httpClient := &http.Client{Timeout: defaultHttpClientTimeout}
 			res, err := httpClient.Do(req)
 			require.NoError(t, err)
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			require.Equal(t, http.StatusOK, res.StatusCode)
 
 			var expectedBody struct{ Data models.Task }

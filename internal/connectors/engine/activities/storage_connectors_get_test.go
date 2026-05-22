@@ -44,7 +44,7 @@ var _ = Describe("Activity StorageConnectorsGet", func() {
 	})
 
 	AfterEach(func() {
-		publisher.Close()
+		_ = publisher.Close()
 	})
 
 	It("returns error when storage.ConnectorsGet fails", func(ctx SpecContext) {

@@ -78,7 +78,7 @@ func TestConnectorsInstall(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -223,7 +223,7 @@ func TestConnectorsUninstall(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -252,7 +252,7 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -304,7 +304,7 @@ func TestConnectorsScheduleForDeletion(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 
@@ -332,7 +332,7 @@ func TestConnectorsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -362,7 +362,7 @@ func TestConnectorsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)

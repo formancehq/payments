@@ -64,7 +64,7 @@ func TestPoolsUpsert(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -189,7 +189,7 @@ func TestPoolsUpdateQuery(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -223,7 +223,7 @@ func TestPoolsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -253,7 +253,7 @@ func TestPoolsDelete(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -360,7 +360,7 @@ func TestPoolsAddAccount(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -488,7 +488,7 @@ func TestPoolsRemoveAccount(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -614,7 +614,7 @@ func TestPoolsRemoveAccountFromConnectorID(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -647,7 +647,7 @@ func TestPoolsList(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)

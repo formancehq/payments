@@ -132,7 +132,7 @@ var _ = Describe("Batch Delete Activities", func() {
 			})
 
 			AfterEach(func() {
-				publisher.Close()
+				_ = publisher.Close()
 				ctrl.Finish()
 			})
 

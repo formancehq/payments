@@ -15,7 +15,7 @@ import (
 
 func TestOutboxEventsInsert(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -69,7 +69,7 @@ func TestOutboxEventsInsert(t *testing.T) {
 
 func TestOutboxEventsPollPending(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -141,7 +141,7 @@ func TestOutboxEventsPollPending(t *testing.T) {
 
 func TestOutboxEventsMarkProcessedAndRecordSent(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -200,7 +200,7 @@ func TestOutboxEventsMarkProcessedAndRecordSent(t *testing.T) {
 
 func TestOutboxEventsMarkProcessedAndRecordSent_Batch(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -292,7 +292,7 @@ func TestOutboxEventsMarkProcessedAndRecordSent_Batch(t *testing.T) {
 
 func TestOutboxEventsMarkFailed(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -351,7 +351,7 @@ func TestOutboxEventsMarkFailed(t *testing.T) {
 
 func TestOutboxEventsMarkFailed_NonRetryableError(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -410,7 +410,7 @@ func TestOutboxEventsMarkFailed_NonRetryableError(t *testing.T) {
 
 func TestOutboxEventsEmptyInsert(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -425,7 +425,7 @@ func TestOutboxEventsEmptyInsert(t *testing.T) {
 
 func TestOutboxEventsInsert_FiltersEventsAlreadySent(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -488,7 +488,7 @@ func TestOutboxEventsInsert_FiltersEventsAlreadySent(t *testing.T) {
 
 func TestOutboxEventsInsert_UniqueConstraintOnIdempotencyKeyAndConnectorID(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -545,7 +545,7 @@ func TestOutboxEventsInsert_UniqueConstraintOnIdempotencyKeyAndConnectorID(t *te
 
 func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -616,7 +616,7 @@ func TestOutboxEventsInsert_SameIdempotencyKeyDifferentConnector(t *testing.T) {
 
 func TestOutboxEventsInsert_SameIdempotencyKeyWithNilConnectorID(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -684,7 +684,7 @@ func TestOutboxEventsInsert_SameIdempotencyKeyWithNilConnectorID(t *testing.T) {
 
 func TestOutboxEventsDeleteOldProcessed(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 
@@ -795,7 +795,7 @@ func TestOutboxEventsDeleteOldProcessed(t *testing.T) {
 
 func TestOutboxEventsDeleteOldProcessed_EmptyResult(t *testing.T) {
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	ctx := context.Background()
 

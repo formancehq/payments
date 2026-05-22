@@ -16,7 +16,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
 
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck // ginkgo dot import pattern
 )
 
 func NewTestServer(configurationProvider func() Configuration) *deferred.Deferred[*Server] {
@@ -91,7 +91,7 @@ func persistData(filePath string, data any) error {
 	if err != nil {
 		return fmt.Errorf("failed to create %q: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	if _, err := file.Write(b); err != nil {
 		return fmt.Errorf("failed to write to %q: %w", filePath, err)

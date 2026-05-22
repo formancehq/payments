@@ -77,7 +77,7 @@ func TestTasksUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -195,7 +195,7 @@ func TestTasksGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -221,7 +221,7 @@ func TestTasksDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)

@@ -114,7 +114,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 	t.Cleanup(func() {
 		cleanupOutboxHelper(ctx, store)()
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -603,7 +603,7 @@ func TestBalancesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
@@ -866,7 +866,7 @@ func TestBalancesGetAt(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
@@ -947,7 +947,7 @@ func TestBalancesGetLatestFromAccountIDs(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)

@@ -57,7 +57,7 @@ var _ = Describe("Activity StorageConnectorsStore", func() {
 	})
 
 	AfterEach(func() {
-		publisher.Close()
+		_ = publisher.Close()
 	})
 
 	It("returns error when storage.DecryptRaw fails", func(ctx SpecContext) {

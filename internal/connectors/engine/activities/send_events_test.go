@@ -51,7 +51,7 @@ var _ = Describe("Send Events", func() {
 		})
 
 		AfterEach(func() {
-			publisher.Close()
+			_ = publisher.Close()
 		})
 
 		It("should not do anything if the event was already sent", func(ctx SpecContext) {

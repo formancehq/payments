@@ -69,7 +69,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	_, err = f.Write(d)
 	if err != nil {

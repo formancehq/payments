@@ -55,7 +55,7 @@ func TestInstancesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -103,7 +103,7 @@ func TestInstancesUpdate(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -147,7 +147,7 @@ func TestInstancesDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -188,7 +188,7 @@ func TestInstancesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -352,7 +352,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -379,7 +379,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("returns schedule when last 5 executions all have errors", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -398,7 +398,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("excludes schedule when any of last 5 executions has no error", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -418,7 +418,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("excludes schedule with fewer than 5 executions", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -436,7 +436,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("ignores executions beyond the 5 most recent", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -457,7 +457,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("returns most recent error instance per schedule", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -479,7 +479,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("returns multiple qualifying schedules", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -510,7 +510,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("cursor pagination returns next page", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -549,7 +549,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("excludes non-terminated instances even when they have errors", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -576,7 +576,7 @@ func TestInstancesDeleteFromConnectorIDBatch(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, s := range defaultSchedules {

@@ -71,7 +71,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 
 	t.Cleanup(func() {
 		cleanupOutboxHelper(ctx, store)()
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -298,7 +298,7 @@ func TestBankAccountsUpdateMetadata(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -399,7 +399,7 @@ func TestBankAccountsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -475,7 +475,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	d1 := models.BankAccount{
 		ID:        defaultBankAccount.ID,
@@ -765,7 +765,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -857,7 +857,7 @@ func TestBankAccountsDeleteRelatedAccountFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())

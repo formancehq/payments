@@ -46,7 +46,7 @@ var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", fu
 	})
 
 	AfterEach(func() {
-		publisher.Close()
+		_ = publisher.Close()
 		ctrl.Finish()
 	})
 
