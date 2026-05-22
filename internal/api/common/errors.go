@@ -10,5 +10,5 @@ import (
 
 func InternalServerError(w http.ResponseWriter, r *http.Request, err error) {
 	logging.FromContext(r.Context()).Error(err)
-	api.WriteErrorResponse(w, http.StatusInternalServerError, api.ErrorInternal, errors.New("Internal error. Consult logs/traces to have more details."))
+	api.WriteErrorResponse(w, http.StatusInternalServerError, api.ErrorInternal, errors.New("internal error, consult logs/traces for details"))
 }
