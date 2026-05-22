@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/go-libs/v3/auth"
 	"github.com/formancehq/go-libs/v3/health"
@@ -27,10 +28,11 @@ func NewModule(bind string, debug bool) fx.Option {
 			info api.ServiceInfo,
 			healthController *health.HealthController,
 			a auth.Authenticator,
+			publisher message.Publisher,
 			versions ...Version,
 		) *chi.Mux {
-			return NewRouter(backend, info, healthController, a, debug, versions...)
-		}, fx.ParamTags(``, ``, ``, ``, `group:"apiVersions"`), fx.ResultTags(`name:"apiRouter"`))),
+			return NewRouter(backend, info, healthController, a, publisher, debug, versions...)
+		}, fx.ParamTags(``, ``, ``, ``, ``, `group:"apiVersions"`), fx.ResultTags(`name:"apiRouter"`))),
 		fx.Provide(func(storage storage.Storage, engine engine.Engine) backend.Backend {
 			return services.New(storage, engine, debug)
 		}),
