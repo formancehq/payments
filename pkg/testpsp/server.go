@@ -46,6 +46,48 @@ type TransactionData struct {
 	DestinationAccountID *string `json:"destinationAccountID,omitempty"`
 }
 
+type PayoutRequest struct {
+	IdempotencyKey       string            `json:"idempotencyKey"`
+	Amount               string            `json:"amount"`
+	Currency             string            `json:"currency"`
+	SourceAccountID      string            `json:"sourceAccountId"`
+	DestinationAccountID string            `json:"destinationAccountId"`
+	Description          *string           `json:"description,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
+}
+
+type PayoutResponse struct {
+	ID                   string `json:"id"`
+	IdempotencyKey       string `json:"idempotencyKey"`
+	Amount               string `json:"amount"`
+	Currency             string `json:"currency"`
+	SourceAccountID      string `json:"sourceAccountId"`
+	DestinationAccountID string `json:"destinationAccountId"`
+	Status               string `json:"status"`
+	CreatedAt            string `json:"createdAt"`
+}
+
+type TransferRequest struct {
+	IdempotencyKey       string            `json:"idempotencyKey"`
+	Amount               string            `json:"amount"`
+	Currency             string            `json:"currency"`
+	SourceAccountID      string            `json:"sourceAccountId"`
+	DestinationAccountID string            `json:"destinationAccountId"`
+	Description          *string           `json:"description,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
+}
+
+type TransferResponse struct {
+	ID                   string `json:"id"`
+	IdempotencyKey       string `json:"idempotencyKey"`
+	Amount               string `json:"amount"`
+	Currency             string `json:"currency"`
+	SourceAccountID      string `json:"sourceAccountId"`
+	DestinationAccountID string `json:"destinationAccountId"`
+	Status               string `json:"status"`
+	CreatedAt            string `json:"createdAt"`
+}
+
 type Server struct {
 	httpServer    *httptest.Server
 	Accounts      []AccountData
@@ -57,6 +99,8 @@ type Server struct {
 	balancesCalled      atomic.Int64
 	transactionsCalled  atomic.Int64
 	beneficiariesCalled atomic.Int64
+	payoutsCalled       atomic.Int64
+	transfersCalled     atomic.Int64
 
 	lastAccountCreatedAtFromNano     atomic.Int64
 	lastBeneficiaryCreatedAtFromNano atomic.Int64
@@ -107,6 +151,8 @@ func NewServer() *Server {
 	mux.HandleFunc("/accounts", s.handleAccounts)
 	mux.HandleFunc("/transactions", s.handleTransactions)
 	mux.HandleFunc("/beneficiaries", s.handleBeneficiaries)
+	mux.HandleFunc("/payouts", s.handlePayouts)
+	mux.HandleFunc("/transfers", s.handleTransfers)
 
 	s.httpServer = httptest.NewServer(mux)
 	return s
@@ -118,6 +164,8 @@ func (s *Server) AccountsCalled() int64      { return s.accountsCalled.Load() }
 func (s *Server) BalancesCalled() int64      { return s.balancesCalled.Load() }
 func (s *Server) TransactionsCalled() int64  { return s.transactionsCalled.Load() }
 func (s *Server) BeneficiariesCalled() int64 { return s.beneficiariesCalled.Load() }
+func (s *Server) PayoutsCalled() int64       { return s.payoutsCalled.Load() }
+func (s *Server) TransfersCalled() int64     { return s.transfersCalled.Load() }
 
 func (s *Server) LastSeenAccountPagingParamCreatedAtFrom() time.Time {
 	return time.Unix(0, s.lastAccountCreatedAtFromNano.Load()).UTC()
@@ -194,4 +242,54 @@ func (s *Server) handleBeneficiaries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = json.NewEncoder(w).Encode(s.Beneficiaries)
+}
+
+func (s *Server) handlePayouts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	var req PayoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	s.payoutsCalled.Add(1)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(PayoutResponse{
+		ID:                   "payout-001",
+		IdempotencyKey:       req.IdempotencyKey,
+		Amount:               req.Amount,
+		Currency:             req.Currency,
+		SourceAccountID:      req.SourceAccountID,
+		DestinationAccountID: req.DestinationAccountID,
+		Status:               "SUCCEEDED",
+		CreatedAt:            time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (s *Server) handleTransfers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	var req TransferRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	s.transfersCalled.Add(1)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(TransferResponse{
+		ID:                   "transfer-001",
+		IdempotencyKey:       req.IdempotencyKey,
+		Amount:               req.Amount,
+		Currency:             req.Currency,
+		SourceAccountID:      req.SourceAccountID,
+		DestinationAccountID: req.DestinationAccountID,
+		Status:               "SUCCEEDED",
+		CreatedAt:            time.Now().UTC().Format(time.RFC3339),
+	})
 }

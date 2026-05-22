@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -39,7 +40,7 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 			Output:                        GinkgoWriter,
 			Debug:                         true,
 			SkipOutboxScheduleCreation:    true,
-			ConnectorPollingPeriodMinimum: time.Second,
+			ConnectorPollingPeriodMinimum: 500 * time.Millisecond,
 		}
 	})
 
@@ -47,7 +48,7 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 		flushRemainingWorkflows(ctx)
 	})
 
-	When("installing a generic connector pointing at a test PSP server", func() {
+	When("installing a generic connector pointing at a test PSP server", Ordered, func() {
 		var (
 			pspServer   *testpsp.Server
 			connectorID string
@@ -55,7 +56,7 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 
 		BeforeEach(func() {
 			pspServer = testpsp.NewServer()
-			GinkgoT().Cleanup(pspServer.Close)
+			DeferCleanup(pspServer.Close)
 
 			install, err := app.GetValue().SDK().Payments.V3.InstallConnector(ctx, "generic",
 				&components.V3InstallConnectorRequest{
@@ -77,20 +78,25 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 		It("calls psp side /accounts and emits account events", func() {
 			Eventually(func() int {
 				return countAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(500 * time.Millisecond).
 				Should(BeNumerically(">=", len(pspServer.Accounts)))
 
 			Expect(pspServer.AccountsCalled()).To(BeNumerically(">", 0))
 
-			refs := loadAccountRefsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
-			Expect(refs).To(HaveLen(len(pspServer.Accounts)))
+			accounts := loadAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
+			Expect(accounts).To(HaveLen(len(pspServer.Accounts)))
 			for _, account := range pspServer.Accounts {
-				Expect(refs).To(ContainElement(account.ID))
+				Expect(accounts).To(ContainElement(HaveField("Reference", account.ID)))
 			}
+
+			// Trigger the schedule manually: the Temporal devserver's natural
+			// schedule polling interval is much longer than the configured 2s,
+			// so waiting for it would make this test slow and flaky.
+			triggerConnectorSchedule(ctx, connectorID, "FETCH_ACCOUNTS")
 
 			Eventually(func() int64 {
 				return pspServer.AccountsCalled()
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(200 * time.Millisecond).
 				Should(BeNumerically(">=", 2))
 
 			latestAccount := pspServer.Accounts[len(pspServer.Accounts)-1]
@@ -100,20 +106,22 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 		It("calls psp side /beneficiaries and emits external account events", func() {
 			Eventually(func() int {
 				return countAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_EXTERNAL)
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(500 * time.Millisecond).
 				Should(BeNumerically(">=", len(pspServer.Beneficiaries)))
 
 			Expect(pspServer.BeneficiariesCalled()).To(BeNumerically(">", 0))
 
-			refs := loadAccountRefsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_EXTERNAL)
-			Expect(refs).To(HaveLen(len(pspServer.Beneficiaries)))
+			accounts := loadAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_EXTERNAL)
+			Expect(accounts).To(HaveLen(len(pspServer.Beneficiaries)))
 			for _, ben := range pspServer.Beneficiaries {
-				Expect(refs).To(ContainElement(ben.ID))
+				Expect(accounts).To(ContainElement(HaveField("Reference", ben.ID)))
 			}
+
+			triggerConnectorSchedule(ctx, connectorID, "FETCH_EXTERNAL_ACCOUNTS")
 
 			Eventually(func() int64 {
 				return pspServer.BeneficiariesCalled()
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(200 * time.Millisecond).
 				Should(BeNumerically(">=", 2))
 
 			latestBeneficiary := pspServer.Beneficiaries[len(pspServer.Beneficiaries)-1]
@@ -124,7 +132,7 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 			Eventually(func() int {
 				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedBalances)
 				return n
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(time.Second).
 				Should(BeNumerically(">=", len(pspServer.Accounts)))
 
 			Expect(pspServer.BalancesCalled()).To(BeNumerically(">", 0))
@@ -134,11 +142,84 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 			Expect(n).To(Equal(len(pspServer.Accounts)))
 		})
 
+		It("can initiate and approve a payout via the PSP", func() {
+			Eventually(func() int {
+				return countAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
+			}).WithTimeout(10 * time.Second).WithPolling(time.Second).
+				Should(BeNumerically(">=", len(pspServer.Accounts)))
+
+			Eventually(func() int {
+				return countAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_EXTERNAL)
+			}).WithTimeout(10 * time.Second).WithPolling(time.Second).
+				Should(BeNumerically(">=", len(pspServer.Beneficiaries)))
+
+			internalAccounts := loadAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
+			externalAccounts := loadAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_EXTERNAL)
+
+			initiateResp, err := app.GetValue().SDK().Payments.V3.InitiatePayment(ctx, pointer.For(false),
+				&components.V3InitiatePaymentRequest{
+					Reference:            uuid.New().String(),
+					ConnectorID:          connectorID,
+					Description:          "payout test",
+					Type:                 components.V3PaymentInitiationTypeEnumPayout,
+					Amount:               big.NewInt(1000),
+					Asset:                "USD/2",
+					SourceAccountID:      &internalAccounts[0].ID,
+					DestinationAccountID: &externalAccounts[0].ID,
+				})
+			Expect(err).To(BeNil())
+			paymentInitiationID := *initiateResp.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
+
+			approveResp, err := app.GetValue().SDK().Payments.V3.ApprovePaymentInitiation(ctx, paymentInitiationID)
+			Expect(err).To(BeNil())
+
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(approveResp.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).
+				WithTimeout(10 * time.Second).WithPolling(500 * time.Millisecond).
+				Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+
+			Expect(pspServer.PayoutsCalled()).To(BeNumerically(">", 0))
+		})
+
+		It("can initiate and approve a transfer via the PSP", func() {
+			Eventually(func() int {
+				return countAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
+			}).WithTimeout(10 * time.Second).WithPolling(time.Second).
+				Should(BeNumerically(">=", len(pspServer.Accounts)))
+
+			internalAccounts := loadAccountsByType(ctx, app.GetValue(), models.ACCOUNT_TYPE_INTERNAL)
+			Expect(internalAccounts).To(HaveLen(len(pspServer.Accounts)))
+
+			initiateResp, err := app.GetValue().SDK().Payments.V3.InitiatePayment(ctx, pointer.For(false),
+				&components.V3InitiatePaymentRequest{
+					Reference:            uuid.New().String(),
+					ConnectorID:          connectorID,
+					Description:          "transfer test",
+					Type:                 components.V3PaymentInitiationTypeEnumTransfer,
+					Amount:               big.NewInt(500),
+					Asset:                "USD/2",
+					SourceAccountID:      &internalAccounts[0].ID,
+					DestinationAccountID: &internalAccounts[1].ID,
+				})
+			Expect(err).To(BeNil())
+			paymentInitiationID := *initiateResp.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
+
+			approveResp, err := app.GetValue().SDK().Payments.V3.ApprovePaymentInitiation(ctx, paymentInitiationID)
+			Expect(err).To(BeNil())
+
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(approveResp.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).
+				WithTimeout(10 * time.Second).WithPolling(500 * time.Millisecond).
+				Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+
+			Expect(pspServer.TransfersCalled()).To(BeNumerically(">", 0))
+		})
+
 		It("calls psp side /transactions and emits payment events", func() {
 			Eventually(func() int {
 				n, _ := CountOutboxEventsByType(ctx, app.GetValue(), events.EventTypeSavedPayments)
 				return n
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(500 * time.Millisecond).
 				Should(BeNumerically(">=", len(pspServer.Transactions)))
 
 			Expect(pspServer.TransactionsCalled()).To(BeNumerically(">", 0))
@@ -157,9 +238,11 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 				Expect(refs).To(ContainElement(tx.ID))
 			}
 
+			triggerConnectorSchedule(ctx, connectorID, "FETCH_PAYMENTS")
+
 			Eventually(func() int64 {
 				return pspServer.TransactionsCalled()
-			}).WithTimeout(10 * time.Second).WithPolling(2 * time.Second).
+			}).WithTimeout(10 * time.Second).WithPolling(200 * time.Millisecond).
 				Should(BeNumerically(">=", 2))
 
 			latestTransaction := pspServer.Transactions[len(pspServer.Transactions)-1]
@@ -168,18 +251,18 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 	})
 })
 
-func countAccountsByType(ctx context.Context, srv *Server, accountType models.AccountType) int {
-	return len(loadAccountRefsByType(ctx, srv, accountType))
-}
-
-func loadAccountRefsByType(ctx context.Context, srv *Server, accountType models.AccountType) []string {
+func loadAccountsByType(ctx context.Context, srv *Server, accountType models.AccountType) []internalEvents.AccountMessagePayload {
 	payloads, _ := LoadOutboxPayloadsByType(ctx, srv, events.EventTypeSavedAccounts)
-	refs := make([]string, 0)
+	accounts := make([]internalEvents.AccountMessagePayload, 0)
 	for _, p := range payloads {
 		var msg internalEvents.AccountMessagePayload
 		if json.Unmarshal(p, &msg) == nil && msg.Type == string(accountType) {
-			refs = append(refs, msg.Reference)
+			accounts = append(accounts, msg)
 		}
 	}
-	return refs
+	return accounts
+}
+
+func countAccountsByType(ctx context.Context, srv *Server, accountType models.AccountType) int {
+	return len(loadAccountsByType(ctx, srv, accountType))
 }
