@@ -96,7 +96,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			dir, err := os.MkdirTemp("", "dummypay")
 			Expect(err).To(BeNil())
 			GinkgoT().Cleanup(func() {
-				os.RemoveAll(dir)
+				_ = os.RemoveAll(dir)
 			})
 
 			connectorConf := components.ConnectorConfig{
@@ -168,7 +168,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			dir, err := os.MkdirTemp("", "updateddir")
 			Expect(err).To(BeNil())
 			GinkgoT().Cleanup(func() {
-				os.RemoveAll(dir)
+				_ = os.RemoveAll(dir)
 			})
 
 			config := components.ConnectorConfig{
@@ -565,7 +565,7 @@ func newV3ConnectorConfigFn() func(id uuid.UUID) *components.V3DummypayConfig {
 		dir, err := os.MkdirTemp("", "dummypay")
 		Expect(err).To(BeNil())
 		GinkgoT().Cleanup(func() {
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 		})
 
 		return &components.V3DummypayConfig{

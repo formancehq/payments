@@ -29,7 +29,7 @@ import (
 
 func Test(t *testing.T) {
 	RegisterFailHandler(Fail)
-	os.Setenv("PLUGIN_MAGIC_COOKIE", magicCookieVal)
+	_ = os.Setenv("PLUGIN_MAGIC_COOKIE", magicCookieVal)
 	RunSpecs(t, "Test Suite")
 }
 
