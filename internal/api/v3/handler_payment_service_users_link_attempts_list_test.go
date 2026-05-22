@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -61,7 +61,7 @@ var _ = Describe("API v3 Payment Service Users Link Attempts List", func() {
 			req := prepareQueryRequest(http.MethodGet, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
 			expectedErr := errors.New("link attempts list error")
 			m.EXPECT().PaymentServiceUsersLinkAttemptsList(gomock.Any(), psuID, connectorID, gomock.Any()).Return(
-				&bunpaginate.Cursor[models.OpenBankingConnectionAttempt]{}, expectedErr,
+				&paginate.Cursor[models.OpenBankingConnectionAttempt]{}, expectedErr,
 			)
 			handlerFn(w, req)
 
@@ -70,7 +70,7 @@ var _ = Describe("API v3 Payment Service Users Link Attempts List", func() {
 
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
-			cursor := &bunpaginate.Cursor[models.OpenBankingConnectionAttempt]{
+			cursor := &paginate.Cursor[models.OpenBankingConnectionAttempt]{
 				Data: []models.OpenBankingConnectionAttempt{
 					{
 						ID:     uuid.New(),

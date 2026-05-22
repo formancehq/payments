@@ -2,8 +2,8 @@ package cmd
 
 import (
 	_ "github.com/bombsimon/logrusr/v3"
-	"github.com/formancehq/go-libs/v3/bun/bunmigrate"
-	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/migrate"
+	"github.com/formancehq/go-libs/v5/pkg/service"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +79,7 @@ func addAutoMigrateCommand(cmd *cobra.Command) {
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		autoMigrate, _ := cmd.Flags().GetBool(autoMigrateFlag)
 		if autoMigrate {
-			return bunmigrate.Run(cmd, args, Migrate)
+			return migrate.Run(cmd, args, Migrate)
 		}
 		return nil
 	}

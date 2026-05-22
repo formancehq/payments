@@ -7,8 +7,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -249,19 +249,19 @@ func applyBalanceQuery(query *bun.SelectQuery, balanceQuery BalanceQuery) *bun.S
 	return query
 }
 
-type ListBalancesQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[BalanceQuery]]
+type ListBalancesQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[BalanceQuery]]
 
-func NewListBalancesQuery(opts bunpaginate.PaginatedQueryOptions[BalanceQuery]) ListBalancesQuery {
+func NewListBalancesQuery(opts paginate.PaginatedQueryOptions[BalanceQuery]) ListBalancesQuery {
 	return ListBalancesQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
 }
 
-func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error) {
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[BalanceQuery], balance](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[BalanceQuery]])(&q),
+func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*paginate.Cursor[models.Balance], error) {
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[BalanceQuery], balance](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[BalanceQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 
 			query = applyBalanceQuery(query, q.Options.Options)
@@ -277,7 +277,7 @@ func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpagi
 
 	balances := toBalancesModels(cursor.Data)
 
-	return &bunpaginate.Cursor[models.Balance]{
+	return &paginate.Cursor[models.Balance]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

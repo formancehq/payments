@@ -8,9 +8,9 @@ import (
 	"strings"
 	stdtime "time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -251,11 +251,11 @@ func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*mode
 
 type ConnectorQuery struct{}
 
-type ListConnectorsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConnectorQuery]]
+type ListConnectorsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ConnectorQuery]]
 
-func NewListConnectorsQuery(opts bunpaginate.PaginatedQueryOptions[ConnectorQuery]) ListConnectorsQuery {
+func NewListConnectorsQuery(opts paginate.PaginatedQueryOptions[ConnectorQuery]) ListConnectorsQuery {
 	return ListConnectorsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -278,7 +278,7 @@ func (s *store) connectorsQueryContext(qb query.Builder) (string, []any, error) 
 	}))
 }
 
-func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error) {
+func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*paginate.Cursor[models.Connector], error) {
 	var (
 		where string
 		args  []any
@@ -291,8 +291,8 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[ConnectorQuery], connector](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConnectorQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[ConnectorQuery], connector](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ConnectorQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -315,7 +315,7 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 		connectors = append(connectors, toConnectorModels(c))
 	}
 
-	return &bunpaginate.Cursor[models.Connector]{
+	return &paginate.Cursor[models.Connector]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

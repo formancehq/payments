@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -252,11 +252,11 @@ func (s *store) BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) 
 
 type BankAccountQuery struct{}
 
-type ListBankAccountsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[BankAccountQuery]]
+type ListBankAccountsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[BankAccountQuery]]
 
-func NewListBankAccountsQuery(opts bunpaginate.PaginatedQueryOptions[BankAccountQuery]) ListBankAccountsQuery {
+func NewListBankAccountsQuery(opts paginate.PaginatedQueryOptions[BankAccountQuery]) ListBankAccountsQuery {
 	return ListBankAccountsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -286,7 +286,7 @@ func (s *store) bankAccountsQueryContext(qb query.Builder) (string, []any, error
 	}))
 }
 
-func (s *store) BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (*bunpaginate.Cursor[models.BankAccount], error) {
+func (s *store) BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (*paginate.Cursor[models.BankAccount], error) {
 	var (
 		where string
 		args  []any
@@ -299,8 +299,8 @@ func (s *store) BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[BankAccountQuery], bankAccount](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[BankAccountQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[BankAccountQuery], bankAccount](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[BankAccountQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			query = query.Relation("RelatedAccounts")
 			if where != "" {
@@ -321,7 +321,7 @@ func (s *store) BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (
 		bankAccounts = append(bankAccounts, toBankAccountModels(a))
 	}
 
-	return &bunpaginate.Cursor[models.BankAccount]{
+	return &paginate.Cursor[models.BankAccount]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

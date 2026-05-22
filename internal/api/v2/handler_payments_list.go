@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/otel"
@@ -47,7 +47,7 @@ func paymentsList(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_paymentsList")
 		defer span.End()
 
-		query, err := bunpaginate.Extract[storage.ListPaymentsQuery](r, func() (*storage.ListPaymentsQuery, error) {
+		query, err := paginate.Extract[storage.ListPaymentsQuery](r, func() (*storage.ListPaymentsQuery, error) {
 			options, err := getPagination(span, r, storage.PaymentQuery{})
 			if err != nil {
 				otel.RecordError(span, err)
@@ -107,7 +107,7 @@ func paymentsList(backend backend.Backend) http.HandlerFunc {
 		}
 
 		err = json.NewEncoder(w).Encode(api.BaseResponse[*PaymentResponse]{
-			Cursor: &bunpaginate.Cursor[*PaymentResponse]{
+			Cursor: &paginate.Cursor[*PaymentResponse]{
 				PageSize: cursor.PageSize,
 				HasMore:  cursor.HasMore,
 				Previous: cursor.Previous,

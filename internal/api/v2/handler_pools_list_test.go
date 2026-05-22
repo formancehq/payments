@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -34,7 +34,7 @@ var _ = Describe("API v2 Pools List", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().PoolsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Pool]{}, fmt.Errorf("pools list error"),
+				&paginate.Cursor[models.Pool]{}, fmt.Errorf("pools list error"),
 			)
 			handlerFn(w, req)
 
@@ -44,7 +44,7 @@ var _ = Describe("API v2 Pools List", func() {
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().PoolsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Pool]{
+				&paginate.Cursor[models.Pool]{
 					Data: []models.Pool{
 						{
 							ID:        uuid.New(),

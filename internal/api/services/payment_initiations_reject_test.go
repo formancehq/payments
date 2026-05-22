@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -32,7 +32,7 @@ func TestPaymentInitiationsReject(t *testing.T) {
 		Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
 	}
 	query := storage.NewListPaymentInitiationAdjustmentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 			WithPageSize(1),
 	)
 
@@ -91,7 +91,7 @@ func TestPaymentInitiationsReject(t *testing.T) {
 				data = []models.PaymentInitiationAdjustment{*test.adj}
 			}
 			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(
-				&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+				&paginate.Cursor[models.PaymentInitiationAdjustment]{
 					Data: data,
 				},
 				test.adjListStorageErr,

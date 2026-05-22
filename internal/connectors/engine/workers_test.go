@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -88,7 +88,7 @@ var _ = Describe("Worker Tests", func() {
 		It("should call RegisterPlugin on all connectors found", func(ctx SpecContext) {
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 
-			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{
 				Data: conns,
 			}, nil)
 			manager.EXPECT().Load(conns[0], false, false).Return("name", json.RawMessage(`{}`), nil)

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -510,7 +510,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by name", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("name", "test1")),
 		)
@@ -524,7 +524,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by name", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "test1")),
 		)
@@ -541,7 +541,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by name 2", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "test2")),
 		)
@@ -557,7 +557,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by unknown name", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "unknown")),
 		)
@@ -572,7 +572,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by id", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", d3.ID.String())),
 		)
@@ -588,7 +588,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by unknown id", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", uuid.New().String())),
 		)
@@ -603,7 +603,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by country", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("country", "US")),
 		)
@@ -620,7 +620,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by country 2", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("country", "DE")),
 		)
@@ -636,7 +636,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by unknown country", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("country", "unknown")),
 		)
@@ -651,7 +651,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("wrong query builder when listing by metadata", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
 		)
@@ -663,7 +663,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by metadata", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
@@ -679,7 +679,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts by unknown metadata", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[unknown]", "bar")),
 		)
@@ -694,7 +694,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing bank accounts", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "bar")),
 		)
@@ -706,7 +706,7 @@ func TestBankAccountsList(t *testing.T) {
 
 	t.Run("list bank accounts test cursor", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+			paginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(1),
 		)
 
@@ -718,7 +718,7 @@ func TestBankAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		compareBankAccounts(t, d2, cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.BankAccountsList(ctx, q)
 		require.NoError(t, err)
@@ -728,7 +728,7 @@ func TestBankAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		compareBankAccounts(t, d3, cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.BankAccountsList(ctx, q)
 		require.NoError(t, err)
@@ -738,7 +738,7 @@ func TestBankAccountsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		compareBankAccounts(t, d1, cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.BankAccountsList(ctx, q)
 		require.NoError(t, err)
@@ -748,7 +748,7 @@ func TestBankAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		compareBankAccounts(t, d3, cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.BankAccountsList(ctx, q)
 		require.NoError(t, err)

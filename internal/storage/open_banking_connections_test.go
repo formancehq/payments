@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -336,7 +336,7 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 
 	t.Run("list attempts by id", func(t *testing.T) {
 		q := NewListOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultOpenBankingConnectionAttempt.ID.String())),
 		)
@@ -352,7 +352,7 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 
 	t.Run("list attempts by status", func(t *testing.T) {
 		q := NewListOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", string(models.OpenBankingConnectionAttemptStatusCompleted))),
 		)
@@ -366,7 +366,7 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 
 	t.Run("wrong query operator", func(t *testing.T) {
 		q := NewListOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("id", "test")),
 		)
@@ -378,7 +378,7 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 
 	t.Run("unknown query key", func(t *testing.T) {
 		q := NewListOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test")),
 		)
@@ -486,7 +486,7 @@ func TestOpenBankingForwardedUserList(t *testing.T) {
 
 	t.Run("list forwarded users by connector_id", func(t *testing.T) {
 		q := NewListOpenBankingForwardedUserQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultOpenBankingForwardedUser.ConnectorID.String())),
 		)
@@ -500,7 +500,7 @@ func TestOpenBankingForwardedUserList(t *testing.T) {
 
 	t.Run("list forwarded users by psu_id", func(t *testing.T) {
 		q := NewListOpenBankingForwardedUserQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("psu_id", defaultPSU2.ID.String())),
 		)
@@ -513,7 +513,7 @@ func TestOpenBankingForwardedUserList(t *testing.T) {
 
 	t.Run("list forwarded users by metadata", func(t *testing.T) {
 		q := NewListOpenBankingForwardedUserQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
@@ -840,7 +840,7 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 
 	t.Run("list connections by connection_id", func(t *testing.T) {
 		q := NewListOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connection_id", defaultOpenBankingConnection.ConnectionID)),
 		)
@@ -854,7 +854,7 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 
 	t.Run("list connections by status", func(t *testing.T) {
 		q := NewListOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", string(models.ConnectionStatusError))),
 		)
@@ -868,7 +868,7 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 
 	t.Run("list connections by metadata", func(t *testing.T) {
 		q := NewListOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[conn_foo2]", "conn_bar2")),
 		)
@@ -882,7 +882,7 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 
 	t.Run("list connections with connector filter", func(t *testing.T) {
 		q := NewListOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15),
 		)
 
@@ -894,7 +894,7 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 
 	t.Run("wrong query operator", func(t *testing.T) {
 		q := NewListOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("connection_id", "test")),
 		)
@@ -906,7 +906,7 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 
 	t.Run("unknown query key", func(t *testing.T) {
 		q := NewListOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
+			paginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test")),
 		)

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -89,7 +89,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should do nothing if no connectors are present", func(ctx SpecContext) {
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
-			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{}, nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{}, nil)
 			err := eng.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})
@@ -101,7 +101,7 @@ var _ = Describe("Engine Tests", func() {
 				{Config: conf},
 			}
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
-			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{Data: connectors}, nil)
 			manager.EXPECT().Load(gomock.Any(), false, false).Return("name", conf, nil).MinTimes(len(connectors))
 			err := eng.OnStart(ctx)
 			Expect(err).To(BeNil())
@@ -126,7 +126,7 @@ var _ = Describe("Engine Tests", func() {
 			loadErr := fmt.Errorf("validation failed: invalid endpoint")
 
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
-			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{Data: connectors}, nil)
 
 			// First connector fails to load
 			manager.EXPECT().Load(connectors[0], false, false).Return("", nil, loadErr)
@@ -551,7 +551,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{
 				Type: models.POOL_TYPE_DYNAMIC,
 			}, nil)
-			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Account]{}, nil)
 			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("failed to update pool query"))
 			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
 			Expect(err).ToNot(BeNil())
@@ -573,7 +573,7 @@ var _ = Describe("Engine Tests", func() {
 				Type: models.POOL_TYPE_DYNAMIC,
 			}, nil)
 			store.EXPECT().PoolsUpdateQuery(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Account]{}, nil)
+			store.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Account]{}, nil)
 			err := eng.UpdatePoolQuery(ctx, poolID, map[string]any{})
 			Expect(err).To(BeNil())
 		})

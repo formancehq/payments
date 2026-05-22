@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -535,12 +535,12 @@ func (s *store) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, p
 
 type PaymentQuery struct{}
 
-type ListPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentQuery]]
+type ListPaymentsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentQuery]]
 
-func NewListPaymentsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentQuery]) ListPaymentsQuery {
+func NewListPaymentsQuery(opts paginate.PaginatedQueryOptions[PaymentQuery]) ListPaymentsQuery {
 	return ListPaymentsQuery{
 		PageSize: opts.PageSize,
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		Options:  opts,
 	}
 }
@@ -585,7 +585,7 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 	return where, args, err
 }
 
-func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
+func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*paginate.Cursor[models.Payment], error) {
 	var (
 		where string
 		args  []any
@@ -599,8 +599,8 @@ func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpagi
 	}
 
 	// TODO(polo): should fetch the adjustments and get the last status and amount?
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentQuery], payment](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PaymentQuery], payment](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -630,7 +630,7 @@ func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpagi
 		payments = append(payments, toPaymentModels(p, p.Status))
 	}
 
-	return &bunpaginate.Cursor[models.Payment]{
+	return &paginate.Cursor[models.Payment]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/events"
@@ -52,7 +52,7 @@ var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", fu
 
 	Context("when cursor is nil", func() {
 		It("builds a default query and returns results", func(ctx SpecContext) {
-			expected := &bunpaginate.Cursor[models.Instance]{
+			expected := &paginate.Cursor[models.Instance]{
 				Data: []models.Instance{{
 					ID:          "inst-1",
 					ScheduleID:  "sched-1",
@@ -74,7 +74,7 @@ var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", fu
 	Context("when cursor is a pointer to an empty string", func() {
 		It("builds a default query and returns results", func(ctx SpecContext) {
 			empty := ""
-			expected := &bunpaginate.Cursor[models.Instance]{Data: []models.Instance{}}
+			expected := &paginate.Cursor[models.Instance]{Data: []models.Instance{}}
 			s.EXPECT().
 				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, healthCheckErrorThreshold, gomock.Any()).
 				Return(expected, nil)
@@ -87,10 +87,10 @@ var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", fu
 
 	Context("when cursor is a valid encoded string", func() {
 		It("unmarshals the cursor and calls storage with the decoded query", func(ctx SpecContext) {
-			q := storage.NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(storage.InstanceQuery{}))
-			cursorStr := bunpaginate.EncodeCursor(q)
+			q := storage.NewListInstancesQuery(paginate.NewPaginatedQueryOptions(storage.InstanceQuery{}))
+			cursorStr := paginate.EncodeCursor(q)
 
-			expected := &bunpaginate.Cursor[models.Instance]{
+			expected := &paginate.Cursor[models.Instance]{
 				Data: []models.Instance{{ID: "inst-2", ConnectorID: connectorID, CreatedAt: now, UpdatedAt: now}},
 			}
 			s.EXPECT().
@@ -129,7 +129,7 @@ var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", fu
 	Context("when storage returns multiple instances with HasMore", func() {
 		It("returns the full cursor unchanged", func(ctx SpecContext) {
 			errMsg := "schedule timed out"
-			expected := &bunpaginate.Cursor[models.Instance]{
+			expected := &paginate.Cursor[models.Instance]{
 				HasMore: true,
 				Data: []models.Instance{
 					{
@@ -169,7 +169,7 @@ var _ = Describe("Activity StorageInstancesListSchedulesAboveErrorThreshold", fu
 			customAct := activities.New(logger, nil, s, evts, p, 0, 10)
 			s.EXPECT().
 				InstancesListSchedulesAboveErrorThreshold(gomock.Any(), connectorID, 10, gomock.Any()).
-				Return(&bunpaginate.Cursor[models.Instance]{}, nil)
+				Return(&paginate.Cursor[models.Instance]{}, nil)
 
 			_, err := customAct.StorageInstancesListSchedulesAboveErrorThreshold(ctx, connectorID, nil)
 			Expect(err).NotTo(HaveOccurred())

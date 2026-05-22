@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/formancehq/go-libs/v3/httpserver"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -24,7 +24,8 @@ func NewHealthCheckModule(bind string, debug bool) fx.Option {
 	return fx.Options(
 		fx.Provide(fx.Annotate(NewRouter, fx.ResultTags(`name:"healthCheck"`))),
 		fx.Invoke(fx.Annotate(func(m *chi.Mux, lc fx.Lifecycle) {
-			lc.Append(httpserver.NewHook(m, httpserver.WithAddress(bind)))
+			hook := httpserver.NewHook(m, httpserver.WithAddress(bind))
+			lc.Append(fx.Hook{OnStart: hook.OnStart, OnStop: hook.OnStop})
 		}, fx.ParamTags(`name:"healthCheck"`, ``))),
 	)
 }

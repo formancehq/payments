@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -161,7 +161,7 @@ func TestBalancesUpsert(t *testing.T) {
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accounts[0].ID),
 				Asset:     "USD/2",
 			}).WithPageSize(15),
@@ -197,7 +197,7 @@ func TestBalancesUpsert(t *testing.T) {
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accounts[2].ID),
 				Asset:     "USD/2",
 			}).WithPageSize(15),
@@ -232,7 +232,7 @@ func TestBalancesUpsert(t *testing.T) {
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accounts[0].ID),
 				Asset:     "USD/2",
 			}).WithPageSize(15),
@@ -276,7 +276,7 @@ func TestBalancesUpsert(t *testing.T) {
 		upsertBalances(t, ctx, store, []models.Balance{b})
 
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accounts[2].ID),
 			}).WithPageSize(15),
 		)
@@ -318,7 +318,7 @@ func TestBalancesUpsert(t *testing.T) {
 		}
 
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accountID),
 			}).WithPageSize(15),
 		)
@@ -615,7 +615,7 @@ func TestBalancesList(t *testing.T) {
 	t.Run("list balances with account id", func(t *testing.T) {
 		accounts := defaultAccounts()
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accounts[0].ID),
 			}).WithPageSize(15),
 		)
@@ -650,7 +650,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with asset 1", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				Asset: "USD/2",
 			}).WithPageSize(15),
 		)
@@ -682,7 +682,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with asset 2", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				Asset: "DKK/2",
 			}).WithPageSize(15),
 		)
@@ -707,7 +707,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with from", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(NewBalanceQuery().WithFrom(now.Add(-40 * time.Minute).UTC().Time)).WithPageSize(15),
+			paginate.NewPaginatedQueryOptions(NewBalanceQuery().WithFrom(now.Add(-40 * time.Minute).UTC().Time)).WithPageSize(15),
 		)
 
 		accounts := defaultAccounts()
@@ -737,7 +737,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with from 2", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				From: now.Add(-20 * time.Minute).UTC().Time,
 			}).WithPageSize(15),
 		)
@@ -750,7 +750,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with to", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				To: now.Add(-40 * time.Minute).UTC().Time,
 			}).WithPageSize(15),
 		)
@@ -791,7 +791,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with to 2", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				To: now.Add(-70 * time.Minute).UTC().Time,
 			}).WithPageSize(15),
 		)
@@ -805,7 +805,7 @@ func TestBalancesList(t *testing.T) {
 	t.Run("list balances test cursor", func(t *testing.T) {
 		accounts := defaultAccounts()
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+			paginate.NewPaginatedQueryOptions(BalanceQuery{
 				AccountID: pointer.For(accounts[0].ID),
 			}).WithPageSize(1),
 		)
@@ -839,7 +839,7 @@ func TestBalancesList(t *testing.T) {
 			},
 		}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.BalancesList(ctx, q)
 		require.NoError(t, err)
@@ -849,7 +849,7 @@ func TestBalancesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, expectedBalances2, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.BalancesList(ctx, q)
 		require.NoError(t, err)

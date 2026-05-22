@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -1388,7 +1388,7 @@ func TestPaymentsListSorting(t *testing.T) {
 	upsertPayments(t, ctx, store, []models.Payment{p})
 
 	q := NewListPaymentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+		paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 			WithPageSize(1),
 	)
 
@@ -1461,7 +1461,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing with reference", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("reference", "test1")),
 		)
@@ -1475,7 +1475,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by reference", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "test1")),
 		)
@@ -1489,7 +1489,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown reference", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "unknown")),
 		)
@@ -1502,7 +1502,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", dps[0].ID.String())),
 		)
@@ -1516,7 +1516,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", "unknown")),
 		)
@@ -1529,7 +1529,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by connector_id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID.String())),
 		)
@@ -1545,7 +1545,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown connector_id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", "unknown")),
 		)
@@ -1558,7 +1558,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by type", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "PAYOUT")),
 		)
@@ -1572,7 +1572,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown type", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "UNKNOWN")),
 		)
@@ -1585,7 +1585,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by asset", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "EUR/2")),
 		)
@@ -1599,7 +1599,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown asset", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "UNKNOWN")),
 		)
@@ -1612,7 +1612,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by scheme", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("scheme", "OTHER")),
 		)
@@ -1627,7 +1627,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown scheme", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("scheme", "UNKNOWN")),
 		)
@@ -1640,7 +1640,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by status", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", "PENDING")),
 		)
@@ -1654,7 +1654,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown status", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", "UNKNOWN")),
 		)
@@ -1667,7 +1667,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by source account id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("source_account_id", defaultAccounts()[0].ID.String())),
 		)
@@ -1681,7 +1681,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown source account id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("source_account_id", "unknown")),
 		)
@@ -1694,7 +1694,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by destination account id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("destination_account_id", defaultAccounts()[0].ID.String())),
 		)
@@ -1708,7 +1708,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown destination account id", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("destination_account_id", "unknown")),
 		)
@@ -1721,7 +1721,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by amount", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("amount", 200)),
 		)
@@ -1735,7 +1735,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown amount", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("amount", 0)),
 		)
@@ -1748,7 +1748,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by initial_amount", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("initial_amount", 300)),
 		)
@@ -1762,7 +1762,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown initial_amount", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("initial_amount", 0)),
 		)
@@ -1775,7 +1775,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by metadata", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("metadata[key1]", "value1")),
 		)
@@ -1787,7 +1787,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by metadata", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[key1]", "value1")),
 		)
@@ -1801,7 +1801,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown metadata", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[key1]", "unknown")),
 		)
@@ -1814,7 +1814,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments by unknown metadata 2", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[unknown]", "unknown")),
 		)
@@ -1827,7 +1827,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "unknown")),
 		)
@@ -1839,7 +1839,7 @@ func TestPaymentsList(t *testing.T) {
 
 	t.Run("list payments test cursor", func(t *testing.T) {
 		q := NewListPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(1),
 		)
 
@@ -1851,7 +1851,7 @@ func TestPaymentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePayments(t, dps[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentsList(ctx, q)
 		require.NoError(t, err)
@@ -1861,7 +1861,7 @@ func TestPaymentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePayments(t, dps[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentsList(ctx, q)
 		require.NoError(t, err)
@@ -1871,7 +1871,7 @@ func TestPaymentsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		comparePayments(t, dps[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentsList(ctx, q)
 		require.NoError(t, err)
@@ -1881,7 +1881,7 @@ func TestPaymentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePayments(t, dps[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentsList(ctx, q)
 		require.NoError(t, err)

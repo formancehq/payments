@@ -1,8 +1,8 @@
 package workflow
 
 import (
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -53,7 +53,7 @@ func (w Workflow) deletePSU(
 
 	// First, let's delete the user from all the open banking he is on.
 	queryBB := storage.NewListOpenBankingForwardedUserQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.OpenBankingForwardedUserQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.OpenBankingForwardedUserQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
 				query.Match("psu_id", deleteUser.PsuID.String()),
@@ -83,7 +83,7 @@ func (w Workflow) deletePSU(
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(forwardedUsers.Next, &queryBB)
+		err = paginate.UnmarshalCursor(forwardedUsers.Next, &queryBB)
 		if err != nil {
 			return err
 		}

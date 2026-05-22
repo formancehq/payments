@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/gibson042/canonicaljson-go"
@@ -370,7 +370,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by name", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "default")),
 		)
@@ -386,7 +386,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by unknown name", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "unknown")),
 		)
@@ -401,7 +401,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by provider", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("provider", "default")),
 		)
@@ -418,7 +418,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by provider uppercase", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("provider", "DEFAULT")),
 		)
@@ -435,7 +435,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by provider with wrong type", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("provider", 1)),
 		)
@@ -447,7 +447,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by unknown provider", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("provider", "unknown")),
 		)
@@ -462,7 +462,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by id", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultConnector3.ID.String())),
 		)
@@ -478,7 +478,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors by unknown id", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", "unknown")),
 		)
@@ -493,7 +493,7 @@ func TestConnectorsList(t *testing.T) {
 
 	t.Run("list connectors test cursor", func(t *testing.T) {
 		q := NewListConnectorsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+			paginate.NewPaginatedQueryOptions(ConnectorQuery{}).
 				WithPageSize(1),
 		)
 
@@ -505,7 +505,7 @@ func TestConnectorsList(t *testing.T) {
 		require.Empty(t, cursor.Previous)
 		require.Equal(t, defaultConnector3, withoutUpdatedAt(cursor.Data[0]))
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.ConnectorsList(ctx, q)
 		require.NoError(t, err)
@@ -515,7 +515,7 @@ func TestConnectorsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, defaultConnector2, withoutUpdatedAt(cursor.Data[0]))
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.ConnectorsList(ctx, q)
 		require.NoError(t, err)
@@ -525,7 +525,7 @@ func TestConnectorsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, defaultConnector, withoutUpdatedAt(cursor.Data[0]))
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.ConnectorsList(ctx, q)
 		require.NoError(t, err)
@@ -535,7 +535,7 @@ func TestConnectorsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, defaultConnector2, withoutUpdatedAt(cursor.Data[0]))
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.ConnectorsList(ctx, q)
 		require.NoError(t, err)

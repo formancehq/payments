@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -67,13 +67,13 @@ func getAttemps(adjustments []models.PaymentInitiationAdjustment) int {
 func (s *Service) getAllPaymentInitiationAdjustments(ctx context.Context, id models.PaymentInitiationID) ([]models.PaymentInitiationAdjustment, error) {
 	adjustments := []models.PaymentInitiationAdjustment{}
 	q := storage.NewListPaymentInitiationAdjustmentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 			WithPageSize(50),
 	)
 	var next string
 	for {
 		if next != "" {
-			err := bunpaginate.UnmarshalCursor(next, &q)
+			err := paginate.UnmarshalCursor(next, &q)
 			if err != nil {
 				return nil, err
 			}

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/otel"
@@ -30,7 +30,7 @@ func connectorsList(backend backend.Backend) http.HandlerFunc {
 		connectors, err := backend.ConnectorsList(
 			ctx,
 			storage.NewListConnectorsQuery(
-				bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
+				paginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 					// NOTE: previous version of payments did not have pagination, so
 					// fetch everything and return it all
 					WithPageSize(1000),

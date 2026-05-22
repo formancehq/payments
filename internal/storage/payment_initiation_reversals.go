@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
@@ -120,11 +120,11 @@ func (s *store) PaymentInitiationReversalsDeleteFromConnectorID(ctx context.Cont
 
 type PaymentInitiationReversalQuery struct{}
 
-type ListPaymentInitiationReversalsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalQuery]]
+type ListPaymentInitiationReversalsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationReversalQuery]]
 
-func NewListPaymentInitiationReversalsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalQuery]) ListPaymentInitiationReversalsQuery {
+func NewListPaymentInitiationReversalsQuery(opts paginate.PaginatedQueryOptions[PaymentInitiationReversalQuery]) ListPaymentInitiationReversalsQuery {
 	return ListPaymentInitiationReversalsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -163,7 +163,7 @@ func (s *store) paymentsInitiationReversalQueryContext(qb query.Builder) (string
 	return where, args, err
 }
 
-func (s *store) PaymentInitiationReversalsList(ctx context.Context, q ListPaymentInitiationReversalsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversal], error) {
+func (s *store) PaymentInitiationReversalsList(ctx context.Context, q ListPaymentInitiationReversalsQuery) (*paginate.Cursor[models.PaymentInitiationReversal], error) {
 	var (
 		where string
 		args  []any
@@ -176,8 +176,8 @@ func (s *store) PaymentInitiationReversalsList(ctx context.Context, q ListPaymen
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalQuery], paymentInitiationReversal](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PaymentInitiationReversalQuery], paymentInitiationReversal](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationReversalQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -198,7 +198,7 @@ func (s *store) PaymentInitiationReversalsList(ctx context.Context, q ListPaymen
 		pis = append(pis, toPaymentInitiationReversalModels(pi))
 	}
 
-	return &bunpaginate.Cursor[models.PaymentInitiationReversal]{
+	return &paginate.Cursor[models.PaymentInitiationReversal]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -237,19 +237,19 @@ func (s *store) PaymentInitiationReversalAdjustmentsGet(ctx context.Context, id 
 
 type PaymentInitiationReversalAdjustmentsQuery struct{}
 
-type ListPaymentInitiationReversalAdjustmentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]]
+type ListPaymentInitiationReversalAdjustmentsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]]
 
-func NewListPaymentInitiationReversalAdjustmentsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]) ListPaymentInitiationReversalAdjustmentsQuery {
+func NewListPaymentInitiationReversalAdjustmentsQuery(opts paginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]) ListPaymentInitiationReversalAdjustmentsQuery {
 	return ListPaymentInitiationReversalAdjustmentsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
 }
 
-func (s *store) PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment], error) {
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery], paymentInitiationReversalAdjustment](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]])(&q),
+func (s *store) PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*paginate.Cursor[models.PaymentInitiationReversalAdjustment], error) {
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery], paymentInitiationReversalAdjustment](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			// TODO(polo): sorter ?
 			query = query.Order("created_at DESC", "sort_id DESC")
@@ -267,7 +267,7 @@ func (s *store) PaymentInitiationReversalAdjustmentsList(ctx context.Context, pi
 		pis = append(pis, toPaymentInitiationReversalAdjustmentModels(pi))
 	}
 
-	return &bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment]{
+	return &paginate.Cursor[models.PaymentInitiationReversalAdjustment]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

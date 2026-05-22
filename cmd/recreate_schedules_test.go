@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
@@ -29,8 +29,8 @@ func TestRecreateSchedules(t *testing.T) {
 	RunSpecs(t, "RecreateSchedules Suite")
 }
 
-func emptySchedulesList() *bunpaginate.Cursor[models.Schedule] {
-	return &bunpaginate.Cursor[models.Schedule]{Data: []models.Schedule{}}
+func emptySchedulesList() *paginate.Cursor[models.Schedule] {
+	return &paginate.Cursor[models.Schedule]{Data: []models.Schedule{}}
 }
 
 var _ = Describe("RecreateSchedules", func() {
@@ -68,7 +68,7 @@ var _ = Describe("RecreateSchedules", func() {
 	Context("Run", func() {
 		It("should succeed with no connectors", func(ctx SpecContext) {
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{}}, nil,
+				&paginate.Cursor[models.Connector]{Data: []models.Connector{}}, nil,
 			)
 
 			err := rs.Run(ctx)
@@ -87,7 +87,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 		It("should skip connectors scheduled for deletion", func(ctx SpecContext) {
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{
+				&paginate.Cursor[models.Connector]{
 					Data: []models.Connector{
 						{
 							ConnectorBase:        models.ConnectorBase{ID: connectorID, Name: "deleted", Provider: "stripe"},
@@ -109,7 +109,7 @@ var _ = Describe("RecreateSchedules", func() {
 			}
 
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil,
+				&paginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil,
 			)
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(
 				nil, fmt.Errorf("task tree error"),
@@ -127,7 +127,7 @@ var _ = Describe("RecreateSchedules", func() {
 			}
 
 			mockStore.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil,
+				&paginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil,
 			)
 			mockStore.EXPECT().ConnectorTasksTreeGet(gomock.Any(), connectorID).Return(nil, nil)
 
@@ -266,7 +266,7 @@ var _ = Describe("RecreateSchedules", func() {
 
 			// Phase 2: sub-schedule in DB
 			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{
+				&paginate.Cursor[models.Schedule]{
 					Data: []models.Schedule{
 						{ID: subScheduleID, ConnectorID: connectorID},
 					},
@@ -304,7 +304,7 @@ var _ = Describe("RecreateSchedules", func() {
 			mockScheduleClient.EXPECT().Create(gomock.Any(), gomock.Any()).Return(mockHandle, nil)
 
 			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{
+				&paginate.Cursor[models.Schedule]{
 					Data: []models.Schedule{
 						{ID: subScheduleID, ConnectorID: connectorID},
 					},
@@ -343,7 +343,7 @@ var _ = Describe("RecreateSchedules", func() {
 			}).AnyTimes()
 
 			mockStore.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{
+				&paginate.Cursor[models.Schedule]{
 					Data: []models.Schedule{
 						{ID: balanceSchedule, ConnectorID: connectorID},
 						{ID: paymentSchedule, ConnectorID: connectorID},

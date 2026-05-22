@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -156,11 +156,11 @@ func (s *store) PaymentServiceUsersDelete(ctx context.Context, paymentServiceUse
 
 type PSUQuery struct{}
 
-type ListPSUsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUQuery]]
+type ListPSUsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PSUQuery]]
 
-func NewListPSUQuery(opts bunpaginate.PaginatedQueryOptions[PSUQuery]) ListPSUsQuery {
+func NewListPSUQuery(opts paginate.PaginatedQueryOptions[PSUQuery]) ListPSUsQuery {
 	return ListPSUsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -190,7 +190,7 @@ func (s *store) paymentServiceUsersQueryContext(qb query.Builder) (string, []any
 	}))
 }
 
-func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error) {
+func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery) (*paginate.Cursor[models.PaymentServiceUser], error) {
 	var (
 		where string
 		args  []any
@@ -203,8 +203,8 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PSUQuery], paymentServiceUser](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUQuery]])(&query),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PSUQuery], paymentServiceUser](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PSUQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			query = query.Relation("BankAccounts")
 			query = query.Column("id", "created_at", "metadata", "locale")
@@ -228,7 +228,7 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 		counterParties = append(counterParties, toPaymentServiceUserModels(a))
 	}
 
-	return &bunpaginate.Cursor[models.PaymentServiceUser]{
+	return &paginate.Cursor[models.PaymentServiceUser]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

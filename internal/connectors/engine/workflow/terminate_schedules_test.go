@@ -3,7 +3,7 @@ package workflow
 import (
 	"errors"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
@@ -12,7 +12,7 @@ import (
 
 func (s *UnitTestSuite) Test_TerminateSchedules_Success() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.Schedule]{
+		&paginate.Cursor[models.Schedule]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.Schedule{
@@ -39,7 +39,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_Success() {
 
 func (s *UnitTestSuite) Test_TerminateSchedules_EmptyScheduleList_Success() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.Schedule]{
+		&paginate.Cursor[models.Schedule]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.Schedule{},
@@ -59,7 +59,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_EmptyScheduleList_Success() {
 
 func (s *UnitTestSuite) Test_TerminateSchedules_HasMore_Success() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.Schedule]{
+		&paginate.Cursor[models.Schedule]{
 			PageSize: 1,
 			HasMore:  true,
 			Next:     "eyJvZmZzZXQiOjYsIm9yZGVyIjowLCJwYWdlU2l6ZSI6MywiZmlsdGVycyI6eyJxYiI6bnVsbCwicGFnZVNpemUiOjMsIm9wdGlvbnMiOnt9fX0",
@@ -76,7 +76,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_HasMore_Success() {
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test").Once().Return(nil)
 
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.Schedule]{
+		&paginate.Cursor[models.Schedule]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.Schedule{},
@@ -113,7 +113,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_StorageSchedulesList_Error() {
 
 func (s *UnitTestSuite) Test_TerminateSchedules_TemporalScheduleDelete_Error() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.Schedule]{
+		&paginate.Cursor[models.Schedule]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.Schedule{
@@ -143,7 +143,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_TemporalScheduleDelete_Error() {
 
 func (s *UnitTestSuite) Test_TerminateSchedules__CursorError_Error() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.Schedule]{
+		&paginate.Cursor[models.Schedule]{
 			PageSize: 1,
 			HasMore:  true,
 			Next:     "toto",

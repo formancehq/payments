@@ -3,17 +3,18 @@ package storage
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v3/bun/bunconnect"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
+	"github.com/formancehq/go-libs/v5/pkg/fx/storagefx"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/service"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
 )
 
-func Module(cmd *cobra.Command, connectionOptions bunconnect.ConnectionOptions, configEncryptionKey string) fx.Option {
+func Module(cmd *cobra.Command, connectionOptions connect.ConnectionOptions, configEncryptionKey string) fx.Option {
 	return fx.Options(
-		bunconnect.Module(connectionOptions, service.IsDebug(cmd)),
+		storagefx.BunConnectModule(connectionOptions, service.IsDebug(cmd)),
 		fx.Provide(func(logger logging.Logger, db *bun.DB) Storage {
 			return newStorage(logger, db, configEncryptionKey)
 		}),

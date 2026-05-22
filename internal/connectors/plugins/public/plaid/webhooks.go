@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/golang-jwt/jwt/v5"

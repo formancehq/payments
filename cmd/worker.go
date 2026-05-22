@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/service"
-	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/service"
+	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/worker"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"

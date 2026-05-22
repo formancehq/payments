@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
@@ -51,7 +51,7 @@ func (s *Service) populatePoolAccounts(ctx context.Context, pool *models.Pool) (
 	}
 
 	q := storage.NewListAccountsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(qb),
 	)
@@ -71,7 +71,7 @@ func (s *Service) populatePoolAccounts(ctx context.Context, pool *models.Pool) (
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		if err != nil {
 			return nil, newStorageError(err, "cannot unmarshal cursor")
 		}

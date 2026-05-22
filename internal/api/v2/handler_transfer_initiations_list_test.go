@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -35,7 +35,7 @@ var _ = Describe("API v2 PaymentInitiations List", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().PaymentInitiationsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.PaymentInitiation]{}, fmt.Errorf("paymentInitiations list error"),
+				&paginate.Cursor[models.PaymentInitiation]{}, fmt.Errorf("paymentInitiations list error"),
 			)
 			handlerFn(w, req)
 
@@ -45,7 +45,7 @@ var _ = Describe("API v2 PaymentInitiations List", func() {
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().PaymentInitiationsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.PaymentInitiation]{
+				&paginate.Cursor[models.PaymentInitiation]{
 					Data: []models.PaymentInitiation{
 						{
 							ID:                   models.PaymentInitiationID{},

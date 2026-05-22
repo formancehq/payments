@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -41,7 +41,7 @@ var _ = Describe("API v3 Schedules List", func() {
 			connectorID := models.ConnectorID{Provider: "psp", Reference: uuid.New()}
 			req := prepareQueryRequest(http.MethodGet, "connectorID", connectorID.String())
 			m.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{}, fmt.Errorf("schedules list error"),
+				&paginate.Cursor[models.Schedule]{}, fmt.Errorf("schedules list error"),
 			)
 			handlerFn(w, req)
 
@@ -52,7 +52,7 @@ var _ = Describe("API v3 Schedules List", func() {
 			connectorID := models.ConnectorID{Provider: "psp", Reference: uuid.New()}
 			req := prepareQueryRequest(http.MethodGet, "connectorID", connectorID.String())
 			m.EXPECT().SchedulesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Schedule]{}, nil,
+				&paginate.Cursor[models.Schedule]{}, nil,
 			)
 			handlerFn(w, req)
 

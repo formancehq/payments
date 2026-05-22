@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
