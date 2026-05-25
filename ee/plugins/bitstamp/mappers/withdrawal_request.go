@@ -28,7 +28,7 @@ func WithdrawalRequestToPSPPayment(currencies map[string]int, w client.Withdrawa
 	if !ok {
 		return nil, nil
 	}
-	amount, err := parseDecimalAmount(w.Amount, precision)
+	amount, err := ParseDecimalAmount(w.Amount, precision)
 	if err != nil {
 		return nil, fmt.Errorf("withdrawal request %d amount: %w", w.ID, err)
 	}

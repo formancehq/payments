@@ -3,7 +3,6 @@ package mappers
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strconv"
 	"time"
 
@@ -39,7 +38,7 @@ func CryptoDepositToPSPPayment(currencies map[string]int, d client.CryptoDeposit
 	if !ok {
 		return nil, nil
 	}
-	amount, err := parseDecimalAmount(d.Amount.String(), precision)
+	amount, err := ParseDecimalAmount(d.Amount.String(), precision)
 	if err != nil {
 		return nil, fmt.Errorf("crypto deposit %d amount: %w", d.ID, err)
 	}
@@ -74,7 +73,7 @@ func CryptoWithdrawalToPSPPayment(currencies map[string]int, w client.CryptoWith
 	if !ok {
 		return nil, nil
 	}
-	amount, err := parseDecimalAmount(w.Amount.String(), precision)
+	amount, err := ParseDecimalAmount(w.Amount.String(), precision)
 	if err != nil {
 		return nil, fmt.Errorf("crypto withdrawal %s amount: %w", w.TxID, err)
 	}
@@ -108,7 +107,7 @@ func RippleIOUToPSPPayment(currencies map[string]int, r client.RippleIOUTransact
 	if !ok {
 		return nil, nil
 	}
-	amount, err := parseDecimalAmount(r.Amount.String(), precision)
+	amount, err := ParseDecimalAmount(r.Amount.String(), precision)
 	if err != nil {
 		return nil, fmt.Errorf("ripple IOU %s amount: %w", r.TxID, err)
 	}
@@ -129,17 +128,4 @@ func RippleIOUToPSPPayment(currencies map[string]int, r client.RippleIOUTransact
 		),
 		Raw: raw,
 	}, nil
-}
-
-// parseDecimalAmount converts a json.Number string to minor units.
-// Errors are wrapped — never silently truncates.
-func parseDecimalAmount(value string, precision int) (*big.Int, error) {
-	if value == "" {
-		return nil, fmt.Errorf("empty amount string")
-	}
-	amount, err := currency.GetAmountWithPrecisionFromString(value, precision)
-	if err != nil {
-		return nil, fmt.Errorf("parse decimal %q at precision %d: %w", value, precision, err)
-	}
-	return amount, nil
 }
