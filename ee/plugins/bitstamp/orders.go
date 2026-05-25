@@ -16,11 +16,6 @@ import (
 // order_status per tracked id, and emits one PSPOrder per cycle.
 // See MAPPINGS §4.4 for the full lifecycle.
 func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
-	currencies, err := p.getCurrencies(ctx)
-	if err != nil {
-		return models.FetchNextOrdersResponse{}, err
-	}
-
 	state := ordersState{TrackedOrders: map[string]trackedOrder{}}
 	if len(req.State) > 0 {
 		if err := json.Unmarshal(req.State, &state); err != nil {
@@ -45,6 +40,20 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		}
 	}
 	ids, evicted := reconciliationIDs(tracked, openIDs, now)
+
+	if len(ids) == 0 {
+		state.TrackedOrders = tracked
+		payload, err := json.Marshal(state)
+		if err != nil {
+			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to marshal orders state: %w", err)
+		}
+		return models.FetchNextOrdersResponse{NewState: payload, HasMore: false}, nil
+	}
+
+	currencies, err := p.getCurrencies(ctx)
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, err
+	}
 
 	orders := make([]models.PSPOrder, 0, len(ids))
 	for _, id := range ids {

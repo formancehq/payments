@@ -13,11 +13,6 @@ import (
 // independent since_id cursor and emits one PSPConversion per
 // type-36 row with two non-zero known currencies. See MAPPINGS §4.5.
 func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
-	currencies, err := p.getCurrencies(ctx)
-	if err != nil {
-		return models.FetchNextConversionsResponse{}, err
-	}
-
 	var state conversionsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &state); err != nil {
@@ -29,6 +24,18 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	transactions, err := p.client.GetUserTransactions(ctx, sinceIDFor(state.LastTransactionID), limit)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("failed to fetch conversions: %w", err)
+	}
+
+	if len(transactions) == 0 {
+		return models.FetchNextConversionsResponse{
+			NewState: req.State,
+			HasMore:  false,
+		}, nil
+	}
+
+	currencies, err := p.getCurrencies(ctx)
+	if err != nil {
+		return models.FetchNextConversionsResponse{}, err
 	}
 
 	conversions := make([]models.PSPConversion, 0, len(transactions))

@@ -25,16 +25,16 @@ const (
 // returned error as a total cycle failure, so partial success cannot
 // be propagated. The next tick retries from the unchanged watermark.
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	currencies, err := p.getCurrencies(ctx)
-	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
-	}
-
 	var state paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &state); err != nil {
 			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to unmarshal payments state: %w", err)
 		}
+	}
+
+	currencies, err := p.getCurrencies(ctx)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	limit := effectivePageSize(req.PageSize)
