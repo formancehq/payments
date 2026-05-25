@@ -129,7 +129,7 @@ type Market struct {
 	Trading                     string `json:"trading,omitempty"`
 }
 
-// MyMarket is one row from POST /api/v2/my_markets/ (signed).
+// MyMarket is one row from GET /api/v2/my_markets/ (signed).
 type MyMarket struct {
 	Name      string `json:"name"`
 	URLSymbol string `json:"url_symbol"`

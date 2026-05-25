@@ -228,7 +228,7 @@ func TestGetOrderStatusRejectsEmptyID(t *testing.T) {
 	}
 }
 
-func TestSignedPOSTMapsAPI5506ToDerivativesUnsupportedError(t *testing.T) {
+func TestSignedGETMapsAPI5506ToDerivativesUnsupportedError(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -238,7 +238,7 @@ func TestSignedPOSTMapsAPI5506ToDerivativesUnsupportedError(t *testing.T) {
 	defer server.Close()
 
 	_, err := New("bitstamp", testAPIKey, testAPISecret, server.URL).
-		GetOpenOrders(context.Background())
+		GetMyMarkets(context.Background())
 	if err == nil {
 		t.Fatal("expected API5506 to surface as an error")
 	}
@@ -327,7 +327,7 @@ func TestGetMarketsDecodes(t *testing.T) {
 	}
 }
 
-func TestGetMyMarketsRequiresSignedPOST(t *testing.T) {
+func TestGetMyMarketsRequiresSignedGET(t *testing.T) {
 	t.Parallel()
 	srv, lastReq := stubServer(t, `[{"name":"BTC/USD","url_symbol":"btcusd"}]`)
 
@@ -338,11 +338,9 @@ func TestGetMyMarketsRequiresSignedPOST(t *testing.T) {
 	if len(got) != 1 || got[0].URLSymbol != "btcusd" {
 		t.Errorf("unexpected my_markets: %+v", got)
 	}
-	// Live probe proved my_markets requires signed POST — verify the
-	// outgoing call satisfies that contract.
 	r := lastReq()
-	if r.Method != http.MethodPost {
-		t.Errorf("method = %s, want POST", r.Method)
+	if r.Method != http.MethodGet {
+		t.Errorf("method = %s, want GET", r.Method)
 	}
 	if r.Header.Get("X-Auth-Signature") == "" {
 		t.Errorf("missing HMAC signature header on my_markets call")
@@ -576,23 +574,6 @@ func TestGetOpenOrdersForMarketSignsTheRightPath(t *testing.T) {
 	}
 }
 
-func TestSignedPOSTMapsAPI5506BeforeWrap(t *testing.T) {
-	t.Parallel()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte(`{"code":"API5506","message":"Trade account does not support derivatives."}`))
-	}))
-	defer srv.Close()
-	_, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
-		GetCryptoTransactions(t.Context(), CryptoTransactionsOptions{Limit: 100})
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !IsDerivativesUnsupportedError(err) {
-		t.Errorf("API5506 must surface as DerivativesUnsupportedError, got %v", err)
-	}
-}
-
 func TestSignedPOSTWrapsGenericServerError(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -604,9 +585,6 @@ func TestSignedPOSTWrapsGenericServerError(t *testing.T) {
 		GetAccountBalances(t.Context())
 	if err == nil {
 		t.Fatal("expected error")
-	}
-	if IsDerivativesUnsupportedError(err) {
-		t.Errorf("non-API5506 errors must not surface as DerivativesUnsupportedError")
 	}
 	if !strings.Contains(err.Error(), "Invalid parameter") {
 		t.Errorf("error should carry the PSP reason, got %v", err)

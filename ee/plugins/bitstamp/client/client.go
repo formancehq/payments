@@ -104,10 +104,26 @@ func (c *client) signRequest(req *http.Request, body string) {
 	req.Header.Set("X-Auth-Version", "v2")
 }
 
-// signedPOST is the shared shape for every authenticated v2 endpoint:
+// signedGET issues an authenticated GET with HMAC headers and no body.
+func (c *client) signedGET(ctx context.Context, path string, dst any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+path, nil)
+	if err != nil {
+		return fmt.Errorf("create request %s: %w", path, err)
+	}
+	c.signRequest(req, "")
+	var errResp ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, dst, &errResp)
+	if err != nil {
+		if errResp.Code == ErrCodeDerivativesUnsupported {
+			return &DerivativesUnsupportedError{Endpoint: path, Message: errResp.Message()}
+		}
+		return fmt.Errorf("%s (status %d, message: %s): %w", path, statusCode, errResp.Message(), err)
+	}
+	return nil
+}
+
+// signedPOST is the shared shape for authenticated v2 POST endpoints:
 // optional form body, HMAC headers, JSON-or-error envelope response.
-// It maps Bitstamp's API5506 derivatives-unsupported error to a typed
-// DerivativesUnsupportedError so callers can spot-only-skip it.
 func (c *client) signedPOST(ctx context.Context, path string, form url.Values, dst any) error {
 	endpoint := c.endpoint + path
 	var (
@@ -131,9 +147,6 @@ func (c *client) signedPOST(ctx context.Context, path string, form url.Values, d
 	var errResp ErrorResponse
 	statusCode, err := c.httpClient.Do(ctx, req, dst, &errResp)
 	if err != nil {
-		if errResp.Code == ErrCodeDerivativesUnsupported {
-			return &DerivativesUnsupportedError{Endpoint: path, Message: errResp.Message()}
-		}
 		return fmt.Errorf("%s (status %d, message: %s): %w", path, statusCode, errResp.Message(), err)
 	}
 	return nil
@@ -322,11 +335,10 @@ func (c *client) GetMarkets(ctx context.Context) ([]Market, error) {
 }
 
 // GetMyMarkets returns the trading-pair allow-list for the
-// authenticated API key. Requires signed POST (GET returns HTTP 400
-// despite what the docs suggest).
+// authenticated API key. Authenticated GET endpoint.
 func (c *client) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
 	var out []MyMarket
-	if err := c.signedPOST(ctx, "/api/v2/my_markets/", nil, &out); err != nil {
+	if err := c.signedGET(ctx, "/api/v2/my_markets/", &out); err != nil {
 		return nil, fmt.Errorf("get my markets: %w", err)
 	}
 	return out, nil
