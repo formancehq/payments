@@ -7,14 +7,13 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/testing/deferred"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/client/models/operations"
 	"github.com/formancehq/payments/pkg/events"
-	"github.com/formancehq/payments/pkg/testserver"
 	. "github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -200,7 +199,7 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 func createV3Account(
 	ctx context.Context,
-	app *testserver.Server,
+	app *Server,
 	req *components.V3CreateAccountRequest,
 ) (string, error) {
 	createResponse, err := app.SDK().Payments.V3.CreateAccount(ctx, req)
@@ -212,7 +211,7 @@ func createV3Account(
 
 func createV2Account(
 	ctx context.Context,
-	app *testserver.Server,
+	app *Server,
 	req components.AccountRequest,
 ) (string, error) {
 	createResponse, err := app.SDK().Payments.V1.CreateAccount(ctx, req)

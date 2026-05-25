@@ -111,7 +111,7 @@ func createFile(ctx context.Context, path string, tpl string, params map[string]
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	t, err := template.New(path).Parse(tpl)
 	if err != nil {

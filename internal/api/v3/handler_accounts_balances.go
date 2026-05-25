@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -27,7 +27,7 @@ func accountsBalances(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		query, err := bunpaginate.Extract(r, func() (*storage.ListBalancesQuery, error) {
+		query, err := paginate.Extract(r, func() (*storage.ListBalancesQuery, error) {
 			options, err := getPagination(span, r, balanceQuery)
 			if err != nil {
 				return nil, err

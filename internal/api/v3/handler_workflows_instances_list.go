@@ -3,10 +3,10 @@ package v3
 import (
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -30,14 +30,14 @@ func workflowsInstancesList(backend backend.Backend) http.HandlerFunc {
 		span.SetAttributes(attribute.String("scheduleID", scheduleID(r)))
 		scheduleID := scheduleID(r)
 
-		query, err := bunpaginate.Extract[storage.ListInstancesQuery](r, func() (*storage.ListInstancesQuery, error) {
-			pageSize, err := bunpaginate.GetPageSize(r)
+		query, err := paginate.Extract[storage.ListInstancesQuery](r, func() (*storage.ListInstancesQuery, error) {
+			pageSize, err := paginate.GetPageSize(r)
 			if err != nil {
 				return nil, err
 			}
 			span.SetAttributes(attribute.Int64("pageSize", int64(pageSize)))
 
-			options := pointer.For(bunpaginate.NewPaginatedQueryOptions(storage.InstanceQuery{}).WithPageSize(pageSize))
+			options := pointer.For(paginate.NewPaginatedQueryOptions(storage.InstanceQuery{}).WithPageSize(pageSize))
 			options = pointer.For(options.WithQueryBuilder(
 				query.And(
 					query.Match("connector_id", connectorID),

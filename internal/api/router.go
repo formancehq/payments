@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/auth"
-	"github.com/formancehq/go-libs/v3/health"
-	"github.com/formancehq/go-libs/v3/service"
+	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
+	"github.com/formancehq/go-libs/v5/pkg/service/health"
+	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
+	"github.com/formancehq/go-libs/v5/pkg/audit/httpaudit"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,7 +18,7 @@ import (
 
 type Version struct {
 	Version int
-	Builder func(backend backend.Backend, a auth.Authenticator, debug bool) *chi.Mux
+	Builder func(backend backend.Backend, a jwt.Authenticator, debug bool) *chi.Mux
 }
 
 type versionsSlice []Version
@@ -37,7 +39,8 @@ func NewRouter(
 	backend backend.Backend,
 	info api.ServiceInfo,
 	healthController *health.HealthController,
-	a auth.Authenticator,
+	a jwt.Authenticator,
+	publisher message.Publisher,
 	debug bool,
 	versions ...Version) *chi.Mux {
 	r := chi.NewRouter()
@@ -47,7 +50,8 @@ func NewRouter(
 			handler.ServeHTTP(w, r)
 		})
 	})
-	r.Use(service.OTLPMiddleware("payments", debug))
+	r.Use(httpserver.OTLPMiddleware("payments", debug))
+	r.Use(httpaudit.Middleware(publisher, "audit-events", "payments", nil))
 	r.Use(middleware.Recoverer)
 	r.Get("/_healthcheck", healthController.Check)
 	r.Get("/_info", api.InfoHandler(info))

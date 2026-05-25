@@ -3,17 +3,14 @@ package currencycloud
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	page := 1
 	balances := make([]models.PSPBalance, 0)
-	for {
-		if page < 0 {
-			break
-		}
+	for page >= 0 {
 
 		pagedBalances, nextPage, err := p.client.GetBalances(ctx, page, req.PageSize)
 		if err != nil {

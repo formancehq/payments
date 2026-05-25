@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 

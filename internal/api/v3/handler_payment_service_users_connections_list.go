@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -52,7 +52,7 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
+		query, err := paginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
 			options, err := getPagination(span, r, storage.OpenBankingConnectionsQuery{})
 			if err != nil {
 				return nil, err
@@ -87,7 +87,7 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 			})
 		}
 
-		api.RenderCursor(w, bunpaginate.Cursor[openBankingConnection]{
+		api.RenderCursor(w, paginate.Cursor[openBankingConnection]{
 			PageSize: cursor.PageSize,
 			HasMore:  cursor.HasMore,
 			Previous: cursor.Previous,
@@ -118,7 +118,7 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
+		query, err := paginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
 			options, err := getPagination(span, r, storage.OpenBankingConnectionsQuery{})
 			if err != nil {
 				return nil, err
@@ -153,7 +153,7 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 			})
 		}
 
-		api.RenderCursor(w, bunpaginate.Cursor[openBankingConnection]{
+		api.RenderCursor(w, paginate.Cursor[openBankingConnection]{
 			PageSize: cursor.PageSize,
 			HasMore:  cursor.HasMore,
 			Previous: cursor.Previous,

@@ -3,7 +3,7 @@ package migrations
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -40,18 +40,18 @@ func FixMissingReferenceTransferInitiation(ctx context.Context, db bun.IDB) erro
 		return err
 	}
 
-	q := bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]]{
-		Order:    bunpaginate.OrderAsc,
+	q := paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[any]]{
+		Order:    paginate.OrderAsc,
 		PageSize: 1000,
-		Options: bunpaginate.PaginatedQueryOptions[any]{
+		Options: paginate.PaginatedQueryOptions[any]{
 			PageSize: 1000,
 		},
 	}
 	for {
-		cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[any], v2TransferInitiation](
+		cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[any], v2TransferInitiation](
 			ctx,
 			db,
-			(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]])(&q),
+			(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[any]])(&q),
 			func(query *bun.SelectQuery) *bun.SelectQuery {
 				return query.
 					Column("id").
@@ -79,7 +79,7 @@ func FixMissingReferenceTransferInitiation(ctx context.Context, db bun.IDB) erro
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		if err != nil {
 			return err
 		}

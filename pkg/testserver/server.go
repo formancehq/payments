@@ -13,16 +13,16 @@ import (
 	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
 	formance "github.com/formancehq/payments/pkg/client"
 
-	"github.com/formancehq/go-libs/v3/otlp"
-	"github.com/formancehq/go-libs/v3/otlp/otlpmetrics"
+	"github.com/formancehq/go-libs/v5/pkg/observe"
+	"github.com/formancehq/go-libs/v5/pkg/observe/metrics"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	"github.com/formancehq/go-libs/v3/bun/bunconnect"
-	"github.com/formancehq/go-libs/v3/httpclient"
-	"github.com/formancehq/go-libs/v3/httpserver"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
+	"github.com/formancehq/go-libs/v5/pkg/transport/httpclient"
+	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/service"
 	"github.com/formancehq/payments/cmd"
 	"github.com/stretchr/testify/require"
 )
@@ -37,13 +37,13 @@ type T interface {
 }
 
 type OTLPConfig struct {
-	BaseConfig otlp.Config
-	Metrics    *otlpmetrics.ModuleConfig
+	BaseConfig observe.Config
+	Metrics    *metrics.ModuleConfig
 }
 
 type Configuration struct {
 	Stack                      string
-	PostgresConfiguration      bunconnect.ConnectionOptions
+	PostgresConfiguration      connect.ConnectionOptions
 	TemporalNamespace          string
 	TemporalAddress            string
 	NatsURL                    string
@@ -180,7 +180,7 @@ func (s *Server) Restart(ctx context.Context) error {
 }
 
 func (s *Server) Database() (*bun.DB, error) {
-	db, err := bunconnect.OpenSQLDB(s.ctx, s.configuration.PostgresConfiguration)
+	db, err := connect.OpenSQLDB(s.ctx, s.configuration.PostgresConfiguration)
 	if err != nil {
 		return nil, err
 	}

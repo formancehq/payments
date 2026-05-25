@@ -36,7 +36,7 @@ func (c *client) writeFile(filename string, b []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to open %q for write: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	_, err = file.Write(b)
 	if err != nil {
@@ -54,7 +54,7 @@ func (c *client) readFile(filename string) (b []byte, err error) {
 		}
 		return b, fmt.Errorf("failed to open %q for read: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	fileInfo, err := file.Stat()
 	if err != nil {

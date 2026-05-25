@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -44,7 +44,7 @@ var _ = Describe("API v3 WorkflowInstances List", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "connectorID", connID.String())
 			m.EXPECT().WorkflowsInstancesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Instance]{}, fmt.Errorf("workflowsInstances list error"),
+				&paginate.Cursor[models.Instance]{}, fmt.Errorf("workflowsInstances list error"),
 			)
 			handlerFn(w, req)
 
@@ -54,7 +54,7 @@ var _ = Describe("API v3 WorkflowInstances List", func() {
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "connectorID", connID.String())
 			m.EXPECT().WorkflowsInstancesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Instance]{}, nil,
+				&paginate.Cursor[models.Instance]{}, nil,
 			)
 			handlerFn(w, req)
 

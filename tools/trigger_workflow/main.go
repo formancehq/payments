@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	golibtemporal "github.com/formancehq/go-libs/v3/temporal"
+	golibtemporal "github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"

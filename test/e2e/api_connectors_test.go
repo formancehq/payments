@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/testserver"
@@ -96,7 +96,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			dir, err := os.MkdirTemp("", "dummypay")
 			Expect(err).To(BeNil())
 			GinkgoT().Cleanup(func() {
-				os.RemoveAll(dir)
+				_ = os.RemoveAll(dir)
 			})
 
 			connectorConf := components.ConnectorConfig{
@@ -168,7 +168,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			dir, err := os.MkdirTemp("", "updateddir")
 			Expect(err).To(BeNil())
 			GinkgoT().Cleanup(func() {
-				os.RemoveAll(dir)
+				_ = os.RemoveAll(dir)
 			})
 
 			config := components.ConnectorConfig{
@@ -565,7 +565,7 @@ func newV3ConnectorConfigFn() func(id uuid.UUID) *components.V3DummypayConfig {
 		dir, err := os.MkdirTemp("", "dummypay")
 		Expect(err).To(BeNil())
 		GinkgoT().Cleanup(func() {
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 		})
 
 		return &components.V3DummypayConfig{
@@ -584,7 +584,7 @@ func newV2ConnectorConfigFn() func(id uuid.UUID) *components.DummyPayConfig {
 		dir, err := os.MkdirTemp("", "dummypay")
 		Expect(err).To(BeNil())
 		GinkgoT().Cleanup(func() {
-			os.RemoveAll(dir)
+			_ = os.RemoveAll(dir)
 		})
 
 		return &components.DummyPayConfig{

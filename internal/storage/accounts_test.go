@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -143,7 +143,7 @@ func TestAccountsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -343,7 +343,7 @@ func TestAccountsUpsert(t *testing.T) {
 		upsertConnector(t, ctx, store, defaultConnector)
 
 		// Count existing accounts
-		accountsBefore, err := store.AccountsList(ctx, NewListAccountsQuery(bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
+		accountsBefore, err := store.AccountsList(ctx, NewListAccountsQuery(paginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
 		require.NoError(t, err)
 		countBefore := len(accountsBefore.Data)
 
@@ -362,7 +362,7 @@ func TestAccountsUpsert(t *testing.T) {
 		require.Error(t, err)
 
 		// Verify no account was inserted
-		accountsAfter, err := store.AccountsList(ctx, NewListAccountsQuery(bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
+		accountsAfter, err := store.AccountsList(ctx, NewListAccountsQuery(paginate.NewPaginatedQueryOptions(AccountQuery{}).WithPageSize(1000)))
 		require.NoError(t, err)
 		assert.Equal(t, countBefore, len(accountsAfter.Data), "no accounts should be inserted on error")
 
@@ -380,7 +380,7 @@ func TestAccountsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -411,7 +411,7 @@ func TestAccountsDelete(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -463,7 +463,7 @@ func TestAccountsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
@@ -473,7 +473,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by reference", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "test1")),
 		)
@@ -488,7 +488,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by reference 2", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "test2")),
 		)
@@ -501,7 +501,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by unknown reference", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "unknown")),
 		)
@@ -514,7 +514,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by connector id", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID)),
 		)
@@ -530,7 +530,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by connector id 2", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector2.ID)),
 		)
@@ -550,7 +550,7 @@ func TestAccountsList(t *testing.T) {
 		}
 
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", unknownConnectorID)),
 		)
@@ -562,7 +562,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by id", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultAccounts2()[0].ID.String())),
 		)
@@ -576,7 +576,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by unknown id", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", "unknown")),
 		)
@@ -589,7 +589,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by type", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", models.ACCOUNT_TYPE_INTERNAL)),
 		)
@@ -610,7 +610,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by unknown type", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "unknown")),
 		)
@@ -623,7 +623,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by default asset", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("default_asset", "USD/2")),
 		)
@@ -640,7 +640,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by unknown default asset", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("default_asset", "unknown")),
 		)
@@ -653,7 +653,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by name", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "test1")),
 		)
@@ -670,7 +670,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by name 2", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "test3")),
 		)
@@ -684,7 +684,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by unknown name", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "unknown")),
 		)
@@ -697,7 +697,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by metadata", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
@@ -711,7 +711,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts by unknown metadata", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "unknown")),
 		)
@@ -724,7 +724,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("wrong query builder operator with metadata", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("metadata[foo]", "unknown")),
 		)
@@ -738,7 +738,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("query builder unknown key", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "unknown")),
 		)
@@ -750,7 +750,7 @@ func TestAccountsList(t *testing.T) {
 
 	t.Run("list accounts test cursor", func(t *testing.T) {
 		q := NewListAccountsQuery(
-			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+			paginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(1),
 		)
 		accounts := defaultAccounts()
@@ -765,7 +765,7 @@ func TestAccountsList(t *testing.T) {
 		require.Empty(t, cursor.Previous)
 		require.Equal(t, accounts3[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -775,7 +775,7 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts3[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -785,7 +785,7 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -795,7 +795,7 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -805,7 +805,7 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts2[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -815,7 +815,7 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -825,7 +825,7 @@ func TestAccountsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts2[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -841,7 +841,7 @@ func TestAccountsDeleteFromConnectorIDBatch(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 

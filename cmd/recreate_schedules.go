@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
@@ -138,7 +138,7 @@ func (r *RecreateSchedules) Run(ctx context.Context) error {
 func (r *RecreateSchedules) listActiveConnectors(ctx context.Context) ([]models.Connector, error) {
 	var result []models.Connector
 	q := storage.NewListConnectorsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
 	)
 
@@ -158,7 +158,7 @@ func (r *RecreateSchedules) listActiveConnectors(ctx context.Context) ([]models.
 			break
 		}
 
-		if err := bunpaginate.UnmarshalCursor(page.Next, &q); err != nil {
+		if err := paginate.UnmarshalCursor(page.Next, &q); err != nil {
 			return nil, err
 		}
 	}
@@ -258,7 +258,7 @@ func (r *RecreateSchedules) recreateSubSchedules(
 	accountCache := make(map[string]*models.Account)
 
 	q := storage.NewListSchedulesQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
 				query.Match("connector_id", connectorID.String()),
@@ -347,7 +347,7 @@ func (r *RecreateSchedules) recreateSubSchedules(
 			break
 		}
 
-		if err := bunpaginate.UnmarshalCursor(page.Next, &q); err != nil {
+		if err := paginate.UnmarshalCursor(page.Next, &q); err != nil {
 			return fmt.Errorf("failed to unmarshal schedules cursor: %w", err)
 		}
 	}

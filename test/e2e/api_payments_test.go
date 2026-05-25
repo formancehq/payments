@@ -7,13 +7,12 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/testing/deferred"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/events"
-	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -173,7 +172,7 @@ var _ = Context("Payments API Payments", Serial, func() {
 
 func setupDebtorAndCreditorV3Accounts(
 	ctx context.Context,
-	app *testserver.Server,
+	app *Server,
 	connectorID string,
 	createdAt time.Time,
 ) (string, string) {
@@ -224,7 +223,7 @@ func setupDebtorAndCreditorV3Accounts(
 
 func setupDebtorAndCreditorV2Accounts(
 	ctx context.Context,
-	app *testserver.Server,
+	app *Server,
 	connectorID string,
 	createdAt time.Time,
 ) (string, string) {

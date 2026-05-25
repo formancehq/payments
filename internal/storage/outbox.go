@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	internalErrors "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/uptrace/bun"
@@ -174,7 +174,7 @@ func (s *store) OutboxEventsMarkProcessedAndRecordSent(ctx context.Context, even
 	_, err = tx.NewUpdate().
 		TableExpr("outbox_events").
 		Set("status = ?", models.OUTBOX_STATUS_PROCESSED).
-		Where("id IN (?)", bun.In(eventIDs)).
+		Where("id IN (?)", bun.List(eventIDs)).
 		Exec(ctx)
 	if err != nil {
 		return e("failed to mark published events as processed", err)

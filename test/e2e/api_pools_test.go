@@ -8,15 +8,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/testing/deferred"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/client/models/operations"
 	"github.com/formancehq/payments/pkg/events"
-	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -702,7 +701,7 @@ var _ = Context("Payments API Pools", Serial, func() {
 
 func setupV3PoolAccounts(
 	ctx context.Context,
-	app *testserver.Server,
+	app *Server,
 	connectorID string,
 	count int,
 ) []string {
@@ -736,7 +735,7 @@ func setupV3PoolAccounts(
 
 func setupV2PoolAccounts(
 	ctx context.Context,
-	app *testserver.Server,
+	app *Server,
 	connectorID string,
 	count int,
 ) []string {

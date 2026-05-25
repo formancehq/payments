@@ -1,6 +1,6 @@
 package wise
 
-import "github.com/formancehq/go-libs/v3/currency"
+import "github.com/formancehq/go-libs/v5/pkg/types/currency"
 
 var (
 	// c.f. https://wise.com/help/articles/2897238/which-currencies-can-i-add-keep-and-receive-in-my-wise-account

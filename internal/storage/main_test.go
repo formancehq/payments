@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunconnect"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/testing/docker"
-	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
-	"github.com/formancehq/go-libs/v3/testing/utils"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/testing/docker"
+	"github.com/formancehq/go-libs/v5/pkg/testing/platform/pgtesting"
+	"github.com/formancehq/go-libs/v5/pkg/testing/utils"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -51,7 +51,7 @@ func newStore(t *testing.T) Storage {
 
 	pgServer := srv.NewDatabase(t)
 
-	db, err := bunconnect.OpenSQLDB(ctx, pgServer.ConnectionOptions())
+	db, err := connect.OpenSQLDB(ctx, pgServer.ConnectionOptions())
 	require.NoError(t, err)
 
 	key := make([]byte, 64)

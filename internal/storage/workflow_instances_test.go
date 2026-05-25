@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -55,7 +55,7 @@ func TestInstancesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -103,7 +103,7 @@ func TestInstancesUpdate(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -147,7 +147,7 @@ func TestInstancesDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -188,7 +188,7 @@ func TestInstancesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -200,7 +200,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by schedule id", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("schedule_id", defaultSchedules[0].ID)),
 		)
@@ -212,7 +212,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("list instances by schedule_id", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("schedule_id", defaultSchedules[0].ID)),
 		)
@@ -229,7 +229,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("list instances by unknown schedule_id", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("schedule_id", uuid.New().String())),
 		)
@@ -244,7 +244,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("list instances by connector_id", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID)),
 		)
@@ -262,7 +262,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("list instances by unknown connector_id", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", models.ConnectorID{
 					Reference: uuid.New(),
@@ -280,7 +280,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "unknown")),
 		)
@@ -292,7 +292,7 @@ func TestInstancesList(t *testing.T) {
 
 	t.Run("list instances test cursor", func(t *testing.T) {
 		q := NewListInstancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+			paginate.NewPaginatedQueryOptions(InstanceQuery{}).
 				WithPageSize(1),
 		)
 
@@ -304,7 +304,7 @@ func TestInstancesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, defaultWorkflowInstances[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.InstancesList(ctx, q)
 		require.NoError(t, err)
@@ -314,7 +314,7 @@ func TestInstancesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, defaultWorkflowInstances[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.InstancesList(ctx, q)
 		require.NoError(t, err)
@@ -324,7 +324,7 @@ func TestInstancesList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		require.Equal(t, defaultWorkflowInstances[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.InstancesList(ctx, q)
 		require.NoError(t, err)
@@ -334,7 +334,7 @@ func TestInstancesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, defaultWorkflowInstances[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.InstancesList(ctx, q)
 		require.NoError(t, err)
@@ -352,7 +352,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -379,7 +379,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("returns schedule when last 5 executions all have errors", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -389,7 +389,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			upsertInstance(t, ctx, store, makeInstance(fmt.Sprintf("all-err-%d", i), 0, 10+i, pointer.For("error")))
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
@@ -398,7 +398,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("excludes schedule when any of last 5 executions has no error", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -410,7 +410,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			upsertInstance(t, ctx, store, makeInstance(fmt.Sprintf("mixed-err-%d", i), 0, 10+i, pointer.For("error")))
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Empty(t, cursor.Data)
@@ -418,7 +418,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("excludes schedule with fewer than 5 executions", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -428,7 +428,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			upsertInstance(t, ctx, store, makeInstance(fmt.Sprintf("few-err-%d", i), 0, 10+i, pointer.For("error")))
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Empty(t, cursor.Data)
@@ -436,7 +436,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("ignores executions beyond the 5 most recent", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -448,7 +448,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			upsertInstance(t, ctx, store, makeInstance(fmt.Sprintf("recent-err-%d", i), 0, 10+i, pointer.For("error")))
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
@@ -457,7 +457,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("returns most recent error instance per schedule", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -470,7 +470,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 		}
 		upsertInstance(t, ctx, store, makeInstance("sched0-latest", 0, 5, pointer.For("latest")))
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
@@ -479,7 +479,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("returns multiple qualifying schedules", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -499,7 +499,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			upsertInstance(t, ctx, store, makeInstance(fmt.Sprintf("s2-err-%d", i), 2, 10+i, pointer.For("err")))
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
@@ -510,7 +510,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("cursor pagination returns next page", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -523,14 +523,14 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			}
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(1))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(1))
 		page1, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Len(t, page1.Data, 1)
 		require.True(t, page1.HasMore)
 		require.NotEmpty(t, page1.Next)
 
-		err = bunpaginate.UnmarshalCursor(page1.Next, &q)
+		err = paginate.UnmarshalCursor(page1.Next, &q)
 		require.NoError(t, err)
 		page2, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
@@ -538,7 +538,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 		require.True(t, page2.HasMore)
 		require.NotEqual(t, page1.Data[0].ScheduleID, page2.Data[0].ScheduleID)
 
-		err = bunpaginate.UnmarshalCursor(page2.Next, &q)
+		err = paginate.UnmarshalCursor(page2.Next, &q)
 		require.NoError(t, err)
 		page3, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
@@ -549,7 +549,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 
 	t.Run("excludes non-terminated instances even when they have errors", func(t *testing.T) {
 		store := newStore(t)
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 		upsertConnector(t, ctx, store, defaultConnector)
 		for _, s := range defaultSchedules {
 			upsertSchedule(t, ctx, store, s)
@@ -562,7 +562,7 @@ func TestInstancesListSchedulesAboveErrorThreshold(t *testing.T) {
 			upsertInstance(t, ctx, store, inst)
 		}
 
-		q := NewListInstancesQuery(bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
+		q := NewListInstancesQuery(paginate.NewPaginatedQueryOptions(InstanceQuery{}).WithPageSize(15))
 		cursor, err := store.InstancesListSchedulesAboveErrorThreshold(ctx, defaultConnector.ID, 5, q)
 		require.NoError(t, err)
 		require.Empty(t, cursor.Data)
@@ -576,7 +576,7 @@ func TestInstancesDeleteFromConnectorIDBatch(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, s := range defaultSchedules {

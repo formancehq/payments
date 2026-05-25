@@ -7,11 +7,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -98,7 +98,7 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -208,7 +208,7 @@ func TestPaymentInitiationsUpdateMetadata(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -262,7 +262,7 @@ func TestPaymentInitiationsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -291,7 +291,7 @@ func TestPaymentInitiationsDelete(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -320,7 +320,7 @@ func TestPaymentInitiationsDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -355,7 +355,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -364,7 +364,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("reference", "test1")),
 		)
@@ -378,7 +378,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment intitiations by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "test1")),
 		)
@@ -392,7 +392,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown reference", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "unknown")),
 		)
@@ -405,7 +405,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment intitiations by id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultPaymentInitiations()[0].ID.String())),
 		)
@@ -419,7 +419,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", "unknown")),
 		)
@@ -432,7 +432,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by connector_id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID.String())),
 		)
@@ -448,7 +448,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown connector_id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", "unknown")),
 		)
@@ -461,7 +461,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by type", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "PAYOUT")),
 		)
@@ -476,7 +476,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by type 2", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "TRANSFER")),
 		)
@@ -490,7 +490,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown type", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "UNKNOWN")),
 		)
@@ -503,7 +503,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by status multiple adjustments", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED.String())),
 		)
@@ -517,7 +517,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by status single adjustment", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String())),
 		)
@@ -531,7 +531,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown status", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", "UNKNOWN")),
 		)
@@ -544,7 +544,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by asset", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "EUR/2")),
 		)
@@ -559,7 +559,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by asset 2", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "USD/2")),
 		)
@@ -573,7 +573,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown asset", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "unknown")),
 		)
@@ -586,7 +586,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by source account id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("source_account_id", defaultAccounts()[0].ID.String())),
 		)
@@ -600,7 +600,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown source account id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("source_account_id", "unknown")),
 		)
@@ -613,7 +613,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by destination account id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("destination_account_id", defaultAccounts()[1].ID.String())),
 		)
@@ -628,7 +628,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown destination account id", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("destination_account_id", "unknown")),
 		)
@@ -641,7 +641,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by amount", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("amount", 200)),
 		)
@@ -655,7 +655,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown amount", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("amount", 0)),
 		)
@@ -668,7 +668,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
 		)
@@ -680,7 +680,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
@@ -694,7 +694,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "unknown")),
 		)
@@ -707,7 +707,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations by unknown metadata 2", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[unknown]", "bar")),
 		)
@@ -720,7 +720,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test1")),
 		)
@@ -732,7 +732,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	t.Run("list payment initiations test cursor", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(1),
 		)
 
@@ -744,7 +744,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiations(t, defaultPaymentInitiations()[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationsList(ctx, q)
 		require.NoError(t, err)
@@ -754,7 +754,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiations(t, defaultPaymentInitiations()[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationsList(ctx, q)
 		require.NoError(t, err)
@@ -764,7 +764,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		comparePaymentInitiations(t, defaultPaymentInitiations()[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationsList(ctx, q)
 		require.NoError(t, err)
@@ -774,7 +774,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiations(t, defaultPaymentInitiations()[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationsList(ctx, q)
 		require.NoError(t, err)
@@ -799,7 +799,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -815,7 +815,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 			ctx,
 			piID1,
 			NewListPaymentInitiationRelatedPaymentsQuery(
-				bunpaginate.NewPaginatedQueryOptions(PaymentInitiationRelatedPaymentsQuery{}).
+				paginate.NewPaginatedQueryOptions(PaymentInitiationRelatedPaymentsQuery{}).
 					WithPageSize(15),
 			),
 		)
@@ -925,7 +925,7 @@ func TestPaymentInitiationIDsFromPaymentID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -953,7 +953,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -966,7 +966,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 			ctx,
 			models.PaymentInitiationID{},
 			NewListPaymentInitiationRelatedPaymentsQuery(
-				bunpaginate.NewPaginatedQueryOptions(PaymentInitiationRelatedPaymentsQuery{}).
+				paginate.NewPaginatedQueryOptions(PaymentInitiationRelatedPaymentsQuery{}).
 					WithPageSize(15),
 			),
 		)
@@ -977,7 +977,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 
 	t.Run("list related payments by payment initiation", func(t *testing.T) {
 		q := NewListPaymentInitiationRelatedPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationRelatedPaymentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationRelatedPaymentsQuery{}).
 				WithPageSize(1),
 		)
 		payments := defaultPayments()
@@ -990,7 +990,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePayments(t, payments[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationRelatedPaymentsList(ctx, piID1, q)
 		require.NoError(t, err)
@@ -1000,7 +1000,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePayments(t, payments[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationRelatedPaymentsList(ctx, piID1, q)
 		require.NoError(t, err)
@@ -1010,7 +1010,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		comparePayments(t, payments[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationRelatedPaymentsList(ctx, piID1, q)
 		require.NoError(t, err)
@@ -1020,7 +1020,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePayments(t, payments[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationRelatedPaymentsList(ctx, piID1, q)
 		require.NoError(t, err)
@@ -1097,7 +1097,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1228,7 +1228,7 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 	t.Parallel()
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1369,7 +1369,7 @@ func TestPaymentInitiationAdjustmentsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1397,7 +1397,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1410,7 +1410,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 			ctx,
 			models.PaymentInitiationID{},
 			NewListPaymentInitiationAdjustmentsQuery(
-				bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+				paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 					WithPageSize(15),
 			),
 		)
@@ -1421,7 +1421,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by status", func(t *testing.T) {
 		q := NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED)),
 		)
@@ -1433,7 +1433,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	t.Run("list payment initiation adjustments by status", func(t *testing.T) {
 		q := NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED)),
 		)
@@ -1447,7 +1447,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
 		)
@@ -1459,7 +1459,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	t.Run("list payment initiation adjustments by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
@@ -1473,7 +1473,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test1")),
 		)
@@ -1485,7 +1485,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	t.Run("list payment initiation adjustments by payment initiation", func(t *testing.T) {
 		q := NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(1),
 		)
 
@@ -1497,7 +1497,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiationAdjustments(t, defaultPaymentInitiationAdjustments()[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
 		require.NoError(t, err)
@@ -1507,7 +1507,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		comparePaymentInitiationAdjustments(t, defaultPaymentInitiationAdjustments()[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
 		require.NoError(t, err)

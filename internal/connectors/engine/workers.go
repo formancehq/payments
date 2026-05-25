@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -88,7 +88,7 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 	}
 
 	query := storage.NewListConnectorsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
 	)
 
@@ -110,7 +110,7 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(connectors.Next, &query)
+		err = paginate.UnmarshalCursor(connectors.Next, &query)
 		if err != nil {
 			return err
 		}

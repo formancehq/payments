@@ -5,10 +5,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -83,7 +83,7 @@ func TestPaymentInitiationReversalsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -129,7 +129,7 @@ func TestPaymentInitiationReversalsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -159,7 +159,7 @@ func TestPaymentInitiationReversalsDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -195,7 +195,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -204,7 +204,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("wrong query builder when listing by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("reference", "test1")),
 		)
@@ -218,7 +218,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment intitiations reversals by id", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultPaymentInitiationReversals()[0].ID.String())),
 		)
@@ -232,7 +232,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown id", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", "unknown")),
 		)
@@ -245,7 +245,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment intitiations reversals by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "test1")),
 		)
@@ -259,7 +259,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown reference", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "unknown")),
 		)
@@ -272,7 +272,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by connector_id", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID.String())),
 		)
@@ -288,7 +288,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown connector_id", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", "unknown")),
 		)
@@ -301,7 +301,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by asset", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "EUR/2")),
 		)
@@ -316,7 +316,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by asset 2", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "USD/2")),
 		)
@@ -330,7 +330,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown asset", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("asset", "unknown")),
 		)
@@ -343,7 +343,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by payment initiation id", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("payment_initiation_id", piID1)),
 		)
@@ -358,7 +358,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknowns payment initiation id", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("payment_initiation_id", "unknown")),
 		)
@@ -371,7 +371,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by amount", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("amount", 200)),
 		)
@@ -385,7 +385,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown amount", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("amount", 0)),
 		)
@@ -398,7 +398,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("wrong query builder when listing by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
 		)
@@ -410,7 +410,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
@@ -424,7 +424,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "unknown")),
 		)
@@ -437,7 +437,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals by unknown metadata 2", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[unknown]", "bar")),
 		)
@@ -450,7 +450,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithQueryBuilder(query.Match("unknown", "bar")),
 		)
 
@@ -461,7 +461,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	t.Run("list payment initiations reversals test cursor", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
 				WithPageSize(1),
 		)
 
@@ -473,7 +473,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiationReversals(t, defaultPaymentInitiationReversals()[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationReversalsList(ctx, q)
 		require.NoError(t, err)
@@ -483,7 +483,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiationReversals(t, defaultPaymentInitiationReversals()[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationReversalsList(ctx, q)
 		require.NoError(t, err)
@@ -493,7 +493,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		comparePaymentInitiationReversals(t, defaultPaymentInitiationReversals()[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationReversalsList(ctx, q)
 		require.NoError(t, err)
@@ -503,7 +503,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiationReversals(t, defaultPaymentInitiationReversals()[2], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationReversalsList(ctx, q)
 		require.NoError(t, err)
@@ -575,7 +575,7 @@ func TestPaymentInitiationReversalAdjustmentsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -624,7 +624,7 @@ func TestPaymentInitiationReversalAdjustmentsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -653,7 +653,7 @@ func TestPaymentInitiationReversalAdjustmentsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -667,7 +667,7 @@ func TestPaymentInitiationReversalAdjustmentsList(t *testing.T) {
 			ctx,
 			models.PaymentInitiationReversalID{},
 			NewListPaymentInitiationReversalAdjustmentsQuery(
-				bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalAdjustmentsQuery{}).
+				paginate.NewPaginatedQueryOptions(PaymentInitiationReversalAdjustmentsQuery{}).
 					WithPageSize(15),
 			),
 		)
@@ -678,7 +678,7 @@ func TestPaymentInitiationReversalAdjustmentsList(t *testing.T) {
 
 	t.Run("list payment initiation reversal adjustments by payment initiation", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(PaymentInitiationReversalAdjustmentsQuery{}).
 				WithPageSize(1),
 		)
 
@@ -690,7 +690,7 @@ func TestPaymentInitiationReversalAdjustmentsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		comparePaymentInitiationReversalAdjustments(t, defaultPaymentInitiationReversalAdjustments[1], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationReversalAdjustmentsList(ctx, defaultPaymentInitiationReversalAdjustments[0].PaymentInitiationReversalID, q)
 		require.NoError(t, err)
@@ -700,7 +700,7 @@ func TestPaymentInitiationReversalAdjustmentsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		comparePaymentInitiationReversalAdjustments(t, defaultPaymentInitiationReversalAdjustments[0], cursor.Data[0])
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PaymentInitiationReversalAdjustmentsList(ctx, defaultPaymentInitiationReversalAdjustments[0].PaymentInitiationReversalID, q)
 		require.NoError(t, err)

@@ -21,7 +21,7 @@ func TestV2Handlers(t *testing.T) {
 }
 
 func assertExpectedResponse(res *http.Response, expectedStatusCode int, expectedBodyString string) {
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	Expect(res.StatusCode).To(Equal(expectedStatusCode))
 
 	data, err := io.ReadAll(res.Body)

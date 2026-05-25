@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -46,7 +46,7 @@ func TestSchedulesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -103,7 +103,7 @@ func TestSchedulesDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -139,7 +139,7 @@ func TestSchedulesDelete(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -170,7 +170,7 @@ func TestSchedulesGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -195,7 +195,7 @@ func TestSchedulesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -204,7 +204,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by connector_id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("connector_id", defaultConnector.ID)),
 		)
@@ -218,7 +218,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("list schedules by connector id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID)),
 		)
@@ -235,7 +235,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("list schedules by unknown connector id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", models.ConnectorID{
 					Reference: uuid.New(),
@@ -254,7 +254,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("list schedules by id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultSchedules[1].ID)),
 		)
@@ -271,7 +271,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("list schedules by unknown id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", models.ConnectorID{
 					Reference: uuid.New(),
@@ -290,7 +290,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "unknown")),
 		)
@@ -302,7 +302,7 @@ func TestSchedulesList(t *testing.T) {
 
 	t.Run("list schedules test cursor", func(t *testing.T) {
 		q := NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(1),
 		)
 
@@ -314,7 +314,7 @@ func TestSchedulesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Schedule{defaultSchedules[1]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.SchedulesList(ctx, q)
 		require.NoError(t, err)
@@ -324,7 +324,7 @@ func TestSchedulesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Schedule{defaultSchedules[2]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.SchedulesList(ctx, q)
 		require.NoError(t, err)
@@ -334,7 +334,7 @@ func TestSchedulesList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		require.Equal(t, []models.Schedule{defaultSchedules[0]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.SchedulesList(ctx, q)
 		require.NoError(t, err)
@@ -344,7 +344,7 @@ func TestSchedulesList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Schedule{defaultSchedules[2]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.SchedulesList(ctx, q)
 		require.NoError(t, err)
@@ -361,7 +361,7 @@ func TestSchedulesPause(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -411,7 +411,7 @@ func TestSchedulesUnpause(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -451,7 +451,7 @@ func TestSchedulesDeleteFromConnectorIDBatch(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 

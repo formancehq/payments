@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -93,11 +93,11 @@ func (s *store) InstancesDeleteFromConnectorIDBatch(ctx context.Context, connect
 
 type InstanceQuery struct{}
 
-type ListInstancesQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]]
+type ListInstancesQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[InstanceQuery]]
 
-func NewListInstancesQuery(opts bunpaginate.PaginatedQueryOptions[InstanceQuery]) ListInstancesQuery {
+func NewListInstancesQuery(opts paginate.PaginatedQueryOptions[InstanceQuery]) ListInstancesQuery {
 	return ListInstancesQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -132,7 +132,7 @@ func (s *store) InstancesGet(ctx context.Context, id string, scheduleID string, 
 	return pointer.For(toInstanceModel(i)), nil
 }
 
-func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*paginate.Cursor[models.Instance], error) {
 	var (
 		where string
 		args  []any
@@ -145,8 +145,8 @@ func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpa
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[InstanceQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -166,7 +166,7 @@ func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpa
 		instances = append(instances, toInstanceModel(i))
 	}
 
-	return &bunpaginate.Cursor[models.Instance]{
+	return &paginate.Cursor[models.Instance]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -213,9 +213,9 @@ func toInstanceModel(from instance) models.Instance {
 
 // Returns the latest workflow instance for schedules which in their last N executions returned exclusively errors,
 // where N is determined by the threshold parameter.
-func (s *store) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[InstanceQuery]])(&q),
+func (s *store) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*paginate.Cursor[models.Instance], error) {
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[InstanceQuery], instance](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[InstanceQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			return query.
 				DistinctOn("schedule_id").
@@ -247,7 +247,7 @@ func (s *store) InstancesListSchedulesAboveErrorThreshold(ctx context.Context, c
 		instances = append(instances, toInstanceModel(i))
 	}
 
-	return &bunpaginate.Cursor[models.Instance]{
+	return &paginate.Cursor[models.Instance]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

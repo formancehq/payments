@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -64,7 +64,7 @@ func TestPoolsUpsert(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -189,7 +189,7 @@ func TestPoolsUpdateQuery(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -223,7 +223,7 @@ func TestPoolsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -253,7 +253,7 @@ func TestPoolsDelete(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -360,7 +360,7 @@ func TestPoolsAddAccount(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -488,7 +488,7 @@ func TestPoolsRemoveAccount(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -614,7 +614,7 @@ func TestPoolsRemoveAccountFromConnectorID(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -647,7 +647,7 @@ func TestPoolsList(t *testing.T) {
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	t.Cleanup(func() {
-		store.Close()
+		_ = store.Close()
 	})
 
 	upsertConnector(t, ctx, store, defaultConnector)
@@ -658,7 +658,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("wrong query builder operator when listing by name", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("name", "test1")),
 		)
@@ -672,7 +672,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by name", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "test1")),
 		)
@@ -688,7 +688,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by unknown name", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "unknown")),
 		)
@@ -703,7 +703,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by id", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", poolID1.String())),
 		)
@@ -719,7 +719,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by unknown id", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", uuid.New().String())),
 		)
@@ -734,7 +734,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by account id 1", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("account_id", defaultAccounts()[0].ID.String())),
 		)
@@ -750,7 +750,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by account id 2", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("account_id", defaultAccounts()[2].ID.String())),
 		)
@@ -766,7 +766,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools by unknown account id", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("account_id", uuid.New().String())),
 		)
@@ -781,7 +781,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test1")),
 		)
@@ -793,7 +793,7 @@ func TestPoolsList(t *testing.T) {
 
 	t.Run("list pools test cursor", func(t *testing.T) {
 		q := NewListPoolsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+			paginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(1),
 		)
 		defaultPools := defaultPools()
@@ -806,7 +806,7 @@ func TestPoolsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Pool{defaultPools[1]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PoolsList(ctx, q)
 		require.NoError(t, err)
@@ -816,7 +816,7 @@ func TestPoolsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Pool{defaultPools[2]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
 		cursor, err = store.PoolsList(ctx, q)
 		require.NoError(t, err)
@@ -826,7 +826,7 @@ func TestPoolsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 		require.Equal(t, []models.Pool{defaultPools[0]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PoolsList(ctx, q)
 		require.NoError(t, err)
@@ -836,7 +836,7 @@ func TestPoolsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Pool{defaultPools[2]}, cursor.Data)
 
-		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
+		err = paginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
 		cursor, err = store.PoolsList(ctx, q)
 		require.NoError(t, err)
@@ -848,7 +848,7 @@ func TestPoolsList(t *testing.T) {
 	})
 
 	t.Run("list pools with validation issues in filter", func(t *testing.T) {
-		q := NewListPoolsQuery(bunpaginate.PaginatedQueryOptions[PoolQuery]{
+		q := NewListPoolsQuery(paginate.PaginatedQueryOptions[PoolQuery]{
 			QueryBuilder: query.And(query.Match("id", "not a valid uuid")),
 			PageSize:     uint64(5),
 		})

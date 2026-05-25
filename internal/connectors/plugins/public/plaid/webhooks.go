@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/golang-jwt/jwt/v5"
@@ -76,10 +76,10 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 		publicKey.Curve = elliptic.P256()
 		x, _ := base64.URLEncoding.DecodeString(key.X + "=")
 		xc := new(big.Int)
-		publicKey.X = xc.SetBytes(x)
+		publicKey.X = xc.SetBytes(x) //nolint:staticcheck // TODO: migrate to new crypto API
 		y, _ := base64.URLEncoding.DecodeString(key.Y + "=")
 		yc := new(big.Int)
-		publicKey.Y = yc.SetBytes(y)
+		publicKey.Y = yc.SetBytes(y) //nolint:staticcheck // TODO: migrate to new crypto API
 
 		return publicKey, nil
 	}, jwt.WithValidMethods([]string{"ES256"}))

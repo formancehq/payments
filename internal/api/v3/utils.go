@@ -5,9 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -42,17 +42,17 @@ func getQueryBuilder(span trace.Span, r *http.Request) (query.Builder, error) {
 	}
 }
 
-func getPagination[T any](span trace.Span, r *http.Request, options T) (*bunpaginate.PaginatedQueryOptions[T], error) {
+func getPagination[T any](span trace.Span, r *http.Request, options T) (*paginate.PaginatedQueryOptions[T], error) {
 	return getPaginationWithBuilder[T](span, r, nil, options)
 }
 
-func getPaginationWithBuilder[T any](span trace.Span, r *http.Request, appendQuery query.Builder, options T) (*bunpaginate.PaginatedQueryOptions[T], error) {
+func getPaginationWithBuilder[T any](span trace.Span, r *http.Request, appendQuery query.Builder, options T) (*paginate.PaginatedQueryOptions[T], error) {
 	qb, err := getQueryBuilder(span, r)
 	if err != nil {
 		return nil, err
 	}
 
-	pageSize, err := bunpaginate.GetPageSize(r)
+	pageSize, err := paginate.GetPageSize(r)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +67,9 @@ func getPaginationWithBuilder[T any](span trace.Span, r *http.Request, appendQue
 	}
 
 	if len(queryBuilders) == 0 {
-		return pointer.For(bunpaginate.NewPaginatedQueryOptions(options).WithPageSize(pageSize)), nil
+		return pointer.For(paginate.NewPaginatedQueryOptions(options).WithPageSize(pageSize)), nil
 	}
 
 	builder := query.And(queryBuilders...)
-	return pointer.For(bunpaginate.NewPaginatedQueryOptions(options).WithQueryBuilder(builder).WithPageSize(pageSize)), nil
+	return pointer.For(paginate.NewPaginatedQueryOptions(options).WithQueryBuilder(builder).WithPageSize(pageSize)), nil
 }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/events"
@@ -57,7 +57,7 @@ var _ = Describe("Activity StorageConnectorsStore", func() {
 	})
 
 	AfterEach(func() {
-		publisher.Close()
+		_ = publisher.Close()
 	})
 
 	It("returns error when storage.DecryptRaw fails", func(ctx SpecContext) {

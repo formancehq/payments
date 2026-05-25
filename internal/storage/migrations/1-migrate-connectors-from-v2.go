@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -58,19 +58,19 @@ func MigrateConnectorsFromV2(ctx context.Context, logger logging.Logger, db bun.
 		return err
 	}
 
-	q := bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConnectorQuery]]{
-		Order:    bunpaginate.OrderAsc,
+	q := paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ConnectorQuery]]{
+		Order:    paginate.OrderAsc,
 		PageSize: 100,
-		Options: bunpaginate.PaginatedQueryOptions[ConnectorQuery]{
+		Options: paginate.PaginatedQueryOptions[ConnectorQuery]{
 			PageSize: 100,
 			Options:  ConnectorQuery{},
 		},
 	}
 	for {
-		cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[ConnectorQuery], v2Connector](
+		cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[ConnectorQuery], v2Connector](
 			ctx,
 			db,
-			(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConnectorQuery]])(&q),
+			(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ConnectorQuery]])(&q),
 			func(query *bun.SelectQuery) *bun.SelectQuery {
 				return query.
 					ColumnExpr("*, pgp_sym_decrypt(config, ?, ?) AS decrypted_config", encryptionKey, encryptionOptions).
@@ -124,7 +124,7 @@ func MigrateConnectorsFromV2(ctx context.Context, logger logging.Logger, db bun.
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		if err != nil {
 			return err
 		}

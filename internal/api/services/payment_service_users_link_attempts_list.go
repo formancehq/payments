@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 )
 
-func (s *Service) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
+func (s *Service) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*paginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	_, err := s.storage.PaymentServiceUsersGet(ctx, psuID)
 	if err != nil {
 		return nil, newStorageError(err, "cannot get payment service user")

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	temporalworker "github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	temporalworker "github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"

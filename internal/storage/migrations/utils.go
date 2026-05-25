@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -37,7 +37,7 @@ type v2Duration struct {
 }
 
 func (d *v2Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.Duration.String())
+	return json.Marshal(d.String())
 }
 
 func (d *v2Duration) UnmarshalJSON(b []byte) error {
@@ -71,7 +71,7 @@ func (d *v2Duration) UnmarshalJSON(b []byte) error {
 }
 
 func paginateWithOffset[FILTERS any, RETURN any](ctx context.Context, db bun.IDB,
-	q *bunpaginate.OffsetPaginatedQuery[FILTERS], builders ...func(query *bun.SelectQuery) *bun.SelectQuery) (*bunpaginate.Cursor[RETURN], error) {
+	q *paginate.OffsetPaginatedQuery[FILTERS], builders ...func(query *bun.SelectQuery) *bun.SelectQuery) (*paginate.Cursor[RETURN], error) {
 	query := db.NewSelect()
-	return bunpaginate.UsingOffset[FILTERS, RETURN](ctx, query, *q, builders...)
+	return paginate.UsingOffset[FILTERS, RETURN](ctx, query, *q, builders...)
 }

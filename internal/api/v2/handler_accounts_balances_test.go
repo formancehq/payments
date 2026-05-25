@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -45,7 +45,7 @@ var _ = Describe("API v2 Accounts Balances", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
 			m.EXPECT().BalancesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Balance]{}, fmt.Errorf("balances list error"),
+				&paginate.Cursor[models.Balance]{}, fmt.Errorf("balances list error"),
 			)
 			handlerFn(w, req)
 
@@ -55,7 +55,7 @@ var _ = Describe("API v2 Accounts Balances", func() {
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
 			m.EXPECT().BalancesList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Balance]{}, nil,
+				&paginate.Cursor[models.Balance]{}, nil,
 			)
 			handlerFn(w, req)
 

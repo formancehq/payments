@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/query"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -427,11 +427,11 @@ func (s *store) PoolsRemoveAccountsFromConnectorID(ctx context.Context, connecto
 
 type PoolQuery struct{}
 
-type ListPoolsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PoolQuery]]
+type ListPoolsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PoolQuery]]
 
-func NewListPoolsQuery(opts bunpaginate.PaginatedQueryOptions[PoolQuery]) ListPoolsQuery {
+func NewListPoolsQuery(opts paginate.PaginatedQueryOptions[PoolQuery]) ListPoolsQuery {
 	return ListPoolsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -463,7 +463,7 @@ func (s *store) poolsQueryContext(qb query.Builder) (string, string, []any, erro
 	return join, where, args, err
 }
 
-func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error) {
+func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*paginate.Cursor[models.Pool], error) {
 	var (
 		join  string
 		where string
@@ -477,8 +477,8 @@ func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.C
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PoolQuery], pool](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PoolQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PoolQuery], pool](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PoolQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			query = query.
 				Relation("PoolAccounts")
@@ -505,7 +505,7 @@ func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.C
 		pools = append(pools, toPoolModel(p))
 	}
 
-	return &bunpaginate.Cursor[models.Pool]{
+	return &paginate.Cursor[models.Pool]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
