@@ -1,7 +1,6 @@
 package bitstamp
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -40,64 +39,39 @@ var _ = Describe("Bitstamp Plugin Balances", func() {
 		ctrl.Finish()
 	})
 
-	// Balances is FromPayload-driven (Qonto pattern): the engine passes
-	// the parent PSPAccount on req.FromPayload and the task derives
-	// the balance from PSPAccount.Raw — no extra GetAccountBalances call.
-
 	Context("fetching next balances", func() {
-		mkParent := func(bal client.AccountBalance) []byte {
-			raw, err := json.Marshal(bal)
-			Expect(err).ToNot(HaveOccurred())
-			asset := "BTC/8"
-			parent := models.PSPAccount{
-				Reference:    "BTC",
-				DefaultAsset: &asset,
-				Raw:          raw,
-			}
-			payload, err := json.Marshal(parent)
-			Expect(err).ToNot(HaveOccurred())
-			return payload
-		}
+		It("returns balances for all supported currencies", func(ctx SpecContext) {
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return([]client.AccountBalance{
+				{Currency: "btc", Available: "1.50000000"},
+				{Currency: "usd", Available: "100.00"},
+			}, nil)
 
-		It("derives the balance from FromPayload without calling the API", func(ctx SpecContext) {
-			payload := mkParent(client.AccountBalance{
-				Currency:  "btc",
-				Total:     "1.50000000",
-				Available: "1.00000000",
-				Reserved:  "0.50000000",
-			})
-			// NO m.EXPECT() call — the assertion is precisely that
-			// no Bitstamp HTTP call is made during the balances task.
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
+			Expect(err).To(BeNil())
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.Balances).To(HaveLen(2))
 
-			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{FromPayload: payload})
+			refs := []string{resp.Balances[0].AccountReference, resp.Balances[1].AccountReference}
+			Expect(refs).To(ConsistOf("BTC", "USD"))
+		})
+
+		It("skips unsupported currencies silently", func(ctx SpecContext) {
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return([]client.AccountBalance{
+				{Currency: "xyz", Available: "1.0"},
+				{Currency: "btc", Available: "0.5"},
+			}, nil)
+
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(1))
-			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.Balances[0].AccountReference).To(Equal("BTC"))
-			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
-			Expect(resp.Balances[0].Amount.Int64()).To(Equal(int64(100000000)))
 		})
 
-		It("errors when FromPayload is missing", func(ctx SpecContext) {
-			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
-			Expect(err).To(MatchError(models.ErrMissingFromPayloadInRequest))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
+		It("propagates GetAccountBalances errors", func(ctx SpecContext) {
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return(nil, ErrPartialEnrichment)
 
-		It("errors on invalid FromPayload JSON", func(ctx SpecContext) {
-			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{
-				FromPayload: []byte(`{not-json`),
-			})
+			_, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(HaveOccurred())
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
-
-		It("skips unsupported currencies silently rather than erroring", func(ctx SpecContext) {
-			payload := mkParent(client.AccountBalance{Currency: "xyz", Available: "1.0"})
-			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{FromPayload: payload})
-			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(BeEmpty())
-			Expect(resp.HasMore).To(BeFalse())
 		})
 	})
 })

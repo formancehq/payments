@@ -166,17 +166,18 @@ var _ = Describe("Bitstamp Plugin", func() {
 	})
 
 	Context("workflow", func() {
-		It("nests balances under accounts and keeps orders + conversions as siblings", func() {
+		It("exposes all five task types as independent periodic roots", func() {
 			tree := workflow()
-			Expect(tree).To(HaveLen(4))
-			Expect(tree[0].TaskType).To(Equal(models.TASK_FETCH_ACCOUNTS))
-			Expect(tree[0].Periodically).To(BeTrue())
-			Expect(tree[0].NextTasks).To(HaveLen(1))
-			Expect(tree[0].NextTasks[0].TaskType).To(Equal(models.TASK_FETCH_BALANCES))
-			Expect(tree[0].NextTasks[0].Periodically).To(BeFalse())
-
-			rootTypes := []models.TaskType{tree[1].TaskType, tree[2].TaskType, tree[3].TaskType}
+			Expect(tree).To(HaveLen(5))
+			rootTypes := make([]models.TaskType, len(tree))
+			for i, n := range tree {
+				rootTypes[i] = n.TaskType
+				Expect(n.Periodically).To(BeTrue(), "task %s should be periodic", n.Name)
+				Expect(n.NextTasks).To(BeEmpty(), "task %s should have no children", n.Name)
+			}
 			Expect(rootTypes).To(ConsistOf(
+				models.TASK_FETCH_ACCOUNTS,
+				models.TASK_FETCH_BALANCES,
 				models.TASK_FETCH_PAYMENTS,
 				models.TASK_FETCH_ORDERS,
 				models.TASK_FETCH_CONVERSIONS,
