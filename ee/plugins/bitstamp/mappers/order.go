@@ -72,7 +72,7 @@ func OrderStatusToPSPOrder(currencies map[string]int, in OrderMapInput) (*models
 	// one cycle).
 	var limitPrice *big.Int
 	if in.Tracked.Price != "" {
-		parsed, perr := ParseAmount(in.Tracked.Price, quotePrec)
+		parsed, perr := ParseDecimalAmount(in.Tracked.Price, quotePrec)
 		if perr != nil {
 			return nil, fmt.Errorf("order %s limit price: %w", in.Status.ID, perr)
 		}
@@ -154,7 +154,7 @@ func computeBaseQuantityOrdered(baseFilled *big.Int, amountRemaining string, bas
 	if amountRemaining == "" {
 		return nil, nil
 	}
-	remaining, err := ParseAmount(amountRemaining, basePrec)
+	remaining, err := ParseDecimalAmount(amountRemaining, basePrec)
 	if err != nil {
 		return nil, fmt.Errorf("amount_remaining %q: %w", amountRemaining, err)
 	}
@@ -210,21 +210,21 @@ func aggregateFills(fills []client.OrderTransaction, base, quote string, basePre
 		fillCount++
 
 		if baseAmt, ok := f.CurrencyAmounts[strings.ToLower(base)]; ok && !IsZeroAmount(baseAmt) {
-			amt, perr := ParseAmount(AbsAmount(baseAmt), basePrec)
+			amt, perr := ParseDecimalAmount(AbsAmount(baseAmt), basePrec)
 			if perr != nil {
 				return nil, nil, nil, 0, fmt.Errorf("fill %d base %s: %w", f.TID, base, perr)
 			}
 			baseFilled.Add(baseFilled, amt)
 		}
 		if quoteAmt, ok := f.CurrencyAmounts[strings.ToLower(quote)]; ok && !IsZeroAmount(quoteAmt) {
-			amt, perr := ParseAmount(AbsAmount(quoteAmt), quotePrec)
+			amt, perr := ParseDecimalAmount(AbsAmount(quoteAmt), quotePrec)
 			if perr != nil {
 				return nil, nil, nil, 0, fmt.Errorf("fill %d quote %s: %w", f.TID, quote, perr)
 			}
 			quoteFilled.Add(quoteFilled, amt)
 		}
 		if !IsZeroAmount(f.Fee) {
-			fee, perr := ParseAmount(AbsAmount(f.Fee), quotePrec)
+			fee, perr := ParseDecimalAmount(AbsAmount(f.Fee), quotePrec)
 			if perr != nil {
 				return nil, nil, nil, 0, fmt.Errorf("fill %d fee: %w", f.TID, perr)
 			}

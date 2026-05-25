@@ -1,6 +1,7 @@
 package mappers
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -40,12 +41,30 @@ func FormatAsset(currencies map[string]int, symbol string) string {
 	return currency.FormatAsset(currencies, symbol)
 }
 
-// ParseAmount converts a Bitstamp decimal string to *big.Int minor
-// units. Always non-negative; callers AbsAmount first.
-func ParseAmount(value string, precision int) (*big.Int, error) {
+// ParseDecimalAmount converts a Bitstamp decimal string to *big.Int minor units.
+// If Bitstamp returns more decimal places than the currency precision allows,
+// the excess digits are silently truncated when they are all zeros.
+func ParseDecimalAmount(value string, precision int) (*big.Int, error) {
+	if value == "" {
+		return nil, fmt.Errorf("empty amount string")
+	}
 	amount, err := currency.GetAmountWithPrecisionFromString(value, precision)
 	if err != nil {
-		return nil, fmt.Errorf("parse amount %q at precision %d: %w", value, precision, err)
+		// Bitstamp often gives us amounts with more decimals than their currency endpoint tells us the precision is
+		// if the trailing numbers are 00s we will truncate them and try to proceed anyway
+		if errors.Is(err, currency.ErrInvalidPrecision) && precision > 0 {
+			if idx := strings.IndexByte(value, '.'); idx >= 0 {
+				decimalPart := value[idx+1:]
+				if len(decimalPart) > precision && strings.TrimLeft(decimalPart[precision:], "0") == "" {
+					truncated := value[:idx+1+precision]
+					amount, err = currency.GetAmountWithPrecisionFromString(truncated, precision)
+					if err == nil {
+						return amount, nil
+					}
+				}
+			}
+		}
+		return nil, fmt.Errorf("parse decimal %q at precision %d: %w", value, precision, err)
 	}
 	return amount, nil
 }
@@ -56,10 +75,10 @@ func ParseAmount(value string, precision int) (*big.Int, error) {
 // the latter is the conversion shape, handled separately).
 func ResolveSinglePaymentAsset(currencies map[string]int, amounts map[string]string) (asset string, amount *big.Int, ok bool, err error) {
 	var (
-		selectedSymbol  string
-		selectedPrec    int
-		selectedRawAbs  string
-		nonZeroCount    int
+		selectedSymbol string
+		selectedPrec   int
+		selectedRawAbs string
+		nonZeroCount   int
 	)
 	for key, val := range amounts {
 		symbol := NormalizeCurrency(key)
@@ -82,7 +101,7 @@ func ResolveSinglePaymentAsset(currencies map[string]int, amounts map[string]str
 	if nonZeroCount == 0 {
 		return "", nil, false, nil
 	}
-	amount, err = ParseAmount(selectedRawAbs, selectedPrec)
+	amount, err = ParseDecimalAmount(selectedRawAbs, selectedPrec)
 	if err != nil {
 		return "", nil, false, err
 	}
@@ -104,9 +123,9 @@ type TwoAssetLeg struct {
 // same-sign legs return ok=false.
 func ResolveTwoAssetConversion(currencies map[string]int, amounts map[string]string) (source, destination TwoAssetLeg, ok bool, err error) {
 	var (
-		neg     *TwoAssetLeg
-		pos     *TwoAssetLeg
-		others  int
+		neg    *TwoAssetLeg
+		pos    *TwoAssetLeg
+		others int
 	)
 	for key, val := range amounts {
 		symbol := NormalizeCurrency(key)
@@ -124,7 +143,7 @@ func ResolveTwoAssetConversion(currencies map[string]int, amounts map[string]str
 			if neg != nil {
 				return TwoAssetLeg{}, TwoAssetLeg{}, false, nil
 			}
-			amt, perr := ParseAmount(AbsAmount(raw), precision)
+			amt, perr := ParseDecimalAmount(AbsAmount(raw), precision)
 			if perr != nil {
 				return TwoAssetLeg{}, TwoAssetLeg{}, false, perr
 			}
@@ -134,7 +153,7 @@ func ResolveTwoAssetConversion(currencies map[string]int, amounts map[string]str
 			if pos != nil {
 				return TwoAssetLeg{}, TwoAssetLeg{}, false, nil
 			}
-			amt, perr := ParseAmount(raw, precision)
+			amt, perr := ParseDecimalAmount(raw, precision)
 			if perr != nil {
 				return TwoAssetLeg{}, TwoAssetLeg{}, false, perr
 			}

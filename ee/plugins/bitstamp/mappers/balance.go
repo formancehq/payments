@@ -26,7 +26,7 @@ func AccountBalanceToPSPBalance(currencies map[string]int, account models.PSPAcc
 	if !known {
 		return nil, nil
 	}
-	amount, err := ParseAmount(bal.Available, precision)
+	amount, err := ParseDecimalAmount(bal.Available, precision)
 	if err != nil {
 		return nil, fmt.Errorf("balance for %s: %w", symbol, err)
 	}

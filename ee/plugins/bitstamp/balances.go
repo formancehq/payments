@@ -38,7 +38,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 			continue
 		}
 
-		amount, err := currency.GetAmountWithPrecisionFromString(bal.Available, precision)
+		amount, err := mappers.ParseDecimalAmount(bal.Available, precision)
 		if err != nil {
 			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 		}

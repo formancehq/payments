@@ -71,7 +71,7 @@ func UserTransactionToPSPConversion(currencies map[string]int, tx client.UserTra
 	// Fee is in the quote currency. Leave Fee/FeeAsset nil when absent
 	// rather than fabricating a zero amount in the wrong asset.
 	if !IsZeroAmount(tx.Fee) {
-		fee, ferr := ParseAmount(AbsAmount(tx.Fee), destination.Precision)
+		fee, ferr := ParseDecimalAmount(AbsAmount(tx.Fee), destination.Precision)
 		if ferr != nil {
 			return ConversionMapResult{}, fmt.Errorf("conversion tx %d fee: %w", tx.ID, ferr)
 		}
