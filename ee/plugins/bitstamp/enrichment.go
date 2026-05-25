@@ -5,166 +5,115 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"golang.org/x/sync/errgroup"
 )
 
-
-const enrichmentRefreshInterval = 24 * time.Hour
-
 const (
-	pathMarkets         = "/api/v2/markets/"
-	pathMyMarkets       = "/api/v2/my_markets/"
-	pathFeesTrading     = "/api/v2/fees/trading/"
-	pathFeesWithdrawal  = "/api/v2/fees/withdrawal/"
+	pathMarkets        = "/api/v2/markets/"
+	pathMyMarkets      = "/api/v2/my_markets/"
+	pathFeesTrading    = "/api/v2/fees/trading/"
+	pathFeesWithdrawal = "/api/v2/fees/withdrawal/"
 )
 
 // ErrPartialEnrichment signals at least one enrichment source failed.
 // The orchestrator continues — accounts ship without the missing
-// metadata rather than failing the install / cycle.
-var ErrPartialEnrichment = errors.New("install-time enrichment: at least one source failed")
+// metadata rather than failing the cycle.
+var ErrPartialEnrichment = errors.New("account data enrichment: at least one source failed")
 
-// enrichmentState holds the install-time-loaded caches feeding
-// PSPAccount metadata. Refreshed in parallel under a 24h TTL.
+// enrichmentState holds enrichment data for a single accounts cycle.
+// Fetched fresh on each call to fetchAccountEnrichmentData; no caching.
 type enrichmentState struct {
-	mu                 sync.RWMutex
-	markets            []client.Market
-	myMarkets          []client.MyMarket
-	tradingFees        []client.TradingFee
-	withdrawalFees     []client.WithdrawalFee
-	marketsSync        time.Time
-	myMarketsSync      time.Time
-	tradingFeesSync    time.Time
-	withdrawalFeesSync time.Time
+	markets        []client.Market
+	myMarkets      []client.MyMarket
+	tradingFees    []client.TradingFee
+	withdrawalFees []client.WithdrawalFee
 }
 
-// ensureEnrichment refreshes the four enrichment caches in parallel.
-// skipMap is read+written under a local mutex so callers can persist
-// newly-discovered skip decisions via FetchNextAccounts NewState.
-func (p *Plugin) ensureEnrichment(ctx context.Context, skipMap map[string]bool) error {
-	var mu sync.Mutex
+// fetchAccountEnrichmentData fetches the four enrichment sources in parallel and
+// returns the combined result. DerivativesUnsupportedError is swallowed
+// per source. Any other error wraps ErrPartialEnrichment.
+func (p *Plugin) fetchAccountEnrichmentData(ctx context.Context) (enrichmentState, error) {
+	var state enrichmentState
 	g, gCtx := errgroup.WithContext(ctx)
+
 	g.Go(func() error {
-		return refreshCache(gCtx, p, pathMarkets, skipMap, &mu,
-			&p.enrichment.marketsSync,
-			p.client.GetMarkets,
-			func(v []client.Market) { p.enrichment.markets = v })
+		rows, err := p.client.GetMarkets(gCtx)
+		if err != nil {
+			return fmt.Errorf("failed to refresh %s: %w", pathMarkets, err)
+		}
+		state.markets = rows
+		return nil
 	})
 	g.Go(func() error {
-		return refreshCache(gCtx, p, pathMyMarkets, skipMap, &mu,
-			&p.enrichment.myMarketsSync,
-			p.client.GetMyMarkets,
-			func(v []client.MyMarket) { p.enrichment.myMarkets = v })
+		rows, err := p.client.GetMyMarkets(gCtx)
+		if err != nil {
+			var derivErr *client.DerivativesUnsupportedError
+			if errors.As(err, &derivErr) {
+				return nil
+			}
+			return fmt.Errorf("failed to refresh %s: %w", pathMyMarkets, err)
+		}
+		state.myMarkets = rows
+		return nil
 	})
 	g.Go(func() error {
-		return refreshCache(gCtx, p, pathFeesTrading, skipMap, &mu,
-			&p.enrichment.tradingFeesSync,
-			p.client.GetTradingFees,
-			func(v []client.TradingFee) { p.enrichment.tradingFees = v })
+		rows, err := p.client.GetTradingFees(gCtx)
+		if err != nil {
+			return fmt.Errorf("failed to refresh %s: %w", pathFeesTrading, err)
+		}
+		state.tradingFees = rows
+		return nil
 	})
 	g.Go(func() error {
-		return refreshCache(gCtx, p, pathFeesWithdrawal, skipMap, &mu,
-			&p.enrichment.withdrawalFeesSync,
-			p.client.GetWithdrawalFees,
-			func(v []client.WithdrawalFee) { p.enrichment.withdrawalFees = v })
+		rows, err := p.client.GetWithdrawalFees(gCtx)
+		if err != nil {
+			return fmt.Errorf("failed to refresh %s: %w", pathFeesWithdrawal, err)
+		}
+		state.withdrawalFees = rows
+		return nil
 	})
 
 	if err := g.Wait(); err != nil {
 		p.logger.WithField("error", err.Error()).
 			Errorf("enrichment refresh: at least one source failed")
-		return fmt.Errorf("%w: %v", ErrPartialEnrichment, err)
+		return state, fmt.Errorf("%w: %v", ErrPartialEnrichment, err)
 	}
-	return nil
-}
-
-// refreshCache is the generic single-source refresh path: skip-map
-// gate, TTL gate, client call, derivatives-error skip, write under lock.
-// skipMap and skipMu are owned by ensureEnrichment so writes are safe
-// across the errgroup goroutines.
-func refreshCache[T any](
-	ctx context.Context,
-	p *Plugin,
-	path string,
-	skipMap map[string]bool,
-	skipMu *sync.Mutex,
-	syncTime *time.Time,
-	fetch func(context.Context) ([]T, error),
-	store func([]T),
-) error {
-	skipMu.Lock()
-	skip := skipMap[path]
-	skipMu.Unlock()
-	if skip {
-		return nil
-	}
-
-	p.enrichment.mu.RLock()
-	fresh := !syncTime.IsZero() && time.Since(*syncTime) < enrichmentRefreshInterval
-	p.enrichment.mu.RUnlock()
-	if fresh {
-		return nil
-	}
-
-	rows, err := fetch(ctx)
-	if err != nil {
-		var derivErr *client.DerivativesUnsupportedError
-		if errors.As(err, &derivErr) {
-			skipMu.Lock()
-			skipMap[path] = true
-			skipMu.Unlock()
-			p.logger.WithField("endpoint", path).WithField("reason", derivErr.Error()).
-				Infof("marking enrichment endpoint as not-supported; future cycles will skip it")
-			return nil
-		}
-		return fmt.Errorf("failed to refresh %s: %w", path, err)
-	}
-	if len(rows) == 0 {
-		p.logger.WithField("endpoint", path).Infof("enrichment refresh returned 0 rows")
-	}
-	p.enrichment.mu.Lock()
-	store(rows)
-	*syncTime = time.Now()
-	p.enrichment.mu.Unlock()
-	return nil
+	return state, nil
 }
 
 // buildEnrichmentForCurrency assembles the AccountEnrichment payload
-// for a single currency from the install-time caches. Returns the
-// zero value when nothing relevant is cached.
-func (p *Plugin) buildEnrichmentForCurrency(currencies map[string]int, currentCurrency client.Currency, symbol string) mappers.AccountEnrichment {
-	p.enrichment.mu.RLock()
-	defer p.enrichment.mu.RUnlock()
+// for a single currency from the provided enrichment data. Returns the
+// zero value when nothing relevant is present.
+func buildEnrichmentForCurrency(enrich enrichmentState, currencyIndex map[string]client.Currency, symbol string) mappers.AccountEnrichment {
+	currentCurrency := currencyIndex[symbol]
+	result := mappers.AccountEnrichment{Networks: currentCurrency.Networks}
 
-	enrich := mappers.AccountEnrichment{Networks: currentCurrency.Networks}
-
-	for _, f := range p.enrichment.withdrawalFees {
+	for _, f := range enrich.withdrawalFees {
 		if strings.EqualFold(f.Currency, symbol) {
-			enrich.WithdrawalFees = append(enrich.WithdrawalFees, f)
+			result.WithdrawalFees = append(result.WithdrawalFees, f)
 		}
 	}
 
-	for _, m := range p.enrichment.myMarkets {
-		base, quote, ok := splitURLSymbol(m.URLSymbol, currencies)
+	for _, m := range enrich.myMarkets {
+		base, quote, ok := splitURLSymbol(m.URLSymbol, currencyIndex)
 		if !ok {
 			continue
 		}
 		if base == symbol || quote == symbol {
-			enrich.TradableMarkets = append(enrich.TradableMarkets, m)
+			result.TradableMarkets = append(result.TradableMarkets, m)
 		}
 	}
 
 	// Representative snapshot (not authoritative per-pair). Pick the
 	// lexicographically-first match by stable key so the value does
 	// not flap if the API returns rows in a different order between
-	// cycles. Authoritative per-pair data lives in the cache and can
-	// be queried independently.
+	// cycles.
 	var repMarket *client.Market
-	for i := range p.enrichment.markets {
-		m := &p.enrichment.markets[i]
+	for i := range enrich.markets {
+		m := &enrich.markets[i]
 		if strings.ToUpper(m.BaseCurrency) != symbol {
 			continue
 		}
@@ -173,14 +122,14 @@ func (p *Plugin) buildEnrichmentForCurrency(currencies map[string]int, currentCu
 		}
 	}
 	if repMarket != nil {
-		enrich.MinOrderValue = repMarket.MinimumOrderValue
-		enrich.MarketType = repMarket.MarketType
+		result.MinOrderValue = repMarket.MinimumOrderValue
+		result.MarketType = repMarket.MarketType
 	}
 
 	var repFee *client.TradingFee
-	for i := range p.enrichment.tradingFees {
-		f := &p.enrichment.tradingFees[i]
-		base, _, ok := splitURLSymbol(f.CurrencyPair, currencies)
+	for i := range enrich.tradingFees {
+		f := &enrich.tradingFees[i]
+		base, _, ok := splitURLSymbol(f.CurrencyPair, currencyIndex)
 		if !ok || base != symbol {
 			continue
 		}
@@ -189,10 +138,10 @@ func (p *Plugin) buildEnrichmentForCurrency(currencies map[string]int, currentCu
 		}
 	}
 	if repFee != nil {
-		enrich.MakerFee = repFee.Fees.Maker
-		enrich.TakerFee = repFee.Fees.Taker
+		result.MakerFee = repFee.Fees.Maker
+		result.TakerFee = repFee.Fees.Taker
 	}
-	return enrich
+	return result
 }
 
 // marketKey produces a stable composite ordering key for selecting
@@ -206,7 +155,7 @@ func marketKey(m client.Market) string {
 // splitURLSymbol parses Bitstamp's lowercase concat pair (e.g.
 // "btcusd", "btcusdc") into uppercase (base, quote) using the known
 // currencies map. Returns ok=false on unrecognisable shapes.
-func splitURLSymbol(urlSymbol string, currencies map[string]int) (base, quote string, ok bool) {
+func splitURLSymbol(urlSymbol string, currencies map[string]client.Currency) (base, quote string, ok bool) {
 	s := strings.ToLower(strings.TrimSpace(urlSymbol))
 	if s == "" {
 		return "", "", false

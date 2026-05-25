@@ -7,10 +7,18 @@ import (
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 )
 
+var testCurrencyIndex = map[string]client.Currency{
+	"BTC":  {Currency: "BTC", Decimals: 8},
+	"ETH":  {Currency: "ETH", Decimals: 18},
+	"EUR":  {Currency: "EUR", Decimals: 2},
+	"USD":  {Currency: "USD", Decimals: 2},
+	"USDC": {Currency: "USDC", Decimals: 6},
+}
+
 func TestAccountBalanceToPSPAccount(t *testing.T) {
 	t.Parallel()
 	bal := client.AccountBalance{Currency: "btc", Total: "1.5", Available: "1.5", Reserved: "0"}
-	got, err := AccountBalanceToPSPAccount(testCurrencies, bal)
+	got, err := AccountBalanceToPSPAccount(testCurrencyIndex, bal)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -60,7 +68,7 @@ func TestAccountBalanceToPSPAccountEnriched(t *testing.T) {
 		MinOrderValue: "10",
 		MarketType:    "SPOT",
 	}
-	got, err := AccountBalanceToPSPAccountEnriched(testCurrencies, bal, enrich)
+	got, err := AccountBalanceToPSPAccountEnriched(testCurrencyIndex, bal, enrich)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -88,7 +96,7 @@ func TestAccountBalanceToPSPAccountEnriched(t *testing.T) {
 func TestAccountBalanceToPSPAccountEnriched_EmptyEnrichmentOmitsMetadata(t *testing.T) {
 	t.Parallel()
 	bal := client.AccountBalance{Currency: "btc"}
-	got, err := AccountBalanceToPSPAccountEnriched(testCurrencies, bal, AccountEnrichment{})
+	got, err := AccountBalanceToPSPAccountEnriched(testCurrencyIndex, bal, AccountEnrichment{})
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -100,7 +108,7 @@ func TestAccountBalanceToPSPAccountEnriched_EmptyEnrichmentOmitsMetadata(t *test
 func TestAccountBalanceToPSPAccountUnknownCurrency(t *testing.T) {
 	t.Parallel()
 	bal := client.AccountBalance{Currency: "xyz", Available: "1.0"}
-	got, err := AccountBalanceToPSPAccount(testCurrencies, bal)
+	got, err := AccountBalanceToPSPAccount(testCurrencyIndex, bal)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -114,7 +122,7 @@ func TestAccountBalanceToPSPAccountUnknownCurrency(t *testing.T) {
 
 func TestAccountBalanceToPSPAccountEmptyCurrency(t *testing.T) {
 	t.Parallel()
-	got, err := AccountBalanceToPSPAccount(testCurrencies, client.AccountBalance{Currency: ""})
+	got, err := AccountBalanceToPSPAccount(testCurrencyIndex, client.AccountBalance{Currency: ""})
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

@@ -49,11 +49,6 @@ type Plugin struct {
 	currencies     map[string]int // ticker → decimal precision
 	currenciesFull []client.Currency
 
-	// enrichment: in-process caches for markets / my_markets /
-	// trading + withdrawal fees. Refreshed in parallel under a 24h TTL.
-	// Acceptable because ensureEnrichment refreshes inline on any call.
-	// Which endpoints to skip is persisted via FetchNextAccounts state.
-	enrichment enrichmentState
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {

@@ -10,11 +10,10 @@ import (
 // force-emitted with com.bitstamp.spec/retention_expired and dropped.
 const orderRetentionMax = 25 * 24 * time.Hour
 
-// accountsState persists skip flags for enrichment endpoints that
-// returned DerivativesUnsupportedError. Stored in the accounts
-// FetchNext state so the decision survives container restarts.
+// accountsState persists the set of currencies already emitted so that
+// subsequent FetchNextAccounts cycles do not re-emit the same account.
 type accountsState struct {
-	SkipEnrichmentEndpoints map[string]bool `json:"skipEnrichmentEndpoints,omitempty"`
+	AccountCurrenciesImportedAt map[string]string `json:"accountCurrenciesImportedAt,omitempty"`
 }
 
 // paymentsState carries one watermark per payment source. Each

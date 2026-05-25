@@ -55,15 +55,16 @@ func TestEnsureEnrichment_HappyPath_PopulatesEveryCache(t *testing.T) {
 	}, nil)
 
 	p := newTestPlugin(t, c)
-	if err := p.ensureEnrichment(t.Context(), map[string]bool{}); err != nil {
-		t.Fatalf("ensureEnrichment: %v", err)
+	state, err := p.fetchAccountEnrichmentData(t.Context())
+	if err != nil {
+		t.Fatalf("fetchAccountEnrichmentData: %v", err)
 	}
 
-	if len(p.enrichment.markets) != 1 || len(p.enrichment.myMarkets) != 1 ||
-		len(p.enrichment.tradingFees) != 1 || len(p.enrichment.withdrawalFees) != 1 {
-		t.Errorf("caches not fully populated: markets=%d myMarkets=%d tradingFees=%d withdrawalFees=%d",
-			len(p.enrichment.markets), len(p.enrichment.myMarkets),
-			len(p.enrichment.tradingFees), len(p.enrichment.withdrawalFees))
+	if len(state.markets) != 1 || len(state.myMarkets) != 1 ||
+		len(state.tradingFees) != 1 || len(state.withdrawalFees) != 1 {
+		t.Errorf("not fully populated: markets=%d myMarkets=%d tradingFees=%d withdrawalFees=%d",
+			len(state.markets), len(state.myMarkets),
+			len(state.tradingFees), len(state.withdrawalFees))
 	}
 }
 
@@ -81,46 +82,20 @@ func TestEnsureEnrichment_PartialFailureReturnsSentinel(t *testing.T) {
 	c.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil)
 
 	p := newTestPlugin(t, c)
-	err := p.ensureEnrichment(t.Context(), map[string]bool{})
+	state, err := p.fetchAccountEnrichmentData(t.Context())
 	if err == nil {
 		t.Fatal("expected ErrPartialEnrichment, got nil")
 	}
 	if !errors.Is(err, ErrPartialEnrichment) {
 		t.Errorf("expected ErrPartialEnrichment, got %v", err)
 	}
-	// Successful caches must still be populated.
-	if len(p.enrichment.markets) != 1 {
-		t.Errorf("markets cache must populate despite my_markets failure, got %+v", p.enrichment.markets)
+	// Successful sources must still be present in the returned state.
+	if len(state.markets) != 1 {
+		t.Errorf("markets must populate despite my_markets failure, got %+v", state.markets)
 	}
 }
 
-func TestEnsureEnrichment_TTLShortCircuitsOnFreshCache(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	c := client.NewMockClient(ctrl)
-	// First refresh — explicit call per source.
-	c.EXPECT().GetMarkets(gomock.Any()).Return([]client.Market{{MarketSymbol: "btcusd"}}, nil)
-	c.EXPECT().GetMyMarkets(gomock.Any()).Return([]client.MyMarket{{URLSymbol: "btcusd"}}, nil)
-	c.EXPECT().GetTradingFees(gomock.Any()).Return([]client.TradingFee{{CurrencyPair: "btcusd"}}, nil)
-	c.EXPECT().GetWithdrawalFees(gomock.Any()).Return([]client.WithdrawalFee{{Currency: "btc"}}, nil)
-
-	p := newTestPlugin(t, c)
-	skipMap := map[string]bool{}
-	if err := p.ensureEnrichment(t.Context(), skipMap); err != nil {
-		t.Fatalf("first ensureEnrichment: %v", err)
-	}
-
-	// Second call within the TTL window must NOT invoke any client
-	// method — the mock controller will fail with "unexpected call"
-	// if it does (we set exactly one expectation per method above).
-	if err := p.ensureEnrichment(t.Context(), skipMap); err != nil {
-		t.Fatalf("second ensureEnrichment: %v", err)
-	}
-}
-
-func TestEnsureEnrichment_DerivativesErrorTriggersSkipCache(t *testing.T) {
+func TestEnsureEnrichment_DerivativesErrorIsSwallowed(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -133,25 +108,19 @@ func TestEnsureEnrichment_DerivativesErrorTriggersSkipCache(t *testing.T) {
 	c.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil)
 
 	p := newTestPlugin(t, c)
-	skipMap := map[string]bool{}
-	// Derivatives error must be swallowed (returned nil) so the
-	// install / cycle is not blocked.
-	if err := p.ensureEnrichment(t.Context(), skipMap); err != nil {
+	if _, err := p.fetchAccountEnrichmentData(t.Context()); err != nil {
 		t.Fatalf("derivatives error must be swallowed, got %v", err)
-	}
-	if !skipMap["/api/v2/my_markets/"] {
-		t.Error("my_markets must be flagged in the skip map")
 	}
 }
 
 func TestSplitURLSymbol(t *testing.T) {
 	t.Parallel()
-	currencies := map[string]int{"BTC": 8, "USD": 2, "USDC": 6, "ETH": 18}
+	currencies := map[string]client.Currency{"BTC": {}, "USD": {}, "USDC": {}, "ETH": {}}
 	cases := []struct {
-		in   string
-		base string
+		in    string
+		base  string
 		quote string
-		ok   bool
+		ok    bool
 	}{
 		{"btcusd", "BTC", "USD", true},
 		{"btcusdc", "BTC", "USDC", true},
@@ -175,28 +144,31 @@ func TestSplitURLSymbol(t *testing.T) {
 
 func TestBuildEnrichmentForCurrency(t *testing.T) {
 	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	p := newTestPlugin(t, client.NewMockClient(ctrl))
-	p.enrichment.markets = []client.Market{
-		{BaseCurrency: "BTC", CounterCurrency: "USD", MarketType: "SPOT", MinimumOrderValue: "10"},
+	currencyIndex := map[string]client.Currency{
+		"BTC": {Currency: "BTC", Networks: []client.CurrencyNetwork{{Network: "bitcoin"}, {Network: "xrpl"}}},
+		"USD": {Currency: "USD"},
+		"ETH": {Currency: "ETH"},
+		"EUR": {Currency: "EUR"},
+		"USDC": {Currency: "USDC"},
 	}
-	p.enrichment.myMarkets = []client.MyMarket{
-		{Name: "BTC/USD", URLSymbol: "btcusd"},
-		{Name: "ETH/USD", URLSymbol: "ethusd"},
-	}
-	p.enrichment.tradingFees = []client.TradingFee{
-		{CurrencyPair: "btcusd", Fees: client.TradingFeeRate{Maker: "0.300", Taker: "0.400"}},
-	}
-	p.enrichment.withdrawalFees = []client.WithdrawalFee{
-		{Currency: "btc", Network: "bitcoin", Fee: "0.00008"},
-		{Currency: "eth", Network: "ethereum", Fee: "0.001"},
+	enrich := enrichmentState{
+		markets: []client.Market{
+			{BaseCurrency: "BTC", CounterCurrency: "USD", MarketType: "SPOT", MinimumOrderValue: "10"},
+		},
+		myMarkets: []client.MyMarket{
+			{Name: "BTC/USD", URLSymbol: "btcusd"},
+			{Name: "ETH/USD", URLSymbol: "ethusd"},
+		},
+		tradingFees: []client.TradingFee{
+			{CurrencyPair: "btcusd", Fees: client.TradingFeeRate{Maker: "0.300", Taker: "0.400"}},
+		},
+		withdrawalFees: []client.WithdrawalFee{
+			{Currency: "btc", Network: "bitcoin", Fee: "0.00008"},
+			{Currency: "eth", Network: "ethereum", Fee: "0.001"},
+		},
 	}
 
-	got := p.buildEnrichmentForCurrency(p.currencies, client.Currency{
-		Currency: "BTC",
-		Networks: []client.CurrencyNetwork{{Network: "bitcoin"}, {Network: "xrpl"}},
-	}, "BTC")
+	got := buildEnrichmentForCurrency(enrich, currencyIndex, "BTC")
 
 	if len(got.Networks) != 2 {
 		t.Errorf("Networks not preserved: %+v", got.Networks)
@@ -222,9 +194,10 @@ func TestBuildEnrichmentForCurrency(t *testing.T) {
 // flapping across cycles if the PSP returns the slice reordered.
 func TestBuildEnrichmentForCurrency_DeterministicRepresentative(t *testing.T) {
 	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	p := newTestPlugin(t, client.NewMockClient(ctrl))
+	currencyIndex := map[string]client.Currency{
+		"BTC": {Currency: "BTC"}, "USD": {Currency: "USD"},
+		"EUR": {Currency: "EUR"}, "USDT": {Currency: "USDT"},
+	}
 
 	markets := []client.Market{
 		{BaseCurrency: "BTC", CounterCurrency: "USDT", MarketType: "SPOT", MinimumOrderValue: "20"},
@@ -242,10 +215,11 @@ func TestBuildEnrichmentForCurrency_DeterministicRepresentative(t *testing.T) {
 	}
 
 	for _, perm := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}, {0, 2, 1}} {
-		p.enrichment.markets = []client.Market{markets[perm[0]], markets[perm[1]], markets[perm[2]]}
-		p.enrichment.tradingFees = []client.TradingFee{fees[perm[0]], fees[perm[1]], fees[perm[2]]}
-
-		got := p.buildEnrichmentForCurrency(p.currencies, client.Currency{Currency: "BTC"}, "BTC")
+		enrich := enrichmentState{
+			markets:     []client.Market{markets[perm[0]], markets[perm[1]], markets[perm[2]]},
+			tradingFees: []client.TradingFee{fees[perm[0]], fees[perm[1]], fees[perm[2]]},
+		}
+		got := buildEnrichmentForCurrency(enrich, currencyIndex, "BTC")
 		if got.MinOrderValue != want.minOrder {
 			t.Errorf("perm %v: MinOrderValue=%q want %q", perm, got.MinOrderValue, want.minOrder)
 		}

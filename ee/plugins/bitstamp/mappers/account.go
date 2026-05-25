@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -26,14 +27,14 @@ type AccountEnrichment struct {
 
 // AccountBalanceToPSPAccount is the zero-enrichment convenience used
 // by tests + the cold-install path before enrichment caches load.
-func AccountBalanceToPSPAccount(currencies map[string]int, bal client.AccountBalance) (*models.PSPAccount, error) {
-	return AccountBalanceToPSPAccountEnriched(currencies, bal, AccountEnrichment{})
+func AccountBalanceToPSPAccount(currencyIndex map[string]client.Currency, bal client.AccountBalance) (*models.PSPAccount, error) {
+	return AccountBalanceToPSPAccountEnriched(currencyIndex, bal, AccountEnrichment{})
 }
 
 // AccountBalanceToPSPAccountEnriched maps one /account_balances/ row
 // to a PSPAccount with optional enrichment metadata. (nil, nil) on
 // empty currency. Raw is preserved for the FromPayload-driven balances task.
-func AccountBalanceToPSPAccountEnriched(currencies map[string]int, bal client.AccountBalance, enrich AccountEnrichment) (*models.PSPAccount, error) {
+func AccountBalanceToPSPAccountEnriched(currencyIndex map[string]client.Currency, bal client.AccountBalance, enrich AccountEnrichment) (*models.PSPAccount, error) {
 	symbol := NormalizeCurrency(bal.Currency)
 	if symbol == "" {
 		return nil, nil
@@ -48,8 +49,8 @@ func AccountBalanceToPSPAccountEnriched(currencies map[string]int, bal client.Ac
 		CreatedAt: BitstampGenesis,
 		Raw:       raw,
 	}
-	if _, known := currencies[symbol]; known {
-		asset := FormatAsset(currencies, symbol)
+	if cur, known := currencyIndex[symbol]; known {
+		asset := currency.FormatAssetWithPrecision(symbol, cur.Decimals)
 		account.DefaultAsset = &asset
 	}
 	metadata, err := buildAccountMetadata(enrich)

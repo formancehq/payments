@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
@@ -20,13 +21,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to unmarshal accounts state: %w", err)
 		}
 	}
-	if state.SkipEnrichmentEndpoints == nil {
-		state.SkipEnrichmentEndpoints = map[string]bool{}
-	}
-
-	currencies, err := p.getCurrencies(ctx)
-	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+	if state.AccountCurrenciesImportedAt == nil {
+		state.AccountCurrenciesImportedAt = map[string]string{}
 	}
 
 	balances, err := p.client.GetAccountBalances(ctx)
@@ -34,35 +30,52 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to fetch accounts: %w", err)
 	}
 
-	// Enrichment is best-effort: failures log and continue. Accounts
-	// ship without the missing metadata rather than failing the cycle.
-	// Skip flags for unavailable endpoints are persisted via NewState.
-	if err := p.ensureEnrichment(ctx, state.SkipEnrichmentEndpoints); err != nil {
-		p.logger.WithField("error", err.Error()).
-			Errorf("accounts cycle: enrichment refresh incomplete")
+	unhandledBalances := make([]client.AccountBalance, 0, len(balances))
+	for _, bal := range balances {
+		symbol := mappers.NormalizeCurrency(bal.Currency)
+		if _, ok := state.AccountCurrenciesImportedAt[symbol]; ok {
+			// we've already imported this account in a previous run
+			continue
+		}
+		if isEmptyBalance(bal) {
+			continue
+		}
+		unhandledBalances = append(unhandledBalances, bal)
+	}
+
+	if len(unhandledBalances) == 0 {
+		return models.FetchNextAccountsResponse{
+			Accounts: []models.PSPAccount{},
+			NewState: req.State,
+			HasMore:  false,
+		}, nil
 	}
 
 	currencyIndex, err := p.currenciesIndex(ctx)
 	if err != nil {
-		p.logger.WithField("error", err.Error()).
-			Errorf("currencies index refresh failed; accounts ship without networks metadata")
-		currencyIndex = map[string]client.Currency{}
+		return models.FetchNextAccountsResponse{}, err
 	}
 
-	accounts := make([]models.PSPAccount, 0, len(balances))
-	for _, bal := range balances {
-		if isEmptyBalance(bal) {
-			continue
-		}
+	// Enrichment is best-effort: failures log and continue. Accounts
+	// ship without the missing metadata rather than failing the cycle.
+	enrich, err := p.fetchAccountEnrichmentData(ctx)
+	if err != nil {
+		p.logger.WithField("error", err.Error()).
+			Errorf("accounts cycle: enrichment refresh incomplete")
+	}
+
+	accounts := make([]models.PSPAccount, 0, len(unhandledBalances))
+	for _, bal := range unhandledBalances {
 		symbol := mappers.NormalizeCurrency(bal.Currency)
-		enrich := p.buildEnrichmentForCurrency(currencies, currencyIndex[symbol], symbol)
-		account, err := mappers.AccountBalanceToPSPAccountEnriched(currencies, bal, enrich)
+		accountEnrich := buildEnrichmentForCurrency(enrich, currencyIndex, symbol)
+		account, err := mappers.AccountBalanceToPSPAccountEnriched(currencyIndex, bal, accountEnrich)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to map account %s: %w", bal.Currency, err)
 		}
 		if account == nil {
 			continue
 		}
+		state.AccountCurrenciesImportedAt[symbol] = time.Now().String()
 		accounts = append(accounts, *account)
 	}
 
