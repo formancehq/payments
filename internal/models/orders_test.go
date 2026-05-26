@@ -170,7 +170,23 @@ func TestFromPSPOrders(t *testing.T) {
 		assert.Empty(t, orders)
 	})
 
-	t.Run("deduplicates same ID, later entry wins", func(t *testing.T) {
+	t.Run("deduplicates same ID, newer CreatedAt wins regardless of list position", func(t *testing.T) {
+		t.Parallel()
+		older := validPSPOrder()
+		older.ClientOrderID = "older"
+		older.CreatedAt = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		newer := validPSPOrder()
+		newer.ClientOrderID = "newer"
+		newer.CreatedAt = time.Date(2024, 1, 1, 0, 0, 0, 1000, time.UTC) // 1 µs later
+
+		// newer comes first in the list — CreatedAt must win over position.
+		orders, err := models.FromPSPOrders([]models.PSPOrder{newer, older}, connectorID, observedAt)
+		require.NoError(t, err)
+		require.Len(t, orders, 1)
+		assert.Equal(t, "newer", orders[0].ClientOrderID)
+	})
+
+	t.Run("deduplicates same ID equal CreatedAt, later in list wins", func(t *testing.T) {
 		t.Parallel()
 		first := validPSPOrder()
 		first.ClientOrderID = "first"

@@ -494,7 +494,7 @@ func FromPSPOrders(from []PSPOrder, connectorID ConnectorID, observedAt time.Tim
 			continue
 		}
 		var newest, oldest Order
-		if existing.UpdatedAt.After(order.UpdatedAt) {
+		if existing.CreatedAt.After(order.CreatedAt) {
 			newest, oldest = existing, order
 		} else {
 			newest, oldest = order, existing
