@@ -170,6 +170,19 @@ func TestFromPSPOrders(t *testing.T) {
 		assert.Empty(t, orders)
 	})
 
+	t.Run("deduplicates same ID, later entry wins", func(t *testing.T) {
+		t.Parallel()
+		first := validPSPOrder()
+		first.ClientOrderID = "first"
+		second := validPSPOrder()
+		second.ClientOrderID = "second"
+
+		orders, err := models.FromPSPOrders([]models.PSPOrder{first, second}, connectorID, observedAt)
+		require.NoError(t, err)
+		require.Len(t, orders, 1)
+		assert.Equal(t, "second", orders[0].ClientOrderID)
+	})
+
 	t.Run("one invalid aborts", func(t *testing.T) {
 		t.Parallel()
 		good := validPSPOrder()
