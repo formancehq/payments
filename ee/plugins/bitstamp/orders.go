@@ -41,43 +41,46 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 	var orders []models.PSPOrder
 	for _, marketName := range markets {
-		// Markets in the metadata are stored as URL symbols (e.g. "btcusd").
-		// The API and mapper both expect slash format (e.g. "BTC/USD").
-		base, quote, err := mappers.SplitCurrencyPair(marketName)
-		if err != nil {
-			p.logger.WithField("market", marketName).Errorf("cannot parse market symbol, skipping: %v", err)
-			continue
-		}
-		slashMarket := base + "/" + quote
-
 		sinceID := state.LastSeenEventIDPerMarket[marketName]
 		var sinceIDPtr *string
 		if sinceID != "" {
 			sinceIDPtr = &sinceID
 		}
 
-		events, err := p.client.GetAccountOrderData(ctx, slashMarket, sinceIDPtr)
+		events, err := p.client.GetAccountOrderData(ctx, marketName, sinceIDPtr)
 		if err != nil {
 			if client.IsNotFoundError(err) {
-				p.logger.WithField("market", slashMarket).
+				p.logger.WithField("market", marketName).
 					Infof("order event history not available for this market type, skipping")
 				continue
 			}
-			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to fetch market %q order events: %w", slashMarket, err)
+			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to fetch market %q order events: %w", marketName, err)
 		}
 
 		var lastEventID string
 		for _, event := range events {
-			order, err := mappers.AccountOrderDataEventToPSPOrder(currencies, accountReference, slashMarket, event)
+			order, err := mappers.AccountOrderDataEventToPSPOrder(currencies, accountReference, marketName, event)
 			if err != nil {
-				p.logger.WithField("market", marketName).WithField("eventID", event.EventID).
+				p.logger.
+					WithField("market", marketName).
+					WithField("eventID", event.EventID).
+					WithField("orderReference", event.Data.IDStr).
 					Errorf("failed to map order event: %v", err)
 				continue
 			}
-			orders = append(orders, *order)
+
 			if isValidMarketEventID(event.EventID) {
 				lastEventID = event.EventID
 			}
+
+			// we expect the process related to the source account to import it
+			if order == nil {
+				p.logger.WithField("market", marketName).WithField("eventID", event.EventID).
+					WithField("orderReference", event.Data.IDStr).
+					Debugf("skipping event not matching accountReference: %q", accountReference)
+				continue
+			}
+			orders = append(orders, *order)
 		}
 
 		if lastEventID != "" {

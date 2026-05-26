@@ -1,9 +1,10 @@
 package mappers
 
 import (
+	"encoding/json"
 	"testing"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 )
 
 func TestSplitCurrencyPair(t *testing.T) {
@@ -35,56 +36,77 @@ func TestSplitCurrencyPair(t *testing.T) {
 	}
 }
 
-func TestAccountReferencesForDirection(t *testing.T) {
+// TestAccountOrderFilterAndReference verifies that AccountOrderDataEventToPSPOrder
+// filters orders whose source currency doesn't match accountReference and that
+// only SourceAccountReference is set (DestinationAccountReference is always nil).
+func TestAccountOrderFilterAndReference(t *testing.T) {
 	t.Parallel()
 
-	deref := func(p *string) string {
-		if p == nil {
-			return "<nil>"
+	currencies := map[string]int{"BTC": 8, "USD": 2}
+
+	makeEvent := func(orderType int) client.AccountOrderDataEvent {
+		return client.AccountOrderDataEvent{
+			Event:   "order_created",
+			EventID: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+			Data: client.AccountOrderDataItem{
+				IDStr:          "1000",
+				OrderType:      orderType,
+				Amount:         json.Number("0.001"),
+				AmountAtCreate: "0.001",
+				AmountTraded:   "0",
+				AmountStr:      "0.001",
+				PriceStr:       "50000",
+				Microtimestamp: "1779709892000000",
+			},
 		}
-		return *p
 	}
 
-	// BUY: src=quote(USD), dst=base(BTC). accountReference=USD → src non-nil, dst nil.
-	src, dst := accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD", "USD")
-	if src == nil || *src != "USD" {
-		t.Errorf("BUY/USD: src = %s, want USD", deref(src))
+	// BUY (orderType=0): source is quote (USD). accountReference=USD → keep.
+	order, err := AccountOrderDataEventToPSPOrder(currencies, "USD", "BTC/USD", makeEvent(0))
+	if err != nil {
+		t.Fatalf("BUY/USD: unexpected error: %v", err)
 	}
-	if dst != nil {
-		t.Errorf("BUY/USD: dst = %s, want nil", deref(dst))
+	if order == nil {
+		t.Fatal("BUY/USD: expected order, got nil")
 	}
-
-	// BUY: accountReference=BTC → src nil, dst non-nil.
-	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD", "BTC")
-	if src != nil {
-		t.Errorf("BUY/BTC: src = %s, want nil", deref(src))
+	if order.SourceAccountReference == nil || *order.SourceAccountReference != "USD" {
+		t.Errorf("BUY/USD: SourceAccountReference = %v, want &USD", order.SourceAccountReference)
 	}
-	if dst == nil || *dst != "BTC" {
-		t.Errorf("BUY/BTC: dst = %s, want BTC", deref(dst))
+	if order.DestinationAccountReference != nil {
+		t.Errorf("BUY/USD: DestinationAccountReference = %v, want nil", order.DestinationAccountReference)
 	}
 
-	// SELL: src=base(BTC), dst=quote(USD). accountReference=BTC → src non-nil, dst nil.
-	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_SELL, "BTC", "USD", "BTC")
-	if src == nil || *src != "BTC" {
-		t.Errorf("SELL/BTC: src = %s, want BTC", deref(src))
+	// BUY: accountReference=BTC (the base, not the source) → filter out.
+	order, err = AccountOrderDataEventToPSPOrder(currencies, "BTC", "BTC/USD", makeEvent(0))
+	if err != nil {
+		t.Fatalf("BUY/BTC: unexpected error: %v", err)
 	}
-	if dst != nil {
-		t.Errorf("SELL/BTC: dst = %s, want nil", deref(dst))
-	}
-
-	// SELL: accountReference=USD → src nil, dst non-nil.
-	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_SELL, "BTC", "USD", "USD")
-	if src != nil {
-		t.Errorf("SELL/USD: src = %s, want nil", deref(src))
-	}
-	if dst == nil || *dst != "USD" {
-		t.Errorf("SELL/USD: dst = %s, want USD", deref(dst))
+	if order != nil {
+		t.Errorf("BUY/BTC: expected nil (filtered), got order %+v", order)
 	}
 
-	// accountReference matches neither → both nil.
-	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD", "ETH")
-	if src != nil || dst != nil {
-		t.Errorf("BUY/ETH: got (%s, %s), want (nil, nil)", deref(src), deref(dst))
+	// SELL (orderType=1): source is base (BTC). accountReference=BTC → keep.
+	order, err = AccountOrderDataEventToPSPOrder(currencies, "BTC", "BTC/USD", makeEvent(1))
+	if err != nil {
+		t.Fatalf("SELL/BTC: unexpected error: %v", err)
+	}
+	if order == nil {
+		t.Fatal("SELL/BTC: expected order, got nil")
+	}
+	if order.SourceAccountReference == nil || *order.SourceAccountReference != "BTC" {
+		t.Errorf("SELL/BTC: SourceAccountReference = %v, want &BTC", order.SourceAccountReference)
+	}
+	if order.DestinationAccountReference != nil {
+		t.Errorf("SELL/BTC: DestinationAccountReference = %v, want nil", order.DestinationAccountReference)
+	}
+
+	// SELL: accountReference=USD (the quote, not the source) → filter out.
+	order, err = AccountOrderDataEventToPSPOrder(currencies, "USD", "BTC/USD", makeEvent(1))
+	if err != nil {
+		t.Fatalf("SELL/USD: unexpected error: %v", err)
+	}
+	if order != nil {
+		t.Errorf("SELL/USD: expected nil (filtered), got order %+v", order)
 	}
 }
 

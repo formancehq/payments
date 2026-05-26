@@ -87,8 +87,8 @@ func TestAccountBalanceToPSPAccountEnriched(t *testing.T) {
 	if got.Metadata[MetadataKeyWithdrawalFees] != wantFees {
 		t.Errorf("withdrawal fees JSON not deterministic: %s\nwant: %s", got.Metadata[MetadataKeyWithdrawalFees], wantFees)
 	}
-	// Tradable markets sorted alphabetically by URL symbol.
-	if got.Metadata[MetadataKeyTradableMarkets] != `["btceur","btcusd"]` {
+	// Tradable markets sorted alphabetically by market name (slash format).
+	if got.Metadata[MetadataKeyTradableMarkets] != `["BTC/EUR","BTC/USD"]` {
 		t.Errorf("tradable markets JSON not deterministic: %s", got.Metadata[MetadataKeyTradableMarkets])
 	}
 }

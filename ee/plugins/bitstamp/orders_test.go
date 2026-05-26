@@ -47,10 +47,12 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 	// containing a PSPAccount whose metadata lists the given markets.
 	// The engine unwraps its own envelope before calling the plugin, so
 	// FromPayload is just the raw PSPAccount JSON.
-	fromPayloadWithMarkets := func(markets []string) json.RawMessage {
+	// Markets must be in slash format (e.g. "BTC/USD"); reference is the
+	// currency that owns the orders being fetched.
+	fromPayloadWithMarkets := func(reference string, markets []string) json.RawMessage {
 		marketsRaw, _ := json.Marshal(markets)
 		account := models.PSPAccount{
-			Reference: "BTC",
+			Reference: reference,
 			Metadata:  map[string]string{mappers.MetadataKeyTradableMarkets: string(marketsRaw)},
 		}
 		payload, _ := json.Marshal(account)
@@ -65,13 +67,12 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			Expect(resp.HasMore).To(BeFalse())
 		})
 
-		It("converts URL symbol to slash format before calling the API", func(ctx SpecContext) {
-			// "btcusd" must be converted to "BTC/USD" for the API call.
+		It("passes the market name directly to the API", func(ctx SpecContext) {
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{}, nil)
 
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(BeEmpty())
@@ -84,7 +85,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 				Return([]client.AccountOrderDataEvent{}, nil)
 
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd", "ethusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD", "ETH/USD"}),
 			})
 			// 404 must not bubble up as an error; the cycle continues.
 			Expect(err).ToNot(HaveOccurred())
@@ -96,7 +97,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 				Return(nil, errors.New("boom"))
 
 			_, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd", "ethusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD", "ETH/USD"}),
 			})
 			Expect(err).To(HaveOccurred())
 		})
@@ -110,6 +111,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						ID: json.Number("1000"), IDStr: "1000",
 						OrderType: 0, OrderSubtype: 0,
 						Datetime:       "1779709892",
+						Amount:         json.Number("0.00028416"),
 						AmountStr:      "0.00028416",
 						AmountTraded:   "0",
 						AmountAtCreate: "0.00028416",
@@ -117,8 +119,9 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 					},
 				}}, nil)
 
+			// BUY order: source is quote (USD), so reference must be "USD".
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
@@ -133,6 +136,9 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			Expect(o.LimitPrice.Int64()).To(Equal(int64(7740000)))
 			Expect(o.SourceAsset).To(Equal("USD/2"))
 			Expect(o.DestinationAsset).To(Equal("BTC/8"))
+			Expect(o.SourceAccountReference).ToNot(BeNil())
+			Expect(*o.SourceAccountReference).To(Equal("USD"))
+			Expect(o.DestinationAccountReference).To(BeNil())
 			Expect(resp.HasMore).To(BeFalse())
 		})
 
@@ -145,6 +151,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						ID: json.Number("1001"), IDStr: "1001",
 						OrderType: 1, OrderSubtype: 0,
 						Datetime:       "1779717950",
+						Amount:         json.Number("0.00028416"),
 						AmountStr:      "0",
 						AmountTraded:   "0.00028416",
 						AmountAtCreate: "0.00028416",
@@ -152,8 +159,9 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 					},
 				}}, nil)
 
+			// SELL order: source is base (BTC), so reference must be "BTC".
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("BTC", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
@@ -162,6 +170,9 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			Expect(o.Direction).To(Equal(models.ORDER_DIRECTION_SELL))
 			Expect(o.Status).To(Equal(models.ORDER_STATUS_FILLED))
 			Expect(o.BaseQuantityFilled.Int64()).To(Equal(int64(28416)))
+			Expect(o.SourceAccountReference).ToNot(BeNil())
+			Expect(*o.SourceAccountReference).To(Equal("BTC"))
+			Expect(o.DestinationAccountReference).To(BeNil())
 		})
 
 		It("emits CANCELLED PSPOrder for order_deleted with remaining amount", func(ctx SpecContext) {
@@ -173,6 +184,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						ID: json.Number("1002"), IDStr: "1002",
 						OrderType: 0, OrderSubtype: 0,
 						Datetime:       "1779717951",
+						Amount:         json.Number("0.00028416"),
 						AmountStr:      "0.00028416",
 						AmountTraded:   "0",
 						AmountAtCreate: "0.00028416",
@@ -180,8 +192,9 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 					},
 				}}, nil)
 
+			// BUY order: source is quote (USD), so reference must be "USD".
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
@@ -196,6 +209,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						ID: json.Number("1003"), IDStr: "1003",
 						OrderType: 0, OrderSubtype: 0,
 						Datetime:       "1779709892",
+						Amount:         json.Number("0.00028416"),
 						AmountStr:      "0.00028416",
 						AmountTraded:   "0",
 						AmountAtCreate: "0.00028416",
@@ -203,8 +217,9 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 					},
 				}}, nil)
 
+			// BUY order: source is quote (USD), so reference must be "USD".
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
@@ -212,7 +227,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			Expect(resp.Orders[0].LimitPrice.Int64()).To(Equal(int64(7740000)))
 		})
 
-		It("advances the since_id cursor (by URL-symbol key) and passes slash market on next call", func(ctx SpecContext) {
+		It("advances the since_id cursor and passes it on the next call", func(ctx SpecContext) {
 			const eventID = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{{
@@ -222,6 +237,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						ID: json.Number("2000"), IDStr: "2000",
 						OrderType: 0, OrderSubtype: 0,
 						Datetime:       "1779709892",
+						Amount:         json.Number("0.5"),
 						AmountStr:      "0.5",
 						AmountTraded:   "0",
 						AmountAtCreate: "0.5",
@@ -230,22 +246,22 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 				}}, nil)
 
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 
 			var state ordersState
 			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			// State key is URL symbol; value is the MarketEventID.
-			Expect(state.LastSeenEventIDPerMarket["btcusd"]).To(Equal(eventID))
+			// State key is the market name as passed in FromPayload.
+			Expect(state.LastSeenEventIDPerMarket["BTC/USD"]).To(Equal(eventID))
 
-			// Second call: since_id=eventID passed to "BTC/USD" slash market.
+			// Second call: since_id=eventID passed for the same market.
 			expectedSinceID := eventID
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", &expectedSinceID).
 				Return([]client.AccountOrderDataEvent{}, nil)
 
 			_, err = plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 				State:       resp.NewState,
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -262,7 +278,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						Data: client.AccountOrderDataItem{
 							ID: json.Number("100"), IDStr: "100",
 							OrderType: 0, OrderSubtype: 0,
-							Datetime: "1779709892", AmountStr: "0.5",
+							Datetime: "1779709892", Amount: json.Number("0.5"), AmountStr: "0.5",
 							AmountTraded: "0", AmountAtCreate: "0.5", PriceStr: "60000.00",
 						},
 					},
@@ -272,7 +288,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						Data: client.AccountOrderDataItem{
 							ID: json.Number("100"), IDStr: "100",
 							OrderType: 0, OrderSubtype: 0,
-							Datetime: "1779717950", AmountStr: "0",
+							Datetime: "1779717950", Amount: json.Number("0.5"), AmountStr: "0",
 							AmountTraded: "0.5", AmountAtCreate: "0.5", PriceStr: "60000.00",
 						},
 					},
@@ -282,14 +298,15 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 						Data: client.AccountOrderDataItem{
 							ID: json.Number("200"), IDStr: "200",
 							OrderType: 0, OrderSubtype: 0,
-							Datetime: "1779717960", AmountStr: "1.0",
+							Datetime: "1779717960", Amount: json.Number("1.0"), AmountStr: "1.0",
 							AmountTraded: "0", AmountAtCreate: "1.0", PriceStr: "60000.00",
 						},
 					},
 				}, nil)
 
+			// All three are BUY orders (orderType=0), so reference must be "USD".
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
-				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(3))
@@ -297,7 +314,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			var state ordersState
 			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
 			// Only the last EventID in the batch is kept as the cursor.
-			Expect(state.LastSeenEventIDPerMarket["btcusd"]).To(Equal(lastEventID))
+			Expect(state.LastSeenEventIDPerMarket["BTC/USD"]).To(Equal(lastEventID))
 		})
 	})
 })
