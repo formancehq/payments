@@ -16,13 +16,10 @@ const MetadataPrefix = "com.bitstamp.spec/"
 const (
 	MetadataKeyType             = MetadataPrefix + "type"
 	MetadataKeyFee              = MetadataPrefix + "fee"
-	MetadataKeyOrderID          = MetadataPrefix + "order_id"
-	MetadataKeyCurrencyPair     = MetadataPrefix + "currency_pair"
-	MetadataKeyOrderType        = MetadataPrefix + "order_type"
-	MetadataKeyOrderSubtype     = MetadataPrefix + "order_subtype"
-	MetadataKeyClientOrderID    = MetadataPrefix + "client_order_id"
-	MetadataKeyRate             = MetadataPrefix + "rate"
-	MetadataKeyRetentionExpired = MetadataPrefix + "retention_expired"
+	MetadataKeyOrderID       = MetadataPrefix + "order_id"
+	MetadataKeyCurrencyPair  = MetadataPrefix + "currency_pair"
+	MetadataKeyClientOrderID = MetadataPrefix + "client_order_id"
+	MetadataKeyRate          = MetadataPrefix + "rate"
 
 	MetadataKeySource                     = MetadataPrefix + "source"
 	MetadataKeyTransferPairID             = MetadataPrefix + "transfer_pair_id"
@@ -132,20 +129,6 @@ func MergeMetadata(maps ...map[string]string) map[string]string {
 		}
 	}
 	return out
-}
-
-// OrderMetadata for PSPOrder. retentionExpired is "true" only on the
-// forced-final emit triggered by the 25-day eviction policy.
-func OrderMetadata(currencyPair, clientOrderID string, retentionExpired bool) map[string]string {
-	m := map[string]string{
-		MetadataKeyCurrencyPair: currencyPair,
-		MetadataKeyOrderType:    "limit", // open_orders/ returns limit orders only
-	}
-	setIfNonEmpty(m, MetadataKeyClientOrderID, clientOrderID)
-	if retentionExpired {
-		m[MetadataKeyRetentionExpired] = "true"
-	}
-	return m
 }
 
 // ConversionMetadata for PSPConversion. pairRate is the value behind

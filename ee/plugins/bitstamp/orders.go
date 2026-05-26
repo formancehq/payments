@@ -5,107 +5,89 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
-// fetchNextOrders reconciles open_orders with tracked state, polls
-// order_status per tracked id, and emits one PSPOrder per cycle.
-// See MAPPINGS §4.4 for the full lifecycle.
+// fetchNextOrders queries account_order_data for every tradeable market
+// listed in the parent account's metadata, emitting one PSPOrder per
+// event. The last-seen order ID per market is persisted in state so
+// subsequent calls use it as since_id to avoid re-fetching processed events.
 func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
-	state := ordersState{TrackedOrders: map[string]trackedOrder{}}
+	state := ordersState{LastSeenEventIDPerMarket: map[string]string{}}
 	if len(req.State) > 0 {
 		if err := json.Unmarshal(req.State, &state); err != nil {
-			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to unmarshal orders state: %w", err)
+			return models.FetchNextOrdersResponse{}, fmt.Errorf("unmarshal orders state: %w", err)
 		}
-		if state.TrackedOrders == nil {
-			state.TrackedOrders = map[string]trackedOrder{}
+		if state.LastSeenEventIDPerMarket == nil {
+			state.LastSeenEventIDPerMarket = map[string]string{}
 		}
 	}
 
-	openOrders, err := p.client.GetOpenOrders(ctx)
+	markets, err := tradeableMarketsFromPayload(req.FromPayload)
 	if err != nil {
-		return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to fetch open orders: %w", err)
+		return models.FetchNextOrdersResponse{}, err
 	}
 
-	now := time.Now().UTC()
-	tracked := mergeOpenOrders(state.TrackedOrders, openOrders, now)
-	openIDs := make(map[string]struct{}, len(openOrders))
-	for _, oo := range openOrders {
-		if oo.ID != "" {
-			openIDs[oo.ID] = struct{}{}
-		}
-	}
-	ids, evicted := reconciliationIDs(tracked, openIDs, now)
-
-	if len(ids) == 0 {
-		state.TrackedOrders = tracked
-		payload, err := json.Marshal(state)
-		if err != nil {
-			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to marshal orders state: %w", err)
-		}
-		return models.FetchNextOrdersResponse{NewState: payload, HasMore: false}, nil
-	}
+	// Deterministic market order so logs are stable.
+	sort.Strings(markets)
 
 	currencies, err := p.getCurrencies(ctx)
 	if err != nil {
 		return models.FetchNextOrdersResponse{}, err
 	}
 
-	orders := make([]models.PSPOrder, 0, len(ids))
-	for _, id := range ids {
-		t := tracked[id]
-		retentionExpired := evicted[id]
-
-		status, err := p.client.GetOrderStatus(ctx, id)
+	var orders []models.PSPOrder
+	for _, urlSymbol := range markets {
+		// Metadata stores URL symbols ("xdceur"); account_order_data expects
+		// "XDC/EUR" format. State is keyed by URL symbol for compatibility.
+		base, quote, err := mappers.SplitCurrencyPair(urlSymbol)
 		if err != nil {
-			// A stale ID past 30-day retention will reliably fail this
-			// call — evict on the spot to avoid permanent retry storms
-			// and unbounded state growth (logs at Info because the
-			// failure is expected for retention-expired IDs).
-			if retentionExpired {
-				p.logger.WithField("orderID", id).
-					Infof("evicting retention-expired order after order_status error: %v", err)
-				delete(tracked, id)
+			p.logger.WithField("market", urlSymbol).Errorf("failed to parse market symbol: %v", err)
+			continue
+		}
+		slashMarket := base + "/" + quote
+
+		sinceID := state.LastSeenEventIDPerMarket[urlSymbol]
+		var sinceIDPtr *string
+		if sinceID != "" {
+			sinceIDPtr = &sinceID
+		}
+
+		events, err := p.client.GetAccountOrderData(ctx, slashMarket, sinceIDPtr)
+		if err != nil {
+			if client.IsNotFoundError(err) {
+				p.logger.WithField("market", slashMarket).
+					Infof("order event history not available for this market type, skipping")
 				continue
 			}
-			p.logger.WithField("orderID", id).Errorf("failed to get order status: %v", err)
-			continue
+			return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to fetch market %q order events: %w", slashMarket, err)
 		}
 
-		order, err := mappers.OrderStatusToPSPOrder(currencies, mappers.OrderMapInput{
-			Status:           status,
-			Tracked:          t.toMapperInput(),
-			RetentionExpired: retentionExpired,
-		})
-		if err != nil {
-			p.logger.WithField("orderID", id).Errorf("failed to map order: %v", err)
-			continue
+		var lastEventID string
+		for _, event := range events {
+			order, err := mappers.AccountOrderDataEventToPSPOrder(currencies, slashMarket, event)
+			if err != nil {
+				p.logger.WithField("market", slashMarket).WithField("eventID", event.EventID).
+					Errorf("failed to map order event: %v", err)
+				continue
+			}
+			orders = append(orders, *order)
+			if event.EventID != "" {
+				lastEventID = event.EventID
+			}
 		}
 
-		if !mappers.IsKnownOrderStatus(status.Status) {
-			p.logger.WithField("orderID", id).WithField("status", status.Status).
-				Infof("emitting order with default OPEN status for previously-unseen Bitstamp status")
-		}
-
-		orders = append(orders, *order)
-
-		if order.Status.IsFinal() || retentionExpired {
-			delete(tracked, id)
-		} else {
-			entry := tracked[id]
-			entry.LastStatus = status.Status
-			tracked[id] = entry
+		if lastEventID != "" {
+			state.LastSeenEventIDPerMarket[urlSymbol] = lastEventID
 		}
 	}
 
-	state.TrackedOrders = tracked
 	payload, err := json.Marshal(state)
 	if err != nil {
-		return models.FetchNextOrdersResponse{}, fmt.Errorf("failed to marshal orders state: %w", err)
+		return models.FetchNextOrdersResponse{}, fmt.Errorf("marshal orders state: %w", err)
 	}
 
 	return models.FetchNextOrdersResponse{
@@ -115,51 +97,23 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}, nil
 }
 
-// mergeOpenOrders adds first-sight entries for new snapshot IDs.
-// Existing entries preserve FirstSeenAt so eviction is anchored to
-// the original observation, not the latest sighting.
-func mergeOpenOrders(existing map[string]trackedOrder, snapshot []client.OpenOrder, now time.Time) map[string]trackedOrder {
-	out := make(map[string]trackedOrder, len(existing)+len(snapshot))
-	for id, t := range existing {
-		out[id] = t
+// tradeableMarketsFromPayload extracts the tradeable market symbols from
+// the parent account's metadata (com.bitstamp.spec/tradable_markets).
+func tradeableMarketsFromPayload(payload json.RawMessage) ([]string, error) {
+	if len(payload) == 0 {
+		return nil, nil
 	}
-	for _, oo := range snapshot {
-		if oo.ID == "" {
-			continue
-		}
-		if _, seen := out[oo.ID]; seen {
-			continue
-		}
-		out[oo.ID] = trackedOrder{
-			LastStatus:  mappers.OrderStatusOpen,
-			FirstSeenAt: now,
-			LimitPrice:  oo.Price,
-		}
+	var account models.PSPAccount
+	if err := json.Unmarshal(payload, &account); err != nil {
+		return nil, fmt.Errorf("unmarshal from payload: %w", err)
 	}
-	return out
-}
-
-// reconciliationIDs returns the sorted list of tracked IDs + the set
-// past orderRetentionMax (still in the open snapshot but evictable).
-func reconciliationIDs(tracked map[string]trackedOrder, openIDs map[string]struct{}, now time.Time) ([]string, map[string]bool) {
-	ids := make([]string, 0, len(tracked))
-	evicted := map[string]bool{}
-	for id, t := range tracked {
-		ids = append(ids, id)
-		if _, stillOpen := openIDs[id]; stillOpen && now.Sub(t.FirstSeenAt) >= orderRetentionMax {
-			evicted[id] = true
-		}
+	raw, ok := account.Metadata[mappers.MetadataKeyTradableMarkets]
+	if !ok || raw == "" {
+		return nil, nil
 	}
-	sort.Strings(ids)
-	return ids, evicted
-}
-
-// toMapperInput bridges the state-package trackedOrder to the
-// mapper-package input shape. The slim shape — LimitPrice +
-// FirstSeenAt only — reflects the live-shape order_status response.
-func (t trackedOrder) toMapperInput() mappers.TrackedOrderInput {
-	return mappers.TrackedOrderInput{
-		Price:       t.LimitPrice,
-		FirstSeenAt: t.FirstSeenAt,
+	var markets []string
+	if err := json.Unmarshal([]byte(raw), &markets); err != nil {
+		return nil, fmt.Errorf("unmarshal tradeable markets: %w", err)
 	}
+	return markets, nil
 }

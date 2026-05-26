@@ -166,22 +166,36 @@ var _ = Describe("Bitstamp Plugin", func() {
 	})
 
 	Context("workflow", func() {
-		It("exposes all five task types as independent periodic roots", func() {
+		It("has four periodic roots with fetch_orders nested under fetch_accounts", func() {
 			tree := workflow()
-			Expect(tree).To(HaveLen(5))
+			Expect(tree).To(HaveLen(4), "expected 4 root tasks (accounts/balances/payments/conversions)")
+
 			rootTypes := make([]models.TaskType, len(tree))
 			for i, n := range tree {
 				rootTypes[i] = n.TaskType
 				Expect(n.Periodically).To(BeTrue(), "task %s should be periodic", n.Name)
-				Expect(n.NextTasks).To(BeEmpty(), "task %s should have no children", n.Name)
 			}
 			Expect(rootTypes).To(ConsistOf(
 				models.TASK_FETCH_ACCOUNTS,
 				models.TASK_FETCH_BALANCES,
 				models.TASK_FETCH_PAYMENTS,
-				models.TASK_FETCH_ORDERS,
 				models.TASK_FETCH_CONVERSIONS,
 			))
+
+			// fetch_orders is a periodic child of fetch_accounts so it
+			// receives the parent PSPAccount (and its tradeable markets
+			// metadata) via FromPayload.
+			var accountsNode models.ConnectorTaskTree
+			for _, n := range tree {
+				if n.TaskType == models.TASK_FETCH_ACCOUNTS {
+					accountsNode = n
+					break
+				}
+			}
+			Expect(accountsNode.NextTasks).To(HaveLen(1))
+			child := accountsNode.NextTasks[0]
+			Expect(child.TaskType).To(Equal(models.TASK_FETCH_ORDERS))
+			Expect(child.Periodically).To(BeTrue())
 		})
 	})
 

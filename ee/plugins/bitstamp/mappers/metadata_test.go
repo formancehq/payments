@@ -38,28 +38,6 @@ func TestPaymentMetadata(t *testing.T) {
 	}
 }
 
-func TestOrderMetadata(t *testing.T) {
-	t.Parallel()
-	got := OrderMetadata("btcusd", "client-123", true)
-	if got[MetadataKeyCurrencyPair] != "btcusd" || got[MetadataKeyOrderType] != "limit" {
-		t.Errorf("missing required keys: %v", got)
-	}
-	if got[MetadataKeyClientOrderID] != "client-123" {
-		t.Errorf("missing client_order_id: %v", got)
-	}
-	if got[MetadataKeyRetentionExpired] != "true" {
-		t.Errorf("missing retention_expired flag: %v", got)
-	}
-
-	clean := OrderMetadata("btcusd", "", false)
-	if _, ok := clean[MetadataKeyClientOrderID]; ok {
-		t.Errorf("empty client_order_id should be omitted: %v", clean)
-	}
-	if _, ok := clean[MetadataKeyRetentionExpired]; ok {
-		t.Errorf("retention_expired should be omitted when false: %v", clean)
-	}
-}
-
 func TestConversionMetadata(t *testing.T) {
 	t.Parallel()
 	tx := client.UserTransaction{Type: TxTypeBuySell, Fee: "0.000000"}
@@ -83,8 +61,7 @@ func TestMetadataKeysAreNamespaced(t *testing.T) {
 	// Guard against accidental drift from the com.bitstamp.spec/* prefix.
 	for _, k := range []string{
 		MetadataKeyType, MetadataKeyFee, MetadataKeyOrderID,
-		MetadataKeyCurrencyPair, MetadataKeyOrderType, MetadataKeyOrderSubtype,
-		MetadataKeyClientOrderID, MetadataKeyRate, MetadataKeyRetentionExpired,
+		MetadataKeyCurrencyPair, MetadataKeyClientOrderID, MetadataKeyRate,
 		MetadataKeySource, MetadataKeyTransferPairID, MetadataKeyTransferDirection,
 		MetadataKeyCounterpartySubAccountID, MetadataKeyCounterpartySubAccountName,
 		MetadataKeyNetwork, MetadataKeyTxID, MetadataKeyDestinationAddress,

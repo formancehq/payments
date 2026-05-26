@@ -228,88 +228,35 @@ type CryptoTransactionsOptions struct {
 	UntilTimestamp int64
 }
 
-// OpenOrder is one row from POST /api/v2/open_orders/all/. Type values:
-// "0" = BUY, "1" = SELL.
-type OpenOrder struct {
-	ID            string `json:"id"`
-	ClientOrderID string `json:"client_order_id,omitempty"`
-	Datetime      string `json:"datetime"`
-	Type          string `json:"type"`
-	Price         string `json:"price"`
-	Amount        string `json:"amount"`
-	CurrencyPair  string `json:"currency_pair"`
+// AccountOrderDataEvent is one item from GET /api/v2/account_order_data/.
+// event is "order_created" or "order_deleted"; further lifecycle events
+// follow the same shape and are handled generically.
+type AccountOrderDataEvent struct {
+	Event          string               `json:"event"`
+	EventID        string               `json:"event_id"`
+	OrderSource    string               `json:"order_source"`
+	TradeAccountID json.Number          `json:"trade_account_id"`
+	Data           AccountOrderDataItem `json:"data"`
 }
 
-// OrderStatus is the response from POST /api/v2/order_status/. The
-// rich shape returns market / type / subtype / datetime /
-// amount_remaining live, so only the original limit Price needs
-// first-sight capture from open_orders/. Derivatives-only fields
-// let the spot-only mapper check HasDerivativesMarker() before mapping.
-type OrderStatus struct {
-	ID              json.Number        `json:"id"`
-	ClientOrderID   string             `json:"client_order_id,omitempty"`
-	Datetime        string             `json:"datetime,omitempty"`
-	Type            string             `json:"type,omitempty"`
-	Subtype         string             `json:"subtype,omitempty"`
-	Status          string             `json:"status"`
-	Market          string             `json:"market,omitempty"`
-	AmountRemaining string             `json:"amount_remaining,omitempty"`
-	Transactions    []OrderTransaction `json:"transactions"`
-
-	MarginMode      string `json:"margin_mode,omitempty"`
-	Leverage        string `json:"leverage,omitempty"`
-	StopPrice       string `json:"stop_price,omitempty"`
-	Trigger         string `json:"trigger,omitempty"`
-	ActivationPrice string `json:"activation_price,omitempty"`
-	TrailingDelta   int    `json:"trailing_delta,omitempty"`
-}
-
-func (os OrderStatus) HasDerivativesMarker() bool {
-	return os.MarginMode != "" || os.Leverage != "" || os.StopPrice != "" ||
-		os.Trigger != "" || os.ActivationPrice != "" || os.TrailingDelta != 0
-}
-
-// OrderTransaction is one fill on an order_status response. Carries
-// the same dynamic per-currency key shape as UserTransaction.
-type OrderTransaction struct {
-	TID             int64  `json:"tid"`
-	Type            int    `json:"type"`
-	Datetime        string `json:"datetime"`
-	Price           string `json:"price"`
-	Fee             string `json:"fee"`
-	CurrencyAmounts map[string]string
-}
-
-var orderTxKnownKeys = map[string]struct{}{
-	"tid":      {},
-	"type":     {},
-	"datetime": {},
-	"price":    {},
-	"fee":      {},
-}
-
-func (ot *OrderTransaction) UnmarshalJSON(data []byte) error {
-	type alias OrderTransaction
-	var a alias
-	if err := json.Unmarshal(data, &a); err != nil {
-		return err
-	}
-	*ot = OrderTransaction(a)
-
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	ot.CurrencyAmounts = make(map[string]string)
-	for key, val := range raw {
-		if _, known := orderTxKnownKeys[key]; known {
-			continue
-		}
-		if s, ok := decodeStringDecimal(val); ok {
-			ot.CurrencyAmounts[key] = s
-		}
-	}
-	return nil
+// AccountOrderDataItem is the order snapshot within an AccountOrderDataEvent.
+// PriceStr may arrive in scientific notation (e.g. "7.74E+4"); callers must
+// normalise it before decimal parsing.
+type AccountOrderDataItem struct {
+	ID             json.Number `json:"id"`
+	IDStr          string      `json:"id_str"`
+	OrderType      int         `json:"order_type"` // 0=BUY, 1=SELL
+	OrderSubtype   int         `json:"order_subtype"`
+	Datetime       string      `json:"datetime"`       // Unix seconds as string
+	Microtimestamp string      `json:"microtimestamp"` // Unix microseconds as string
+	Amount         json.Number `json:"amount"`
+	AmountStr      string      `json:"amount_str"` // remaining amount
+	AmountTraded   string      `json:"amount_traded"`
+	AmountAtCreate string      `json:"amount_at_create"`
+	Price          json.Number `json:"price"`
+	PriceStr       string      `json:"price_str"` // may be scientific notation
+	IsLiquidation  bool        `json:"is_liquidation"`
+	TrailingDelta  int         `json:"trailing_delta"`
 }
 
 // decodeStringDecimal accepts only string decimal values. Numeric

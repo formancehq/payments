@@ -2,13 +2,7 @@ package bitstamp
 
 import (
 	"encoding/json"
-	"time"
 )
-
-// orderRetentionMax is 5 days less than Bitstamp's 30-day
-// order_status/ retention window. Tracked orders past this are
-// force-emitted with com.bitstamp.spec/retention_expired and dropped.
-const orderRetentionMax = 25 * 24 * time.Hour
 
 // accountsState persists the set of currencies already emitted so that
 // subsequent FetchNextAccounts cycles do not re-emit the same account.
@@ -69,32 +63,10 @@ func (s *paymentsState) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// trackedOrder is the slim first-sight capture: only the original
-// limit price needs persisting because order_status/ returns market,
-// type, subtype, datetime, amount_remaining live every cycle.
-type trackedOrder struct {
-	LastStatus  string    `json:"lastStatus"`
-	FirstSeenAt time.Time `json:"firstSeenAt"`
-	LimitPrice  string    `json:"limitPrice"`
-}
-
+// ordersState tracks the last seen MarketEventID per market so that
+// GetAccountOrderData since_id only returns unseen events.
 type ordersState struct {
-	TrackedOrders map[string]trackedOrder `json:"trackedOrders"`
-}
-
-// UnmarshalJSON tolerates the legacy fuller trackedOrder shape
-// (Amount / CurrencyPair / Type) by silently ignoring obsolete fields.
-func (s *ordersState) UnmarshalJSON(data []byte) error {
-	type alias ordersState
-	var a alias
-	if err := json.Unmarshal(data, &a); err != nil {
-		return err
-	}
-	if a.TrackedOrders == nil {
-		a.TrackedOrders = map[string]trackedOrder{}
-	}
-	*s = ordersState(a)
-	return nil
+	LastSeenEventIDPerMarket map[string]string `json:"lastSeenEventIDPerMarket"`
 }
 
 type conversionsState struct {

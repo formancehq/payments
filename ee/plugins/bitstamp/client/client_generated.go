@@ -55,6 +55,21 @@ func (mr *MockClientMockRecorder) GetAccountBalances(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountBalances", reflect.TypeOf((*MockClient)(nil).GetAccountBalances), ctx)
 }
 
+// GetAccountOrderData mocks base method.
+func (m *MockClient) GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountOrderData", ctx, market, sinceID)
+	ret0, _ := ret[0].([]AccountOrderDataEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountOrderData indicates an expected call of GetAccountOrderData.
+func (mr *MockClientMockRecorder) GetAccountOrderData(ctx, market, sinceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountOrderData", reflect.TypeOf((*MockClient)(nil).GetAccountOrderData), ctx, market, sinceID)
+}
+
 // GetCryptoTransactions mocks base method.
 func (m *MockClient) GetCryptoTransactions(ctx context.Context, opts CryptoTransactionsOptions) (CryptoTransactionsResponse, error) {
 	m.ctrl.T.Helper()
@@ -113,51 +128,6 @@ func (m *MockClient) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
 func (mr *MockClientMockRecorder) GetMyMarkets(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyMarkets", reflect.TypeOf((*MockClient)(nil).GetMyMarkets), ctx)
-}
-
-// GetOpenOrders mocks base method.
-func (m *MockClient) GetOpenOrders(ctx context.Context) ([]OpenOrder, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOpenOrders", ctx)
-	ret0, _ := ret[0].([]OpenOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOpenOrders indicates an expected call of GetOpenOrders.
-func (mr *MockClientMockRecorder) GetOpenOrders(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrders", reflect.TypeOf((*MockClient)(nil).GetOpenOrders), ctx)
-}
-
-// GetOpenOrdersForMarket mocks base method.
-func (m *MockClient) GetOpenOrdersForMarket(ctx context.Context, currencyPair string) ([]OpenOrder, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOpenOrdersForMarket", ctx, currencyPair)
-	ret0, _ := ret[0].([]OpenOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOpenOrdersForMarket indicates an expected call of GetOpenOrdersForMarket.
-func (mr *MockClientMockRecorder) GetOpenOrdersForMarket(ctx, currencyPair any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrdersForMarket", reflect.TypeOf((*MockClient)(nil).GetOpenOrdersForMarket), ctx, currencyPair)
-}
-
-// GetOrderStatus mocks base method.
-func (m *MockClient) GetOrderStatus(ctx context.Context, orderID string) (OrderStatus, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderStatus", ctx, orderID)
-	ret0, _ := ret[0].(OrderStatus)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOrderStatus indicates an expected call of GetOrderStatus.
-func (mr *MockClientMockRecorder) GetOrderStatus(ctx, orderID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderStatus", reflect.TypeOf((*MockClient)(nil).GetOrderStatus), ctx, orderID)
 }
 
 // GetTradingFees mocks base method.

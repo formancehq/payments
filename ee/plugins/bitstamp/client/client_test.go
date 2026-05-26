@@ -118,8 +118,8 @@ func TestSignRequestProducesValidHMAC(t *testing.T) {
 	defer server.Close()
 
 	c := New("bitstamp", testAPIKey, testAPISecret, server.URL)
-	if _, err := c.GetOpenOrders(context.Background()); err != nil {
-		t.Fatalf("GetOpenOrders: %v", err)
+	if _, err := c.GetAccountOrderData(context.Background(), "BTC/USD", nil); err != nil {
+		t.Fatalf("GetAccountOrderData: %v", err)
 	}
 
 	if got := capturedReq.Header.Get("X-Auth"); got != "BITSTAMP "+testAPIKey {
@@ -175,56 +175,88 @@ func TestSignRequestFormBodySetsContentType(t *testing.T) {
 		capturedCT = r.Header.Get("Content-Type")
 		b, _ := io.ReadAll(r.Body)
 		capturedBody = string(b)
-		_, _ = w.Write([]byte(`{"id":"123","status":"Finished","transactions":[]}`))
+		_, _ = w.Write([]byte(`[]`))
 	}))
 	defer server.Close()
 
 	c := New("bitstamp", testAPIKey, testAPISecret, server.URL)
-	if _, err := c.GetOrderStatus(context.Background(), "123"); err != nil {
-		t.Fatalf("GetOrderStatus: %v", err)
+	if _, err := c.GetAccountOrderData(context.Background(), "BTC/USD", nil); err != nil {
+		t.Fatalf("GetAccountOrderData: %v", err)
 	}
 
 	if capturedCT != "application/x-www-form-urlencoded" {
 		t.Fatalf("Content-Type=%q, expected application/x-www-form-urlencoded", capturedCT)
 	}
-	if !strings.Contains(capturedBody, "id=123") {
-		t.Fatalf("body=%q, expected to contain id=123", capturedBody)
+	if !strings.Contains(capturedBody, "order_source=orderbook") {
+		t.Fatalf("body=%q, expected to contain order_source=orderbook", capturedBody)
 	}
 }
 
-func TestGetOpenOrdersDecodesSnapshot(t *testing.T) {
+func TestGetAccountOrderDataDecodesEvents(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`[
-			{"id":"1","datetime":"2025-09-25 14:00:00","type":"0","price":"60000.00","amount":"0.5","currency_pair":"btcusd","client_order_id":"abc"}
-		]`))
-	}))
-	defer server.Close()
+	srv, lastReq := stubServer(t, `[
+		{"event":"order_created","event_id":"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4","order_source":"orderbook","trade_account_id":0,
+		 "data":{"id":2010622299103234,"id_str":"2010622299103234","order_type":0,"order_subtype":0,
+		         "datetime":"1779709559","amount_str":"0.00028416","amount_traded":"0","amount_at_create":"0.00028416","price_str":"77419.30"}}
+	]`)
 
-	orders, err := New("bitstamp", testAPIKey, testAPISecret, server.URL).
-		GetOpenOrders(context.Background())
+	events, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
+		GetAccountOrderData(t.Context(), "BTC/USD", nil)
 	if err != nil {
-		t.Fatalf("GetOpenOrders: %v", err)
+		t.Fatalf("GetAccountOrderData: %v", err)
 	}
-	if len(orders) != 1 || orders[0].ID != "1" || orders[0].CurrencyPair != "btcusd" {
-		t.Fatalf("unexpected snapshot: %#v", orders)
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	e := events[0]
+	if e.Event != "order_created" {
+		t.Errorf("event=%q, want order_created", e.Event)
+	}
+	if e.EventID != "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4" {
+		t.Errorf("event_id=%q, unexpected", e.EventID)
+	}
+	if e.Data.IDStr != "2010622299103234" || e.Data.AmountAtCreate != "0.00028416" {
+		t.Errorf("data fields not decoded: %+v", e.Data)
+	}
+
+	// Verify form body carries market and order_source.
+	body, _ := io.ReadAll(lastReq().Body)
+	for _, want := range []string{"market=BTC%2FUSD", "order_source=orderbook"} {
+		if !strings.Contains(string(body), want) {
+			t.Errorf("body missing %q, got %q", want, body)
+		}
 	}
 }
 
-func TestGetOpenOrdersForMarketRejectsEmptyPair(t *testing.T) {
+func TestGetAccountOrderDataPassesSinceID(t *testing.T) {
 	t.Parallel()
-	c := New("bitstamp", testAPIKey, testAPISecret, "http://unused")
-	if _, err := c.GetOpenOrdersForMarket(context.Background(), ""); err == nil {
-		t.Fatal("expected error for empty currency pair")
+
+	srv, lastReq := stubServer(t, `[]`)
+	sinceID := "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+	_, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
+		GetAccountOrderData(t.Context(), "BTC/USD", &sinceID)
+	if err != nil {
+		t.Fatalf("GetAccountOrderData: %v", err)
+	}
+	body, _ := io.ReadAll(lastReq().Body)
+	if !strings.Contains(string(body), "since_id="+sinceID) {
+		t.Errorf("body missing since_id, got %q", body)
 	}
 }
 
-func TestGetOrderStatusRejectsEmptyID(t *testing.T) {
+func TestGetAccountOrderDataOmitsSinceIDWhenNil(t *testing.T) {
 	t.Parallel()
-	c := New("bitstamp", testAPIKey, testAPISecret, "http://unused")
-	if _, err := c.GetOrderStatus(context.Background(), ""); err == nil {
-		t.Fatal("expected error for empty order ID")
+
+	srv, lastReq := stubServer(t, `[]`)
+	_, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
+		GetAccountOrderData(t.Context(), "BTC/USD", nil)
+	if err != nil {
+		t.Fatalf("GetAccountOrderData: %v", err)
+	}
+	body, _ := io.ReadAll(lastReq().Body)
+	if strings.Contains(string(body), "since_id=") {
+		t.Errorf("cold-start call must not send since_id, got body %q", body)
 	}
 }
 
@@ -491,38 +523,6 @@ func TestGetWithdrawalRequestByIDNotFoundReturnsError(t *testing.T) {
 	}
 }
 
-func TestOrderStatusDecodesExtendedFields(t *testing.T) {
-	t.Parallel()
-	// Live-probed shape: order_status returns market / type / subtype /
-	// datetime / amount_remaining alongside status + transactions.
-	srv, _ := stubServer(t, `{
-		"id":1458532827766784,
-		"datetime":"2022-01-31 14:43:15",
-		"type":"0",
-		"subtype":"LIMIT",
-		"status":"Open",
-		"market":"BTC/USD",
-		"amount_remaining":"0.50",
-		"client_order_id":"my-id",
-		"transactions":[{"tid":1,"price":"60000.00","btc":"0.5","usd":"30000.00","fee":"15.00","datetime":"2022-01-31 14:43:15","type":2}]
-	}`)
-
-	got, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
-		GetOrderStatus(t.Context(), "1458532827766784")
-	if err != nil {
-		t.Fatalf("GetOrderStatus: %v", err)
-	}
-	if got.Market != "BTC/USD" || got.Type != "0" || got.Subtype != "LIMIT" || got.AmountRemaining != "0.50" || got.Datetime == "" {
-		t.Errorf("extended order_status fields missing: %+v", got)
-	}
-	if len(got.Transactions) != 1 || got.Transactions[0].CurrencyAmounts["btc"] != "0.5" {
-		t.Errorf("transactions[] not decoded: %+v", got.Transactions)
-	}
-	if got.HasDerivativesMarker() {
-		t.Error("spot order should not flag as derivatives")
-	}
-}
-
 func TestGetUserTransactionsHonoursSinceIDAndLimit(t *testing.T) {
 	t.Parallel()
 	srv, lastReq := stubServer(t, `[{"id":1,"datetime":"2025-09-25 14:42:59.000000","type":"0","fee":"0","eur":"25.00"}]`)
@@ -555,25 +555,6 @@ func TestGetUserTransactionsOmitsZeroSinceID(t *testing.T) {
 	}
 }
 
-func TestGetOpenOrdersForMarketSignsTheRightPath(t *testing.T) {
-	t.Parallel()
-	srv, lastReq := stubServer(t, `[]`)
-	_, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
-		GetOpenOrdersForMarket(t.Context(), "BTC/USD")
-	if err != nil {
-		t.Fatalf("GetOpenOrdersForMarket: %v", err)
-	}
-	if got := lastReq().URL.Path; got != "/api/v2/open_orders/btc/usd/" {
-		// Tolerate that we lowercased + stripped whitespace; allow either btcusd or btc/usd shape.
-		if got != "/api/v2/open_orders/btc%2Fusd/" && got != "/api/v2/open_orders/btcusd/" {
-			t.Errorf("unexpected path %q", got)
-		}
-	}
-	if lastReq().Header.Get("X-Auth-Signature") == "" {
-		t.Errorf("missing HMAC signature")
-	}
-}
-
 func TestSignedPOSTWrapsGenericServerError(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -591,15 +572,3 @@ func TestSignedPOSTWrapsGenericServerError(t *testing.T) {
 	}
 }
 
-func TestOrderStatusFlagsDerivatives(t *testing.T) {
-	t.Parallel()
-	srv, _ := stubServer(t, `{"id":1,"status":"Open","margin_mode":"ISOLATED","leverage":"3.1"}`)
-	got, err := New("bitstamp", testAPIKey, testAPISecret, srv.URL).
-		GetOrderStatus(t.Context(), "1")
-	if err != nil {
-		t.Fatalf("GetOrderStatus: %v", err)
-	}
-	if !got.HasDerivativesMarker() {
-		t.Errorf("expected derivatives marker on margin_mode + leverage, got %+v", got)
-	}
-}

@@ -24,9 +24,7 @@ type Client interface {
 	GetAccountBalances(ctx context.Context) ([]AccountBalance, error)
 	GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error)
 	GetCurrencies(ctx context.Context) ([]Currency, error)
-	GetOpenOrders(ctx context.Context) ([]OpenOrder, error)
-	GetOpenOrdersForMarket(ctx context.Context, currencyPair string) ([]OpenOrder, error)
-	GetOrderStatus(ctx context.Context, orderID string) (OrderStatus, error)
+	GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error)
 
 	// Multi-source payments feeds — see MAPPINGS §3.3 + §12.2.
 	GetCryptoTransactions(ctx context.Context, opts CryptoTransactionsOptions) (CryptoTransactionsResponse, error)
@@ -114,6 +112,9 @@ func (c *client) signedGET(ctx context.Context, path string, dst any) error {
 	var errResp ErrorResponse
 	statusCode, err := c.httpClient.Do(ctx, req, dst, &errResp)
 	if err != nil {
+		if statusCode == 404 {
+			return &NotFoundError{Endpoint: path, Message: errResp.Message()}
+		}
 		if errResp.Code == ErrCodeDerivativesUnsupported {
 			return &DerivativesUnsupportedError{Endpoint: path, Message: errResp.Message()}
 		}
@@ -147,6 +148,9 @@ func (c *client) signedPOST(ctx context.Context, path string, form url.Values, d
 	var errResp ErrorResponse
 	statusCode, err := c.httpClient.Do(ctx, req, dst, &errResp)
 	if err != nil {
+		if statusCode == 404 {
+			return &NotFoundError{Endpoint: path, Message: errResp.Message()}
+		}
 		return fmt.Errorf("%s (status %d, message: %s): %w", path, statusCode, errResp.Message(), err)
 	}
 	return nil
@@ -193,47 +197,19 @@ func (c *client) GetCurrencies(ctx context.Context) ([]Currency, error) {
 	return out, nil
 }
 
-// GetOpenOrders returns the current snapshot of all open orders across
-// every currency pair. The Bitstamp server caches this for ~10s, so
-// back-to-back polls do not see fresher data.
-func (c *client) GetOpenOrders(ctx context.Context) ([]OpenOrder, error) {
-	var out []OpenOrder
-	if err := c.signedPOST(ctx, "/api/v2/open_orders/all/", nil, &out); err != nil {
-		return nil, fmt.Errorf("get open orders: %w", err)
-	}
-	return out, nil
-}
-
-// GetOpenOrdersForMarket is the per-pair variant; included for future
-// per-market polling (the orders task uses GetOpenOrders today).
-// Currency pair is normalised to lowercase per Bitstamp convention.
-func (c *client) GetOpenOrdersForMarket(ctx context.Context, currencyPair string) ([]OpenOrder, error) {
-	pair := strings.ToLower(strings.TrimSpace(currencyPair))
-	if pair == "" {
-		return nil, fmt.Errorf("get open orders: currency pair is required")
-	}
-	var out []OpenOrder
-	if err := c.signedPOST(ctx, "/api/v2/open_orders/"+pair+"/", nil, &out); err != nil {
-		return nil, fmt.Errorf("get open orders for %s: %w", pair, err)
-	}
-	return out, nil
-}
-
-// GetOrderStatus fetches the current status + fills for a single
-// order. The order ID is sent in the form body (not the URL path) per
-// Bitstamp's documented endpoint. Bitstamp retains order_status data
-// for ~30 days; older IDs return an error, which the orders task
-// guards against via the 25-day TrackedOrders eviction policy.
-func (c *client) GetOrderStatus(ctx context.Context, orderID string) (OrderStatus, error) {
-	if orderID == "" {
-		return OrderStatus{}, fmt.Errorf("get order status: order id is required")
-	}
+// GetAccountOrderData returns order lifecycle events for one market.
+// order_source is always "orderbook". sinceID, when non-nil and positive,
+// restricts the response to events whose order ID is greater than sinceID.
+func (c *client) GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error) {
 	form := url.Values{}
-	form.Set("id", orderID)
-	form.Set("omit_transactions", "false")
-	var out OrderStatus
-	if err := c.signedPOST(ctx, "/api/v2/order_status/", form, &out); err != nil {
-		return OrderStatus{}, fmt.Errorf("get order status %s: %w", orderID, err)
+	form.Set("order_source", "orderbook")
+	form.Set("market", strings.TrimSpace(market))
+	if sinceID != nil && *sinceID != "" {
+		form.Set("since_id", *sinceID)
+	}
+	var out []AccountOrderDataEvent
+	if err := c.signedPOST(ctx, "/api/v2/account_order_data/", form, &out); err != nil {
+		return nil, fmt.Errorf("get account order data for %s: %w", market, err)
 	}
 	return out, nil
 }

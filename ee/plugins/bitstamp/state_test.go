@@ -3,7 +3,6 @@ package bitstamp
 import (
 	"encoding/json"
 	"testing"
-	"time"
 )
 
 // TestPaymentsStateDecode_LegacyFlatShape locks the migration path
@@ -128,59 +127,32 @@ func TestPaymentsStateDecode_InvalidJSON(t *testing.T) {
 	}
 }
 
-// TestOrdersStateDecode_LegacyFullerShape: the legacy trackedOrder
-// carried Amount / CurrencyPair / Type fields that we no longer need
-// (order_status returns them live). The decoder must absorb the old
-// shape without erroring or losing the still-relevant fields
-// (LastStatus, FirstSeenAt, LimitPrice/Price).
-func TestOrdersStateDecode_LegacyFullerShape(t *testing.T) {
+// TestOrdersStateDecode_LegacyTrackedOrders: the previous ordersState had a
+// "trackedOrders" map and then "lastSeenIDPerMarket". Old state must decode
+// into the new shape without error; unknown fields are ignored and
+// LastSeenEventIDPerMarket starts empty (cold start — correct on upgrade).
+func TestOrdersStateDecode_LegacyTrackedOrders(t *testing.T) {
 	t.Parallel()
 	payload := `{
 		"trackedOrders": {
-			"100": {
-				"lastStatus": "Open",
-				"firstSeenAt": "2025-09-25T14:00:00Z",
-				"price": "60000.00",
-				"amount": "0.50000000",
-				"currencyPair": "btcusd",
-				"type": 0
-			}
+			"100": {"lastStatus": "Open", "firstSeenAt": "2025-09-25T14:00:00Z", "limitPrice": "60000.00"}
 		}
 	}`
 	var s ordersState
 	if err := json.Unmarshal([]byte(payload), &s); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	o, ok := s.TrackedOrders["100"]
-	if !ok {
-		t.Fatal("trackedOrders[100] missing")
-	}
-	if o.LastStatus != "Open" {
-		t.Errorf("LastStatus = %q", o.LastStatus)
-	}
-	if o.FirstSeenAt.IsZero() {
-		t.Error("FirstSeenAt must decode from legacy ISO timestamp")
-	}
-	// The new trackedOrder uses LimitPrice (not Price); the obsolete
-	// "price" field is dropped silently. That's the migration cost.
-}
-
-func TestOrdersStateDecode_NilMapNotZeroed(t *testing.T) {
-	t.Parallel()
-	var s ordersState
-	if err := json.Unmarshal([]byte(`{}`), &s); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if s.TrackedOrders == nil {
-		t.Error("TrackedOrders must be non-nil after decode (callers may write to it)")
+	if len(s.LastSeenEventIDPerMarket) != 0 {
+		t.Errorf("LastSeenEventIDPerMarket must be empty on upgrade from legacy state, got %v", s.LastSeenEventIDPerMarket)
 	}
 }
 
 func TestOrdersStateRoundTrip(t *testing.T) {
 	t.Parallel()
 	in := ordersState{
-		TrackedOrders: map[string]trackedOrder{
-			"200": {LastStatus: "Open", FirstSeenAt: time.Date(2025, 9, 25, 14, 0, 0, 0, time.UTC), LimitPrice: "60000.00"},
+		LastSeenEventIDPerMarket: map[string]string{
+			"btcusd": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+			"ethusd": "00112233445566778899aabbccddeeff",
 		},
 	}
 	raw, err := json.Marshal(in)
@@ -191,9 +163,9 @@ func TestOrdersStateRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(raw, &out); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	got, ok := out.TrackedOrders["200"]
-	if !ok || got.LimitPrice != "60000.00" || got.LastStatus != "Open" || !got.FirstSeenAt.Equal(in.TrackedOrders["200"].FirstSeenAt) {
-		t.Errorf("round-trip mismatch: %+v", out)
+	if out.LastSeenEventIDPerMarket["btcusd"] != in.LastSeenEventIDPerMarket["btcusd"] ||
+		out.LastSeenEventIDPerMarket["ethusd"] != in.LastSeenEventIDPerMarket["ethusd"] {
+		t.Errorf("round-trip mismatch: got %+v, want %+v", out, in)
 	}
 }
 

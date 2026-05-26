@@ -43,253 +43,259 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 		ctrl.Finish()
 	})
 
+	// fromPayloadWithMarkets builds a FetchNextOrdersRequest.FromPayload
+	// containing a PSPAccount whose metadata lists the given URL-symbol markets.
+	fromPayloadWithMarkets := func(markets []string) json.RawMessage {
+		raw, _ := json.Marshal(markets)
+		account := models.PSPAccount{
+			Reference: "BTC",
+			Metadata:  map[string]string{mappers.MetadataKeyTradableMarkets: string(raw)},
+		}
+		payload, _ := json.Marshal(account)
+		return payload
+	}
+
 	Context("fetching next orders", func() {
-		It("returns the wrapped client error when open_orders fails", func(ctx SpecContext) {
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return(nil, errors.New("boom"))
-
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: []byte(`{}`)})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("boom"))
-			Expect(err.Error()).To(ContainSubstring("fetch open orders"))
-			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
-		})
-
-		It("seeds tracked orders from a fresh snapshot and emits one OPEN PSPOrder per ID", func(ctx SpecContext) {
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{
-				{ID: "100", Datetime: "2025-09-25 14:00:00.000000", Type: "0", Price: "60000.00", Amount: "0.50000000", CurrencyPair: "btcusd"},
-			}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "100").Return(client.OrderStatus{
-				ID:              "100",
-				Datetime:        "2025-09-25 14:00:00.000000",
-				Type:            "0",
-				Subtype:         mappers.OrderSubtypeLimit,
-				Market:          "BTC/USD",
-				AmountRemaining: "0.50000000",
-				Status:          mappers.OrderStatusOpen,
-			}, nil)
-
+		It("returns empty response when FromPayload has no tradeable markets", func(ctx SpecContext) {
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.Orders).To(HaveLen(1))
-			Expect(resp.Orders[0].Reference).To(Equal("100"))
-			Expect(resp.Orders[0].Status).To(Equal(models.ORDER_STATUS_OPEN))
-			Expect(resp.Orders[0].Direction).To(Equal(models.ORDER_DIRECTION_BUY))
-			Expect(resp.Orders[0].BaseQuantityOrdered.Int64()).To(Equal(int64(50_000_000)))
+			Expect(resp.Orders).To(BeEmpty())
 			Expect(resp.HasMore).To(BeFalse())
-
-			var state ordersState
-			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).To(HaveKey("100"))
-			Expect(state.TrackedOrders["100"].LimitPrice).To(Equal("60000.00"))
 		})
 
-		It("marks a tracked order PARTIALLY_FILLED when order_status returns fills under Open", func(ctx SpecContext) {
-			now := time.Now().UTC()
-			initial := ordersState{TrackedOrders: map[string]trackedOrder{
-				"101": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: now.Add(-time.Hour),
-					LimitPrice: "60000.00"},
-			}}
-			rawState, _ := json.Marshal(initial)
+		It("converts URL symbol to slash format before calling the API", func(ctx SpecContext) {
+			// "btcusd" must be converted to "BTC/USD" for the API call.
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{}, nil)
 
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{
-				{ID: "101", Type: "1", Price: "60000.00", Amount: "1.00000000", CurrencyPair: "btcusd"},
-			}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "101").Return(client.OrderStatus{
-				ID:              "101",
-				Type:            "1",
-				Subtype:         mappers.OrderSubtypeLimit,
-				Market:          "BTC/USD",
-				AmountRemaining: "0.75000000",
-				Status:          mappers.OrderStatusOpen,
-				Transactions: []client.OrderTransaction{{
-					TID:             1,
-					Price:           "60000.00",
-					Fee:             "7.50",
-					CurrencyAmounts: map[string]string{"btc": "0.25", "usd": "15000.00"},
-				}},
-			}, nil)
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.Orders).To(BeEmpty())
+		})
 
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
+		It("logs Info and skips market on 404 instead of erroring", func(ctx SpecContext) {
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return(nil, &client.NotFoundError{Endpoint: "/api/v2/account_order_data/", Message: "not found"})
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "ETH/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd", "ethusd"}),
+			})
+			// 404 must not bubble up as an error; the cycle continues.
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.Orders).To(BeEmpty())
+		})
+
+		It("returns error and halts when a market fails with non-404", func(ctx SpecContext) {
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return(nil, errors.New("boom"))
+
+			_, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd", "ethusd"}),
+			})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("emits OPEN PSPOrder for order_created with no fills", func(ctx SpecContext) {
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event:   "order_created",
+					EventID: "evt-1",
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("1000"), IDStr: "1000",
+						OrderType: 0, OrderSubtype: 0,
+						Datetime:       "1779709892",
+						AmountStr:      "0.00028416",
+						AmountTraded:   "0",
+						AmountAtCreate: "0.00028416",
+						PriceStr:       "77400.00",
+					},
+				}}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
-			Expect(resp.Orders[0].Status).To(Equal(models.ORDER_STATUS_PARTIALLY_FILLED))
-			Expect(resp.Orders[0].BaseQuantityFilled.Int64()).To(Equal(int64(25_000_000)))
-			Expect(resp.Orders[0].QuoteAmount.Int64()).To(Equal(int64(1_500_000)))
-			Expect(resp.Orders[0].Fee.Int64()).To(Equal(int64(750)))
-
-			var state ordersState
-			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).To(HaveKey("101"))
+			o := resp.Orders[0]
+			Expect(o.Reference).To(Equal("1000"))
+			Expect(o.Direction).To(Equal(models.ORDER_DIRECTION_BUY))
+			Expect(o.Status).To(Equal(models.ORDER_STATUS_OPEN))
+			Expect(o.Type).To(Equal(models.ORDER_TYPE_LIMIT))
+			Expect(o.TimeInForce).To(Equal(models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED))
+			Expect(o.BaseQuantityOrdered.Int64()).To(Equal(int64(28416)))
+			Expect(o.BaseQuantityFilled.Sign()).To(Equal(0))
+			Expect(o.LimitPrice.Int64()).To(Equal(int64(7740000)))
+			Expect(o.SourceAsset).To(Equal("USD/2"))
+			Expect(o.DestinationAsset).To(Equal("BTC/8"))
+			Expect(resp.HasMore).To(BeFalse())
 		})
 
-		It("drops a tracked order from state when it becomes FILLED", func(ctx SpecContext) {
-			initial := ordersState{TrackedOrders: map[string]trackedOrder{
-				"102": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: time.Now().Add(-time.Hour),
-					LimitPrice: "60000.00"},
-			}}
-			rawState, _ := json.Marshal(initial)
+		It("emits FILLED PSPOrder for order_deleted with full fill", func(ctx SpecContext) {
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event:   "order_deleted",
+					EventID: "evt-2",
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("1001"), IDStr: "1001",
+						OrderType: 1, OrderSubtype: 0,
+						Datetime:       "1779717950",
+						AmountStr:      "0",
+						AmountTraded:   "0.00028416",
+						AmountAtCreate: "0.00028416",
+						PriceStr:       "77400.00",
+					},
+				}}, nil)
 
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "102").Return(client.OrderStatus{
-				ID:              "102",
-				Type:            "0",
-				Subtype:         mappers.OrderSubtypeLimit,
-				Market:          "BTC/USD",
-				AmountRemaining: "0",
-				Status:          mappers.OrderStatusFinished,
-				Transactions: []client.OrderTransaction{{
-					TID: 1, Price: "60000.00", Fee: "15.00",
-					CurrencyAmounts: map[string]string{"btc": "0.5", "usd": "30000.00"},
-				}},
-			}, nil)
-
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
-			Expect(resp.Orders[0].Status).To(Equal(models.ORDER_STATUS_FILLED))
-
-			var state ordersState
-			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).ToNot(HaveKey("102"))
+			o := resp.Orders[0]
+			Expect(o.Reference).To(Equal("1001"))
+			Expect(o.Direction).To(Equal(models.ORDER_DIRECTION_SELL))
+			Expect(o.Status).To(Equal(models.ORDER_STATUS_FILLED))
+			Expect(o.BaseQuantityFilled.Int64()).To(Equal(int64(28416)))
 		})
 
-		It("drops a tracked order from state when it becomes CANCELLED", func(ctx SpecContext) {
-			initial := ordersState{TrackedOrders: map[string]trackedOrder{
-				"103": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: time.Now().Add(-time.Hour),
-					LimitPrice: "60000.00"},
-			}}
-			rawState, _ := json.Marshal(initial)
+		It("emits CANCELLED PSPOrder for order_deleted with remaining amount", func(ctx SpecContext) {
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event:   "order_deleted",
+					EventID: "evt-3",
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("1002"), IDStr: "1002",
+						OrderType: 0, OrderSubtype: 0,
+						Datetime:       "1779717951",
+						AmountStr:      "0.00028416",
+						AmountTraded:   "0",
+						AmountAtCreate: "0.00028416",
+						PriceStr:       "77400.00",
+					},
+				}}, nil)
 
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "103").Return(client.OrderStatus{
-				ID:      "103",
-				Type:    "0",
-				Subtype: mappers.OrderSubtypeLimit,
-				Market:  "BTC/USD",
-				Status:  mappers.OrderStatusCanceled,
-			}, nil)
-
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
 			Expect(resp.Orders[0].Status).To(Equal(models.ORDER_STATUS_CANCELLED))
-
-			var state ordersState
-			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).ToNot(HaveKey("103"))
 		})
 
-		It("evicts long-lived tracked orders past orderRetentionMax with metadata flag", func(ctx SpecContext) {
-			old := time.Now().UTC().Add(-orderRetentionMax - time.Minute)
-			initial := ordersState{TrackedOrders: map[string]trackedOrder{
-				"200": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: old,
-					LimitPrice: "60000.00"},
-			}}
-			rawState, _ := json.Marshal(initial)
+		It("handles scientific notation price (7.74E+4 = 77400)", func(ctx SpecContext) {
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event: "order_created",
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("1003"), IDStr: "1003",
+						OrderType: 0, OrderSubtype: 0,
+						Datetime:       "1779709892",
+						AmountStr:      "0.00028416",
+						AmountTraded:   "0",
+						AmountAtCreate: "0.00028416",
+						PriceStr:       "7.74E+4",
+					},
+				}}, nil)
 
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{
-				{ID: "200", Type: "0", Price: "60000.00", Amount: "0.50000000", CurrencyPair: "btcusd"},
-			}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "200").Return(client.OrderStatus{
-				ID:      "200",
-				Type:    "0",
-				Subtype: mappers.OrderSubtypeLimit,
-				Market:  "BTC/USD",
-				Status:  mappers.OrderStatusOpen,
-			}, nil)
-
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.Orders).To(HaveLen(1))
-			Expect(resp.Orders[0].Metadata[mappers.MetadataKeyRetentionExpired]).To(Equal("true"))
+			// 7.74E+4 = 77400.00 → 7740000 at quotePrec=2
+			Expect(resp.Orders[0].LimitPrice.Int64()).To(Equal(int64(7740000)))
+		})
+
+		It("advances the since_id cursor (by URL-symbol key) and passes slash market on next call", func(ctx SpecContext) {
+			const eventID = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event:   "order_created",
+					EventID: eventID,
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("2000"), IDStr: "2000",
+						OrderType: 0, OrderSubtype: 0,
+						Datetime:       "1779709892",
+						AmountStr:      "0.5",
+						AmountTraded:   "0",
+						AmountAtCreate: "0.5",
+						PriceStr:       "60000.00",
+					},
+				}}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
+			Expect(err).ToNot(HaveOccurred())
 
 			var state ordersState
 			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).ToNot(HaveKey("200"))
+			// State key is URL symbol; value is the MarketEventID.
+			Expect(state.LastSeenEventIDPerMarket["btcusd"]).To(Equal(eventID))
+
+			// Second call: since_id=eventID passed to "BTC/USD" slash market.
+			expectedSinceID := eventID
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", &expectedSinceID).
+				Return([]client.AccountOrderDataEvent{}, nil)
+
+			_, err = plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+				State:       resp.NewState,
+			})
+			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("does not poison the cycle when one order_status call fails", func(ctx SpecContext) {
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{
-				{ID: "300", Type: "0", Price: "1.00", Amount: "1.00000000", CurrencyPair: "btcusd"},
-				{ID: "301", Type: "0", Price: "1.00", Amount: "1.00000000", CurrencyPair: "btcusd"},
-			}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "300").Return(client.OrderStatus{}, errors.New("transient"))
-			m.EXPECT().GetOrderStatus(gomock.Any(), "301").Return(client.OrderStatus{
-				ID:      "301",
-				Type:    "0",
-				Subtype: mappers.OrderSubtypeLimit,
-				Market:  "BTC/USD",
-				Status:  mappers.OrderStatusOpen,
-			}, nil)
+		It("tracks the last EventID across multiple events in one batch", func(ctx SpecContext) {
+			const firstEventID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			const lastEventID = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{
+					{
+						Event:   "order_created",
+						EventID: firstEventID,
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("100"), IDStr: "100",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime: "1779709892", AmountStr: "0.5",
+							AmountTraded: "0", AmountAtCreate: "0.5", PriceStr: "60000.00",
+						},
+					},
+					{
+						Event:   "order_deleted",
+						EventID: "cccccccccccccccccccccccccccccccc",
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("100"), IDStr: "100",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime: "1779717950", AmountStr: "0",
+							AmountTraded: "0.5", AmountAtCreate: "0.5", PriceStr: "60000.00",
+						},
+					},
+					{
+						Event:   "order_created",
+						EventID: lastEventID,
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("200"), IDStr: "200",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime: "1779717960", AmountStr: "1.0",
+							AmountTraded: "0", AmountAtCreate: "1.0", PriceStr: "60000.00",
+						},
+					},
+				}, nil)
 
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets([]string{"btcusd"}),
+			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.Orders).To(HaveLen(1))
-			Expect(resp.Orders[0].Reference).To(Equal("301"))
+			Expect(resp.Orders).To(HaveLen(3))
 
 			var state ordersState
 			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).To(HaveKey("300"))
-			Expect(state.TrackedOrders).To(HaveKey("301"))
-		})
-
-		It("evicts retention-expired entries when order_status fails so they do not loop forever", func(ctx SpecContext) {
-			// A stale ID past the 30-day window: API will keep failing
-			// the order_status call, so the cleanup path must run even
-			// on error or the entry leaks (unbounded state + permanent
-			// error log spam).
-			old := time.Now().UTC().Add(-orderRetentionMax - time.Minute)
-			initial := ordersState{TrackedOrders: map[string]trackedOrder{
-				"500": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: old, LimitPrice: "60000.00"},
-			}}
-			rawState, _ := json.Marshal(initial)
-
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{
-				{ID: "500", Type: "0", Price: "60000.00", Amount: "0.5", CurrencyPair: "btcusd"},
-			}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "500").
-				Return(client.OrderStatus{}, errors.New("order not found"))
-
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.Orders).To(BeEmpty())
-
-			var state ordersState
-			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
-			Expect(state.TrackedOrders).ToNot(HaveKey("500"), "retention-expired entry must be evicted on error")
-		})
-
-		It("handles MARKET subtype where the order never appeared in open_orders/", func(ctx SpecContext) {
-			// MARKET orders that fully fill within one cycle bypass
-			// open_orders/. The orchestrator must still emit a sensible
-			// PSPOrder when the order_status reply lands (e.g. via the
-			// trailing-poll path of a previously-tracked order). Here
-			// we drive that with a state that already tracks the ID
-			// (LimitPrice empty per MAPPINGS §3.4.1).
-			initial := ordersState{TrackedOrders: map[string]trackedOrder{
-				"400": {LastStatus: mappers.OrderStatusOpen, FirstSeenAt: time.Now().UTC()},
-			}}
-			rawState, _ := json.Marshal(initial)
-
-			m.EXPECT().GetOpenOrders(gomock.Any()).Return([]client.OpenOrder{}, nil)
-			m.EXPECT().GetOrderStatus(gomock.Any(), "400").Return(client.OrderStatus{
-				ID:      "400",
-				Type:    "0",
-				Subtype: mappers.OrderSubtypeMarket,
-				Market:  "BTC/USD",
-				Status:  mappers.OrderStatusFinished,
-				Transactions: []client.OrderTransaction{{
-					TID: 5, Price: "60000.00", Fee: "15.00",
-					CurrencyAmounts: map[string]string{"btc": "0.5", "usd": "30000.00"},
-				}},
-			}, nil)
-
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{State: rawState})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.Orders).To(HaveLen(1))
-			Expect(resp.Orders[0].Type).To(Equal(models.ORDER_TYPE_MARKET))
-			Expect(resp.Orders[0].TimeInForce).To(Equal(models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL))
-			Expect(resp.Orders[0].LimitPrice).To(BeNil(), "MARKET order should not have a LimitPrice")
+			// Only the last EventID in the batch is kept as the cursor.
+			Expect(state.LastSeenEventIDPerMarket["btcusd"]).To(Equal(lastEventID))
 		})
 	})
 })

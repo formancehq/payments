@@ -6,45 +6,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func TestOrderSubtypeToType(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		in   string
-		want models.OrderType
-	}{
-		{OrderSubtypeLimit, models.ORDER_TYPE_LIMIT},
-		{OrderSubtypeMarket, models.ORDER_TYPE_MARKET},
-		{OrderSubtypeInstant, models.ORDER_TYPE_MARKET},
-		{OrderSubtypeStopLimit, models.ORDER_TYPE_STOP_LIMIT},
-		{"", models.ORDER_TYPE_UNKNOWN},
-		{"FUTURE_SUBTYPE", models.ORDER_TYPE_UNKNOWN},
-	}
-	for _, tc := range cases {
-		if got := OrderSubtypeToType(tc.in); got != tc.want {
-			t.Errorf("OrderSubtypeToType(%q) = %v, want %v", tc.in, got, tc.want)
-		}
-	}
-}
-
-func TestOrderSubtypeToTIF(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		in   string
-		want models.TimeInForce
-	}{
-		{OrderSubtypeMarket, models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL},
-		{OrderSubtypeInstant, models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL},
-		{OrderSubtypeLimit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
-		{OrderSubtypeStopLimit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
-		{"", models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
-	}
-	for _, tc := range cases {
-		if got := OrderSubtypeToTIF(tc.in); got != tc.want {
-			t.Errorf("OrderSubtypeToTIF(%q) = %v, want %v", tc.in, got, tc.want)
-		}
-	}
-}
-
 func TestWithdrawalRequestTypeToScheme(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -107,9 +68,9 @@ func TestCryptoDepositStatusToPaymentStatus(t *testing.T) {
 func TestTransactionTypeToPaymentType(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		txType   string
-		want     models.PaymentType
-		wantOk   bool
+		txType    string
+		want      models.PaymentType
+		wantOk    bool
 		wantKnown bool
 	}{
 		{TxTypeDeposit, models.PAYMENT_TYPE_PAYIN, true, true},
@@ -143,60 +104,79 @@ func TestTransactionTypeToPaymentType(t *testing.T) {
 	}
 }
 
-func TestOrderStatusToPSPStatus(t *testing.T) {
+func TestOrderSubtypeToType(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name      string
-		raw       string
-		fillCount int
-		want      models.OrderStatus
+		subtype int
+		want    models.OrderType
 	}{
-		{"in queue", OrderStatusInQueue, 0, models.ORDER_STATUS_PENDING},
-		{"open, no fills", OrderStatusOpen, 0, models.ORDER_STATUS_OPEN},
-		{"open, partial fills", OrderStatusOpen, 1, models.ORDER_STATUS_PARTIALLY_FILLED},
-		{"finished", OrderStatusFinished, 3, models.ORDER_STATUS_FILLED},
-		{"canceled", OrderStatusCanceled, 1, models.ORDER_STATUS_CANCELLED},
-		{"cancel pending", OrderStatusCancelPending, 0, models.ORDER_STATUS_CANCELLED},
-		{"unknown defaults to open + Warn", "Some New Bitstamp State", 0, models.ORDER_STATUS_OPEN},
+		{OrderSubtypeLimit, models.ORDER_TYPE_LIMIT},
+		{OrderSubtypeInstant, models.ORDER_TYPE_MARKET},
+		{OrderSubtypeMarket, models.ORDER_TYPE_MARKET},
+		{OrderSubtypeDaily, models.ORDER_TYPE_LIMIT},
+		{OrderSubtypeIOC, models.ORDER_TYPE_LIMIT},
+		{OrderSubtypeMOC, models.ORDER_TYPE_LIMIT_MAKER},
+		{OrderSubtypeFOK, models.ORDER_TYPE_LIMIT},
+		{OrderSubtypeCashSell, models.ORDER_TYPE_MARKET},
+		{OrderSubtypeGTD, models.ORDER_TYPE_LIMIT},
+		{OrderSubtypeStopLoss, models.ORDER_TYPE_STOP},
+		{OrderSubtypeTakeProfit, models.ORDER_TYPE_TAKE_PROFIT},
+		{OrderSubtypeStopLossLimit, models.ORDER_TYPE_STOP_LIMIT},
+		{OrderSubtypeTakeProfitLimit, models.ORDER_TYPE_TAKE_PROFIT_LIMIT},
+		{OrderSubtypeTrailingStopLoss, models.ORDER_TYPE_TRAILING_STOP},
+		{OrderSubtypeTrailingTakeProfit, models.ORDER_TYPE_TAKE_PROFIT},
+		{OrderSubtypeStopLossLimit2, models.ORDER_TYPE_STOP_LIMIT},
+		{OrderSubtypeTrailingTakeProfitLimit, models.ORDER_TYPE_TAKE_PROFIT_LIMIT},
+		{99, models.ORDER_TYPE_LIMIT},
 	}
 	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			if got := OrderStatusToPSPStatus(tc.raw, tc.fillCount); got != tc.want {
-				t.Errorf("got %v, want %v", got, tc.want)
-			}
-		})
+		if got := OrderSubtypeToType(tc.subtype); got != tc.want {
+			t.Errorf("OrderSubtypeToType(%d) = %v, want %v", tc.subtype, got, tc.want)
+		}
 	}
 }
 
-func TestNoBitstampExpiredStatus(t *testing.T) {
+func TestOrderSubtypeToTIF(t *testing.T) {
 	t.Parallel()
-	// Bitstamp does not emit "Expired" — the connector must never
-	// coerce an unknown status to ORDER_STATUS_EXPIRED.
-	if OrderStatusToPSPStatus("Expired", 0) == models.ORDER_STATUS_EXPIRED {
-		t.Error("ORDER_STATUS_EXPIRED must not be reachable from any Bitstamp status string")
+	cases := []struct {
+		subtype int
+		want    models.TimeInForce
+	}{
+		{OrderSubtypeLimit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeInstant, models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL},
+		{OrderSubtypeMarket, models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL},
+		{OrderSubtypeDaily, models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME},
+		{OrderSubtypeIOC, models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL},
+		{OrderSubtypeMOC, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeFOK, models.TIME_IN_FORCE_FILL_OR_KILL},
+		{OrderSubtypeCashSell, models.TIME_IN_FORCE_IMMEDIATE_OR_CANCEL},
+		{OrderSubtypeGTD, models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME},
+		{OrderSubtypeStopLoss, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeTakeProfit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeStopLossLimit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeTakeProfitLimit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeTrailingStopLoss, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeTrailingTakeProfit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeStopLossLimit2, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{OrderSubtypeTrailingTakeProfitLimit, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
+		{99, models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED},
 	}
-	if IsKnownOrderStatus("Expired") {
-		t.Error("Expired should not be in the documented Bitstamp set")
+	for _, tc := range cases {
+		if got := OrderSubtypeToTIF(tc.subtype); got != tc.want {
+			t.Errorf("OrderSubtypeToTIF(%d) = %v, want %v", tc.subtype, got, tc.want)
+		}
 	}
 }
 
 func TestOrderTypeDirection(t *testing.T) {
 	t.Parallel()
-	if OrderTypeStringToDirection("0") != models.ORDER_DIRECTION_BUY {
-		t.Error("0 should map to BUY")
-	}
-	if OrderTypeStringToDirection("1") != models.ORDER_DIRECTION_SELL {
-		t.Error("1 should map to SELL")
-	}
-	if OrderTypeStringToDirection("99") != models.ORDER_DIRECTION_UNKNOWN {
-		t.Error("unknown should map to UNKNOWN")
-	}
 	if OrderTypeIntToDirection(0) != models.ORDER_DIRECTION_BUY {
 		t.Error("int 0 should map to BUY")
 	}
 	if OrderTypeIntToDirection(1) != models.ORDER_DIRECTION_SELL {
 		t.Error("int 1 should map to SELL")
+	}
+	if OrderTypeIntToDirection(99) != models.ORDER_DIRECTION_UNKNOWN {
+		t.Error("unknown should map to UNKNOWN")
 	}
 }

@@ -60,3 +60,21 @@ func IsDerivativesUnsupportedError(err error) bool {
 	var d *DerivativesUnsupportedError
 	return errors.As(err, &d)
 }
+
+// NotFoundError is returned by client methods when the server responds
+// with HTTP 404. For account_order_data this typically means the market
+// is not available for the authenticated account.
+type NotFoundError struct {
+	Endpoint string
+	Message  string
+}
+
+func (e *NotFoundError) Error() string {
+	return "bitstamp: not found on " + e.Endpoint + ": " + e.Message
+}
+
+// IsNotFoundError reports whether err is (or wraps) a NotFoundError.
+func IsNotFoundError(err error) bool {
+	var n *NotFoundError
+	return errors.As(err, &n)
+}
