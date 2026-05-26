@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -62,8 +63,8 @@ func UserTransactionToPSPConversion(currencies map[string]int, tx client.UserTra
 		SourceAmount:                source.Amount,
 		DestinationAmount:           destination.Amount,
 		Status:                      models.CONVERSION_STATUS_COMPLETED,
-		SourceAccountReference:      strPtr(source.Symbol),
-		DestinationAccountReference: strPtr(destination.Symbol),
+		SourceAccountReference:      pointer.For(source.Symbol),
+		DestinationAccountReference: pointer.For(destination.Symbol),
 		Metadata:                    ConversionMetadata(tx, currencyPair, pairRate),
 		Raw:                         raw,
 	}

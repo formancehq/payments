@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -114,9 +115,9 @@ func AccountOrderDataEventToPSPOrder(currencies map[string]int, market string, e
 		QuoteAsset:                  quoteAsset,
 		PriceAsset:                  &quoteAsset,
 		TimeInForce:                 tif,
-		SourceAccountReference:      strPtr(src),
-		DestinationAccountReference: strPtr(dst),
-		Metadata:                    accountOrderEventMetadata(event, pair),
+		SourceAccountReference:      pointer.For(src),
+		DestinationAccountReference: pointer.For(dst),
+		Metadata:                    accountOrderEventMetadata(event, market, pair),
 		Raw:                         raw,
 	}, nil
 }
@@ -161,17 +162,18 @@ func parseUnixMicrosecondsStr(s string) time.Time {
 	return time.Unix(us/1_000_000, (us%1_000_000)*1_000).UTC()
 }
 
-func accountOrderEventMetadata(event client.AccountOrderDataEvent, pair string) map[string]string {
+func accountOrderEventMetadata(
+	event client.AccountOrderDataEvent,
+	marketType string,
+	pair string,
+) map[string]string {
 	m := map[string]string{
+		MetadataKeyMarketType:   marketType,
 		MetadataKeyCurrencyPair: pair,
 	}
-	setIfNonEmpty(m, MetadataKeyOrderDatetime, event.Data.Datetime)
+	setIfNonEmpty(m, MetadataKeyOrderEventType, event.Event)
+	setIfNonEmpty(m, MetadataKeyOrderEventID, event.EventID)
+	setIfNonEmpty(m, MetadataKeyOrderDatetimeSecs, event.Data.Datetime)
+	setIfNonEmpty(m, MetadataKeyOrderDatetimeMicros, event.Data.Microtimestamp)
 	return m
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

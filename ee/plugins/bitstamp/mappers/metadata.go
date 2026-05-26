@@ -14,8 +14,8 @@ const MetadataPrefix = "com.bitstamp.spec/"
 // Metadata key catalogue. Typed constants so refactors are
 // grep-friendly and tests can assert exact key names.
 const (
-	MetadataKeyType             = MetadataPrefix + "type"
-	MetadataKeyFee              = MetadataPrefix + "fee"
+	MetadataKeyType          = MetadataPrefix + "type"
+	MetadataKeyFee           = MetadataPrefix + "fee"
 	MetadataKeyOrderID       = MetadataPrefix + "order_id"
 	MetadataKeyCurrencyPair  = MetadataPrefix + "currency_pair"
 	MetadataKeyClientOrderID = MetadataPrefix + "client_order_id"
@@ -39,7 +39,11 @@ const (
 	MetadataKeyFeeTierTaker    = MetadataPrefix + "fee_tier_taker"
 	MetadataKeyMinOrderValue   = MetadataPrefix + "min_order_value"
 	MetadataKeyMarketType      = MetadataPrefix + "market_type"
-	MetadataKeyOrderDatetime   = MetadataPrefix + "order_status_datetime"
+
+	MetadataKeyOrderEventType      = MetadataPrefix + "order_event_type"
+	MetadataKeyOrderEventID        = MetadataPrefix + "order_event_id"
+	MetadataKeyOrderDatetimeSecs   = MetadataPrefix + "order_status_datetime_s"
+	MetadataKeyOrderDatetimeMicros = MetadataPrefix + "order_status_datetime_ms"
 )
 
 const (
