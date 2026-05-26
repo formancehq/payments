@@ -36,18 +36,35 @@ func SplitCurrencyPair(pair string) (base, quote string, err error) {
 	}
 }
 
-// accountReferencesForDirection: BUY → (quote, base), SELL → (base, quote).
-func accountReferencesForDirection(d models.OrderDirection, base, quote string) (string, string) {
+// accountReferencesForDirection returns the source/destination account
+// references for the given direction, filtered to only the side whose
+// currency matches accountReference. The other side is nil.
+// BUY → src=quote, dst=base; SELL → src=base, dst=quote.
+func accountReferencesForDirection(d models.OrderDirection, base, quote, accountReference string) (srcRef *string, dstRef *string) {
+	var src, dst string
 	if d == models.ORDER_DIRECTION_SELL {
-		return base, quote
+		src, dst = base, quote
+	} else {
+		src, dst = quote, base
 	}
-	return quote, base
+	if src == accountReference {
+		srcRef = pointer.For(src)
+	}
+	if dst == accountReference {
+		dstRef = pointer.For(dst)
+	}
+	return srcRef, dstRef
 }
 
 // AccountOrderDataEventToPSPOrder maps one account_order_data event to a
 // PSPOrder. The market parameter is the lowercase pair symbol (e.g. "btcusd")
 // and must match the value used to query the endpoint.
-func AccountOrderDataEventToPSPOrder(currencies map[string]int, market string, event client.AccountOrderDataEvent) (*models.PSPOrder, error) {
+func AccountOrderDataEventToPSPOrder(
+	currencies map[string]int,
+	accountReference string,
+	market string,
+	event client.AccountOrderDataEvent,
+) (*models.PSPOrder, error) {
 	pair := strings.ToLower(strings.TrimSpace(market))
 	base, quote, err := SplitCurrencyPair(pair)
 	if err != nil {
@@ -92,7 +109,11 @@ func AccountOrderDataEventToPSPOrder(currencies map[string]int, market string, e
 	status := AccountOrderEventToStatus(event.Event, event.Data.AmountStr, event.Data.AmountTraded)
 	createdAt := parseUnixMicrosecondsStr(event.Data.Microtimestamp)
 
-	src, dst := accountReferencesForDirection(direction, base, quote)
+	srcCurrency, dstCurrency := quote, base
+	if direction == models.ORDER_DIRECTION_SELL {
+		srcCurrency, dstCurrency = base, quote
+	}
+	srcAccRef, dstAccRef := accountReferencesForDirection(direction, base, quote, accountReference)
 	quoteAsset := FormatAsset(currencies, quote)
 
 	raw, err := json.Marshal(event)
@@ -106,8 +127,8 @@ func AccountOrderDataEventToPSPOrder(currencies map[string]int, market string, e
 		Direction:                   direction,
 		Type:                        orderType,
 		Status:                      status,
-		SourceAsset:                 FormatAsset(currencies, src),
-		DestinationAsset:            FormatAsset(currencies, dst),
+		SourceAsset:                 FormatAsset(currencies, srcCurrency),
+		DestinationAsset:            FormatAsset(currencies, dstCurrency),
 		BaseQuantityOrdered:         baseQuantityOrdered,
 		BaseQuantityFilled:          baseQuantityFilled,
 		LimitPrice:                  limitPrice,
@@ -115,8 +136,8 @@ func AccountOrderDataEventToPSPOrder(currencies map[string]int, market string, e
 		QuoteAsset:                  quoteAsset,
 		PriceAsset:                  &quoteAsset,
 		TimeInForce:                 tif,
-		SourceAccountReference:      pointer.For(src),
-		DestinationAccountReference: pointer.For(dst),
+		SourceAccountReference:      srcAccRef,
+		DestinationAccountReference: dstAccRef,
 		Metadata:                    accountOrderEventMetadata(event, market, pair),
 		Raw:                         raw,
 	}, nil

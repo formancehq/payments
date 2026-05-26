@@ -44,12 +44,14 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 	})
 
 	// fromPayloadWithMarkets builds a FetchNextOrdersRequest.FromPayload
-	// containing a PSPAccount whose metadata lists the given URL-symbol markets.
+	// containing a PSPAccount whose metadata lists the given markets.
+	// The engine unwraps its own envelope before calling the plugin, so
+	// FromPayload is just the raw PSPAccount JSON.
 	fromPayloadWithMarkets := func(markets []string) json.RawMessage {
-		raw, _ := json.Marshal(markets)
+		marketsRaw, _ := json.Marshal(markets)
 		account := models.PSPAccount{
 			Reference: "BTC",
-			Metadata:  map[string]string{mappers.MetadataKeyTradableMarkets: string(raw)},
+			Metadata:  map[string]string{mappers.MetadataKeyTradableMarkets: string(marketsRaw)},
 		}
 		payload, _ := json.Marshal(account)
 		return payload

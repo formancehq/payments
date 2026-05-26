@@ -99,10 +99,7 @@ func buildAccountMetadata(enrich AccountEnrichment) (map[string]string, error) {
 	if len(enrich.TradableMarkets) > 0 {
 		symbols := make([]string, 0, len(enrich.TradableMarkets))
 		for _, m := range enrich.TradableMarkets {
-			s := strings.TrimSpace(m.URLSymbol)
-			if s == "" {
-				s = strings.TrimSpace(m.Name)
-			}
+			s := strings.TrimSpace(m.Name)
 			if s != "" {
 				symbols = append(symbols, s)
 			}

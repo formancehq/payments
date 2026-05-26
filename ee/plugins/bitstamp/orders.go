@@ -26,7 +26,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		}
 	}
 
-	markets, err := tradeableMarketsFromPayload(req.FromPayload)
+	accountReference, markets, err := tradeableMarketsFromPayload(req.FromPayload)
 	if err != nil {
 		return models.FetchNextOrdersResponse{}, err
 	}
@@ -40,17 +40,17 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}
 
 	var orders []models.PSPOrder
-	for _, urlSymbol := range markets {
-		// Metadata stores URL symbols ("xdceur"); account_order_data expects
-		// "XDC/EUR" format. State is keyed by URL symbol for compatibility.
-		base, quote, err := mappers.SplitCurrencyPair(urlSymbol)
+	for _, marketName := range markets {
+		// Markets in the metadata are stored as URL symbols (e.g. "btcusd").
+		// The API and mapper both expect slash format (e.g. "BTC/USD").
+		base, quote, err := mappers.SplitCurrencyPair(marketName)
 		if err != nil {
-			p.logger.WithField("market", urlSymbol).Errorf("failed to parse market symbol: %v", err)
+			p.logger.WithField("market", marketName).Errorf("cannot parse market symbol, skipping: %v", err)
 			continue
 		}
 		slashMarket := base + "/" + quote
 
-		sinceID := state.LastSeenEventIDPerMarket[urlSymbol]
+		sinceID := state.LastSeenEventIDPerMarket[marketName]
 		var sinceIDPtr *string
 		if sinceID != "" {
 			sinceIDPtr = &sinceID
@@ -68,20 +68,20 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 		var lastEventID string
 		for _, event := range events {
-			order, err := mappers.AccountOrderDataEventToPSPOrder(currencies, slashMarket, event)
+			order, err := mappers.AccountOrderDataEventToPSPOrder(currencies, accountReference, slashMarket, event)
 			if err != nil {
-				p.logger.WithField("market", slashMarket).WithField("eventID", event.EventID).
+				p.logger.WithField("market", marketName).WithField("eventID", event.EventID).
 					Errorf("failed to map order event: %v", err)
 				continue
 			}
 			orders = append(orders, *order)
-			if event.EventID != "" {
+			if isValidMarketEventID(event.EventID) {
 				lastEventID = event.EventID
 			}
 		}
 
 		if lastEventID != "" {
-			state.LastSeenEventIDPerMarket[urlSymbol] = lastEventID
+			state.LastSeenEventIDPerMarket[marketName] = lastEventID
 		}
 	}
 
@@ -97,23 +97,41 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}, nil
 }
 
-// tradeableMarketsFromPayload extracts the tradeable market symbols from
-// the parent account's metadata (com.bitstamp.spec/tradable_markets).
-func tradeableMarketsFromPayload(payload json.RawMessage) ([]string, error) {
+// tradeableMarketsFromPayload extracts the account reference and tradeable
+// market symbols from the PSPAccount JSON passed as FromPayload. The engine
+// unwraps its own {"id":…,"payload":…} envelope before invoking the plugin,
+// so this function receives the raw PSPAccount JSON directly.
+func tradeableMarketsFromPayload(payload json.RawMessage) (string, []string, error) {
 	if len(payload) == 0 {
-		return nil, nil
+		return "", nil, nil
 	}
 	var account models.PSPAccount
 	if err := json.Unmarshal(payload, &account); err != nil {
-		return nil, fmt.Errorf("unmarshal from payload: %w", err)
+		return "", nil, fmt.Errorf("unmarshal from payload: %w", err)
 	}
 	raw, ok := account.Metadata[mappers.MetadataKeyTradableMarkets]
 	if !ok || raw == "" {
-		return nil, nil
+		return account.Reference, nil, nil
 	}
 	var markets []string
 	if err := json.Unmarshal([]byte(raw), &markets); err != nil {
-		return nil, fmt.Errorf("unmarshal tradeable markets: %w", err)
+		return "", nil, fmt.Errorf("unmarshal tradeable markets: %w", err)
 	}
-	return markets, nil
+	return account.Reference, markets, nil
+}
+
+// isValidMarketEventID reports whether s is a 32-character lowercase hex
+// string as required by Bitstamp's since_id parameter. The API rejects
+// anything else with a 400, even though its own responses sometimes return
+// shorter event_id values for certain markets.
+func isValidMarketEventID(s string) bool {
+	if len(s) != 32 {
+		return false
+	}
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
+			return false
+		}
+	}
+	return true
 }

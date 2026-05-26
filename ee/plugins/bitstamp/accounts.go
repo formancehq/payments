@@ -75,7 +75,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		if account == nil {
 			continue
 		}
-		state.AccountCurrenciesImportedAt[symbol] = time.Now().String()
+		state.AccountCurrenciesImportedAt[symbol] = time.Now().UTC().Format(time.RFC3339)
 		accounts = append(accounts, *account)
 	}
 

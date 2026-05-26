@@ -37,13 +37,54 @@ func TestSplitCurrencyPair(t *testing.T) {
 
 func TestAccountReferencesForDirection(t *testing.T) {
 	t.Parallel()
-	src, dst := accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD")
-	if src != "USD" || dst != "BTC" {
-		t.Errorf("BUY: got (%s, %s), want (USD, BTC)", src, dst)
+
+	deref := func(p *string) string {
+		if p == nil {
+			return "<nil>"
+		}
+		return *p
 	}
-	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_SELL, "BTC", "USD")
-	if src != "BTC" || dst != "USD" {
-		t.Errorf("SELL: got (%s, %s), want (BTC, USD)", src, dst)
+
+	// BUY: src=quote(USD), dst=base(BTC). accountReference=USD → src non-nil, dst nil.
+	src, dst := accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD", "USD")
+	if src == nil || *src != "USD" {
+		t.Errorf("BUY/USD: src = %s, want USD", deref(src))
+	}
+	if dst != nil {
+		t.Errorf("BUY/USD: dst = %s, want nil", deref(dst))
+	}
+
+	// BUY: accountReference=BTC → src nil, dst non-nil.
+	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD", "BTC")
+	if src != nil {
+		t.Errorf("BUY/BTC: src = %s, want nil", deref(src))
+	}
+	if dst == nil || *dst != "BTC" {
+		t.Errorf("BUY/BTC: dst = %s, want BTC", deref(dst))
+	}
+
+	// SELL: src=base(BTC), dst=quote(USD). accountReference=BTC → src non-nil, dst nil.
+	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_SELL, "BTC", "USD", "BTC")
+	if src == nil || *src != "BTC" {
+		t.Errorf("SELL/BTC: src = %s, want BTC", deref(src))
+	}
+	if dst != nil {
+		t.Errorf("SELL/BTC: dst = %s, want nil", deref(dst))
+	}
+
+	// SELL: accountReference=USD → src nil, dst non-nil.
+	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_SELL, "BTC", "USD", "USD")
+	if src != nil {
+		t.Errorf("SELL/USD: src = %s, want nil", deref(src))
+	}
+	if dst == nil || *dst != "USD" {
+		t.Errorf("SELL/USD: dst = %s, want USD", deref(dst))
+	}
+
+	// accountReference matches neither → both nil.
+	src, dst = accountReferencesForDirection(models.ORDER_DIRECTION_BUY, "BTC", "USD", "ETH")
+	if src != nil || dst != nil {
+		t.Errorf("BUY/ETH: got (%s, %s), want (nil, nil)", deref(src), deref(dst))
 	}
 }
 
