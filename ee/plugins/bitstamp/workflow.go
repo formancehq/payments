@@ -10,9 +10,10 @@ import "github.com/formancehq/payments/internal/models"
 //	fetch_payments     (periodic root)
 //	fetch_conversions  (periodic root)
 //
-// Payments/orders/conversions are independent roots — Bitstamp
+// Payments/balances/conversions are independent roots — Bitstamp
 // endpoints are account-global at the API-key level so no parent
 // context is needed.
+// Orders derives the markets to search from the accounts metadata
 func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{
 		{
