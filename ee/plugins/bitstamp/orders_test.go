@@ -106,7 +106,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{{
 					Event:   "order_created",
-					EventID: "evt-1",
+					EventID: "00000000-0000-0000-0000-000000000001",
 					Data: client.AccountOrderDataItem{
 						ID: json.Number("1000"), IDStr: "1000",
 						OrderType: 0, OrderSubtype: 0,
@@ -146,7 +146,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{{
 					Event:   "order_deleted",
-					EventID: "evt-2",
+					EventID: "00000000-0000-0000-0000-000000000002",
 					Data: client.AccountOrderDataItem{
 						ID: json.Number("1001"), IDStr: "1001",
 						OrderType: 1, OrderSubtype: 0,
@@ -179,7 +179,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{{
 					Event:   "order_deleted",
-					EventID: "evt-3",
+					EventID: "00000000-0000-0000-0000-000000000003",
 					Data: client.AccountOrderDataItem{
 						ID: json.Number("1002"), IDStr: "1002",
 						OrderType: 0, OrderSubtype: 0,
@@ -204,7 +204,8 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 		It("handles scientific notation price (7.74E+4 = 77400)", func(ctx SpecContext) {
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{{
-					Event: "order_created",
+					Event:   "order_created",
+					EventID: "00000000-0000-0000-0000-000000000004",
 					Data: client.AccountOrderDataItem{
 						ID: json.Number("1003"), IDStr: "1003",
 						OrderType: 0, OrderSubtype: 0,

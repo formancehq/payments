@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -64,21 +63,7 @@ func AccountOrderDataEventToPSPOrder(
 		return nil, fmt.Errorf("order %s: unknown direction %d", event.Data.IDStr, event.Data.OrderType)
 	}
 
-	// Only emit orders that belong to the account making the request.
-	// BUY spends the quote currency; SELL spends the base currency.
-	// this is to avoid duplication where another account will import the same order
-	var srcCurrency, dstCurrency string
-	if direction == models.ORDER_DIRECTION_BUY {
-		if quote != accountReference {
-			return nil, nil
-		}
-		srcCurrency, dstCurrency = quote, base
-	} else {
-		if base != accountReference {
-			return nil, nil
-		}
-		srcCurrency, dstCurrency = base, quote
-	}
+	srcAccount, dstAccount, srcCurrency, dstCurrency := ResolveOrderAccounts(direction, base, quote, accountReference)
 
 	orderType := OrderSubtypeToType(event.Data.OrderSubtype)
 	tif := OrderSubtypeToTIF(event.Data.OrderSubtype)
@@ -126,11 +111,35 @@ func AccountOrderDataEventToPSPOrder(
 		QuoteAsset:                  quoteAsset,
 		PriceAsset:                  &quoteAsset,
 		TimeInForce:                 tif,
-		SourceAccountReference:      pointer.For(accountReference),
-		DestinationAccountReference: nil,
+		SourceAccountReference:      srcAccount,
+		DestinationAccountReference: dstAccount,
 		Metadata:                    accountOrderEventMetadata(event, market, pair),
 		Raw:                         raw,
 	}, nil
+}
+
+// ResolveOrderAccounts derives the four account/currency variables from the
+// trade direction. BUY spends the quote currency; SELL spends the base.
+// accountReference is placed on the source side when it is the spender and
+// on the destination side otherwise.
+func ResolveOrderAccounts(direction models.OrderDirection, base, quote, accountReference string) (srcAccount, dstAccount *string, srcCurrency, dstCurrency string) {
+	ref := accountReference
+	if direction == models.ORDER_DIRECTION_BUY {
+		srcCurrency, dstCurrency = quote, base
+		if quote == accountReference {
+			srcAccount = &ref
+		} else {
+			dstAccount = &ref
+		}
+	} else {
+		srcCurrency, dstCurrency = base, quote
+		if base == accountReference {
+			srcAccount = &ref
+		} else {
+			dstAccount = &ref
+		}
+	}
+	return
 }
 
 // parsePriceToMinorUnits converts a price string (which may be in scientific

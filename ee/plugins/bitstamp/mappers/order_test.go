@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/internal/models"
 )
 
 func TestSplitCurrencyPair(t *testing.T) {
@@ -36,10 +37,10 @@ func TestSplitCurrencyPair(t *testing.T) {
 	}
 }
 
-// TestAccountOrderFilterAndReference verifies that AccountOrderDataEventToPSPOrder
-// filters orders whose source currency doesn't match accountReference and that
-// only SourceAccountReference is set (DestinationAccountReference is always nil).
-func TestAccountOrderFilterAndReference(t *testing.T) {
+// TestAccountOrderAccountReference verifies that AccountOrderDataEventToPSPOrder
+// always returns an order and routes accountReference to SourceAccountReference
+// when it is the spender, or DestinationAccountReference otherwise.
+func TestAccountOrderAccountReference(t *testing.T) {
 	t.Parallel()
 
 	currencies := map[string]int{"BTC": 8, "USD": 2}
@@ -47,7 +48,7 @@ func TestAccountOrderFilterAndReference(t *testing.T) {
 	makeEvent := func(orderType int) client.AccountOrderDataEvent {
 		return client.AccountOrderDataEvent{
 			Event:   "order_created",
-			EventID: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+			EventID: "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4",
 			Data: client.AccountOrderDataItem{
 				IDStr:          "1000",
 				OrderType:      orderType,
@@ -61,7 +62,7 @@ func TestAccountOrderFilterAndReference(t *testing.T) {
 		}
 	}
 
-	// BUY (orderType=0): source is quote (USD). accountReference=USD → keep.
+	// BUY spends quote (USD): accountReference=USD → srcAccount=&USD, dstAccount=nil.
 	order, err := AccountOrderDataEventToPSPOrder(currencies, "USD", "BTC/USD", makeEvent(0))
 	if err != nil {
 		t.Fatalf("BUY/USD: unexpected error: %v", err)
@@ -76,16 +77,22 @@ func TestAccountOrderFilterAndReference(t *testing.T) {
 		t.Errorf("BUY/USD: DestinationAccountReference = %v, want nil", order.DestinationAccountReference)
 	}
 
-	// BUY: accountReference=BTC (the base, not the source) → filter out.
+	// BUY spends quote (USD): accountReference=BTC (the destination) → srcAccount=nil, dstAccount=&BTC.
 	order, err = AccountOrderDataEventToPSPOrder(currencies, "BTC", "BTC/USD", makeEvent(0))
 	if err != nil {
 		t.Fatalf("BUY/BTC: unexpected error: %v", err)
 	}
-	if order != nil {
-		t.Errorf("BUY/BTC: expected nil (filtered), got order %+v", order)
+	if order == nil {
+		t.Fatal("BUY/BTC: expected order, got nil")
+	}
+	if order.SourceAccountReference != nil {
+		t.Errorf("BUY/BTC: SourceAccountReference = %v, want nil", order.SourceAccountReference)
+	}
+	if order.DestinationAccountReference == nil || *order.DestinationAccountReference != "BTC" {
+		t.Errorf("BUY/BTC: DestinationAccountReference = %v, want &BTC", order.DestinationAccountReference)
 	}
 
-	// SELL (orderType=1): source is base (BTC). accountReference=BTC → keep.
+	// SELL spends base (BTC): accountReference=BTC → srcAccount=&BTC, dstAccount=nil.
 	order, err = AccountOrderDataEventToPSPOrder(currencies, "BTC", "BTC/USD", makeEvent(1))
 	if err != nil {
 		t.Fatalf("SELL/BTC: unexpected error: %v", err)
@@ -100,14 +107,86 @@ func TestAccountOrderFilterAndReference(t *testing.T) {
 		t.Errorf("SELL/BTC: DestinationAccountReference = %v, want nil", order.DestinationAccountReference)
 	}
 
-	// SELL: accountReference=USD (the quote, not the source) → filter out.
+	// SELL spends base (BTC): accountReference=USD (the destination) → srcAccount=nil, dstAccount=&USD.
 	order, err = AccountOrderDataEventToPSPOrder(currencies, "USD", "BTC/USD", makeEvent(1))
 	if err != nil {
 		t.Fatalf("SELL/USD: unexpected error: %v", err)
 	}
-	if order != nil {
-		t.Errorf("SELL/USD: expected nil (filtered), got order %+v", order)
+	if order == nil {
+		t.Fatal("SELL/USD: expected order, got nil")
+	}
+	if order.SourceAccountReference != nil {
+		t.Errorf("SELL/USD: SourceAccountReference = %v, want nil", order.SourceAccountReference)
+	}
+	if order.DestinationAccountReference == nil || *order.DestinationAccountReference != "USD" {
+		t.Errorf("SELL/USD: DestinationAccountReference = %v, want &USD", order.DestinationAccountReference)
 	}
 }
 
+func TestResolveOrderAccounts(t *testing.T) {
+	t.Parallel()
 
+	ptrEq := func(p *string, want string) bool { return p != nil && *p == want }
+
+	cases := []struct {
+		name             string
+		direction        models.OrderDirection
+		base, quote, ref string
+		wantSrcAccount   string // "" means expect nil
+		wantDstAccount   string // "" means expect nil
+		wantSrcCurrency  string
+		wantDstCurrency  string
+	}{
+		{
+			name: "BUY ref=quote (spender)",
+			direction: models.ORDER_DIRECTION_BUY, base: "BTC", quote: "USD", ref: "USD",
+			wantSrcAccount: "USD", wantSrcCurrency: "USD", wantDstCurrency: "BTC",
+		},
+		{
+			name: "BUY ref=base (receiver)",
+			direction: models.ORDER_DIRECTION_BUY, base: "BTC", quote: "USD", ref: "BTC",
+			wantDstAccount: "BTC", wantSrcCurrency: "USD", wantDstCurrency: "BTC",
+		},
+		{
+			name: "SELL ref=base (spender)",
+			direction: models.ORDER_DIRECTION_SELL, base: "BTC", quote: "USD", ref: "BTC",
+			wantSrcAccount: "BTC", wantSrcCurrency: "BTC", wantDstCurrency: "USD",
+		},
+		{
+			name: "SELL ref=quote (receiver)",
+			direction: models.ORDER_DIRECTION_SELL, base: "BTC", quote: "USD", ref: "USD",
+			wantDstAccount: "USD", wantSrcCurrency: "BTC", wantDstCurrency: "USD",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			srcAccount, dstAccount, srcCurrency, dstCurrency := ResolveOrderAccounts(tc.direction, tc.base, tc.quote, tc.ref)
+
+			if tc.wantSrcAccount != "" {
+				if !ptrEq(srcAccount, tc.wantSrcAccount) {
+					t.Errorf("srcAccount = %v, want &%s", srcAccount, tc.wantSrcAccount)
+				}
+			} else if srcAccount != nil {
+				t.Errorf("srcAccount = &%s, want nil", *srcAccount)
+			}
+
+			if tc.wantDstAccount != "" {
+				if !ptrEq(dstAccount, tc.wantDstAccount) {
+					t.Errorf("dstAccount = %v, want &%s", dstAccount, tc.wantDstAccount)
+				}
+			} else if dstAccount != nil {
+				t.Errorf("dstAccount = &%s, want nil", *dstAccount)
+			}
+
+			if srcCurrency != tc.wantSrcCurrency {
+				t.Errorf("srcCurrency = %q, want %q", srcCurrency, tc.wantSrcCurrency)
+			}
+			if dstCurrency != tc.wantDstCurrency {
+				t.Errorf("dstCurrency = %q, want %q", dstCurrency, tc.wantDstCurrency)
+			}
+		})
+	}
+}

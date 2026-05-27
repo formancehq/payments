@@ -88,30 +88,10 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 				continue
 			}
 			lastEventID = event.EventID
-
-			// we expect the process related to the source account to import it
-			if order == nil {
-				p.logger.WithField("market", marketName).WithField("eventID", event.EventID).
-					WithField("orderReference", event.Data.IDStr).
-					Debugf("skipping event not matching accountReference: %q", accountReference)
-				continue
-			}
 			orders = append(orders, *order)
 
 			if req.PageSize > 0 && len(orders) >= req.PageSize {
-				if lastEventID != "" {
-					state.LastSeenEventIDPerMarket[marketName] = lastEventID
-				}
-				state.HasMoreCurrentMarket = marketName
-				payload, err := json.Marshal(state)
-				if err != nil {
-					return models.FetchNextOrdersResponse{}, fmt.Errorf("marshal orders state: %w", err)
-				}
-				return models.FetchNextOrdersResponse{
-					Orders:   orders,
-					NewState: payload,
-					HasMore:  true,
-				}, nil
+				break
 			}
 		}
 
