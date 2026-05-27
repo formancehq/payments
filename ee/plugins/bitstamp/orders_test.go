@@ -228,7 +228,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 		})
 
 		It("advances the since_id cursor and passes it on the next call", func(ctx SpecContext) {
-			const eventID = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+			const eventID = "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4"
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{{
 					Event:   "order_created",
@@ -267,9 +267,159 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("truncates orders within a market when the API returns more events than the page size", func(ctx SpecContext) {
+			const firstEventID = "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4"
+			const secondEventID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{
+					{
+						Event:   "order_created",
+						EventID: firstEventID,
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("5000"), IDStr: "5000",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime:       "1779709892",
+							Amount:         json.Number("0.5"),
+							AmountStr:      "0.5",
+							AmountTraded:   "0",
+							AmountAtCreate: "0.5",
+							PriceStr:       "60000.00",
+						},
+					},
+					{
+						Event:   "order_created",
+						EventID: secondEventID,
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("5001"), IDStr: "5001",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime:       "1779709893",
+							Amount:         json.Number("0.5"),
+							AmountStr:      "0.5",
+							AmountTraded:   "0",
+							AmountAtCreate: "0.5",
+							PriceStr:       "60000.00",
+						},
+					},
+				}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				PageSize:    1,
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.Orders).To(HaveLen(1))
+			Expect(resp.Orders[0].Reference).To(Equal("5000"))
+
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.HasMoreCurrentMarket).To(Equal("BTC/USD"))
+			// Cursor must point to the last event included in this page, not the one we didn't return.
+			Expect(state.LastSeenEventIDPerMarket["BTC/USD"]).To(Equal(firstEventID))
+		})
+
+		It("returns HasMore=true and saves HasMoreCurrentMarket when page limit is reached", func(ctx SpecContext) {
+			const eventID = "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4"
+			// BTC/USD returns one order (fills the page), ETH/USD must not be called.
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event:   "order_created",
+					EventID: eventID,
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("3000"), IDStr: "3000",
+						OrderType: 0, OrderSubtype: 0,
+						Datetime:       "1779709892",
+						Amount:         json.Number("0.5"),
+						AmountStr:      "0.5",
+						AmountTraded:   "0",
+						AmountAtCreate: "0.5",
+						PriceStr:       "60000.00",
+					},
+				}}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				PageSize:    1,
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD", "ETH/USD"}),
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.Orders).To(HaveLen(1))
+
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.HasMoreCurrentMarket).To(Equal("BTC/USD"))
+			Expect(state.LastSeenEventIDPerMarket["BTC/USD"]).To(Equal(eventID))
+		})
+
+		It("resumes from HasMoreCurrentMarket and skips earlier markets", func(ctx SpecContext) {
+			const btcEventID = "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4"
+			const ethEventID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+
+			// Simulate state saved after first page stopped at BTC/USD.
+			initialState, _ := json.Marshal(ordersState{
+				LastSeenEventIDPerMarket: map[string]string{"BTC/USD": btcEventID},
+				HasMoreCurrentMarket:     "BTC/USD",
+			})
+
+			// BTC/USD is re-fetched from its since_id; ETH/USD is now called.
+			expectedSinceID := btcEventID
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", &expectedSinceID).
+				Return([]client.AccountOrderDataEvent{}, nil)
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "ETH/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{{
+					Event:   "order_created",
+					EventID: ethEventID,
+					Data: client.AccountOrderDataItem{
+						ID: json.Number("4000"), IDStr: "4000",
+						OrderType: 0, OrderSubtype: 0,
+						Datetime:       "1779709892",
+						Amount:         json.Number("1.0"),
+						AmountStr:      "1.0",
+						AmountTraded:   "0",
+						AmountAtCreate: "1.0",
+						PriceStr:       "2000.00",
+					},
+				}}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				PageSize:    10,
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD", "ETH/USD"}),
+				State:       initialState,
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.Orders).To(HaveLen(1))
+
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.HasMoreCurrentMarket).To(BeEmpty())
+			Expect(state.LastSeenEventIDPerMarket["ETH/USD"]).To(Equal(ethEventID))
+		})
+
+		It("clears HasMoreCurrentMarket when all markets fit within page size", func(ctx SpecContext) {
+			initialState, _ := json.Marshal(ordersState{
+				LastSeenEventIDPerMarket: map[string]string{},
+				HasMoreCurrentMarket:     "BTC/USD",
+			})
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
+				Return([]client.AccountOrderDataEvent{}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				PageSize:    10,
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
+				State:       initialState,
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.HasMore).To(BeFalse())
+
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.HasMoreCurrentMarket).To(BeEmpty())
+		})
+
 		It("tracks the last EventID across multiple events in one batch", func(ctx SpecContext) {
-			const firstEventID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			const lastEventID = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+			const firstEventID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+			const lastEventID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", gomock.Nil()).
 				Return([]client.AccountOrderDataEvent{
 					{
@@ -284,7 +434,7 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 					},
 					{
 						Event:   "order_deleted",
-						EventID: "cccccccccccccccccccccccccccccccc",
+						EventID: "cccccccc-cccc-cccc-cccc-cccccccccccc",
 						Data: client.AccountOrderDataItem{
 							ID: json.Number("100"), IDStr: "100",
 							OrderType: 0, OrderSubtype: 0,

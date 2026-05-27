@@ -151,8 +151,8 @@ func TestOrdersStateRoundTrip(t *testing.T) {
 	t.Parallel()
 	in := ordersState{
 		LastSeenEventIDPerMarket: map[string]string{
-			"btcusd": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
-			"ethusd": "00112233445566778899aabbccddeeff",
+			"btcusd": "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4",
+			"ethusd": "00112233-4455-6677-8899-aabbccddeeff",
 		},
 	}
 	raw, err := json.Marshal(in)
@@ -220,6 +220,33 @@ func TestMaxInt64(t *testing.T) {
 			t.Parallel()
 			if got := maxInt64(tc.in); got != tc.want {
 				t.Errorf("maxInt64(%v) = %d, want %d", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestIsValidMarketEventID(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		id   string
+		want bool
+	}{
+		{"000652ba-1467-f198-0000-00d800000020", true},   // valid UUID lowercase
+		{"AABBCCDD-EEFF-0011-2233-445566778899", true},   // valid UUID uppercase
+		{"", false},                                       // empty
+		{"tooshort", false},                               // too short
+		{"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4", false},     // 32-char hex, no hyphens
+		{"000652ba-1467-f198-0000-00d80000002", false},   // UUID too short by one
+		{"000652ba-1467-f198-0000-00d8000000200", false}, // UUID too long by one
+		{"000652ba_1467_f198_0000_00d800000020", false},  // wrong separator
+		{"zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz", false}, // non-hex UUID
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.id, func(t *testing.T) {
+			t.Parallel()
+			if got := isValidMarketEventID(tc.id); got != tc.want {
+				t.Errorf("isValidMarketEventID(%q) = %v, want %v", tc.id, got, tc.want)
 			}
 		})
 	}

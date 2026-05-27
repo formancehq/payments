@@ -64,9 +64,12 @@ func (s *paymentsState) UnmarshalJSON(data []byte) error {
 }
 
 // ordersState tracks the last seen MarketEventID per market so that
-// GetAccountOrderData since_id only returns unseen events.
+// GetAccountOrderData since_id only returns unseen events. HasMoreCurrentMarket
+// holds the market key at which the previous page stopped so the next call can
+// resume from that point instead of restarting from the beginning of the list.
 type ordersState struct {
 	LastSeenEventIDPerMarket map[string]string `json:"lastSeenEventIDPerMarket"`
+	HasMoreCurrentMarket     string            `json:"hasMoreCurrentMarket,omitempty"`
 }
 
 type conversionsState struct {

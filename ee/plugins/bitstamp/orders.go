@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
+
+var marketEventIDRegexp = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // fetchNextOrders queries account_order_data for every tradeable market
 // listed in the parent account's metadata, emitting one PSPOrder per
@@ -31,7 +34,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		return models.FetchNextOrdersResponse{}, err
 	}
 
-	// Deterministic market order so logs are stable.
+	// Deterministic market order required for hasMore behaviour
 	sort.Strings(markets)
 
 	currencies, err := p.getCurrencies(ctx)
@@ -40,10 +43,20 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}
 
 	var orders []models.PSPOrder
+	skipping := state.HasMoreCurrentMarket != ""
+
 	for _, marketName := range markets {
+		// Skip markets until we reach the one where the previous page stopped.
+		if skipping {
+			if marketName != state.HasMoreCurrentMarket {
+				continue
+			}
+			skipping = false
+		}
+
 		sinceID := state.LastSeenEventIDPerMarket[marketName]
 		var sinceIDPtr *string
-		if sinceID != "" {
+		if isValidMarketEventID(sinceID) {
 			sinceIDPtr = &sinceID
 		}
 
@@ -59,6 +72,12 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 		var lastEventID string
 		for _, event := range events {
+			if !isValidMarketEventID(event.EventID) {
+				p.logger.WithField("market", marketName).WithField("eventID", event.EventID).WithField("order_id", event.Data.IDStr).
+					Debugf("skipping event with invalid ID")
+				continue
+			}
+
 			order, err := mappers.AccountOrderDataEventToPSPOrder(currencies, accountReference, marketName, event)
 			if err != nil {
 				p.logger.
@@ -68,10 +87,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 					Errorf("failed to map order event: %v", err)
 				continue
 			}
-
-			if isValidMarketEventID(event.EventID) {
-				lastEventID = event.EventID
-			}
+			lastEventID = event.EventID
 
 			// we expect the process related to the source account to import it
 			if order == nil {
@@ -81,12 +97,43 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 				continue
 			}
 			orders = append(orders, *order)
+
+			if req.PageSize > 0 && len(orders) >= req.PageSize {
+				if lastEventID != "" {
+					state.LastSeenEventIDPerMarket[marketName] = lastEventID
+				}
+				state.HasMoreCurrentMarket = marketName
+				payload, err := json.Marshal(state)
+				if err != nil {
+					return models.FetchNextOrdersResponse{}, fmt.Errorf("marshal orders state: %w", err)
+				}
+				return models.FetchNextOrdersResponse{
+					Orders:   orders,
+					NewState: payload,
+					HasMore:  true,
+				}, nil
+			}
 		}
 
 		if lastEventID != "" {
 			state.LastSeenEventIDPerMarket[marketName] = lastEventID
 		}
+
+		if req.PageSize > 0 && len(orders) >= req.PageSize {
+			state.HasMoreCurrentMarket = marketName
+			payload, err := json.Marshal(state)
+			if err != nil {
+				return models.FetchNextOrdersResponse{}, fmt.Errorf("marshal orders state: %w", err)
+			}
+			return models.FetchNextOrdersResponse{
+				Orders:   orders,
+				NewState: payload,
+				HasMore:  true,
+			}, nil
+		}
 	}
+
+	state.HasMoreCurrentMarket = ""
 
 	payload, err := json.Marshal(state)
 	if err != nil {
@@ -123,18 +170,8 @@ func tradeableMarketsFromPayload(payload json.RawMessage) (string, []string, err
 	return account.Reference, markets, nil
 }
 
-// isValidMarketEventID reports whether s is a 32-character lowercase hex
-// string as required by Bitstamp's since_id parameter. The API rejects
-// anything else with a 400, even though its own responses sometimes return
-// shorter event_id values for certain markets.
+// isValidMarketEventID reports whether s is a UUID-formatted event ID
+// (e.g. "000652ba-1467-f198-0000-00d800000020") usable as a since_id value.
 func isValidMarketEventID(s string) bool {
-	if len(s) != 32 {
-		return false
-	}
-	for _, c := range s {
-		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
-			return false
-		}
-	}
-	return true
+	return marketEventIDRegexp.MatchString(s)
 }
