@@ -70,21 +70,6 @@ func (mr *MockClientMockRecorder) GetAccountOrderData(ctx, market, sinceID any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountOrderData", reflect.TypeOf((*MockClient)(nil).GetAccountOrderData), ctx, market, sinceID)
 }
 
-// GetCryptoTransactions mocks base method.
-func (m *MockClient) GetCryptoTransactions(ctx context.Context, opts CryptoTransactionsOptions) (CryptoTransactionsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCryptoTransactions", ctx, opts)
-	ret0, _ := ret[0].(CryptoTransactionsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCryptoTransactions indicates an expected call of GetCryptoTransactions.
-func (mr *MockClientMockRecorder) GetCryptoTransactions(ctx, opts any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoTransactions", reflect.TypeOf((*MockClient)(nil).GetCryptoTransactions), ctx, opts)
-}
-
 // GetCurrencies mocks base method.
 func (m *MockClient) GetCurrencies(ctx context.Context) ([]Currency, error) {
 	m.ctrl.T.Helper()
@@ -173,34 +158,4 @@ func (m *MockClient) GetWithdrawalFees(ctx context.Context) ([]WithdrawalFee, er
 func (mr *MockClientMockRecorder) GetWithdrawalFees(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalFees", reflect.TypeOf((*MockClient)(nil).GetWithdrawalFees), ctx)
-}
-
-// GetWithdrawalRequestByID mocks base method.
-func (m *MockClient) GetWithdrawalRequestByID(ctx context.Context, id int64) (WithdrawalRequest, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWithdrawalRequestByID", ctx, id)
-	ret0, _ := ret[0].(WithdrawalRequest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetWithdrawalRequestByID indicates an expected call of GetWithdrawalRequestByID.
-func (mr *MockClientMockRecorder) GetWithdrawalRequestByID(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalRequestByID", reflect.TypeOf((*MockClient)(nil).GetWithdrawalRequestByID), ctx, id)
-}
-
-// GetWithdrawalRequests mocks base method.
-func (m *MockClient) GetWithdrawalRequests(ctx context.Context, limit, offset int) ([]WithdrawalRequest, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWithdrawalRequests", ctx, limit, offset)
-	ret0, _ := ret[0].([]WithdrawalRequest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetWithdrawalRequests indicates an expected call of GetWithdrawalRequests.
-func (mr *MockClientMockRecorder) GetWithdrawalRequests(ctx, limit, offset any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalRequests", reflect.TypeOf((*MockClient)(nil).GetWithdrawalRequests), ctx, limit, offset)
 }

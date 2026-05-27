@@ -5,33 +5,18 @@ import (
 	"testing"
 )
 
-// TestPaymentsStateDecode_LegacyFlatShape locks the migration path
-// from the legacy single-watermark state JSON. An existing connector
-// install must NOT have its since_id watermark wiped when upgrading
-// to the multi-source binary.
+// TestPaymentsStateDecode_LegacyFlatShape locks the migration path from
+// the legacy single-watermark {"lastTransactionID": N} state JSON.
 func TestPaymentsStateDecode_LegacyFlatShape(t *testing.T) {
 	t.Parallel()
-
 	cases := []struct {
-		name    string
-		json    string
-		wantUT  int64
-		wantOTH bool // expect non-zero crypto/withdrawal subfields
+		name   string
+		json   string
+		wantID int64
 	}{
-		{
-			name:    "legacy non-zero watermark lifts into UserTransactions",
-			json:    `{"lastTransactionID": 458254264}`,
-			wantUT:  458254264,
-			wantOTH: false,
-		},
-		{
-			name:    "legacy zero watermark still decodes cleanly",
-			json:    `{"lastTransactionID": 0}`,
-			wantUT:  0,
-			wantOTH: false,
-		},
+		{"non-zero watermark", `{"lastTransactionID": 458254264}`, 458254264},
+		{"zero watermark", `{"lastTransactionID": 0}`, 0},
 	}
-
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -40,58 +25,17 @@ func TestPaymentsStateDecode_LegacyFlatShape(t *testing.T) {
 			if err := json.Unmarshal([]byte(tc.json), &s); err != nil {
 				t.Fatalf("unmarshal: %v", err)
 			}
-			if s.UserTransactions.LastTransactionID != tc.wantUT {
-				t.Errorf("UserTransactions.LastTransactionID = %d, want %d",
-					s.UserTransactions.LastTransactionID, tc.wantUT)
-			}
-			if s.CryptoTransactions.DepositsSinceTs != 0 ||
-				s.WithdrawalRequests.LastID != 0 {
-				t.Errorf("legacy migration must leave new substates zero, got %+v", s)
+			if s.LastTransactionID != tc.wantID {
+				t.Errorf("LastTransactionID = %d, want %d", s.LastTransactionID, tc.wantID)
 			}
 		})
 	}
 }
 
-// TestPaymentsStateDecode_NewNestedShape locks the steady-state
-// decode for the multi-source nested shape. A connector that has
-// already run at least one cycle persists this form.
-func TestPaymentsStateDecode_NewNestedShape(t *testing.T) {
-	t.Parallel()
-
-	payload := `{
-		"userTransactions":   {"lastTransactionID": 458254264},
-		"cryptoTransactions": {"depositsSinceTs": 1759995000, "withdrawalsSinceTs": 1642665114, "ripplesSinceTs": 0},
-		"withdrawalRequests": {"lastID": 42}
-	}`
-
-	var s paymentsState
-	if err := json.Unmarshal([]byte(payload), &s); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-
-	if s.UserTransactions.LastTransactionID != 458254264 {
-		t.Errorf("UT watermark = %d", s.UserTransactions.LastTransactionID)
-	}
-	if s.CryptoTransactions.DepositsSinceTs != 1759995000 {
-		t.Errorf("crypto deposits ts = %d", s.CryptoTransactions.DepositsSinceTs)
-	}
-	if s.CryptoTransactions.WithdrawalsSinceTs != 1642665114 {
-		t.Errorf("crypto withdrawals ts = %d", s.CryptoTransactions.WithdrawalsSinceTs)
-	}
-	if s.WithdrawalRequests.LastID != 42 {
-		t.Errorf("withdrawal requests lastID = %d", s.WithdrawalRequests.LastID)
-	}
-}
-
-// TestPaymentsStateRoundTrip asserts the new shape round-trips
-// without data loss through Marshal -> Unmarshal.
+// TestPaymentsStateRoundTrip asserts the flat shape round-trips.
 func TestPaymentsStateRoundTrip(t *testing.T) {
 	t.Parallel()
-	in := paymentsState{
-		UserTransactions:   userTransactionsState{LastTransactionID: 999},
-		CryptoTransactions: cryptoTransactionsState{DepositsSinceTs: 1, WithdrawalsSinceTs: 2, RipplesSinceTs: 3},
-		WithdrawalRequests: withdrawalRequestsState{LastID: 7},
-	}
+	in := paymentsState{LastTransactionID: 999}
 	raw, err := json.Marshal(in)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -105,8 +49,7 @@ func TestPaymentsStateRoundTrip(t *testing.T) {
 	}
 }
 
-// TestPaymentsStateDecode_EmptyObject must yield the zero value
-// (cold start) without erroring.
+// TestPaymentsStateDecode_EmptyObject must yield the zero value (cold start).
 func TestPaymentsStateDecode_EmptyObject(t *testing.T) {
 	t.Parallel()
 	var s paymentsState
@@ -170,10 +113,7 @@ func TestOrdersStateRoundTrip(t *testing.T) {
 }
 
 // TestAdvanceInt64Cursor locks the canonical "never reset on empty
-// response" invariant. Three separate regressions in the connector
-// PR history (Coinbase Prime, Stripe x2) were variants of "wrote
-// candidate over current without checking" — keeping this primitive
-// in one place + unit-tested means the bug cannot regress here.
+// response" invariant.
 func TestAdvanceInt64Cursor(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -196,30 +136,6 @@ func TestAdvanceInt64Cursor(t *testing.T) {
 			if got := advanceInt64Cursor(tc.current, tc.candidate); got != tc.want {
 				t.Errorf("advanceInt64Cursor(%d, %d) = %d, want %d",
 					tc.current, tc.candidate, got, tc.want)
-			}
-		})
-	}
-}
-
-func TestMaxInt64(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name string
-		in   []int64
-		want int64
-	}{
-		{"empty slice", nil, 0},
-		{"single zero", []int64{0}, 0},
-		{"mixed positive", []int64{3, 1, 5, 2}, 5},
-		{"all zeros", []int64{0, 0, 0}, 0},
-		{"max first", []int64{10, 1, 1}, 10},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			if got := maxInt64(tc.in); got != tc.want {
-				t.Errorf("maxInt64(%v) = %d, want %d", tc.in, got, tc.want)
 			}
 		})
 	}

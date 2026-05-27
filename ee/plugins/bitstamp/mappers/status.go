@@ -4,8 +4,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// Bitstamp user_transactions.type values. 33 + 36 are undocumented
-// but observed in production. See MAPPINGS §4.3.
+// Bitstamp user_transactions.type values. See MAPPINGS §4.3.
 const (
 	TxTypeDeposit              = "0"
 	TxTypeWithdrawal           = "1"
@@ -18,6 +17,19 @@ const (
 	TxTypeSettlementTransfer   = "33"
 	TxTypeInterAccountTransfer = "35"
 	TxTypeBuySell              = "36"
+
+	// Small balance conversion: two legs in one row (debit/credit),
+	// handled identically to type 36 by the conversions mapper.
+	TxTypeSmallBalanceConversionSrc = "53"
+	TxTypeSmallBalanceConversionDst = "55"
+
+	// Derivatives operations — spot-only connector skips these with a
+	// warning log regardless of whether a derivatives marker is present
+	// in the raw JSON.
+	TxTypeDerivativesPeriodicSettlement = "58"
+	TxTypeInsuranceFundClaim            = "59"
+	TxTypeInsuranceFundPremium          = "60"
+	TxTypeCollateralLiquidation         = "61"
 )
 
 var transactionTypeMap = map[string]models.PaymentType{
@@ -36,7 +48,7 @@ var transactionTypeMap = map[string]models.PaymentType{
 // rows (handled by other capabilities); unknown codes fall back to
 // PAYMENT_TYPE_OTHER + ok=true and are logged at Info.
 func TransactionTypeToPaymentType(txType string) (paymentType models.PaymentType, ok bool) {
-	if IsOrderOrConversion(txType) {
+	if IsConversionType(txType) {
 		return 0, false
 	}
 	if t, found := transactionTypeMap[txType]; found {
@@ -45,10 +57,26 @@ func TransactionTypeToPaymentType(txType string) (paymentType models.PaymentType
 	return models.PAYMENT_TYPE_OTHER, true
 }
 
-// IsOrderOrConversion: type 2 = trade fill (orders), type 36 = instant
-// buy/sell (conversions). Payments mapper rejects both.
-func IsOrderOrConversion(txType string) bool {
-	return txType == TxTypeMarketTrade || txType == TxTypeBuySell
+// IsConversionType reports whether a transaction type should be handled
+// by the conversions mapper: type 2 (market trade fill), 36 (instant
+// buy/sell), 53/55 (small-balance conversion).
+func IsConversionType(txType string) bool {
+	switch txType {
+	case TxTypeMarketTrade, TxTypeBuySell, TxTypeSmallBalanceConversionSrc, TxTypeSmallBalanceConversionDst:
+		return true
+	}
+	return false
+}
+
+// IsDerivativesType reports whether a transaction type is an inherently
+// derivatives operation. Spot-only connector skips these with a warning.
+func IsDerivativesType(txType string) bool {
+	switch txType {
+	case TxTypeDerivativesPeriodicSettlement, TxTypeInsuranceFundClaim,
+		TxTypeInsuranceFundPremium, TxTypeCollateralLiquidation:
+		return true
+	}
+	return false
 }
 
 // IsTransferType: types 14 / 33 / 35 — two-legged movements emitted
@@ -62,7 +90,7 @@ func IsTransferType(txType string) bool {
 }
 
 func IsKnownTransactionType(txType string) bool {
-	if IsOrderOrConversion(txType) {
+	if IsConversionType(txType) || IsDerivativesType(txType) {
 		return true
 	}
 	_, ok := transactionTypeMap[txType]
@@ -161,73 +189,5 @@ func OrderSubtypeToTIF(subtype int) models.TimeInForce {
 		return models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME
 	default:
 		return models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED
-	}
-}
-
-const (
-	WithdrawalRequestTypeSEPA              = 0
-	WithdrawalRequestTypeInternationalWire = 1
-	WithdrawalRequestTypeARDI              = 2
-	WithdrawalRequestTypeInternationalBIC  = 3
-	WithdrawalRequestTypeCrypto            = 4
-)
-
-// WithdrawalRequestTypeToScheme — Formance has no SWIFT / ARDI /
-// crypto-withdrawal constants today; non-SEPA preserves the wire
-// integer in metadata under MetadataKeyType for downstream
-// disambiguation.
-func WithdrawalRequestTypeToScheme(t int) models.PaymentScheme {
-	switch t {
-	case WithdrawalRequestTypeSEPA:
-		return models.PAYMENT_SCHEME_SEPA_CREDIT
-	case WithdrawalRequestTypeInternationalWire,
-		WithdrawalRequestTypeARDI,
-		WithdrawalRequestTypeInternationalBIC,
-		WithdrawalRequestTypeCrypto:
-		return models.PAYMENT_SCHEME_OTHER
-	default:
-		return models.PAYMENT_SCHEME_UNKNOWN
-	}
-}
-
-const (
-	WithdrawalRequestStatusOpen       = 0
-	WithdrawalRequestStatusInProgress = 1
-	WithdrawalRequestStatusFinished   = 2
-	WithdrawalRequestStatusCanceled   = 3
-	WithdrawalRequestStatusFailed     = 4
-)
-
-func WithdrawalRequestStatusToPaymentStatus(s int) models.PaymentStatus {
-	switch s {
-	case WithdrawalRequestStatusOpen, WithdrawalRequestStatusInProgress:
-		return models.PAYMENT_STATUS_PENDING
-	case WithdrawalRequestStatusFinished:
-		return models.PAYMENT_STATUS_SUCCEEDED
-	case WithdrawalRequestStatusCanceled:
-		return models.PAYMENT_STATUS_CANCELLED
-	case WithdrawalRequestStatusFailed:
-		return models.PAYMENT_STATUS_FAILED
-	default:
-		return models.PAYMENT_STATUS_UNKNOWN
-	}
-}
-
-// Withdrawals + ripple IOUs have no status field — both are treated
-// as SUCCEEDED by the orchestrator (endpoint surfaces only processed
-// rows).
-const (
-	CryptoDepositStatusPending   = "PENDING"
-	CryptoDepositStatusCompleted = "COMPLETED"
-)
-
-func CryptoDepositStatusToPaymentStatus(s string) models.PaymentStatus {
-	switch s {
-	case CryptoDepositStatusPending:
-		return models.PAYMENT_STATUS_PENDING
-	case CryptoDepositStatusCompleted:
-		return models.PAYMENT_STATUS_SUCCEEDED
-	default:
-		return models.PAYMENT_STATUS_UNKNOWN
 	}
 }

@@ -26,11 +26,6 @@ const (
 	MetadataKeyTransferDirection          = MetadataPrefix + "transfer_direction"
 	MetadataKeyCounterpartySubAccountID   = MetadataPrefix + "counterparty_sub_account_id"
 	MetadataKeyCounterpartySubAccountName = MetadataPrefix + "counterparty_sub_account_name"
-	MetadataKeyNetwork                    = MetadataPrefix + "network"
-	MetadataKeyTxID                       = MetadataPrefix + "txid"
-	MetadataKeyDestinationAddress         = MetadataPrefix + "destination_address"
-	MetadataKeyPendingReason              = MetadataPrefix + "pending_reason"
-	MetadataKeyBankTransactionID          = MetadataPrefix + "bank_transaction_id"
 
 	MetadataKeyNetworks        = MetadataPrefix + "networks"
 	MetadataKeyWithdrawalFees  = MetadataPrefix + "withdrawal_fees"
@@ -47,9 +42,7 @@ const (
 )
 
 const (
-	PaymentSourceUserTransactions   = "user_transactions"
-	PaymentSourceCryptoTransactions = "crypto_transactions"
-	PaymentSourceWithdrawalRequests = "withdrawal_requests"
+	PaymentSourceUserTransactions = "user_transactions"
 )
 
 const (
@@ -79,35 +72,6 @@ func PaymentMetadata(tx client.UserTransaction) map[string]string {
 	if orderID := tx.OrderID.String(); orderID != "" && orderID != "0" {
 		m[MetadataKeyOrderID] = orderID
 	}
-	return m
-}
-
-// CryptoTransactionMetadata for crypto-transactions/ rows. kind is
-// "deposit" / "withdrawal" / "ripple_iou", surfaced under MetadataKeyType
-// to distinguish the three buckets within the same source.
-func CryptoTransactionMetadata(kind, network, txid, destinationAddress, pendingReason string) map[string]string {
-	m := map[string]string{
-		MetadataKeySource: PaymentSourceCryptoTransactions,
-		MetadataKeyType:   kind,
-	}
-	setIfNonEmpty(m, MetadataKeyNetwork, network)
-	setIfNonEmpty(m, MetadataKeyTxID, txid)
-	setIfNonEmpty(m, MetadataKeyDestinationAddress, destinationAddress)
-	setIfNonEmpty(m, MetadataKeyPendingReason, pendingReason)
-	return m
-}
-
-// WithdrawalRequestMetadata for withdrawal-requests/ rows.
-// withdrawalType is the integer enum stringified.
-func WithdrawalRequestMetadata(withdrawalType, network, address, txid, bankTxID string) map[string]string {
-	m := map[string]string{
-		MetadataKeySource: PaymentSourceWithdrawalRequests,
-		MetadataKeyType:   withdrawalType,
-	}
-	setIfNonEmpty(m, MetadataKeyNetwork, network)
-	setIfNonEmpty(m, MetadataKeyDestinationAddress, address)
-	setIfNonEmpty(m, MetadataKeyTxID, txid)
-	setIfNonEmpty(m, MetadataKeyBankTransactionID, bankTxID)
 	return m
 }
 
@@ -145,6 +109,9 @@ func ConversionMetadata(tx client.UserTransaction, currencyPair, pairRate string
 	setIfNonEmpty(m, MetadataKeyRate, pairRate)
 	if !IsZeroAmount(tx.Fee) {
 		m[MetadataKeyFee] = tx.Fee
+	}
+	if orderID := tx.OrderID.String(); orderID != "" && orderID != "0" {
+		m[MetadataKeyOrderID] = orderID
 	}
 	return m
 }

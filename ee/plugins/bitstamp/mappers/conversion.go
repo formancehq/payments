@@ -26,7 +26,7 @@ func UserTransactionToPSPConversion(currencies map[string]int, tx client.UserTra
 	if tx.HasDerivativesMarker() {
 		return ConversionMapResult{Skip: true, DerivativesRow: true}, nil
 	}
-	if tx.Type != TxTypeBuySell {
+	if !IsConversionType(tx.Type) {
 		return ConversionMapResult{Skip: true}, nil
 	}
 

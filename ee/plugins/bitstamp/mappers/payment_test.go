@@ -88,7 +88,12 @@ func TestUserTransactionToPSPPaymentWithdrawalNegative(t *testing.T) {
 
 func TestUserTransactionToPSPPaymentSkipsTradesAndConversions(t *testing.T) {
 	t.Parallel()
-	for _, txType := range []string{TxTypeMarketTrade, TxTypeBuySell} {
+	for _, txType := range []string{
+		TxTypeMarketTrade,
+		TxTypeBuySell,
+		TxTypeSmallBalanceConversionSrc,
+		TxTypeSmallBalanceConversionDst,
+	} {
 		tx := newTx(`{
 			"id": 2000,
 			"datetime": "2025-09-25 14:42:59.000000",
@@ -104,6 +109,35 @@ func TestUserTransactionToPSPPaymentSkipsTradesAndConversions(t *testing.T) {
 		if !res.Skip || res.Payment != nil {
 			t.Errorf("type %s should be skipped, got %#v", txType, res)
 		}
+	}
+}
+
+func TestUserTransactionToPSPPaymentSkipsDerivativesTypes(t *testing.T) {
+	t.Parallel()
+	for _, txType := range []string{
+		TxTypeDerivativesPeriodicSettlement,
+		TxTypeInsuranceFundClaim,
+		TxTypeInsuranceFundPremium,
+		TxTypeCollateralLiquidation,
+	} {
+		txType := txType
+		t.Run("type_"+txType, func(t *testing.T) {
+			t.Parallel()
+			tx := newTx(`{
+				"id": 9000,
+				"datetime": "2025-09-25 14:42:59.000000",
+				"type": "` + txType + `",
+				"fee": "0",
+				"usd": "100.00"
+			}`)
+			res, err := UserTransactionToPSPPayment(testCurrencies, tx)
+			if err != nil {
+				t.Fatalf("type %s: err: %v", txType, err)
+			}
+			if !res.Skip || !res.DerivativesRow {
+				t.Errorf("type %s: expected DerivativesRow skip, got %#v", txType, res)
+			}
+		})
 	}
 }
 

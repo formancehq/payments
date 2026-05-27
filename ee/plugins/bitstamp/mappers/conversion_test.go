@@ -99,9 +99,9 @@ func TestUserTransactionToPSPConversionWithFee(t *testing.T) {
 	}
 }
 
-func TestUserTransactionToPSPConversionSkipsNonType36(t *testing.T) {
+func TestUserTransactionToPSPConversionSkipsNonConversionTypes(t *testing.T) {
 	t.Parallel()
-	for _, txType := range []string{TxTypeDeposit, TxTypeWithdrawal, TxTypeMarketTrade, TxTypeStakingReward} {
+	for _, txType := range []string{TxTypeDeposit, TxTypeWithdrawal, TxTypeStakingReward} {
 		tx := newTx(`{
 			"id": 700,
 			"datetime": "2025-09-25 14:42:59.000000",
@@ -157,5 +157,37 @@ func TestUserTransactionToPSPConversionSkipsSingleAsset(t *testing.T) {
 	}
 	if !res.Skip || res.Conversion != nil {
 		t.Errorf("single-asset type-36 row must skip, got %#v", res)
+	}
+}
+
+func TestUserTransactionToPSPConversionSmallBalanceTypes(t *testing.T) {
+	t.Parallel()
+	// Types 53 and 55 (small balance conversion) follow the same two-asset
+	// shape as type 36 and must be emitted as PSPConversions.
+	for _, txType := range []string{TxTypeSmallBalanceConversionSrc, TxTypeSmallBalanceConversionDst} {
+		txType := txType
+		t.Run("type_"+txType, func(t *testing.T) {
+			t.Parallel()
+			tx := newTx(`{
+				"id": 1000,
+				"datetime": "2025-09-25 14:42:59.000000",
+				"type": "` + txType + `",
+				"fee": "0",
+				"eur": "-100.00",
+				"usdc": "116.21",
+				"usdc_eur": "0.86047"
+			}`)
+			res, err := UserTransactionToPSPConversion(testCurrencies, tx)
+			if err != nil {
+				t.Fatalf("type %s: err: %v", txType, err)
+			}
+			if res.Skip || res.Conversion == nil {
+				t.Fatalf("type %s: expected conversion, got %#v", txType, res)
+			}
+			if res.Conversion.SourceAsset != "EUR/2" || res.Conversion.DestinationAsset != "USDC/6" {
+				t.Errorf("type %s: assets: got (%s, %s), want (EUR/2, USDC/6)",
+					txType, res.Conversion.SourceAsset, res.Conversion.DestinationAsset)
+			}
+		})
 	}
 }

@@ -26,11 +26,6 @@ type Client interface {
 	GetCurrencies(ctx context.Context) ([]Currency, error)
 	GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error)
 
-	// Multi-source payments feeds — see MAPPINGS §3.3 + §12.2.
-	GetCryptoTransactions(ctx context.Context, opts CryptoTransactionsOptions) (CryptoTransactionsResponse, error)
-	GetWithdrawalRequests(ctx context.Context, limit, offset int) ([]WithdrawalRequest, error)
-	GetWithdrawalRequestByID(ctx context.Context, id int64) (WithdrawalRequest, error)
-
 	// Install-time enrichment endpoints — see MAPPINGS §12.2.
 	GetMarkets(ctx context.Context) ([]Market, error)
 	GetMyMarkets(ctx context.Context) ([]MyMarket, error)
@@ -212,84 +207,6 @@ func (c *client) GetAccountOrderData(ctx context.Context, market string, sinceID
 		return nil, fmt.Errorf("get account order data for %s: %w", market, err)
 	}
 	return out, nil
-}
-
-// GetCryptoTransactions returns on-chain crypto deposits + withdrawals
-// + ripple IOU transactions for the authenticated account. The
-// endpoint is documented as Main-account only; sub-account scopes
-// trigger a Bitstamp error that the orchestrator catches via the
-// try-and-skip cache.
-func (c *client) GetCryptoTransactions(ctx context.Context, opts CryptoTransactionsOptions) (CryptoTransactionsResponse, error) {
-	form := url.Values{}
-	if opts.Limit > 0 {
-		form.Set("limit", strconv.Itoa(opts.Limit))
-	}
-	if opts.Offset > 0 {
-		form.Set("offset", strconv.Itoa(opts.Offset))
-	}
-	if opts.IncludeIOUs {
-		form.Set("include_ious", "true")
-	}
-	if opts.SinceTimestamp > 0 {
-		form.Set("since_timestamp", strconv.FormatInt(opts.SinceTimestamp, 10))
-	}
-	if opts.UntilTimestamp > 0 {
-		form.Set("until_timestamp", strconv.FormatInt(opts.UntilTimestamp, 10))
-	}
-	// Bitstamp requires a body for this endpoint (the docs list optional
-	// params but the bare POST returns an empty-body signing mismatch);
-	// send at least the limit so the body is non-empty even when no
-	// opts are provided.
-	if len(form) == 0 {
-		form.Set("limit", "100")
-	}
-	var out CryptoTransactionsResponse
-	if err := c.signedPOST(ctx, "/api/v2/crypto-transactions/", form, &out); err != nil {
-		return CryptoTransactionsResponse{}, fmt.Errorf("get crypto transactions: %w", err)
-	}
-	return out, nil
-}
-
-// GetWithdrawalRequests returns fiat / crypto withdrawal requests
-// with their lifecycle status. Bitstamp REQUIRES both limit AND
-// offset (sending only limit returns "Both limit and offset must be
-// present."). Cold-start callers walk offsets until an empty page.
-func (c *client) GetWithdrawalRequests(ctx context.Context, limit, offset int) ([]WithdrawalRequest, error) {
-	if limit <= 0 {
-		return nil, fmt.Errorf("get withdrawal requests: limit must be positive")
-	}
-	if offset < 0 {
-		return nil, fmt.Errorf("get withdrawal requests: offset must be non-negative")
-	}
-	form := url.Values{}
-	form.Set("limit", strconv.Itoa(limit))
-	form.Set("offset", strconv.Itoa(offset))
-	var out []WithdrawalRequest
-	if err := c.signedPOST(ctx, "/api/v2/withdrawal-requests/", form, &out); err != nil {
-		return nil, fmt.Errorf("get withdrawal requests (offset=%d limit=%d): %w", offset, limit, err)
-	}
-	return out, nil
-}
-
-// GetWithdrawalRequestByID polls a single withdrawal request — used
-// for status follow-up between full-list cycles.
-func (c *client) GetWithdrawalRequestByID(ctx context.Context, id int64) (WithdrawalRequest, error) {
-	if id <= 0 {
-		return WithdrawalRequest{}, fmt.Errorf("get withdrawal request: id must be positive")
-	}
-	form := url.Values{}
-	form.Set("id", strconv.FormatInt(id, 10))
-	// Bitstamp returns either a single object or a 1-element array
-	// depending on firmware; we ask for a slice and pick element 0
-	// (more permissive parse than the docs).
-	var out []WithdrawalRequest
-	if err := c.signedPOST(ctx, "/api/v2/withdrawal-requests/", form, &out); err != nil {
-		return WithdrawalRequest{}, fmt.Errorf("get withdrawal request %d: %w", id, err)
-	}
-	if len(out) == 0 {
-		return WithdrawalRequest{}, fmt.Errorf("get withdrawal request %d: not found", id)
-	}
-	return out[0], nil
 }
 
 // GetMarkets returns every Bitstamp market (pair) with base/counter

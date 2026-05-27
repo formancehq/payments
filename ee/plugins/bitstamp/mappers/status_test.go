@@ -6,64 +6,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func TestWithdrawalRequestTypeToScheme(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		in   int
-		want models.PaymentScheme
-	}{
-		{WithdrawalRequestTypeSEPA, models.PAYMENT_SCHEME_SEPA_CREDIT},
-		{WithdrawalRequestTypeInternationalWire, models.PAYMENT_SCHEME_OTHER},
-		{WithdrawalRequestTypeARDI, models.PAYMENT_SCHEME_OTHER},
-		{WithdrawalRequestTypeInternationalBIC, models.PAYMENT_SCHEME_OTHER},
-		{WithdrawalRequestTypeCrypto, models.PAYMENT_SCHEME_OTHER},
-		{99, models.PAYMENT_SCHEME_UNKNOWN},
-		{-1, models.PAYMENT_SCHEME_UNKNOWN},
-	}
-	for _, tc := range cases {
-		if got := WithdrawalRequestTypeToScheme(tc.in); got != tc.want {
-			t.Errorf("WithdrawalRequestTypeToScheme(%d) = %v, want %v", tc.in, got, tc.want)
-		}
-	}
-}
-
-func TestWithdrawalRequestStatusToPaymentStatus(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		in   int
-		want models.PaymentStatus
-	}{
-		{WithdrawalRequestStatusOpen, models.PAYMENT_STATUS_PENDING},
-		{WithdrawalRequestStatusInProgress, models.PAYMENT_STATUS_PENDING},
-		{WithdrawalRequestStatusFinished, models.PAYMENT_STATUS_SUCCEEDED},
-		{WithdrawalRequestStatusCanceled, models.PAYMENT_STATUS_CANCELLED},
-		{WithdrawalRequestStatusFailed, models.PAYMENT_STATUS_FAILED},
-		{99, models.PAYMENT_STATUS_UNKNOWN},
-	}
-	for _, tc := range cases {
-		if got := WithdrawalRequestStatusToPaymentStatus(tc.in); got != tc.want {
-			t.Errorf("WithdrawalRequestStatusToPaymentStatus(%d) = %v, want %v", tc.in, got, tc.want)
-		}
-	}
-}
-
-func TestCryptoDepositStatusToPaymentStatus(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		in   string
-		want models.PaymentStatus
-	}{
-		{"PENDING", models.PAYMENT_STATUS_PENDING},
-		{"COMPLETED", models.PAYMENT_STATUS_SUCCEEDED},
-		{"", models.PAYMENT_STATUS_UNKNOWN},
-		{"FUTURE", models.PAYMENT_STATUS_UNKNOWN},
-	}
-	for _, tc := range cases {
-		if got := CryptoDepositStatusToPaymentStatus(tc.in); got != tc.want {
-			t.Errorf("CryptoDepositStatusToPaymentStatus(%q) = %v, want %v", tc.in, got, tc.want)
-		}
-	}
-}
 
 func TestTransactionTypeToPaymentType(t *testing.T) {
 	t.Parallel()

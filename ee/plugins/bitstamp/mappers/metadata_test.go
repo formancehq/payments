@@ -40,7 +40,7 @@ func TestPaymentMetadata(t *testing.T) {
 
 func TestConversionMetadata(t *testing.T) {
 	t.Parallel()
-	tx := client.UserTransaction{Type: TxTypeBuySell, Fee: "0.000000"}
+	tx := client.UserTransaction{Type: TxTypeBuySell, Fee: "0.000000", OrderID: json.Number("458254264")}
 	got := ConversionMetadata(tx, "eur_usdc", "0.86047")
 	if got[MetadataKeyType] != TxTypeBuySell {
 		t.Errorf("missing type: %v", got)
@@ -54,6 +54,16 @@ func TestConversionMetadata(t *testing.T) {
 	if _, ok := got[MetadataKeyFee]; ok {
 		t.Errorf("zero fee should be omitted: %v", got)
 	}
+	if got[MetadataKeyOrderID] != "458254264" {
+		t.Errorf("order_id=%q, want 458254264", got[MetadataKeyOrderID])
+	}
+
+	// Zero order_id must be omitted.
+	txNoOrder := client.UserTransaction{Type: TxTypeBuySell, OrderID: json.Number("0")}
+	gotNoOrder := ConversionMetadata(txNoOrder, "eur_usdc", "")
+	if _, ok := gotNoOrder[MetadataKeyOrderID]; ok {
+		t.Errorf("zero order_id must be omitted: %v", gotNoOrder)
+	}
 }
 
 func TestMetadataKeysAreNamespaced(t *testing.T) {
@@ -64,8 +74,6 @@ func TestMetadataKeysAreNamespaced(t *testing.T) {
 		MetadataKeyCurrencyPair, MetadataKeyClientOrderID, MetadataKeyRate,
 		MetadataKeySource, MetadataKeyTransferPairID, MetadataKeyTransferDirection,
 		MetadataKeyCounterpartySubAccountID, MetadataKeyCounterpartySubAccountName,
-		MetadataKeyNetwork, MetadataKeyTxID, MetadataKeyDestinationAddress,
-		MetadataKeyPendingReason, MetadataKeyBankTransactionID,
 		MetadataKeyNetworks, MetadataKeyWithdrawalFees, MetadataKeyTradableMarkets,
 		MetadataKeyFeeTierMaker, MetadataKeyFeeTierTaker, MetadataKeyMinOrderValue,
 		MetadataKeyMarketSymbol, MetadataKeyOrderDatetimeSecs,
@@ -81,50 +89,6 @@ func startsWith(s, prefix string) bool {
 		return false
 	}
 	return s[:len(prefix)] == prefix
-}
-
-func TestCryptoTransactionMetadata(t *testing.T) {
-	t.Parallel()
-	got := CryptoTransactionMetadata(CryptoKindDeposit, "bitcoin", "tx-1", "addr-1", "ADDRESS_VERIFICATION_NEEDED")
-	if got[MetadataKeySource] != PaymentSourceCryptoTransactions {
-		t.Errorf("source = %q", got[MetadataKeySource])
-	}
-	if got[MetadataKeyType] != CryptoKindDeposit {
-		t.Errorf("kind = %q", got[MetadataKeyType])
-	}
-	if got[MetadataKeyNetwork] != "bitcoin" || got[MetadataKeyTxID] != "tx-1" ||
-		got[MetadataKeyDestinationAddress] != "addr-1" || got[MetadataKeyPendingReason] != "ADDRESS_VERIFICATION_NEEDED" {
-		t.Errorf("missing fields: %+v", got)
-	}
-
-	// Empty optionals must be omitted, not empty-stringed.
-	got = CryptoTransactionMetadata(CryptoKindWithdrawal, "", "", "", "")
-	for _, k := range []string{MetadataKeyNetwork, MetadataKeyTxID, MetadataKeyDestinationAddress, MetadataKeyPendingReason} {
-		if _, present := got[k]; present {
-			t.Errorf("empty %s must be omitted, got %v", k, got[k])
-		}
-	}
-}
-
-func TestWithdrawalRequestMetadata(t *testing.T) {
-	t.Parallel()
-	got := WithdrawalRequestMetadata("4", "bitcoin", "addr-1", "tx-1", "bank-1")
-	if got[MetadataKeySource] != PaymentSourceWithdrawalRequests {
-		t.Errorf("source = %q", got[MetadataKeySource])
-	}
-	if got[MetadataKeyType] != "4" {
-		t.Errorf("withdrawal type = %q", got[MetadataKeyType])
-	}
-	if got[MetadataKeyBankTransactionID] != "bank-1" {
-		t.Errorf("bank tx id = %q", got[MetadataKeyBankTransactionID])
-	}
-
-	got = WithdrawalRequestMetadata("0", "", "", "", "")
-	for _, k := range []string{MetadataKeyNetwork, MetadataKeyDestinationAddress, MetadataKeyTxID, MetadataKeyBankTransactionID} {
-		if _, present := got[k]; present {
-			t.Errorf("empty %s must be omitted", k)
-		}
-	}
 }
 
 func TestTransferPairMetadata(t *testing.T) {

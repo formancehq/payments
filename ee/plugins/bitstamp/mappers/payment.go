@@ -39,10 +39,10 @@ type PaymentMapResult struct {
 // MAPPINGS §3.6. The pair-id metadata (= tx.id stringified) is what
 // lets a downstream consumer join the two legs across connectors.
 func UserTransactionToPSPPayment(currencies map[string]int, tx client.UserTransaction) (PaymentMapResult, error) {
-	if tx.HasDerivativesMarker() {
+	if tx.HasDerivativesMarker() || IsDerivativesType(tx.Type) {
 		return PaymentMapResult{Skip: true, DerivativesRow: true}, nil
 	}
-	if IsOrderOrConversion(tx.Type) {
+	if IsConversionType(tx.Type) {
 		return PaymentMapResult{Skip: true}, nil
 	}
 
