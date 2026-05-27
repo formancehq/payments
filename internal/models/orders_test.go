@@ -24,24 +24,24 @@ func newConnectorID(t *testing.T) models.ConnectorID {
 
 func validPSPOrder() models.PSPOrder {
 	return models.PSPOrder{
-		Reference:           "order-ref-1",
-		ClientOrderID:       "client-order-1",
-		CreatedAt:           time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		Direction:           models.ORDER_DIRECTION_BUY,
-		SourceAsset:         "USD/2",
-		DestinationAsset:    "BTC/8",
-		Type:                models.ORDER_TYPE_LIMIT,
-		Status:              models.ORDER_STATUS_FILLED,
-		BaseQuantityOrdered: big.NewInt(1000),
-		BaseQuantityFilled:  big.NewInt(1000),
-		LimitPrice:          big.NewInt(5000000),
-		TimeInForce:         models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED,
-		QuoteAmount:         big.NewInt(5000000000),
-		QuoteAsset:          "USD/2",
-		Fee:                 big.NewInt(100),
-		FeeAsset:            pointer.For("USD/2"),
-		AverageFillPrice:    big.NewInt(5000000),
-		PriceAsset:          pointer.For("USD/2"),
+		Reference:                   "order-ref-1",
+		ClientOrderID:               "client-order-1",
+		CreatedAt:                   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		Direction:                   models.ORDER_DIRECTION_BUY,
+		SourceAsset:                 "USD/2",
+		DestinationAsset:            "BTC/8",
+		Type:                        models.ORDER_TYPE_LIMIT,
+		Status:                      models.ORDER_STATUS_FILLED,
+		BaseQuantityOrdered:         big.NewInt(1000),
+		BaseQuantityFilled:          big.NewInt(1000),
+		LimitPrice:                  big.NewInt(5000000),
+		TimeInForce:                 models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED,
+		QuoteAmount:                 big.NewInt(5000000000),
+		QuoteAsset:                  "USD/2",
+		Fee:                         big.NewInt(100),
+		FeeAsset:                    pointer.For("USD/2"),
+		AverageFillPrice:            big.NewInt(5000000),
+		PriceAsset:                  pointer.For("USD/2"),
 		SourceAccountReference:      pointer.For("src-wallet"),
 		DestinationAccountReference: pointer.For("dst-wallet"),
 		Metadata: map[string]string{
@@ -184,6 +184,14 @@ func TestFromPSPOrders(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, orders, 1)
 		assert.Equal(t, "newer", orders[0].ClientOrderID)
+		assert.Len(t, orders[0].Adjustments, 2)
+
+		// older comes first in the list — CreatedAt must win over position.
+		orders, err = models.FromPSPOrders([]models.PSPOrder{older, newer}, connectorID, observedAt)
+		require.NoError(t, err)
+		require.Len(t, orders, 1)
+		assert.Equal(t, "newer", orders[0].ClientOrderID)
+		assert.Len(t, orders[0].Adjustments, 2)
 	})
 
 	t.Run("deduplicates same ID equal CreatedAt, later in list wins", func(t *testing.T) {

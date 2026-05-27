@@ -421,7 +421,7 @@ func latestAdjustmentRaw(adjustments []OrderAdjustment) json.RawMessage {
 	}
 	latest := adjustments[0]
 	for _, a := range adjustments[1:] {
-		if a.CreatedAt.After(latest.CreatedAt) {
+		if !a.CreatedAt.Before(latest.CreatedAt) {
 			latest = a
 		}
 	}
@@ -499,6 +499,8 @@ func FromPSPOrders(from []PSPOrder, connectorID ConnectorID, observedAt time.Tim
 		} else {
 			newest, oldest = order, existing
 		}
+		// FromPSPOrderToOrder always creates a single order with a single adjustment
+		// after combining we want to keep the older record as the first adjustment
 		newest.Adjustments = append(oldest.Adjustments, newest.Adjustments...)
 		seen[order.ID] = newest
 	}
