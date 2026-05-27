@@ -1,6 +1,7 @@
 package bitstamp
 
 import (
+	"errors"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -68,10 +69,12 @@ var _ = Describe("Bitstamp Plugin Balances", func() {
 		})
 
 		It("propagates GetAccountBalances errors", func(ctx SpecContext) {
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(nil, ErrPartialEnrichment)
+			expectedErr := errors.New("failed")
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return(nil, expectedErr)
 
 			_, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(expectedErr))
 		})
 	})
 })

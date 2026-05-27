@@ -75,7 +75,7 @@ func TestAccountBalanceToPSPAccountEnriched(t *testing.T) {
 	if got.Metadata[MetadataKeyFeeTierMaker] != "0.300" || got.Metadata[MetadataKeyFeeTierTaker] != "0.400" {
 		t.Errorf("fee tier metadata missing: %+v", got.Metadata)
 	}
-	if got.Metadata[MetadataKeyMinOrderValue] != "10" || got.Metadata[MetadataKeyMarketType] != "SPOT" {
+	if got.Metadata[MetadataKeyMinOrderValue] != "10" || got.Metadata[MetadataKeyMarketSymbol] != "SPOT" {
 		t.Errorf("market metadata missing: %+v", got.Metadata)
 	}
 	// Networks must be deterministically ordered by network name.

@@ -38,7 +38,7 @@ const (
 	MetadataKeyFeeTierMaker    = MetadataPrefix + "fee_tier_maker"
 	MetadataKeyFeeTierTaker    = MetadataPrefix + "fee_tier_taker"
 	MetadataKeyMinOrderValue   = MetadataPrefix + "min_order_value"
-	MetadataKeyMarketType      = MetadataPrefix + "market_type"
+	MetadataKeyMarketSymbol    = MetadataPrefix + "market_symbol"
 
 	MetadataKeyOrderEventType      = MetadataPrefix + "order_event_type"
 	MetadataKeyOrderEventID        = MetadataPrefix + "order_event_id"

@@ -60,11 +60,10 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 	}
 
 	Context("fetching next orders", func() {
-		It("returns empty response when FromPayload has no tradeable markets", func(ctx SpecContext) {
-			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.Orders).To(BeEmpty())
-			Expect(resp.HasMore).To(BeFalse())
+		It("returns error when FromPayload is empty", func(ctx SpecContext) {
+			_, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("missing payload in FromPayload"))
 		})
 
 		It("passes the market name directly to the API", func(ctx SpecContext) {
@@ -266,6 +265,62 @@ var _ = Describe("Bitstamp Plugin Orders", func() {
 				State:       resp.NewState,
 			})
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("skips the event whose ID equals the since_id cursor to avoid duplicate imports", func(ctx SpecContext) {
+			const sinceID = "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4"
+			const newEventID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+
+			initialState, _ := json.Marshal(ordersState{
+				LastSeenEventIDPerMarket: map[string]string{"BTC/USD": sinceID},
+			})
+
+			// API returns the since_id event first (as Bitstamp does), followed by a new event.
+			expectedSinceID := sinceID
+			m.EXPECT().GetAccountOrderData(gomock.Any(), "BTC/USD", &expectedSinceID).
+				Return([]client.AccountOrderDataEvent{
+					{
+						Event:   "order_created",
+						EventID: sinceID,
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("1000"), IDStr: "1000",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime:       "1779709892",
+							Amount:         json.Number("0.5"),
+							AmountStr:      "0.5",
+							AmountTraded:   "0",
+							AmountAtCreate: "0.5",
+							PriceStr:       "60000.00",
+						},
+					},
+					{
+						Event:   "order_created",
+						EventID: newEventID,
+						Data: client.AccountOrderDataItem{
+							ID: json.Number("1001"), IDStr: "1001",
+							OrderType: 0, OrderSubtype: 0,
+							Datetime:       "1779709900",
+							Amount:         json.Number("0.5"),
+							AmountStr:      "0.5",
+							AmountTraded:   "0",
+							AmountAtCreate: "0.5",
+							PriceStr:       "60000.00",
+						},
+					},
+				}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{
+				FromPayload: fromPayloadWithMarkets("USD", []string{"BTC/USD"}),
+				State:       initialState,
+			})
+			Expect(err).ToNot(HaveOccurred())
+			// The since_id event must be dropped; only the new event is returned.
+			Expect(resp.Orders).To(HaveLen(1))
+			Expect(resp.Orders[0].Reference).To(Equal("1001"))
+
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.LastSeenEventIDPerMarket["BTC/USD"]).To(Equal(newEventID))
 		})
 
 		It("truncates orders within a market when the API returns more events than the page size", func(ctx SpecContext) {

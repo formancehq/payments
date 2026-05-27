@@ -124,7 +124,7 @@ func buildAccountMetadata(enrich AccountEnrichment) (map[string]string, error) {
 		out[MetadataKeyMinOrderValue] = s
 	}
 	if s := strings.TrimSpace(enrich.MarketType); s != "" {
-		out[MetadataKeyMarketType] = s
+		out[MetadataKeyMarketSymbol] = s
 	}
 	return out, nil
 }

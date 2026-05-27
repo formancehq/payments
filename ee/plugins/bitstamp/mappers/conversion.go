@@ -69,15 +69,23 @@ func UserTransactionToPSPConversion(currencies map[string]int, tx client.UserTra
 		Raw:                         raw,
 	}
 
-	// Fee is in the quote currency. Leave Fee/FeeAsset nil when absent
-	// rather than fabricating a zero amount in the wrong asset.
+	// Fee is in the quote currency. Identify the quote leg from the pair
+	// key (e.g. "usdc_eur" → quote = "eur"). For a buy the quote is the
+	// source; for a sell it is the destination. Fall back to destination
+	// when the pair key is unavailable.
+	feeLeg := destination
+	if parts := strings.SplitN(pairKey, "_", 2); len(parts) == 2 {
+		if strings.EqualFold(source.Symbol, parts[1]) {
+			feeLeg = source
+		}
+	}
 	if !IsZeroAmount(tx.Fee) {
-		fee, ferr := ParseDecimalAmount(AbsAmount(tx.Fee), destination.Precision)
+		fee, ferr := ParseDecimalAmount(AbsAmount(tx.Fee), feeLeg.Precision)
 		if ferr != nil {
 			return ConversionMapResult{}, fmt.Errorf("conversion tx %d fee: %w", tx.ID, ferr)
 		}
 		conv.Fee = fee
-		feeAsset := destination.Asset
+		feeAsset := feeLeg.Asset
 		conv.FeeAsset = &feeAsset
 	}
 

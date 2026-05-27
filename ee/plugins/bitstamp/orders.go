@@ -72,6 +72,11 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 		var lastEventID string
 		for _, event := range events {
+			// the ID we got from the state was already imported by the previous job
+			if sinceID != "" && event.EventID == sinceID {
+				continue
+			}
+
 			if !isValidMarketEventID(event.EventID) {
 				p.logger.WithField("market", marketName).WithField("eventID", event.EventID).WithField("order_id", event.Data.IDStr).
 					Debugf("skipping event with invalid ID")
@@ -133,7 +138,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 // so this function receives the raw PSPAccount JSON directly.
 func tradeableMarketsFromPayload(payload json.RawMessage) (string, []string, error) {
 	if len(payload) == 0 {
-		return "", nil, nil
+		return "", nil, fmt.Errorf("missing payload in FromPayload")
 	}
 	var account models.PSPAccount
 	if err := json.Unmarshal(payload, &account); err != nil {

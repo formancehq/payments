@@ -90,11 +90,12 @@ func TestUserTransactionToPSPConversionWithFee(t *testing.T) {
 	if res.Conversion == nil {
 		t.Fatal("expected conversion")
 	}
-	if res.Conversion.Fee == nil || res.Conversion.Fee.Cmp(big.NewInt(50000)) != 0 {
-		t.Errorf("fee=%v, want 50000 minor units at USDC/6", res.Conversion.Fee)
+	// pair key is "usdc_eur" → quote = EUR = source; fee 0.05 at EUR/2 = 5 minor units.
+	if res.Conversion.Fee == nil || res.Conversion.Fee.Cmp(big.NewInt(5)) != 0 {
+		t.Errorf("fee=%v, want 5 minor units at EUR/2", res.Conversion.Fee)
 	}
-	if res.Conversion.FeeAsset == nil || *res.Conversion.FeeAsset != "USDC/6" {
-		t.Errorf("feeAsset=%v, want USDC/6", res.Conversion.FeeAsset)
+	if res.Conversion.FeeAsset == nil || *res.Conversion.FeeAsset != "EUR/2" {
+		t.Errorf("feeAsset=%v, want EUR/2", res.Conversion.FeeAsset)
 	}
 }
 

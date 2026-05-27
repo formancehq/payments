@@ -68,7 +68,7 @@ func TestMetadataKeysAreNamespaced(t *testing.T) {
 		MetadataKeyPendingReason, MetadataKeyBankTransactionID,
 		MetadataKeyNetworks, MetadataKeyWithdrawalFees, MetadataKeyTradableMarkets,
 		MetadataKeyFeeTierMaker, MetadataKeyFeeTierTaker, MetadataKeyMinOrderValue,
-		MetadataKeyMarketType, MetadataKeyOrderDatetimeSecs,
+		MetadataKeyMarketSymbol, MetadataKeyOrderDatetimeSecs,
 	} {
 		if !startsWith(k, MetadataPrefix) {
 			t.Errorf("%q not under %s", k, MetadataPrefix)

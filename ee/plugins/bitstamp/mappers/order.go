@@ -188,7 +188,7 @@ func accountOrderEventMetadata(
 	pair string,
 ) map[string]string {
 	m := map[string]string{
-		MetadataKeyMarketType:   marketType,
+		MetadataKeyMarketSymbol:   marketType,
 		MetadataKeyCurrencyPair: pair,
 	}
 	setIfNonEmpty(m, MetadataKeyOrderEventType, event.Event)

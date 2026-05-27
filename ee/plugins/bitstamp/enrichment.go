@@ -37,10 +37,10 @@ type enrichmentState struct {
 // per source. Any other error wraps ErrPartialEnrichment.
 func (p *Plugin) fetchAccountEnrichmentData(ctx context.Context) (enrichmentState, error) {
 	var state enrichmentState
-	g, gCtx := errgroup.WithContext(ctx)
+	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := p.client.GetMarkets(gCtx)
+		rows, err := p.client.GetMarkets(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to refresh %s: %w", pathMarkets, err)
 		}
@@ -48,7 +48,7 @@ func (p *Plugin) fetchAccountEnrichmentData(ctx context.Context) (enrichmentStat
 		return nil
 	})
 	g.Go(func() error {
-		rows, err := p.client.GetMyMarkets(gCtx)
+		rows, err := p.client.GetMyMarkets(ctx)
 		if err != nil {
 			var derivErr *client.DerivativesUnsupportedError
 			if errors.As(err, &derivErr) {
@@ -60,7 +60,7 @@ func (p *Plugin) fetchAccountEnrichmentData(ctx context.Context) (enrichmentStat
 		return nil
 	})
 	g.Go(func() error {
-		rows, err := p.client.GetTradingFees(gCtx)
+		rows, err := p.client.GetTradingFees(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to refresh %s: %w", pathFeesTrading, err)
 		}
@@ -68,7 +68,7 @@ func (p *Plugin) fetchAccountEnrichmentData(ctx context.Context) (enrichmentStat
 		return nil
 	})
 	g.Go(func() error {
-		rows, err := p.client.GetWithdrawalFees(gCtx)
+		rows, err := p.client.GetWithdrawalFees(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to refresh %s: %w", pathFeesWithdrawal, err)
 		}
