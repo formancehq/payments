@@ -16,9 +16,15 @@ runs:
     - name: Load dependencies
       shell: bash
       run: nix develop --install
+    - name: Go environment
+      id: go-env
+      shell: bash
+      run: |
+        echo "GOCACHE=$(nix develop --impure --command go env GOCACHE)" >> $GITHUB_OUTPUT
+        echo "GOMODCACHE=$(nix develop --impure --command go env GOMODCACHE)" >> $GITHUB_OUTPUT
     - uses: namespacelabs/nscloud-cache-action@v1
       if: inputs.nscloud-cache != 'false'
       with:
         path: |
-          ~/.cache/go-build
-          /tmp/go/pkg/mod/
+          ${{ steps.go-env.outputs.GOCACHE }}
+          ${{ steps.go-env.outputs.GOMODCACHE }}

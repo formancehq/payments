@@ -23,6 +23,10 @@ jobs:
           registry: ghcr.io
           username: "NumaryBot"
           password: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - uses: namespacelabs/nscloud-setup-buildx-action@v0
+      - name: Download Go modules
+        shell: bash
+        run: nix develop --impure --command go mod download
       - run: >
           nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
           develop --impure --command just release
