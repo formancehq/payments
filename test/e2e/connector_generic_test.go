@@ -9,8 +9,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
@@ -252,11 +252,14 @@ var _ = Context("Generic Connector E2E", Serial, func() {
 })
 
 func loadAccountsByType(ctx context.Context, srv *Server, accountType models.AccountType) []internalEvents.AccountMessagePayload {
-	payloads, _ := LoadOutboxPayloadsByType(ctx, srv, events.EventTypeSavedAccounts)
+	GinkgoHelper()
+	payloads, err := LoadOutboxPayloadsByType(ctx, srv, events.EventTypeSavedAccounts)
+	Expect(err).ToNot(HaveOccurred(), "LoadOutboxPayloadsByType failed for accountType %s", accountType)
 	accounts := make([]internalEvents.AccountMessagePayload, 0)
-	for _, p := range payloads {
+	for i, p := range payloads {
 		var msg internalEvents.AccountMessagePayload
-		if json.Unmarshal(p, &msg) == nil && msg.Type == string(accountType) {
+		Expect(json.Unmarshal(p, &msg)).ToNot(HaveOccurred(), "failed to unmarshal payload %d for accountType %s", i, accountType)
+		if msg.Type == string(accountType) {
 			accounts = append(accounts, msg)
 		}
 	}

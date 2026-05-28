@@ -195,6 +195,11 @@ func parseTimeParam(r *http.Request, name string) (time.Time, bool) {
 }
 
 func (s *Server) handleAccounts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	s.accountsCalled.Add(1)
 	w.Header().Set("Content-Type", "application/json")
 	if t, ok := parseTimeParam(r, "createdAtFrom"); ok {
@@ -206,6 +211,11 @@ func (s *Server) handleAccounts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAccountSub(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/accounts/"), "/")
 	if len(parts) >= 2 && parts[1] == "balances" {
 		accountID := parts[0]
@@ -223,6 +233,11 @@ func (s *Server) handleAccountSub(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleTransactions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	s.transactionsCalled.Add(1)
 	w.Header().Set("Content-Type", "application/json")
 	if t, ok := parseTimeParam(r, "updatedAtFrom"); ok {
@@ -234,6 +249,11 @@ func (s *Server) handleTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleBeneficiaries(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	s.beneficiariesCalled.Add(1)
 	w.Header().Set("Content-Type", "application/json")
 	if t, ok := parseTimeParam(r, "createdAtFrom"); ok {
@@ -251,6 +271,10 @@ func (s *Server) handlePayouts(w http.ResponseWriter, r *http.Request) {
 	}
 	var req PayoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if req.IdempotencyKey == "" || req.Amount == "" || req.Currency == "" || req.SourceAccountID == "" || req.DestinationAccountID == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -276,6 +300,10 @@ func (s *Server) handleTransfers(w http.ResponseWriter, r *http.Request) {
 	}
 	var req TransferRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if req.IdempotencyKey == "" || req.Amount == "" || req.Currency == "" || req.SourceAccountID == "" || req.DestinationAccountID == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
