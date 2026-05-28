@@ -8,10 +8,10 @@ import (
 	"fmt"
 	libtime "time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -147,12 +147,12 @@ func (s *store) OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UU
 
 type OpenBankingConnectionAttemptsQuery struct{}
 
-type ListOpenBankingConnectionAttemptsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]]
+type ListOpenBankingConnectionAttemptsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]]
 
-func NewListOpenBankingConnectionAttemptsQuery(opts bunpaginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]) ListOpenBankingConnectionAttemptsQuery {
+func NewListOpenBankingConnectionAttemptsQuery(opts paginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]) ListOpenBankingConnectionAttemptsQuery {
 	return ListOpenBankingConnectionAttemptsQuery{
 		PageSize: opts.PageSize,
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		Options:  opts,
 	}
 }
@@ -176,7 +176,7 @@ func (s *store) openBankingConnectionAttemptsQueryContext(qb query.Builder) (str
 	}))
 }
 
-func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
+func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListOpenBankingConnectionAttemptsQuery) (*paginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	var (
 		where string
 		args  []any
@@ -189,8 +189,8 @@ func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uui
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery], openBankingConnectionAttempt](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]])(&query),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery], openBankingConnectionAttempt](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -217,7 +217,7 @@ func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uui
 		openBankingConnectionAttemptsModels[i] = *res
 	}
 
-	return &bunpaginate.Cursor[models.OpenBankingConnectionAttempt]{
+	return &paginate.Cursor[models.OpenBankingConnectionAttempt]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -332,11 +332,11 @@ func (s *store) OpenBankingForwardedUserDelete(ctx context.Context, psuID uuid.U
 
 type OpenBankingForwardedUserQuery struct{}
 
-type ListOpenBankingForwardedUserQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]]
+type ListOpenBankingForwardedUserQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]]
 
-func NewListOpenBankingForwardedUserQuery(opts bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]) ListOpenBankingForwardedUserQuery {
+func NewListOpenBankingForwardedUserQuery(opts paginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]) ListOpenBankingForwardedUserQuery {
 	return ListOpenBankingForwardedUserQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -366,7 +366,7 @@ func (s *store) openBankingForwardedUserQueryContext(qb query.Builder) (string, 
 	}))
 }
 
-func (s *store) OpenBankingForwardedUserList(ctx context.Context, query ListOpenBankingForwardedUserQuery) (*bunpaginate.Cursor[models.OpenBankingForwardedUser], error) {
+func (s *store) OpenBankingForwardedUserList(ctx context.Context, query ListOpenBankingForwardedUserQuery) (*paginate.Cursor[models.OpenBankingForwardedUser], error) {
 	var (
 		where string
 		args  []any
@@ -379,8 +379,8 @@ func (s *store) OpenBankingForwardedUserList(ctx context.Context, query ListOpen
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery], openBankingForwardedUser](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]])(&query),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery], openBankingForwardedUser](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -403,7 +403,7 @@ func (s *store) OpenBankingForwardedUserList(ctx context.Context, query ListOpen
 		obForwardedUserModels[i] = *bb
 	}
 
-	return &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	return &paginate.Cursor[models.OpenBankingForwardedUser]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -669,12 +669,12 @@ func (s *store) OpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUI
 
 type OpenBankingConnectionsQuery struct{}
 
-type ListOpenBankingConnectionsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]]
+type ListOpenBankingConnectionsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]]
 
-func NewListOpenBankingConnectionsQuery(opts bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]) ListOpenBankingConnectionsQuery {
+func NewListOpenBankingConnectionsQuery(opts paginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]) ListOpenBankingConnectionsQuery {
 	return ListOpenBankingConnectionsQuery{
 		PageSize: opts.PageSize,
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		Options:  opts,
 	}
 }
@@ -703,7 +703,7 @@ func (s *store) openBankingConnectionsQueryContext(qb query.Builder) (string, []
 	}))
 }
 
-func (s *store) OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error) {
+func (s *store) OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListOpenBankingConnectionsQuery) (*paginate.Cursor[models.OpenBankingConnection], error) {
 	var (
 		where string
 		args  []any
@@ -716,8 +716,8 @@ func (s *store) OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID,
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery], openBankingConnections](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]])(&query),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[OpenBankingConnectionsQuery], openBankingConnections](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -746,7 +746,7 @@ func (s *store) OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID,
 		openBankingConnectionsModels[i] = toOpenBankingConnectionsModels(connection)
 	}
 
-	return &bunpaginate.Cursor[models.OpenBankingConnection]{
+	return &paginate.Cursor[models.OpenBankingConnection]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

@@ -6,8 +6,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/migrations"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/storage/migrations"
 	"github.com/uptrace/bun"
 )
 

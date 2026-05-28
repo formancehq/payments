@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"

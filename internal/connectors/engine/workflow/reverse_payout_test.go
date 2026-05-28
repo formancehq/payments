@@ -5,8 +5,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
@@ -23,7 +23,7 @@ func (s *UnitTestSuite) Test_ReversePayout_Success() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -47,7 +47,7 @@ func (s *UnitTestSuite) Test_ReversePayout_Success() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -117,7 +117,7 @@ func (s *UnitTestSuite) Test_ReversePayout_PluginReversePayout_Error_Success() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -141,7 +141,7 @@ func (s *UnitTestSuite) Test_ReversePayout_PluginReversePayout_Error_Success() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -286,7 +286,7 @@ func (s *UnitTestSuite) Test_ReversePayout_ValidatePaymentInitiationProcessed_Er
 	)
 	// No processed payment initiation adjustments
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -323,7 +323,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationAdjustmentsLi
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -380,7 +380,7 @@ func (s *UnitTestSuite) Test_ReversePayout_ValidateReverseAmount_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -404,7 +404,7 @@ func (s *UnitTestSuite) Test_ReversePayout_ValidateReverseAmount_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -457,7 +457,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsAdjustmentsI
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -481,7 +481,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsAdjustmentsI
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -522,7 +522,7 @@ func (s *UnitTestSuite) Test_ReversePayout_ValidateOnlyReverse_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -546,7 +546,7 @@ func (s *UnitTestSuite) Test_ReversePayout_ValidateOnlyReverse_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -584,7 +584,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StorageAccountsGet_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -608,7 +608,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StorageAccountsGet_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -650,7 +650,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StorageAccountsGet_2_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -674,7 +674,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StorageAccountsGet_2_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -720,7 +720,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentsStore_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -744,7 +744,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentsStore_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -799,7 +799,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsRelatedPayme
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -823,7 +823,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsRelatedPayme
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -879,7 +879,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsAdjustmentsS
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -903,7 +903,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsAdjustmentsS
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -960,7 +960,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationReversalsAdju
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -984,7 +984,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationReversalsAdju
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -1042,7 +1042,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StorageTasksStore_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -1066,7 +1066,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StorageTasksStore_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -1121,7 +1121,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationReversalsAdju
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -1145,7 +1145,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationReversalsAdju
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},
@@ -1197,7 +1197,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsAdjustmentsS
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 1,
 			HasMore:  false,
 			Data: []models.PaymentInitiationAdjustment{
@@ -1221,7 +1221,7 @@ func (s *UnitTestSuite) Test_ReversePayout_StoragePaymentInitiationsAdjustmentsS
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+		&paginate.Cursor[models.PaymentInitiationAdjustment]{
 			PageSize: 0,
 			HasMore:  false,
 			Data:     []models.PaymentInitiationAdjustment{},

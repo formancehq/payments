@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -203,7 +203,7 @@ var _ = Describe("Bitstamp Plugin Conversions", func() {
 			Expect(c.Reference).To(Equal("579538560"))
 			Expect(c.SourceAsset).To(Equal("USDC/6"))
 			Expect(c.DestinationAsset).To(Equal("BTC/8"))
-			Expect(c.SourceAmount.Int64()).To(Equal(int64(9959727)))  // 9.959727 × 10^6 (truncated, not rounded)
+			Expect(c.SourceAmount.Int64()).To(Equal(int64(9959727))) // 9.959727 × 10^6 (truncated, not rounded)
 			Expect(c.DestinationAmount.Int64()).To(Equal(int64(12858)))
 			Expect(c.Fee.Int64()).To(Equal(int64(39840))) // 0.039840 × 10^6 in USDC
 			Expect(*c.FeeAsset).To(Equal("USDC/6"))

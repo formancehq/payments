@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 )
 
 var supportedCurrencies = currency.ISO4217Currencies

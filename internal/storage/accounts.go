@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -231,11 +231,11 @@ func (s *store) AccountsDelete(ctx context.Context, id models.AccountID) error {
 
 type AccountQuery struct{}
 
-type ListAccountsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[AccountQuery]]
+type ListAccountsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[AccountQuery]]
 
-func NewListAccountsQuery(opts bunpaginate.PaginatedQueryOptions[AccountQuery]) ListAccountsQuery {
+func NewListAccountsQuery(opts paginate.PaginatedQueryOptions[AccountQuery]) ListAccountsQuery {
 	return ListAccountsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -269,7 +269,7 @@ func (s *store) accountsQueryContext(qb query.Builder) (string, []any, error) {
 	}))
 }
 
-func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error) {
+func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*paginate.Cursor[models.Account], error) {
 	var (
 		where string
 		args  []any
@@ -282,8 +282,8 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[AccountQuery], account](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[AccountQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[AccountQuery], account](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[AccountQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -305,7 +305,7 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 		accounts = append(accounts, toAccountModels(a))
 	}
 
-	return &bunpaginate.Cursor[models.Account]{
+	return &paginate.Cursor[models.Account]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

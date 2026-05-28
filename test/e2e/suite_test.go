@@ -10,13 +10,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunconnect"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
-	"github.com/formancehq/go-libs/v3/testing/docker"
-	"github.com/formancehq/go-libs/v3/testing/platform/natstesting"
-	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
-	"github.com/formancehq/go-libs/v3/testing/platform/temporaltesting"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
+	"github.com/formancehq/go-libs/v5/pkg/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/testing/docker"
+	"github.com/formancehq/go-libs/v5/pkg/testing/platform/natstesting"
+	"github.com/formancehq/go-libs/v5/pkg/testing/platform/pgtesting"
+	"github.com/formancehq/go-libs/v5/pkg/testing/platform/temporaltesting"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/api/serviceerror"
 	v17 "go.temporal.io/api/workflow/v1"
@@ -74,7 +74,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 		templateDatabase := ret.NewDatabase(GinkgoT(), pgtesting.WithName(DBTemplate))
 
-		migrateDB, err := bunconnect.OpenSQLDB(context.Background(), templateDatabase.ConnectionOptions())
+		migrateDB, err := connect.OpenSQLDB(context.Background(), templateDatabase.ConnectionOptions())
 		Expect(err).To(BeNil())
 
 		err = storage.Migrate(context.Background(), logging.Testing(), migrateDB, "test")

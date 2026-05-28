@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"

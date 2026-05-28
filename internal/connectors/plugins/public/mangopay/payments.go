@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"

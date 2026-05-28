@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/testing/deferred"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
@@ -38,12 +38,12 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 
 	app = NewTestServer(func() Configuration {
 		return Configuration{
-			Stack:                     stack,
-			NatsURL:                   natsServer.GetValue().ClientURL(),
-			PostgresConfiguration:     db.GetValue().ConnectionOptions(),
-			TemporalNamespace:         temporalServer.GetValue().DefaultNamespace(),
-			TemporalAddress:           temporalServer.GetValue().Address(),
-			Output:                    GinkgoWriter,
+			Stack:                      stack,
+			NatsURL:                    natsServer.GetValue().ClientURL(),
+			PostgresConfiguration:      db.GetValue().ConnectionOptions(),
+			TemporalNamespace:          temporalServer.GetValue().DefaultNamespace(),
+			TemporalAddress:            temporalServer.GetValue().Address(),
+			Output:                     GinkgoWriter,
 			SkipOutboxScheduleCreation: true,
 		}
 	})

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"

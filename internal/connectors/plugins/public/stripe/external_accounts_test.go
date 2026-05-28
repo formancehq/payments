@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"

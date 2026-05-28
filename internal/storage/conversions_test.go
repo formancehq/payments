@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/stretchr/testify/assert"
@@ -35,20 +35,20 @@ func TestConversionsUpsert(t *testing.T) {
 		}
 
 		conv := models.Conversion{
-			ID:               convID,
-			ConnectorID:      defaultConnector.ID,
-			Reference:        "conv-test-1",
-			CreatedAt:        now.Add(-60 * time.Minute).UTC().Time,
-			UpdatedAt:        now.Add(-5 * time.Minute).UTC().Time,
-			SourceAsset:      "USD/2",
-			DestinationAsset: "USDC/6",
-			SourceAmount:     big.NewInt(10000),
+			ID:                convID,
+			ConnectorID:       defaultConnector.ID,
+			Reference:         "conv-test-1",
+			CreatedAt:         now.Add(-60 * time.Minute).UTC().Time,
+			UpdatedAt:         now.Add(-5 * time.Minute).UTC().Time,
+			SourceAsset:       "USD/2",
+			DestinationAsset:  "USDC/6",
+			SourceAmount:      big.NewInt(10000),
 			DestinationAmount: big.NewInt(10000000),
-			Status:           models.CONVERSION_STATUS_COMPLETED,
-			Fee:              big.NewInt(50),
-			FeeAsset:         pointer.For("USD/2"),
-			Metadata:         map[string]string{},
-			Raw:              []byte(`{"test": "data"}`),
+			Status:            models.CONVERSION_STATUS_COMPLETED,
+			Fee:               big.NewInt(50),
+			FeeAsset:          pointer.For("USD/2"),
+			Metadata:          map[string]string{},
+			Raw:               []byte(`{"test": "data"}`),
 		}
 
 		require.NoError(t, store.ConversionsUpsert(ctx, []models.Conversion{conv}))
@@ -94,17 +94,17 @@ func TestConversionsUpsert(t *testing.T) {
 		}
 
 		conv := models.Conversion{
-			ID:           convID,
-			ConnectorID:  defaultConnector.ID,
-			Reference:    "conv-test-2",
-			CreatedAt:    now.Add(-60 * time.Minute).UTC().Time,
-			UpdatedAt:    now.Add(-5 * time.Minute).UTC().Time,
-			SourceAsset:  "USD/2",
+			ID:               convID,
+			ConnectorID:      defaultConnector.ID,
+			Reference:        "conv-test-2",
+			CreatedAt:        now.Add(-60 * time.Minute).UTC().Time,
+			UpdatedAt:        now.Add(-5 * time.Minute).UTC().Time,
+			SourceAsset:      "USD/2",
 			DestinationAsset: "EUR/2",
-			SourceAmount: big.NewInt(5000),
-			Status:       models.CONVERSION_STATUS_PENDING,
-			Metadata:     map[string]string{},
-			Raw:          []byte(`{}`),
+			SourceAmount:     big.NewInt(5000),
+			Status:           models.CONVERSION_STATUS_PENDING,
+			Metadata:         map[string]string{},
+			Raw:              []byte(`{}`),
 		}
 
 		// Insert first time
@@ -213,7 +213,7 @@ func TestConversionsList(t *testing.T) {
 	upsertConversions(t, ctx, store, conversions)
 
 	t.Run("list all conversions", func(t *testing.T) {
-		q := NewListConversionsQuery(bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).WithPageSize(10))
+		q := NewListConversionsQuery(paginate.NewPaginatedQueryOptions(ConversionQuery{}).WithPageSize(10))
 		cursor, err := store.ConversionsList(ctx, q)
 		require.NoError(t, err)
 		assert.Len(t, cursor.Data, 2)
@@ -221,7 +221,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by reference", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("reference", "conv-1")),
 		)
@@ -233,7 +233,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by reference with invalid operator", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Lt("reference", "conv-1")),
 		)
@@ -243,7 +243,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by status", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("status", "COMPLETED")),
 		)
@@ -255,7 +255,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by source_asset", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("source_asset", "EUR/2")),
 		)
@@ -267,7 +267,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by metadata", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("metadata[key1]", "value1")),
 		)
@@ -279,7 +279,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by metadata with invalid operator", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Lt("metadata[key1]", "value1")),
 		)
@@ -289,7 +289,7 @@ func TestConversionsList(t *testing.T) {
 
 	t.Run("filter by unknown key", func(t *testing.T) {
 		q := NewListConversionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).
+			paginate.NewPaginatedQueryOptions(ConversionQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("unknown_field", "value")),
 		)
@@ -298,7 +298,7 @@ func TestConversionsList(t *testing.T) {
 	})
 
 	t.Run("pagination", func(t *testing.T) {
-		q := NewListConversionsQuery(bunpaginate.NewPaginatedQueryOptions(ConversionQuery{}).WithPageSize(1))
+		q := NewListConversionsQuery(paginate.NewPaginatedQueryOptions(ConversionQuery{}).WithPageSize(1))
 		cursor, err := store.ConversionsList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
@@ -306,7 +306,7 @@ func TestConversionsList(t *testing.T) {
 
 		// Next page
 		var next ListConversionsQuery
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &next)
+		err = paginate.UnmarshalCursor(cursor.Next, &next)
 		require.NoError(t, err)
 		cursor, err = store.ConversionsList(ctx, next)
 		require.NoError(t, err)

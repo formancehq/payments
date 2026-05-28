@@ -3,8 +3,8 @@ package workflow
 import (
 	"strings"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -23,13 +23,13 @@ func (w Workflow) runUpdateSchedulePollingPeriod(
 ) error {
 	var q storage.ListSchedulesQuery
 	if in.NextPageToken != "" {
-		err := bunpaginate.UnmarshalCursor(in.NextPageToken, &q)
+		err := paginate.UnmarshalCursor(in.NextPageToken, &q)
 		if err != nil {
 			return err
 		}
 	} else {
 		q = storage.NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
 				WithPageSize(100).
 				WithQueryBuilder(
 					query.Match("connector_id", in.ConnectorID.String()),
@@ -93,7 +93,7 @@ func (w Workflow) runUpdateSchedulePollingPeriod(
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(schedules.Next, &q)
+		err = paginate.UnmarshalCursor(schedules.Next, &q)
 		if err != nil {
 			return err
 		}

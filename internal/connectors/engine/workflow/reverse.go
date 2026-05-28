@@ -4,8 +4,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -88,9 +88,9 @@ func (w Workflow) validateOnlyReverse(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:             w.getDefaultTaskQueue(),
-					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes:      w.SearchAttributes(ctx, &validateReverse.ConnectorID),
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes:  w.SearchAttributes(ctx, &validateReverse.ConnectorID),
 				},
 			),
 			RunSendEvents, //nolint:staticcheck // ignore deprecation
@@ -109,7 +109,7 @@ func (w Workflow) validatePaymentInitiationProcessed(
 	validateReverse ValidateReverse,
 ) error {
 	query := storage.NewListPaymentInitiationAdjustmentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 			WithPageSize(1).
 			WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String())),
 	)
@@ -138,7 +138,7 @@ func (w Workflow) validateReverseAmount(
 	amount := validateReverse.PI.Amount
 
 	query := storage.NewListPaymentInitiationAdjustmentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED.String())),
 	)
@@ -162,7 +162,7 @@ func (w Workflow) validateReverseAmount(
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(adjs.Next, &query)
+		err = paginate.UnmarshalCursor(adjs.Next, &query)
 		if err != nil {
 			return err
 		}

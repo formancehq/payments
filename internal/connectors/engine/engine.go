@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
@@ -1535,7 +1535,7 @@ func (e *engine) populatePoolAccounts(ctx context.Context, pool *models.Pool) ([
 	}
 
 	q := storage.NewListAccountsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(qb),
 	)
@@ -1555,7 +1555,7 @@ func (e *engine) populatePoolAccounts(ctx context.Context, pool *models.Pool) ([
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		err = paginate.UnmarshalCursor(cursor.Next, &q)
 		if err != nil {
 			return nil, fmt.Errorf("cannot unmarshal cursor: %w", err)
 		}
@@ -1587,7 +1587,7 @@ func (e *engine) OnStart(ctx context.Context) error {
 	}
 
 	query := storage.NewListConnectorsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
 	)
 
@@ -1607,7 +1607,7 @@ func (e *engine) OnStart(ctx context.Context) error {
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(connectors.Next, &query)
+		err = paginate.UnmarshalCursor(connectors.Next, &query)
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -48,7 +48,7 @@ func TestPoolsList(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			query := storage.ListPoolsQuery{}
-			store.EXPECT().PoolsList(gomock.Any(), query).Return(&bunpaginate.Cursor[models.Pool]{}, test.err)
+			store.EXPECT().PoolsList(gomock.Any(), query).Return(&paginate.Cursor[models.Pool]{}, test.err)
 			_, err := s.PoolsList(context.Background(), query)
 			if test.expectedError == nil {
 				require.NoError(t, err)

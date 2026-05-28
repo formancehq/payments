@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -59,10 +59,10 @@ func TestPaymentInitiationAdjustmentsGetLast(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			query := storage.NewListPaymentInitiationAdjustmentsQuery(
-				bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+				paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 					WithPageSize(1),
 			)
-			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(&paginate.Cursor[models.PaymentInitiationAdjustment]{
 				PageSize: 1,
 				HasMore:  false,
 				Data:     test.storageResponse,

@@ -3,13 +3,13 @@ package v3
 import (
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/auth"
+	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/go-chi/chi/v5"
 )
 
-func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.Mux {
+func newRouter(backend backend.Backend, a jwt.Authenticator, debug bool) *chi.Mux {
 	r := chi.NewRouter()
 	validator := validation.NewValidator()
 
@@ -22,7 +22,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 		// Authenticated routes
 		r.Group(func(r chi.Router) {
-			r.Use(auth.Middleware(a))
+			r.Use(jwt.Middleware(a))
 
 			// Accounts
 			r.Route("/accounts", func(r chi.Router) {

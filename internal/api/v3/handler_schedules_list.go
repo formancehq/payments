@@ -3,10 +3,10 @@ package v3
 import (
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -27,7 +27,7 @@ func schedulesList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
+		query, err := paginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
 			builder := query.And(query.Match("connector_id", connectorID.String()))
 			options, err := getPaginationWithBuilder(span, r, builder, storage.ScheduleQuery{})
 			if err != nil {

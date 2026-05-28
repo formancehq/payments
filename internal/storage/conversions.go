@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -23,20 +23,20 @@ type conversion struct {
 	SortID int64 `bun:"sort_id,autoincrement"`
 
 	// Mandatory fields
-	ID           models.ConversionID     `bun:"id,pk,type:character varying,notnull"`
-	ConnectorID  models.ConnectorID      `bun:"connector_id,type:character varying,notnull"`
-	Reference    string                  `bun:"reference,type:text,notnull"`
-	CreatedAt    internalTime.Time       `bun:"created_at,type:timestamp without time zone,notnull"`
-	UpdatedAt    internalTime.Time       `bun:"updated_at,type:timestamp without time zone,notnull"`
-	SourceAsset  string                  `bun:"source_asset,type:text,notnull"`
-	DestinationAsset  string                  `bun:"destination_asset,type:text,notnull"`
-	SourceAmount *big.Int                `bun:"source_amount,type:numeric,notnull"`
-	Status       models.ConversionStatus `bun:"status,type:text,notnull"`
+	ID               models.ConversionID     `bun:"id,pk,type:character varying,notnull"`
+	ConnectorID      models.ConnectorID      `bun:"connector_id,type:character varying,notnull"`
+	Reference        string                  `bun:"reference,type:text,notnull"`
+	CreatedAt        internalTime.Time       `bun:"created_at,type:timestamp without time zone,notnull"`
+	UpdatedAt        internalTime.Time       `bun:"updated_at,type:timestamp without time zone,notnull"`
+	SourceAsset      string                  `bun:"source_asset,type:text,notnull"`
+	DestinationAsset string                  `bun:"destination_asset,type:text,notnull"`
+	SourceAmount     *big.Int                `bun:"source_amount,type:numeric,notnull"`
+	Status           models.ConversionStatus `bun:"status,type:text,notnull"`
 
 	// Optional fields
-	DestinationAmount    *big.Int `bun:"destination_amount,type:numeric,nullzero"`
-	Fee                  *big.Int `bun:"fee,type:numeric,nullzero"`
-	FeeAsset             *string  `bun:"fee_asset,type:text,nullzero"`
+	DestinationAmount    *big.Int          `bun:"destination_amount,type:numeric,nullzero"`
+	Fee                  *big.Int          `bun:"fee,type:numeric,nullzero"`
+	FeeAsset             *string           `bun:"fee_asset,type:text,nullzero"`
 	SourceAccountID      *models.AccountID `bun:"source_account_id,type:character varying,nullzero"`
 	DestinationAccountID *models.AccountID `bun:"destination_account_id,type:character varying,nullzero"`
 
@@ -144,12 +144,12 @@ func (s *store) ConversionsDeleteFromConnectorID(ctx context.Context, connectorI
 
 type ConversionQuery struct{}
 
-type ListConversionsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConversionQuery]]
+type ListConversionsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ConversionQuery]]
 
-func NewListConversionsQuery(opts bunpaginate.PaginatedQueryOptions[ConversionQuery]) ListConversionsQuery {
+func NewListConversionsQuery(opts paginate.PaginatedQueryOptions[ConversionQuery]) ListConversionsQuery {
 	return ListConversionsQuery{
 		PageSize: opts.PageSize,
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		Options:  opts,
 	}
 }
@@ -190,7 +190,7 @@ func (s *store) conversionsQueryContext(qb query.Builder) (string, []any, error)
 	return where, args, err
 }
 
-func (s *store) ConversionsList(ctx context.Context, q ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error) {
+func (s *store) ConversionsList(ctx context.Context, q ListConversionsQuery) (*paginate.Cursor[models.Conversion], error) {
 	var (
 		where string
 		args  []any
@@ -203,8 +203,8 @@ func (s *store) ConversionsList(ctx context.Context, q ListConversionsQuery) (*b
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[ConversionQuery], conversion](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ConversionQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[ConversionQuery], conversion](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ConversionQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -224,7 +224,7 @@ func (s *store) ConversionsList(ctx context.Context, q ListConversionsQuery) (*b
 		conversions = append(conversions, toConversionModels(c))
 	}
 
-	return &bunpaginate.Cursor[models.Conversion]{
+	return &paginate.Cursor[models.Conversion]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

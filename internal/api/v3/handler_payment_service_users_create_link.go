@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/api"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"

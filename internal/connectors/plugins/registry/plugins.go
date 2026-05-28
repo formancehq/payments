@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -33,8 +33,8 @@ type PluginInformation struct {
 var (
 	pluginsRegistry map[string]PluginInformation = make(map[string]PluginInformation)
 
-	ErrPluginNotFound              = errors.New("plugin not found")
-	ErrPluginEnterpriseOnly        = errors.New("plugin requires Enterprise Edition")
+	ErrPluginNotFound       = errors.New("plugin not found")
+	ErrPluginEnterpriseOnly = errors.New("plugin requires Enterprise Edition")
 
 	checkRequired = regexp.MustCompile("required")
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

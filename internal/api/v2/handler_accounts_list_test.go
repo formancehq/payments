@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -35,7 +35,7 @@ var _ = Describe("API v2 Accounts List", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Account]{}, fmt.Errorf("accounts list error"),
+				&paginate.Cursor[models.Account]{}, fmt.Errorf("accounts list error"),
 			)
 			handlerFn(w, req)
 
@@ -49,7 +49,7 @@ var _ = Describe("API v2 Accounts List", func() {
 				Provider:  "test",
 			}
 			m.EXPECT().AccountsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Account]{
+				&paginate.Cursor[models.Account]{
 					Data: []models.Account{
 						{
 							ID: models.AccountID{

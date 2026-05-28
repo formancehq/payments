@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	bunpaginate "github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	paginate "github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	registry "github.com/formancehq/payments/internal/connectors/plugins/registry"
 	models "github.com/formancehq/payments/internal/models"
 	storage "github.com/formancehq/payments/internal/storage"
@@ -78,10 +78,10 @@ func (mr *MockBackendMockRecorder) AccountsGet(ctx, id any) *gomock.Call {
 }
 
 // AccountsList mocks base method.
-func (m *MockBackend) AccountsList(ctx context.Context, query storage.ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error) {
+func (m *MockBackend) AccountsList(ctx context.Context, query storage.ListAccountsQuery) (*paginate.Cursor[models.Account], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AccountsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Account])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Account])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -93,10 +93,10 @@ func (mr *MockBackendMockRecorder) AccountsList(ctx, query any) *gomock.Call {
 }
 
 // BalancesList mocks base method.
-func (m *MockBackend) BalancesList(ctx context.Context, query storage.ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error) {
+func (m *MockBackend) BalancesList(ctx context.Context, query storage.ListBalancesQuery) (*paginate.Cursor[models.Balance], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BalancesList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Balance])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Balance])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -152,10 +152,10 @@ func (mr *MockBackendMockRecorder) BankAccountsGet(ctx, id any) *gomock.Call {
 }
 
 // BankAccountsList mocks base method.
-func (m *MockBackend) BankAccountsList(ctx context.Context, query storage.ListBankAccountsQuery) (*bunpaginate.Cursor[models.BankAccount], error) {
+func (m *MockBackend) BankAccountsList(ctx context.Context, query storage.ListBankAccountsQuery) (*paginate.Cursor[models.BankAccount], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BankAccountsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.BankAccount])
+	ret0, _ := ret[0].(*paginate.Cursor[models.BankAccount])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -253,10 +253,10 @@ func (mr *MockBackendMockRecorder) ConnectorsInstall(ctx, provider, config any) 
 }
 
 // ConnectorsList mocks base method.
-func (m *MockBackend) ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error) {
+func (m *MockBackend) ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*paginate.Cursor[models.Connector], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConnectorsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Connector])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Connector])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -313,10 +313,10 @@ func (mr *MockBackendMockRecorder) ConversionsGet(ctx, id any) *gomock.Call {
 }
 
 // ConversionsList mocks base method.
-func (m *MockBackend) ConversionsList(ctx context.Context, query storage.ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error) {
+func (m *MockBackend) ConversionsList(ctx context.Context, query storage.ListConversionsQuery) (*paginate.Cursor[models.Conversion], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConversionsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Conversion])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Conversion])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -343,10 +343,10 @@ func (mr *MockBackendMockRecorder) OrdersGet(ctx, id any) *gomock.Call {
 }
 
 // OrdersList mocks base method.
-func (m *MockBackend) OrdersList(ctx context.Context, query storage.ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error) {
+func (m *MockBackend) OrdersList(ctx context.Context, query storage.ListOrdersQuery) (*paginate.Cursor[models.Order], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OrdersList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Order])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Order])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -373,10 +373,10 @@ func (mr *MockBackendMockRecorder) PaymentInitiationAdjustmentsGetLast(ctx, id a
 }
 
 // PaymentInitiationAdjustmentsList mocks base method.
-func (m *MockBackend) PaymentInitiationAdjustmentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error) {
+func (m *MockBackend) PaymentInitiationAdjustmentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationAdjustmentsQuery) (*paginate.Cursor[models.PaymentInitiationAdjustment], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentInitiationAdjustmentsList", ctx, id, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentInitiationAdjustment])
+	ret0, _ := ret[0].(*paginate.Cursor[models.PaymentInitiationAdjustment])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -403,10 +403,10 @@ func (mr *MockBackendMockRecorder) PaymentInitiationAdjustmentsListAll(ctx, id a
 }
 
 // PaymentInitiationRelatedPaymentsList mocks base method.
-func (m *MockBackend) PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
+func (m *MockBackend) PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*paginate.Cursor[models.Payment], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentInitiationRelatedPaymentsList", ctx, id, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Payment])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Payment])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -507,10 +507,10 @@ func (mr *MockBackendMockRecorder) PaymentInitiationsGet(ctx, id any) *gomock.Ca
 }
 
 // PaymentInitiationsList mocks base method.
-func (m *MockBackend) PaymentInitiationsList(ctx context.Context, query storage.ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error) {
+func (m *MockBackend) PaymentInitiationsList(ctx context.Context, query storage.ListPaymentInitiationsQuery) (*paginate.Cursor[models.PaymentInitiation], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentInitiationsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentInitiation])
+	ret0, _ := ret[0].(*paginate.Cursor[models.PaymentInitiation])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -595,10 +595,10 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersConnectionsDelete(ctx, con
 }
 
 // PaymentServiceUsersConnectionsList mocks base method.
-func (m *MockBackend) PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error) {
+func (m *MockBackend) PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListOpenBankingConnectionsQuery) (*paginate.Cursor[models.OpenBankingConnection], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersConnectionsList", ctx, psuID, connectorID, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingConnection])
+	ret0, _ := ret[0].(*paginate.Cursor[models.OpenBankingConnection])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -729,10 +729,10 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersLinkAttemptsGet(ctx, psuID
 }
 
 // PaymentServiceUsersLinkAttemptsList mocks base method.
-func (m *MockBackend) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
+func (m *MockBackend) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*paginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersLinkAttemptsList", ctx, psuID, connectorID, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingConnectionAttempt])
+	ret0, _ := ret[0].(*paginate.Cursor[models.OpenBankingConnectionAttempt])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -744,10 +744,10 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersLinkAttemptsList(ctx, psuI
 }
 
 // PaymentServiceUsersList mocks base method.
-func (m *MockBackend) PaymentServiceUsersList(ctx context.Context, query storage.ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error) {
+func (m *MockBackend) PaymentServiceUsersList(ctx context.Context, query storage.ListPSUsQuery) (*paginate.Cursor[models.PaymentServiceUser], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentServiceUser])
+	ret0, _ := ret[0].(*paginate.Cursor[models.PaymentServiceUser])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -804,10 +804,10 @@ func (mr *MockBackendMockRecorder) PaymentsGet(ctx, id any) *gomock.Call {
 }
 
 // PaymentsList mocks base method.
-func (m *MockBackend) PaymentsList(ctx context.Context, query storage.ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
+func (m *MockBackend) PaymentsList(ctx context.Context, query storage.ListPaymentsQuery) (*paginate.Cursor[models.Payment], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Payment])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Payment])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -920,10 +920,10 @@ func (mr *MockBackendMockRecorder) PoolsGet(ctx, id any) *gomock.Call {
 }
 
 // PoolsList mocks base method.
-func (m *MockBackend) PoolsList(ctx context.Context, query storage.ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error) {
+func (m *MockBackend) PoolsList(ctx context.Context, query storage.ListPoolsQuery) (*paginate.Cursor[models.Pool], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PoolsList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Pool])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Pool])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -978,10 +978,10 @@ func (mr *MockBackendMockRecorder) SchedulesGet(ctx, id, connectorID any) *gomoc
 }
 
 // SchedulesList mocks base method.
-func (m *MockBackend) SchedulesList(ctx context.Context, query storage.ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error) {
+func (m *MockBackend) SchedulesList(ctx context.Context, query storage.ListSchedulesQuery) (*paginate.Cursor[models.Schedule], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SchedulesList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Schedule])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Schedule])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1008,10 +1008,10 @@ func (mr *MockBackendMockRecorder) TaskGet(ctx, id any) *gomock.Call {
 }
 
 // WorkflowsInstancesList mocks base method.
-func (m *MockBackend) WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error) {
+func (m *MockBackend) WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*paginate.Cursor[models.Instance], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WorkflowsInstancesList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Instance])
+	ret0, _ := ret[0].(*paginate.Cursor[models.Instance])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

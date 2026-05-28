@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/fx/workflowfx"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel/metric"
@@ -47,7 +48,7 @@ func purgeOptions(cmd *cobra.Command) error {
 	var purge *Purge
 	options := []fx.Option{
 		fx.Supply(fx.Annotate(logger, fx.As(new(logging.Logger)))),
-		temporal.FXModuleFromFlags(
+		workflowfx.TemporalClientModuleFromFlags(
 			cmd,
 			engine.Tracer,
 			temporal.SearchAttributes{

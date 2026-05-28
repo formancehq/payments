@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
-	temporalworker "github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	temporalworker "github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
@@ -35,8 +35,8 @@ type Workflow struct {
 
 	connectors connectors.Manager
 
-	stackPublicURL           string
-	stack                    string
+	stackPublicURL      string
+	stack               string
 	healthCheckInterval time.Duration
 
 	logger logging.Logger
@@ -44,13 +44,13 @@ type Workflow struct {
 
 func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger, healthCheckInterval time.Duration) Workflow {
 	return Workflow{
-		temporalClient:           temporalClient,
-		temporalNamespace:        temporalNamespace,
-		connectors:               connectors,
-		stack:                    stack,
-		stackPublicURL:           stackPublicURL,
+		temporalClient:      temporalClient,
+		temporalNamespace:   temporalNamespace,
+		connectors:          connectors,
+		stack:               stack,
+		stackPublicURL:      stackPublicURL,
 		healthCheckInterval: healthCheckInterval,
-		logger:                   logger,
+		logger:              logger,
 	}
 }
 

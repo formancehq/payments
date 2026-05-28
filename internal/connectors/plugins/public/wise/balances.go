@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/models"
 )
 
