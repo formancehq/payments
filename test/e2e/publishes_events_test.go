@@ -44,8 +44,6 @@ var _ = Context("Publishes events", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		// Subscribe to published events on NATS for this test
-		e = Subscribe(GinkgoT(), app.GetValue())
 		var err error
 		defaultConnectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 		Expect(err).To(BeNil())
@@ -57,6 +55,9 @@ var _ = Context("Publishes events", Ordered, Serial, func() {
 	})
 
 	It("creates an account on the default connector and publishes the account saved event", func() {
+		// Subscribe after connector install so no install-phase events are queued
+		e = Subscribe(GinkgoT(), app.GetValue())
+
 		// Create a simple v3 account on the default connector
 		createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
 			Reference:   "ref",
