@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -257,4 +257,3 @@ func (s *UnitTestSuite) Test_InstallConnector_WithEmptyBootstrap_OnFailure_DoesN
 	s.True(s.env.IsWorkflowCompleted())
 	s.Error(s.env.GetWorkflowError())
 }
-

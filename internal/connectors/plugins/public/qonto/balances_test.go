@@ -2,7 +2,7 @@ package qonto
 
 import (
 	"encoding/json"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"math/big"
 	"strconv"
 	"time"

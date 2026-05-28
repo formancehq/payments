@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 
-	"github.com/formancehq/go-libs/v3/api"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/api/services"
 	"github.com/formancehq/payments/internal/storage"

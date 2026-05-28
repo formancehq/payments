@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/publish"
+	"github.com/formancehq/go-libs/v5/pkg/messaging/publish"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 )

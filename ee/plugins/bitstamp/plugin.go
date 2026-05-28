@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -48,7 +48,6 @@ type Plugin struct {
 	currLastSync   time.Time
 	currencies     map[string]int // ticker → decimal precision
 	currenciesFull []client.Currency
-
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {

@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/pkg/errors"
 )
 

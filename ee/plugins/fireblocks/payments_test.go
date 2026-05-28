@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -69,12 +69,12 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 				},
 			},
 			{
-				ID:         "c",
-				AssetID:    "USD",
-				AmountInfo: client.AmountInfo{Amount: "10.50"},
-				Operation:  "TRANSFER",
-				Status:     "PENDING_SIGNATURE",
-				CreatedAt:  1001,
+				ID:          "c",
+				AssetID:     "USD",
+				AmountInfo:  client.AmountInfo{Amount: "10.50"},
+				Operation:   "TRANSFER",
+				Status:      "PENDING_SIGNATURE",
+				CreatedAt:   1001,
 				Source:      client.TransferPeer{Type: "VAULT_ACCOUNT"},
 				Destination: client.TransferPeer{Type: "EXTERNAL_WALLET"},
 			},
@@ -99,14 +99,14 @@ var _ = Describe("Fireblocks Plugin Payments", func() {
 		Expect(first.Metadata[MetadataPrefix+"tx_hash"]).To(Equal("hash"))
 		Expect(first.Metadata[MetadataPrefix+"network_fee"]).To(Equal("0.01"))
 
-	second := resp.Payments[1]
-	Expect(second.Reference).To(Equal("c"))
-	Expect(second.Amount).To(Equal(big.NewInt(1050)))
-	Expect(second.Asset).To(Equal("USD/2"))
-	Expect(second.Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
-	Expect(second.Status).To(Equal(models.PAYMENT_STATUS_PENDING))
-	Expect(second.SourceAccountReference).To(BeNil())
-	Expect(second.DestinationAccountReference).To(BeNil())
+		second := resp.Payments[1]
+		Expect(second.Reference).To(Equal("c"))
+		Expect(second.Amount).To(Equal(big.NewInt(1050)))
+		Expect(second.Asset).To(Equal("USD/2"))
+		Expect(second.Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
+		Expect(second.Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+		Expect(second.SourceAccountReference).To(BeNil())
+		Expect(second.DestinationAccountReference).To(BeNil())
 
 		var newState paymentsState
 		err = json.Unmarshal(resp.NewState, &newState)

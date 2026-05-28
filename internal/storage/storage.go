@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -21,7 +21,7 @@ type Storage interface {
 	// Accounts
 	AccountsUpsert(ctx context.Context, accounts []models.Account) error
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
-	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
+	AccountsList(ctx context.Context, q ListAccountsQuery) (*paginate.Cursor[models.Account], error)
 	AccountsListAllByConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.Account, error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	AccountsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
@@ -32,14 +32,14 @@ type Storage interface {
 
 	// Balances
 	BalancesUpsert(ctx context.Context, balances []models.Balance) error
-	BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
+	BalancesList(ctx context.Context, q ListBalancesQuery) (*paginate.Cursor[models.Balance], error)
 	BalancesGetFromAccountIDs(ctx context.Context, accountIDs []models.AccountID, at *time.Time) ([]models.AggregatedBalance, error)
 
 	// Bank Accounts
 	BankAccountsUpsert(ctx context.Context, bankAccount models.BankAccount) error
 	BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error
 	BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) (*models.BankAccount, error)
-	BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (*bunpaginate.Cursor[models.BankAccount], error)
+	BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (*paginate.Cursor[models.BankAccount], error)
 	BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID, relatedAccount models.BankAccountRelatedAccount) error
 	BankAccountsDeleteRelatedAccountFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
@@ -49,7 +49,7 @@ type Storage interface {
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
 	ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
-	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
+	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*paginate.Cursor[models.Connector], error)
 	ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error
 
 	// Connector Tasks Tree
@@ -69,7 +69,7 @@ type Storage interface {
 	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error
 	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)
 	PaymentsGetByReference(ctx context.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error)
-	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
+	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*paginate.Cursor[models.Payment], error)
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	PaymentsDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
 	PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error
@@ -85,35 +85,35 @@ type Storage interface {
 	PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error)
 	PaymentInitiationsDelete(ctx context.Context, piID models.PaymentInitiationID) error
 	PaymentInitiationsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
-	PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error)
+	PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*paginate.Cursor[models.PaymentInitiation], error)
 	PaymentInitiationIDsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiationID, error)
 
 	// Payment Initiation Adjustments
 	PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationAdjustment) error
 	PaymentInitiationAdjustmentsUpsertIfPredicate(ctx context.Context, adj models.PaymentInitiationAdjustment, predicate func(models.PaymentInitiationAdjustment) bool) (bool, error)
 	PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error)
-	PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error)
+	PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*paginate.Cursor[models.PaymentInitiationAdjustment], error)
 
 	// Payment Initiation Related Payments
 	PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID models.PaymentInitiationID, pID models.PaymentID, createdAt time.Time) error
-	PaymentInitiationRelatedPaymentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
+	PaymentInitiationRelatedPaymentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationRelatedPaymentsQuery) (*paginate.Cursor[models.Payment], error)
 
 	// Payment Initiation Reversals
 	PaymentInitiationReversalsUpsert(ctx context.Context, pir models.PaymentInitiationReversal, reversalAdjustments []models.PaymentInitiationReversalAdjustment) error
 	PaymentInitiationReversalsGet(ctx context.Context, id models.PaymentInitiationReversalID) (*models.PaymentInitiationReversal, error)
 	PaymentInitiationReversalsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
-	PaymentInitiationReversalsList(ctx context.Context, q ListPaymentInitiationReversalsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversal], error)
+	PaymentInitiationReversalsList(ctx context.Context, q ListPaymentInitiationReversalsQuery) (*paginate.Cursor[models.PaymentInitiationReversal], error)
 
 	// Payment Initiation Reversal Adjustments
 	PaymentInitiationReversalAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationReversalAdjustment) error
 	PaymentInitiationReversalAdjustmentsGet(ctx context.Context, id models.PaymentInitiationReversalAdjustmentID) (*models.PaymentInitiationReversalAdjustment, error)
-	PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment], error)
+	PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*paginate.Cursor[models.PaymentInitiationReversalAdjustment], error)
 
 	// Payment Service Users
 	PaymentServiceUsersCreate(ctx context.Context, psu models.PaymentServiceUser) error
 	PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*models.PaymentServiceUser, error)
 	PaymentServiceUsersDelete(ctx context.Context, paymentServiceUserID string) error
-	PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error)
+	PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery) (*paginate.Cursor[models.PaymentServiceUser], error)
 	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, bankAccountID uuid.UUID) error
 
 	// Pools
@@ -124,28 +124,28 @@ type Storage interface {
 	PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	PoolsRemoveAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
-	PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error)
+	PoolsList(ctx context.Context, q ListPoolsQuery) (*paginate.Cursor[models.Pool], error)
 
 	// Open Banking
 	OpenBankingConnectionAttemptsUpsert(ctx context.Context, from models.OpenBankingConnectionAttempt) error
 	OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, errMsg *string) error
-	OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error)
+	OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListOpenBankingConnectionAttemptsQuery) (*paginate.Cursor[models.OpenBankingConnectionAttempt], error)
 	OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.OpenBankingConnectionAttempt, error)
 	OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingForwardedUser) error
 	OpenBankingForwardedUserGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error)
 	OpenBankingForwardedUserGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error)
 	OpenBankingForwardedUserDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error
-	OpenBankingForwardedUserList(ctx context.Context, query ListOpenBankingForwardedUserQuery) (*bunpaginate.Cursor[models.OpenBankingForwardedUser], error)
+	OpenBankingForwardedUserList(ctx context.Context, query ListOpenBankingForwardedUserQuery) (*paginate.Cursor[models.OpenBankingForwardedUser], error)
 	OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error
 	OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error
 	OpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, error)
 	OpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error
 	OpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error)
-	OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error)
+	OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListOpenBankingConnectionsQuery) (*paginate.Cursor[models.OpenBankingConnection], error)
 
 	// Schedules
 	SchedulesUpsert(ctx context.Context, schedule models.Schedule) error
-	SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
+	SchedulesList(ctx context.Context, q ListSchedulesQuery) (*paginate.Cursor[models.Schedule], error)
 	SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error)
 	SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	SchedulesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
@@ -178,10 +178,10 @@ type Storage interface {
 	InstancesUpsert(ctx context.Context, instance models.Instance) error
 	InstancesUpdate(ctx context.Context, instance models.Instance) error
 	InstancesGet(ctx context.Context, id string, scheduleID string, connectorID models.ConnectorID) (*models.Instance, error)
-	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
+	InstancesList(ctx context.Context, q ListInstancesQuery) (*paginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	InstancesDeleteFromConnectorIDBatch(ctx context.Context, connectorID models.ConnectorID, batchSize int) (int, error)
-	InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
+	InstancesListSchedulesAboveErrorThreshold(ctx context.Context, connectorID models.ConnectorID, threshold int, q ListInstancesQuery) (*paginate.Cursor[models.Instance], error)
 
 	// Outbox Events
 	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error
@@ -194,15 +194,13 @@ type Storage interface {
 	// Orders
 	OrdersUpsert(ctx context.Context, orders []models.Order) error
 	OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error)
-	OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error)
+	OrdersList(ctx context.Context, q ListOrdersQuery) (*paginate.Cursor[models.Order], error)
 	OrdersDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
-
-
 
 	// Conversions
 	ConversionsUpsert(ctx context.Context, conversions []models.Conversion) error
 	ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error)
-	ConversionsList(ctx context.Context, q ListConversionsQuery) (*bunpaginate.Cursor[models.Conversion], error)
+	ConversionsList(ctx context.Context, q ListConversionsQuery) (*paginate.Cursor[models.Conversion], error)
 	ConversionsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Raw encryption helpers

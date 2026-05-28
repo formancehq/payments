@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"golang.org/x/sync/errgroup"
 )
 
-func (s *Service) PoolsList(ctx context.Context, query storage.ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error) {
+func (s *Service) PoolsList(ctx context.Context, query storage.ListPoolsQuery) (*paginate.Cursor[models.Pool], error) {
 	ps, err := s.storage.PoolsList(ctx, query)
 	if err != nil {
 		return nil, newStorageError(err, "cannot list pools")

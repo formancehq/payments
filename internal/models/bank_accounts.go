@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/google/uuid"
 )
 

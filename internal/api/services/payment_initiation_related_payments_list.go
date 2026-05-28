@@ -3,26 +3,26 @@ package services
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 )
 
-func (s *Service) PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
+func (s *Service) PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*paginate.Cursor[models.Payment], error) {
 	cursor, err := s.storage.PaymentInitiationRelatedPaymentsList(ctx, id, query)
 	return cursor, newStorageError(err, "cannot list payment initiation related payments")
 }
 
 func (s *Service) PaymentInitiationRelatedPaymentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error) {
 	q := storage.NewListPaymentInitiationRelatedPaymentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
 			WithPageSize(50),
 	)
 	var next string
 	relatedPayment := []models.Payment{}
 	for {
 		if next != "" {
-			err := bunpaginate.UnmarshalCursor(next, &q)
+			err := paginate.UnmarshalCursor(next, &q)
 			if err != nil {
 				return nil, err
 			}

@@ -3,8 +3,8 @@ package workflow
 import (
 	"errors"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -40,7 +40,7 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 		},
 	}
 
-	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	obForwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
@@ -167,7 +167,7 @@ func (s *UnitTestSuite) Test_DeletePSU_PluginDeleteUser_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	forwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	forwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
@@ -220,7 +220,7 @@ func (s *UnitTestSuite) Test_DeletePSU_ChildWorkflow_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	forwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	forwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
@@ -276,7 +276,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersDelete_Error() 
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	obForwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
@@ -362,7 +362,7 @@ func (s *UnitTestSuite) Test_DeletePSU_UpdateTaskSuccess_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	obForwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
@@ -421,7 +421,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMultipleObForwardedUsers() {
 	}
 
 	// Multiple open banking forwarded users in a single page
-	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	obForwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
@@ -498,7 +498,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithNoObForwardedUsers() {
 	}
 
 	// Empty open banking forwarded users list
-	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	obForwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data:    []models.OpenBankingForwardedUser{},
 		HasMore: false,
 	}
@@ -541,7 +541,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+	obForwardedUsers := &paginate.Cursor[models.OpenBankingForwardedUser]{
 		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,

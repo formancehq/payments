@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -16,7 +16,7 @@ func (s *Service) PaymentInitiationsReject(ctx context.Context, id models.Paymen
 		ctx,
 		id,
 		storage.NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+			paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 				WithPageSize(1),
 		),
 	)

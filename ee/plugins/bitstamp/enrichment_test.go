@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"go.uber.org/mock/gomock"
 )
@@ -145,10 +145,10 @@ func TestSplitURLSymbol(t *testing.T) {
 func TestBuildEnrichmentForCurrency(t *testing.T) {
 	t.Parallel()
 	currencyIndex := map[string]client.Currency{
-		"BTC": {Currency: "BTC", Networks: []client.CurrencyNetwork{{Network: "bitcoin"}, {Network: "xrpl"}}},
-		"USD": {Currency: "USD"},
-		"ETH": {Currency: "ETH"},
-		"EUR": {Currency: "EUR"},
+		"BTC":  {Currency: "BTC", Networks: []client.CurrencyNetwork{{Network: "bitcoin"}, {Network: "xrpl"}}},
+		"USD":  {Currency: "USD"},
+		"ETH":  {Currency: "ETH"},
+		"EUR":  {Currency: "EUR"},
 		"USDC": {Currency: "USDC"},
 	}
 	enrich := enrichmentState{

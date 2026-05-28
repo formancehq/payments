@@ -1,8 +1,8 @@
 package workflow
 
 import (
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -25,13 +25,13 @@ func (w Workflow) runListActiveSchedules(
 ) (result ListActiveSchedulesResult, _ error) {
 	var q storage.ListSchedulesQuery
 	if listActiveSchedules.NextPageToken != "" {
-		err := bunpaginate.UnmarshalCursor(listActiveSchedules.NextPageToken, &q)
+		err := paginate.UnmarshalCursor(listActiveSchedules.NextPageToken, &q)
 		if err != nil {
 			return result, err
 		}
 	} else {
 		q = storage.NewListSchedulesQuery(
-			bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
+			paginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
 				WithPageSize(100).
 				WithQueryBuilder(
 					query.Match("connector_id", listActiveSchedules.ConnectorID.String()),

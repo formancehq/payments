@@ -1,6 +1,6 @@
 package bankingcircle
 
-import "github.com/formancehq/go-libs/v3/currency"
+import "github.com/formancehq/go-libs/v5/pkg/types/currency"
 
 var (
 	// All supported BankingCircle currencies and decimal are on par with

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	gotime "time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -91,7 +91,6 @@ func (s *store) SchedulesUnpause(ctx context.Context, id string, connectorID mod
 	return e("failed to unpause schedule", err)
 }
 
-
 func (s *store) SchedulesDelete(ctx context.Context, id string) error {
 	_, err := s.db.NewDelete().
 		Model((*schedule)(nil)).
@@ -117,11 +116,11 @@ func (s *store) SchedulesGet(ctx context.Context, id string, connectorID models.
 
 type ScheduleQuery struct{}
 
-type ListSchedulesQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ScheduleQuery]]
+type ListSchedulesQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ScheduleQuery]]
 
-func NewListSchedulesQuery(opts bunpaginate.PaginatedQueryOptions[ScheduleQuery]) ListSchedulesQuery {
+func NewListSchedulesQuery(opts paginate.PaginatedQueryOptions[ScheduleQuery]) ListSchedulesQuery {
 	return ListSchedulesQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -141,7 +140,7 @@ func (s *store) schedulesQueryContext(qb query.Builder) (string, []any, error) {
 	}))
 }
 
-func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error) {
+func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*paginate.Cursor[models.Schedule], error) {
 	var (
 		where string
 		args  []any
@@ -154,8 +153,8 @@ func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpa
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[ScheduleQuery], schedule](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[ScheduleQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[ScheduleQuery], schedule](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[ScheduleQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -175,7 +174,7 @@ func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpa
 		schedules = append(schedules, toScheduleModel(s))
 	}
 
-	return &bunpaginate.Cursor[models.Schedule]{
+	return &paginate.Cursor[models.Schedule]{
 		PageSize: cursor.PageSize,
 		Data:     schedules,
 		HasMore:  cursor.HasMore,

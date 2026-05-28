@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -26,7 +26,7 @@ func TestPaymentInitiationsApprove(t *testing.T) {
 	s := New(store, eng, false)
 
 	query := storage.NewListPaymentInitiationAdjustmentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+		paginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
 			WithPageSize(1),
 	)
 	pid := models.PaymentInitiationID{}
@@ -131,7 +131,7 @@ func TestPaymentInitiationsApprove(t *testing.T) {
 				data = []models.PaymentInitiationAdjustment{*test.adj}
 			}
 			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(
-				&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+				&paginate.Cursor[models.PaymentInitiationAdjustment]{
 					PageSize: 1,
 					HasMore:  false,
 					Data:     data,

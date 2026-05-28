@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -51,13 +51,13 @@ func DefaultConfig() Config {
 
 // ConnectorInstance represents a single connector instance in the workbench.
 type ConnectorInstance struct {
-	ID           string                 `json:"id"`
-	Provider     string                 `json:"provider"`
-	Name         string                 `json:"name"`
-	ConnectorID  models.ConnectorID     `json:"connector_id"`
-	Config       json.RawMessage        `json:"config"`
-	CreatedAt    time.Time              `json:"created_at"`
-	Installed    bool                   `json:"installed"`
+	ID          string             `json:"id"`
+	Provider    string             `json:"provider"`
+	Name        string             `json:"name"`
+	ConnectorID models.ConnectorID `json:"connector_id"`
+	Config      json.RawMessage    `json:"config"`
+	CreatedAt   time.Time          `json:"created_at"`
+	Installed   bool               `json:"installed"`
 
 	// Internal components (not serialized)
 	plugin       models.Plugin
@@ -417,9 +417,9 @@ func (w *Workbench) GetGenericServerStatus() map[string]interface{} {
 
 // AvailableConnector represents an available connector type.
 type AvailableConnector struct {
-	Provider   string             `json:"provider"`
-	Config     registry.Config    `json:"config"`
-	PluginType models.PluginType  `json:"plugin_type"`
+	Provider   string            `json:"provider"`
+	Config     registry.Config   `json:"config"`
+	PluginType models.PluginType `json:"plugin_type"`
 }
 
 // GetAvailableConnectors returns all available connector types from the registry.

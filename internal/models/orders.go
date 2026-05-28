@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/utils/assets"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/gibson042/canonicaljson-go"

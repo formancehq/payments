@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -23,14 +23,14 @@ func init() {
 }
 
 type Plugin struct {
-    models.Plugin
+	models.Plugin
 
-    name   string
-    logger logging.Logger
+	name   string
+	logger logging.Logger
 
-    client            client.Client
-    config            Config
-    supportedWebhooks map[client.EventType]supportedWebhook
+	client            client.Client
+	config            Config
+	supportedWebhooks map[client.EventType]supportedWebhook
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -56,11 +56,11 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 }
 
 func (p *Plugin) Name() string {
-    return p.name
+	return p.name
 }
 
 func (p *Plugin) Config() models.PluginInternalConfig {
-    return p.config
+	return p.config
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {

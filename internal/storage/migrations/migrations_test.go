@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunconnect"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/migrations"
-	testmigrations "github.com/formancehq/go-libs/v3/testing/migrations"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
+	"github.com/formancehq/go-libs/v5/pkg/storage/migrations"
+	testmigrations "github.com/formancehq/go-libs/v5/pkg/testing/migrations"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -34,7 +34,7 @@ func TestMigrationsWithoutV2(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	pgDatabase := srv.NewDatabase(t)
-	db, err := bunconnect.OpenSQLDB(ctx, pgDatabase.ConnectionOptions())
+	db, err := connect.OpenSQLDB(ctx, pgDatabase.ConnectionOptions())
 	require.NoError(t, err)
 
 	if testing.Verbose() {
@@ -53,7 +53,7 @@ func TestMigrationsWithV2(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	pgDatabase := srv.NewDatabase(t)
-	db, err := bunconnect.OpenSQLDB(ctx, pgDatabase.ConnectionOptions())
+	db, err := connect.OpenSQLDB(ctx, pgDatabase.ConnectionOptions())
 	require.NoError(t, err)
 
 	if testing.Verbose() {

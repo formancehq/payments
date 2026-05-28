@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"

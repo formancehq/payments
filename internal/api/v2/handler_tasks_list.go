@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/otel"
@@ -31,14 +31,14 @@ func tasksList(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_tasksList")
 		defer span.End()
 
-		query, err := bunpaginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
-			pageSize, err := bunpaginate.GetPageSize(r)
+		query, err := paginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
+			pageSize, err := paginate.GetPageSize(r)
 			if err != nil {
 				return nil, err
 			}
 			span.SetAttributes(attribute.Int64("pageSize", int64(pageSize)))
 
-			return pointer.For(storage.NewListSchedulesQuery(bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).WithPageSize(pageSize))), nil
+			return pointer.For(storage.NewListSchedulesQuery(paginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).WithPageSize(pageSize))), nil
 		})
 		if err != nil {
 			otel.RecordError(span, err)
@@ -73,7 +73,7 @@ func tasksList(backend backend.Backend) http.HandlerFunc {
 		}
 
 		err = json.NewEncoder(w).Encode(api.BaseResponse[listTasksResponseElement]{
-			Cursor: &bunpaginate.Cursor[listTasksResponseElement]{
+			Cursor: &paginate.Cursor[listTasksResponseElement]{
 				PageSize: cursor.PageSize,
 				HasMore:  cursor.HasMore,
 				Previous: cursor.Previous,

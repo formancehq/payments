@@ -8,10 +8,10 @@ import (
 	"math/big"
 	stdtime "time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -271,11 +271,11 @@ func (s *store) PaymentInitiationsDelete(ctx context.Context, piID models.Paymen
 
 type PaymentInitiationQuery struct{}
 
-type ListPaymentInitiationsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery]]
+type ListPaymentInitiationsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationQuery]]
 
-func NewListPaymentInitiationsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery]) ListPaymentInitiationsQuery {
+func NewListPaymentInitiationsQuery(opts paginate.PaginatedQueryOptions[PaymentInitiationQuery]) ListPaymentInitiationsQuery {
 	return ListPaymentInitiationsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -328,7 +328,7 @@ ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort
 	return join, where, args, err
 }
 
-func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error) {
+func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*paginate.Cursor[models.PaymentInitiation], error) {
 	var (
 		join  string
 		where string
@@ -342,8 +342,8 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery], paymentInitiation](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PaymentInitiationQuery], paymentInitiation](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if join != "" {
 				query = query.Join(join)
@@ -368,7 +368,7 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 		pis = append(pis, toPaymentInitiationModels(pi))
 	}
 
-	return &bunpaginate.Cursor[models.PaymentInitiation]{
+	return &paginate.Cursor[models.PaymentInitiation]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -470,19 +470,19 @@ func (s *store) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id mo
 
 type PaymentInitiationRelatedPaymentsQuery struct{}
 
-type ListPaymentInitiationRelatedPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]]
+type ListPaymentInitiationRelatedPaymentsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]]
 
-func NewListPaymentInitiationRelatedPaymentsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]) ListPaymentInitiationRelatedPaymentsQuery {
+func NewListPaymentInitiationRelatedPaymentsQuery(opts paginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]) ListPaymentInitiationRelatedPaymentsQuery {
 	return ListPaymentInitiationRelatedPaymentsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
 }
 
-func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery], paymentInitiationRelatedPayment](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]])(&q),
+func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationRelatedPaymentsQuery) (*paginate.Cursor[models.Payment], error) {
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery], paymentInitiationRelatedPayment](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			// TODO(polo): sorter ?
 			query = query.Order("created_at DESC", "sort_id DESC")
@@ -505,7 +505,7 @@ func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID m
 		pis = append(pis, *p)
 	}
 
-	return &bunpaginate.Cursor[models.Payment]{
+	return &paginate.Cursor[models.Payment]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -695,11 +695,11 @@ func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.P
 
 type PaymentInitiationAdjustmentsQuery struct{}
 
-type ListPaymentInitiationAdjustmentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]]
+type ListPaymentInitiationAdjustmentsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]]
 
-func NewListPaymentInitiationAdjustmentsQuery(opts bunpaginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]) ListPaymentInitiationAdjustmentsQuery {
+func NewListPaymentInitiationAdjustmentsQuery(opts paginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]) ListPaymentInitiationAdjustmentsQuery {
 	return ListPaymentInitiationAdjustmentsQuery{
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
 	}
@@ -729,7 +729,7 @@ func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (str
 	return where, args, err
 }
 
-func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error) {
+func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*paginate.Cursor[models.PaymentInitiationAdjustment], error) {
 	var (
 		where string
 		args  []any
@@ -742,8 +742,8 @@ func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID model
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery], paymentInitiationAdjustment](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery], paymentInitiationAdjustment](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -765,7 +765,7 @@ func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID model
 		pis = append(pis, toPaymentInitiationAdjustmentModels(pi))
 	}
 
-	return &bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+	return &paginate.Cursor[models.PaymentInitiationAdjustment]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -98,11 +98,11 @@ func TestPaymentInitiationRelatedPaymentsListAll(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			query := storage.NewListPaymentInitiationRelatedPaymentsQuery(
-				bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
+				paginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
 					WithPageSize(50),
 			)
 
-			store.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.Payment]{
+			store.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), pid, query).Return(&paginate.Cursor[models.Payment]{
 				PageSize: 1,
 				HasMore:  false,
 				Data:     []models.Payment{{}},

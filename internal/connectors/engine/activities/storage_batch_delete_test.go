@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/events"
@@ -19,11 +19,11 @@ import (
 
 // batchDeleteTestCase defines a test configuration for batch delete activities
 type batchDeleteTestCase struct {
-	name           string
-	entityName     string
-	registerFunc   func(env *testsuite.TestActivityEnvironment, act activities.Activities)
-	executeFunc    func(env *testsuite.TestActivityEnvironment, act activities.Activities, connectorID models.ConnectorID) error
-	expectBatchFn  func(s *storage.MockStorage, connectorID models.ConnectorID, batchSize int) *gomock.Call
+	name          string
+	entityName    string
+	registerFunc  func(env *testsuite.TestActivityEnvironment, act activities.Activities)
+	executeFunc   func(env *testsuite.TestActivityEnvironment, act activities.Activities, connectorID models.ConnectorID) error
+	expectBatchFn func(s *storage.MockStorage, connectorID models.ConnectorID, batchSize int) *gomock.Call
 }
 
 var batchDeleteTestCases = []batchDeleteTestCase{

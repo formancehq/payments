@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/go-libs/v3/query"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/stretchr/testify/assert"
@@ -525,7 +525,7 @@ func TestOrdersListSorting(t *testing.T) {
 
 	upsertOrders(t, ctx, store, []models.Order{order})
 
-	q := NewListOrdersQuery(bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).WithPageSize(1))
+	q := NewListOrdersQuery(paginate.NewPaginatedQueryOptions(OrderQuery{}).WithPageSize(1))
 	cursor, err := store.OrdersList(ctx, q)
 	require.NoError(t, err)
 	require.Len(t, cursor.Data, 1)
@@ -545,7 +545,7 @@ func TestOrdersList(t *testing.T) {
 	upsertOrders(t, ctx, store, orders)
 
 	t.Run("list all orders", func(t *testing.T) {
-		q := NewListOrdersQuery(bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).WithPageSize(10))
+		q := NewListOrdersQuery(paginate.NewPaginatedQueryOptions(OrderQuery{}).WithPageSize(10))
 		cursor, err := store.OrdersList(ctx, q)
 		require.NoError(t, err)
 		assert.Len(t, cursor.Data, 2)
@@ -553,7 +553,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by reference", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("reference", "order-1")),
 		)
@@ -565,7 +565,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by reference with invalid operator", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Lt("reference", "order-1")),
 		)
@@ -575,7 +575,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by direction", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("direction", "BUY")),
 		)
@@ -587,7 +587,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by status", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("status", "FILLED")),
 		)
@@ -599,7 +599,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by type", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("type", "LIMIT")),
 		)
@@ -611,7 +611,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by metadata", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("metadata[key1]", "value1")),
 		)
@@ -623,7 +623,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by metadata with invalid operator", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Lt("metadata[key1]", "value1")),
 		)
@@ -633,7 +633,7 @@ func TestOrdersList(t *testing.T) {
 
 	t.Run("filter by unknown key", func(t *testing.T) {
 		q := NewListOrdersQuery(
-			bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).
+			paginate.NewPaginatedQueryOptions(OrderQuery{}).
 				WithPageSize(10).
 				WithQueryBuilder(query.Match("unknown_field", "value")),
 		)
@@ -642,7 +642,7 @@ func TestOrdersList(t *testing.T) {
 	})
 
 	t.Run("pagination", func(t *testing.T) {
-		q := NewListOrdersQuery(bunpaginate.NewPaginatedQueryOptions(OrderQuery{}).WithPageSize(1))
+		q := NewListOrdersQuery(paginate.NewPaginatedQueryOptions(OrderQuery{}).WithPageSize(1))
 		cursor, err := store.OrdersList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
@@ -650,7 +650,7 @@ func TestOrdersList(t *testing.T) {
 
 		// Next page
 		var next ListOrdersQuery
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &next)
+		err = paginate.UnmarshalCursor(cursor.Next, &next)
 		require.NoError(t, err)
 		cursor, err = store.OrdersList(ctx, next)
 		require.NoError(t, err)

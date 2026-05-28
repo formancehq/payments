@@ -1,6 +1,6 @@
 package mangopay
 
-import "github.com/formancehq/go-libs/v3/currency"
+import "github.com/formancehq/go-libs/v5/pkg/types/currency"
 
 var (
 	// c.f. https://mangopay.com/docs/api-basics/data-formats

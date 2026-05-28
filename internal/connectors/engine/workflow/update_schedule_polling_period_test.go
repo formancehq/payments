@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
@@ -15,7 +15,7 @@ import (
 
 func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_NoSchedules_Success() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).
-		Once().Return(&bunpaginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{}}, nil)
+		Once().Return(&paginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{}}, nil)
 
 	s.env.ExecuteWorkflow(RunUpdateSchedulePollingPeriod, UpdateSchedulePollingPeriod{
 		ConnectorID: s.connectorID,
@@ -31,7 +31,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_NotPaused_Success() {
 	schedule := models.Schedule{ID: scheduleID, ConnectorID: s.connectorID}
 
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).
-		Once().Return(&bunpaginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{schedule}}, nil)
+		Once().Return(&paginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{schedule}}, nil)
 	s.env.OnActivity(activities.TemporalScheduleUpdatePollingPeriodActivity, mock.Anything, scheduleID, mock.Anything).
 		Once().Return(nil)
 
@@ -49,7 +49,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_NonFetchSchedule_Skippe
 	nonFetch := models.Schedule{ID: fmt.Sprintf("test-%s-HEALTH_CHECK", s.connectorID.String()), ConnectorID: s.connectorID}
 
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).
-		Once().Return(&bunpaginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{nonFetch}}, nil)
+		Once().Return(&paginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{nonFetch}}, nil)
 	// Neither TemporalSchedulesUnpause nor TemporalScheduleUpdatePollingPeriod should be called.
 
 	s.env.ExecuteWorkflow(RunUpdateSchedulePollingPeriod, UpdateSchedulePollingPeriod{
@@ -71,7 +71,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_PausedSchedule_Unpaused
 	}
 
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).
-		Once().Return(&bunpaginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{schedule}}, nil)
+		Once().Return(&paginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{schedule}}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesUnpauseActivity, mock.Anything, []models.Schedule{schedule}).
 		Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleUpdatePollingPeriodActivity, mock.Anything, scheduleID, mock.Anything).
@@ -94,7 +94,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_MixedPaused_OnlyPausedU
 	active := models.Schedule{ID: activeID, ConnectorID: s.connectorID}
 
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).
-		Once().Return(&bunpaginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{paused, active}}, nil)
+		Once().Return(&paginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{paused, active}}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesUnpauseActivity, mock.Anything, []models.Schedule{paused}).
 		Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleUpdatePollingPeriodActivity, mock.Anything, mock.Anything, mock.Anything).
@@ -119,7 +119,7 @@ func (s *UnitTestSuite) Test_UpdateSchedulePollingPeriod_TemporalUnpause_Error()
 	}
 
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).
-		Once().Return(&bunpaginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{schedule}}, nil)
+		Once().Return(&paginate.Cursor[models.Schedule]{HasMore: false, Data: []models.Schedule{schedule}}, nil)
 	s.env.OnActivity(activities.TemporalSchedulesUnpauseActivity, mock.Anything, mock.Anything).
 		Once().Return(temporal.NewNonRetryableApplicationError("unpause error", "TEMPORAL", errors.New("unpause error")))
 

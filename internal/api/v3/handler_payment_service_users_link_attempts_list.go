@@ -3,9 +3,9 @@ package v3
 import (
 	"net/http"
 
-	"github.com/formancehq/go-libs/v3/api"
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	"github.com/formancehq/go-libs/v5/pkg/transport/api"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -35,7 +35,7 @@ func paymentServiceUsersLinkAttemptList(backend backend.Backend) http.HandlerFun
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionAttemptsQuery](r, func() (*storage.ListOpenBankingConnectionAttemptsQuery, error) {
+		query, err := paginate.Extract[storage.ListOpenBankingConnectionAttemptsQuery](r, func() (*storage.ListOpenBankingConnectionAttemptsQuery, error) {
 			options, err := getPagination(span, r, storage.OpenBankingConnectionAttemptsQuery{})
 			if err != nil {
 				return nil, err
@@ -68,7 +68,7 @@ func paymentServiceUsersLinkAttemptList(backend backend.Backend) http.HandlerFun
 			}
 		}
 
-		newCursor := bunpaginate.Cursor[attemptResponse]{
+		newCursor := paginate.Cursor[attemptResponse]{
 			PageSize: cursor.PageSize,
 			HasMore:  cursor.HasMore,
 			Previous: cursor.Previous,

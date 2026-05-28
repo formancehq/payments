@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -51,10 +51,10 @@ type Engine struct {
 	mu sync.RWMutex
 
 	// Execution state
-	installed   bool
-	tasksTree   *models.ConnectorTasksTree
-	pageSize    int
-	running     bool
+	installed bool
+	tasksTree *models.ConnectorTasksTree
+	pageSize  int
+	running   bool
 
 	// Fetch state (for step-by-step execution)
 	accountsFetchState    *fetchState
@@ -67,8 +67,8 @@ type Engine struct {
 }
 
 type fetchState struct {
-	State    json.RawMessage
-	HasMore  bool
+	State        json.RawMessage
+	HasMore      bool
 	PagesFetched int
 	TotalItems   int
 }
@@ -83,12 +83,12 @@ func NewEngine(
 	logger logging.Logger,
 ) *Engine {
 	return &Engine{
-		connectorID:          connectorID,
-		plugin:               plugin,
-		storage:              storage,
-		debug:                debug,
-		tasks:                tasks,
-		logger:               logger,
+		connectorID:           connectorID,
+		plugin:                plugin,
+		storage:               storage,
+		debug:                 debug,
+		tasks:                 tasks,
+		logger:                logger,
 		pageSize:              DefaultPageSize,
 		paymentsFetchState:    make(map[string]*fetchState),
 		balancesFetchState:    make(map[string]*fetchState),
@@ -268,7 +268,7 @@ func (e *Engine) executeFetchAccountsTask(ctx context.Context, task models.Conne
 		}
 
 		pageNum++
-		
+
 		// Start task tracking
 		var exec *TaskExecution
 		if e.tasks != nil {

@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
-	internalTime "github.com/formancehq/go-libs/v3/time"
+	"github.com/formancehq/go-libs/v5/pkg/query"
+	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
+	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
 	internalEvents "github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"
@@ -29,7 +29,7 @@ type order struct {
 	UpdatedAt           internalTime.Time     `bun:"updated_at,type:timestamp without time zone,notnull"`
 	Direction           models.OrderDirection `bun:"direction,type:text,notnull"`
 	SourceAsset         string                `bun:"source_asset,type:text,notnull"`
-	DestinationAsset         string                `bun:"destination_asset,type:text,notnull"`
+	DestinationAsset    string                `bun:"destination_asset,type:text,notnull"`
 	Type                models.OrderType      `bun:"type,type:text,notnull"`
 	BaseQuantityOrdered *big.Int              `bun:"base_quantity_ordered,type:numeric,notnull"`
 	TimeInForce         models.TimeInForce    `bun:"time_in_force,type:text,notnull"`
@@ -38,18 +38,18 @@ type order struct {
 	Status models.OrderStatus `bun:"status,type:text,notnull"`
 
 	// Optional fields
-	BaseQuantityFilled *big.Int           `bun:"base_quantity_filled,type:numeric,nullzero"`
-	LimitPrice         *big.Int           `bun:"limit_price,type:numeric,nullzero"`
-	StopPrice          *big.Int           `bun:"stop_price,type:numeric,nullzero"`
-	ExpiresAt          *internalTime.Time `bun:"expires_at,type:timestamp without time zone,nullzero"`
-	Fee                *big.Int           `bun:"fee,type:numeric,nullzero"`
-	QuoteAmount        *big.Int           `bun:"quote_amount,type:numeric,nullzero"`
-	QuoteAsset         string             `bun:"quote_asset,type:text,notnull,default:''"`
-	FeeAsset           *string            `bun:"fee_asset,type:text,nullzero"`
-	AverageFillPrice   *big.Int           `bun:"average_fill_price,type:numeric,nullzero"`
-	PriceAsset             *string            `bun:"price_asset,type:text,nullzero"`
-	SourceAccountID        *models.AccountID  `bun:"source_account_id,type:character varying,nullzero"`
-	DestinationAccountID   *models.AccountID  `bun:"destination_account_id,type:character varying,nullzero"`
+	BaseQuantityFilled   *big.Int           `bun:"base_quantity_filled,type:numeric,nullzero"`
+	LimitPrice           *big.Int           `bun:"limit_price,type:numeric,nullzero"`
+	StopPrice            *big.Int           `bun:"stop_price,type:numeric,nullzero"`
+	ExpiresAt            *internalTime.Time `bun:"expires_at,type:timestamp without time zone,nullzero"`
+	Fee                  *big.Int           `bun:"fee,type:numeric,nullzero"`
+	QuoteAmount          *big.Int           `bun:"quote_amount,type:numeric,nullzero"`
+	QuoteAsset           string             `bun:"quote_asset,type:text,notnull,default:''"`
+	FeeAsset             *string            `bun:"fee_asset,type:text,nullzero"`
+	AverageFillPrice     *big.Int           `bun:"average_fill_price,type:numeric,nullzero"`
+	PriceAsset           *string            `bun:"price_asset,type:text,nullzero"`
+	SourceAccountID      *models.AccountID  `bun:"source_account_id,type:character varying,nullzero"`
+	DestinationAccountID *models.AccountID  `bun:"destination_account_id,type:character varying,nullzero"`
 
 	// Optional fields with default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
@@ -247,12 +247,12 @@ func (s *store) OrdersDeleteFromConnectorID(ctx context.Context, connectorID mod
 
 type OrderQuery struct{}
 
-type ListOrdersQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OrderQuery]]
+type ListOrdersQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OrderQuery]]
 
-func NewListOrdersQuery(opts bunpaginate.PaginatedQueryOptions[OrderQuery]) ListOrdersQuery {
+func NewListOrdersQuery(opts paginate.PaginatedQueryOptions[OrderQuery]) ListOrdersQuery {
 	return ListOrdersQuery{
 		PageSize: opts.PageSize,
-		Order:    bunpaginate.OrderAsc,
+		Order:    paginate.OrderAsc,
 		Options:  opts,
 	}
 }
@@ -296,7 +296,7 @@ func (s *store) ordersQueryContext(qb query.Builder) (string, []any, error) {
 	return where, args, err
 }
 
-func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate.Cursor[models.Order], error) {
+func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*paginate.Cursor[models.Order], error) {
 	var (
 		where string
 		args  []any
@@ -309,8 +309,8 @@ func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OrderQuery], order](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OrderQuery]])(&q),
+	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[OrderQuery], order](s, ctx,
+		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OrderQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -341,7 +341,7 @@ func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate
 		orders = append(orders, toOrderModels(o))
 	}
 
-	return &bunpaginate.Cursor[models.Order]{
+	return &paginate.Cursor[models.Order]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -352,26 +352,26 @@ func (s *store) OrdersList(ctx context.Context, q ListOrdersQuery) (*bunpaginate
 
 func fromOrderModels(from models.Order) order {
 	o := order{
-		ID:                  from.ID,
-		ConnectorID:         from.ConnectorID,
-		Reference:           from.Reference,
-		ClientOrderID:       from.ClientOrderID,
-		CreatedAt:           internalTime.New(from.CreatedAt),
-		UpdatedAt:           internalTime.New(from.UpdatedAt),
-		Direction:           from.Direction,
-		SourceAsset:         from.SourceAsset,
-		DestinationAsset:         from.DestinationAsset,
-		Type:                from.Type,
-		Status:              from.Status,
-		BaseQuantityOrdered: from.BaseQuantityOrdered,
-		BaseQuantityFilled:  from.BaseQuantityFilled,
-		LimitPrice:          from.LimitPrice,
-		StopPrice:           from.StopPrice,
-		QuoteAmount:         from.QuoteAmount,
-		QuoteAsset:          from.QuoteAsset,
-		Fee:                 from.Fee,
-		FeeAsset:            from.FeeAsset,
-		AverageFillPrice:    from.AverageFillPrice,
+		ID:                   from.ID,
+		ConnectorID:          from.ConnectorID,
+		Reference:            from.Reference,
+		ClientOrderID:        from.ClientOrderID,
+		CreatedAt:            internalTime.New(from.CreatedAt),
+		UpdatedAt:            internalTime.New(from.UpdatedAt),
+		Direction:            from.Direction,
+		SourceAsset:          from.SourceAsset,
+		DestinationAsset:     from.DestinationAsset,
+		Type:                 from.Type,
+		Status:               from.Status,
+		BaseQuantityOrdered:  from.BaseQuantityOrdered,
+		BaseQuantityFilled:   from.BaseQuantityFilled,
+		LimitPrice:           from.LimitPrice,
+		StopPrice:            from.StopPrice,
+		QuoteAmount:          from.QuoteAmount,
+		QuoteAsset:           from.QuoteAsset,
+		Fee:                  from.Fee,
+		FeeAsset:             from.FeeAsset,
+		AverageFillPrice:     from.AverageFillPrice,
 		PriceAsset:           from.PriceAsset,
 		SourceAccountID:      from.SourceAccountID,
 		DestinationAccountID: from.DestinationAccountID,
