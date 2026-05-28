@@ -75,7 +75,6 @@ jobs:
   GoReleaser:
     runs-on: "namespace-profile-linux-amd64-4vcpu"
     if: contains(github.event.pull_request.labels.*.name, 'build-images') || contains(github.event.pull_request.labels.*.name, 'deploy-staging') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
-    timeout-minutes: 5
     needs:
       - Dirty
     steps:
@@ -92,8 +91,12 @@ jobs:
           registry: ghcr.io
           username: "NumaryBot"
           password: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - uses: namespacelabs/nscloud-setup-buildx-action@v0
+      - name: Download Go modules
+        shell: bash
+        run: nix develop --impure --command go mod download
       - run: >
-          nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes" 
+          nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
           develop --impure --command just release-ci
         env:
           GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
