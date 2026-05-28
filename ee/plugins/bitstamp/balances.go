@@ -6,16 +6,24 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	currencies, err := p.getCurrencies(ctx)
+	accountBalances, err := p.client.GetAccountBalances(ctx)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	accountBalances, err := p.client.GetAccountBalances(ctx)
+	if len(accountBalances) == 0 {
+		return models.FetchNextBalancesResponse{
+			Balances: []models.PSPBalance{},
+			HasMore:  false,
+		}, nil
+	}
+
+	currencies, err := p.getCurrencies(ctx)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
@@ -23,14 +31,14 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	now := time.Now().UTC()
 	balances := make([]models.PSPBalance, 0, len(accountBalances))
 	for _, bal := range accountBalances {
-		symbol := normalizeCurrency(bal.Currency)
+		symbol := mappers.NormalizeCurrency(bal.Currency)
 		precision, ok := currencies[symbol]
 		if !ok {
 			p.logger.Infof("skipping balance %s: unsupported currency", symbol)
 			continue
 		}
 
-		amount, err := currency.GetAmountWithPrecisionFromString(bal.Available, precision)
+		amount, err := mappers.ParseDecimalAmount(bal.Available, precision)
 		if err != nil {
 			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance for %s: %w", symbol, err)
 		}

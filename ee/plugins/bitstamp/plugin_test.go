@@ -2,7 +2,6 @@ package bitstamp
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -48,59 +47,15 @@ var _ = Describe("Bitstamp Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			ctrl := gomock.NewController(GinkgoT())
-			defer ctrl.Finish()
-
-			m := client.NewMockClient(ctrl)
 			p := &Plugin{
 				Plugin: plugins.NewBasePlugin(),
-				client: m,
 				logger: logger,
 			}
-
-			m.EXPECT().GetCurrencies(gomock.Any()).Return(
-				[]client.Currency{
-					{Name: "Bitcoin", Currency: "BTC", Decimals: 8, Type: "crypto"},
-					{Name: "Ethereum", Currency: "ETH", Decimals: 18, Type: "crypto"},
-					{Name: "US Dollar", Currency: "USD", Decimals: 2, Type: "fiat"},
-				},
-				nil,
-			)
-
 			req := models.InstallRequest{}
 			res, err := p.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
-
-			Expect(p.currencies).To(HaveKey("BTC"))
-			Expect(p.currencies["BTC"]).To(Equal(8))
-			Expect(p.currencies).To(HaveKey("ETH"))
-			Expect(p.currencies["ETH"]).To(Equal(18))
-			Expect(p.currencies).To(HaveKey("USD"))
-			Expect(p.currencies["USD"]).To(Equal(2))
-		})
-
-		It("should return error when currencies fetch fails", func(ctx SpecContext) {
-			ctrl := gomock.NewController(GinkgoT())
-			defer ctrl.Finish()
-
-			m := client.NewMockClient(ctrl)
-			p := &Plugin{
-				Plugin: plugins.NewBasePlugin(),
-				client: m,
-				logger: logger,
-			}
-
-			m.EXPECT().GetCurrencies(gomock.Any()).Return(
-				nil,
-				fmt.Errorf("connection refused"),
-			)
-
-			req := models.InstallRequest{}
-			_, err := p.Install(ctx, req)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("loading currencies"))
 		})
 	})
 
@@ -179,6 +134,68 @@ var _ = Describe("Bitstamp Plugin", func() {
 			req := models.FetchNextPaymentsRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+	})
+
+	Context("fetch next orders", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextOrdersRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextOrders(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+	})
+
+	Context("fetch next conversions", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextConversionsRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextConversions(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+	})
+
+	Context("capabilities", func() {
+		It("declares fetch accounts, balances, payments, orders, conversions", func() {
+			Expect(capabilities).To(ContainElements(
+				models.CAPABILITY_FETCH_ACCOUNTS,
+				models.CAPABILITY_FETCH_BALANCES,
+				models.CAPABILITY_FETCH_PAYMENTS,
+				models.CAPABILITY_FETCH_ORDERS,
+				models.CAPABILITY_FETCH_CONVERSIONS,
+			))
+		})
+	})
+
+	Context("workflow", func() {
+		It("has four periodic roots with fetch_orders nested under fetch_accounts", func() {
+			tree := workflow()
+			Expect(tree).To(HaveLen(4), "expected 4 root tasks (accounts/balances/payments/conversions)")
+
+			rootTypes := make([]models.TaskType, len(tree))
+			for i, n := range tree {
+				rootTypes[i] = n.TaskType
+				Expect(n.Periodically).To(BeTrue(), "task %s should be periodic", n.Name)
+			}
+			Expect(rootTypes).To(ConsistOf(
+				models.TASK_FETCH_ACCOUNTS,
+				models.TASK_FETCH_BALANCES,
+				models.TASK_FETCH_PAYMENTS,
+				models.TASK_FETCH_CONVERSIONS,
+			))
+
+			// fetch_orders is a periodic child of fetch_accounts so it
+			// receives the parent PSPAccount (and its tradeable markets
+			// metadata) via FromPayload.
+			var accountsNode models.ConnectorTaskTree
+			for _, n := range tree {
+				if n.TaskType == models.TASK_FETCH_ACCOUNTS {
+					accountsNode = n
+					break
+				}
+			}
+			Expect(accountsNode.NextTasks).To(HaveLen(1))
+			child := accountsNode.NextTasks[0]
+			Expect(child.TaskType).To(Equal(models.TASK_FETCH_ORDERS))
+			Expect(child.Periodically).To(BeTrue())
 		})
 	})
 

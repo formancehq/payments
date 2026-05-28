@@ -5,9 +5,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"math/big"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -24,6 +24,13 @@ type Client interface {
 	GetAccountBalances(ctx context.Context) ([]AccountBalance, error)
 	GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error)
 	GetCurrencies(ctx context.Context) ([]Currency, error)
+	GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error)
+
+	// Install-time enrichment endpoints — see MAPPINGS §12.2.
+	GetMarkets(ctx context.Context) ([]Market, error)
+	GetMyMarkets(ctx context.Context) ([]MyMarket, error)
+	GetTradingFees(ctx context.Context) ([]TradingFee, error)
+	GetWithdrawalFees(ctx context.Context) ([]WithdrawalFee, error)
 }
 
 const DefaultEndpoint = "https://www.bitstamp.net"
@@ -35,6 +42,10 @@ type client struct {
 	apiSecret  string
 }
 
+// New returns a Bitstamp REST v2 client. The HTTP transport is wrapped
+// with otelhttp (per-request spans) and metrics (per-connector
+// counters), in that order, so traces carry the connector name out of
+// the box.
 func New(connectorName, apiKey, apiSecret, endpoint string) Client {
 	if endpoint == "" {
 		endpoint = DefaultEndpoint
@@ -44,202 +55,207 @@ func New(connectorName, apiKey, apiSecret, endpoint string) Client {
 		apiKey:    apiKey,
 		apiSecret: apiSecret,
 	}
-
-	config := &httpwrapper.Config{
+	c.httpClient = httpwrapper.NewClient(&httpwrapper.Config{
 		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
-			Transport: http.DefaultTransport,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
 		}),
-	}
-	c.httpClient = httpwrapper.NewClient(config)
-
+	})
 	return c
 }
 
+// signRequest applies Bitstamp v2 HMAC-SHA256 auth headers.
+// The message-to-sign is a raw concatenation (no separators):
+//
+//	"BITSTAMP " + apiKey + method + host + path + query + contentType +
+//	    nonce + timestamp + "v2" + body
+//
+// Bitstamp omits Content-Type for empty-body POSTs; signRequest mirrors
+// that by reading req.Header.Get("Content-Type") (empty string when
+// unset), so callers must NOT set Content-Type for empty bodies.
 func (c *client) signRequest(req *http.Request, body string) {
 	nonce := uuid.New().String()
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-	host := req.URL.Host
-	path := req.URL.Path
-	query := req.URL.RawQuery
-
-	contentType := req.Header.Get("Content-Type")
-
-	// Bitstamp v2 HMAC string-to-sign: raw concatenation, no separators
 	message := "BITSTAMP " + c.apiKey +
 		req.Method +
-		host +
-		path +
-		query +
-		contentType +
+		req.URL.Host +
+		req.URL.Path +
+		req.URL.RawQuery +
+		req.Header.Get("Content-Type") +
 		nonce +
 		timestamp +
 		"v2" +
 		body
 
-	h := hmac.New(sha256.New, []byte(c.apiSecret))
-	h.Write([]byte(message))
-	signature := hex.EncodeToString(h.Sum(nil))
+	mac := hmac.New(sha256.New, []byte(c.apiSecret))
+	mac.Write([]byte(message))
 
 	req.Header.Set("X-Auth", "BITSTAMP "+c.apiKey)
-	req.Header.Set("X-Auth-Signature", signature)
+	req.Header.Set("X-Auth-Signature", hex.EncodeToString(mac.Sum(nil)))
 	req.Header.Set("X-Auth-Nonce", nonce)
 	req.Header.Set("X-Auth-Timestamp", timestamp)
 	req.Header.Set("X-Auth-Version", "v2")
 }
 
-func (c *client) GetAccountBalances(ctx context.Context) ([]AccountBalance, error) {
-	endpoint := fmt.Sprintf("%s/api/v2/account_balances/", c.endpoint)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
+// signedGET issues an authenticated GET with HMAC headers and no body.
+func (c *client) signedGET(ctx context.Context, path string, dst any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("create request %s: %w", path, err)
 	}
-
 	c.signRequest(req, "")
-
-	var response []AccountBalance
-	var errorResponse ErrorResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
+	var errResp ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, dst, &errResp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account balances (status %d, message: %s): %w", statusCode, errorResponse.Message(), err)
-	}
-
-	return response, nil
-}
-
-func (c *client) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
-	endpoint := fmt.Sprintf("%s/api/v2/user_transactions/", c.endpoint)
-
-	params := url.Values{}
-	params.Set("limit", strconv.Itoa(limit))
-	params.Set("sort", "asc")
-	if sinceID != nil && *sinceID > 0 {
-		params.Set("since_id", strconv.FormatInt(*sinceID, 10))
-	}
-	body := params.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	c.signRequest(req, body)
-
-	var response []UserTransaction
-	var errorResponse ErrorResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user transactions (status %d, message: %s): %w", statusCode, errorResponse.Message(), err)
-	}
-
-	return response, nil
-}
-
-func (c *client) GetCurrencies(ctx context.Context) ([]Currency, error) {
-	endpoint := fmt.Sprintf("%s/api/v2/currencies/", c.endpoint)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Public endpoint — no auth needed
-
-	var response []Currency
-	var errorResponse ErrorResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &response, &errorResponse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get currencies (status %d, message: %s): %w", statusCode, errorResponse.Message(), err)
-	}
-
-	return response, nil
-}
-
-// AccountBalance represents a Bitstamp account balance for a single currency.
-type AccountBalance struct {
-	Currency  string `json:"currency"`
-	Total     string `json:"total"`
-	Available string `json:"available"`
-	Reserved  string `json:"reserved"`
-}
-
-// UserTransaction represents a Bitstamp user transaction with dynamic currency keys.
-type UserTransaction struct {
-	ID              int64             `json:"id"`
-	Datetime        string            `json:"datetime"`
-	Type            string            `json:"type"`
-	Fee             string            `json:"fee"`
-	CurrencyAmounts map[string]string `json:"-"`
-}
-
-func (ut *UserTransaction) UnmarshalJSON(data []byte) error {
-	// First unmarshal known fields via an alias to avoid recursion.
-	type Alias UserTransaction
-	var alias Alias
-	if err := json.Unmarshal(data, &alias); err != nil {
-		return err
-	}
-	*ut = UserTransaction(alias)
-
-	// Then extract dynamic currency amount keys from the raw map. Bitstamp
-	// also returns dynamic non-currency properties such as pair rates
-	// ("usdc_eur"), so only string decimal fields with single-symbol keys are
-	// considered currency amounts.
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	knownKeys := map[string]struct{}{
-		"id": {}, "datetime": {}, "type": {}, "fee": {},
-		"order_id": {}, "self_trade": {}, "self_trade_order_id": {},
-	}
-
-	ut.CurrencyAmounts = make(map[string]string)
-	for key, val := range raw {
-		if _, known := knownKeys[key]; known {
-			continue
+		if statusCode == 404 {
+			return &NotFoundError{Endpoint: path, Message: errResp.Message()}
 		}
-		if strings.Contains(key, "_") {
-			continue
+		if errResp.Code == ErrCodeDerivativesUnsupported {
+			return &DerivativesUnsupportedError{Endpoint: path, Message: errResp.Message()}
 		}
-
-		var strVal string
-		if err := json.Unmarshal(val, &strVal); err == nil {
-			if _, ok := new(big.Float).SetString(strVal); ok {
-				ut.CurrencyAmounts[key] = strVal
-			}
-		}
+		return fmt.Errorf("%s (status %d, message: %s): %w", path, statusCode, errResp.Message(), err)
 	}
-
 	return nil
 }
 
-// Currency represents a Bitstamp currency with its decimal precision.
-type Currency struct {
-	Name     string `json:"name"`
-	Currency string `json:"currency"`
-	Decimals int    `json:"decimals"`
-	Type     string `json:"type"`
+// signedPOST is the shared shape for authenticated v2 POST endpoints:
+// optional form body, HMAC headers, JSON-or-error envelope response.
+func (c *client) signedPOST(ctx context.Context, path string, form url.Values, dst any) error {
+	endpoint := c.endpoint + path
+	var (
+		body   string
+		reader io.Reader
+	)
+	if form != nil {
+		body = form.Encode()
+		reader = strings.NewReader(body)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, reader)
+	if err != nil {
+		return fmt.Errorf("create request %s: %w", path, err)
+	}
+	if form != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	c.signRequest(req, body)
+
+	var errResp ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, dst, &errResp)
+	if err != nil {
+		if statusCode == 404 {
+			return &NotFoundError{Endpoint: path, Message: errResp.Message()}
+		}
+		return fmt.Errorf("%s (status %d, message: %s): %w", path, statusCode, errResp.Message(), err)
+	}
+	return nil
 }
 
-// ErrorResponse represents a Bitstamp API error.
-// Bitstamp uses two formats: old (status/reason/code) and new (code/message).
-type ErrorResponse struct {
-	Status string `json:"status"`
-	Reason string `json:"reason"`
-	Code   string `json:"code"`
-	Msg    string `json:"message"`
+func (c *client) GetAccountBalances(ctx context.Context) ([]AccountBalance, error) {
+	var out []AccountBalance
+	if err := c.signedPOST(ctx, "/api/v2/account_balances/", nil, &out); err != nil {
+		return nil, fmt.Errorf("get account balances: %w", err)
+	}
+	return out, nil
 }
 
-func (e ErrorResponse) Message() string {
-	if e.Msg != "" {
-		return e.Msg
+func (c *client) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
+	form := url.Values{}
+	form.Set("sort", "asc")
+	if limit > 0 {
+		form.Set("limit", strconv.Itoa(limit))
 	}
-	if e.Reason != "" {
-		return e.Reason
+	if sinceID != nil && *sinceID > 0 {
+		form.Set("since_id", strconv.FormatInt(*sinceID, 10))
 	}
-	return e.Code
+	var out []UserTransaction
+	if err := c.signedPOST(ctx, "/api/v2/user_transactions/", form, &out); err != nil {
+		return nil, fmt.Errorf("get user transactions: %w", err)
+	}
+	return out, nil
+}
+
+// GetCurrencies hits the public /currencies/ endpoint — no auth, no
+// signing. Kept on the same client so the metrics + otel transport
+// instruments it uniformly.
+func (c *client) GetCurrencies(ctx context.Context) ([]Currency, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v2/currencies/", nil)
+	if err != nil {
+		return nil, fmt.Errorf("get currencies: create request: %w", err)
+	}
+	var out []Currency
+	var errResp ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &out, &errResp)
+	if err != nil {
+		return nil, fmt.Errorf("get currencies (status %d, message: %s): %w", statusCode, errResp.Message(), err)
+	}
+	return out, nil
+}
+
+// GetAccountOrderData returns order lifecycle events for one market.
+// order_source is always "orderbook". sinceID, when non-nil and positive,
+// restricts the response to events whose order ID is greater than sinceID.
+func (c *client) GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error) {
+	form := url.Values{}
+	form.Set("order_source", "orderbook")
+	form.Set("market", strings.TrimSpace(market))
+	if sinceID != nil && *sinceID != "" {
+		form.Set("since_id", *sinceID)
+	}
+	var out []AccountOrderDataEvent
+	if err := c.signedPOST(ctx, "/api/v2/account_order_data/", form, &out); err != nil {
+		return nil, fmt.Errorf("get account order data for %s: %w", market, err)
+	}
+	return out, nil
+}
+
+// GetMarkets returns every Bitstamp market (pair) with base/counter
+// decimals, minimum order value, and market_type (SPOT vs derivatives
+// variants — the spot-only enrichment filters non-SPOT rows out).
+// Public GET; no signing required.
+func (c *client) GetMarkets(ctx context.Context) ([]Market, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v2/markets/", nil)
+	if err != nil {
+		return nil, fmt.Errorf("get markets: create request: %w", err)
+	}
+	var out []Market
+	var errResp ErrorResponse
+	statusCode, err := c.httpClient.Do(ctx, req, &out, &errResp)
+	if err != nil {
+		return nil, fmt.Errorf("get markets (status %d, message: %s): %w", statusCode, errResp.Message(), err)
+	}
+	return out, nil
+}
+
+// GetMyMarkets returns the trading-pair allow-list for the
+// authenticated API key. Authenticated GET endpoint.
+func (c *client) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
+	var out []MyMarket
+	if err := c.signedGET(ctx, "/api/v2/my_markets/", &out); err != nil {
+		return nil, fmt.Errorf("get my markets: %w", err)
+	}
+	return out, nil
+}
+
+// GetTradingFees returns the maker/taker fee schedule for every pair
+// the authenticated key can trade. The fee rate is a string-decimal
+// percentage (e.g. "0.300" = 0.3%).
+func (c *client) GetTradingFees(ctx context.Context) ([]TradingFee, error) {
+	var out []TradingFee
+	if err := c.signedPOST(ctx, "/api/v2/fees/trading/", nil, &out); err != nil {
+		return nil, fmt.Errorf("get trading fees: %w", err)
+	}
+	return out, nil
+}
+
+// GetWithdrawalFees returns per-currency × per-network withdrawal
+// fees (e.g. BTC has both `bitcoin: 0.00008` and `xrpl: 0`). Multiple
+// rows per currency are expected on assets that span multiple
+// blockchains (USDC, ETH, …).
+func (c *client) GetWithdrawalFees(ctx context.Context) ([]WithdrawalFee, error) {
+	var out []WithdrawalFee
+	if err := c.signedPOST(ctx, "/api/v2/fees/withdrawal/", nil, &out); err != nil {
+		return nil, fmt.Errorf("get withdrawal fees: %w", err)
+	}
+	return out, nil
 }

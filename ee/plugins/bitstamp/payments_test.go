@@ -56,8 +56,10 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
+			Expect(err.Error()).To(ContainSubstring("test error"))
+			Expect(err.Error()).To(ContainSubstring("user_transactions"))
+			Expect(resp.Payments).To(BeEmpty())
+			Expect(resp.NewState).To(BeEmpty())
 		})
 
 		It("should fetch deposit transactions as PAYIN", func(ctx SpecContext) {
@@ -183,7 +185,7 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(0))
 		})
 
-		It("should fetch sub-account transfer as TRANSFER", func(ctx SpecContext) {
+		It("should map a sub-account transfer (positive amount) as PAYIN with transfer_pair metadata", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:    []byte(`{}`),
 				PageSize: 100,
@@ -209,7 +211,9 @@ var _ = Describe("Bitstamp Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(1))
 
 			payment := resp.Payments[0]
-			Expect(payment.Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
+			Expect(payment.Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
+			Expect(payment.Metadata).To(HaveKeyWithValue("com.bitstamp.spec/transfer_direction", "incoming"))
+			Expect(payment.Metadata).To(HaveKey("com.bitstamp.spec/transfer_pair_id"))
 		})
 
 		It("should fetch staking rewards as PAYIN", func(ctx SpecContext) {

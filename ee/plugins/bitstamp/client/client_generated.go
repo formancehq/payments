@@ -55,6 +55,21 @@ func (mr *MockClientMockRecorder) GetAccountBalances(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountBalances", reflect.TypeOf((*MockClient)(nil).GetAccountBalances), ctx)
 }
 
+// GetAccountOrderData mocks base method.
+func (m *MockClient) GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountOrderData", ctx, market, sinceID)
+	ret0, _ := ret[0].([]AccountOrderDataEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountOrderData indicates an expected call of GetAccountOrderData.
+func (mr *MockClientMockRecorder) GetAccountOrderData(ctx, market, sinceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountOrderData", reflect.TypeOf((*MockClient)(nil).GetAccountOrderData), ctx, market, sinceID)
+}
+
 // GetCurrencies mocks base method.
 func (m *MockClient) GetCurrencies(ctx context.Context) ([]Currency, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +85,51 @@ func (mr *MockClientMockRecorder) GetCurrencies(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrencies", reflect.TypeOf((*MockClient)(nil).GetCurrencies), ctx)
 }
 
+// GetMarkets mocks base method.
+func (m *MockClient) GetMarkets(ctx context.Context) ([]Market, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarkets", ctx)
+	ret0, _ := ret[0].([]Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarkets indicates an expected call of GetMarkets.
+func (mr *MockClientMockRecorder) GetMarkets(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarkets", reflect.TypeOf((*MockClient)(nil).GetMarkets), ctx)
+}
+
+// GetMyMarkets mocks base method.
+func (m *MockClient) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMyMarkets", ctx)
+	ret0, _ := ret[0].([]MyMarket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMyMarkets indicates an expected call of GetMyMarkets.
+func (mr *MockClientMockRecorder) GetMyMarkets(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyMarkets", reflect.TypeOf((*MockClient)(nil).GetMyMarkets), ctx)
+}
+
+// GetTradingFees mocks base method.
+func (m *MockClient) GetTradingFees(ctx context.Context) ([]TradingFee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTradingFees", ctx)
+	ret0, _ := ret[0].([]TradingFee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTradingFees indicates an expected call of GetTradingFees.
+func (mr *MockClientMockRecorder) GetTradingFees(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradingFees", reflect.TypeOf((*MockClient)(nil).GetTradingFees), ctx)
+}
+
 // GetUserTransactions mocks base method.
 func (m *MockClient) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
 	m.ctrl.T.Helper()
@@ -83,4 +143,19 @@ func (m *MockClient) GetUserTransactions(ctx context.Context, sinceID *int64, li
 func (mr *MockClientMockRecorder) GetUserTransactions(ctx, sinceID, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTransactions", reflect.TypeOf((*MockClient)(nil).GetUserTransactions), ctx, sinceID, limit)
+}
+
+// GetWithdrawalFees mocks base method.
+func (m *MockClient) GetWithdrawalFees(ctx context.Context) ([]WithdrawalFee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithdrawalFees", ctx)
+	ret0, _ := ret[0].([]WithdrawalFee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWithdrawalFees indicates an expected call of GetWithdrawalFees.
+func (mr *MockClientMockRecorder) GetWithdrawalFees(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithdrawalFees", reflect.TypeOf((*MockClient)(nil).GetWithdrawalFees), ctx)
 }

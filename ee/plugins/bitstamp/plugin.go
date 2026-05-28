@@ -9,14 +9,18 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 const (
-	ProviderName   = "bitstamp"
-	MetadataPrefix = "com.bitstamp.spec/"
+	ProviderName = "bitstamp"
+
+	// MetadataPrefix is re-exported from mappers so orchestrator code
+	// doesn't import mappers just for the prefix constant.
+	MetadataPrefix = mappers.MetadataPrefix
 
 	currencyRefreshInterval = 24 * time.Hour
 )
@@ -30,14 +34,21 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name          string
-	logger        logging.Logger
-	client        client.Client
-	config        Config
-	currMu        sync.RWMutex
-	currRefreshMu sync.Mutex
-	currLastSync  time.Time
-	currencies    map[string]int // currency ticker (uppercase) → decimal precision
+	name   string
+	logger logging.Logger
+	client client.Client
+	config Config
+
+	// Currencies cache: precision map (hot path) + full Currency slice
+	// (Networks for enrichment). Both populated by loadCurrencies under
+	// a 24h TTL. Double-checked locking on currRefreshMu. The cache is
+	// acceptable because getCurrencies refreshes it inline on any call.
+	currMu         sync.RWMutex
+	currRefreshMu  sync.Mutex
+	currLastSync   time.Time
+	currencies     map[string]int // ticker → decimal precision
+	currenciesFull []client.Currency
+
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -71,36 +82,46 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 	return p.config
 }
 
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	if err := p.loadCurrencies(ctx); err != nil {
-		return models.InstallResponse{}, fmt.Errorf("loading currencies: %w", err)
-	}
-	return models.InstallResponse{
-		Workflow: workflow(),
-	}, nil
+func (p *Plugin) Install(_ context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
+	return models.InstallResponse{Workflow: workflow()}, nil
 }
 
 func (p *Plugin) loadCurrencies(ctx context.Context) error {
 	currencies, err := p.client.GetCurrencies(ctx)
 	if err != nil {
-		return fmt.Errorf("getting currencies: %w", err)
+		return fmt.Errorf("failed to get currencies: %w", err)
 	}
-
 	currencyMap := make(map[string]int, len(currencies))
 	for _, c := range currencies {
-		symbol := normalizeCurrency(c.Currency)
+		symbol := mappers.NormalizeCurrency(c.Currency)
 		if symbol == "" {
 			continue
 		}
 		currencyMap[symbol] = c.Decimals
 	}
-
 	p.currMu.Lock()
 	p.currencies = currencyMap
+	p.currenciesFull = currencies
 	p.currLastSync = time.Now()
 	p.currMu.Unlock()
 	p.logger.Infof("loaded %d currencies from Bitstamp", len(currencyMap))
 	return nil
+}
+
+// currenciesIndex returns the full Currency objects keyed by
+// uppercase ticker. Reads from the shared currency cache populated
+// by loadCurrencies — no extra API call.
+func (p *Plugin) currenciesIndex(ctx context.Context) (map[string]client.Currency, error) {
+	if err := p.ensureCurrencies(ctx); err != nil {
+		return nil, err
+	}
+	p.currMu.RLock()
+	defer p.currMu.RUnlock()
+	out := make(map[string]client.Currency, len(p.currenciesFull))
+	for _, c := range p.currenciesFull {
+		out[mappers.NormalizeCurrency(c.Currency)] = c
+	}
+	return out, nil
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
@@ -139,12 +160,13 @@ func (p *Plugin) getCurrencies(ctx context.Context) (map[string]int, error) {
 	return p.currencies, nil
 }
 
+// FetchNext* methods are thin guards — the inner orchestrators call
+// getCurrencies() (which TTL-refreshes under the hood), so freshness
+// is handled once at the read site instead of duplicated here.
+
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
-	}
-	if err := p.ensureCurrencies(ctx); err != nil {
-		return models.FetchNextAccountsResponse{}, err
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
@@ -153,9 +175,6 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
-	if err := p.ensureCurrencies(ctx); err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
 	return p.fetchNextBalances(ctx, req)
 }
 
@@ -163,10 +182,21 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
-	if err := p.ensureCurrencies(ctx); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
-	}
 	return p.fetchNextPayments(ctx, req)
+}
+
+func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	if p.client == nil {
+		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextOrders(ctx, req)
+}
+
+func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextConversions(ctx, req)
 }
 
 var _ models.Plugin = &Plugin{}

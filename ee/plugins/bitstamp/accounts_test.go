@@ -2,10 +2,10 @@ package bitstamp
 
 import (
 	"errors"
-	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
+	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -27,14 +27,21 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 			Plugin: plugins.NewBasePlugin(),
 			client: m,
 			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			currencies: map[string]int{
-				"USD": 2,
-				"EUR": 2,
-				"BTC": 8,
-				"ETH": 18,
-			},
-			currLastSync: time.Now(),
 		}
+		// Enrichment caches are refreshed on every FetchNextAccounts cycle;
+		// default each install-time call to a non-empty but cheap response.
+		// Per-test cases can override with explicit expectations.
+		m.EXPECT().GetMarkets(gomock.Any()).Return(nil, nil).AnyTimes()
+		m.EXPECT().GetMyMarkets(gomock.Any()).Return(nil, nil).AnyTimes()
+		m.EXPECT().GetTradingFees(gomock.Any()).Return(nil, nil).AnyTimes()
+		m.EXPECT().GetWithdrawalFees(gomock.Any()).Return(nil, nil).AnyTimes()
+		// currenciesIndex re-fetches full Currency objects on each cycle.
+		m.EXPECT().GetCurrencies(gomock.Any()).Return([]client.Currency{
+			{Currency: "btc", Decimals: 8},
+			{Currency: "usd", Decimals: 2},
+			{Currency: "eur", Decimals: 2},
+			{Currency: "eth", Decimals: 18},
+		}, nil).AnyTimes()
 	})
 
 	AfterEach(func() {
@@ -55,7 +62,9 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			// Orchestrator wraps client errors with a single line of context.
+			Expect(err.Error()).To(ContainSubstring("test error"))
+			Expect(err.Error()).To(ContainSubstring("fetch accounts"))
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
@@ -81,8 +90,9 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 
 			// Verify BTC account
 			Expect(resp.Accounts[0].Reference).To(Equal("BTC"))
-			Expect(resp.Accounts[0].CreatedAt).To(Equal(bitstampLaunchDate))
-			Expect(resp.Accounts[0].Name).To(BeNil())
+			Expect(resp.Accounts[0].CreatedAt).To(Equal(mappers.BitstampGenesis))
+			Expect(resp.Accounts[0].Name).NotTo(BeNil())
+			Expect(*resp.Accounts[0].Name).To(Equal("BTC"))
 			Expect(*resp.Accounts[0].DefaultAsset).To(Equal("BTC/8"))
 
 			// Verify USD account
@@ -150,6 +160,26 @@ var _ = Describe("Bitstamp Plugin Accounts", func() {
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Accounts).To(HaveLen(0))
+			Expect(resp.HasMore).To(BeFalse())
+		})
+
+		It("should return empty accounts when all currencies were already seen", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{"accountCurrenciesImportedAt":{"BTC":"2025-01-01 00:00:00 +0000 UTC","USD":"2025-01-01 00:00:00 +0000 UTC"}}`),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
+				[]client.AccountBalance{
+					{Currency: "btc", Total: "1.50000000", Available: "1.00000000", Reserved: "0.50000000"},
+					{Currency: "usd", Total: "5000.00", Available: "4500.00", Reserved: "500.00"},
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Accounts).To(BeEmpty())
 			Expect(resp.HasMore).To(BeFalse())
 		})
 	})

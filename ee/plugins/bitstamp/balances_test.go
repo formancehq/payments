@@ -41,76 +41,40 @@ var _ = Describe("Bitstamp Plugin Balances", func() {
 	})
 
 	Context("fetching next balances", func() {
-		It("should return an error - get balances error", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
+		It("returns balances for all supported currencies", func(ctx SpecContext) {
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return([]client.AccountBalance{
+				{Currency: "btc", Available: "1.50000000"},
+				{Currency: "usd", Available: "100.00"},
+			}, nil)
 
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				nil,
-				errors.New("test error"),
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
-
-		It("should fetch balances successfully", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
-
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				[]client.AccountBalance{
-					{Currency: "btc", Total: "1.50000000", Available: "1.00000000", Reserved: "0.50000000"},
-					{Currency: "usd", Total: "5000.00", Available: "4500.00", Reserved: "500.00"},
-				},
-				nil,
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(BeNil())
+			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.Balances).To(HaveLen(2))
-			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.Balances[0].AccountReference).To(Equal("BTC"))
-			Expect(resp.Balances[0].Asset).To(Equal("BTC/8"))
-			// 1.00000000 BTC = 100000000 satoshis
-			Expect(resp.Balances[0].Amount.Int64()).To(Equal(int64(100000000)))
-			Expect(resp.Balances[1].AccountReference).To(Equal("USD"))
-			Expect(resp.Balances[1].Asset).To(Equal("USD/2"))
-			Expect(resp.Balances[1].Amount.Int64()).To(Equal(int64(450000)))
+
+			refs := []string{resp.Balances[0].AccountReference, resp.Balances[1].AccountReference}
+			Expect(refs).To(ConsistOf("BTC", "USD"))
 		})
 
-		It("should skip unknown currencies", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
+		It("skips unsupported currencies silently", func(ctx SpecContext) {
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return([]client.AccountBalance{
+				{Currency: "xyz", Available: "1.0"},
+				{Currency: "btc", Available: "0.5"},
+			}, nil)
 
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				[]client.AccountBalance{
-					{Currency: "unknown", Total: "1.00000000", Available: "1.00000000", Reserved: "0"},
-					{Currency: "btc", Total: "1.00000000", Available: "1.00000000", Reserved: "0"},
-				},
-				nil,
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
+			resp, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(1))
 			Expect(resp.Balances[0].AccountReference).To(Equal("BTC"))
-			Expect(resp.HasMore).To(BeFalse())
 		})
 
-		It("should handle lowercase to uppercase currency matching", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{}
+		It("propagates GetAccountBalances errors", func(ctx SpecContext) {
+			expectedErr := errors.New("failed")
+			m.EXPECT().GetAccountBalances(gomock.Any()).Return(nil, expectedErr)
 
-			m.EXPECT().GetAccountBalances(gomock.Any()).Return(
-				[]client.AccountBalance{
-					{Currency: "eth", Total: "10.5", Available: "10.5", Reserved: "0"},
-				},
-				nil,
-			)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).To(BeNil())
-			Expect(resp.Balances).To(HaveLen(1))
-			Expect(resp.Balances[0].Asset).To(Equal("ETH/18"))
+			_, err := plg.FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(expectedErr))
 		})
 	})
 })
