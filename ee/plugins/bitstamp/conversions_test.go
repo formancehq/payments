@@ -176,6 +176,41 @@ var _ = Describe("Bitstamp Plugin Conversions", func() {
 			Expect(resp.HasMore).To(BeFalse())
 		})
 
+		It("sub-precision truncation: type-2 BTC/USDC trade where USDC amount has 8 decimals but precision is 6", func(ctx SpecContext) {
+			// Bitstamp returned "-9.95972708" for USDC (8 d.p.) even though the
+			// currencies endpoint reports precision=6.  The extra two digits must be
+			// truncated, not rounded, before converting to minor units.
+			tx := mkTx(`{
+				"id": 579538560,
+				"datetime": "2026-05-25 11:42:21.657000",
+				"type": "2",
+				"fee": "0.039840",
+				"btc": "0.00012858",
+				"usdc": "-9.95972708",
+				"btc_usdc": 77459.38000000,
+				"usd": 0.0,
+				"eur": 0.0,
+				"order_id": 2010621407232000
+			}`)
+			m.EXPECT().GetUserTransactions(gomock.Any(), gomock.Nil(), 100).
+				Return([]client.UserTransaction{tx}, nil)
+
+			resp, err := plg.FetchNextConversions(ctx, models.FetchNextConversionsRequest{PageSize: 100})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.Conversions).To(HaveLen(1))
+
+			c := resp.Conversions[0]
+			Expect(c.Reference).To(Equal("579538560"))
+			Expect(c.SourceAsset).To(Equal("USDC/6"))
+			Expect(c.DestinationAsset).To(Equal("BTC/8"))
+			Expect(c.SourceAmount.Int64()).To(Equal(int64(9959727)))  // 9.959727 × 10^6 (truncated, not rounded)
+			Expect(c.DestinationAmount.Int64()).To(Equal(int64(12858)))
+			Expect(c.Fee.Int64()).To(Equal(int64(39840))) // 0.039840 × 10^6 in USDC
+			Expect(*c.FeeAsset).To(Equal("USDC/6"))
+			Expect(c.Status).To(Equal(models.CONVERSION_STATUS_COMPLETED))
+			Expect(c.Metadata[mappers.MetadataKeyRate]).To(Equal("77459.38000000"))
+		})
+
 		It("Warn-skips derivatives-marked type-36 rows", func(ctx SpecContext) {
 			tx := mkTx(`{
 				"id": 900,

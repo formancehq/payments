@@ -110,10 +110,18 @@ func TestParseDecimalAmount(t *testing.T) {
 			want:      big.NewInt(50),
 		},
 		{
-			name:      "non-zero digits beyond precision errors",
+			name:      "non-zero digits beyond precision truncated",
 			value:     "1.235",
 			precision: 2,
-			wantErr:   true,
+			want:      big.NewInt(123),
+		},
+		{
+			// Bitstamp sub-precision noise on a high-precision asset: the extra
+			// digit is dropped because precision comes from Bitstamp's own API.
+			name:      "sub-precision noise truncated not rounded",
+			value:     "0.123456789",
+			precision: 8,
+			want:      big.NewInt(12345678),
 		},
 		{
 			name:      "precision zero with decimal errors",

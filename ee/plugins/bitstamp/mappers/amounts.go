@@ -43,19 +43,19 @@ func FormatAsset(currencies map[string]int, symbol string) string {
 
 // ParseDecimalAmount converts a Bitstamp decimal string to *big.Int minor units.
 // If Bitstamp returns more decimal places than the currency precision allows,
-// the excess digits are silently truncated when they are all zeros.
+// the excess digits are unconditionally truncated. The precision itself comes
+// from Bitstamp's own currency endpoint, so we trust it as the authoritative
+// bound — any digits beyond it are sub-precision noise that can be safely dropped.
 func ParseDecimalAmount(value string, precision int) (*big.Int, error) {
 	if value == "" {
 		return nil, fmt.Errorf("empty amount string")
 	}
 	amount, err := currency.GetAmountWithPrecisionFromString(value, precision)
 	if err != nil {
-		// Bitstamp often gives us amounts with more decimals than their currency endpoint tells us the precision is
-		// if the trailing numbers are 00s we will truncate them and try to proceed anyway
 		if errors.Is(err, currency.ErrInvalidPrecision) && precision > 0 {
 			if idx := strings.IndexByte(value, '.'); idx >= 0 {
 				decimalPart := value[idx+1:]
-				if len(decimalPart) > precision && strings.TrimLeft(decimalPart[precision:], "0") == "" {
+				if len(decimalPart) > precision {
 					truncated := value[:idx+1+precision]
 					amount, err = currency.GetAmountWithPrecisionFromString(truncated, precision)
 					if err == nil {
