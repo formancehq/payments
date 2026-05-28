@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/auth"
-	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v5/pkg/fx/authnfx"
+	"github.com/formancehq/go-libs/v5/pkg/service"
 	"github.com/formancehq/payments/internal/api"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
@@ -55,7 +55,7 @@ func serverOptions(cmd *cobra.Command) (fx.Option, error) {
 	pollingPeriodDefault, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodDefault)
 	pollingPeriodMinimum, _ := cmd.Flags().GetDuration(ConnectorPollingPeriodMinimum)
 	return fx.Options(
-		auth.FXModuleFromFlags(cmd),
+		authnfx.JWTModuleFromFlags(cmd),
 		api.NewModule(listen, service.IsDebug(cmd)),
 		v2.NewModule(),
 		v3.NewModule(),
