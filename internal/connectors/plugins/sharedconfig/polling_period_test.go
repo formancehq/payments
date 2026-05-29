@@ -7,6 +7,26 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 )
 
+func TestSetAndGetPollingPeriodDefaults(t *testing.T) {
+	// sequential — mutates package-level atomics
+	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
+	if got := sharedconfig.GetDefaultPollingPeriod(); got != 30*time.Minute {
+		t.Errorf("GetDefaultPollingPeriod() = %v, want %v", got, 30*time.Minute)
+	}
+	if got := sharedconfig.GetMinimumPollingPeriod(); got != 20*time.Minute {
+		t.Errorf("GetMinimumPollingPeriod() = %v, want %v", got, 20*time.Minute)
+	}
+
+	// overwrite with different values
+	sharedconfig.SetPollingPeriodDefaults(45*time.Minute, 10*time.Minute)
+	if got := sharedconfig.GetDefaultPollingPeriod(); got != 45*time.Minute {
+		t.Errorf("GetDefaultPollingPeriod() = %v, want %v", got, 45*time.Minute)
+	}
+	if got := sharedconfig.GetMinimumPollingPeriod(); got != 10*time.Minute {
+		t.Errorf("GetMinimumPollingPeriod() = %v, want %v", got, 10*time.Minute)
+	}
+}
+
 func TestParsePollingPeriod(t *testing.T) {
 	cases := []struct {
 		raw            string
