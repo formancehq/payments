@@ -2,24 +2,25 @@ package sharedconfig
 
 import (
 	"encoding/json"
+	"sync/atomic"
 	"time"
 )
 
 var (
 	// these have no hard-coded default value because they are supposed to be set as part of the server configuration
 	// using command line flags. as such their default values are also configured in the cmd package
-	minimumPollingPeriod time.Duration
-	defaultPollingPeriod time.Duration
+	minimumPollingPeriod atomic.Int64
+	defaultPollingPeriod atomic.Int64
 )
 
-func GetMinimumPollingPeriod() time.Duration { return minimumPollingPeriod }
-func GetDefaultPollingPeriod() time.Duration { return defaultPollingPeriod }
+func GetMinimumPollingPeriod() time.Duration { return time.Duration(minimumPollingPeriod.Load()) }
+func GetDefaultPollingPeriod() time.Duration { return time.Duration(defaultPollingPeriod.Load()) }
 
 // SetPollingPeriodDefaults is only intended to be called from connectors.Manager
 // which gets its configuration from command line arguments set by the service administrator
 func SetPollingPeriodDefaults(def, min time.Duration) {
-	defaultPollingPeriod = def
-	minimumPollingPeriod = min
+	defaultPollingPeriod.Store(int64(def))
+	minimumPollingPeriod.Store(int64(min))
 }
 
 type PollingPeriod time.Duration
