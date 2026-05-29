@@ -11,8 +11,8 @@ import (
 func TestUnmarshalAndValidateConfig(t *testing.T) {
 	 t.Parallel()
 
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
+	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
+	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string

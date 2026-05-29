@@ -5,10 +5,20 @@ import (
 	"time"
 )
 
-const (
-	MinimumPollingPeriod = 20 * time.Minute
-	DefaultPollingPeriod = 30 * time.Minute
+var (
+	minimumPollingPeriod = 20 * time.Minute
+	defaultPollingPeriod = 30 * time.Minute
 )
+
+func GetMinimumPollingPeriod() time.Duration { return minimumPollingPeriod }
+func GetDefaultPollingPeriod() time.Duration { return defaultPollingPeriod }
+
+// SetPollingPeriodDefaults is only intended to be called from connectors.Manager
+// which gets its configuration from command line arguments set by the service administrator
+func SetPollingPeriodDefaults(def, min time.Duration) {
+	defaultPollingPeriod = def
+	minimumPollingPeriod = min
+}
 
 type PollingPeriod time.Duration
 

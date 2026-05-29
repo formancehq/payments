@@ -23,9 +23,9 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	BeforeEach(func() {
 		var err error
-		defaultPollingPeriod, err = sharedconfig.NewPollingPeriod("", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
+		defaultPollingPeriod, err = sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 		Expect(err).To(BeNil())
-		longPollingPeriod, err = sharedconfig.NewPollingPeriod("45m", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
+		longPollingPeriod, err = sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 		Expect(err).To(BeNil())
 	})
 
