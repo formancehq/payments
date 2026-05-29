@@ -6,8 +6,10 @@ import (
 )
 
 var (
-	minimumPollingPeriod = 20 * time.Minute
-	defaultPollingPeriod = 30 * time.Minute
+	// these have no hard-coded default value because they are supposed to be set as part of the server configuration
+	// using command line flags. as such their default values are also configured in the cmd package
+	minimumPollingPeriod time.Duration
+	defaultPollingPeriod time.Duration
 )
 
 func GetMinimumPollingPeriod() time.Duration { return minimumPollingPeriod }

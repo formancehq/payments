@@ -3,9 +3,13 @@ package routable
 import (
 	"encoding/json"
 	"testing"
+	"time"
+
+	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 )
 
 func TestConfigDefaults(t *testing.T) {
+	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	cfg, err := unmarshalAndValidateConfig(json.RawMessage(`{"apiKey":"k"}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

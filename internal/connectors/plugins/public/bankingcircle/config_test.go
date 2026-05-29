@@ -2,6 +2,7 @@ package bankingcircle
 
 import (
 	"testing"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 )
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
+	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
 
 	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())

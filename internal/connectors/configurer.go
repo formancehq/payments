@@ -14,6 +14,9 @@ type Configurer struct {
 }
 
 func NewConfigurer(pollingPeriodDefault, pollingPeriodMinimum time.Duration) (*Configurer, error) {
+	if pollingPeriodDefault <= 0 || pollingPeriodMinimum <= 0 {
+		return nil, fmt.Errorf("connector polling period default and minimum must be bigger than zero")
+	}
 	if pollingPeriodDefault < pollingPeriodMinimum {
 		return nil, fmt.Errorf("default connector polling period may not be lower than minimum")
 	}

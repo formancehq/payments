@@ -2,6 +2,8 @@ package qonto
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/go-playground/validator/v10"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
@@ -22,6 +24,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 	)
 
 	BeforeEach(func() {
+		sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 		var err error
 		defaultPollingPeriod, err = sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 		Expect(err).To(BeNil())
