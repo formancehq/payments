@@ -24,6 +24,7 @@ const (
 	V3InstallConnectorRequestTypeFireblocks    V3InstallConnectorRequestType = "Fireblocks"
 	V3InstallConnectorRequestTypeGeneric       V3InstallConnectorRequestType = "Generic"
 	V3InstallConnectorRequestTypeIncrease      V3InstallConnectorRequestType = "Increase"
+	V3InstallConnectorRequestTypeKrakenpro     V3InstallConnectorRequestType = "Krakenpro"
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
 	V3InstallConnectorRequestTypeModulr        V3InstallConnectorRequestType = "Modulr"
 	V3InstallConnectorRequestTypeMoneycorp     V3InstallConnectorRequestType = "Moneycorp"
@@ -58,6 +59,7 @@ type V3InstallConnectorRequest struct {
 	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
+	V3KrakenproConfig     *V3KrakenproConfig     `queryParam:"inline"`
 	V3RoutableConfig      *V3RoutableConfig      `queryParam:"inline"`
 
 	Type V3InstallConnectorRequestType
@@ -204,6 +206,18 @@ func CreateV3InstallConnectorRequestIncrease(increase V3IncreaseConfig) V3Instal
 	return V3InstallConnectorRequest{
 		V3IncreaseConfig: &increase,
 		Type:             typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestKrakenpro(krakenpro V3KrakenproConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeKrakenpro
+
+	typStr := string(typ)
+	krakenpro.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3KrakenproConfig: &krakenpro,
+		Type:              typ,
 	}
 }
 
@@ -447,6 +461,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3IncreaseConfig = v3IncreaseConfig
 		u.Type = V3InstallConnectorRequestTypeIncrease
 		return nil
+	case "Krakenpro":
+		v3KrakenproConfig := new(V3KrakenproConfig)
+		if err := utils.UnmarshalJSON(data, &v3KrakenproConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Krakenpro) type V3KrakenproConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3KrakenproConfig = v3KrakenproConfig
+		u.Type = V3InstallConnectorRequestTypeKrakenpro
+		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
 		if err := utils.UnmarshalJSON(data, &v3MangopayConfig, "", true, false); err != nil {
@@ -625,6 +648,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3FireblocksConfig != nil {
 		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
+	if u.V3KrakenproConfig != nil {
+		return utils.MarshalJSON(u.V3KrakenproConfig, "", true)
 	}
 
 	if u.V3RoutableConfig != nil {

@@ -1,0 +1,198 @@
+package krakenpro
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
+	"github.com/formancehq/payments/ee/plugins/krakenpro/mappers"
+	"github.com/formancehq/payments/internal/models"
+)
+
+// openOrdersInProcessSafetyCap bounds the in-process OpenOrders cursor
+// drain so a bad cursor chain can't spin forever; on hit we log and bail
+// and the next cycle restarts from page 1.
+const openOrdersInProcessSafetyCap = 100
+
+// closedOrdersClosetime filters the ClosedOrders window on the close
+// timestamp, so a newly-closed order with an ancient opentm still
+// surfaces in the current window.
+const closedOrdersClosetime = "close"
+
+// orderPhase labels which endpoint a batch came from in log fields
+// + per-row error messages. Stable strings — downstream log queries
+// rely on them.
+type orderPhase string
+
+const (
+	phaseOpen   orderPhase = "open"
+	phaseClosed orderPhase = "closed"
+)
+
+// fetchNextOrders runs the two-source orders pipeline (see MAPPINGS §8):
+//
+//  1. Drain every currently-open order via Kraken's `with_cursor`
+//     paging, looping in-process. Open-orders sets are bounded.
+//  2. Page closed orders through the shared frozen-end + ofs window on
+//     close time (see [ledgerWindow]) — drains the whole window without
+//     skips before the watermark advances.
+//
+// Both endpoints return cumulative per-order state, so each emission
+// is the order's full picture. Wallet resolution uses the engine's
+// AccountLookup (coinbaseprime pattern); a not-currently-held asset
+// resolves to nil account refs rather than failing the page.
+func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
+	var state ordersState
+	if len(req.State) > 0 {
+		if err := json.Unmarshal(req.State, &state); err != nil {
+			return models.FetchNextOrdersResponse{}, fmt.Errorf("unmarshal orders state: %w", err)
+		}
+	}
+
+	currencies, pairs, err := p.ensureAssets(ctx)
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, err
+	}
+	wallets, err := p.resolveWallets(ctx)
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, err
+	}
+
+	orders := make([]models.PSPOrder, 0)
+
+	openDrained, openMapErrors, err := p.drainOpenOrders(ctx, currencies, pairs, wallets, &orders)
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, err
+	}
+
+	pageSize := effectivePageSize(req.PageSize)
+	start, end, ofs := state.Closed.plan(nowEpoch())
+	closedResp, err := p.client.GetClosedOrders(ctx, client.ClosedOrdersParams{
+		Trades: true, WithoutCount: true,
+		Start: start, End: end, Offset: ofs, Closetime: closedOrdersClosetime,
+	})
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, fmt.Errorf("fetch closed orders: %w", err)
+	}
+	closedMapErrors := p.appendMappedOrders(currencies, pairs, wallets, closedResp.Closed, phaseClosed, &orders)
+
+	hasMore := state.Closed.advance(len(closedResp.Closed), pageSize)
+
+	payload, err := json.Marshal(state)
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, fmt.Errorf("marshal orders state: %w", err)
+	}
+
+	p.logCycle("fetch_orders", len(orders), len(closedResp.Closed), state.Closed, hasMore,
+		"openDrained", openDrained,
+		"openMapErrors", openMapErrors,
+		"closedMapErrors", closedMapErrors)
+	return models.FetchNextOrdersResponse{
+		Orders:   orders,
+		NewState: payload,
+		HasMore:  hasMore,
+	}, nil
+}
+
+// drainOpenOrders walks Kraken's cursor pagination over the
+// currently-open snapshot, appending mapped orders into out. Hard-bails
+// after openOrdersInProcessSafetyCap pages.
+func (p *Plugin) drainOpenOrders(
+	ctx context.Context,
+	currencies map[string]int,
+	pairs map[string]client.AssetPair,
+	wallets map[string]string,
+	out *[]models.PSPOrder,
+) (int, int, error) {
+	var (
+		cursor    string
+		drained   int
+		mapErrors int
+	)
+	for page := 0; ; page++ {
+		if page >= openOrdersInProcessSafetyCap {
+			p.logger.WithField("cap", openOrdersInProcessSafetyCap).
+				Errorf("OpenOrders drain hit safety cap, deferring rest to next cycle")
+			return drained, mapErrors, nil
+		}
+		resp, err := p.client.GetOpenOrders(ctx, client.OpenOrdersParams{
+			Trades:     true,
+			WithCursor: true,
+			Cursor:     cursor,
+			Limit:      PAGE_SIZE,
+		})
+		if err != nil {
+			return drained, mapErrors, fmt.Errorf("fetch open orders: %w", err)
+		}
+
+		before := len(*out)
+		mapErrors += p.appendMappedOrders(currencies, pairs, wallets, resp.Open, phaseOpen, out)
+		drained += len(*out) - before
+
+		if strings.TrimSpace(resp.Cursor.Next) == "" {
+			return drained, mapErrors, nil
+		}
+		cursor = resp.Cursor.Next
+	}
+}
+
+// appendMappedOrders maps each (id, OrderEntry) row into a PSPOrder and
+// appends to `out`, returning the count of rows skipped on a non-fatal
+// map error (already logged). Wallet resolution is best-effort: an
+// asset not currently held resolves to nil account refs (the order
+// still emits) rather than failing the page — see MAPPINGS §8.
+func (p *Plugin) appendMappedOrders(
+	currencies map[string]int,
+	pairs map[string]client.AssetPair,
+	wallets map[string]string,
+	entries map[string]client.OrderEntry,
+	phase orderPhase,
+	out *[]models.PSPOrder,
+) int {
+	var mapErrors int
+	for id, oe := range entries {
+		order, err := mappers.OrderEntryToPSPOrder(currencies, pairs, wallets,
+			mappers.OrderEntryWithID{OrderID: id, Order: oe})
+		if err != nil {
+			mapErrors++
+			p.logger.WithField("orderID", id).WithField("phase", string(phase)).
+				Errorf("map order: %v", err)
+			continue
+		}
+		if order != nil {
+			*out = append(*out, *order)
+		}
+	}
+	return mapErrors
+}
+
+// resolveWallets builds a fresh symbol → spot-account-reference map
+// from the engine's AccountLookup. Only the spot (trading) class is
+// indexed — orders debit/credit the spot wallet, never earn/staking
+// balances — exactly mirroring coinbaseprime's TRADING filter. The
+// key is the normalised symbol; the value is the spot account's raw
+// Kraken reference (e.g. BTC → XXBT). Unresolved orders surface as a
+// hard error from the order mapper, which the orchestrator escalates.
+func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) {
+	if p.accountLookup == nil {
+		return nil, fmt.Errorf("account lookup not wired: engine misconfiguration")
+	}
+	accounts, err := p.accountLookup.ListAccountsByConnector(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list accounts: %w", err)
+	}
+	wallets := make(map[string]string, len(accounts))
+	for _, a := range accounts {
+		if a.Metadata[mappers.MetadataPrefix+"wallet_type"] != mappers.WalletClassSpot {
+			continue
+		}
+		symbol := mappers.NormalizeAsset(a.Reference)
+		if symbol == "" {
+			continue
+		}
+		wallets[symbol] = a.Reference
+	}
+	return wallets, nil
+}
