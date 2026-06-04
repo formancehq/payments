@@ -6489,6 +6489,7 @@ components:
           Fireblocks: '#/components/schemas/V3FireblocksConfig'
           Generic: '#/components/schemas/V3GenericConfig'
           Increase: '#/components/schemas/V3IncreaseConfig'
+          Krakenpro: '#/components/schemas/V3KrakenproConfig'
           Mangopay: '#/components/schemas/V3MangopayConfig'
           Modulr: '#/components/schemas/V3ModulrConfig'
           Moneycorp: '#/components/schemas/V3MoneycorpConfig'
@@ -6521,6 +6522,7 @@ components:
         - $ref: '#/components/schemas/V3BitstampConfig'
         - $ref: '#/components/schemas/V3CoinbaseprimeConfig'
         - $ref: '#/components/schemas/V3FireblocksConfig'
+        - $ref: '#/components/schemas/V3KrakenproConfig'
         - $ref: '#/components/schemas/V3RoutableConfig'
     V3AdyenConfig:
       type: object
@@ -6854,6 +6856,32 @@ components:
           default: Increase
         webhookSharedSecret:
           type: string
+    V3KrakenproConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - apiSecret
+      properties:
+        apiKey:
+          type: string
+        apiSecret:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: 25
+          deprecated: true
+          x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+        pollingPeriod:
+          type: string
+          default: 30m
+        provider:
+          type: string
+          default: Krakenpro
     V3MangopayConfig:
       type: object
       required:

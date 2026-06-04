@@ -12,5 +12,6 @@ var EnterpriseOnlyPlugins = map[string]struct{}{
 	"bitstamp":      {},
 	"coinbaseprime": {},
 	"fireblocks":    {},
+	"krakenpro":     {},
 	"routable":      {},
 }
