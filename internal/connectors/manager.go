@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	pluginserrors "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
+	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 )
@@ -68,6 +69,7 @@ func NewManager(
 		// start it misconfigured
 		log.Panicf("invalid connector polling period configuration: %v", err)
 	}
+	sharedconfig.SetPollingPeriodDefaults(pollingPeriodDefault, pollingPeriodMinimum)
 	return &manager{
 		logger:               logger,
 		configurer:           configurer,

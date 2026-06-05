@@ -13,15 +13,34 @@ import (
 func TestNewConfigurer(t *testing.T) {
 	t.Parallel()
 
-	defaultPeriod := 13 * time.Minute
-	minimumPeriod := 5 * time.Minute
+	tests := []struct {
+		name        string
+		def         time.Duration
+		min         time.Duration
+		expectError bool
+	}{
+		{"valid", 13 * time.Minute, 5 * time.Minute, false},
+		{"default below minimum", 4 * time.Minute, 5 * time.Minute, true},
+		{"zero default", 0, 5 * time.Minute, true},
+		{"zero minimum", 13 * time.Minute, 0, true},
+		{"both zero", 0, 0, true},
+		{"negative default", -1 * time.Minute, 5 * time.Minute, true},
+		{"negative minimum", 13 * time.Minute, -1 * time.Minute, true},
+		{"both negative", -1 * time.Minute, -2 * time.Minute, true},
+	}
 
-	configurer, err := connectors.NewConfigurer(defaultPeriod, minimumPeriod)
-	require.NoError(t, err)
-	assert.Equal(t, defaultPeriod, configurer.DefaultConfig().PollingPeriod)
-
-	_, err = connectors.NewConfigurer(minimumPeriod-time.Second, minimumPeriod)
-	require.Error(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			configurer, err := connectors.NewConfigurer(tt.def, tt.min)
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.def, configurer.DefaultConfig().PollingPeriod)
+			}
+		})
+	}
 }
 
 func TestValidateConfig(t *testing.T) {

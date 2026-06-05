@@ -43,7 +43,7 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
 
-	pp, err := sharedconfig.NewPollingPeriod(raw.PollingPeriod, sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
+	pp, err := sharedconfig.NewPollingPeriod(raw.PollingPeriod, sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 	if err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}

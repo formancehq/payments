@@ -3,6 +3,7 @@ package wise
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/internal/models"
@@ -22,10 +23,11 @@ func makePayload(t *testing.T, v any) []byte {
 }
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
+	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
 
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.DefaultPollingPeriod, sharedconfig.MinimumPollingPeriod)
+	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
+	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string
