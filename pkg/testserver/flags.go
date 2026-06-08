@@ -120,6 +120,10 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 		}
 	}
 
+	if configuration.ConnectorPollingPeriodMinimum != 0 {
+		args = append(args, "--"+cmd.ConnectorPollingPeriodMinimum, configuration.ConnectorPollingPeriodMinimum.String())
+	}
+
 	if configuration.Debug {
 		args = append(args, "--"+service.DebugFlag)
 	}

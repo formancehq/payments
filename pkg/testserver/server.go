@@ -52,8 +52,9 @@ type Configuration struct {
 	Output                     io.Writer
 	Debug                      bool
 	OTLPConfig                 *OTLPConfig
-	OutboxPollingInterval      time.Duration
-	SkipOutboxScheduleCreation bool
+	OutboxPollingInterval          time.Duration
+	SkipOutboxScheduleCreation     bool
+	ConnectorPollingPeriodMinimum  time.Duration
 }
 
 type Logger interface {
