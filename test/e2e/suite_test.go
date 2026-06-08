@@ -6,11 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
@@ -204,25 +202,3 @@ PAGES:
 	}
 }
 
-// triggerConnectorSchedule forces an immediate fire of the given connector's
-// Temporal schedule. The capability string must match the models.Capability.String()
-// value (e.g. "FETCH_ACCOUNTS", "FETCH_EXTERNAL_ACCOUNTS", "FETCH_PAYMENTS").
-//
-// It waits for any previously-running workflow to be recognized as terminated by
-// the Temporal devserver before triggering, because BUFFER_ONE overlap policy
-// will otherwise defer the trigger until the "running" (but actually terminated)
-// workflow is cleared — which can take far longer than test timeouts allow.
-func triggerConnectorSchedule(ctx context.Context, connectorID, capability string) {
-	scheduleID := fmt.Sprintf("%s-%s-%s", stack, connectorID, capability)
-	handle := temporalServer.GetValue().DefaultClient().ScheduleClient().GetHandle(ctx, scheduleID)
-
-	Eventually(func() int {
-		desc, err := handle.Describe(ctx)
-		if err != nil || desc == nil {
-			return 1
-		}
-		return len(desc.Info.RunningWorkflows)
-	}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).Should(Equal(0))
-
-	Expect(handle.Trigger(ctx, client.ScheduleTriggerOptions{})).To(BeNil())
-}
