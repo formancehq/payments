@@ -64,11 +64,10 @@ func NewClient(config *Config) Client {
 	if config.Timeout == 0 {
 		config.Timeout = models.DefaultConnectorClientTimeout
 	}
-	if config.Transport != nil {
-		config.Transport = otelhttp.NewTransport(config.Transport)
-	} else {
+	if config.Transport == nil {
 		config.Transport = http.DefaultTransport.(*http.Transport).Clone()
 	}
+	config.Transport = otelhttp.NewTransport(config.Transport)
 
 	httpClient := &http.Client{
 		Timeout:   config.Timeout,
