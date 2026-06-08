@@ -21,3 +21,10 @@
 #docs/*.md
 # Then explicitly reverse the ignore rule for a single file:
 #!docs/README.md
+
+# HTTP client code — replaced by internal/connectors/httpwrapper
+api_default.go
+client.go
+configuration.go
+response.go
+git_push.sh

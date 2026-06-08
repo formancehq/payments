@@ -4,24 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/genericclient/v3"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/stretchr/testify/require"
 )
 
 func mockAPIClient(handler http.HandlerFunc) (*client, *httptest.Server) {
 	server := httptest.NewServer(handler)
-
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Timeout: 10 * time.Second}
-	configuration.Servers[0].URL = server.URL
-
-	return &client{apiClient: genericclient.NewAPIClient(configuration)}, server
+	httpClient := httpwrapper.NewClient(&httpwrapper.Config{
+		Timeout: 10 * time.Second,
+	})
+	return &client{httpClient: httpClient, baseURL: server.URL}, server
 }
 
 // --- Payout tests ---
@@ -46,12 +43,8 @@ func TestCreatePayout_Success(t *testing.T) {
 		require.Equal(t, "/payouts", r.URL.Path)
 		require.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		defer func() { _ = r.Body.Close() }()
-
 		var req PayoutRequest
-		require.NoError(t, json.Unmarshal(body, &req))
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
 		require.Equal(t, "ref_123", req.IdempotencyKey)
 
 		w.Header().Set("Content-Type", "application/json")
@@ -77,14 +70,14 @@ func TestCreatePayout_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error": "bad request"}`))
+		_, _ = w.Write([]byte(`{"title": "bad request", "detail": "invalid input"}`))
 	})
 	defer server.Close()
 
 	resp, err := c.CreatePayout(context.Background(), &PayoutRequest{IdempotencyKey: "ref_123"})
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Contains(t, err.Error(), "400")
+	require.ErrorIs(t, err, httpwrapper.ErrStatusCodeClientError)
 }
 
 func TestCreatePayout_InvalidJSON(t *testing.T) {
@@ -108,11 +101,8 @@ func TestCreatePayout_WithMetadata(t *testing.T) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-		defer func() { _ = r.Body.Close() }()
-
 		var req PayoutRequest
-		_ = json.Unmarshal(body, &req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 		require.Equal(t, "value1", req.Metadata["key1"])
 
 		w.Header().Set("Content-Type", "application/json")
@@ -153,12 +143,8 @@ func TestCreateTransfer_Success(t *testing.T) {
 		require.Equal(t, "/transfers", r.URL.Path)
 		require.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		defer func() { _ = r.Body.Close() }()
-
 		var req TransferRequest
-		require.NoError(t, json.Unmarshal(body, &req))
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
 		require.Equal(t, "ref_456", req.IdempotencyKey)
 
 		w.Header().Set("Content-Type", "application/json")
@@ -186,14 +172,14 @@ func TestCreateTransfer_HTTPError(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error": "internal error"}`))
+		_, _ = w.Write([]byte(`{"title": "internal error", "detail": "server fault"}`))
 	})
 	defer server.Close()
 
 	resp, err := c.CreateTransfer(context.Background(), &TransferRequest{IdempotencyKey: "ref_456"})
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Contains(t, err.Error(), "500")
+	require.ErrorIs(t, err, httpwrapper.ErrStatusCodeServerError)
 }
 
 func TestCreateTransfer_InvalidJSON(t *testing.T) {
@@ -217,11 +203,8 @@ func TestCreateTransfer_WithDescription(t *testing.T) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-		defer func() { _ = r.Body.Close() }()
-
 		var req TransferRequest
-		_ = json.Unmarshal(body, &req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 		require.NotNil(t, req.Description)
 		require.Equal(t, "Payment for services", *req.Description)
 
@@ -256,7 +239,7 @@ func TestListAccounts_Success(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
-			{"id": "acc_1", "name": "Test Account", "currency": "USD", "createdAt": now.Format(time.RFC3339)},
+			{"id": "acc_1", "accountName": "Test Account", "createdAt": now.Format(time.RFC3339)},
 		})
 	})
 	defer server.Close()
@@ -289,7 +272,7 @@ func TestListAccounts_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error": "server error"}`))
+		_, _ = w.Write([]byte(`{"title": "server error", "detail": "internal"}`))
 	})
 	defer server.Close()
 
@@ -300,6 +283,7 @@ func TestListAccounts_Error(t *testing.T) {
 func TestGetBalances_Success(t *testing.T) {
 	t.Parallel()
 
+	now := time.Now().UTC()
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodGet, r.Method)
 		require.Contains(t, r.URL.Path, "/accounts/acc_123/balances")
@@ -307,6 +291,7 @@ func TestGetBalances_Success(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"id": "bal_1", "accountID": "acc_123", "at": now.Format(time.RFC3339),
 			"balances": []map[string]interface{}{{"currency": "USD", "amount": "1000"}},
 		})
 	})
@@ -322,7 +307,7 @@ func TestGetBalances_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(`{"error": "not found"}`))
+		_, _ = w.Write([]byte(`{"title": "not found", "detail": "account missing"}`))
 	})
 	defer server.Close()
 
@@ -341,7 +326,7 @@ func TestListBeneficiaries_Success(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
-			{"id": "ben_1", "name": "Test Beneficiary", "createdAt": now.Format(time.RFC3339)},
+			{"id": "ben_1", "ownerName": "Test Beneficiary", "createdAt": now.Format(time.RFC3339)},
 		})
 	})
 	defer server.Close()
@@ -357,7 +342,7 @@ func TestListBeneficiaries_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error": "server error"}`))
+		_, _ = w.Write([]byte(`{"title": "server error", "detail": "internal"}`))
 	})
 	defer server.Close()
 
@@ -393,7 +378,7 @@ func TestListTransactions_Error(t *testing.T) {
 
 	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error": "server error"}`))
+		_, _ = w.Write([]byte(`{"title": "server error", "detail": "internal"}`))
 	})
 	defer server.Close()
 
@@ -433,15 +418,10 @@ func TestAPITransport_AddsAuthHeader(t *testing.T) {
 func TestCreatePayout_ReadBodyError(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}))
+	})
 	defer server.Close()
-
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Timeout: 10 * time.Second}
-	configuration.Servers[0].URL = server.URL
-	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
 
 	_, err := c.CreatePayout(context.Background(), &PayoutRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"})
 	require.Error(t, err)
@@ -450,15 +430,10 @@ func TestCreatePayout_ReadBodyError(t *testing.T) {
 func TestCreateTransfer_ReadBodyError(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c, server := mockAPIClient(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}))
+	})
 	defer server.Close()
-
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Timeout: 10 * time.Second}
-	configuration.Servers[0].URL = server.URL
-	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
 
 	_, err := c.CreateTransfer(context.Background(), &TransferRequest{IdempotencyKey: "ref_123", Amount: "10000", Currency: "USD/2"})
 	require.Error(t, err)
@@ -475,29 +450,32 @@ func (f *failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
 func TestCreatePayout_NetworkError(t *testing.T) {
 	t.Parallel()
 
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
-	configuration.Servers[0].URL = "http://localhost:9999"
-	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+	c := &client{
+		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
+			Transport: &failingTransport{},
+		}),
+		baseURL: "http://localhost:9999",
+	}
 
 	resp, err := c.CreatePayout(context.Background(), &PayoutRequest{IdempotencyKey: "ref_123"})
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Contains(t, err.Error(), "failed to execute payout request")
 }
 
 func TestCreateTransfer_NetworkError(t *testing.T) {
 	t.Parallel()
 
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Transport: &failingTransport{}}
-	configuration.Servers[0].URL = "http://localhost:9999"
-	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+	c := &client{
+		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
+			Transport: &failingTransport{},
+		}),
+		baseURL: "http://localhost:9999",
+	}
 
 	resp, err := c.CreateTransfer(context.Background(), &TransferRequest{IdempotencyKey: "ref_123"})
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Contains(t, err.Error(), "failed to execute transfer request")
+	require.Contains(t, err.Error(), "failed to make request")
 }
 
 // --- Read response error tests ---
@@ -519,27 +497,31 @@ func (e *errorBodyTransport) RoundTrip(*http.Request) (*http.Response, error) {
 func TestCreatePayout_ReadResponseError(t *testing.T) {
 	t.Parallel()
 
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Transport: &errorBodyTransport{statusCode: http.StatusOK}}
-	configuration.Servers[0].URL = "http://localhost:9999"
-	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+	c := &client{
+		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
+			Transport: &errorBodyTransport{statusCode: http.StatusOK},
+		}),
+		baseURL: "http://localhost:9999",
+	}
 
 	resp, err := c.CreatePayout(context.Background(), &PayoutRequest{IdempotencyKey: "ref_123"})
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Contains(t, err.Error(), "failed to read payout response")
+	require.Contains(t, err.Error(), "failed to read response body")
 }
 
 func TestCreateTransfer_ReadResponseError(t *testing.T) {
 	t.Parallel()
 
-	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Transport: &errorBodyTransport{statusCode: http.StatusOK}}
-	configuration.Servers[0].URL = "http://localhost:9999"
-	c := &client{apiClient: genericclient.NewAPIClient(configuration)}
+	c := &client{
+		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
+			Transport: &errorBodyTransport{statusCode: http.StatusOK},
+		}),
+		baseURL: "http://localhost:9999",
+	}
 
 	resp, err := c.CreateTransfer(context.Background(), &TransferRequest{IdempotencyKey: "ref_123"})
 	require.Error(t, err)
 	require.Nil(t, resp)
-	require.Contains(t, err.Error(), "failed to read transfer response")
+	require.Contains(t, err.Error(), "failed to read response body")
 }
