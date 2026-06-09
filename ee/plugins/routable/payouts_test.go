@@ -162,6 +162,31 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("forwards com.routable.spec/message to Routable.message when set", func(ctx SpecContext) {
+		piWithMsg := pi()
+		piWithMsg.Metadata = map[string]string{
+			mappers.MetadataKeyMessage: "Hi Acme - invoice #12345 for May services.",
+		}
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+			Expect(req.Message).To(Equal("Hi Acme - invoice #12345 for May services."))
+			return &client.Payable{ID: "pa_msg", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+		})
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: piWithMsg})
+		Expect(err).To(BeNil())
+	})
+
+	It("omits message from the wire body when no metadata is set", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+			Expect(req.Message).To(BeEmpty())
+			body, err := json.Marshal(req)
+			Expect(err).To(BeNil())
+			Expect(string(body)).NotTo(ContainSubstring(`"message"`))
+			return &client.Payable{ID: "pa_nomsg", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+		})
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
+		Expect(err).To(BeNil())
+	})
+
 	// Validation errors must wrap ErrInvalidRequest so Temporal stops
 	// retrying invalid PIs.
 	It("rejects payment initiations with no source/destination and wraps ErrInvalidRequest", func(ctx SpecContext) {
