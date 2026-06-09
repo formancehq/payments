@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/models"
@@ -92,6 +93,18 @@ func NewClient(config *Config) Client {
 func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorBody any) (int, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return 0, fmt.Errorf("%w: failed to make request: %w", ErrStatusCodeRequestTimeout, err)
+		}
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			if urlErr.Timeout() {
+				return 0, fmt.Errorf("%w: failed to make request: %w", ErrStatusCodeRequestTimeout, err)
+			}
+			if !errors.Is(err, context.Canceled) {
+				return 0, fmt.Errorf("%w: failed to make request: %w", ErrStatusCodeClientError, err)
+			}
+		}
 		return 0, fmt.Errorf("failed to make request: %w", err)
 	}
 

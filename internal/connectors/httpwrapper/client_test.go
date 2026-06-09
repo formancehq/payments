@@ -2,6 +2,7 @@ package httpwrapper_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -108,13 +109,60 @@ var _ = Describe("ClientWrapper", func() {
 			Entry("425 Too Early", http.StatusTooEarly, httpwrapper.ErrStatusCodeTooEarly),
 			Entry("429 Too Many Requests", http.StatusTooManyRequests, httpwrapper.ErrStatusCodeTooManyRequests),
 		)
-		It("responds with error when HTTP request fails", func(ctx SpecContext) {
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "notaurl", http.NoBody)
+		DescribeTable("classifies url.Error transport failures as client errors",
+			func(ctx SpecContext, rawURL string) {
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, http.NoBody)
+				Expect(err).To(BeNil())
+
+				code, doErr := client.Do(context.Background(), req, nil, nil)
+				Expect(code).To(Equal(0))
+				Expect(errors.Is(doErr, httpwrapper.ErrStatusCodeClientError)).To(BeTrue())
+			},
+			Entry("no such host", "http://this-host-does-not-exist.invalid"),
+			Entry("unsupported protocol scheme", "ftp://example.com"),
+			Entry("relative URL with no scheme", "notaurl"),
+		)
+		It("classifies http client timeout as a request timeout error", func() {
+			slowServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(200 * time.Millisecond)
+			}))
+			defer slowServer.Close()
+
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, slowServer.URL, http.NoBody)
 			Expect(err).To(BeNil())
 
-			res := &errorRes{}
-			code, doErr := client.Do(context.Background(), req, &successRes{}, res)
+			code, doErr := client.Do(context.Background(), req, nil, nil)
 			Expect(code).To(Equal(0))
+			Expect(errors.Is(doErr, httpwrapper.ErrStatusCodeRequestTimeout)).To(BeTrue())
+			Expect(errors.Is(doErr, httpwrapper.ErrStatusCodeClientError)).To(BeFalse())
+		})
+		It("classifies context deadline exceeded as a request timeout error", func() {
+			slowServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(200 * time.Millisecond)
+			}))
+			defer slowServer.Close()
+
+			deadlineCtx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(deadlineCtx, http.MethodGet, slowServer.URL, http.NoBody)
+			Expect(err).To(BeNil())
+
+			code, doErr := client.Do(deadlineCtx, req, nil, nil)
+			Expect(code).To(Equal(0))
+			Expect(errors.Is(doErr, httpwrapper.ErrStatusCodeRequestTimeout)).To(BeTrue())
+			Expect(errors.Is(doErr, httpwrapper.ErrStatusCodeClientError)).To(BeFalse())
+		})
+		It("does not classify context cancellation as a client error", func() {
+			cancelCtx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			req, err := http.NewRequestWithContext(cancelCtx, http.MethodGet, server.URL+"?code=200", http.NoBody)
+			Expect(err).To(BeNil())
+
+			code, doErr := client.Do(cancelCtx, req, nil, nil)
+			Expect(code).To(Equal(0))
+			Expect(errors.Is(doErr, httpwrapper.ErrStatusCodeClientError)).To(BeFalse())
 			Expect(doErr).To(MatchError(ContainSubstring("failed to make request")))
 		})
 	})
