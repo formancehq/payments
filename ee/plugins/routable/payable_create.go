@@ -68,6 +68,7 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		ActingTeamMember: mappers.FieldOr(pi.Metadata, mappers.MetadataKeyActingTeamMember, p.config.ActingTeamMember),
 		Reference:        pi.Reference,
 		ExternalID:       pi.Metadata[mappers.MetadataKeyExternalID],
+		Message:          pi.Metadata[mappers.MetadataKeyMessage],
 		IdempotencyKey:   pi.Reference,
 	}
 

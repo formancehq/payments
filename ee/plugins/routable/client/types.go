@@ -185,6 +185,12 @@ type CreatePayableRequest struct {
 	Reference        string            `json:"reference,omitempty"`
 	ExternalID       string            `json:"external_id,omitempty"`
 
+	// Message is Routable's vendor-facing email body sent to the payee's
+	// contacts when the payable is processed. HTML subset permitted; see
+	// https://developers.routable.com/docs/html-messages. Omitted from the
+	// wire body when empty so existing callers see no behavioral change.
+	Message string `json:"message,omitempty"`
+
 	// IdempotencyKey is sent via the Idempotency-Key header, never the body.
 	// memo is intentionally NOT modeled here: Routable's v1 POST /v1/payables
 	// schema rejects it as "Extra inputs are not permitted". The Payable

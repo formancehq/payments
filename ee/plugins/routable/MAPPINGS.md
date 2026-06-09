@@ -180,6 +180,7 @@ All keys are defined as constants in [`mappers/metadata.go`](mappers/metadata.go
 | `com.routable.spec/acting_team_member` | `MetadataKeyActingTeamMember` | conditional¹ | config `actingTeamMember` | `acting_team_member` | Routable team member ID initiating the payable. |
 | `com.routable.spec/external_id` | `MetadataKeyExternalID` | no | `""` | `external_id` | Caller-supplied external reference (idempotent lookup key on Routable's side). |
 | `com.routable.spec/line_item_description` | `MetadataKeyLineDescription` | no | `PSPPaymentInitiation.Description`, then `"Payment <reference>"` | `line_items[0].description` | Description on the auto-generated single-line item. Required by Routable v1; we always emit a non-empty value. |
+| `com.routable.spec/message` | `MetadataKeyMessage` | no | (omitted) | `message` | Vendor-facing email body sent to the payee's contacts when the payable is processed. A limited subset of HTML is permitted (see [Routable docs](https://developers.routable.com/docs/html-messages)). Omitted from the request body when empty. |
 
 > `com.routable.spec/memo` is read-only metadata on synced payables/receivables (populated from the Routable response). Routable's v1 `POST /v1/payables` rejects `memo` as an unknown field, so we do not forward this key on create. Use `com.routable.spec/line_item_description` for the message that ends up on the payable.
 

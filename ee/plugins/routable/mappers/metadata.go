@@ -11,6 +11,7 @@ const (
 	MetadataKeyDeliveryMethod   = MetadataPrefix + "delivery_method"
 	MetadataKeyExternalID       = MetadataPrefix + "external_id"
 	MetadataKeyMemo             = MetadataPrefix + "memo"
+	MetadataKeyMessage          = MetadataPrefix + "message"
 	MetadataKeyLineDescription  = MetadataPrefix + "line_item_description"
 	MetadataKeyActingTeamMember = MetadataPrefix + "acting_team_member"
 )
