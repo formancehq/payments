@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
@@ -556,7 +556,9 @@ func uninstallConnector(
 	Expect(err).To(BeNil())
 	Expect(taskID.Reference).To(ContainSubstring("uninstall"))
 	taskPoller := testserver.TaskPoller(ctx, GinkgoT(), srv)
-	blockTillWorkflowComplete(ctx, connectorID, "uninstall")
+	uninstallCtx, uninstallCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer uninstallCancel()
+	blockTillWorkflowComplete(uninstallCtx, connectorID, "uninstall")
 	Eventually(taskPoller(delRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 }
 

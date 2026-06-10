@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/go-libs/v5/pkg/transport/httpserver"
 	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
@@ -55,6 +55,8 @@ func NewModule(
 			MaxConcurrentActivityTaskPollers:        temporalMaxConcurrentActivityTaskPollers,
 			MaxConcurrentActivityExecutionSize:      temporalMaxConcurrentActivityTaskPollers * temporalMaxSlotsPerPoller,
 			MaxConcurrentLocalActivityExecutionSize: temporalMaxLocalActivitySlots,
+			// https://docs.temporal.io/encyclopedia/workers/worker-shutdown
+			WorkerStopTimeout: 3 * time.Second,
 		}),
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)
