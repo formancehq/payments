@@ -460,6 +460,52 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			Expect(*res.Data["dummypay"]["directory"].DefaultValue).To(Equal(""))
 		})
 	})
+
+	When("fetching connector capabilities", func() {
+		It("returns the catalog keyed by provider with non-empty capability sets", func() {
+			resp, err := app.GetValue().SDK().Payments.V3.ListConnectorCapabilities(ctx, nil)
+			Expect(err).To(BeNil())
+			Expect(resp.V3ConnectorCapabilitiesResponse).NotTo(BeNil())
+			data := resp.V3ConnectorCapabilitiesResponse.Data
+			Expect(data).To(HaveKey("dummypay"))
+			Expect(data["dummypay"]).To(ContainElement(components.V3CapabilityFetchAccounts))
+			// Sanity-check that ETag is set and Cache-Control advertises caching.
+			etag := resp.Headers["Etag"]
+			Expect(etag).ToNot(BeEmpty())
+			Expect(resp.Headers["Cache-Control"]).To(ContainElement(ContainSubstring("max-age=3600")))
+		})
+
+		It("returns capabilities of an installed connector", func() {
+			id := uuid.New()
+			connectorID, err := installV3Connector(ctx, app.GetValue(), nil, id)
+			Expect(err).To(BeNil())
+			DeferCleanup(func() { uninstallConnector(ctx, app.GetValue(), connectorID) })
+
+			resp, err := app.GetValue().SDK().Payments.V3.GetConnectorCapabilities(ctx, connectorID)
+			Expect(err).To(BeNil())
+			Expect(resp.V3ConnectorCapabilityResponse).NotTo(BeNil())
+			Expect(resp.V3ConnectorCapabilityResponse.Data).To(ContainElement(components.V3CapabilityFetchAccounts))
+		})
+
+		It("inlines capabilities on each row of the connectors list", func() {
+			id := uuid.New()
+			connectorID, err := installV3Connector(ctx, app.GetValue(), nil, id)
+			Expect(err).To(BeNil())
+			DeferCleanup(func() { uninstallConnector(ctx, app.GetValue(), connectorID) })
+
+			resp, err := app.GetValue().SDK().Payments.V3.ListConnectors(ctx, nil, nil, nil)
+			Expect(err).To(BeNil())
+			Expect(resp.V3ConnectorsCursorResponse).NotTo(BeNil())
+			data := resp.V3ConnectorsCursorResponse.Cursor.Data
+			Expect(data).ToNot(BeEmpty())
+			// Assert against a real capability rather than non-nil: the wire
+			// contract guarantees an empty slice when the plugin is unknown,
+			// so non-nil alone would pass on a broken per-row lookup.
+			for _, c := range data {
+				Expect(c.Capabilities).To(ContainElement(components.V3CapabilityFetchAccounts))
+			}
+		})
+	})
 })
 
 // if this turns out to be slow we might also consider executing each test suite on its own namespace
