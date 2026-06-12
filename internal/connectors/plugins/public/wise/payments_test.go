@@ -258,5 +258,72 @@ var _ = Describe("Wise Plugin Payments", func() {
 			// LastTransferID is the last emitted, covering the overflow page.
 			Expect(state.LastTransferID).To(Equal(uint64(105)))
 		})
+
+		It("should keep the offset and stop when an over-fetch ends on a short final page (EN-1087)", func(ctx SpecContext) {
+			// A full first page with a skipped (unsupported) transfer emits fewer
+			// than pageSize payments; the next page is the last one and is short.
+			// The accumulated total still exceeds pageSize, so ShouldFetchMore
+			// reports hasMore=true via its over-fetch branch. We must not advance
+			// the offset past the short final page nor report HasMore: otherwise
+			// the stored offset lands beyond the data and skips transfers that
+			// later fill the gap.
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    3,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			makeTransfer := func(id uint64, cur string) client.Transfer {
+				return client.Transfer{
+					ID:             id,
+					Reference:      fmt.Sprintf("test%d", id),
+					Status:         "outgoing_payment_sent",
+					SourceAccount:  1,
+					SourceCurrency: "USD",
+					SourceValue:    "100",
+					TargetAccount:  2,
+					TargetCurrency: cur,
+					TargetValue:    "100",
+					User:           1,
+					CreatedAt:      now,
+				}
+			}
+
+			// Full first page (ID 201 is HUF and skipped) -> emits 200, 202.
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 3).Return(
+				[]client.Transfer{
+					makeTransfer(200, "USD"),
+					makeTransfer(201, "HUF"),
+					makeTransfer(202, "USD"),
+				},
+				nil,
+			)
+			// Short final page (2 < pageSize) -> emits 203, 204; total now 4 > 3.
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 3, 3).Return(
+				[]client.Transfer{
+					makeTransfer(203, "USD"),
+					makeTransfer(204, "USD"),
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+
+			refs := make([]string, 0, len(resp.Payments))
+			for _, p := range resp.Payments {
+				refs = append(refs, p.Reference)
+			}
+			Expect(refs).To(ConsistOf("200", "202", "203", "204"))
+			// Short final page => end of data reached.
+			Expect(resp.HasMore).To(BeFalse())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// Offset stays on the short final page (start = 3); it must NOT jump
+			// to 6 and skip transfers that later land at offsets 4..5.
+			Expect(state.Offset).To(Equal(3))
+			Expect(state.LastTransferID).To(Equal(uint64(204)))
+		})
 	})
 })
