@@ -482,17 +482,23 @@ func FromPSPOrderToOrder(from PSPOrder, connectorID ConnectorID, observedAt time
 // prepended to the newer record so the full lifecycle is recorded without
 // triggering a duplicate-row conflict on upsert.
 func FromPSPOrders(from []PSPOrder, connectorID ConnectorID, observedAt time.Time) ([]Order, error) {
-	seen := make(map[OrderID]Order, len(from))
+	// indexByID maps an order ID to its position in orders so duplicates can be
+	// merged in place. orders preserves first-seen input order — ranging over a
+	// map to build the result would make the output order non-deterministic.
+	indexByID := make(map[OrderID]int, len(from))
+	orders := make([]Order, 0, len(from))
 	for _, o := range from {
 		order, err := FromPSPOrderToOrder(o, connectorID, observedAt)
 		if err != nil {
 			return nil, err
 		}
-		existing, dup := seen[order.ID]
+		idx, dup := indexByID[order.ID]
 		if !dup {
-			seen[order.ID] = order
+			indexByID[order.ID] = len(orders)
+			orders = append(orders, order)
 			continue
 		}
+		existing := orders[idx]
 		var newest, oldest Order
 		if existing.CreatedAt.After(order.CreatedAt) {
 			newest, oldest = existing, order
@@ -502,13 +508,9 @@ func FromPSPOrders(from []PSPOrder, connectorID ConnectorID, observedAt time.Tim
 		// FromPSPOrderToOrder always creates a single order with a single adjustment
 		// after combining we want to keep the older record as the first adjustment
 		newest.Adjustments = append(oldest.Adjustments, newest.Adjustments...)
-		seen[order.ID] = newest
+		orders[idx] = newest
 	}
 
-	orders := make([]Order, 0, len(seen))
-	for _, order := range seen {
-		orders = append(orders, order)
-	}
 	return orders, nil
 }
 
