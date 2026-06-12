@@ -3,8 +3,10 @@ package column
 import (
 	"context"
 	"fmt"
+	"io"
 	"math/big"
 	"net/http"
+	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
@@ -45,7 +47,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when sourceAccount is missing", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
+					Reference: "test-ref",
+					Amount:    big.NewInt(100),
 				},
 			}
 			_, err := plg.CreatePayout(ctx, req)
@@ -56,6 +59,7 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when sourceAccount reference is missing", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
+					Reference:     "test-ref",
 					Amount:        big.NewInt(100),
 					SourceAccount: &models.PSPAccount{},
 				},
@@ -68,7 +72,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when destinationAccount is missing", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
+					Reference: "test-ref",
+					Amount:    big.NewInt(100),
 					SourceAccount: &models.PSPAccount{
 						Reference: "test-ref",
 					},
@@ -82,7 +87,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when destinationAccount reference is missing", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
+					Reference: "test-ref",
+					Amount:    big.NewInt(100),
 					SourceAccount: &models.PSPAccount{
 						Reference: "test-ref",
 					},
@@ -97,7 +103,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when metadata is missing", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
+					Reference: "test-ref",
+					Amount:    big.NewInt(100),
 					SourceAccount: &models.PSPAccount{
 						Reference: "test-ref",
 					},
@@ -114,7 +121,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when payout type is missing", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
+					Reference: "test-ref",
+					Amount:    big.NewInt(100),
 					SourceAccount: &models.PSPAccount{
 						Reference: "test-ref",
 					},
@@ -132,7 +140,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 		It("should return an error when payout type is invalid", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
+					Reference: "test-ref",
+					Amount:    big.NewInt(100),
 					SourceAccount: &models.PSPAccount{
 						Reference: "test-ref",
 					},
@@ -154,7 +163,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should return an error when asset is missing", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -175,8 +185,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -229,8 +240,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -264,8 +276,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should return an error when creating wire payout request fails", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -297,8 +310,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should return an error when creating international-wire payout request fails", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -330,8 +344,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should return an error when creating realtime payout request fails", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -375,8 +390,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 
 					req := models.CreatePayoutRequest{
 						PaymentInitiation: models.PSPPaymentInitiation{
-							Amount: big.NewInt(100),
-							Asset:  "USD/2",
+							Reference: "test-ref",
+							Amount:    big.NewInt(100),
+							Asset:     "USD/2",
 							SourceAccount: &models.PSPAccount{
 								Reference: "test-ref",
 							},
@@ -400,8 +416,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 				It("should return an error when wire payout URL is invalid", func(ctx SpecContext) {
 					req := models.CreatePayoutRequest{
 						PaymentInitiation: models.PSPPaymentInitiation{
-							Amount: big.NewInt(100),
-							Asset:  "USD/2",
+							Reference: "test-ref",
+							Amount:    big.NewInt(100),
+							Asset:     "USD/2",
 							SourceAccount: &models.PSPAccount{
 								Reference: "test-ref",
 							},
@@ -423,8 +440,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 				It("should return an error when international wire payout URL is invalid", func(ctx SpecContext) {
 					req := models.CreatePayoutRequest{
 						PaymentInitiation: models.PSPPaymentInitiation{
-							Amount: big.NewInt(100),
-							Asset:  "USD/2",
+							Reference: "test-ref",
+							Amount:    big.NewInt(100),
+							Asset:     "USD/2",
 							SourceAccount: &models.PSPAccount{
 								Reference: "test-ref",
 							},
@@ -446,8 +464,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 				It("should return an error when realtime payout URL is invalid", func(ctx SpecContext) {
 					req := models.CreatePayoutRequest{
 						PaymentInitiation: models.PSPPaymentInitiation{
-							Amount: big.NewInt(100),
-							Asset:  "USD/2",
+							Reference: "test-ref",
+							Amount:    big.NewInt(100),
+							Asset:     "USD/2",
 							SourceAccount: &models.PSPAccount{
 								Reference: "test-ref",
 							},
@@ -469,8 +488,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 				It("should return an error when asset is invalid", func(ctx SpecContext) {
 					req := models.CreatePayoutRequest{
 						PaymentInitiation: models.PSPPaymentInitiation{
-							Amount: big.NewInt(100),
-							Asset:  "INVALID/2",
+							Reference: "test-ref",
+							Amount:    big.NewInt(100),
+							Asset:     "INVALID/2",
 							SourceAccount: &models.PSPAccount{
 								Reference: "test-ref",
 							},
@@ -497,8 +517,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -540,8 +561,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should create a payment from an ACH payout response", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -585,8 +607,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should create a payment from an international wire payout response", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -627,8 +650,9 @@ var _ = Describe("Column Plugin Payouts", func() {
 			It("should create a payment from a realtime payout response", func(ctx SpecContext) {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
-						Amount: big.NewInt(100),
-						Asset:  "USD/2",
+						Reference: "test-ref",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -695,7 +719,7 @@ var _ = Describe("Column Plugin Payouts", func() {
 
 		DescribeTable("should send the payment initiation reference as the Idempotency-Key header",
 			func(ctx SpecContext, payoutType string, setResponse func(any)) {
-				var capturedKey string
+				var capturedKey, capturedBody string
 				mockHTTPClient.EXPECT().Do(
 					gomock.Any(),
 					gomock.Any(),
@@ -703,6 +727,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 					gomock.Any(),
 				).DoAndReturn(func(_ context.Context, r *http.Request, resp any, _ any) (int, error) {
 					capturedKey = r.Header.Get("Idempotency-Key")
+					bodyBytes, _ := io.ReadAll(r.Body)
+					capturedBody = string(bodyBytes)
 					setResponse(resp)
 					return 200, nil
 				})
@@ -710,6 +736,8 @@ var _ = Describe("Column Plugin Payouts", func() {
 				_, err := plg.CreatePayout(ctx, newPayoutRequest(payoutType))
 				Expect(err).To(BeNil())
 				Expect(capturedKey).To(Equal("pi-ref-123"))
+				// Reference is header-only (json:"-") and must never leak into the body.
+				Expect(capturedBody).ToNot(ContainSubstring("pi-ref-123"))
 			},
 			Entry("ACH", "ach", func(resp any) {
 				*(resp.(*client.ACHPayoutResponse)) = client.ACHPayoutResponse{
@@ -731,6 +759,19 @@ var _ = Describe("Column Plugin Payouts", func() {
 					ID: "test-id", InitiatedAt: "2021-01-01T00:00:00Z", CurrencyCode: "USD", Amount: 100, Status: "completed",
 				}
 			}),
+		)
+
+		DescribeTable("should reject a reference that cannot be used as a Column Idempotency-Key",
+			func(ctx SpecContext, reference string, expectedErr error) {
+				req := newPayoutRequest("ach")
+				req.PaymentInitiation.Reference = reference
+
+				_, err := plg.CreatePayout(ctx, req)
+				Expect(err).To(MatchError(ContainSubstring(expectedErr.Error())))
+			},
+			Entry("empty reference", "", ErrMissingReference),
+			Entry("reference exceeding 255 chars", strings.Repeat("a", 256), ErrReferenceTooLong),
+			Entry("reference with non-ASCII characters", "réf-123", ErrReferenceInvalidCharacters),
 		)
 	})
 

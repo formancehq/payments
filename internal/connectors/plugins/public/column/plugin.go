@@ -37,6 +37,13 @@ var (
 	ErrMissingDestinationAccount          = errors.New("required field destinationAccount must be provided")
 	ErrMissingDestinationAccountReference = errors.New("required destinationAccount field reference must be provided")
 
+	// Reference is sent as Column's Idempotency-Key header (EN-1086); it must
+	// be present and satisfy Column's documented key constraints, otherwise the
+	// money movement would run without idempotency protection or be rejected.
+	ErrMissingReference           = errors.New("required field reference must be provided")
+	ErrReferenceTooLong           = fmt.Errorf("field reference must be at most %d characters", columnMaxIdempotencyKeyLength)
+	ErrReferenceInvalidCharacters = errors.New("field reference must contain only ASCII printable characters")
+
 	ErrMissingRelatedPaymentInitiationReference = fmt.Errorf("required field relatedPaymentInitiation.reference must be provided")
 
 	ErrMissingMetadata = errors.New("required field metadata must be provided")

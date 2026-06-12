@@ -16,6 +16,34 @@ type ColumnAddress struct {
 	Country    string
 }
 
+// columnMaxIdempotencyKeyLength mirrors Column's documented Idempotency-Key
+// constraint (https://docs.column.com/working-with-the-api/idempotency): the
+// key must be at most 255 chars and ASCII printable (codes 32-126).
+const columnMaxIdempotencyKeyLength = 255
+
+// validateReference checks that the payment initiation reference can be used as
+// Column's Idempotency-Key header (EN-1086). Empty is not reachable through the
+// public API today, but is guarded as defense-in-depth; the length/charset
+// checks catch references the API accepts (no length cap on v2, up to 1000 on
+// v3, no charset restriction) but Column would reject with a 4xx.
+func validateReference(reference string) error {
+	if reference == "" {
+		return models.NewConnectorValidationError("reference", ErrMissingReference)
+	}
+
+	if len(reference) > columnMaxIdempotencyKeyLength {
+		return models.NewConnectorValidationError("reference", ErrReferenceTooLong)
+	}
+
+	for _, r := range reference {
+		if r < 32 || r > 126 {
+			return models.NewConnectorValidationError("reference", ErrReferenceInvalidCharacters)
+		}
+	}
+
+	return nil
+}
+
 func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 
 	if pi.Amount == nil {
@@ -65,6 +93,10 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 		}
 	}
 
+	if err := validateReference(pi.Reference); err != nil {
+		return err
+	}
+
 	countryCode := models.ExtractNamespacedMetadata(pi.Metadata, client.ColumnAddressCountryCodeMetadataKey)
 	address := extractAddressFromMetadata(pi.Metadata, countryCode)
 
@@ -109,6 +141,10 @@ func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 
 	if pi.Asset == "" {
 		return models.NewConnectorValidationError("asset", ErrMissingAsset)
+	}
+
+	if err := validateReference(pi.Reference); err != nil {
+		return err
 	}
 
 	return nil
