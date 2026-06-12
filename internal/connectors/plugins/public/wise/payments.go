@@ -64,12 +64,15 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	if !needMore {
-		payments = payments[:req.PageSize]
-		paymentIDs = paymentIDs[:req.PageSize]
-
-		// Wise is very annoying with that point, the offset must be a multiple
-		// of the pageSize, otherwise, we will have an error inconsistent
-		// pagination.
+		// We intentionally do NOT trim down to req.PageSize. Wise requires the
+		// offset to be a multiple of pageSize (it returns an "inconsistent
+		// pagination" error otherwise), so we can only ever resume on a page
+		// boundary, never mid-page. Trimming would discard transfers we already
+		// fetched while the offset advances past them, losing them permanently
+		// (EN-1087): trimmed transfers sit below the new offset but have IDs
+		// above LastTransferID, so the next call never re-reads them. Instead we
+		// keep the whole over-fetched batch (up to ~2x pageSize) and only
+		// advance past pages we fully consumed, as the mangopay connector does.
 		newState.Offset += req.PageSize
 	}
 
