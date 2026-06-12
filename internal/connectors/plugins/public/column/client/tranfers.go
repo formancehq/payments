@@ -18,6 +18,9 @@ type TransferRequest struct {
 	AllowOverdraft        bool                   `json:"allow_overdraft,omitempty"`
 	Hold                  bool                   `json:"hold,omitempty"`
 	Details               TransferRequestDetails `json:"details,omitempty"`
+	// Reference is the payment initiation reference, sent as the
+	// Idempotency-Key header (never in the body) to make retries safe.
+	Reference string `json:"-"`
 }
 
 type TransferRequestDetails struct {
@@ -60,6 +63,7 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 	if err != nil {
 		return &TransferResponse{}, fmt.Errorf("failed to create transfer request: %w", err)
 	}
+	setIdempotencyKey(req, transferRequest.Reference)
 
 	var response TransferResponse
 	var errRes columnError

@@ -36,6 +36,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 			SourceAccount:      pi.SourceAccount.Reference,
 			DestinationAccount: pi.DestinationAccount.Reference,
 			Description:        pi.Description,
+			Reference:          pi.Reference,
 		},
 	)
 	if err != nil {
