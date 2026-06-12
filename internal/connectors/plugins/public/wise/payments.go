@@ -44,6 +44,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	var paymentIDs []uint64
 	needMore := false
 	hasMore := false
+	// lastPageFull tracks whether the most recently fetched Wise page was full.
+	// It is the real "is there more to fetch" signal: ShouldFetchMore hardcodes
+	// hasMore=true for any over-fetch (it assumes the caller trims), but since we
+	// no longer trim, a short final page means we have reached the end.
+	lastPageFull := false
 	for {
 		pagedTransfers, err := p.client.GetTransfers(ctx, from.ID, newState.Offset, req.PageSize)
 		if err != nil {
@@ -55,6 +60,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
+		lastPageFull = len(pagedTransfers) >= req.PageSize
+
 		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransfers, req.PageSize)
 		if !needMore || !hasMore {
 			break
@@ -63,13 +70,20 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		newState.Offset += req.PageSize
 	}
 
-	if !needMore {
-		payments = payments[:req.PageSize]
-		paymentIDs = paymentIDs[:req.PageSize]
-
-		// Wise is very annoying with that point, the offset must be a multiple
-		// of the pageSize, otherwise, we will have an error inconsistent
-		// pagination.
+	// We intentionally do NOT trim down to req.PageSize. Wise requires the offset
+	// to be a multiple of pageSize (it returns an "inconsistent pagination" error
+	// otherwise), so we can only ever resume on a page boundary, never mid-page.
+	// Trimming would discard transfers we already fetched while the offset
+	// advances past them, losing them permanently (EN-1087): trimmed transfers
+	// sit below the new offset but have IDs above LastTransferID, so the next
+	// call never re-reads them. Instead we keep the whole over-fetched batch (up
+	// to ~2x pageSize), like the mangopay connector.
+	//
+	// The offset may only move past the last page when that page was full. On a
+	// short final page we have reached the end, so we leave the offset on that
+	// page: advancing would push it beyond the data and silently skip transfers
+	// that later fill the gap before it.
+	if !needMore && lastPageFull {
 		newState.Offset += req.PageSize
 	}
 
@@ -85,7 +99,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return models.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
-		HasMore:  hasMore,
+		HasMore:  lastPageFull,
 	}, nil
 }
 

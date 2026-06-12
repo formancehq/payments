@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
 	"go.uber.org/mock/gomock"
@@ -24,7 +25,7 @@ var _ = Describe("Wise Plugin Payments", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg = &Plugin{client: m}
+		plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 	})
 
 	AfterEach(func() {
@@ -191,6 +192,138 @@ var _ = Describe("Wise Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(state.Offset).To(Equal(40))
 			Expect(state.LastTransferID).To(Equal(uint64(49)))
+		})
+
+		It("should not lose payments when a short page is followed by a full one (EN-1087)", func(ctx SpecContext) {
+			// Page 1 emits fewer than pageSize payments because one transfer has
+			// an unsupported currency and is skipped. Page 2 is full, pushing the
+			// accumulated total above pageSize. The previously buggy trim dropped
+			// the overflow transfers while advancing the offset past them, losing
+			// them permanently.
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    3,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			makeTransfer := func(id uint64, cur string) client.Transfer {
+				return client.Transfer{
+					ID:             id,
+					Reference:      fmt.Sprintf("test%d", id),
+					Status:         "outgoing_payment_sent",
+					SourceAccount:  1,
+					SourceCurrency: "USD",
+					SourceValue:    "100",
+					TargetAccount:  2,
+					TargetCurrency: cur,
+					TargetValue:    "100",
+					User:           1,
+					CreatedAt:      now,
+				}
+			}
+
+			// ID 101 is HUF, which is unsupported and therefore skipped.
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 3).Return(
+				[]client.Transfer{
+					makeTransfer(100, "USD"),
+					makeTransfer(101, "HUF"),
+					makeTransfer(102, "USD"),
+				},
+				nil,
+			)
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 3, 3).Return(
+				[]client.Transfer{
+					makeTransfer(103, "USD"),
+					makeTransfer(104, "USD"),
+					makeTransfer(105, "USD"),
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+
+			// All five supported transfers must be emitted; none trimmed away.
+			refs := make([]string, 0, len(resp.Payments))
+			for _, p := range resp.Payments {
+				refs = append(refs, p.Reference)
+			}
+			Expect(refs).To(ConsistOf("100", "102", "103", "104", "105"))
+			Expect(resp.HasMore).To(BeTrue())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// Offset advanced one page per page consumed (two pages of 3).
+			Expect(state.Offset).To(Equal(6))
+			// LastTransferID is the last emitted, covering the overflow page.
+			Expect(state.LastTransferID).To(Equal(uint64(105)))
+		})
+
+		It("should keep the offset and stop when an over-fetch ends on a short final page (EN-1087)", func(ctx SpecContext) {
+			// A full first page with a skipped (unsupported) transfer emits fewer
+			// than pageSize payments; the next page is the last one and is short.
+			// The accumulated total still exceeds pageSize, so ShouldFetchMore
+			// reports hasMore=true via its over-fetch branch. We must not advance
+			// the offset past the short final page nor report HasMore: otherwise
+			// the stored offset lands beyond the data and skips transfers that
+			// later fill the gap.
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    3,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			makeTransfer := func(id uint64, cur string) client.Transfer {
+				return client.Transfer{
+					ID:             id,
+					Reference:      fmt.Sprintf("test%d", id),
+					Status:         "outgoing_payment_sent",
+					SourceAccount:  1,
+					SourceCurrency: "USD",
+					SourceValue:    "100",
+					TargetAccount:  2,
+					TargetCurrency: cur,
+					TargetValue:    "100",
+					User:           1,
+					CreatedAt:      now,
+				}
+			}
+
+			// Full first page (ID 201 is HUF and skipped) -> emits 200, 202.
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 3).Return(
+				[]client.Transfer{
+					makeTransfer(200, "USD"),
+					makeTransfer(201, "HUF"),
+					makeTransfer(202, "USD"),
+				},
+				nil,
+			)
+			// Short final page (2 < pageSize) -> emits 203, 204; total now 4 > 3.
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 3, 3).Return(
+				[]client.Transfer{
+					makeTransfer(203, "USD"),
+					makeTransfer(204, "USD"),
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+
+			refs := make([]string, 0, len(resp.Payments))
+			for _, p := range resp.Payments {
+				refs = append(refs, p.Reference)
+			}
+			Expect(refs).To(ConsistOf("200", "202", "203", "204"))
+			// Short final page => end of data reached.
+			Expect(resp.HasMore).To(BeFalse())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// Offset stays on the short final page (start = 3); it must NOT jump
+			// to 6 and skip transfers that later land at offsets 4..5.
+			Expect(state.Offset).To(Equal(3))
+			Expect(state.LastTransferID).To(Equal(uint64(204)))
 		})
 	})
 })
