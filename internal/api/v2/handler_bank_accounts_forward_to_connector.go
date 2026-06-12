@@ -69,6 +69,12 @@ func bankAccountsForwardToConnector(backend backend.Backend, validator *validati
 			return
 		}
 
+		if err := bankAccount.Obfuscate(); err != nil {
+			otel.RecordError(span, err)
+			common.InternalServerError(w, r, err)
+			return
+		}
+
 		data := &BankAccountResponse{
 			ID:        bankAccount.ID.String(),
 			Name:      bankAccount.Name,
