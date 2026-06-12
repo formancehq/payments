@@ -5232,7 +5232,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 |provider|string|true|none|none|
 |scheduledForDeletion|boolean|true|none|none|
 |config|object|true|none|none|
-|capabilities|[[V3Capability](#schemav3capability)]|true|none|Plugin capabilities advertised by the connector's provider.|
+|capabilities|[[V3Capability](#schemav3capability)]|false|none|Plugin capabilities advertised by the connector's provider.|
 |updatedAt|string(date-time)¦null|false|none|none|
 
 <h2 id="tocS_V3ConnectorBase">V3ConnectorBase</h2>

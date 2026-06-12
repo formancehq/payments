@@ -19,7 +19,7 @@ type V3Connector struct {
 	ScheduledForDeletion bool      `json:"scheduledForDeletion"`
 	Config               Config    `json:"config"`
 	// Plugin capabilities advertised by the connector's provider.
-	Capabilities []V3Capability `json:"capabilities"`
+	Capabilities []V3Capability `json:"capabilities,omitempty"`
 	UpdatedAt    *time.Time     `json:"updatedAt,omitempty"`
 }
 
@@ -85,7 +85,7 @@ func (o *V3Connector) GetConfig() Config {
 
 func (o *V3Connector) GetCapabilities() []V3Capability {
 	if o == nil {
-		return []V3Capability{}
+		return nil
 	}
 	return o.Capabilities
 }

@@ -556,7 +556,6 @@ components:
         - provider
         - scheduledForDeletion
         - config
-        - capabilities
       properties:
         id:
           type: string
