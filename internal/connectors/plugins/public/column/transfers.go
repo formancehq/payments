@@ -34,6 +34,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 			ReceiverBankAccountId: pi.DestinationAccount.Reference,
 			AllowOverdraft:        allowOverdraft == "true",
 			Hold:                  hold == "true",
+			Reference:             pi.Reference,
 			Details: client.TransferRequestDetails{
 				SenderName:           *pi.SourceAccount.Name,
 				MerchantName:         pi.Metadata[client.ColumnMerchantNameMetadataKey],

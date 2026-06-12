@@ -242,6 +242,9 @@ type PayoutRequest struct {
 	DestinationAccount string            `json:"destination_account"`
 	Description        string            `json:"description"`
 	Metadata           map[string]string `json:"metadata"`
+	// Reference is the payment initiation reference, sent as the
+	// Idempotency-Key header (never in the body) to make retries safe.
+	Reference string `json:"-"`
 }
 
 type PayoutResponse struct {
@@ -341,7 +344,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 			UltimateOriginatorCounterpartyId:  models.ExtractNamespacedMetadata(pr.Metadata, ColumnUltimateOriginatorCounterpartyIdMetadataKey),
 		}
 
-		return c.initiateACHPayout(ctx, achPayload)
+		return c.initiateACHPayout(ctx, achPayload, pr.Reference)
 	case "wire":
 		wirePayload := &WirePayoutRequest{
 			Amount:                           pr.Amount,
@@ -354,7 +357,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 			UltimateOriginatorAccountNumber:  models.ExtractNamespacedMetadata(pr.Metadata, ColumnUltimateOriginatorAccountNumberMetadataKey),
 		}
 
-		return c.initiateWirePayouts(ctx, wirePayload)
+		return c.initiateWirePayouts(ctx, wirePayload, pr.Reference)
 	case "international-wire":
 		internationalPayload := &InternationalWirePayoutRequest{
 			Amount:                   pr.Amount,
@@ -374,7 +377,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 			},
 		}
 
-		return c.initiateInternationalPayout(ctx, internationalPayload)
+		return c.initiateInternationalPayout(ctx, internationalPayload, pr.Reference)
 	case "realtime":
 		realtimePayload := &RealtimeTransferRequest{
 			Amount:                       pr.Amount,
@@ -388,13 +391,13 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 			EndToEndID:                   models.ExtractNamespacedMetadata(pr.Metadata, ColumnEndToEndIdMetadataKey),
 		}
 
-		return c.initiateRealtimePayout(ctx, realtimePayload)
+		return c.initiateRealtimePayout(ctx, realtimePayload, pr.Reference)
 	}
 
 	return nil, nil
 }
 
-func (c *client) initiateACHPayout(ctx context.Context, pr *ACHPayoutRequest) (*PayoutResponse, error) {
+func (c *client) initiateACHPayout(ctx context.Context, pr *ACHPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_ach_payout")
 
 	body, err := json.Marshal(pr)
@@ -406,6 +409,7 @@ func (c *client) initiateACHPayout(ctx context.Context, pr *ACHPayoutRequest) (*
 	if err != nil {
 		return &PayoutResponse{}, fmt.Errorf("failed to create ach transfer request: %w", err)
 	}
+	setIdempotencyKey(req, idempotencyKey)
 
 	var response ACHPayoutResponse
 	var errRes columnError
@@ -416,7 +420,7 @@ func (c *client) initiateACHPayout(ctx context.Context, pr *ACHPayoutRequest) (*
 	return MapAchPayout(response)
 }
 
-func (c *client) initiateWirePayouts(ctx context.Context, pr *WirePayoutRequest) (*PayoutResponse, error) {
+func (c *client) initiateWirePayouts(ctx context.Context, pr *WirePayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_wire_payout")
 
 	body, err := json.Marshal(pr)
@@ -428,6 +432,7 @@ func (c *client) initiateWirePayouts(ctx context.Context, pr *WirePayoutRequest)
 	if err != nil {
 		return &PayoutResponse{}, fmt.Errorf("failed to create wire transfer request: %w", err)
 	}
+	setIdempotencyKey(req, idempotencyKey)
 
 	var response WirePayoutResponse
 	var errRes columnError
@@ -438,7 +443,7 @@ func (c *client) initiateWirePayouts(ctx context.Context, pr *WirePayoutRequest)
 	return MapWirePayout(response)
 }
 
-func (c *client) initiateInternationalPayout(ctx context.Context, pr *InternationalWirePayoutRequest) (*PayoutResponse, error) {
+func (c *client) initiateInternationalPayout(ctx context.Context, pr *InternationalWirePayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_international_payout")
 
 	body, err := json.Marshal(pr)
@@ -450,6 +455,7 @@ func (c *client) initiateInternationalPayout(ctx context.Context, pr *Internatio
 	if err != nil {
 		return &PayoutResponse{}, fmt.Errorf("failed to create international transfer request: %w", err)
 	}
+	setIdempotencyKey(req, idempotencyKey)
 
 	var response InternationalWirePayoutResponse
 	var errRes columnError
@@ -460,7 +466,7 @@ func (c *client) initiateInternationalPayout(ctx context.Context, pr *Internatio
 	return MapInternationalWirePayout(response)
 }
 
-func (c *client) initiateRealtimePayout(ctx context.Context, pr *RealtimeTransferRequest) (*PayoutResponse, error) {
+func (c *client) initiateRealtimePayout(ctx context.Context, pr *RealtimeTransferRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_realtime_payout")
 
 	body, err := json.Marshal(pr)
@@ -472,6 +478,7 @@ func (c *client) initiateRealtimePayout(ctx context.Context, pr *RealtimeTransfe
 	if err != nil {
 		return &PayoutResponse{}, fmt.Errorf("failed to create rtp transfer request: %w", err)
 	}
+	setIdempotencyKey(req, idempotencyKey)
 
 	var response RealtimeTransferResponse
 	var errRes columnError

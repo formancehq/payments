@@ -1,8 +1,10 @@
 package column
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"net/http"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
@@ -533,6 +535,48 @@ var _ = Describe("Column Plugin Payments", func() {
 				Expect(res.Payment.Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
 				Expect(res.Payment.Asset).To(Equal("USD/2"))
 				Expect(res.PollingTransferID).To(BeNil())
+			})
+
+			// EN-1086: the book transfer must carry the payment initiation
+			// reference as the Idempotency-Key header so engine retries do not
+			// create a duplicate transfer at Column.
+			It("should send the payment initiation reference as the Idempotency-Key header", func(ctx SpecContext) {
+				req := models.CreateTransferRequest{
+					PaymentInitiation: models.PSPPaymentInitiation{
+						Reference: "pi-ref-123",
+						Amount:    big.NewInt(100),
+						Asset:     "USD/2",
+						Metadata: map[string]string{
+							client.ColumnAllowOverdraftMetadataKey: "true",
+							client.ColumnHoldMetadataKey:           "false",
+						},
+						SourceAccount: &models.PSPAccount{
+							Name:      pointer.For("Test Source"),
+							Reference: "src_ref",
+						},
+						DestinationAccount: &models.PSPAccount{
+							Reference: "dst_ref",
+						},
+					},
+				}
+
+				var capturedKey string
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).DoAndReturn(func(_ context.Context, r *http.Request, resp any, _ any) (int, error) {
+					capturedKey = r.Header.Get("Idempotency-Key")
+					*(resp.(*client.TransferResponse)) = client.TransferResponse{
+						ID: "test-transfer-id", CreatedAt: "2024-03-20T10:00:00Z", CurrencyCode: "USD", Amount: 100,
+					}
+					return 200, nil
+				})
+
+				_, err := plg.CreateTransfer(ctx, req)
+				Expect(err).To(BeNil())
+				Expect(capturedKey).To(Equal("pi-ref-123"))
 			})
 		})
 	})

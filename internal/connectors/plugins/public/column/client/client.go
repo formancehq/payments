@@ -98,3 +98,15 @@ func (c *client) newRequest(ctx context.Context, method, path string, body io.Re
 	}
 	return req, nil
 }
+
+// idempotencyKeyHeader is Column's header for safely retrying mutating
+// requests. Reusing the same key makes the call idempotent at Column, which
+// protects the money-movement path against duplicate payouts/transfers when
+// the engine retries the activity (see EN-1086).
+const idempotencyKeyHeader = "Idempotency-Key"
+
+func setIdempotencyKey(req *http.Request, key string) {
+	if key != "" {
+		req.Header.Set(idempotencyKeyHeader, key)
+	}
+}

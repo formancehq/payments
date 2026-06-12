@@ -1,8 +1,10 @@
 package column
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
@@ -666,6 +668,70 @@ var _ = Describe("Column Plugin Payouts", func() {
 				Expect(resp.Payment.Asset).To(Equal("USD/2"))
 			})
 		})
+	})
+
+	Context("Idempotency key (EN-1086)", func() {
+		// Each payout rail must send the payment initiation reference as the
+		// Idempotency-Key header so that engine retries do not create a
+		// duplicate money movement at Column.
+		newPayoutRequest := func(payoutType string) models.CreatePayoutRequest {
+			return models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Reference: "pi-ref-123",
+					Amount:    big.NewInt(100),
+					Asset:     "USD/2",
+					SourceAccount: &models.PSPAccount{
+						Reference: "src-ref",
+					},
+					DestinationAccount: &models.PSPAccount{
+						Reference: "dst-ref",
+					},
+					Metadata: map[string]string{
+						client.ColumnPayoutTypeMetadataKey: payoutType,
+					},
+				},
+			}
+		}
+
+		DescribeTable("should send the payment initiation reference as the Idempotency-Key header",
+			func(ctx SpecContext, payoutType string, setResponse func(any)) {
+				var capturedKey string
+				mockHTTPClient.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).DoAndReturn(func(_ context.Context, r *http.Request, resp any, _ any) (int, error) {
+					capturedKey = r.Header.Get("Idempotency-Key")
+					setResponse(resp)
+					return 200, nil
+				})
+
+				_, err := plg.CreatePayout(ctx, newPayoutRequest(payoutType))
+				Expect(err).To(BeNil())
+				Expect(capturedKey).To(Equal("pi-ref-123"))
+			},
+			Entry("ACH", "ach", func(resp any) {
+				*(resp.(*client.ACHPayoutResponse)) = client.ACHPayoutResponse{
+					ID: "test-id", CreatedAt: "2021-01-01T00:00:00Z", CurrencyCode: "USD", Amount: 100,
+				}
+			}),
+			Entry("wire", "wire", func(resp any) {
+				*(resp.(*client.WirePayoutResponse)) = client.WirePayoutResponse{
+					ID: "test-id", CreatedAt: "2021-01-01T00:00:00Z", CurrencyCode: "USD", Amount: 100,
+				}
+			}),
+			Entry("international-wire", "international-wire", func(resp any) {
+				*(resp.(*client.InternationalWirePayoutResponse)) = client.InternationalWirePayoutResponse{
+					ID: "test-id", CreatedAt: "2021-01-01T00:00:00Z", CurrencyCode: "USD", Amount: 100,
+				}
+			}),
+			Entry("realtime", "realtime", func(resp any) {
+				*(resp.(*client.RealtimeTransferResponse)) = client.RealtimeTransferResponse{
+					ID: "test-id", InitiatedAt: "2021-01-01T00:00:00Z", CurrencyCode: "USD", Amount: 100, Status: "completed",
+				}
+			}),
+		)
 	})
 
 	Context("mapTransactionStatus", func() {
