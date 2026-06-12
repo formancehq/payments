@@ -84,10 +84,14 @@ func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, i
 		return e("updating open banking connection attempt status", err)
 	}
 
-	// Fetch the attempt to get psuID and connectorID for the event
+	// Fetch the attempt to get psuID and connectorID for the event.
+	// Select columns explicitly (like the get/list paths) so the query never
+	// references the raw encrypted temporary_token column; the event payload
+	// does not need the token, so it is intentionally omitted.
 	attempt := openBankingConnectionAttempt{}
 	err = tx.NewSelect().
 		Model(&attempt).
+		Column("id", "psu_id", "connector_id", "created_at", "status", "state", "client_redirect_url", "expires_at", "error").
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
