@@ -50,7 +50,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		assert.Equal(t, "12******901", *bankAccount.AccountNumber)
 	})
 
-	t.Run("invalid IBAN", func(t *testing.T) {
+	t.Run("short IBAN is fully masked, not rejected", func(t *testing.T) {
 		t.Parallel()
 		// Given
 
@@ -62,11 +62,11 @@ func TestBankAccountObfuscate(t *testing.T) {
 		err := bankAccount.Obfuscate()
 
 		// Then
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "IBAN is not valid")
+		require.NoError(t, err)
+		assert.Equal(t, "****", *bankAccount.IBAN)
 	})
 
-	t.Run("invalid account number", func(t *testing.T) {
+	t.Run("short account number is fully masked, not rejected", func(t *testing.T) {
 		t.Parallel()
 		// Given
 
@@ -78,8 +78,8 @@ func TestBankAccountObfuscate(t *testing.T) {
 		err := bankAccount.Obfuscate()
 
 		// Then
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Account number is not valid")
+		require.NoError(t, err)
+		assert.Equal(t, "***", *bankAccount.AccountNumber)
 	})
 
 	t.Run("nil IBAN and account number", func(t *testing.T) {

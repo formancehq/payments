@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -70,26 +69,35 @@ func (b *BankAccount) IdempotencyKey() string {
 	return IdempotencyKey(ik)
 }
 
+// Obfuscate masks the IBAN and account number in place, keeping a short
+// prefix and suffix for recognisability. Values too short to keep both ends
+// are fully masked rather than rejected: these are display-only fields, and
+// failing here would surface as a 500 to the caller (and, for the
+// forward-to-connector endpoint, only after the side effect already
+// succeeded). The error return is kept for interface stability; it is
+// currently always nil.
 func (a *BankAccount) Obfuscate() error {
 	if a.IBAN != nil {
-		length := len(*a.IBAN)
-		if length < 8 {
-			return errors.New("IBAN is not valid")
-		}
-
-		*a.IBAN = (*a.IBAN)[:4] + strings.Repeat("*", length-8) + (*a.IBAN)[length-4:]
+		*a.IBAN = obfuscate(*a.IBAN, 4, 4)
 	}
 
 	if a.AccountNumber != nil {
-		length := len(*a.AccountNumber)
-		if length < 5 {
-			return errors.New("Account number is not valid")
-		}
-
-		*a.AccountNumber = (*a.AccountNumber)[:2] + strings.Repeat("*", length-5) + (*a.AccountNumber)[length-3:]
+		*a.AccountNumber = obfuscate(*a.AccountNumber, 2, 3)
 	}
 
 	return nil
+}
+
+// obfuscate keeps the first prefix and last suffix characters of v and masks
+// the rest with '*'. If v is too short to keep both ends without overlap, it
+// is fully masked.
+func obfuscate(v string, prefix, suffix int) string {
+	length := len(v)
+	if length < prefix+suffix {
+		return strings.Repeat("*", length)
+	}
+
+	return v[:prefix] + strings.Repeat("*", length-prefix-suffix) + v[length-suffix:]
 }
 
 func FillBankAccountDetailsToAccountMetadata(account *Account, bankAccount *BankAccount) {
