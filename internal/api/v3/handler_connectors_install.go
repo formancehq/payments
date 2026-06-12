@@ -30,7 +30,6 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		span.SetAttributes(attribute.String("config", string(config)))
 		span.SetAttributes(attribute.String("provider", connector(r)))
 
 		provider := strings.ToLower(connector(r))

@@ -30,7 +30,6 @@ func connectorsConfigUpdate(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
-		span.SetAttributes(attribute.String("config", string(rawConfig)))
 		err = backend.ConnectorsConfigUpdate(ctx, connectorID, rawConfig)
 		if err != nil {
 			otel.RecordError(span, err)
