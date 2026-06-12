@@ -437,6 +437,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+		migrations.Migration{
+			Name: "encrypt open banking tokens",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running encrypt open banking tokens migration...")
+					err := encryptOpenBankingTokens(ctx, tx, encryptionKey)
+					logger.WithField("error", err).Info("finished running encrypt open banking tokens migration")
+					return err
+				})
+			},
+		},
 	)
 }
 

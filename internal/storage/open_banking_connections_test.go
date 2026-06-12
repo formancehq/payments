@@ -999,3 +999,74 @@ func compareOpenBankingConnections(t *testing.T, expected, actual models.OpenBan
 		require.Nil(t, actual.AccessToken)
 	}
 }
+
+func TestOpenBankingTokensEncryptedAtRest(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	st := newStore(t)
+	defer st.Close()
+
+	upsertConnector(t, ctx, st, defaultConnector)
+	createPSU(t, ctx, st, defaultPSU2)
+
+	const (
+		accessTokenPlaintext = "super_secret_access_token"
+		tempTokenPlaintext   = "super_secret_temp_token"
+	)
+
+	attempt := models.OpenBankingConnectionAttempt{
+		ID:          uuid.New(),
+		PsuID:       defaultPSU2.ID,
+		ConnectorID: defaultConnector.ID,
+		CreatedAt:   now.Add(-60 * time.Minute).UTC().Time,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
+		State:       models.CallbackState{Randomized: "random", AttemptID: uuid.New()},
+		TemporaryToken: &models.Token{
+			Token:     tempTokenPlaintext,
+			ExpiresAt: now.Add(30 * time.Minute).UTC().Time,
+		},
+	}
+	require.NoError(t, st.OpenBankingConnectionAttemptsUpsert(ctx, attempt))
+
+	forwardedUser := models.OpenBankingForwardedUser{
+		ConnectorID: defaultConnector.ID,
+		AccessToken: &models.Token{
+			Token:     accessTokenPlaintext,
+			ExpiresAt: now.Add(60 * time.Minute).UTC().Time,
+		},
+	}
+	require.NoError(t, st.OpenBankingForwardedUserUpsert(ctx, defaultPSU2.ID, forwardedUser))
+
+	concrete, ok := st.(*store)
+	require.True(t, ok)
+
+	// temporary_token must be stored as ciphertext, not the plaintext value.
+	var rawTempToken []byte
+	require.NoError(t, concrete.db.NewRaw(
+		"SELECT temporary_token FROM open_banking_connection_attempts WHERE id = ?", attempt.ID,
+	).Scan(ctx, &rawTempToken))
+	require.NotEmpty(t, rawTempToken)
+	require.NotEqual(t, tempTokenPlaintext, string(rawTempToken))
+
+	var decryptedTempToken string
+	require.NoError(t, concrete.db.NewRaw(
+		"SELECT pgp_sym_decrypt(?::BYTEA, ?, ?)", rawTempToken, concrete.configEncryptionKey, encryptionOptions,
+	).Scan(ctx, &decryptedTempToken))
+	require.Equal(t, tempTokenPlaintext, decryptedTempToken)
+
+	// access_token must be stored as ciphertext, not the plaintext value.
+	var rawAccessToken []byte
+	require.NoError(t, concrete.db.NewRaw(
+		"SELECT access_token FROM open_banking_access_tokens WHERE psu_id = ? AND connector_id = ?",
+		defaultPSU2.ID, defaultConnector.ID,
+	).Scan(ctx, &rawAccessToken))
+	require.NotEmpty(t, rawAccessToken)
+	require.NotEqual(t, accessTokenPlaintext, string(rawAccessToken))
+
+	var decryptedAccessToken string
+	require.NoError(t, concrete.db.NewRaw(
+		"SELECT pgp_sym_decrypt(?::BYTEA, ?, ?)", rawAccessToken, concrete.configEncryptionKey, encryptionOptions,
+	).Scan(ctx, &decryptedAccessToken))
+	require.Equal(t, accessTokenPlaintext, decryptedAccessToken)
+}

@@ -32,9 +32,12 @@ type openBankingConnectionAttempt struct {
 
 	// Optional fields
 	ClientRedirectURL *string    `bun:"client_redirect_url,type:text,nullzero"`
-	TemporaryToken    *string    `bun:"temporary_token,type:text,nullzero"`
 	ExpiresAt         *time.Time `bun:"expires_at,type:timestamp without time zone,nullzero"`
 	Error             *string    `bun:"error,type:text,nullzero"`
+
+	// Encrypted field: written via pgp_sym_encrypt and scanned back decrypted.
+	// The raw temporary_token column is bytea; this field receives the decrypted value.
+	TemporaryToken *string `bun:"decrypted_temporary_token,scanonly"`
 }
 
 func (s *store) OpenBankingConnectionAttemptsUpsert(ctx context.Context, from models.OpenBankingConnectionAttempt) error {
@@ -45,6 +48,9 @@ func (s *store) OpenBankingConnectionAttemptsUpsert(ctx context.Context, from mo
 
 	_, err = s.db.NewInsert().
 		Model(&attempt).
+		// temporary_token is encrypted at rest (bytea); NULL stays NULL.
+		Value("temporary_token", "CASE WHEN ?::TEXT IS NULL THEN NULL ELSE pgp_sym_encrypt(?::TEXT, ?, ?) END",
+			attempt.TemporaryToken, attempt.TemporaryToken, s.configEncryptionKey, encryptionOptions).
 		On("CONFLICT (id) DO UPDATE").
 		Set("error = EXCLUDED.error").
 		Set("status = EXCLUDED.status").
@@ -136,6 +142,8 @@ func (s *store) OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UU
 	attempt := openBankingConnectionAttempt{}
 	err := s.db.NewSelect().
 		Model(&attempt).
+		Column("id", "psu_id", "connector_id", "created_at", "status", "state", "client_redirect_url", "expires_at", "error").
+		ColumnExpr("pgp_sym_decrypt(temporary_token, ?, ?) AS decrypted_temporary_token", s.configEncryptionKey, encryptionOptions).
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
@@ -192,6 +200,10 @@ func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uui
 	cursor, err := paginateWithOffset[paginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery], openBankingConnectionAttempt](s, ctx,
 		(*paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[OpenBankingConnectionAttemptsQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
+			query = query.
+				Column("id", "psu_id", "connector_id", "created_at", "status", "state", "client_redirect_url", "expires_at", "error").
+				ColumnExpr("pgp_sym_decrypt(temporary_token, ?, ?) AS decrypted_temporary_token", s.configEncryptionKey, encryptionOptions)
+
 			if where != "" {
 				query = query.Where(where, args...)
 			}
@@ -256,6 +268,8 @@ func (s *store) OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.U
 	if token != nil {
 		_, err = tx.NewInsert().
 			Model(token).
+			// access_token is encrypted at rest (bytea).
+			Value("access_token", "pgp_sym_encrypt(?::TEXT, ?, ?)", token.AccessToken, s.configEncryptionKey, encryptionOptions).
 			On("CONFLICT (psu_id, connector_id, connection_id) DO UPDATE").
 			Set("access_token = EXCLUDED.access_token").
 			Set("expires_at = EXCLUDED.expires_at").
@@ -286,7 +300,8 @@ func (s *store) OpenBankingForwardedUserGet(ctx context.Context, psuID uuid.UUID
 	obForwardedUser := openBankingForwardedUser{}
 	err := s.db.NewSelect().
 		Model(&obForwardedUser).
-		Column("open_banking_forwarded_users.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Column("open_banking_forwarded_users.*", "open_banking_access_tokens.expires_at").
+		ColumnExpr("pgp_sym_decrypt(open_banking_access_tokens.access_token, ?, ?) AS access_token", s.configEncryptionKey, encryptionOptions).
 		Join("LEFT JOIN open_banking_access_tokens ON open_banking_forwarded_users.psu_id = open_banking_access_tokens.psu_id AND open_banking_forwarded_users.connector_id = open_banking_access_tokens.connector_id").
 		Where("open_banking_forwarded_users.psu_id = ?", psuID).
 		Where("open_banking_forwarded_users.connector_id = ?", connectorID).
@@ -304,7 +319,8 @@ func (s *store) OpenBankingForwardedUserGetByPSPUserID(ctx context.Context, pspU
 
 	err := s.db.NewSelect().
 		Model(&obForwardedUser).
-		Column("open_banking_forwarded_users.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Column("open_banking_forwarded_users.*", "open_banking_access_tokens.expires_at").
+		ColumnExpr("pgp_sym_decrypt(open_banking_access_tokens.access_token, ?, ?) AS access_token", s.configEncryptionKey, encryptionOptions).
 		Join("LEFT JOIN open_banking_access_tokens ON open_banking_forwarded_users.psu_id = open_banking_access_tokens.psu_id AND open_banking_forwarded_users.connector_id = open_banking_access_tokens.connector_id").
 		Where("open_banking_forwarded_users.psp_user_id = ?", pspUserID).
 		Where("open_banking_forwarded_users.connector_id = ?", connectorID).
@@ -387,7 +403,8 @@ func (s *store) OpenBankingForwardedUserList(ctx context.Context, query ListOpen
 			}
 
 			query = query.
-				Column("open_banking_forwarded_users.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+				Column("open_banking_forwarded_users.*", "open_banking_access_tokens.expires_at").
+				ColumnExpr("pgp_sym_decrypt(open_banking_access_tokens.access_token, ?, ?) AS access_token", s.configEncryptionKey, encryptionOptions).
 				Join("LEFT JOIN open_banking_access_tokens ON open_banking_forwarded_users.psu_id = open_banking_access_tokens.psu_id AND open_banking_forwarded_users.connector_id = open_banking_access_tokens.connector_id")
 
 			return query
@@ -466,6 +483,8 @@ func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUI
 	if token != nil {
 		_, err = tx.NewInsert().
 			Model(token).
+			// access_token is encrypted at rest (bytea).
+			Value("access_token", "pgp_sym_encrypt(?::TEXT, ?, ?)", token.AccessToken, s.configEncryptionKey, encryptionOptions).
 			On("CONFLICT (psu_id, connector_id, connection_id) DO UPDATE").
 			Set("access_token = EXCLUDED.access_token").
 			Set("expires_at = EXCLUDED.expires_at").
@@ -624,7 +643,8 @@ func (s *store) OpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, 
 	connection := openBankingConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
-		Column("open_banking_connections.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Column("open_banking_connections.*", "open_banking_access_tokens.expires_at").
+		ColumnExpr("pgp_sym_decrypt(open_banking_access_tokens.access_token, ?, ?) AS access_token", s.configEncryptionKey, encryptionOptions).
 		Join("LEFT JOIN open_banking_access_tokens ON open_banking_connections.psu_id = open_banking_access_tokens.psu_id AND open_banking_connections.connector_id = open_banking_access_tokens.connector_id AND open_banking_connections.connection_id = open_banking_access_tokens.connection_id").
 		Where("open_banking_connections.psu_id = ?", psuID).
 		Where("open_banking_connections.connector_id = ?", connectorID).
@@ -641,7 +661,8 @@ func (s *store) OpenBankingConnectionsGetFromConnectionID(ctx context.Context, c
 	connection := openBankingConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
-		Column("open_banking_connections.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Column("open_banking_connections.*", "open_banking_access_tokens.expires_at").
+		ColumnExpr("pgp_sym_decrypt(open_banking_access_tokens.access_token, ?, ?) AS access_token", s.configEncryptionKey, encryptionOptions).
 		Join("LEFT JOIN open_banking_access_tokens ON open_banking_connections.psu_id = open_banking_access_tokens.psu_id AND open_banking_connections.connector_id = open_banking_access_tokens.connector_id AND open_banking_connections.connection_id = open_banking_access_tokens.connection_id").
 		Where("open_banking_connections.connector_id = ?", connectorID).
 		Where("open_banking_connections.connection_id = ?", connectionID).
