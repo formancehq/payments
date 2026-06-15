@@ -38,7 +38,6 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
-		span.SetAttributes(attribute.String("config", string(config)))
 
 		connectorID, err := backend.ConnectorsInstall(ctx, provider, config)
 		if err != nil {
