@@ -871,6 +871,95 @@ func TestPaymentsUpsertRefunded(t *testing.T) {
 	require.NoError(t, err)
 	// two refunds in the same batch, should be 100 - 10 - 10 = 80
 	require.Equal(t, big.NewInt(80), actual.Amount)
+
+	// EN-1085 / C2: each refund adjustment must keep its own amount (10), not the
+	// accumulated sum. big.Int aliasing previously mutated the first refund's amount in place.
+	for _, adj := range actual.Adjustments {
+		if adj.Status == models.PAYMENT_STATUS_REFUNDED {
+			require.Equal(t, big.NewInt(10), adj.Amount, "each refund adjustment must keep its own amount")
+		}
+	}
+}
+
+// TestPaymentsUpsertDoesNotMutateCallerAmounts covers EN-1085 / C2: accumulating refund
+// deltas must not mutate the caller's adjustment big.Int values in place.
+func TestPaymentsUpsertDoesNotMutateCallerAmounts(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	input := defaultPaymentsRefunded()
+	require.NoError(t, store.PaymentsUpsert(ctx, input))
+
+	// The two refund adjustments were each 10 on input and must be untouched after upsert.
+	for _, p := range input {
+		for _, adj := range p.Adjustments {
+			if adj.Status == models.PAYMENT_STATUS_REFUNDED {
+				require.Equal(t, big.NewInt(10), adj.Amount, "caller adjustment amount must not be mutated")
+			}
+		}
+	}
+}
+
+// TestPaymentsUpsertNilAmountAdjustment covers EN-1085 / C2: an adjustment with a nil amount
+// must not panic, must leave the payment amount unchanged, and must still record the status.
+func TestPaymentsUpsertNilAmountAdjustment(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	paymentID := models.PaymentID{
+		PaymentReference: models.PaymentReference{
+			Reference: "nil-amount",
+			Type:      models.PAYMENT_TYPE_TRANSFER,
+		},
+		ConnectorID: defaultConnector.ID,
+	}
+	p := models.Payment{
+		ID:            paymentID,
+		ConnectorID:   defaultConnector.ID,
+		Reference:     "nil-amount",
+		CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+		Type:          models.PAYMENT_TYPE_TRANSFER,
+		InitialAmount: big.NewInt(100),
+		Amount:        big.NewInt(100),
+		Asset:         "USD/2",
+		Scheme:        models.PAYMENT_SCHEME_OTHER,
+		Adjustments: []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: paymentID,
+					Reference: "nil-amount",
+					CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUNDED,
+				},
+				Reference: "nil-amount",
+				CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_REFUNDED,
+				Amount:    nil, // optional field omitted by the connector
+				Raw:       []byte(`{}`),
+			},
+		},
+	}
+
+	require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{p}))
+
+	actual, err := store.PaymentsGet(ctx, paymentID)
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(100), actual.Amount, "a nil-amount adjustment must not change the amount")
+	require.Equal(t, models.PAYMENT_STATUS_REFUNDED, actual.Status, "the status change must still be recorded")
 }
 
 func TestPaymentsUpdateMetadata(t *testing.T) {

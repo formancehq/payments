@@ -83,13 +83,20 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 
 		for _, a := range p.Adjustments {
 			adjustmentsToInsert = append(adjustmentsToInsert, fromPaymentAdjustmentModels(a))
+			// Amount is optional on adjustments; without it there is no delta to apply
+			// (and big.Int.Set/Add would panic on a nil operand).
+			if a.Amount == nil {
+				continue
+			}
+			// Each delta is accumulated into a freshly-allocated big.Int so we never mutate
+			// the caller's adjustment amounts (or the persisted adjustment rows) in place.
 			switch a.Status {
 			case models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT:
 				if i, ok := paymentsInitialAmountToAdjustSeen[p.ID]; ok {
-					paymentsInitialAmountToAdjust[i].InitialAmount = a.Amount
+					paymentsInitialAmountToAdjust[i].InitialAmount = new(big.Int).Set(a.Amount)
 				} else {
 					res := fromPaymentModels(p)
-					res.InitialAmount = a.Amount
+					res.InitialAmount = new(big.Int).Set(a.Amount)
 					paymentsInitialAmountToAdjust = append(paymentsInitialAmountToAdjust, res)
 					paymentsInitialAmountToAdjustSeen[p.ID] = len(paymentsInitialAmountToAdjust) - 1
 				}
@@ -98,7 +105,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 					paymentsRefunded[i].Amount.Add(paymentsRefunded[i].Amount, a.Amount)
 				} else {
 					res := fromPaymentModels(p)
-					res.Amount = a.Amount
+					res.Amount = new(big.Int).Set(a.Amount)
 					paymentsRefunded = append(paymentsRefunded, res)
 					paymentsRefundedSeen[p.ID] = len(paymentsRefunded) - 1
 				}
@@ -107,7 +114,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 					paymentsCaptured[i].Amount.Add(paymentsCaptured[i].Amount, a.Amount)
 				} else {
 					res := fromPaymentModels(p)
-					res.Amount = a.Amount
+					res.Amount = new(big.Int).Set(a.Amount)
 					paymentsCaptured = append(paymentsCaptured, res)
 					paymentsCapturedSeen[p.ID] = len(paymentsCaptured) - 1
 				}
@@ -679,13 +686,19 @@ func toPaymentModels(payment payment, status models.PaymentStatus) models.Paymen
 }
 
 func fromPaymentAdjustmentModels(from models.PaymentAdjustment) paymentAdjustment {
+	// Copy the amount so the persisted row never aliases the caller's big.Int, which
+	// could otherwise be mutated in place while accumulating deltas (EN-1085 / C2).
+	var amount *big.Int
+	if from.Amount != nil {
+		amount = new(big.Int).Set(from.Amount)
+	}
 	return paymentAdjustment{
 		ID:        from.ID,
 		PaymentID: from.ID.PaymentID,
 		Reference: from.Reference,
 		CreatedAt: internalTime.New(from.CreatedAt),
 		Status:    from.Status,
-		Amount:    from.Amount,
+		Amount:    amount,
 		Asset:     from.Asset,
 		Metadata:  from.Metadata,
 		Raw:       from.Raw,
