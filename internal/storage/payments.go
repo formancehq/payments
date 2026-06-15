@@ -72,53 +72,10 @@ type paymentAdjustment struct {
 func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) error {
 	paymentsToInsert := make([]payment, 0, len(payments))
 	adjustmentsToInsert := make([]paymentAdjustment, 0)
-	paymentsRefundedSeen := make(map[models.PaymentID]int)
-	paymentsRefunded := make([]payment, 0)
-	paymentsInitialAmountToAdjustSeen := make(map[models.PaymentID]int)
-	paymentsInitialAmountToAdjust := make([]payment, 0)
-	paymentsCapturedSeen := make(map[models.PaymentID]int)
-	paymentsCaptured := make([]payment, 0)
 	for _, p := range payments {
 		paymentsToInsert = append(paymentsToInsert, fromPaymentModels(p))
-
 		for _, a := range p.Adjustments {
 			adjustmentsToInsert = append(adjustmentsToInsert, fromPaymentAdjustmentModels(a))
-			// Amount is optional on adjustments; without it there is no delta to apply
-			// (and big.Int.Set/Add would panic on a nil operand).
-			if a.Amount == nil {
-				continue
-			}
-			// Each delta is accumulated into a freshly-allocated big.Int so we never mutate
-			// the caller's adjustment amounts (or the persisted adjustment rows) in place.
-			switch a.Status {
-			case models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT:
-				if i, ok := paymentsInitialAmountToAdjustSeen[p.ID]; ok {
-					paymentsInitialAmountToAdjust[i].InitialAmount = new(big.Int).Set(a.Amount)
-				} else {
-					res := fromPaymentModels(p)
-					res.InitialAmount = new(big.Int).Set(a.Amount)
-					paymentsInitialAmountToAdjust = append(paymentsInitialAmountToAdjust, res)
-					paymentsInitialAmountToAdjustSeen[p.ID] = len(paymentsInitialAmountToAdjust) - 1
-				}
-			case models.PAYMENT_STATUS_REFUNDED:
-				if i, ok := paymentsRefundedSeen[p.ID]; ok {
-					paymentsRefunded[i].Amount.Add(paymentsRefunded[i].Amount, a.Amount)
-				} else {
-					res := fromPaymentModels(p)
-					res.Amount = new(big.Int).Set(a.Amount)
-					paymentsRefunded = append(paymentsRefunded, res)
-					paymentsRefundedSeen[p.ID] = len(paymentsRefunded) - 1
-				}
-			case models.PAYMENT_STATUS_CAPTURE, models.PAYMENT_STATUS_REFUND_REVERSED:
-				if i, ok := paymentsCapturedSeen[p.ID]; ok {
-					paymentsCaptured[i].Amount.Add(paymentsCaptured[i].Amount, a.Amount)
-				} else {
-					res := fromPaymentModels(p)
-					res.Amount = new(big.Int).Set(a.Amount)
-					paymentsCaptured = append(paymentsCaptured, res)
-					paymentsCapturedSeen[p.ID] = len(paymentsCaptured) - 1
-				}
-			}
 		}
 	}
 
@@ -137,6 +94,93 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			Exec(ctx)
 		if err != nil {
 			return e("failed to insert payments", err)
+		}
+	}
+
+	// Insert adjustments before applying any amount delta. Temporal activities are
+	// at-least-once, so a replayed batch must be idempotent: the RETURNING clause tells
+	// us which adjustments were actually inserted, and only those may move a payment's
+	// amount. Re-applying deltas for already-stored adjustments would, for example,
+	// subtract a refund twice (EN-1085 / C1).
+	var insertedAdjustments []paymentAdjustment
+	if len(adjustmentsToInsert) > 0 {
+		err = tx.NewInsert().
+			Model(&adjustmentsToInsert).
+			On("CONFLICT (id) DO NOTHING").
+			Returning("*").
+			Scan(ctx, &insertedAdjustments)
+		if err != nil {
+			return e("failed to insert adjustments", err)
+		}
+	}
+
+	// paymentMap resolves the full payment model for an inserted adjustment, both for the
+	// amount deltas below and for the outbox events further down.
+	paymentMap := make(map[models.PaymentID]models.Payment, len(payments))
+	for _, p := range payments {
+		paymentMap[p.ID] = p
+	}
+
+	// Refund/capture amount deltas are driven from the adjustments that were actually
+	// inserted (the RETURNING set, already deduplicated by primary key). Applying one delta
+	// per inserted row makes both a replayed batch and a batch that repeats the same
+	// adjustment idempotent: a refund cannot be subtracted twice (EN-1085 / C1). Each delta
+	// is accumulated into a freshly-allocated big.Int so we never mutate a caller's or a
+	// persisted adjustment's amount in place (EN-1085 / C2).
+	paymentsRefundedSeen := make(map[models.PaymentID]int)
+	paymentsRefunded := make([]payment, 0)
+	paymentsCapturedSeen := make(map[models.PaymentID]int)
+	paymentsCaptured := make([]payment, 0)
+	for _, adj := range insertedAdjustments {
+		// Amount is optional on adjustments; without it there is no delta to apply.
+		if adj.Amount == nil {
+			continue
+		}
+		p, ok := paymentMap[adj.PaymentID]
+		if !ok {
+			continue
+		}
+		switch adj.Status {
+		case models.PAYMENT_STATUS_REFUNDED:
+			if i, ok := paymentsRefundedSeen[p.ID]; ok {
+				paymentsRefunded[i].Amount.Add(paymentsRefunded[i].Amount, adj.Amount)
+			} else {
+				res := fromPaymentModels(p)
+				res.Amount = new(big.Int).Set(adj.Amount)
+				paymentsRefunded = append(paymentsRefunded, res)
+				paymentsRefundedSeen[p.ID] = len(paymentsRefunded) - 1
+			}
+		case models.PAYMENT_STATUS_CAPTURE, models.PAYMENT_STATUS_REFUND_REVERSED:
+			if i, ok := paymentsCapturedSeen[p.ID]; ok {
+				paymentsCaptured[i].Amount.Add(paymentsCaptured[i].Amount, adj.Amount)
+			} else {
+				res := fromPaymentModels(p)
+				res.Amount = new(big.Int).Set(adj.Amount)
+				paymentsCaptured = append(paymentsCaptured, res)
+				paymentsCapturedSeen[p.ID] = len(paymentsCaptured) - 1
+			}
+		}
+	}
+
+	// initial_amount is set absolutely (= EXCLUDED.initial_amount), not as a delta, so it
+	// is already idempotent on replay. Preserve the original "last amount adjustment in the
+	// input wins" semantics by walking the input in order; copy the amount to avoid aliasing
+	// (EN-1085 / C2).
+	paymentsInitialAmountToAdjustSeen := make(map[models.PaymentID]int)
+	paymentsInitialAmountToAdjust := make([]payment, 0)
+	for _, p := range payments {
+		for _, a := range p.Adjustments {
+			if a.Status != models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT || a.Amount == nil {
+				continue
+			}
+			if i, ok := paymentsInitialAmountToAdjustSeen[p.ID]; ok {
+				paymentsInitialAmountToAdjust[i].InitialAmount = new(big.Int).Set(a.Amount)
+			} else {
+				res := fromPaymentModels(p)
+				res.InitialAmount = new(big.Int).Set(a.Amount)
+				paymentsInitialAmountToAdjust = append(paymentsInitialAmountToAdjust, res)
+				paymentsInitialAmountToAdjustSeen[p.ID] = len(paymentsInitialAmountToAdjust) - 1
+			}
 		}
 	}
 
@@ -173,27 +217,8 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 		}
 	}
 
-	// Track which adjustments were actually inserted (to create outbox events only for new ones)
-	var insertedAdjustments []paymentAdjustment
-	if len(adjustmentsToInsert) > 0 {
-		err = tx.NewInsert().
-			Model(&adjustmentsToInsert).
-			On("CONFLICT (id) DO NOTHING").
-			Returning("*").
-			Scan(ctx, &insertedAdjustments)
-		if err != nil {
-			return e("failed to insert adjustments", err)
-		}
-	}
-
 	// Create outbox events for each inserted adjustment
 	if len(insertedAdjustments) > 0 {
-		// Build a map of payment ID to payment model for easy lookup
-		paymentMap := make(map[models.PaymentID]models.Payment)
-		for _, p := range payments {
-			paymentMap[p.ID] = p
-		}
-
 		outboxEvents := make([]models.OutboxEvent, 0, len(insertedAdjustments))
 		for _, adj := range insertedAdjustments {
 			payment, ok := paymentMap[adj.PaymentID]
