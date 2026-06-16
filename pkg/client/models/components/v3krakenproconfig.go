@@ -7,10 +7,10 @@ import (
 )
 
 type V3KrakenproConfig struct {
-	APIKey    string  `json:"apiKey"`
-	APISecret string  `json:"apiSecret"`
-	Endpoint  *string `json:"endpoint,omitempty"`
-	Name      string  `json:"name"`
+	APIKey    string `json:"apiKey"`
+	APISecret string `json:"apiSecret"`
+	Endpoint  string `json:"endpoint"`
+	Name      string `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
@@ -42,9 +42,9 @@ func (o *V3KrakenproConfig) GetAPISecret() string {
 	return o.APISecret
 }
 
-func (o *V3KrakenproConfig) GetEndpoint() *string {
+func (o *V3KrakenproConfig) GetEndpoint() string {
 	if o == nil {
-		return nil
+		return ""
 	}
 	return o.Endpoint
 }

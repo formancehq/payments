@@ -33,12 +33,15 @@ func ResolvePair(pairs map[string]client.AssetPair, pair string) (PairResolution
 			QuoteSymbol: NormalizeAsset(entry.Quote),
 		}, true
 	}
-	// Fallback: try every cached pair whose wsname/altname matches
-	// when stripped of the slash.
+	// Fallback: match any cached pair on its code, altname or wsname,
+	// comparing slash-normalized so wsname forms like "XBT/USD" resolve.
+	candidate := slashless(pair)
 	for code, entry := range pairs {
-		if code == pair || entry.Altname == pair {
+		if slashless(code) == candidate ||
+			slashless(entry.Altname) == candidate ||
+			slashless(entry.Wsname) == candidate {
 			return PairResolution{
-				Pair:        pair,
+				Pair:        code,
 				Wsname:      entry.Wsname,
 				BaseSymbol:  NormalizeAsset(entry.Base),
 				QuoteSymbol: NormalizeAsset(entry.Quote),
@@ -46,6 +49,12 @@ func ResolvePair(pairs map[string]client.AssetPair, pair string) (PairResolution
 		}
 	}
 	return PairResolution{}, false
+}
+
+// slashless upper-cases and removes "/" so pair codes, altnames and
+// wsnames ("XBT/USD") compare on equal footing.
+func slashless(s string) string {
+	return strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(s), "/", ""))
 }
 
 // OrderEntryWithID pairs an OrderEntry with its map-key id. The
@@ -197,8 +206,12 @@ func parseOrderAmounts(oe client.OrderEntry, basePrec, quotePrec int, orderID st
 	if a.cost, err = ParseDecimalAmount(orZero(oe.Cost), quotePrec); err != nil {
 		return orderAmounts{}, fmt.Errorf("order %s cost: %w", orderID, err)
 	}
-	if a.fee, err = ParseDecimalAmount(orZero(oe.Fee), quotePrec); err != nil {
-		a.fee = new(big.Int) // blank fee on canceled/expired rows is OK
+	// A blank fee (canceled/expired rows) is zero; a non-empty value that
+	// won't parse is a real data error and must surface, not be hidden.
+	if strings.TrimSpace(oe.Fee) == "" {
+		a.fee = new(big.Int)
+	} else if a.fee, err = ParseDecimalAmount(oe.Fee, quotePrec); err != nil {
+		return orderAmounts{}, fmt.Errorf("order %s fee: %w", orderID, err)
 	}
 	if a.avgPrice, err = parseOptionalPrice(oe.Price, a.pricePrecision); err != nil {
 		return orderAmounts{}, fmt.Errorf("order %s avg price: %w", orderID, err)

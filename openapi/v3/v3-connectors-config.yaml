@@ -389,6 +389,7 @@ components:
                 - name
                 - apiKey
                 - apiSecret
+                - endpoint
             properties:
                 apiKey:
                     type: string

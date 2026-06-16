@@ -4,7 +4,7 @@ import "github.com/formancehq/payments/internal/models"
 
 // Read-only crypto-exchange capability set per EN-1014.
 // Transfers / payouts / bank accounts / webhooks are intentionally
-// omitted — out of scope for the read-only epic EN-715.
+// omitted — this connector is read-only by design.
 var capabilities = []models.Capability{
 	models.CAPABILITY_FETCH_ACCOUNTS,
 	models.CAPABILITY_FETCH_BALANCES,

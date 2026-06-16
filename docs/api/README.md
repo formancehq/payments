@@ -8669,7 +8669,7 @@ xor
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
 |apiSecret|string|true|none|none|
-|endpoint|string|false|none|none|
+|endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

@@ -27,12 +27,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
-	// Spot account references for attributing a payment to its asset's
-	// trading account (the raw variant stays in kraken_asset metadata).
-	wallets, err := p.resolveWallets(ctx)
-	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
-	}
+	// Spot account references (symbol -> raw spot code) for attributing a
+	// payment to its asset's trading account, taken from the asset cache —
+	// no DB lookup. The raw variant stays in kraken_asset metadata.
+	wallets := p.snapshotAssetCodes()
 
 	pageSize := effectivePageSize(req.PageSize)
 	start, end, ofs := state.Window.plan(nowEpoch())

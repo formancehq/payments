@@ -2,11 +2,21 @@ package krakenpro
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 )
+
+// TestMain seeds the package-global polling defaults the same way
+// connectors.Manager does in production, so the config tests below
+// assert against known values (min 10m > the 5m test input, so the
+// clamp path is exercised).
+func TestMain(m *testing.M) {
+	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 10*time.Minute)
+	os.Exit(m.Run())
+}
 
 func TestUnmarshalConfigAppliesDefaultPollingPeriod(t *testing.T) {
 	t.Parallel()
@@ -14,8 +24,8 @@ func TestUnmarshalConfigAppliesDefaultPollingPeriod(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if cfg.PollingPeriod.Duration() != sharedconfig.DefaultPollingPeriod {
-		t.Errorf("polling=%v want default %v", cfg.PollingPeriod.Duration(), sharedconfig.DefaultPollingPeriod)
+	if cfg.PollingPeriod.Duration() != sharedconfig.GetDefaultPollingPeriod() {
+		t.Errorf("polling=%v want default %v", cfg.PollingPeriod.Duration(), sharedconfig.GetDefaultPollingPeriod())
 	}
 }
 
@@ -25,8 +35,8 @@ func TestUnmarshalConfigEnforcesMinPollingPeriod(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if cfg.PollingPeriod.Duration() != sharedconfig.MinimumPollingPeriod {
-		t.Errorf("polling=%v want min %v", cfg.PollingPeriod.Duration(), sharedconfig.MinimumPollingPeriod)
+	if cfg.PollingPeriod.Duration() != sharedconfig.GetMinimumPollingPeriod() {
+		t.Errorf("polling=%v want min %v", cfg.PollingPeriod.Duration(), sharedconfig.GetMinimumPollingPeriod())
 	}
 }
 

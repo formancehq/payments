@@ -15,8 +15,10 @@ func FormatAsset(currencies map[string]int, symbol string) string {
 	return currency.FormatAsset(currencies, symbol)
 }
 
-// IsZeroAmount treats empty + unparseable as zero so a malformed row
-// never produces a phantom non-zero amount.
+// IsZeroAmount reports whether s is an empty or parseable-zero amount.
+// A malformed value returns false (treated as non-zero) so callers that
+// gate on it don't silently skip the row — the subsequent parse surfaces
+// the error instead.
 func IsZeroAmount(s string) bool {
 	s = strings.TrimSpace(s)
 	if s == "" || s == "0" {
@@ -24,7 +26,7 @@ func IsZeroAmount(s string) bool {
 	}
 	f, _, err := new(big.Float).Parse(s, 10)
 	if err != nil {
-		return true
+		return false
 	}
 	return f.Sign() == 0
 }
@@ -88,10 +90,17 @@ func SubDecimal(lhs, rhs string, precision int) (*big.Int, error) {
 	return res, nil
 }
 
-// AvailableBalance computes Kraken's available balance per the BalanceEx
+// AvailableBalance computes Kraken's spendable balance per the BalanceEx
 // docs: balance + credit - credit_used - hold_trade, clamped to >= 0.
-// credit / credit_used are zero (empty) on spot-only accounts and on
-// VIP/Pro accounts without a credit line.
+//   - balance:     settled funds held in the asset class
+//   - credit:      a VIP/Pro credit line extended on top of balance
+//   - credit_used: the portion of that credit line already drawn
+//   - hold_trade:  funds locked behind open orders
+//
+// credit / credit_used are empty (zero) on spot-only accounts and on
+// VIP/Pro accounts without a credit line, so the formula collapses to
+// balance - hold_trade there. The clamp guards a transient hold_trade
+// overshoot from producing a negative (invalid) balance.
 func AvailableBalance(balance, holdTrade, credit, creditUsed string, precision int) (*big.Int, error) {
 	terms := []struct {
 		s    string

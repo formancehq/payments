@@ -45,13 +45,15 @@ func TestAccountMetadata(t *testing.T) {
 		t.Parallel()
 		m := AccountMetadata("XXBT")
 		mustHave(t, m, MetadataPrefix+"wallet_type", WalletClassSpot)
-		mustHave(t, m, MetadataPrefix+"kraken_asset", "XXBT")
+		// kraken_asset is intentionally NOT stored: it equals the Reference.
+		if _, ok := m[MetadataPrefix+"kraken_asset"]; ok {
+			t.Error("kraken_asset must not be duplicated in account metadata")
+		}
 	})
 	t.Run("earn-variant", func(t *testing.T) {
 		t.Parallel()
 		m := AccountMetadata("xbt.m")
 		mustHave(t, m, MetadataPrefix+"wallet_type", "rewards")
-		mustHave(t, m, MetadataPrefix+"kraken_asset", "XBT.M")
 	})
 	if WalletClassSpot != "spot" {
 		t.Fatalf("WalletClassSpot drifted: %q", WalletClassSpot)

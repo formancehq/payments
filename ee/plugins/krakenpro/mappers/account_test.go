@@ -28,8 +28,9 @@ func TestRawBalanceToPSPAccount_Spot(t *testing.T) {
 	if got.Metadata[MetadataPrefix+"wallet_type"] != WalletClassSpot {
 		t.Errorf("wallet_type=%q want spot", got.Metadata[MetadataPrefix+"wallet_type"])
 	}
-	if got.Metadata[MetadataPrefix+"kraken_asset"] != "XXBT" {
-		t.Errorf("kraken_asset=%q want XXBT", got.Metadata[MetadataPrefix+"kraken_asset"])
+	// The raw code is the Reference, so it isn't duplicated in metadata.
+	if _, ok := got.Metadata[MetadataPrefix+"kraken_asset"]; ok {
+		t.Error("kraken_asset must not be duplicated in account metadata")
 	}
 }
 

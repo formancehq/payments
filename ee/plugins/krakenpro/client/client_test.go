@@ -157,7 +157,6 @@ func TestIsFatalAuthErrorMatrix(t *testing.T) {
 	for _, code := range []string{
 		"EAPI:Invalid key",
 		"EAPI:Invalid signature",
-		"EAPI:Invalid nonce",
 		"EAPI:Bad request",
 		"EGeneral:Permission denied",
 		"EGeneral:Unknown method",
@@ -165,6 +164,40 @@ func TestIsFatalAuthErrorMatrix(t *testing.T) {
 		if !IsFatalAuthError(&APIError{Code: code, All: []string{code}}) {
 			t.Errorf("%q must be fatal — Temporal must stop retrying", code)
 		}
+	}
+}
+
+func TestInvalidNonceIsRetriableNotFatal(t *testing.T) {
+	t.Parallel()
+	// A shared key across worker pods makes the odd out-of-order nonce a
+	// transient race: it must retry (with backoff), not hard-fail.
+	_, c := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"error":["EAPI:Invalid nonce"]}`)
+	})
+	_, err := c.GetBalanceEx(context.Background())
+	if IsFatalAuthError(err) {
+		t.Fatal("EAPI:Invalid nonce must not be fatal")
+	}
+	if !IsRetriableError(err) {
+		t.Fatal("EAPI:Invalid nonce must be retriable")
+	}
+	if !errors.Is(err, httpwrapper.ErrStatusCodeTooManyRequests) {
+		t.Fatalf("invalid nonce must map to the backoff path, got %v", err)
+	}
+}
+
+func TestPublicCallSendsNoAuthHeaders(t *testing.T) {
+	t.Parallel()
+	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		for _, h := range []string{"api-key", "api-nonce", "api-sign"} {
+			if r.Header.Get(h) != "" {
+				t.Errorf("public request must not carry %s", h)
+			}
+		}
+		_, _ = io.WriteString(w, `{"error":[],"result":{}}`)
+	})
+	if _, err := c.GetAssets(context.Background()); err != nil {
+		t.Fatalf("GetAssets: %v", err)
 	}
 }
 
@@ -360,18 +393,15 @@ func TestThrottledPrefixMapsToTooManyRequests(t *testing.T) {
 
 func TestNonceIsMonotonicAcrossConcurrentCalls(t *testing.T) {
 	t.Parallel()
-	c, err := New("krakenpro-test", "k", testSecret, "http://x")
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
-	impl := c.(*client)
+	tr := newSigningTransport("k", []byte("abcd"), http.DefaultTransport)
 
 	// Spawn N goroutines each pulling a nonce, then verify all values
-	// are unique and that the sequence is strictly monotonic when sorted.
+	// are unique — the atomic guard must keep concurrent callers (the
+	// fetch_* activities sharing one client) from colliding.
 	const N = 64
 	out := make(chan string, N)
 	for i := 0; i < N; i++ {
-		go func() { out <- impl.nextNonce() }()
+		go func() { out <- tr.nextNonce() }()
 	}
 	seen := map[string]struct{}{}
 	for i := 0; i < N; i++ {

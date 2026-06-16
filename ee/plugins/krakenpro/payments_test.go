@@ -15,39 +15,25 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// mkSpotAccount builds a spot (trading) PSPAccount as fetch_accounts
-// emits it: raw-code reference + wallet_type=spot metadata. Shared by
-// the payments + conversions specs whose orchestrators resolveWallets.
-func mkSpotAccount(rawCode string) models.PSPAccount {
-	return models.PSPAccount{
-		Reference: rawCode,
-		Metadata:  map[string]string{"com.krakenpro.spec/wallet_type": "spot"},
-	}
-}
-
 var _ = Describe("Kraken Pro fetch_payments", func() {
 	var (
-		ctrl   *gomock.Controller
-		m      *client.MockClient
-		lookup *models.MockAccountLookup
-		plg    *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		lookup = models.NewMockAccountLookup(ctrl)
-		lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return([]models.PSPAccount{
-			mkSpotAccount("XXBT"), mkSpotAccount("ZUSD"), mkSpotAccount("ZEUR"),
-		}, nil).AnyTimes()
 		plg = &Plugin{
-			Plugin:        plugins.NewBasePlugin(),
-			client:        m,
-			logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			accountLookup: lookup,
+			Plugin: plugins.NewBasePlugin(),
+			client: m,
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
 			currencies: map[string]int{
 				"BTC": 8, "USD": 2, "EUR": 2,
 			},
+			// Wallet refs resolve from this cache (symbol -> raw spot code).
+			assetCodes:   map[string]string{"BTC": "XXBT", "USD": "ZUSD", "EUR": "ZEUR"},
 			assetsLoaded: time.Now(),
 		}
 	})

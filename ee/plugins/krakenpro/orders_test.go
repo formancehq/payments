@@ -1,7 +1,6 @@
 package krakenpro
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,42 +17,32 @@ import (
 
 var _ = Describe("Kraken Pro fetch_orders", func() {
 	var (
-		ctrl   *gomock.Controller
-		m      *client.MockClient
-		lookup *models.MockAccountLookup
-		plg    *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		lookup = models.NewMockAccountLookup(ctrl)
 		plg = &Plugin{
-			Plugin:        plugins.NewBasePlugin(),
-			client:        m,
-			logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			accountLookup: lookup,
+			Plugin: plugins.NewBasePlugin(),
+			client: m,
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
 			currencies: map[string]int{
 				"BTC": 8, "USD": 2,
 			},
 			assetPairs: map[string]client.AssetPair{
 				"XXBTZUSD": {Altname: "XBTUSD", Wsname: "XBT/USD", Base: "XXBT", Quote: "ZUSD"},
 			},
+			// Wallet refs resolve from this cache (symbol -> raw spot code),
+			// the way orders.go resolves them — no DB AccountLookup.
+			assetCodes:   map[string]string{"BTC": "XXBT", "USD": "ZUSD"},
 			assetsLoaded: time.Now(),
 		}
 	})
 
 	AfterEach(func() { ctrl.Finish() })
-
-	// spotAccount builds a spot (trading) PSPAccount the way fetch_accounts
-	// emits them: raw-code reference + wallet_type=spot metadata, which is
-	// what resolveWallets filters on.
-	spotAccount := func(rawCode string) models.PSPAccount {
-		return models.PSPAccount{
-			Reference: rawCode,
-			Metadata:  map[string]string{"com.krakenpro.spec/wallet_type": "spot"},
-		}
-	}
 
 	closedFilledOrder := func() client.OrderEntry {
 		return client.OrderEntry{
@@ -84,10 +73,6 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 
 	Describe("window pagination", func() {
 		It("drains OpenOrders via cursor and ClosedOrders via the frozen window", func(ctx SpecContext) {
-			lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return([]models.PSPAccount{
-				spotAccount("XXBT"), spotAccount("ZUSD"),
-			}, nil)
-
 			// OpenOrders cursor: page 1 → cursor.next "page2"; page 2 → empty.
 			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.AssignableToTypeOf(client.OpenOrdersParams{})).
 				DoAndReturn(func(_ any, p client.OpenOrdersParams) (client.OpenOrdersResponse, error) {
@@ -130,7 +115,6 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 		})
 
 		It("resumes a frozen ClosedOrders window with start=watermark", func(ctx SpecContext) {
-			lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return(nil, nil)
 			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.Any()).
 				Return(client.OpenOrdersResponse{Open: map[string]client.OrderEntry{}}, nil)
 
@@ -155,9 +139,6 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 		})
 
 		It("drains a ClosedOrders window larger than PAGE_SIZE with no skips", func(ctx SpecContext) {
-			lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return([]models.PSPAccount{
-				spotAccount("XXBT"), spotAccount("ZUSD"),
-			}, nil).AnyTimes()
 			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.Any()).
 				Return(client.OpenOrdersResponse{Open: map[string]client.OrderEntry{}}, nil).AnyTimes()
 
@@ -200,10 +181,8 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 	})
 
 	Describe("error handling", func() {
-		It("emits with nil refs (no failure) when a historical order's asset isn't currently held", func(ctx SpecContext) {
-			lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return([]models.PSPAccount{
-				spotAccount("XXBT"), // USD not currently held
-			}, nil)
+		It("emits with nil refs (no failure) when an order's asset isn't in the cache", func(ctx SpecContext) {
+			plg.assetCodes = map[string]string{"BTC": "XXBT"} // USD absent
 			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.Any()).
 				Return(client.OpenOrdersResponse{Open: map[string]client.OrderEntry{}}, nil)
 			m.EXPECT().GetClosedOrders(gomock.Any(), gomock.Any()).
@@ -220,19 +199,7 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 			Expect(*resp.Orders[0].DestinationAccountReference).To(Equal("XXBT"))
 		})
 
-		It("returns helpful error when AccountLookup wasn't wired", func() {
-			bare := &Plugin{
-				Plugin: plugins.NewBasePlugin(),
-				client: m,
-				logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			}
-			_, err := bare.resolveWallets(context.Background())
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("account lookup not wired"))
-		})
-
 		It("propagates GetOpenOrders errors", func(ctx SpecContext) {
-			lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return(nil, nil)
 			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.Any()).
 				Return(client.OpenOrdersResponse{}, errors.New("boom"))
 			_, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
@@ -240,7 +207,6 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 		})
 
 		It("propagates GetClosedOrders errors", func(ctx SpecContext) {
-			lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return(nil, nil)
 			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.Any()).
 				Return(client.OpenOrdersResponse{Open: map[string]client.OrderEntry{}}, nil)
 			m.EXPECT().GetClosedOrders(gomock.Any(), gomock.Any()).
