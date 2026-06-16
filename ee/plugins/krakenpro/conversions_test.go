@@ -16,27 +16,23 @@ import (
 
 var _ = Describe("Kraken Pro fetch_conversions", func() {
 	var (
-		ctrl   *gomock.Controller
-		m      *client.MockClient
-		lookup *models.MockAccountLookup
-		plg    *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		lookup = models.NewMockAccountLookup(ctrl)
-		lookup.EXPECT().ListAccountsByConnector(gomock.Any()).Return([]models.PSPAccount{
-			mkSpotAccount("XXBT"), mkSpotAccount("ZUSD"),
-		}, nil).AnyTimes()
 		plg = &Plugin{
-			Plugin:        plugins.NewBasePlugin(),
-			client:        m,
-			logger:        logging.NewDefaultLogger(GinkgoWriter, true, false, false),
-			accountLookup: lookup,
+			Plugin: plugins.NewBasePlugin(),
+			client: m,
+			logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
 			currencies: map[string]int{
 				"BTC": 8, "USD": 2,
 			},
+			// Wallet refs resolve from this cache (symbol -> raw spot code).
+			assetCodes:   map[string]string{"BTC": "XXBT", "USD": "ZUSD"},
 			assetsLoaded: time.Now(),
 		}
 	})

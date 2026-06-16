@@ -39,10 +39,12 @@ const (
 //     close time (see [ledgerWindow]) — drains the whole window without
 //     skips before the watermark advances.
 //
-// Both endpoints return cumulative per-order state, so each emission
-// is the order's full picture. Wallet resolution uses the engine's
-// AccountLookup (coinbaseprime pattern); a not-currently-held asset
-// resolves to nil account refs rather than failing the page.
+// Both endpoints return cumulative per-order state, so each emission is
+// the order's full picture. fetch_orders is a periodic root (not nested
+// under fetch_accounts): Kraken can't filter orders by account, so a
+// per-account fan-out would refetch everything N times. Source/dest
+// wallet refs come from the in-memory asset cache (symbol -> raw spot
+// code) — no DB lookup; an unknown symbol resolves to nil refs.
 func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
 	var state ordersState
 	if len(req.State) > 0 {
@@ -55,10 +57,7 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	if err != nil {
 		return models.FetchNextOrdersResponse{}, err
 	}
-	wallets, err := p.resolveWallets(ctx)
-	if err != nil {
-		return models.FetchNextOrdersResponse{}, err
-	}
+	wallets := p.snapshotAssetCodes()
 
 	orders := make([]models.PSPOrder, 0)
 
@@ -166,33 +165,4 @@ func (p *Plugin) appendMappedOrders(
 		}
 	}
 	return mapErrors
-}
-
-// resolveWallets builds a fresh symbol → spot-account-reference map
-// from the engine's AccountLookup. Only the spot (trading) class is
-// indexed — orders debit/credit the spot wallet, never earn/staking
-// balances — exactly mirroring coinbaseprime's TRADING filter. The
-// key is the normalised symbol; the value is the spot account's raw
-// Kraken reference (e.g. BTC → XXBT). Unresolved orders surface as a
-// hard error from the order mapper, which the orchestrator escalates.
-func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) {
-	if p.accountLookup == nil {
-		return nil, fmt.Errorf("account lookup not wired: engine misconfiguration")
-	}
-	accounts, err := p.accountLookup.ListAccountsByConnector(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list accounts: %w", err)
-	}
-	wallets := make(map[string]string, len(accounts))
-	for _, a := range accounts {
-		if a.Metadata[mappers.MetadataPrefix+"wallet_type"] != mappers.WalletClassSpot {
-			continue
-		}
-		symbol := mappers.NormalizeAsset(a.Reference)
-		if symbol == "" {
-			continue
-		}
-		wallets[symbol] = a.Reference
-	}
-	return wallets, nil
 }

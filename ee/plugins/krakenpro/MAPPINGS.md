@@ -49,7 +49,11 @@ Pro VIP uses **lowercase** headers and a JSON request body. The standard Kraken 
 | `api-otp` | optional 2FA — not configured in v1 |
 | `Content-Type` | `application/json` (always carries `{"nonce":"…"}` at minimum) |
 
-`uriPath` is everything after the host (e.g. `/0/private/Balance`). The nonce is a strictly-monotonic integer in milliseconds. Re-using a stale nonce returns `EAPI:Invalid nonce`.
+`uriPath` is everything after the host (e.g. `/0/private/Balance`). The nonce is a strictly-monotonic integer in **nanoseconds** (`time.Now().UnixNano()`). Re-using a stale (<=) nonce returns `EAPI:Invalid nonce`.
+
+Signing lives in an `http.RoundTripper` (`client/transport.go`, the moneycorp pattern): the transport injects a fresh nonce into the JSON body and sets the `api-*` headers for `/0/private/*` paths, and passes `/0/public/*` through unsigned.
+
+**Nonce & multiple workers.** The in-process `atomic.Int64` guard is Kraken's recommended mutex-counter for threads sharing a key — it keeps the concurrent `fetch_*` activities in one worker from colliding. It cannot coordinate across separate worker pods that share the same API key, so an occasional out-of-order `EAPI:Invalid nonce` is expected there; it is classified **retriable with backoff** (not fatal) so the next attempt sends a fresh, higher nonce. The backoff matters because Kraken temporarily locks a key after too many invalid-nonce errors. For production HA the real fix (per Kraken) is a **dedicated API key per worker** or a configured **nonce window** on the key.
 
 ### Public endpoints
 
@@ -61,15 +65,15 @@ Pro VIP uses **lowercase** headers and a JSON request body. The standard Kraken 
 
 `workflow()` declares the task tree:
 
-```
-fetch_accounts          (periodic root; BootstrapOnInstall = [TASK_FETCH_ACCOUNTS])
- └─ fetch_orders        (periodic; resolves wallet refs via engine AccountLookup)
+```text
+fetch_accounts          (periodic root)
 fetch_balances          (periodic root; reads BalanceEx, no parent context needed)
 fetch_payments          (periodic root)
+fetch_orders            (periodic root)
 fetch_conversions       (periodic root)
 ```
 
-Orders sit under accounts and `BootstrapOnInstall` is declared so the accounts table is fully populated **before** any order resolves a wallet reference — same pattern as Coinbase Prime ([`ee/plugins/coinbaseprime/plugin.go`](../coinbaseprime/plugin.go) `BootstrapOnInstall`).
+All tasks are independent periodic roots. `fetch_orders` is **not** nested under `fetch_accounts`: Kraken cannot filter orders by account, so nesting would make the engine fan out one identical full-orders fetch per account. Orders (and payments/conversions) resolve their spot wallet references from the in-process asset cache (`symbol → raw spot code`, e.g. `BTC → XXBT`), which is exactly the reference `fetch_accounts` emits — so there is no DB `AccountLookup` and no accounts dependency.
 
 ### Pagination invariants — frozen-end + ofs window
 
@@ -181,7 +185,7 @@ Each Kraken asset class is its own account — the coinbaseprime wallet-per-asse
 
 Because distinct variants have distinct account references, the engine never sees a duplicate `(account, asset)` tuple, so balances report the **real per-variant amount** with no summing.
 
-Orders + conversions + payments debit/credit only the **spot (trading)** account — `resolveWallets` filters `wallet_type == spot`, mirroring coinbaseprime's TRADING filter — while earn/staking accounts are balance-holding only (like coinbaseprime VAULT/ONCHAIN).
+Orders + conversions + payments debit/credit only the **spot (trading)** account. The spot reference is taken straight from the asset cache (`symbol → raw spot code`), so no account lookup is needed; earn/staking accounts are balance-holding only (like coinbaseprime VAULT/ONCHAIN).
 
 Payments/conversions also keep the precise raw asset in metadata (`kraken_asset`, plus `kraken_source_asset` / `kraken_destination_asset` for conversions).
 
@@ -213,9 +217,9 @@ Each raw BalanceEx key → one PSPAccount keyed by the raw code.
 | n/a — stable sentinel | `CreatedAt` | `2011-08-01T00:00:00Z` (Kraken genesis) |
 | `NormalizeAsset` + precision | `DefaultAsset` | `<SYMBOL>/<precision>` via `currency.FormatAsset` |
 | (raw row) | `Raw` | the contributing `{code, entry}` |
-| see §9 | `Metadata` | namespaced `com.krakenpro.spec/*` (`wallet_type`, `kraken_asset`) |
+| see §9 | `Metadata` | namespaced `com.krakenpro.spec/*` (`wallet_type` only — the raw code is already the `Reference`) |
 
-Rows whose `balance == 0` AND `hold_trade == 0` produce no account by themselves. The **spot/trading account is always emitted** for any symbol that holds value in some variant — even if the spot balance is zero (value sits in an earn variant) — using the deterministic `/0/public/Assets` canonical code, so order/conversion wallet resolution always finds a trading account.
+Every BalanceEx variant that normalizes to a known symbol produces an account — **zero balances are not filtered** (Kraken only returns a row for an asset the account holds or has held). `fetchNextAccounts` and `fetchNextBalances` share one inclusion predicate (`mappers.IncludeBalanceEntry`) so a balance can never reference an account that was not emitted. The **spot/trading account is additionally always emitted** for any held symbol — even if value sits only in an earn variant — using the deterministic `/0/public/Assets` canonical code, so order/conversion/payment wallet resolution always finds a trading account.
 
 Cross-cycle de-dup: `accountsState.AccountAssetsImportedAt[reference]` records when an account (raw code) was first emitted; subsequent cycles skip already-seen accounts.
 
@@ -309,10 +313,10 @@ zero) are skipped.
 - `POST /0/private/ClosedOrders` — historical/closed orders. No cursor support (spec-confirmed); paged through the shared frozen-end + ofs window (§3) on close time (`closetime: "close"`, so a newly-closed order with an ancient opentm still surfaces).
 
 **Account references are best-effort.** Order source/destination resolve to the
-spot (trading) account of each leg's symbol via `AccountLookup`. A historical
-order in an asset **not currently held** (no spot account) emits with a **nil**
+spot (trading) account of each leg's symbol via the in-process asset cache
+(`symbol → raw spot code`). A symbol absent from the cache emits with a **nil**
 account reference rather than failing the page — `PSPOrder.Validate()` permits
-nil refs, so a no-longer-held asset never blocks the orders stream (Codex item 8).
+nil refs, so an unknown asset never blocks the orders stream (Codex item 8).
 
 **`cl_ord_id`.** When an order carries a client-assigned id it maps to
 `PSPOrder.ClientOrderID` and `metadata."com.krakenpro.spec/cl_ord_id"`.
@@ -368,7 +372,7 @@ Both endpoints always pass `trades: true` so each row carries its per-fill txid 
 | `descr.price2` | `StopPrice` | for stop-limit etc. |
 | `status` + (vol_exec vs vol) | `Status` | via `mapKrakenOrderStatus` (table below) |
 | `models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED` | `TimeInForce` | Kraken's enum doesn't surface TIF on OpenOrders/ClosedOrders; default GTC |
-| (resolved via AccountLookup) | `SourceAccountReference`, `DestinationAccountReference` | BUY: src=quote wallet, dst=base wallet; SELL: inverted |
+| (resolved via asset cache) | `SourceAccountReference`, `DestinationAccountReference` | BUY: src=quote wallet, dst=base wallet; SELL: inverted |
 | `trades: [...]` | `metadata."com.krakenpro.spec/fills"` | comma-joined trade txids (free of charge — same response, no extra call) |
 
 ### Status mapping (`mapKrakenOrderStatus`)
@@ -406,7 +410,7 @@ Mirrors `coinbaseprime/orders.go::mapCoinbaseStatus`. The Kraken `status` enum i
 
 ### Wallet resolution
 
-Same pattern as Coinbase Prime ([`ee/plugins/coinbaseprime/orders.go::resolveWallets`](../coinbaseprime/orders.go)). For each fetch cycle, fresh-read `p.accountLookup.ListAccountsByConnector(ctx)` and build `symbol → reference`. Unresolved wallets fail the page (Temporal retries after the next `fetch_accounts` cycle populates the missing entry).
+Source/destination account references come from the in-process asset cache (`snapshotAssetCodes()`: `symbol → raw spot code`, e.g. `BTC → XXBT`), which is exactly the reference `fetch_accounts` emits for the spot account. This needs no DB `AccountLookup` and no per-account fan-out, which is why `fetch_orders` can be a standalone root. A symbol missing from the cache resolves to a nil reference (best-effort; see above).
 
 ### 8.5 Adjustment granularity — design choice
 
@@ -510,7 +514,7 @@ All metadata keys are namespaced `com.krakenpro.spec/`. Per-primitive:
 | `aclass` | `aclass` | payments, conversions |
 | `balance_after` | `balance` | payments, conversions |
 | `fee` | `fee` | payments |
-| `wallet_type` | `"trading"` | accounts (the only kind Kraken Spot exposes) |
+| `wallet_type` | class label: `spot` / `staked` / `rewards` / … | accounts |
 | `pair` | `pair` | orders |
 | `ws_name` | `wsname` (from AssetPairs cache) | orders |
 | `fills` | comma-separated list of fill txids | orders |
@@ -538,10 +542,10 @@ The orchestrator passes the raw envelope into `PSPAccount.Raw` / `PSPPayment.Raw
 
 `Install(ctx, _)` performs a single signed `BalanceEx` call with a 10s context timeout. Validation steps:
 
-1. Decode the JSON envelope; reject hard on `EAPI:Invalid key|signature|nonce`.
+1. Decode the JSON envelope; reject hard on fatal auth (`EAPI:Invalid key|signature`, `EGeneral:Permission denied`). `EAPI:Invalid nonce` is treated as retriable, not fatal (it can be a transient cross-pod race — see §2).
 2. Load `/0/public/Assets` and `/0/public/AssetPairs` into the in-Plugin TTL cache (24h). Cache misses are refreshed inline on the next read (so a slow PSP doesn't stall the install API call indefinitely — see catalogue rule L1).
 
-No HTTP work in the `New` constructor.
+`New` builds the HTTP client (and its signing transport) per the PSP convention; the first network call happens in `Install`.
 
 ---
 

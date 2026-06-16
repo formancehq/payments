@@ -33,7 +33,9 @@ var ledgerTypes = map[string]ledgerTypeEntry{
 	"deposit":    {LedgerKindPayment, models.PAYMENT_TYPE_PAYIN, false},
 	"withdrawal": {LedgerKindPayment, models.PAYMENT_TYPE_PAYOUT, false},
 
-	// sign-driven: positive → PAYIN, negative → PAYOUT
+	// "transfer" is a real Kraken ledger type (spot<->futures and
+	// subaccount moves). Sign-driven: direction depends on the amount
+	// sign — positive credits the account (PAYIN), negative debits (PAYOUT).
 	"transfer": {LedgerKindPayment, models.PAYMENT_TYPE_PAYIN, true},
 
 	"staking":  {LedgerKindPayment, models.PAYMENT_TYPE_PAYIN, false},

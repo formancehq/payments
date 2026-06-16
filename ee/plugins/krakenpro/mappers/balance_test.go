@@ -87,14 +87,19 @@ func TestRawBalanceToPSPBalanceUnknownAssetSkipped(t *testing.T) {
 	}
 }
 
-func TestRawBalanceToPSPBalanceZeroSkipped(t *testing.T) {
+func TestRawBalanceToPSPBalanceZeroEmitted(t *testing.T) {
 	t.Parallel()
+	// Zero balances are NOT filtered: a known asset must still map to a
+	// balance so it stays aligned with the account fetchNextAccounts emits.
 	got, err := RawBalanceToPSPBalance(testCurrencies, "XXBT", client.BalanceExEntry{Balance: "0", HoldTrade: "0"}, time.Now())
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if got != nil {
-		t.Errorf("zero balance should map to nil, got %#v", got)
+	if got == nil {
+		t.Fatal("zero balance must still emit a balance (account parity)")
+	}
+	if got.Amount.Sign() != 0 {
+		t.Errorf("amount=%s want 0", got.Amount)
 	}
 }
 

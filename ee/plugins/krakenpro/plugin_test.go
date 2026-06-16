@@ -84,7 +84,7 @@ var _ = Describe("Kraken Pro Plugin", func() {
 			Expect(err).To(MatchError(models.ErrInvalidRequest))
 		})
 
-		It("fails fast (ErrInvalidRequest) on EAPI:Invalid nonce — preserves the nonce window", func(ctx SpecContext) {
+		It("does NOT fail fast on EAPI:Invalid nonce — it's a retriable cross-pod race", func(ctx SpecContext) {
 			ctrl := gomock.NewController(GinkgoT())
 			defer ctrl.Finish()
 			m := client.NewMockClient(ctrl)
@@ -92,7 +92,8 @@ var _ = Describe("Kraken Pro Plugin", func() {
 
 			p := &Plugin{Plugin: plugins.NewBasePlugin(), client: m, logger: logger}
 			_, err := p.Install(ctx, models.InstallRequest{})
-			Expect(err).To(MatchError(models.ErrInvalidRequest))
+			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(MatchError(models.ErrInvalidRequest), "invalid nonce must stay retriable, not fatal")
 		})
 
 		It("bubbles up retryable errors (EService:Unavailable) for Temporal to retry", func(ctx SpecContext) {
@@ -105,22 +106,6 @@ var _ = Describe("Kraken Pro Plugin", func() {
 			_, err := p.Install(ctx, models.InstallRequest{})
 			Expect(err).To(HaveOccurred())
 			Expect(err).NotTo(MatchError(models.ErrInvalidRequest))
-		})
-	})
-
-	Context("BootstrapOnInstall", func() {
-		It("declares TASK_FETCH_ACCOUNTS as the bootstrap step", func() {
-			Expect(plg.BootstrapOnInstall()).To(Equal([]models.TaskType{models.TASK_FETCH_ACCOUNTS}))
-		})
-	})
-
-	Context("UseAccountLookup", func() {
-		It("wires the lookup once", func() {
-			ctrl := gomock.NewController(GinkgoT())
-			defer ctrl.Finish()
-			lookup := models.NewMockAccountLookup(ctrl)
-			plg.UseAccountLookup(lookup)
-			Expect(plg.accountLookup).To(Equal(models.AccountLookup(lookup)))
 		})
 	})
 
@@ -168,27 +153,22 @@ var _ = Describe("Kraken Pro Plugin", func() {
 	})
 
 	Context("workflow", func() {
-		It("nests fetch_orders under fetch_accounts and exposes 4 roots", func() {
+		It("exposes 5 independent periodic roots with fetch_orders not nested", func() {
 			tree := workflow()
-			Expect(tree).To(HaveLen(4))
+			Expect(tree).To(HaveLen(5))
 			rootTypes := make([]models.TaskType, len(tree))
-			var accountsNode models.ConnectorTaskTree
 			for i, n := range tree {
 				rootTypes[i] = n.TaskType
 				Expect(n.Periodically).To(BeTrue(), "root %s must be periodic", n.Name)
-				if n.TaskType == models.TASK_FETCH_ACCOUNTS {
-					accountsNode = n
-				}
+				Expect(n.NextTasks).To(BeEmpty(), "root %s must have no children", n.Name)
 			}
 			Expect(rootTypes).To(ConsistOf(
 				models.TASK_FETCH_ACCOUNTS,
 				models.TASK_FETCH_BALANCES,
 				models.TASK_FETCH_PAYMENTS,
+				models.TASK_FETCH_ORDERS,
 				models.TASK_FETCH_CONVERSIONS,
 			))
-			Expect(accountsNode.NextTasks).To(HaveLen(1))
-			Expect(accountsNode.NextTasks[0].TaskType).To(Equal(models.TASK_FETCH_ORDERS))
-			Expect(accountsNode.NextTasks[0].Periodically).To(BeTrue())
 		})
 	})
 

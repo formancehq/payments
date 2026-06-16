@@ -109,12 +109,18 @@ var _ = Describe("Kraken Pro fetch_accounts", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("emits nothing when every row is zero", func(ctx SpecContext) {
+	It("returns an error on malformed state", func(ctx SpecContext) {
+		_, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: json.RawMessage(`{invalid`)})
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("emits zero-balance accounts (no zero filtering, for account/balance parity)", func(ctx SpecContext) {
 		m.EXPECT().GetBalanceEx(gomock.Any()).Return(map[string]client.BalanceExEntry{
 			"XXBT": {Balance: "0", HoldTrade: "0"},
 		}, nil)
 		resp, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{})
 		Expect(err).To(BeNil())
-		Expect(resp.Accounts).To(BeEmpty())
+		Expect(resp.Accounts).To(HaveLen(1))
+		Expect(resp.Accounts[0].Reference).To(Equal("XXBT"))
 	})
 })

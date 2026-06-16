@@ -71,16 +71,15 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		}
 	}
 
-	// 1. One account per variant that holds value. All-zero rows produce
-	//    no account by themselves (noise); a symbol with value only in an
-	//    earn variant still gets its spot account in step 2.
+	// 1. One account per BalanceEx variant. Zero balances are NOT
+	//    filtered: Kraken only returns a row for an asset the account
+	//    holds (or has held), and emitting every variant via the same
+	//    predicate as fetchNextBalances guarantees no balance ever
+	//    references an account that wasn't emitted (see MAPPINGS §5/§6).
 	heldSymbols := map[string]bool{}
 	for rawCode, entry := range entries {
-		symbol := mappers.NormalizeAsset(rawCode)
-		if symbol == "" {
-			continue
-		}
-		if mappers.IsZeroAmount(entry.Balance) && mappers.IsZeroAmount(entry.HoldTrade) {
+		symbol, ok := mappers.IncludeBalanceEntry(currencies, rawCode)
+		if !ok {
 			continue
 		}
 		heldSymbols[symbol] = true

@@ -3,17 +3,12 @@ package client
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"strconv"
 	"strings"
-	"sync/atomic"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -74,13 +69,12 @@ const DefaultEndpoint = "https://api.kraken.com"
 type client struct {
 	httpClient httpwrapper.Client
 	endpoint   string
-	apiKey     string
-	apiSecret  []byte       // base64-decoded
-	nonce      atomic.Int64 // strictly-monotonic per-key nonce; see nextNonce
 }
 
 // New returns a Kraken Pro REST client. The secret is base64-decoded up
 // front so an invalid secret fails here, not on the first signed call.
+// Signing is handled by signingTransport, slotted innermost (closest to
+// the wire) so it signs over the exact bytes that go out.
 func New(connectorName, apiKey, apiSecret, endpoint string) (Client, error) {
 	if endpoint == "" {
 		endpoint = DefaultEndpoint
@@ -89,117 +83,47 @@ func New(connectorName, apiKey, apiSecret, endpoint string) (Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decode apiSecret: %w", err)
 	}
-	c := &client{
-		endpoint:  strings.TrimRight(endpoint, "/"),
-		apiKey:    apiKey,
-		apiSecret: secret,
-	}
-	// Seed with UnixNano so the nonce starts above any prior ms/us-precision
-	// caller: Kraken rejects any nonce <= the highest ever used for the key.
-	c.nonce.Store(time.Now().UnixNano())
-	c.httpClient = httpwrapper.NewClient(&httpwrapper.Config{
-		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
-			Transport: otelhttp.NewTransport(http.DefaultTransport),
+	signing := newSigningTransport(apiKey, secret, http.DefaultTransport)
+	return &client{
+		endpoint: strings.TrimRight(endpoint, "/"),
+		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
+			Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
+				Transport: otelhttp.NewTransport(signing),
+			}),
 		}),
-	})
-	return c, nil
+	}, nil
 }
 
-// nextNonce returns max(prev+1, now) as an ASCII nonce, so a backward
-// clock tick (NTP) can't violate the strictly-increasing invariant
-// Kraken enforces per API key.
-func (c *client) nextNonce() string {
-	for {
-		prev := c.nonce.Load()
-		now := time.Now().UnixNano()
-		next := prev + 1
-		if now > next {
-			next = now
-		}
-		if c.nonce.CompareAndSwap(prev, next) {
-			return strconv.FormatInt(next, 10)
-		}
-	}
-}
-
-// signPath signs the per-request inputs per Kraken docs:
-//
-//	API-Sign = base64( HMAC-SHA512( secret, uriPath || SHA256(nonceASCII || body) ) )
-//
-// uriPath is everything after the host (e.g. "/0/private/Balance").
-func (c *client) signPath(uriPath, nonce string, body []byte) string {
-	sha := sha256.New()
-	sha.Write([]byte(nonce))
-	sha.Write(body)
-	mac := hmac.New(sha512.New, c.apiSecret)
-	mac.Write([]byte(uriPath))
-	mac.Write(sha.Sum(nil))
-	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
-}
-
-// doPublic issues an unsigned GET to a /public/* endpoint, decodes
-// the standard Kraken envelope, and unmarshals result into dst.
-func (c *client) doPublic(ctx context.Context, uriPath string, dst any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+uriPath, nil)
-	if err != nil {
-		return fmt.Errorf("build request %s: %w", uriPath, err)
-	}
-	var envelope struct {
-		Error  []string        `json:"error"`
-		Result json.RawMessage `json:"result"`
-	}
-	var errResp ErrorResponse
-	status, err := c.httpClient.Do(ctx, req, &envelope, &errResp)
-	if err != nil {
-		return fmt.Errorf("%s (status %d): %w", uriPath, status, err)
-	}
-	if len(envelope.Error) > 0 {
-		return apiError(uriPath, envelope.Error)
-	}
-	if dst == nil || len(envelope.Result) == 0 {
-		return nil
-	}
-	if err := json.Unmarshal(envelope.Result, dst); err != nil {
-		return fmt.Errorf("decode %s result: %w", uriPath, err)
-	}
-	return nil
-}
-
-// apiError types a Kraken error envelope. Rate-limit codes are wrapped
-// as httpwrapper.ErrStatusCodeTooManyRequests (the registry maps that to
-// plugins.ErrUpstreamRatelimit) because Kraken signals throttling in the
-// error array, often on HTTP 200 — the status code alone won't catch it.
+// apiError types a Kraken error envelope. Rate-limit and (cross-pod)
+// invalid-nonce codes are wrapped as httpwrapper.ErrStatusCodeTooManyRequests
+// (the registry maps that to plugins.ErrUpstreamRatelimit -> retry with
+// backoff) because Kraken signals both in the error array, often on
+// HTTP 200 — the status code alone won't catch them.
 func apiError(endpoint string, codes []string) error {
 	e := &APIError{Endpoint: endpoint, Code: codes[0], All: codes}
-	if IsRateLimitError(e) {
+	if IsRetriableError(e) {
 		return errorsutils.NewWrappedError(e, httpwrapper.ErrStatusCodeTooManyRequests)
 	}
 	return e
 }
 
-// doPrivate issues a signed POST to a /private/* endpoint with a
-// JSON body that always carries the nonce. Result is decoded into
-// dst. errResp captures any 4xx/5xx envelope shape.
-func (c *client) doPrivate(ctx context.Context, uriPath string, params map[string]any, dst any) error {
-	nonce := c.nextNonce()
-	if params == nil {
-		params = make(map[string]any, 1)
+// do issues a Kraken REST call and decodes the standard envelope into
+// dst. GET hits `/0/public/*` unsigned; POST hits `/0/private/*` and is
+// signed by signingTransport. errResp captures any 4xx/5xx envelope,
+// which Kraken shapes identically to a success body.
+func (c *client) do(ctx context.Context, method, uriPath string, params map[string]any, dst any) error {
+	var body io.Reader
+	if method == http.MethodPost {
+		raw, err := json.Marshal(orEmptyParams(params))
+		if err != nil {
+			return fmt.Errorf("encode body for %s: %w", uriPath, err)
+		}
+		body = bytes.NewReader(raw)
 	}
-	params["nonce"] = nonce
-
-	body, err := json.Marshal(params)
-	if err != nil {
-		return fmt.Errorf("encode body for %s: %w", uriPath, err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint+uriPath, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, method, c.endpoint+uriPath, body)
 	if err != nil {
 		return fmt.Errorf("build request %s: %w", uriPath, err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.apiKey)
-	req.Header.Set("api-nonce", nonce)
-	req.Header.Set("api-sign", c.signPath(uriPath, nonce, body))
 
 	var envelope struct {
 		Error  []string        `json:"error"`
@@ -209,8 +133,8 @@ func (c *client) doPrivate(ctx context.Context, uriPath string, params map[strin
 	status, err := c.httpClient.Do(ctx, req, &envelope, &errResp)
 	if err != nil {
 		// httpwrapper returns a non-nil err on non-2xx; surface the
-		// envelope's first error code (if any) as a typed APIError
-		// so callers can switch on IsFatalAuthError / rate limit.
+		// envelope's first error code (if any) as a typed APIError so
+		// callers can switch on IsFatalAuthError / retriable.
 		if len(errResp.Errors) > 0 {
 			return apiError(uriPath, errResp.Errors)
 		}
@@ -228,10 +152,19 @@ func (c *client) doPrivate(ctx context.Context, uriPath string, params map[strin
 	return nil
 }
 
+// orEmptyParams guarantees a non-nil body so even param-less private
+// calls (e.g. BalanceEx) send `{}` for the transport to inject the nonce.
+func orEmptyParams(params map[string]any) map[string]any {
+	if params == nil {
+		return map[string]any{}
+	}
+	return params
+}
+
 // GetAssets fetches /0/public/Assets.
 func (c *client) GetAssets(ctx context.Context) (map[string]AssetInfo, error) {
 	out := make(map[string]AssetInfo)
-	if err := c.doPublic(ctx, "/0/public/Assets", &out); err != nil {
+	if err := c.do(ctx, http.MethodGet, "/0/public/Assets", nil, &out); err != nil {
 		return nil, fmt.Errorf("get assets: %w", err)
 	}
 	return out, nil
@@ -240,7 +173,7 @@ func (c *client) GetAssets(ctx context.Context) (map[string]AssetInfo, error) {
 // GetAssetPairs fetches /0/public/AssetPairs.
 func (c *client) GetAssetPairs(ctx context.Context) (map[string]AssetPair, error) {
 	out := make(map[string]AssetPair)
-	if err := c.doPublic(ctx, "/0/public/AssetPairs", &out); err != nil {
+	if err := c.do(ctx, http.MethodGet, "/0/public/AssetPairs", nil, &out); err != nil {
 		return nil, fmt.Errorf("get asset pairs: %w", err)
 	}
 	return out, nil
@@ -249,7 +182,7 @@ func (c *client) GetAssetPairs(ctx context.Context) (map[string]AssetPair, error
 // GetBalanceEx fetches /0/private/BalanceEx.
 func (c *client) GetBalanceEx(ctx context.Context) (map[string]BalanceExEntry, error) {
 	out := make(map[string]BalanceExEntry)
-	if err := c.doPrivate(ctx, "/0/private/BalanceEx", nil, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/0/private/BalanceEx", nil, &out); err != nil {
 		return nil, fmt.Errorf("get balance ex: %w", err)
 	}
 	return out, nil
@@ -274,7 +207,7 @@ func (c *client) GetLedgers(ctx context.Context, p LedgersParams) (LedgersRespon
 		params["without_count"] = true
 	}
 	var out LedgersResponse
-	if err := c.doPrivate(ctx, "/0/private/Ledgers", params, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/0/private/Ledgers", params, &out); err != nil {
 		return LedgersResponse{}, fmt.Errorf("get ledgers: %w", err)
 	}
 	return out, nil
@@ -301,7 +234,7 @@ func (c *client) GetOpenOrders(ctx context.Context, p OpenOrdersParams) (OpenOrd
 		params["userref"] = p.Userref
 	}
 	var out OpenOrdersResponse
-	if err := c.doPrivate(ctx, "/0/private/OpenOrders", params, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/0/private/OpenOrders", params, &out); err != nil {
 		return OpenOrdersResponse{}, fmt.Errorf("get open orders: %w", err)
 	}
 	return out, nil
@@ -331,7 +264,7 @@ func (c *client) GetClosedOrders(ctx context.Context, p ClosedOrdersParams) (Clo
 		params["without_count"] = true
 	}
 	var out ClosedOrdersResponse
-	if err := c.doPrivate(ctx, "/0/private/ClosedOrders", params, &out); err != nil {
+	if err := c.do(ctx, http.MethodPost, "/0/private/ClosedOrders", params, &out); err != nil {
 		return ClosedOrdersResponse{}, fmt.Errorf("get closed orders: %w", err)
 	}
 	return out, nil

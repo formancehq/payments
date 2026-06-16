@@ -30,12 +30,10 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, err
 	}
-	// Spot account references for attributing each conversion leg to its
-	// asset's trading account (the precise variant is kept in metadata).
-	wallets, err := p.resolveWallets(ctx)
-	if err != nil {
-		return models.FetchNextConversionsResponse{}, err
-	}
+	// Spot account references (symbol -> raw spot code) for attributing
+	// each conversion leg to its asset's trading account, taken from the
+	// asset cache — no DB lookup. The precise variant stays in metadata.
+	wallets := p.snapshotAssetCodes()
 
 	pageSize := effectivePageSize(req.PageSize)
 	start, end, ofs := state.Window.plan(nowEpoch())
@@ -49,7 +47,7 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	// Pair conversion-typed rows by refid. A leg seen here either
 	// matches a half-pair stashed in a prior cycle (emit) or is stashed
 	// itself for a future cycle.
-	conversions := make([]models.PSPConversion, 0)
+	conversions := make([]models.PSPConversion, 0, len(resp.Ledger))
 	for ledgerID, entry := range resp.Ledger {
 		if kind, _, _ := mappers.ClassifyLedgerType(entry.Type); kind != mappers.LedgerKindConversion {
 			continue

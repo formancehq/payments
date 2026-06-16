@@ -76,14 +76,12 @@ func LedgerMetadata(ledgerID string, e client.LedgerEntry) map[string]string {
 }
 
 // AccountMetadata is the per-PSPAccount metadata bundle for one raw
-// Kraken variant. wallet_type is the class discriminator resolveWallets
-// keys off (coinbaseprime pattern); kraken_asset is the raw code, which
-// equals the account Reference and keeps the spot/earn provenance
-// explicit alongside the normalised DefaultAsset.
+// Kraken variant. Only wallet_type (the spot/staked/... class) is stored;
+// the raw Kraken code is intentionally omitted because it already is the
+// account Reference (storing it again would be redundant).
 func AccountMetadata(rawCode string) map[string]string {
 	return map[string]string{
-		MetadataPrefix + "wallet_type":  WalletClass(rawCode),
-		MetadataPrefix + "kraken_asset": strings.ToUpper(strings.TrimSpace(rawCode)),
+		MetadataPrefix + "wallet_type": WalletClass(rawCode),
 	}
 }
 

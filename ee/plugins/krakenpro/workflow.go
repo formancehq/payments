@@ -5,30 +5,23 @@ import "github.com/formancehq/payments/internal/models"
 // workflow declares the periodic task tree. See MAPPINGS §3.
 //
 //	fetch_accounts        (periodic root)
-//	  └─ fetch_orders     (periodic; reads wallet refs via AccountLookup)
 //	fetch_balances        (periodic root — BalanceEx is account-global)
 //	fetch_payments        (periodic root)
+//	fetch_orders          (periodic root)
 //	fetch_conversions     (periodic root)
 //
-// Orders sit nested under accounts so the engine reads the accounts
-// table fresh before each order cycle. BootstrapOnInstall in
-// plugin.go additionally drains a full FETCH_ACCOUNTS pass on
-// install so the very first FETCH_ORDERS cycle never sees an empty
-// accounts table.
+// All tasks are independent roots. fetch_orders is NOT nested under
+// fetch_accounts: Kraken can't filter orders by account, so nesting
+// would make the engine fan out one identical full-orders fetch per
+// account. Orders resolve their wallet refs from the in-memory asset
+// cache instead (see orders.go), so they need no accounts dependency.
 func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{
 		{
 			TaskType:     models.TASK_FETCH_ACCOUNTS,
 			Name:         "fetch_accounts",
 			Periodically: true,
-			NextTasks: []models.ConnectorTaskTree{
-				{
-					TaskType:     models.TASK_FETCH_ORDERS,
-					Name:         "fetch_orders",
-					Periodically: true,
-					NextTasks:    []models.ConnectorTaskTree{},
-				},
-			},
+			NextTasks:    []models.ConnectorTaskTree{},
 		},
 		{
 			TaskType:     models.TASK_FETCH_BALANCES,
@@ -39,6 +32,12 @@ func workflow() models.ConnectorTasksTree {
 		{
 			TaskType:     models.TASK_FETCH_PAYMENTS,
 			Name:         "fetch_payments",
+			Periodically: true,
+			NextTasks:    []models.ConnectorTaskTree{},
+		},
+		{
+			TaskType:     models.TASK_FETCH_ORDERS,
+			Name:         "fetch_orders",
 			Periodically: true,
 			NextTasks:    []models.ConnectorTaskTree{},
 		},

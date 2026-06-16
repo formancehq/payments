@@ -22,8 +22,8 @@ func (e ErrorResponse) Message() string {
 
 // APIError is the typed error carried by client methods when Kraken
 // answers with a non-empty `error` array. Code is the first entry,
-// All carries the full slice. Auth and nonce failures are fatal —
-// connector logic uses IsFatalAuthError to short-circuit retries.
+// All carries the full slice. Callers classify it via IsFatalAuthError
+// (short-circuit retries) and IsRetriableError (rate-limit / nonce).
 type APIError struct {
 	Endpoint string
 	Code     string
@@ -41,13 +41,15 @@ func IsAPIError(err error) bool {
 }
 
 // fatalAuthCodes must not be retried — they mean a misconfigured
-// connector, and retrying makes it worse: each EAPI:Invalid nonce retry
-// pushes the per-key nonce floor higher, eventually bricking the key
-// until an operator resets it on Kraken's side.
+// connector (bad key/secret/permissions or a wrong endpoint), so retries
+// only burn quota. Note "EAPI:Invalid nonce" is deliberately NOT here:
+// with one API key shared across worker pods, out-of-order arrival makes
+// the occasional invalid nonce a transient race, so it is retriable (see
+// invalidNonceCode + IsRetriableError, and MAPPINGS for the per-worker
+// key / nonce-window guidance).
 var fatalAuthCodes = map[string]struct{}{
 	"EAPI:Invalid key":           {},
 	"EAPI:Invalid signature":     {},
-	"EAPI:Invalid nonce":         {},
 	"EAPI:Bad request":           {},
 	"EGeneral:Permission denied": {},
 	"EGeneral:Unknown method":    {},
@@ -63,6 +65,8 @@ func IsFatalAuthError(err error) bool {
 	_, fatal := fatalAuthCodes[a.Code]
 	return fatal
 }
+
+const invalidNonceCode = "EAPI:Invalid nonce"
 
 // rateLimitCodes are the exact Kraken error codes that mean "back off".
 // EService:Throttled carries a trailing timestamp ("EService:Throttled:
@@ -86,4 +90,17 @@ func IsRateLimitError(err error) bool {
 		return true
 	}
 	return strings.HasPrefix(a.Code, "EService:Throttled")
+}
+
+// IsRetriableError reports whether err is an APIError that should be
+// retried with backoff: rate-limit/throttle, or a transient invalid
+// nonce (a cross-pod race on a shared key). Both are routed through the
+// platform rate-limit path so retries are spaced out — important because
+// Kraken temporarily locks a key after too many invalid-nonce errors.
+func IsRetriableError(err error) bool {
+	if IsRateLimitError(err) {
+		return true
+	}
+	var a *APIError
+	return errors.As(err, &a) && a.Code == invalidNonceCode
 }

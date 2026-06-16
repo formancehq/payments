@@ -284,3 +284,34 @@ func TestResolvePair(t *testing.T) {
 		t.Errorf("base=%q quote=%q", res.BaseSymbol, res.QuoteSymbol)
 	}
 }
+
+func TestResolvePair_FallbackForms(t *testing.T) {
+	t.Parallel()
+	// Each of these non-primary-key forms must resolve via the fallback:
+	// altname, wsname (with slash), and a slash-stripped wsname.
+	for _, in := range []string{"XBTUSD", "XBT/USD", "XBTUSD ", "xbt/usd"} {
+		res, ok := ResolvePair(testPairs, in)
+		if !ok {
+			t.Fatalf("expected fallback resolution for %q", in)
+		}
+		if res.BaseSymbol != "BTC" || res.QuoteSymbol != "USD" {
+			t.Errorf("%q → base=%q quote=%q", in, res.BaseSymbol, res.QuoteSymbol)
+		}
+		if res.Pair != "XXBTZUSD" {
+			t.Errorf("%q → Pair=%q want canonical code XXBTZUSD", in, res.Pair)
+		}
+	}
+	if _, ok := ResolvePair(testPairs, "NOPENOPE"); ok {
+		t.Error("unknown pair must not resolve")
+	}
+}
+
+func TestOrderEntryToPSPOrder_NonEmptyInvalidFeeErrors(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("sell", "market")
+	oe.Fee = "not-a-number"
+	if _, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+		OrderEntryWithID{OrderID: "OFEE", Order: oe}); err == nil {
+		t.Fatal("a non-empty unparseable fee must return an error, not silently zero")
+	}
+}

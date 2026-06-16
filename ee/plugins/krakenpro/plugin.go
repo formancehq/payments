@@ -41,12 +41,6 @@ type Plugin struct {
 	client client.Client
 	config Config
 
-	// accountLookup is injected by the engine via UseAccountLookup
-	// right after plugin instantiation. Orders use it to resolve
-	// wallet IDs from the persisted accounts table instead of a
-	// fragile in-process cache that wouldn't survive pod hops.
-	accountLookup models.AccountLookup
-
 	// Asset / pair caches. Reads dominate writes, so an RWMutex
 	// protects the published maps; a separate Mutex serialises
 	// the refresh path so two callers can't race a duplicate
@@ -93,9 +87,10 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 
 // Install validates credentials with a cheap signed call (under a short
 // timeout) and warms the asset caches so the first cycle skips the cold
-// start. Fatal-auth errors are wrapped as models.ErrInvalidRequest to
-// stop Temporal retrying — retries would keep burning the nonce floor
-// (see client.fatalAuthCodes).
+// start. Fatal-auth errors (bad key/secret/permissions) are wrapped as
+// models.ErrInvalidRequest to stop Temporal retrying. A transient
+// EAPI:Invalid nonce is deliberately NOT fatal (it can be a cross-pod
+// race) and is left retriable — see client.fatalAuthCodes / IsRetriableError.
 func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
 	cctx, cancel := context.WithTimeout(ctx, installValidationTimeout)
 	defer cancel()
@@ -115,19 +110,6 @@ func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.I
 	}
 
 	return models.InstallResponse{Workflow: workflow()}, nil
-}
-
-// UseAccountLookup wires the engine's accounts lookup. Called once
-// per plugin instance, before any periodic task fires.
-func (p *Plugin) UseAccountLookup(lookup models.AccountLookup) {
-	p.accountLookup = lookup
-}
-
-// BootstrapOnInstall declares FETCH_ACCOUNTS as a blocking install
-// step so the accounts table is fully populated before any
-// FETCH_ORDERS cycle tries to resolve wallet refs.
-func (p *Plugin) BootstrapOnInstall() []models.TaskType {
-	return []models.TaskType{models.TASK_FETCH_ACCOUNTS}
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
