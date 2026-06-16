@@ -140,7 +140,7 @@ func (w Workflow) createPayout(
 		}
 
 		if createPayoutResponse.PollingPayoutID != nil {
-			config, err := w.connectors.GetConfig(createPayout.ConnectorID)
+			pollingPeriod, err := w.connectorPollingPeriod(ctx, createPayout.ConnectorID)
 			if err != nil {
 				return err
 			}
@@ -163,7 +163,7 @@ func (w Workflow) createPayout(
 				activities.ScheduleCreateOptions{
 					ScheduleID: scheduleID,
 					Interval: &client.ScheduleIntervalSpec{
-						Every: config.PollingPeriod,
+						Every: pollingPeriod,
 					},
 					Action: client.ScheduleWorkflowAction{
 						Workflow: RunPollPayout,

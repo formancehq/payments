@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -10,6 +11,33 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
+
+// Test_Run_Periodically_UsesActivityPollingPeriod asserts scheduleNextWorkflow uses the
+// polling period returned by the deterministic activity (EN-1093/H12) for both the schedule
+// interval and the jitter. The global mock (SetupTest) returns 2m.
+func (s *UnitTestSuite) Test_Run_Periodically_UsesActivityPollingPeriod() {
+	pollingPeriod := 2 * time.Minute
+	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.ScheduleCreateOptions) error {
+		s.Equal(RunFetchNextAccounts, req.Action.Workflow)
+		s.NotNil(req.Interval)
+		s.Equal(pollingPeriod, req.Interval.Every)
+		s.Equal(calculateJitter(pollingPeriod), req.Jitter)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(
+		RunNextTasksV3_1,
+		s.connectorID,
+		&FromPayload{ID: "1", Payload: []byte(`{}`)},
+		[]models.ConnectorTaskTree{
+			{TaskType: models.TASK_FETCH_ACCOUNTS, Name: "test", Periodically: true, NextTasks: []models.ConnectorTaskTree{}},
+		},
+	)
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
 
 func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {

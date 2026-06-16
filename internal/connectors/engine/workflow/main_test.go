@@ -16,6 +16,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	temporallog "go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/testsuite"
@@ -65,10 +66,26 @@ func (s *UnitTestSuite) SetupTest() {
 	}
 
 	s.addData()
+
+	// EN-1093/H12: scheduleNextWorkflow now reads the polling period via a deterministic
+	// activity (the test env always takes the activity branch). Register it globally so any
+	// test that schedules is covered; .Maybe() leaves non-scheduling tests unaffected.
+	s.mockPollingPeriod(2 * time.Minute)
 }
 
 func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
 	s.env.AssertExpectations(s.T())
+}
+
+// mockPollingPeriod registers the deterministic StorageConnectorsGetPollingPeriod activity
+// (EN-1093/H12). Temporal's TestWorkflowEnvironment always reports the newest GetVersion, so
+// scheduleNextWorkflow / create_payout / create_transfer always take the activity branch in
+// tests. Registered with .Maybe() since not every test reaches the polling-period read.
+func (s *UnitTestSuite) mockPollingPeriod(pollingPeriod time.Duration) {
+	s.env.OnActivity(activities.StorageConnectorsGetPollingPeriodActivity, mock.Anything, mock.Anything).Maybe().Return(
+		pollingPeriod,
+		nil,
+	)
 }
 
 func TestUnitTestSuite(t *testing.T) {
