@@ -108,18 +108,24 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 		return 0, fmt.Errorf("failed to make request: %w", err)
 	}
 
-	reqErr := c.httpErrorCheckerFn(resp.StatusCode)
-	// the caller doesn't care about the response body so we return early
-	if resp.Body == nil || (reqErr == nil && expectedBody == nil) || (reqErr != nil && errorBody == nil) {
-		return resp.StatusCode, reqErr
-	}
-
+	// Always drain and close the body, regardless of the return path below.
+	// Draining lets the underlying connection be reused (keep-alive); closing
+	// without draining (or not closing at all on early returns) leaks file
+	// descriptors and connections in a long-running worker.
+	// net/http guarantees resp.Body is non-nil on a successful Do, so there is
+	// no nil check to perform here.
 	defer func() {
-		err = resp.Body.Close()
-		if err != nil {
-			logging.FromContext(ctx).Errorf("failed to close response body: %w", err)
+		_, _ = io.Copy(io.Discard, resp.Body)
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			logging.FromContext(ctx).Errorf("failed to close response body: %v", closeErr)
 		}
 	}()
+
+	reqErr := c.httpErrorCheckerFn(resp.StatusCode)
+	// the caller doesn't care about the response body so we return early
+	if (reqErr == nil && expectedBody == nil) || (reqErr != nil && errorBody == nil) {
+		return resp.StatusCode, reqErr
+	}
 
 	// TODO: reading everything into memory might not be optimal if we expect long responses
 	rawBody, err := io.ReadAll(resp.Body)
