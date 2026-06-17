@@ -142,7 +142,7 @@ func (w Workflow) createTransfer(
 
 		if createTransferResponse.PollingTransferID != nil {
 			// payment not yet available, waiting for the next polling
-			config, err := w.connectors.GetConfig(createTransfer.ConnectorID)
+			pollingPeriod, err := w.connectorPollingPeriod(ctx, createTransfer.ConnectorID)
 			if err != nil {
 				return err
 			}
@@ -165,7 +165,7 @@ func (w Workflow) createTransfer(
 				activities.ScheduleCreateOptions{
 					ScheduleID: scheduleID,
 					Interval: &client.ScheduleIntervalSpec{
-						Every: config.PollingPeriod,
+						Every: pollingPeriod,
 					},
 					Action: client.ScheduleWorkflowAction{
 						Workflow: RunPollTransfer,

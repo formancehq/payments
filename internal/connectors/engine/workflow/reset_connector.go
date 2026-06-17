@@ -83,10 +83,23 @@ func (w Workflow) resetConnector(
 	// We need to change the connector ID to a new one, otherwise, we will
 	// have some conflicts with temporal and previous workflows related to the
 	// previous connector ID.
+	//
+	// The reference must be generated through workflow.SideEffect: calling
+	// uuid.New() directly in the workflow body is non-deterministic, so on replay
+	// a different UUID would be produced and the install child WorkflowID below
+	// (install-{stack}-{newConnector.ID}) would no longer match history, failing
+	// the workflow task in a loop and leaving the reset stuck (EN-1093 / H10).
+	var newReference uuid.UUID
+	if err := workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+		return uuid.New()
+	}).Get(&newReference); err != nil {
+		return nil, fmt.Errorf("generating new connector reference: %w", err)
+	}
+
 	newConnector := models.Connector{
 		ConnectorBase: models.ConnectorBase{
 			ID: models.ConnectorID{
-				Reference: uuid.New(),
+				Reference: newReference,
 				Provider:  connector.Provider,
 			},
 			Name:      connector.Name,
