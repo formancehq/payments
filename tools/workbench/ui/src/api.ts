@@ -139,7 +139,7 @@ export interface Conversion {
   source_asset: string;
   destination_asset: string;
   source_amount: string;
-  destination_amount?: string;
+  target_amount?: string;
   status: string;
   wallet_id: string;
   metadata?: Record<string, string>;
