@@ -43,7 +43,7 @@ var _ = Describe("API v2 Router", func() {
 					return nil
 				})
 
-			req := httptest.NewRequest(http.MethodPost, "/connectors/webhooks/"+connID.String()+"/", strings.NewReader("{}"))
+			req := httptest.NewRequest(http.MethodPost, "/connectors/C/"+connID.String()+"/", strings.NewReader("{}"))
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
@@ -55,7 +55,7 @@ var _ = Describe("API v2 Router", func() {
 				ConnectorsHandleWebhooks(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				Return(nil)
 
-			req := httptest.NewRequest(http.MethodPost, "/connectors/webhooks/"+connID.String()+"/some/provider/path", strings.NewReader("{}"))
+			req := httptest.NewRequest(http.MethodPost, "/connectors/C/"+connID.String()+"/some/provider/path", strings.NewReader("{}"))
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
@@ -63,7 +63,7 @@ var _ = Describe("API v2 Router", func() {
 		})
 
 		It("returns a bad request when the connector ID in the path is invalid", func(ctx SpecContext) {
-			req := httptest.NewRequest(http.MethodPost, "/connectors/webhooks/invalid/", strings.NewReader("{}"))
+			req := httptest.NewRequest(http.MethodPost, "/connectors/C/invalid/", strings.NewReader("{}"))
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
