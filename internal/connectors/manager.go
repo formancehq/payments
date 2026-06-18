@@ -28,6 +28,10 @@ type Manager interface {
 	Unload(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
+	// DefaultConfig returns the configurer's default connector config. It carries
+	// no per-connector state (no lookup, never ErrNotFound) and is used to apply
+	// the same defaults the manager applies when parsing a stored config.
+	DefaultConfig() models.Config
 }
 
 // Will start, hold, manage and stop Connectors
@@ -163,6 +167,10 @@ func (m *manager) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	}
 
 	return c.plugin, nil
+}
+
+func (m *manager) DefaultConfig() models.Config {
+	return m.configurer.DefaultConfig()
 }
 
 func (m *manager) GetConfig(connectorID models.ConnectorID) (models.Config, error) {

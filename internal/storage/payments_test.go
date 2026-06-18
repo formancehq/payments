@@ -871,6 +871,331 @@ func TestPaymentsUpsertRefunded(t *testing.T) {
 	require.NoError(t, err)
 	// two refunds in the same batch, should be 100 - 10 - 10 = 80
 	require.Equal(t, big.NewInt(80), actual.Amount)
+
+	// EN-1085 / C2: each refund adjustment must keep its own amount (10), not the
+	// accumulated sum. big.Int aliasing previously mutated the first refund's amount in place.
+	for _, adj := range actual.Adjustments {
+		if adj.Status == models.PAYMENT_STATUS_REFUNDED {
+			require.Equal(t, big.NewInt(10), adj.Amount, "each refund adjustment must keep its own amount")
+		}
+	}
+}
+
+// TestPaymentsUpsertDoesNotMutateCallerAmounts covers EN-1085 / C2: accumulating refund
+// deltas must not mutate the caller's adjustment big.Int values in place.
+func TestPaymentsUpsertDoesNotMutateCallerAmounts(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	input := defaultPaymentsRefunded()
+	require.NoError(t, store.PaymentsUpsert(ctx, input))
+
+	// The two refund adjustments were each 10 on input and must be untouched after upsert.
+	for _, p := range input {
+		for _, adj := range p.Adjustments {
+			if adj.Status == models.PAYMENT_STATUS_REFUNDED {
+				require.Equal(t, big.NewInt(10), adj.Amount, "caller adjustment amount must not be mutated")
+			}
+		}
+	}
+}
+
+// TestPaymentsUpsertDuplicateRefundInBatch covers EN-1085 / C1: when the same refund
+// adjustment appears more than once within a single batch, Postgres inserts one row and the
+// amount delta must be applied exactly once (not once per duplicate occurrence).
+func TestPaymentsUpsertDuplicateRefundInBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	paymentID := models.PaymentID{
+		PaymentReference: models.PaymentReference{
+			Reference: "dup-refund",
+			Type:      models.PAYMENT_TYPE_TRANSFER,
+		},
+		ConnectorID: defaultConnector.ID,
+	}
+	refund := models.PaymentAdjustment{
+		ID: models.PaymentAdjustmentID{
+			PaymentID: paymentID,
+			Reference: "dup-refund",
+			CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_STATUS_REFUNDED,
+		},
+		Reference: "dup-refund",
+		CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+		Status:    models.PAYMENT_STATUS_REFUNDED,
+		Amount:    big.NewInt(30),
+		Asset:     pointer.For("USD/2"),
+		Raw:       []byte(`{}`),
+	}
+
+	p := models.Payment{
+		ID:            paymentID,
+		ConnectorID:   defaultConnector.ID,
+		Reference:     "dup-refund",
+		CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+		Type:          models.PAYMENT_TYPE_TRANSFER,
+		InitialAmount: big.NewInt(100),
+		Amount:        big.NewInt(100),
+		Asset:         "USD/2",
+		Scheme:        models.PAYMENT_SCHEME_OTHER,
+		// Same refund adjustment listed twice in a single batch.
+		Adjustments: []models.PaymentAdjustment{refund, refund},
+	}
+
+	require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{p}))
+
+	actual, err := store.PaymentsGet(ctx, paymentID)
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(70), actual.Amount, "duplicated refund in one batch must be applied once: 100 - 30 = 70")
+
+	events := outboxEventsForEntity(ctx, t, store, paymentID.String())
+	require.Len(t, events, 1, "a deduplicated adjustment must yield a single outbox event")
+}
+
+// TestPaymentsUpsertIdempotentOnReplay covers EN-1085 / C1: Temporal activities are
+// at-least-once, so replaying an already-committed batch must not re-apply amount deltas
+// (a refund must not be subtracted twice).
+func TestPaymentsUpsertIdempotentOnReplay(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	paymentID := models.PaymentID{
+		PaymentReference: models.PaymentReference{
+			Reference: "replay-test",
+			Type:      models.PAYMENT_TYPE_TRANSFER,
+		},
+		ConnectorID: defaultConnector.ID,
+	}
+
+	// Rebuilt for each call so replay reconstructs fresh big.Int values, like Temporal would.
+	batch := func() []models.Payment {
+		return []models.Payment{
+			{
+				ID:            paymentID,
+				ConnectorID:   defaultConnector.ID,
+				Reference:     "replay-test",
+				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+				Type:          models.PAYMENT_TYPE_TRANSFER,
+				InitialAmount: big.NewInt(100),
+				Amount:        big.NewInt(100),
+				Asset:         "USD/2",
+				Scheme:        models.PAYMENT_SCHEME_OTHER,
+				Adjustments: []models.PaymentAdjustment{
+					{
+						ID: models.PaymentAdjustmentID{
+							PaymentID: paymentID,
+							Reference: "replay-test",
+							CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+							Status:    models.PAYMENT_STATUS_SUCCEEDED,
+						},
+						Reference: "replay-test",
+						CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+						Amount:    big.NewInt(100),
+						Asset:     pointer.For("USD/2"),
+						Raw:       []byte(`{}`),
+					},
+					{
+						ID: models.PaymentAdjustmentID{
+							PaymentID: paymentID,
+							Reference: "replay-test",
+							CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+							Status:    models.PAYMENT_STATUS_REFUNDED,
+						},
+						Reference: "replay-test",
+						CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_REFUNDED,
+						Amount:    big.NewInt(30),
+						Asset:     pointer.For("USD/2"),
+						Raw:       []byte(`{}`),
+					},
+				},
+			},
+		}
+	}
+
+	require.NoError(t, store.PaymentsUpsert(ctx, batch()))
+
+	afterFirst, err := store.PaymentsGet(ctx, paymentID)
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(70), afterFirst.Amount, "100 - 30 refund = 70")
+
+	firstEvents := outboxEventsForEntity(ctx, t, store, paymentID.String())
+	require.Len(t, firstEvents, 2, "expected one outbox event per inserted adjustment")
+	cleanupOutboxHelper(ctx, store)()
+
+	// Replay the identical batch (at-least-once delivery).
+	require.NoError(t, store.PaymentsUpsert(ctx, batch()))
+
+	afterReplay, err := store.PaymentsGet(ctx, paymentID)
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(70), afterReplay.Amount, "replay must not re-apply the refund delta")
+
+	replayEvents := outboxEventsForEntity(ctx, t, store, paymentID.String())
+	require.Empty(t, replayEvents, "replay must not emit outbox events for already-stored adjustments")
+}
+
+// outboxEventsForEntity returns pending SavedPayments outbox events for the given entity ID.
+func outboxEventsForEntity(ctx context.Context, t *testing.T, store Storage, entityID string) []models.OutboxEvent {
+	t.Helper()
+	pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+	require.NoError(t, err)
+	out := make([]models.OutboxEvent, 0)
+	for _, event := range pendingEvents {
+		if event.EventType == events.EventTypeSavedPayments && event.EntityID == entityID {
+			out = append(out, event)
+		}
+	}
+	return out
+}
+
+// TestPaymentsUpsertMixedCaptureAndRefundInBatch covers EN-1085: a single batch with both a
+// capture and a refund for the same payment must apply both deltas (amount + capture - refund)
+// and emit one outbox event per inserted adjustment.
+func TestPaymentsUpsertMixedCaptureAndRefundInBatch(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	paymentID := models.PaymentID{
+		PaymentReference: models.PaymentReference{
+			Reference: "mixed",
+			Type:      models.PAYMENT_TYPE_TRANSFER,
+		},
+		ConnectorID: defaultConnector.ID,
+	}
+	p := models.Payment{
+		ID:            paymentID,
+		ConnectorID:   defaultConnector.ID,
+		Reference:     "mixed",
+		CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+		Type:          models.PAYMENT_TYPE_TRANSFER,
+		InitialAmount: big.NewInt(100),
+		Amount:        big.NewInt(100),
+		Asset:         "USD/2",
+		Scheme:        models.PAYMENT_SCHEME_OTHER,
+		Adjustments: []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: paymentID,
+					Reference: "mixed",
+					CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_CAPTURE,
+				},
+				Reference: "mixed",
+				CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_CAPTURE,
+				Amount:    big.NewInt(50),
+				Asset:     pointer.For("USD/2"),
+				Raw:       []byte(`{}`),
+			},
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: paymentID,
+					Reference: "mixed",
+					CreatedAt: now.Add(-20 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUNDED,
+				},
+				Reference: "mixed",
+				CreatedAt: now.Add(-20 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_REFUNDED,
+				Amount:    big.NewInt(30),
+				Asset:     pointer.For("USD/2"),
+				Raw:       []byte(`{}`),
+			},
+		},
+	}
+
+	require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{p}))
+
+	actual, err := store.PaymentsGet(ctx, paymentID)
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(120), actual.Amount, "100 + 50 capture - 30 refund = 120")
+
+	require.Len(t, outboxEventsForEntity(ctx, t, store, paymentID.String()), 2)
+}
+
+// TestPaymentsUpsertNilAmountAdjustment covers EN-1085 / C2: an adjustment with a nil amount
+// must not panic, must leave the payment amount unchanged, and must still record the status.
+func TestPaymentsUpsertNilAmountAdjustment(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+	defer cleanupOutboxHelper(ctx, store)()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	paymentID := models.PaymentID{
+		PaymentReference: models.PaymentReference{
+			Reference: "nil-amount",
+			Type:      models.PAYMENT_TYPE_TRANSFER,
+		},
+		ConnectorID: defaultConnector.ID,
+	}
+	p := models.Payment{
+		ID:            paymentID,
+		ConnectorID:   defaultConnector.ID,
+		Reference:     "nil-amount",
+		CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+		Type:          models.PAYMENT_TYPE_TRANSFER,
+		InitialAmount: big.NewInt(100),
+		Amount:        big.NewInt(100),
+		Asset:         "USD/2",
+		Scheme:        models.PAYMENT_SCHEME_OTHER,
+		Adjustments: []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: paymentID,
+					Reference: "nil-amount",
+					CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUNDED,
+				},
+				Reference: "nil-amount",
+				CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_REFUNDED,
+				Amount:    nil, // optional field omitted by the connector
+				Raw:       []byte(`{}`),
+			},
+		},
+	}
+
+	require.NoError(t, store.PaymentsUpsert(ctx, []models.Payment{p}))
+
+	actual, err := store.PaymentsGet(ctx, paymentID)
+	require.NoError(t, err)
+	require.Equal(t, big.NewInt(100), actual.Amount, "a nil-amount adjustment must not change the amount")
+	require.Equal(t, models.PAYMENT_STATUS_REFUNDED, actual.Status, "the status change must still be recorded")
 }
 
 func TestPaymentsUpdateMetadata(t *testing.T) {

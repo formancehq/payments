@@ -185,7 +185,7 @@ func (w Workflow) scheduleNextWorkflow(
 		return err
 	}
 
-	config, err := w.connectors.GetConfig(connectorID)
+	pollingPeriod, err := w.connectorPollingPeriod(ctx, connectorID)
 	if err != nil {
 		return err
 	}
@@ -194,9 +194,9 @@ func (w Workflow) scheduleNextWorkflow(
 		infiniteRetryContext(ctx),
 		activities.ScheduleCreateOptions{
 			ScheduleID: scheduleID,
-			Jitter:     calculateJitter(config.PollingPeriod),
+			Jitter:     calculateJitter(pollingPeriod),
 			Interval: &client.ScheduleIntervalSpec{
-				Every: config.PollingPeriod,
+				Every: pollingPeriod,
 			},
 			Action: client.ScheduleWorkflowAction{
 				// Use the same ID as the schedule ID, so we can identify the workflows running.

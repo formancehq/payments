@@ -237,6 +237,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageConnectorsScheduleForDeletion,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageConnectorsGetPollingPeriod",
+			Func: a.StorageConnectorsGetPollingPeriod,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageSchedulesGet",
 			Func: a.StorageSchedulesGet,
 		}).

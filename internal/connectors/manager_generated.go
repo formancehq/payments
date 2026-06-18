@@ -41,6 +41,20 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
 }
 
+// DefaultConfig mocks base method.
+func (m *MockManager) DefaultConfig() models.Config {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DefaultConfig")
+	ret0, _ := ret[0].(models.Config)
+	return ret0
+}
+
+// DefaultConfig indicates an expected call of DefaultConfig.
+func (mr *MockManagerMockRecorder) DefaultConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DefaultConfig", reflect.TypeOf((*MockManager)(nil).DefaultConfig))
+}
+
 // Get mocks base method.
 func (m *MockManager) Get(arg0 models.ConnectorID) (models.Plugin, error) {
 	m.ctrl.T.Helper()
