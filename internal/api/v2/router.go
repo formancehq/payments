@@ -16,7 +16,7 @@ func newRouter(backend backend.Backend, a jwt.Authenticator, debug bool) *chi.Mu
 	r.Group(func(r chi.Router) {
 		// Public routes
 		r.Group(func(r chi.Router) {
-			r.Handle("/connectors/C/{connectorID}/*", connectorsWebhooks(backend))
+			r.Handle("/connectors/webhooks/{connectorID}/*", connectorsWebhooks(backend))
 		})
 
 		// Authenticated routes

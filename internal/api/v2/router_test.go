@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	"github.com/formancehq/go-libs/v5/pkg/authn/jwt"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -29,9 +30,14 @@ var _ = Describe("API v2 Router", func() {
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			// authenticator is nil: the webhooks route is public so the JWT
-			// middleware closure is never invoked for it.
-			r = newRouter(m, nil, false)
+			// Build the router with a real authenticator that DENIES every
+			// request. The webhooks route is public, so requests must reach the
+			// handler regardless of authentication. If the route were ever moved
+			// behind the JWT middleware, this authenticator would reject the
+			// request with 401 and these tests would fail.
+			auth := jwt.NewMockAuthenticator(ctrl)
+			auth.EXPECT().Authenticate(gomock.Any(), gomock.Any()).Return(false, nil).AnyTimes()
+			r = newRouter(m, auth, false)
 			connID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
 		})
 
