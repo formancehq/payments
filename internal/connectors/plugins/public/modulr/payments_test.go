@@ -32,7 +32,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 		ctrl.Finish()
 	})
 
-	Context("fetching next accounts", func() {
+	Context("fetching next payments", func() {
 		var (
 			sampleTransactions []client.Transaction
 			now                time.Time
@@ -41,8 +41,13 @@ var _ = Describe("Modulr Plugin Payments", func() {
 		BeforeEach(func() {
 			now = time.Now().UTC()
 
+			// Modulr returns transactions newest-first (descending by transactionDate),
+			// so index 0 is the most recent. PostedDate intentionally lags TransactionDate
+			// by 2h: the watermark must track TransactionDate (the filtered/compared field),
+			// never the later PostedDate.
 			sampleTransactions = make([]client.Transaction, 0)
 			for i := 0; i < 50; i++ {
+				txnDate := now.Add(-time.Duration(i) * time.Minute)
 				sampleTransactions = append(sampleTransactions, client.Transaction{
 					ID:              fmt.Sprintf("%d", i),
 					Type:            "PI_FAST",
@@ -50,8 +55,8 @@ var _ = Describe("Modulr Plugin Payments", func() {
 					Credit:          false,
 					SourceID:        fmt.Sprintf("test-%d", i),
 					Description:     fmt.Sprintf("Description %d", i),
-					PostedDate:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
-					TransactionDate: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
+					PostedDate:      txnDate.Add(2 * time.Hour).Format(transactionDateLayout),
+					TransactionDate: txnDate.Format(transactionDateLayout),
 					Account: client.Account{
 						Currency: "USD",
 					},
@@ -78,8 +83,9 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, timeEq(time.Time{}), timeEq(time.Time{})).Return(
 				[]client.Transaction{},
+				0,
 				errors.New("test error"),
 			)
 
@@ -96,8 +102,9 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, timeEq(time.Time{}), timeEq(time.Time{})).Return(
 				[]client.Transaction{},
+				0,
 				nil,
 			)
 
@@ -110,19 +117,23 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// Nothing newer than the watermark: stay put, no drain in progress.
 			Expect(state.LastTransactionTime.IsZero()).To(BeTrue())
+			Expect(state.Ceiling.IsZero()).To(BeTrue())
+			Expect(state.Version).To(Equal(paymentsStateVersion))
 		})
 
-		It("should fetch next payments - no state pageSize > total payments", func(ctx SpecContext) {
+		It("should fetch a single page oldest-first and advance the watermark to the newest transactionDate", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:       []byte(`{}`),
 				PageSize:    60,
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, time.Time{}).Return(
+			// Single page (totalPages = 1): it is both the newest and oldest page.
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, timeEq(time.Time{}), timeEq(time.Time{})).Return(
 				sampleTransactions,
+				1,
 				nil,
 			)
 
@@ -132,72 +143,208 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.NewState).ToNot(BeNil())
 
+			// Emitted oldest-first (ascending CreatedAt) so the earliest event seeds each
+			// payment's base row in the engine.
+			expectOldestFirst(resp.Payments)
+
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
-			createdTime, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleTransactions[49].PostedDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(createdTime.UTC()))
+			Expect(state.Ceiling.IsZero()).To(BeTrue())
+			Expect(state.Version).To(Equal(paymentsStateVersion))
+
+			// Watermark is the newest TransactionDate (index 0), not the PostedDate.
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
+			postedNewest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
+			Expect(state.LastTransactionTime.UTC()).ToNot(Equal(postedNewest.UTC()))
 		})
 
-		It("should fetch next payments - no state pageSize < total payments", func(ctx SpecContext) {
+		It("should drain a multi-page window oldest-first without losing transactions", func(ctx SpecContext) {
+			// 50 transactions, PageSize 20 -> 3 pages. Modulr is newest-first, so
+			// page 0 = indices 0..19 (newest), page 1 = 20..39, page 2 = 40..49 (oldest).
+			// They must be emitted oldest-first: page 2, then page 1, then page 0.
+			const pageSize = 20
+			ceiling, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+
+			// open: peek page 0 (unbounded above) -> freeze ceiling, TotalPages = 3.
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, pageSize, timeEq(time.Time{}), timeEq(time.Time{})).Return(
+				sampleTransactions[:20], 3, nil,
+			)
+			// Descent over the frozen window (to = ceiling), oldest page first.
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 2, pageSize, timeEq(time.Time{}), timeEq(ceiling)).Return(
+				sampleTransactions[40:], 3, nil,
+			)
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, pageSize, timeEq(time.Time{}), timeEq(ceiling)).Return(
+				sampleTransactions[20:40], 3, nil,
+			)
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, pageSize, timeEq(time.Time{}), timeEq(ceiling)).Return(
+				sampleTransactions[:20], 3, nil,
+			)
+
+			// Mimic the engine loop: keep calling while HasMore, threading NewState.
+			state := []byte(`{}`)
+			allPayments := make([]models.PSPPayment, 0)
+			calls := 0
+			for {
+				resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
+					State:       state,
+					PageSize:    pageSize,
+					FromPayload: []byte(`{"reference": "test"}`),
+				})
+				Expect(err).To(BeNil())
+				allPayments = append(allPayments, resp.Payments...)
+				state = resp.NewState
+				calls++
+
+				if calls == 1 {
+					// open: ceiling frozen, descent set to start at the oldest page, nothing
+					// emitted yet, watermark not advanced.
+					Expect(resp.HasMore).To(BeTrue())
+					Expect(resp.Payments).To(HaveLen(0))
+					var mid paymentsState
+					Expect(json.Unmarshal(state, &mid)).To(BeNil())
+					Expect(mid.NextPage).To(Equal(2))
+					Expect(mid.Ceiling.UTC()).To(Equal(ceiling.UTC()))
+					Expect(mid.LastTransactionTime.IsZero()).To(BeTrue())
+				}
+
+				if !resp.HasMore {
+					break
+				}
+				Expect(calls).To(BeNumerically("<", 6)) // guard against an infinite loop
+			}
+
+			Expect(calls).To(Equal(4)) // open + 3 page emits
+			// Nothing lost despite the backlog exceeding PageSize.
+			Expect(allPayments).To(HaveLen(50))
+			// Emitted strictly oldest-first across the whole multi-page window.
+			expectOldestFirst(allPayments)
+
+			var final paymentsState
+			Expect(json.Unmarshal(state, &final)).To(BeNil())
+			Expect(final.Ceiling.IsZero()).To(BeTrue())
+			Expect(final.NextPage).To(Equal(0))
+			Expect(final.LastTransactionTime.UTC()).To(Equal(ceiling.UTC()))
+		})
+
+		It("should fetch only transactions newer than the existing watermark", func(ctx SpecContext) {
+			// Watermark sits at index 10's TransactionDate; the API (newest-first) returns
+			// everything >= the watermark, i.e. indices 0..10, on a single page.
+			watermark, _ := time.Parse(transactionDateLayout, sampleTransactions[10].TransactionDate)
 			req := models.FetchNextPaymentsRequest{
-				State:       []byte(`{}`),
+				State: []byte(fmt.Sprintf(
+					`{"lastTransactionTime":"%s","version":%d}`,
+					watermark.UTC().Format(time.RFC3339Nano), paymentsStateVersion,
+				)),
 				PageSize:    40,
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 40, time.Time{}).Return(
-				sampleTransactions[:40],
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 40, timeEq(watermark), timeEq(time.Time{})).Return(
+				sampleTransactions[:11],
+				1,
 				nil,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(40))
-			Expect(resp.HasMore).To(BeTrue())
-			Expect(resp.NewState).ToNot(BeNil())
-
-			var state paymentsState
-			err = json.Unmarshal(resp.NewState, &state)
-			Expect(err).To(BeNil())
-			createdTime, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleTransactions[39].PostedDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(createdTime.UTC()))
-		})
-
-		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
-			lastCreatedAt, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleTransactions[38].PostedDate)
-			req := models.FetchNextPaymentsRequest{
-				State:       []byte(fmt.Sprintf(`{"lastTransactionTime": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
-				PageSize:    40,
-				FromPayload: []byte(`{"reference": "test"}`),
-			}
-
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 40, lastCreatedAt.UTC()).Return(
-				sampleTransactions[:40],
-				nil,
-			)
-
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 40, lastCreatedAt.UTC()).Return(
-				sampleTransactions[41:],
-				nil,
-			)
-
-			resp, err := plg.FetchNextPayments(ctx, req)
-			Expect(err).To(BeNil())
+			// Index 10 (== watermark) is skipped; indices 0..9 are kept.
 			Expect(resp.Payments).To(HaveLen(10))
 			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.NewState).ToNot(BeNil())
+			expectOldestFirst(resp.Payments)
 
 			var state paymentsState
-			err = json.Unmarshal(resp.NewState, &state)
+			Expect(json.Unmarshal(resp.NewState, &state)).To(BeNil())
+			Expect(state.Ceiling.IsZero()).To(BeTrue())
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
+		})
+
+		It("should restart at page 0 when state has a stale page but no ceiling", func(ctx SpecContext) {
+			// Defensive: a corrupt/legacy state with a non-zero NextPage but a zero Ceiling
+			// must be treated as a fresh window (peek page 0), never paged mid-window with
+			// a zero ceiling.
+			req := models.FetchNextPaymentsRequest{
+				State:       []byte(fmt.Sprintf(`{"nextPage":7,"version":%d}`, paymentsStateVersion)),
+				PageSize:    60,
+				FromPayload: []byte(`{"reference": "test"}`),
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, timeEq(time.Time{}), timeEq(time.Time{})).Return(
+				sampleTransactions,
+				1,
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
-			createdTime, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleTransactions[49].PostedDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(createdTime.UTC()))
+			Expect(resp.Payments).To(HaveLen(50))
+			Expect(resp.HasMore).To(BeFalse())
+
+			var state paymentsState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(BeNil())
+			Expect(state.NextPage).To(Equal(0))
+			Expect(state.Ceiling.IsZero()).To(BeTrue())
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
+		})
+
+		It("should reset stale pre-version state (migration) and refetch from zero", func(ctx SpecContext) {
+			// Pre-fix state: a PostedDate-derived watermark and no version field (version 0).
+			stale, _ := time.Parse(transactionDateLayout, sampleTransactions[5].PostedDate)
+			req := models.FetchNextPaymentsRequest{
+				State: []byte(fmt.Sprintf(
+					`{"lastTransactionTime":"%s"}`, stale.UTC().Format(time.RFC3339Nano),
+				)),
+				PageSize:    60,
+				FromPayload: []byte(`{"reference": "test"}`),
+			}
+
+			// Migration must discard the stale watermark and refetch from zero.
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, timeEq(time.Time{}), timeEq(time.Time{})).Return(
+				sampleTransactions,
+				1,
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(50))
+
+			var state paymentsState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(BeNil())
+			Expect(state.Version).To(Equal(paymentsStateVersion))
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
 		})
 	})
 })
+
+// expectOldestFirst asserts payments are emitted in non-decreasing CreatedAt order, so the
+// engine seeds each payment's base row from the earliest event.
+func expectOldestFirst(payments []models.PSPPayment) {
+	for i := 1; i < len(payments); i++ {
+		Expect(payments[i-1].CreatedAt.After(payments[i].CreatedAt)).To(BeFalse())
+	}
+}
+
+// timeEq matches a time.Time argument by instant (time.Equal), ignoring location and
+// monotonic-clock differences that survive JSON round-trips through connector state.
+type timeEqMatcher struct{ t time.Time }
+
+func (m timeEqMatcher) Matches(x any) bool {
+	t, ok := x.(time.Time)
+	return ok && t.Equal(m.t)
+}
+
+func (m timeEqMatcher) String() string {
+	return fmt.Sprintf("is the time %s", m.t)
+}
+
+func timeEq(t time.Time) gomock.Matcher {
+	return timeEqMatcher{t: t}
+}
 
 var _ = Describe("Modulr Plugin Transaction to Payments", func() {
 	var (
