@@ -66,17 +66,14 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 // for its fromTransactionDate / toTransactionDate filters.
 const transactionFilterLayout = "2006-01-02T15:04:05-0700"
 
-// formatToTransactionDate formats a drain-window ceiling for the second-precision
-// toTransactionDate filter, rounding UP to the next second. The ceiling is a transaction
-// timestamp that may carry milliseconds; truncating it down (the filter is second-precision)
-// would make the inclusive upper bound earlier than the ceiling and exclude the newest
-// transaction(s) in that fractional second, which the drain would then skip permanently once
-// the watermark advances. fetchNextPayments re-applies the exact ceiling client-side, so the
-// widened bound never emits anything past it.
+// formatToTransactionDate formats a drain-window ceiling for the toTransactionDate filter.
+// The filter is whole-second and INCLUSIVE: toTransactionDate=2017-01-28T01:01:01+0000
+// returns transactions through 2017-01-28T01:01:01.999 (verified against the Modulr
+// sandbox). So we truncate the ceiling (which carries milliseconds) down to its second —
+// the whole ceiling second, including the ceiling transaction itself, is still returned.
+// We deliberately do NOT round up: that would widen the window into the next second and
+// admit transactions newer than the ceiling, shifting the newest-first page boundaries
+// mid-drain. fetchNextPayments re-applies the exact ceiling client-side.
 func formatToTransactionDate(toTransactionDate time.Time) string {
-	rounded := toTransactionDate.Truncate(time.Second)
-	if rounded.Before(toTransactionDate) {
-		rounded = rounded.Add(time.Second)
-	}
-	return rounded.Format(transactionFilterLayout)
+	return toTransactionDate.Truncate(time.Second).Format(transactionFilterLayout)
 }

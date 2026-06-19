@@ -12,6 +12,8 @@ func TestFormatToTransactionDate(t *testing.T) {
 
 	utc := time.FixedZone("", 0)
 
+	// Modulr's toTransactionDate filter is whole-second and inclusive, so truncating a
+	// millisecond ceiling down to its second still returns the ceiling transaction.
 	tests := []struct {
 		name string
 		in   time.Time
@@ -23,14 +25,14 @@ func TestFormatToTransactionDate(t *testing.T) {
 			want: "2026-06-18T13:54:29+0000",
 		},
 		{
-			name: "milliseconds round up to the next second",
+			name: "milliseconds are truncated down to the second",
 			in:   time.Date(2026, 6, 18, 13, 54, 29, 18_000_000, utc),
-			want: "2026-06-18T13:54:30+0000",
+			want: "2026-06-18T13:54:29+0000",
 		},
 		{
-			name: "sub-millisecond also rounds up",
+			name: "sub-millisecond is also truncated down",
 			in:   time.Date(2026, 6, 18, 13, 54, 29, 1, utc),
-			want: "2026-06-18T13:54:30+0000",
+			want: "2026-06-18T13:54:29+0000",
 		},
 	}
 
