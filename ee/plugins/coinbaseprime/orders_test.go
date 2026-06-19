@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
@@ -17,44 +16,26 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// walletsToPSPAccounts produces a fixture slice matching the shape
-// scopedAccountLookup returns in production: each PSPAccount carries the
-// wallet ID as Reference, a `SYMBOL/precision` DefaultAsset string so
-// resolveWallets can recover the symbol, and a `wallet_type` metadata
-// entry set to TRADING (the only type resolveWallets indexes).
-func walletsToPSPAccounts(wallets map[string]string, currencies map[string]int) []models.PSPAccount {
-	accounts := make([]models.PSPAccount, 0, len(wallets))
+func walletsToClientWallets(wallets map[string]string) []client.Wallet {
+	ret := make([]client.Wallet, 0, len(wallets))
 	for symbol, walletID := range wallets {
-		precision := currencies[symbol]
-		asset := symbol + "/" + pspAccountPrecisionSuffix(precision)
-		accounts = append(accounts, models.PSPAccount{
-			Reference:    walletID,
-			DefaultAsset: pointer.For(asset),
-			Metadata:     map[string]string{"wallet_type": "TRADING"},
-			Raw:          []byte(`{}`),
+		ret = append(ret, client.Wallet{
+			ID:     walletID,
+			Symbol: symbol,
+			Type:   walletTypeTrading,
 		})
 	}
-	return accounts
-}
-
-func pspAccountPrecisionSuffix(p int) string {
-	if p == 0 {
-		return "0"
-	}
-	s := ""
-	for p > 0 {
-		s = string(rune('0'+p%10)) + s
-		p /= 10
-	}
-	return s
+	return ret
 }
 
 var _ = Describe("Coinbase Plugin Orders", func() {
 	var (
-		ctrl   *gomock.Controller
-		m      *client.MockClient
-		lookup *models.MockAccountLookup
-		plg    *Plugin
+		ctrl            *gomock.Controller
+		m               *client.MockClient
+		plg             *Plugin
+		tradingWallets  map[string]string
+		walletsErr      error
+		walletResponses map[string]*client.WalletsResponse
 	)
 
 	defaultWallets := map[string]string{
@@ -77,14 +58,22 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		lookup = models.NewMockAccountLookup(ctrl)
-		// Default expectation: fetchNextOrders always calls the lookup at
-		// the top of its loop. Tests that need a different wallet set
-		// replace this expectation via a local EXPECT().
-		lookup.EXPECT().
-			ListAccountsByConnector(gomock.Any()).
-			DoAndReturn(func(ctx context.Context) ([]models.PSPAccount, error) {
-				return walletsToPSPAccounts(defaultWallets, defaultCurrencies), nil
+		tradingWallets = defaultWallets
+		walletsErr = nil
+		walletResponses = map[string]*client.WalletsResponse{}
+		m.EXPECT().
+			GetWallets(gomock.Any(), walletTypeTrading, gomock.Any(), PAGE_SIZE).
+			DoAndReturn(func(_ context.Context, _ string, cursor string, _ int) (*client.WalletsResponse, error) {
+				if walletsErr != nil {
+					return nil, walletsErr
+				}
+				if resp, ok := walletResponses[cursor]; ok {
+					return resp, nil
+				}
+				return &client.WalletsResponse{
+					Wallets:    walletsToClientWallets(tradingWallets),
+					Pagination: client.Pagination{HasNext: false},
+				}, nil
 			}).
 			AnyTimes()
 
@@ -94,7 +83,6 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			logger:         logging.NewDefaultLogger(GinkgoWriter, true, false, false),
 			currencies:     defaultCurrencies,
 			networkSymbols: map[string]string{},
-			accountLookup:  lookup,
 			assetsLastSync: time.Now(),
 		}
 	})
@@ -811,14 +799,8 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(order.BaseQuantityFilled.Cmp(big.NewInt(0))).To(Equal(0))
 		})
 
-		It("fails the batch on an unresolved wallet so Temporal retries until the next accounts cycle populates it", func(ctx SpecContext) {
-			// Simulate a freshly-bootstrapped connector missing a newly
-			// created BTC wallet — AccountLookup only has USD.
-			lookup = models.NewMockAccountLookup(ctrl)
-			lookup.EXPECT().
-				ListAccountsByConnector(gomock.Any()).
-				Return(walletsToPSPAccounts(map[string]string{"USD": "wallet-usd"}, defaultCurrencies), nil)
-			plg.accountLookup = lookup
+		It("fails the batch on an unresolved wallet so Temporal retries", func(ctx SpecContext) {
+			tradingWallets = map[string]string{"USD": "wallet-usd"}
 
 			req := models.FetchNextOrdersRequest{
 				State:    []byte(`{}`),
@@ -852,8 +834,8 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
 		})
 
-		It("returns a hard error when accountLookup is not wired", func(ctx SpecContext) {
-			plg.accountLookup = nil
+		It("wraps and returns the wallet listing error", func(ctx SpecContext) {
+			walletsErr = errors.New("coinbase down")
 
 			req := models.FetchNextOrdersRequest{
 				State:    []byte(`{}`),
@@ -862,32 +844,12 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 
 			resp, err := plg.FetchNextOrders(ctx, req)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("account lookup not wired"))
+			Expect(err.Error()).To(ContainSubstring("listing trading wallets"))
+			Expect(err.Error()).To(ContainSubstring("coinbase down"))
 			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
 		})
 
-		It("wraps and returns the lookup error when ListAccountsByConnector fails", func(ctx SpecContext) {
-			lookup = models.NewMockAccountLookup(ctrl)
-			lookup.EXPECT().
-				ListAccountsByConnector(gomock.Any()).
-				Return(nil, errors.New("db down"))
-			plg.accountLookup = lookup
-
-			req := models.FetchNextOrdersRequest{
-				State:    []byte(`{}`),
-				PageSize: 10,
-			}
-
-			resp, err := plg.FetchNextOrders(ctx, req)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("listing accounts"))
-			Expect(err.Error()).To(ContainSubstring("db down"))
-			Expect(resp).To(Equal(models.FetchNextOrdersResponse{}))
-		})
-
-		It("resolves source/destination account references from the cached wallets map without calling GetWallets", func(ctx SpecContext) {
-			// The absence of any m.EXPECT().GetWallets(...) in this test is
-			// the core assertion: orders must not trigger a wallet refresh.
+		It("resolves source/destination account references from Coinbase trading wallets", func(ctx SpecContext) {
 			req := models.FetchNextOrdersRequest{
 				State:    []byte(`{}`),
 				PageSize: 10,
@@ -943,38 +905,21 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(*sell.DestinationAccountReference).To(Equal("wallet-usd"))
 		})
 
-		It("ignores non-TRADING wallets with the same symbol so a VAULT row cannot stomp the TRADING row", func(ctx SpecContext) {
-			// Coinbase Prime now paginates TRADING / VAULT / ONCHAIN / QC /
-			// WALLET_TYPE_OTHER separately — a single user can therefore own
-			// USD-TRADING and USD-VAULT, both with DefaultAsset "USD/2".
-			// Orders always debit/credit the TRADING wallet, so the resolver
-			// must filter on wallet_type before building the map. Here the
-			// VAULT wallet sorts ahead of the TRADING one in the lookup
-			// response to defeat a naive "last write wins" loop.
-			lookup = models.NewMockAccountLookup(ctrl)
-			lookup.EXPECT().
-				ListAccountsByConnector(gomock.Any()).
-				Return([]models.PSPAccount{
-					{
-						Reference:    "wallet-usd-vault",
-						DefaultAsset: pointer.For("USD/2"),
-						Metadata:     map[string]string{"wallet_type": "VAULT"},
-						Raw:          []byte(`{}`),
+		It("paginates trading wallets before resolving account references", func(ctx SpecContext) {
+			walletResponses = map[string]*client.WalletsResponse{
+				"": {
+					Wallets: []client.Wallet{
+						{ID: "wallet-usd-trading", Symbol: "USD", Type: walletTypeTrading},
 					},
-					{
-						Reference:    "wallet-usd-trading",
-						DefaultAsset: pointer.For("USD/2"),
-						Metadata:     map[string]string{"wallet_type": "TRADING"},
-						Raw:          []byte(`{}`),
+					Pagination: client.Pagination{HasNext: true, NextCursor: "next-page"},
+				},
+				"next-page": {
+					Wallets: []client.Wallet{
+						{ID: "wallet-btc-trading", Symbol: "BTC", Type: walletTypeTrading},
 					},
-					{
-						Reference:    "wallet-btc-trading",
-						DefaultAsset: pointer.For("BTC/8"),
-						Metadata:     map[string]string{"wallet_type": "TRADING"},
-						Raw:          []byte(`{}`),
-					},
-				}, nil)
-			plg.accountLookup = lookup
+					Pagination: client.Pagination{HasNext: false},
+				},
+			}
 
 			req := models.FetchNextOrdersRequest{
 				State:    []byte(`{}`),
@@ -1005,7 +950,7 @@ var _ = Describe("Coinbase Plugin Orders", func() {
 			Expect(resp.Orders).To(HaveLen(1))
 
 			order := resp.Orders[0]
-			// BUY BTC-USD: source = USD wallet — must be the TRADING one, never the VAULT one.
+			// BUY BTC-USD: source = USD wallet, destination = BTC wallet.
 			Expect(order.SourceAccountReference).ToNot(BeNil())
 			Expect(*order.SourceAccountReference).To(Equal("wallet-usd-trading"))
 			Expect(order.DestinationAccountReference).ToNot(BeNil())

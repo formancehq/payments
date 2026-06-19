@@ -424,26 +424,6 @@ var _ = Describe("Wrapper optional upgrades", func() {
 		logger = logging.Testing()
 	})
 
-	Context("UseAccountLookup", func() {
-		It("no-ops when plugin does not implement PluginWithAccountLookup", func() {
-			plg := models.NewMockPlugin(ctrl)
-			wrapper := New(connectorID, logger, plg)
-			// Should not panic and should not call anything on the plugin.
-			wrapper.UseAccountLookup(models.NewMockAccountLookup(ctrl))
-		})
-
-		It("forwards when plugin implements PluginWithAccountLookup", func() {
-			plg := &pluginWithLookup{
-				MockPlugin: models.NewMockPlugin(ctrl),
-				inner:      models.NewMockPluginWithAccountLookup(ctrl),
-			}
-			lookup := models.NewMockAccountLookup(ctrl)
-			plg.inner.EXPECT().UseAccountLookup(lookup)
-			wrapper := New(connectorID, logger, plg)
-			wrapper.UseAccountLookup(lookup)
-		})
-	})
-
 	Context("BootstrapOnInstall", func() {
 		It("returns nil when plugin does not implement PluginWithBootstrapOnInstall", func() {
 			plg := models.NewMockPlugin(ctrl)
@@ -463,17 +443,6 @@ var _ = Describe("Wrapper optional upgrades", func() {
 		})
 	})
 })
-
-// pluginWithLookup composes MockPlugin with the optional AccountLookup upgrade
-// so the type assertion inside wrapper.UseAccountLookup succeeds.
-type pluginWithLookup struct {
-	*models.MockPlugin
-	inner *models.MockPluginWithAccountLookup
-}
-
-func (p *pluginWithLookup) UseAccountLookup(lookup models.AccountLookup) {
-	p.inner.UseAccountLookup(lookup)
-}
 
 // pluginWithBootstrap composes MockPlugin with the optional BootstrapOnInstall
 // upgrade so the type assertion inside wrapper.BootstrapOnInstall succeeds.

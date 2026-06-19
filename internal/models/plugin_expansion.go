@@ -2,14 +2,6 @@ package models
 
 //go:generate mockgen -source plugin_expansion.go -destination plugin_expansion_generated.go -package models
 
-// PluginWithAccountLookup is an optional upgrade on Plugin. A plugin that
-// implements it signals to the engine that it wants an AccountLookup wired
-// in. The engine calls UseAccountLookup once per plugin instance, before any
-// activity or workflow dispatches to the plugin.
-type PluginWithAccountLookup interface {
-	UseAccountLookup(AccountLookup)
-}
-
 // PluginWithBootstrapOnInstall is an optional upgrade on Plugin. A plugin
 // that implements it declares one or more fetch tasks that must run to
 // completion (HasMore: false) as part of the install flow, before any of

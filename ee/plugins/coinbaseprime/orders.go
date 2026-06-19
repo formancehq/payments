@@ -13,11 +13,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-// resolveWallets builds a fresh symbol→walletID map from the engine's
-// AccountLookup each time FetchNextOrders runs. The lookup reads from the
-// persisted accounts table scoped to the connector, so the map is always
-// up-to-date and consistent across pods — unlike the previous in-process
-// cache which only reflected pages processed on the current pod.
+// resolveWallets builds a fresh symbol→walletID map from Coinbase Prime each
+// time FetchNextOrders runs. The plugin should not read Formance storage:
+// Coinbase remains the source of truth for the PSP wallet IDs needed to link
+// orders to account references.
 //
 // Only TRADING wallets are indexed: Coinbase Prime paginates TRADING /
 // VAULT / ONCHAIN / QC / WALLET_TYPE_OTHER separately (see GET /wallets
@@ -29,38 +28,32 @@ import (
 // so non-TRADING rows must be excluded — otherwise a VAULT or ONCHAIN row
 // could stomp the TRADING row in the map and resolution would return the
 // wrong account.
-//
-// Returns a hard error if the engine never injected a lookup (configuration
-// bug) or if the DB read fails.
 func (p *Plugin) resolveWallets(ctx context.Context) (map[string]string, error) {
-	if p.accountLookup == nil {
-		return nil, fmt.Errorf("account lookup not wired: engine misconfiguration")
+	wallets := make(map[string]string)
+	cursor := ""
+	for {
+		response, err := p.client.GetWallets(ctx, walletTypeTrading, cursor, PAGE_SIZE)
+		if err != nil {
+			return nil, fmt.Errorf("listing trading wallets: %w", err)
+		}
+
+		for _, wallet := range response.Wallets {
+			symbol := strings.ToUpper(strings.TrimSpace(wallet.Symbol))
+			if symbol == "" {
+				continue
+			}
+			wallets[symbol] = wallet.ID
+		}
+
+		if !response.Pagination.HasNext {
+			break
+		}
+		if response.Pagination.NextCursor == "" {
+			return nil, fmt.Errorf("listing trading wallets: next cursor missing")
+		}
+		cursor = response.Pagination.NextCursor
 	}
 
-	accounts, err := p.accountLookup.ListAccountsByConnector(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("listing accounts: %w", err)
-	}
-
-	wallets := make(map[string]string, len(accounts))
-	for _, a := range accounts {
-		if a.DefaultAsset == nil {
-			continue
-		}
-		if a.Metadata["wallet_type"] != walletTypeTrading {
-			continue
-		}
-		// DefaultAsset is in the form "SYMBOL/precision" (e.g. "BTC/8").
-		symbol, _, ok := strings.Cut(*a.DefaultAsset, "/")
-		if !ok {
-			continue
-		}
-		symbol = strings.ToUpper(strings.TrimSpace(symbol))
-		if symbol == "" {
-			continue
-		}
-		wallets[symbol] = a.Reference
-	}
 	return wallets, nil
 }
 

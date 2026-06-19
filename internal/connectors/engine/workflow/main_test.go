@@ -91,7 +91,7 @@ func (s *UnitTestSuite) mockPollingPeriod(pollingPeriod time.Duration) {
 func TestUnitTestSuite(t *testing.T) {
 	logger := logging.Testing()
 	w := Workflow{
-		connectors:     connectors.NewManager(logger, true, time.Minute, time.Minute, nil),
+		connectors:     connectors.NewManager(logger, true, time.Minute, time.Minute),
 		stackPublicURL: "http://localhost:8080",
 		stack:          "test",
 		logger:         logger,

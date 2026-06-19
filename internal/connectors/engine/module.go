@@ -20,7 +20,7 @@ func Module(
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Provide(func(logger logging.Logger, s storage.Storage) connectors.Manager {
-			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum, NewAccountLookupFactory(s))
+			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum)
 		}),
 		fx.Provide(func(
 			logger logging.Logger,

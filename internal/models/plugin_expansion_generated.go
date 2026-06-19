@@ -15,42 +15,6 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockPluginWithAccountLookup is a mock of PluginWithAccountLookup interface.
-type MockPluginWithAccountLookup struct {
-	ctrl     *gomock.Controller
-	recorder *MockPluginWithAccountLookupMockRecorder
-	isgomock struct{}
-}
-
-// MockPluginWithAccountLookupMockRecorder is the mock recorder for MockPluginWithAccountLookup.
-type MockPluginWithAccountLookupMockRecorder struct {
-	mock *MockPluginWithAccountLookup
-}
-
-// NewMockPluginWithAccountLookup creates a new mock instance.
-func NewMockPluginWithAccountLookup(ctrl *gomock.Controller) *MockPluginWithAccountLookup {
-	mock := &MockPluginWithAccountLookup{ctrl: ctrl}
-	mock.recorder = &MockPluginWithAccountLookupMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPluginWithAccountLookup) EXPECT() *MockPluginWithAccountLookupMockRecorder {
-	return m.recorder
-}
-
-// UseAccountLookup mocks base method.
-func (m *MockPluginWithAccountLookup) UseAccountLookup(arg0 AccountLookup) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UseAccountLookup", arg0)
-}
-
-// UseAccountLookup indicates an expected call of UseAccountLookup.
-func (mr *MockPluginWithAccountLookupMockRecorder) UseAccountLookup(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UseAccountLookup", reflect.TypeOf((*MockPluginWithAccountLookup)(nil).UseAccountLookup), arg0)
-}
-
 // MockPluginWithBootstrapOnInstall is a mock of PluginWithBootstrapOnInstall interface.
 type MockPluginWithBootstrapOnInstall struct {
 	ctrl     *gomock.Controller

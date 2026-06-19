@@ -62,7 +62,7 @@ func NewModule(
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func(logger logging.Logger, s storage.Storage) connectors.Manager {
-			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum, engine.NewAccountLookupFactory(s))
+			return connectors.NewManager(logger, debug, pollingPeriodDefault, pollingPeriodMinimum)
 		}),
 		fx.Provide(func(temporalClient client.Client, manager connectors.Manager, logger logging.Logger) workflow.Workflow {
 			return workflow.New(temporalClient, temporalNamespace, manager, stack, stackURL, logger, healthCheckInterval)
