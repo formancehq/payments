@@ -40,13 +40,13 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(pageSize))
 	if !fromTransactionDate.IsZero() {
-		q.Add("fromTransactionDate", fromTransactionDate.Format("2006-01-02T15:04:05-0700"))
+		q.Add("fromTransactionDate", fromTransactionDate.Format(transactionFilterLayout))
 	}
 	// The transactions endpoint returns results newest-first and exposes no sort
 	// parameter, so we freeze the upper bound of a drain window with toTransactionDate
 	// to keep page indices stable while paginating (see fetchNextPayments).
 	if !toTransactionDate.IsZero() {
-		q.Add("toTransactionDate", toTransactionDate.Format("2006-01-02T15:04:05-0700"))
+		q.Add("toTransactionDate", formatToTransactionDate(toTransactionDate))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -60,4 +60,23 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 		)
 	}
 	return res.Content, res.TotalPages, nil
+}
+
+// transactionFilterLayout is the second-precision layout the transactions endpoint accepts
+// for its fromTransactionDate / toTransactionDate filters.
+const transactionFilterLayout = "2006-01-02T15:04:05-0700"
+
+// formatToTransactionDate formats a drain-window ceiling for the second-precision
+// toTransactionDate filter, rounding UP to the next second. The ceiling is a transaction
+// timestamp that may carry milliseconds; truncating it down (the filter is second-precision)
+// would make the inclusive upper bound earlier than the ceiling and exclude the newest
+// transaction(s) in that fractional second, which the drain would then skip permanently once
+// the watermark advances. fetchNextPayments re-applies the exact ceiling client-side, so the
+// widened bound never emits anything past it.
+func formatToTransactionDate(toTransactionDate time.Time) string {
+	rounded := toTransactionDate.Truncate(time.Second)
+	if rounded.Before(toTransactionDate) {
+		rounded = rounded.Add(time.Second)
+	}
+	return rounded.Format(transactionFilterLayout)
 }
