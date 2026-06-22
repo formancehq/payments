@@ -21,7 +21,7 @@ type Client interface {
 	GetPayments(ctx context.Context, paymentType PaymentType, page, pageSize int, modifiedSince time.Time) ([]Payment, error)
 	InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error)
 	GetPayout(ctx context.Context, payoutID string) (PayoutResponse, error)
-	GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate time.Time) ([]Transaction, error)
+	GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate, toTransactionDate time.Time) ([]Transaction, int, error)
 	InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error)
 	GetTransfer(ctx context.Context, transferID string) (TransferResponse, error)
 }
