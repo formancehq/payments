@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 type externalAccountsState struct {

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/go-libs/v5/pkg/messaging/publish"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/google/go-cmp/cmp"
 	"github.com/invopop/jsonschema"

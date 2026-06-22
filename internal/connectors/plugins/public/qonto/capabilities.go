@@ -1,6 +1,6 @@
 package qonto
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 /*
 *

@@ -3,10 +3,10 @@ package registry
 import (
 	"errors"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 func translateError(err error) error {

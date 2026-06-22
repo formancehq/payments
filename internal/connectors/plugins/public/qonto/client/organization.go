@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type OrganizationBankAccount struct {

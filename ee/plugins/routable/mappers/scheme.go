@@ -3,7 +3,7 @@ package mappers
 import (
 	"strings"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // DeliveryMethodToScheme covers every Routable v1 delivery_method

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // SplitCurrencyPair parses Bitstamp's "<base><quote>" (lowercase) or

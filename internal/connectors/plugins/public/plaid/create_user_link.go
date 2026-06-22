@@ -6,7 +6,7 @@ import (
 
 	iso6391 "github.com/emvi/iso-639-1"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"golang.org/x/text/language"
 )
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.temporal.io/sdk/workflow"
 )
 

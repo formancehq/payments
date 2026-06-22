@@ -10,8 +10,8 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 const ProviderName = "mangopay"

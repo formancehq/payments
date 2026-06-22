@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 	"github.com/get-momo/atlar-v1-go-client/client/credit_transfers"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )

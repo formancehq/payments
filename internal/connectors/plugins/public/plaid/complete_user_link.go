@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {

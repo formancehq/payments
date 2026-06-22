@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/metadata"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/get-momo/atlar-v1-go-client/client/external_accounts"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {

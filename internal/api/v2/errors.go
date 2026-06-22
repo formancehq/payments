@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/api/services"
 	"github.com/formancehq/payments/internal/storage"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 const (

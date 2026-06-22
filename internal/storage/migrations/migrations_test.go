@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/connect"
 	"github.com/formancehq/go-libs/v5/pkg/storage/migrations"
 	testmigrations "github.com/formancehq/go-libs/v5/pkg/testing/migrations"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/extra/bundebug"

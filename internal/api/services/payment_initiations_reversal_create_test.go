@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/payments/internal/connectors/engine"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"

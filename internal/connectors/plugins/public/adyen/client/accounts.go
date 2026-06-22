@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 func (c *client) GetMerchantAccounts(ctx context.Context, pageNumber, pageSize int32) ([]management.Merchant, error) {

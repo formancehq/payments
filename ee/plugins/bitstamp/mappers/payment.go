@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // PaymentMapResult tells the orchestrator how to handle the row.

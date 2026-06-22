@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // paymentsState carries the cycle cursor across fetcher invocations.

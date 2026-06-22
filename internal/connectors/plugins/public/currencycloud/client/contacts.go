@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 type Contact struct {

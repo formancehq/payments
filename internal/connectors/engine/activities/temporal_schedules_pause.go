@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 )

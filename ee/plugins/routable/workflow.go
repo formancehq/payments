@@ -1,6 +1,6 @@
 package routable
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 // workflow declares the periodic sync graph for Routable. Settings accounts
 // drive balance fetches; companies and payments are independent siblings.

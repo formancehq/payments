@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 type WebhookDelivery struct {

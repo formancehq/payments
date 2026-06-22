@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	internalevents "github.com/formancehq/payments/internal/events"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"

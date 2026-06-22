@@ -1,7 +1,7 @@
 package mappers
 
 import (
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // Bitstamp user_transactions.type values. See MAPPINGS §4.3.

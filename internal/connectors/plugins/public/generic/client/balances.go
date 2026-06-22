@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/genericclient/v3"
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 func (c *client) GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error) {

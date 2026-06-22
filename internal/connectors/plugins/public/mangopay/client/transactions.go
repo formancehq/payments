@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/metrics"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 type Payment struct {

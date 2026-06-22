@@ -3,7 +3,7 @@ package mappers
 import (
 	"strings"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // PayableStatus maps Routable status strings; unknown values fall

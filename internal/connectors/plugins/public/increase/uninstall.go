@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (p *Plugin) uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {

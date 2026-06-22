@@ -13,7 +13,7 @@ import (
 	"github.com/adyen/adyen-go-api-library/v7/src/webhook"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 const (

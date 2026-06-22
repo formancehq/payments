@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func AccountToBalance(a client.Account, now time.Time) (models.PSPBalance, error) {

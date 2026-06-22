@@ -1,6 +1,6 @@
 package wise
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 const (
 	fetchProfileName = "fetch_profiles"

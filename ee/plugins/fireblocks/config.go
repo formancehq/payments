@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )

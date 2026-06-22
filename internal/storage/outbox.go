@@ -8,8 +8,8 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	internalTime "github.com/formancehq/go-libs/v5/pkg/types/time"
-	"github.com/formancehq/payments/internal/models"
-	internalErrors "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	internalErrors "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/uptrace/bun"
 )
 

@@ -1,6 +1,6 @@
 package routable
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 // Webhooks and bank-account creation are deferred to follow-up PRs;
 // MAPPINGS.md §6.4 tracks the roadmap.

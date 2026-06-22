@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func GetWebhookBaseURL(stackPublicURL string, connectorID models.ConnectorID) (string, error) {

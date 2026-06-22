@@ -1,6 +1,6 @@
 package plaid
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 func workflow() models.ConnectorTasksTree {
 	// Do not launch fetch data workflows here, since we're depending on the

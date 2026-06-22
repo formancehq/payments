@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/genericclient/v3"
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 func (c *client) ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error) {

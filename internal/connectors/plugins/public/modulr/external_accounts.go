@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
-	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/utils/pagination"
+	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/pagination"
 )
 
 type externalAccountsState struct {

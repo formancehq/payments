@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/webhook"
 )

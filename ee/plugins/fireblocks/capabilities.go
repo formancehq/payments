@@ -1,6 +1,6 @@
 package fireblocks
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 var capabilities = []models.Capability{
 	models.CAPABILITY_FETCH_ACCOUNTS,

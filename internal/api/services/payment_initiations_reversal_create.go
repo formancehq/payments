@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (s *Service) PaymentInitiationReversalsCreate(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error) {

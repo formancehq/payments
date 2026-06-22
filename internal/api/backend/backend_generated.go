@@ -17,7 +17,7 @@ import (
 
 	paginate "github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	registry "github.com/formancehq/payments/internal/connectors/plugins/registry"
-	models "github.com/formancehq/payments/internal/models"
+	models "github.com/formancehq/payments/pkg/domain/models"
 	storage "github.com/formancehq/payments/internal/storage"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"

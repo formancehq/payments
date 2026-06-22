@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type ListAccountsResponse struct {

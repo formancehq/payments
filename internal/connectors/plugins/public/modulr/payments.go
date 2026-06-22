@@ -9,7 +9,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // transactionDateLayout is the timestamp layout Modulr uses for transaction dates.

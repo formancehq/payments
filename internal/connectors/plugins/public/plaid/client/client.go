@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/models"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/plaid/plaid-go/v34/plaid"
 )

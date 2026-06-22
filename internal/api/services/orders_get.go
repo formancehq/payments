@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (s *Service) OrdersGet(ctx context.Context, id models.OrderID) (*models.Order, error) {

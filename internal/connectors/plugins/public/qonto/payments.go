@@ -7,13 +7,13 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"maps"
 	"math/big"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/utils/pagination"
+	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/pagination"
 )
 
 type paymentsState struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"

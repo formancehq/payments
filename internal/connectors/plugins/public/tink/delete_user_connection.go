@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest) error {

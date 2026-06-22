@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 func ParseAtlarTimestamp(value string) (time.Time, error) {
