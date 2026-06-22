@@ -45,15 +45,15 @@ Pro VIP uses **lowercase** headers and a JSON request body. The standard Kraken 
 |---|---|
 | `api-key` | `<apiKey>` |
 | `api-sign` | `base64( HMAC-SHA512( base64decode(apiSecret), uriPath \|\| SHA256(nonceASCII \|\| bodyBytes) ) )` |
-| `api-nonce` | `time.Now().UnixNano()` decimal string. Nanoseconds (19 digits) sit above any ms/us-precision client that may have already incremented the per-key nonce floor on Kraken's side. The client also enforces strict monotonicity in-process via `atomic.Int64` so concurrent in-flight calls never share a value. |
+| `api-nonce` | `time.Now().UnixNano()` decimal string (stateless, computed per call). Nanoseconds (19 digits) sit above any ms/us-precision client that may have already incremented the per-key nonce floor on Kraken's side. |
 | `api-otp` | optional 2FA — not configured in v1 |
 | `Content-Type` | `application/json` (always carries `{"nonce":"…"}` at minimum) |
 
-`uriPath` is everything after the host (e.g. `/0/private/Balance`). The nonce is a strictly-monotonic integer in **nanoseconds** (`time.Now().UnixNano()`). Re-using a stale (<=) nonce returns `EAPI:Invalid nonce`.
+`uriPath` is everything after the host (e.g. `/0/private/Balance`). The nonce is a strictly-increasing integer in **nanoseconds** (`time.Now().UnixNano()`). Re-using a stale (<=) nonce returns `EAPI:Invalid nonce`.
 
-Signing lives in an `http.RoundTripper` (`client/transport.go`, the moneycorp pattern): the transport injects a fresh nonce into the JSON body and sets the `api-*` headers for `/0/private/*` paths, and passes `/0/public/*` through unsigned.
+Nonce generation and signing live in the client (`client/client.go` `signRequest`), not in the HTTP transport: the signature covers the request body that carries the nonce, so it is computed where the body is built. `/0/private/*` requests are signed; `/0/public/*` are sent unsigned.
 
-**Nonce & multiple workers.** The in-process `atomic.Int64` guard is Kraken's recommended mutex-counter for threads sharing a key — it keeps the concurrent `fetch_*` activities in one worker from colliding. It cannot coordinate across separate worker pods that share the same API key, so an occasional out-of-order `EAPI:Invalid nonce` is expected there; it is classified **retriable with backoff** (not fatal) so the next attempt sends a fresh, higher nonce. The backoff matters because Kraken temporarily locks a key after too many invalid-nonce errors. For production HA the real fix (per Kraken) is a **dedicated API key per worker** or a configured **nonce window** on the key.
+**Nonce & multiple workers.** The nonce is intentionally stateless (no stored counter): two `payments-worker` pods share one API key, so no in-process counter can guarantee global ordering anyway. A `UnixNano` nonce is strictly increasing for sequential calls; the rare out-of-order `EAPI:Invalid nonce` (concurrent calls / cross-pod races) is classified **retriable with backoff** (mapped to `ErrStatusCodeTooEarly`, not fatal) so the next attempt sends a fresh, higher nonce. The backoff matters because Kraken temporarily locks a key after too many invalid-nonce errors. For production HA the real fix (per Kraken) is a **dedicated API key per worker** or a configured **nonce window** on the key.
 
 ### Public endpoints
 
@@ -278,8 +278,8 @@ zero) are skipped.
 |---|---|---|
 | `deposit` | `PAYMENT_TYPE_PAYIN` | external funding incoming |
 | `withdrawal` | `PAYMENT_TYPE_PAYOUT` | external funding outgoing |
-| `transfer` | sign-based: positive → `PAYMENT_TYPE_PAYIN`, negative → `PAYMENT_TYPE_PAYOUT` | sub-account / inter-wallet transfer |
-| `staking`, `reward`, `dividend`, `credit`, `nft_rebate` | `PAYMENT_TYPE_PAYIN` (positive amount) | rewards & rebates |
+| `transfer`, `custodytransfer` | `PAYMENT_TYPE_TRANSFER` | internal movement (spot<->futures, subaccount, spot<->staking allocation; often carries a `subtype`). The spot leg is attributed by amount sign (negative=source, positive=destination); the counterparty wallet isn't tracked |
+| `staking`, `reward`, `dividend`, `credit`, `nft_rebate` | `PAYMENT_TYPE_PAYIN` (positive amount) | rewards & rebates (staking REWARD income; the staking *allocation* move is a `transfer` above) |
 | `adjustment`, `rollover`, `settled`, `reserve`, `reserved_fee`, `ic_settlement` | `PAYMENT_TYPE_OTHER` | bookkeeping / system entries |
 | `nftcreatorfee` | `PAYMENT_TYPE_PAYOUT` | NFT creator fee outflow |
 | `trade`, `eqtrade` | **skipped** (handled by FETCH_ORDERS) | sign-of-life log only |
@@ -298,7 +298,7 @@ zero) are skipped.
 | `asset → NormalizeAsset` + precision | `Asset` | `<SYMBOL>/<precision>` |
 | `models.PAYMENT_SCHEME_OTHER` | `Scheme` | Kraken doesn't expose card / SEPA / ACH per row in this endpoint |
 | `models.PAYMENT_STATUS_SUCCEEDED` | `Status` | ledger entries are only written on settlement — there's no pending state at this layer |
-| see §9 | `Metadata` | includes `ledger_id`, `refid`, `subtype`, `aclass`, `balance_after`, `kraken_type` |
+| see §9 | `Metadata` | includes `refid`, `subtype`, `aclass`, `balance_after`, `kraken_type`, `kraken_asset` (the ledger id is the `Reference`, not duplicated in metadata) |
 | (full row) | `Raw` | for replay / debugging |
 
 `fee` from the ledger row is logged in metadata (`com.krakenpro.spec/fee`) but **not** subtracted from `amount`. For payments the fee is recorded only when material; for trade-related fees, see §8.
@@ -507,7 +507,7 @@ All metadata keys are namespaced `com.krakenpro.spec/`. Per-primitive:
 
 | Key | Source | Capabilities |
 |---|---|---|
-| `ledger_id` | row map key | payments, conversions |
+| `source_ledger_id`, `destination_ledger_id` | row map keys | conversions (payments use the ledger id as the `Reference`, not metadata) |
 | `refid` | `refid` | payments, conversions |
 | `kraken_type` | `type` | payments, conversions |
 | `subtype` | `subtype` | payments, conversions |
@@ -540,12 +540,11 @@ The orchestrator passes the raw envelope into `PSPAccount.Raw` / `PSPPayment.Raw
 
 ## 12. Install behaviour
 
-`Install(ctx, _)` performs a single signed `BalanceEx` call with a 10s context timeout. Validation steps:
+`Install(ctx, _)` does **no network I/O** — it only registers the periodic workflow, so install stays fast. Validation is deferred:
 
-1. Decode the JSON envelope; reject hard on fatal auth (`EAPI:Invalid key|signature`, `EGeneral:Permission denied`). `EAPI:Invalid nonce` is treated as retriable, not fatal (it can be a transient cross-pod race — see §2).
-2. Load `/0/public/Assets` and `/0/public/AssetPairs` into the in-Plugin TTL cache (24h). Cache misses are refreshed inline on the next read (so a slow PSP doesn't stall the install API call indefinitely — see catalogue rule L1).
-
-`New` builds the HTTP client (and its signing transport) per the PSP convention; the first network call happens in `Install`.
+1. `New` already rejects malformed config (missing fields, non-base64 secret).
+2. The asset caches (`/0/public/Assets`, `/0/public/AssetPairs`, 24h TTL) lazy-load on the first fetch via `ensureAssets`; a stale cache that misses a newly-listed asset is force-refreshed and retried by the ledger orchestrators before the watermark advances (see §6/§9).
+3. A bad-but-well-formed key surfaces on the first poll as a fatal-auth error, which the `FetchNext*` wrappers map to a non-retryable `models.ErrInvalidRequest` (`EAPI:Invalid nonce` stays retriable — see §2).
 
 ---
 

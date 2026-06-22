@@ -78,16 +78,25 @@ func TestLedgerEntryToPSPPaymentWithdrawal(t *testing.T) {
 	}
 }
 
-func TestLedgerEntryToPSPPaymentTransferSignDriven(t *testing.T) {
+func TestLedgerEntryToPSPPaymentTransferIsTransfer(t *testing.T) {
 	t.Parallel()
+	// A transfer is an internal movement: always TRANSFER, with the spot
+	// (known) leg attributed by amount sign — negative leaves the account
+	// (source), positive enters it (destination).
 	out, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", client.LedgerEntry{
 		Type: "transfer", Asset: "ZUSD", Amount: "-50.00", Time: 1.0,
 	})
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if out.Payment.Type != models.PAYMENT_TYPE_PAYOUT {
-		t.Errorf("negative transfer should be PAYOUT, got %v", out.Payment.Type)
+	if out.Payment.Type != models.PAYMENT_TYPE_TRANSFER {
+		t.Errorf("transfer should map to TRANSFER, got %v", out.Payment.Type)
+	}
+	if out.Payment.SourceAccountReference == nil {
+		t.Error("negative transfer should attribute the spot account as source")
+	}
+	if out.Payment.DestinationAccountReference != nil {
+		t.Error("negative transfer should leave destination nil")
 	}
 
 	in, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L2", client.LedgerEntry{
@@ -96,8 +105,14 @@ func TestLedgerEntryToPSPPaymentTransferSignDriven(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if in.Payment.Type != models.PAYMENT_TYPE_PAYIN {
-		t.Errorf("positive transfer should be PAYIN, got %v", in.Payment.Type)
+	if in.Payment.Type != models.PAYMENT_TYPE_TRANSFER {
+		t.Errorf("transfer should map to TRANSFER, got %v", in.Payment.Type)
+	}
+	if in.Payment.DestinationAccountReference == nil {
+		t.Error("positive transfer should attribute the spot account as destination")
+	}
+	if in.Payment.SourceAccountReference != nil {
+		t.Error("positive transfer should leave source nil")
 	}
 }
 

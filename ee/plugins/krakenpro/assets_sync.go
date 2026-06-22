@@ -83,6 +83,16 @@ func (p *Plugin) ensureAssets(ctx context.Context) (map[string]int, map[string]c
 	return p.snapshotAssets(), p.snapshotPairs(), nil
 }
 
+// forceRefreshAssets reloads the asset cache regardless of TTL. Called by
+// the ledger orchestrators when a row references an asset missing from
+// the cache (likely listed after the last refresh) so the row can be
+// re-mapped before the pagination watermark advances past it.
+func (p *Plugin) forceRefreshAssets(ctx context.Context) error {
+	p.assetsRefresh.Lock()
+	defer p.assetsRefresh.Unlock()
+	return p.refreshAssets(ctx)
+}
+
 // needsAssetRefresh is the TTL check under a read lock.
 func (p *Plugin) needsAssetRefresh() bool {
 	p.assetsMu.RLock()

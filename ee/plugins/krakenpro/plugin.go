@@ -3,13 +3,11 @@ package krakenpro
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
-	"github.com/formancehq/payments/ee/plugins/krakenpro/mappers"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
@@ -17,10 +15,8 @@ import (
 )
 
 const (
-	ProviderName             = "krakenpro"
-	MetadataPrefix           = mappers.MetadataPrefix
-	assetRefreshTTL          = 24 * time.Hour
-	installValidationTimeout = 10 * time.Second
+	ProviderName    = "krakenpro"
+	assetRefreshTTL = 24 * time.Hour
 )
 
 func init() {
@@ -85,30 +81,13 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 	return p.config
 }
 
-// Install validates credentials with a cheap signed call (under a short
-// timeout) and warms the asset caches so the first cycle skips the cold
-// start. Fatal-auth errors (bad key/secret/permissions) are wrapped as
-// models.ErrInvalidRequest to stop Temporal retrying. A transient
-// EAPI:Invalid nonce is deliberately NOT fatal (it can be a cross-pod
-// race) and is left retriable — see client.fatalAuthCodes / IsRetriableError.
-func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
-	cctx, cancel := context.WithTimeout(ctx, installValidationTimeout)
-	defer cancel()
-
-	if _, err := p.client.GetBalanceEx(cctx); err != nil {
-		if client.IsFatalAuthError(err) {
-			return models.InstallResponse{}, errors.Wrap(models.ErrInvalidRequest, "install: validate credentials: "+err.Error())
-		}
-		return models.InstallResponse{}, fmt.Errorf("install: validate credentials: %w", err)
-	}
-	if err := p.refreshAssets(cctx); err != nil {
-		// Asset cache failure is non-fatal at install — the per-read
-		// refresh will retry. Log and continue so a flaky asset
-		// endpoint can't block the entire install.
-		p.logger.WithField("error", err.Error()).
-			Errorf("install: asset cache refresh skipped, will retry on demand")
-	}
-
+// Install only registers the periodic workflow — it does no network I/O,
+// so install stays fast. Validation is deferred: New already rejects
+// malformed config, the asset caches lazy-load on first fetch (see
+// ensureAssets), and a bad-but-well-formed key surfaces on the first
+// poll as a fatal-auth error mapped to a non-retryable error
+// (mapFatalAuth), the same class Install used to catch.
+func (p *Plugin) Install(_ context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
 	return models.InstallResponse{Workflow: workflow()}, nil
 }
 
@@ -117,40 +96,58 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 }
 
 // FetchNext* methods are thin guards; inner orchestrators do the work.
+// Each maps a fatal Kraken auth failure to a non-retryable error so a
+// revoked key / permission change stops the activity instead of looping.
+
+// mapFatalAuth converts a fatal Kraken auth failure into a non-retryable
+// models.ErrInvalidRequest (the registry only short-circuits retries on
+// that), mirroring how Install treated the same error class. Everything
+// else — including retriable rate-limit/nonce — passes through unchanged.
+func mapFatalAuth(err error) error {
+	if err != nil && client.IsFatalAuthError(err) {
+		return errors.Wrap(models.ErrInvalidRequest, err.Error())
+	}
+	return err
+}
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.fetchNextAccounts(ctx, req)
+	resp, err := p.fetchNextAccounts(ctx, req)
+	return resp, mapFatalAuth(err)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.fetchNextBalances(ctx, req)
+	resp, err := p.fetchNextBalances(ctx, req)
+	return resp, mapFatalAuth(err)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.fetchNextPayments(ctx, req)
+	resp, err := p.fetchNextPayments(ctx, req)
+	return resp, mapFatalAuth(err)
 }
 
 func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
 	if p.client == nil {
 		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.fetchNextOrders(ctx, req)
+	resp, err := p.fetchNextOrders(ctx, req)
+	return resp, mapFatalAuth(err)
 }
 
 func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.fetchNextConversions(ctx, req)
+	resp, err := p.fetchNextConversions(ctx, req)
+	return resp, mapFatalAuth(err)
 }
 
 // logCycle writes the standard end-of-cycle log line every
