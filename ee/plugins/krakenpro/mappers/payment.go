@@ -12,12 +12,16 @@ import (
 //   - Payment != nil → emit it.
 //   - Skip == true   → the row belongs to another pipeline (orders /
 //     conversions) or is intentionally ignored.
+//   - UnknownAsset   → the asset is missing from the cache (likely listed
+//     after the last refresh); the orchestrator should refresh + retry
+//     before the watermark advances rather than drop the row.
 //   - UnknownType    → emit as OTHER and Infof the ledger id (the
 //     logging interface has no Warnf level).
 type PaymentMapResult struct {
-	Payment     *models.PSPPayment
-	Skip        bool
-	UnknownType bool
+	Payment      *models.PSPPayment
+	Skip         bool
+	UnknownAsset bool
+	UnknownType  bool
 }
 
 // LedgerEntryToPSPPayment maps a single ledger row into a PSPPayment.
@@ -27,7 +31,7 @@ type PaymentMapResult struct {
 // (PAYIN → destination, PAYOUT → source) so it links to a real
 // PSPAccount, with the raw variant kept in kraken_asset metadata.
 func LedgerEntryToPSPPayment(currencies map[string]int, wallets map[string]string, ledgerID string, e client.LedgerEntry) (PaymentMapResult, error) {
-	kind, paymentType, signDriven := ClassifyLedgerType(e.Type)
+	kind, paymentType := ClassifyLedgerType(e.Type)
 	if kind != LedgerKindPayment {
 		return PaymentMapResult{Skip: true}, nil
 	}
@@ -38,17 +42,14 @@ func LedgerEntryToPSPPayment(currencies map[string]int, wallets map[string]strin
 	}
 	precision, known := currencies[symbol]
 	if !known {
-		// Unknown asset: skip silently. The asset cache TTL refresh
-		// will pick it up on subsequent cycles.
-		return PaymentMapResult{Skip: true}, nil
+		// Asset not in the cache — likely listed after the last refresh.
+		// Flag it so the orchestrator refreshes + retries before advancing
+		// the watermark, instead of permanently skipping the row.
+		return PaymentMapResult{Skip: true, UnknownAsset: true}, nil
 	}
 
 	if IsZeroAmount(e.Amount) {
 		return PaymentMapResult{Skip: true}, nil
-	}
-
-	if signDriven && IsNegative(e.Amount) {
-		paymentType = models.PAYMENT_TYPE_PAYOUT
 	}
 
 	amount, err := ParseDecimalAmount(AbsAmount(e.Amount), precision)
@@ -69,18 +70,19 @@ func LedgerEntryToPSPPayment(currencies map[string]int, wallets map[string]strin
 		Asset:     FormatAsset(currencies, symbol),
 		Scheme:    models.PAYMENT_SCHEME_OTHER,
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Metadata:  LedgerMetadata(ledgerID, e),
+		Metadata:  LedgerMetadata(e),
 		Raw:       raw,
 	}
-	// PAYIN credits the destination, PAYOUT debits the source; OTHER is
-	// left unattributed (ambiguous direction). Refs are optional, so an
-	// unresolved spot account stays nil.
+	// Attribute the spot account by amount sign: a negative amount leaves
+	// the account (source), a positive one enters it (destination). This
+	// holds for PAYOUT/PAYIN and for the TRANSFER's known (spot) leg; the
+	// counterparty wallet (futures/staking/subaccount) isn't tracked, so
+	// the other side stays nil. Refs are optional.
 	if ref := spotRef(wallets, symbol); ref != nil {
-		switch paymentType {
-		case models.PAYMENT_TYPE_PAYIN:
-			payment.DestinationAccountReference = ref
-		case models.PAYMENT_TYPE_PAYOUT:
+		if IsNegative(e.Amount) {
 			payment.SourceAccountReference = ref
+		} else {
+			payment.DestinationAccountReference = ref
 		}
 	}
 

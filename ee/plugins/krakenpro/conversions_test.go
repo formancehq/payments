@@ -80,6 +80,37 @@ var _ = Describe("Kraken Pro fetch_conversions", func() {
 		Expect(resp2.Conversions).To(HaveLen(1))
 	})
 
+	It("refreshes + retries when a leg's asset is unknown, then emits and clears pending", func(ctx SpecContext) {
+		// Cache lacks DOGE; the arriving leg references XXDG.
+		plg.currencies = map[string]int{"BTC": 8}
+		plg.assetCodes = map[string]string{"BTC": "XXBT"}
+		plg.assetsLoaded = time.Now()
+
+		startState := conversionsState{Pending: map[string]pendingLeg{
+			"C1": {LedgerID: "LA", Time: 1.0, Type: "conversion", Asset: "XXBT", Amount: "-0.01"},
+		}}
+		stateBytes, _ := json.Marshal(startState)
+
+		m.EXPECT().GetLedgers(gomock.Any(), gomock.Any()).Return(client.LedgersResponse{
+			Ledger: map[string]client.LedgerEntry{
+				"LB": {Refid: "C1", Type: "conversion", Asset: "XXDG", Amount: "300.0", Time: 2.0},
+			},
+		}, nil)
+		// Forced refresh sees both assets so the pair maps on retry.
+		m.EXPECT().GetAssets(gomock.Any()).Return(map[string]client.AssetInfo{
+			"XXBT": {Altname: "XBT", Decimals: 8},
+			"XXDG": {Altname: "XDG", Decimals: 8},
+		}, nil)
+		m.EXPECT().GetAssetPairs(gomock.Any()).Return(map[string]client.AssetPair{}, nil)
+
+		resp, err := plg.FetchNextConversions(ctx, models.FetchNextConversionsRequest{State: stateBytes})
+		Expect(err).To(BeNil())
+		Expect(resp.Conversions).To(HaveLen(1), "leg recovered after refresh, not lost")
+		var st conversionsState
+		Expect(json.Unmarshal(resp.NewState, &st)).To(Succeed())
+		Expect(st.Pending).To(BeEmpty(), "pending cleared only after a successful emit")
+	})
+
 	It("propagates GetLedgers errors", func(ctx SpecContext) {
 		m.EXPECT().GetLedgers(gomock.Any(), gomock.Any()).Return(client.LedgersResponse{}, errors.New("boom"))
 		_, err := plg.FetchNextConversions(ctx, models.FetchNextConversionsRequest{})

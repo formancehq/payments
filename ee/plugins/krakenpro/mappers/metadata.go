@@ -49,15 +49,14 @@ func suffixClassLabel(suffix string) string {
 	}
 }
 
-// LedgerMetadata builds the per-PSPPayment / per-PSPConversion
-// metadata bundle, namespaced via MetadataPrefix. kraken_asset carries
-// the raw Kraken asset code (e.g. "XXBT", "XBT.M") so the original
-// spot/earn provenance stays queryable even though the PSPPayment's
-// Asset field is normalised. Empty / zero optional fields are omitted
-// so downstream filtering by presence stays meaningful.
-func LedgerMetadata(ledgerID string, e client.LedgerEntry) map[string]string {
+// LedgerMetadata builds the per-PSPPayment metadata bundle, namespaced
+// via MetadataPrefix. The ledger id is intentionally omitted — it already
+// is the PSPPayment's Reference. kraken_asset carries the raw Kraken code
+// (e.g. "XXBT", "XBT.M") so the original spot/earn provenance stays
+// queryable even though the PSPPayment's Asset is normalised. Empty
+// optional fields are omitted so presence-based filtering stays meaningful.
+func LedgerMetadata(e client.LedgerEntry) map[string]string {
 	m := map[string]string{
-		MetadataPrefix + "ledger_id":    ledgerID,
 		MetadataPrefix + "refid":        e.Refid,
 		MetadataPrefix + "kraken_type":  e.Type,
 		MetadataPrefix + "kraken_asset": e.Asset,

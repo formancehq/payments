@@ -61,10 +61,11 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 	orders := make([]models.PSPOrder, 0)
 
-	openDrained, openMapErrors, err := p.drainOpenOrders(ctx, currencies, pairs, wallets, &orders)
+	openDrained, openMapErrors, openCursor, err := p.drainOpenOrders(ctx, currencies, pairs, wallets, state.OpenCursor, &orders)
 	if err != nil {
 		return models.FetchNextOrdersResponse{}, err
 	}
+	state.OpenCursor = openCursor // non-empty only when the cap deferred pages
 
 	pageSize := effectivePageSize(req.PageSize)
 	start, end, ofs := state.Closed.plan(nowEpoch())
@@ -77,7 +78,9 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}
 	closedMapErrors := p.appendMappedOrders(currencies, pairs, wallets, closedResp.Closed, phaseClosed, &orders)
 
-	hasMore := state.Closed.advance(len(closedResp.Closed), pageSize)
+	// More work if the closed window is still draining OR the open drain
+	// was deferred at the safety cap — otherwise the deferred tail starves.
+	hasMore := state.Closed.advance(len(closedResp.Closed), pageSize) || state.OpenCursor != ""
 
 	payload, err := json.Marshal(state)
 	if err != nil {
@@ -87,7 +90,8 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	p.logCycle("fetch_orders", len(orders), len(closedResp.Closed), state.Closed, hasMore,
 		"openDrained", openDrained,
 		"openMapErrors", openMapErrors,
-		"closedMapErrors", closedMapErrors)
+		"closedMapErrors", closedMapErrors,
+		"openDeferred", state.OpenCursor != "")
 	return models.FetchNextOrdersResponse{
 		Orders:   orders,
 		NewState: payload,
@@ -95,26 +99,24 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}, nil
 }
 
-// drainOpenOrders walks Kraken's cursor pagination over the
-// currently-open snapshot, appending mapped orders into out. Hard-bails
-// after openOrdersInProcessSafetyCap pages.
+// drainOpenOrders walks Kraken's cursor pagination over the currently-open
+// snapshot starting from `cursor` (empty = from the top), appending mapped
+// orders into out. It returns the cursor to resume from: empty when the
+// snapshot is fully drained, or the next-page token when it bails at
+// openOrdersInProcessSafetyCap so the next cycle can continue the tail.
 func (p *Plugin) drainOpenOrders(
 	ctx context.Context,
 	currencies map[string]int,
 	pairs map[string]client.AssetPair,
 	wallets map[string]string,
+	cursor string,
 	out *[]models.PSPOrder,
-) (int, int, error) {
-	var (
-		cursor    string
-		drained   int
-		mapErrors int
-	)
+) (drained, mapErrors int, nextCursor string, err error) {
 	for page := 0; ; page++ {
 		if page >= openOrdersInProcessSafetyCap {
 			p.logger.WithField("cap", openOrdersInProcessSafetyCap).
-				Errorf("OpenOrders drain hit safety cap, deferring rest to next cycle")
-			return drained, mapErrors, nil
+				Errorf("OpenOrders drain hit safety cap, resuming from saved cursor next cycle")
+			return drained, mapErrors, cursor, nil
 		}
 		resp, err := p.client.GetOpenOrders(ctx, client.OpenOrdersParams{
 			Trades:     true,
@@ -123,7 +125,7 @@ func (p *Plugin) drainOpenOrders(
 			Limit:      PAGE_SIZE,
 		})
 		if err != nil {
-			return drained, mapErrors, fmt.Errorf("fetch open orders: %w", err)
+			return drained, mapErrors, "", fmt.Errorf("fetch open orders: %w", err)
 		}
 
 		before := len(*out)
@@ -131,7 +133,7 @@ func (p *Plugin) drainOpenOrders(
 		drained += len(*out) - before
 
 		if strings.TrimSpace(resp.Cursor.Next) == "" {
-			return drained, mapErrors, nil
+			return drained, mapErrors, "", nil
 		}
 		cursor = resp.Cursor.Next
 	}

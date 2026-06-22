@@ -57,53 +57,51 @@ var _ = Describe("Kraken Pro Plugin", func() {
 	})
 
 	Context("install", func() {
-		It("calls BalanceEx for credential validation and returns workflow", func(ctx SpecContext) {
+		It("registers the workflow without any network call", func(ctx SpecContext) {
 			ctrl := gomock.NewController(GinkgoT())
 			defer ctrl.Finish()
-			m := client.NewMockClient(ctrl)
-			m.EXPECT().GetBalanceEx(gomock.Any()).Return(map[string]client.BalanceExEntry{}, nil)
-			m.EXPECT().GetAssets(gomock.Any()).Return(map[string]client.AssetInfo{
-				"XXBT": {Altname: "XBT", Decimals: 8},
-			}, nil)
-			m.EXPECT().GetAssetPairs(gomock.Any()).Return(map[string]client.AssetPair{}, nil)
+			m := client.NewMockClient(ctrl) // no client calls expected: install is I/O-free
 
 			p := &Plugin{Plugin: plugins.NewBasePlugin(), client: m, logger: logger}
 			resp, err := p.Install(ctx, models.InstallRequest{})
 			Expect(err).To(BeNil())
 			Expect(resp.Workflow).To(Equal(workflow()))
 		})
+	})
 
-		It("fails fast (ErrInvalidRequest) on EAPI:Invalid key so Temporal stops retrying", func(ctx SpecContext) {
+	Context("fatal auth on polling", func() {
+		// A warm cache makes ensureAssets short-circuit so the only client
+		// call a fetch makes is the data call we're stubbing.
+		warmPlugin := func(m client.Client) *Plugin {
+			return &Plugin{
+				Plugin:       plugins.NewBasePlugin(),
+				client:       m,
+				logger:       logger,
+				currencies:   map[string]int{"BTC": 8},
+				assetCodes:   map[string]string{"BTC": "XXBT"},
+				assetsLoaded: time.Now(),
+			}
+		}
+
+		It("maps a fatal auth error during polling to a non-retryable ErrInvalidRequest", func(ctx SpecContext) {
 			ctrl := gomock.NewController(GinkgoT())
 			defer ctrl.Finish()
 			m := client.NewMockClient(ctrl)
-			m.EXPECT().GetBalanceEx(gomock.Any()).Return(nil, &client.APIError{Endpoint: "/0/private/BalanceEx", Code: "EAPI:Invalid key", All: []string{"EAPI:Invalid key"}})
+			m.EXPECT().GetBalanceEx(gomock.Any()).
+				Return(nil, &client.APIError{Code: "EAPI:Invalid key", All: []string{"EAPI:Invalid key"}})
 
-			p := &Plugin{Plugin: plugins.NewBasePlugin(), client: m, logger: logger}
-			_, err := p.Install(ctx, models.InstallRequest{})
+			_, err := warmPlugin(m).FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(MatchError(models.ErrInvalidRequest))
 		})
 
-		It("does NOT fail fast on EAPI:Invalid nonce — it's a retriable cross-pod race", func(ctx SpecContext) {
+		It("leaves a retriable error (EService:Unavailable) retryable during polling", func(ctx SpecContext) {
 			ctrl := gomock.NewController(GinkgoT())
 			defer ctrl.Finish()
 			m := client.NewMockClient(ctrl)
-			m.EXPECT().GetBalanceEx(gomock.Any()).Return(nil, &client.APIError{Endpoint: "/0/private/BalanceEx", Code: "EAPI:Invalid nonce", All: []string{"EAPI:Invalid nonce"}})
+			m.EXPECT().GetBalanceEx(gomock.Any()).
+				Return(nil, &client.APIError{Code: "EService:Unavailable", All: []string{"EService:Unavailable"}})
 
-			p := &Plugin{Plugin: plugins.NewBasePlugin(), client: m, logger: logger}
-			_, err := p.Install(ctx, models.InstallRequest{})
-			Expect(err).To(HaveOccurred())
-			Expect(err).NotTo(MatchError(models.ErrInvalidRequest), "invalid nonce must stay retriable, not fatal")
-		})
-
-		It("bubbles up retryable errors (EService:Unavailable) for Temporal to retry", func(ctx SpecContext) {
-			ctrl := gomock.NewController(GinkgoT())
-			defer ctrl.Finish()
-			m := client.NewMockClient(ctrl)
-			m.EXPECT().GetBalanceEx(gomock.Any()).Return(nil, &client.APIError{Endpoint: "/0/private/BalanceEx", Code: "EService:Unavailable", All: []string{"EService:Unavailable"}})
-
-			p := &Plugin{Plugin: plugins.NewBasePlugin(), client: m, logger: logger}
-			_, err := p.Install(ctx, models.InstallRequest{})
+			_, err := warmPlugin(m).FetchNextBalances(ctx, models.FetchNextBalancesRequest{})
 			Expect(err).To(HaveOccurred())
 			Expect(err).NotTo(MatchError(models.ErrInvalidRequest))
 		})

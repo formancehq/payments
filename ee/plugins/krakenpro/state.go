@@ -107,11 +107,13 @@ func (p pendingLeg) toLedgerEntry(refid string) client.LedgerEntry {
 // ordersState is the resumable cursor for FetchNextOrders. ClosedOrders
 // pages through the shared frozen-end + ofs window on close time.
 //
-// OpenOrders has no cross-invocation state: it's always a snapshot of
-// currently-open orders, drained in-process via Kraken's `with_cursor`
-// paging within each cycle. Re-emission per cycle is idempotent — the
-// engine dedupes by (reference, status, baseFilled, fee) so unchanged
-// orders cost zero adjustments.
+// OpenOrders is drained in-process via Kraken's `with_cursor` paging.
+// OpenCursor is normally empty (each cycle re-drains the snapshot from
+// the start, which is idempotent — the engine dedupes by reference +
+// status + baseFilled + fee). It is only set when a drain hits the
+// in-process safety cap, so the next cycle resumes from where it stopped
+// instead of restarting at page 1 and starving the tail.
 type ordersState struct {
-	Closed ledgerWindow `json:"closed"`
+	Closed     ledgerWindow `json:"closed"`
+	OpenCursor string       `json:"openCursor,omitempty"`
 }

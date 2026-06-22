@@ -94,9 +94,10 @@ func IsRateLimitError(err error) bool {
 
 // IsRetriableError reports whether err is an APIError that should be
 // retried with backoff: rate-limit/throttle, or a transient invalid
-// nonce (a cross-pod race on a shared key). Both are routed through the
-// platform rate-limit path so retries are spaced out — important because
-// Kraken temporarily locks a key after too many invalid-nonce errors.
+// nonce (a cross-pod race on a shared key). apiError routes them to
+// backoff wrappers (rate-limit -> TooManyRequests, nonce -> TooEarly)
+// so retries are spaced out — Kraken temp-locks a key after too many
+// invalid-nonce errors.
 func IsRetriableError(err error) bool {
 	if IsRateLimitError(err) {
 		return true

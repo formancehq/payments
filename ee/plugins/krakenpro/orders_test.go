@@ -178,6 +178,26 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 			}
 			Expect(emitted).To(HaveLen(n), "every closed order drained, none skipped")
 		})
+
+		It("persists the OpenOrders cursor and keeps hasMore when the safety cap is hit", func(ctx SpecContext) {
+			// OpenOrders never returns an empty cursor → the drain bails at
+			// the in-process safety cap and must save the cursor + signal more.
+			m.EXPECT().GetOpenOrders(gomock.Any(), gomock.Any()).DoAndReturn(
+				func(_ any, _ client.OpenOrdersParams) (client.OpenOrdersResponse, error) {
+					r := client.OpenOrdersResponse{Open: map[string]client.OrderEntry{}}
+					r.Cursor.Next = "more"
+					return r, nil
+				}).AnyTimes()
+			m.EXPECT().GetClosedOrders(gomock.Any(), gomock.Any()).
+				Return(client.ClosedOrdersResponse{Closed: map[string]client.OrderEntry{}}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
+			Expect(err).To(BeNil())
+			Expect(resp.HasMore).To(BeTrue(), "deferred open pages must keep hasMore true")
+			var state ordersState
+			Expect(json.Unmarshal(resp.NewState, &state)).To(Succeed())
+			Expect(state.OpenCursor).To(Equal("more"), "cursor saved to resume next cycle")
+		})
 	})
 
 	Describe("error handling", func() {

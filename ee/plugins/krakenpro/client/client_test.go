@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -181,8 +182,10 @@ func TestInvalidNonceIsRetriableNotFatal(t *testing.T) {
 	if !IsRetriableError(err) {
 		t.Fatal("EAPI:Invalid nonce must be retriable")
 	}
-	if !errors.Is(err, httpwrapper.ErrStatusCodeTooManyRequests) {
-		t.Fatalf("invalid nonce must map to the backoff path, got %v", err)
+	// Invalid nonce maps to TooEarly (stronger backoff than rate-limit)
+	// because too many invalid-nonce errors temp-lock the key.
+	if !errors.Is(err, httpwrapper.ErrStatusCodeTooEarly) {
+		t.Fatalf("invalid nonce must map to the TooEarly backoff path, got %v", err)
 	}
 }
 
@@ -391,27 +394,26 @@ func TestThrottledPrefixMapsToTooManyRequests(t *testing.T) {
 	}
 }
 
-func TestNonceIsMonotonicAcrossConcurrentCalls(t *testing.T) {
+func TestNonceStrictlyIncreasesAcrossCalls(t *testing.T) {
 	t.Parallel()
-	tr := newSigningTransport("k", []byte("abcd"), http.DefaultTransport)
-
-	// Spawn N goroutines each pulling a nonce, then verify all values
-	// are unique — the atomic guard must keep concurrent callers (the
-	// fetch_* activities sharing one client) from colliding.
-	const N = 64
-	out := make(chan string, N)
-	for i := 0; i < N; i++ {
-		go func() { out <- tr.nextNonce() }()
-	}
-	seen := map[string]struct{}{}
-	for i := 0; i < N; i++ {
-		v := <-out
-		if _, dup := seen[v]; dup {
-			t.Fatalf("duplicate nonce %q", v)
+	// The nonce is a stateless UnixNano (no stored counter). Across
+	// sequential signed calls it must be a strictly-increasing integer —
+	// Kraken requires that per key.
+	var nonces []int64
+	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		n, err := strconv.ParseInt(r.Header.Get("api-nonce"), 10, 64)
+		if err != nil {
+			t.Errorf("api-nonce not an integer: %q", r.Header.Get("api-nonce"))
 		}
-		seen[v] = struct{}{}
+		nonces = append(nonces, n)
+		_, _ = io.WriteString(w, `{"error":[],"result":{}}`)
+	})
+	for i := 0; i < 4; i++ {
+		_, _ = c.GetBalanceEx(context.Background())
 	}
-	if len(seen) != N {
-		t.Errorf("expected %d unique nonces, got %d", N, len(seen))
+	for i := 1; i < len(nonces); i++ {
+		if nonces[i] <= nonces[i-1] {
+			t.Errorf("nonce not strictly increasing: %d <= %d", nonces[i], nonces[i-1])
+		}
 	}
 }

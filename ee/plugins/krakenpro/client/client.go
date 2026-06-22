@@ -3,12 +3,17 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -69,12 +74,16 @@ const DefaultEndpoint = "https://api.kraken.com"
 type client struct {
 	httpClient httpwrapper.Client
 	endpoint   string
+	apiKey     string
+	apiSecret  []byte // base64-decoded HMAC secret
 }
 
 // New returns a Kraken Pro REST client. The secret is base64-decoded up
-// front so an invalid secret fails here, not on the first signed call.
-// Signing is handled by signingTransport, slotted innermost (closest to
-// the wire) so it signs over the exact bytes that go out.
+// front so a malformed secret fails here, not on the first signed call.
+// The transport stays a plain metrics+otel chain; nonce generation and
+// signing live in the client (see signRequest) — the signature covers
+// the request body, so it must be computed where the body is built, not
+// in a body-mutating RoundTripper.
 func New(connectorName, apiKey, apiSecret, endpoint string) (Client, error) {
 	if endpoint == "" {
 		endpoint = DefaultEndpoint
@@ -83,46 +92,63 @@ func New(connectorName, apiKey, apiSecret, endpoint string) (Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decode apiSecret: %w", err)
 	}
-	signing := newSigningTransport(apiKey, secret, http.DefaultTransport)
 	return &client{
-		endpoint: strings.TrimRight(endpoint, "/"),
+		endpoint:  strings.TrimRight(endpoint, "/"),
+		apiKey:    apiKey,
+		apiSecret: secret,
 		httpClient: httpwrapper.NewClient(&httpwrapper.Config{
+			// No custom HttpErrorCheckerFn: httpwrapper's default maps
+			// 429/4xx/5xx for us. The only Kraken-specific handling is the
+			// 200-body error array, parsed below in do().
 			Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
-				Transport: otelhttp.NewTransport(signing),
+				Transport: otelhttp.NewTransport(http.DefaultTransport),
 			}),
 		}),
 	}, nil
 }
 
-// apiError types a Kraken error envelope. Rate-limit and (cross-pod)
-// invalid-nonce codes are wrapped as httpwrapper.ErrStatusCodeTooManyRequests
-// (the registry maps that to plugins.ErrUpstreamRatelimit -> retry with
-// backoff) because Kraken signals both in the error array, often on
-// HTTP 200 — the status code alone won't catch them.
+// apiError types a Kraken error envelope and routes retriable cases to a
+// backoff path (Kraken signals these in the error array, often on HTTP
+// 200, so the status code alone won't catch them):
+//   - rate-limit/throttle -> ErrStatusCodeTooManyRequests
+//   - invalid nonce       -> ErrStatusCodeTooEarly (a stronger backoff,
+//     since too many invalid-nonce errors temp-lock the key)
+//
+// Both map, via the registry, to a retry-with-delay. Fatal-auth and any
+// other code stay a bare APIError for the caller to classify.
 func apiError(endpoint string, codes []string) error {
 	e := &APIError{Endpoint: endpoint, Code: codes[0], All: codes}
-	if IsRetriableError(e) {
+	switch {
+	case IsRateLimitError(e):
 		return errorsutils.NewWrappedError(e, httpwrapper.ErrStatusCodeTooManyRequests)
+	case e.Code == invalidNonceCode:
+		return errorsutils.NewWrappedError(e, httpwrapper.ErrStatusCodeTooEarly)
 	}
 	return e
 }
 
 // do issues a Kraken REST call and decodes the standard envelope into
 // dst. GET hits `/0/public/*` unsigned; POST hits `/0/private/*` and is
-// signed by signingTransport. errResp captures any 4xx/5xx envelope,
-// which Kraken shapes identically to a success body.
+// signed by signRequest. errResp captures any 4xx/5xx envelope, which
+// Kraken shapes identically to a success body.
 func (c *client) do(ctx context.Context, method, uriPath string, params map[string]any, dst any) error {
-	var body io.Reader
+	var body []byte
 	if method == http.MethodPost {
-		raw, err := json.Marshal(orEmptyParams(params))
+		if params == nil {
+			params = map[string]any{}
+		}
+		raw, err := json.Marshal(params)
 		if err != nil {
 			return fmt.Errorf("encode body for %s: %w", uriPath, err)
 		}
-		body = bytes.NewReader(raw)
+		body = raw
 	}
-	req, err := http.NewRequestWithContext(ctx, method, c.endpoint+uriPath, body)
+	req, err := http.NewRequestWithContext(ctx, method, c.endpoint+uriPath, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("build request %s: %w", uriPath, err)
+	}
+	if method == http.MethodPost {
+		c.signRequest(req, uriPath, params)
 	}
 
 	var envelope struct {
@@ -152,13 +178,37 @@ func (c *client) do(ctx context.Context, method, uriPath string, params map[stri
 	return nil
 }
 
-// orEmptyParams guarantees a non-nil body so even param-less private
-// calls (e.g. BalanceEx) send `{}` for the transport to inject the nonce.
-func orEmptyParams(params map[string]any) map[string]any {
-	if params == nil {
-		return map[string]any{}
-	}
-	return params
+// signRequest finalises a private request: it injects a fresh nonce into
+// params, re-encodes the body, and sets the api-key/api-nonce/api-sign
+// headers. Kept in the client (not the transport) because the signature
+// covers the body that carries the nonce. The nonce is a stateless
+// strictly-increasing UnixNano: Kraken requires it per key, and the rare
+// cross-pod ordering race surfaces as EAPI:Invalid nonce and is retried
+// (see apiError / MAPPINGS for the dedicated-key / nonce-window guidance).
+func (c *client) signRequest(req *http.Request, uriPath string, params map[string]any) {
+	nonce := strconv.FormatInt(time.Now().UnixNano(), 10)
+	params["nonce"] = nonce
+	body, _ := json.Marshal(params) // re-marshal: params was just built from a map
+	req.Body = io.NopCloser(bytes.NewReader(body))
+	req.ContentLength = int64(len(body))
+	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(body)), nil }
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", c.apiKey)
+	req.Header.Set("api-nonce", nonce)
+	req.Header.Set("api-sign", sign(c.apiSecret, uriPath, nonce, body))
+}
+
+// sign computes the Kraken API-Sign per docs:
+//
+//	base64( HMAC-SHA512( secret, uriPath || SHA256(nonce || body) ) )
+func sign(secret []byte, uriPath, nonce string, body []byte) string {
+	sha := sha256.New()
+	sha.Write([]byte(nonce))
+	sha.Write(body)
+	mac := hmac.New(sha512.New, secret)
+	mac.Write([]byte(uriPath))
+	mac.Write(sha.Sum(nil))
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
 // GetAssets fetches /0/public/Assets.

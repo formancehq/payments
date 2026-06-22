@@ -10,11 +10,14 @@ func TestLedgerMetadata(t *testing.T) {
 	t.Parallel()
 	t.Run("all-fields-present", func(t *testing.T) {
 		t.Parallel()
-		m := LedgerMetadata("L-1", client.LedgerEntry{
+		m := LedgerMetadata(client.LedgerEntry{
 			Refid: "REF", Type: "deposit", Aclass: "currency", Asset: "XXBT",
 			Subtype: "spot", Fee: "0.5", Balance: "1.234",
 		})
-		mustHave(t, m, MetadataPrefix+"ledger_id", "L-1")
+		// ledger_id is intentionally NOT stored: it equals the payment Reference.
+		if _, ok := m[MetadataPrefix+"ledger_id"]; ok {
+			t.Error("ledger_id must not be duplicated in metadata")
+		}
 		mustHave(t, m, MetadataPrefix+"refid", "REF")
 		mustHave(t, m, MetadataPrefix+"kraken_type", "deposit")
 		mustHave(t, m, MetadataPrefix+"kraken_asset", "XXBT")
@@ -25,14 +28,14 @@ func TestLedgerMetadata(t *testing.T) {
 	})
 	t.Run("empty-subtype-omitted", func(t *testing.T) {
 		t.Parallel()
-		m := LedgerMetadata("L-1", client.LedgerEntry{Type: "deposit"})
+		m := LedgerMetadata(client.LedgerEntry{Type: "deposit"})
 		if _, ok := m[MetadataPrefix+"subtype"]; ok {
 			t.Fatal("empty subtype must be omitted")
 		}
 	})
 	t.Run("zero-fee-omitted", func(t *testing.T) {
 		t.Parallel()
-		m := LedgerMetadata("L-1", client.LedgerEntry{Type: "deposit", Fee: "0.00000000"})
+		m := LedgerMetadata(client.LedgerEntry{Type: "deposit", Fee: "0.00000000"})
 		if _, ok := m[MetadataPrefix+"fee"]; ok {
 			t.Fatal("zero fee must be omitted")
 		}

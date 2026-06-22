@@ -44,32 +44,21 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("fetch ledgers: %w", err)
 	}
 
-	// Pair conversion-typed rows by refid. A leg seen here either
-	// matches a half-pair stashed in a prior cycle (emit) or is stashed
-	// itself for a future cycle.
-	conversions := make([]models.PSPConversion, 0, len(resp.Ledger))
-	for ledgerID, entry := range resp.Ledger {
-		if kind, _, _ := mappers.ClassifyLedgerType(entry.Type); kind != mappers.LedgerKindConversion {
-			continue
+	// Process the page; if a pairing references an asset missing from the
+	// cache, force ONE refresh and re-process from the same starting state
+	// before the watermark advances, so legs aren't lost.
+	conversions, pending, unknown := p.processConversionsPage(currencies, wallets, state.Pending, resp.Ledger)
+	if len(unknown) > 0 {
+		if err := p.forceRefreshAssets(ctx); err != nil {
+			return models.FetchNextConversionsResponse{}, fmt.Errorf("refresh assets for unknown conversion asset: %w", err)
 		}
-		if entry.Refid == "" {
-			p.logger.WithField("ledgerID", ledgerID).Infof("conversion row has empty refid, skipping")
-			continue
-		}
-
-		other, ok := state.Pending[entry.Refid]
-		if !ok {
-			state.Pending[entry.Refid] = pendingLeg{
-				LedgerID: ledgerID, Time: entry.Time, Type: entry.Type, Subtype: entry.Subtype,
-				Asset: entry.Asset, Amount: entry.Amount, Fee: entry.Fee, Balance: entry.Balance,
-			}
-			continue
-		}
-		delete(state.Pending, entry.Refid)
-		if conv := p.mapConversionPair(currencies, wallets, ledgerID, entry, other); conv != nil {
-			conversions = append(conversions, *conv)
+		conversions, pending, unknown = p.processConversionsPage(p.snapshotAssets(), p.snapshotAssetCodes(), state.Pending, resp.Ledger)
+		if len(unknown) > 0 {
+			p.logger.WithField("assets", unknown).
+				Errorf("conversions: assets still unknown after cache refresh, legs kept pending")
 		}
 	}
+	state.Pending = pending
 
 	hasMore := state.Window.advance(len(resp.Ledger), pageSize)
 
@@ -88,25 +77,97 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	}, nil
 }
 
-// mapConversionPair pairs a fresh ledger row with its stashed
-// half-pair into a PSPConversion. Returns nil (logged + dropped) on a
-// same-sign pair or a mapping error.
+// conversionMapStatus is the outcome of pairing two conversion legs.
+type conversionMapStatus int
+
+const (
+	convOK           conversionMapStatus = iota // paired + mapped, emit
+	convDrop                                    // same-sign / permanent error, drop the pair
+	convUnknownAsset                            // asset missing from cache, retry after refresh
+)
+
+// processConversionsPage pairs a ledger page against a COPY of pending
+// and returns the emitted conversions, the resulting pending map, and the
+// assets of pairs it couldn't map because of a missing-from-cache asset.
+// It never mutates the input pending map, so the caller can re-run it from
+// the same starting state after a cache refresh. A pending leg is removed
+// only on a successful emit (or a permanent drop), never before mapping.
+func (p *Plugin) processConversionsPage(
+	currencies map[string]int, wallets map[string]string,
+	pending map[string]pendingLeg, ledger map[string]client.LedgerEntry,
+) ([]models.PSPConversion, map[string]pendingLeg, []string) {
+	next := make(map[string]pendingLeg, len(pending))
+	for k, v := range pending {
+		next[k] = v
+	}
+	conversions := make([]models.PSPConversion, 0, len(ledger))
+	var unknown []string
+	for ledgerID, entry := range ledger {
+		if kind, _ := mappers.ClassifyLedgerType(entry.Type); kind != mappers.LedgerKindConversion {
+			continue
+		}
+		if entry.Refid == "" {
+			p.logger.WithField("ledgerID", ledgerID).Infof("conversion row has empty refid, skipping")
+			continue
+		}
+		other, ok := next[entry.Refid]
+		if !ok {
+			next[entry.Refid] = pendingLeg{
+				LedgerID: ledgerID, Time: entry.Time, Type: entry.Type, Subtype: entry.Subtype,
+				Asset: entry.Asset, Amount: entry.Amount, Fee: entry.Fee, Balance: entry.Balance,
+			}
+			continue
+		}
+		conv, status := p.mapConversionPair(currencies, wallets, ledgerID, entry, other)
+		switch status {
+		case convOK:
+			conversions = append(conversions, *conv)
+			delete(next, entry.Refid)
+		case convUnknownAsset:
+			// Keep both legs available (other stays in next) so the
+			// post-refresh re-run from the original pending re-pairs them.
+			unknown = append(unknown, entry.Asset, other.Asset)
+		case convDrop:
+			delete(next, entry.Refid)
+		}
+	}
+	return conversions, next, unknown
+}
+
+// mapConversionPair pairs a fresh ledger row with its stashed half-pair.
+// It reports convDrop for a same-sign pair or a permanent mapping error,
+// convUnknownAsset when a leg's asset is missing from the cache (the
+// caller refreshes + retries), and convOK with the conversion otherwise.
 func (p *Plugin) mapConversionPair(
 	currencies map[string]int,
 	wallets map[string]string,
 	ledgerID string, entry client.LedgerEntry, other pendingLeg,
-) *models.PSPConversion {
+) (*models.PSPConversion, conversionMapStatus) {
 	a := mappers.ConversionLeg{LedgerID: ledgerID, Entry: entry}
 	b := mappers.ConversionLeg{LedgerID: other.LedgerID, Entry: other.toLedgerEntry(entry.Refid)}
 	src, dst, paired := mappers.PairConversionLegs(a, b)
 	if !paired {
 		p.logger.WithField("refid", entry.Refid).Infof("conversion legs have same sign, skipping")
-		return nil
+		return nil, convDrop
+	}
+	if !assetKnown(currencies, src.Entry.Asset) || !assetKnown(currencies, dst.Entry.Asset) {
+		return nil, convUnknownAsset
 	}
 	conv, err := mappers.ConversionPairToPSPConversion(currencies, wallets, src, dst)
 	if err != nil {
 		p.logger.WithField("refid", entry.Refid).Errorf("map conversion: %v", err)
-		return nil
+		return nil, convDrop
 	}
-	return conv
+	return conv, convOK
+}
+
+// assetKnown reports whether a raw Kraken asset normalises to a symbol
+// present in the cache.
+func assetKnown(currencies map[string]int, asset string) bool {
+	sym := mappers.NormalizeAsset(asset)
+	if sym == "" {
+		return false
+	}
+	_, ok := currencies[sym]
+	return ok
 }

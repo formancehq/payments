@@ -57,6 +57,29 @@ var _ = Describe("Kraken Pro fetch_payments", func() {
 		Expect(refs).To(ConsistOf("L1", "L4"))
 	})
 
+	It("refreshes the asset cache and retries when a row's asset is unknown (not lost)", func(ctx SpecContext) {
+		// Cache lacks DOGE; the ledger row references XXDG (a new listing).
+		plg.currencies = map[string]int{"BTC": 8}
+		plg.assetCodes = map[string]string{"BTC": "XXBT"}
+		plg.assetsLoaded = time.Now()
+
+		m.EXPECT().GetLedgers(gomock.Any(), gomock.Any()).Return(client.LedgersResponse{
+			Ledger: map[string]client.LedgerEntry{
+				"L1": {Refid: "R1", Time: 1.0, Type: "deposit", Asset: "XXDG", Amount: "100.0"},
+			},
+		}, nil)
+		// The forced refresh now sees the newly-listed asset.
+		m.EXPECT().GetAssets(gomock.Any()).Return(map[string]client.AssetInfo{
+			"XXDG": {Altname: "XDG", Decimals: 8},
+		}, nil)
+		m.EXPECT().GetAssetPairs(gomock.Any()).Return(map[string]client.AssetPair{}, nil)
+
+		resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{})
+		Expect(err).To(BeNil())
+		Expect(resp.Payments).To(HaveLen(1), "row recovered after refresh, not skipped")
+		Expect(resp.Payments[0].Reference).To(Equal("L1"))
+	})
+
 	It("first cycle freezes a window end and pages ofs from 0", func(ctx SpecContext) {
 		m.EXPECT().GetLedgers(gomock.Any(), gomock.AssignableToTypeOf(client.LedgersParams{})).
 			DoAndReturn(func(_ any, p client.LedgersParams) (client.LedgersResponse, error) {
