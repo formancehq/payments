@@ -1,8 +1,10 @@
 package v2
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/payments/internal/api/backend"
@@ -12,10 +14,28 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+// v2WebhookProviders is the set of connectors that ever registered webhook URLs
+// in v2 (/connectors/webhooks/{provider}/{connectorID}/). Only Adyen and
+// MangoPay did, so any other provider in the path is rejected with 404 rather
+// than silently accepted (EN-1091).
+var v2WebhookProviders = map[string]struct{}{
+	"adyen":    {},
+	"mangopay": {},
+}
+
 func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsWebhooks")
 		defer span.End()
+
+		provider := strings.ToLower(connectorProvider(r))
+		span.SetAttributes(attribute.String("provider", provider))
+		if _, ok := v2WebhookProviders[provider]; !ok {
+			err := fmt.Errorf("webhooks are not supported for connector %q in v2", connectorProvider(r))
+			otel.RecordError(span, err)
+			api.NotFound(w, err)
+			return
+		}
 
 		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
 		connectorID, err := models.ConnectorIDFromString(connectorID(r))

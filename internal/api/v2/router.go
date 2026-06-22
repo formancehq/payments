@@ -16,7 +16,11 @@ func newRouter(backend backend.Backend, a jwt.Authenticator, debug bool) *chi.Mu
 	r.Group(func(r chi.Router) {
 		// Public routes
 		r.Group(func(r chi.Router) {
-			r.Handle("/connectors/webhooks/{connectorID}/*", connectorsWebhooks(backend))
+			// v2 webhook URLs registered with PSPs include the provider as a
+			// path segment before the connector ID, e.g.
+			// /connectors/webhooks/mangopay/{connectorID}/ (see EN-1091). The
+			// provider segment must be preserved or real PSP traffic 404s.
+			r.Handle("/connectors/webhooks/{connector}/{connectorID}/*", connectorsWebhooks(backend))
 		})
 
 		// Authenticated routes
