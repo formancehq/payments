@@ -39,10 +39,11 @@ RUN mkdir -p /home/appuser/.cache/go-build && chown -R appuser:appgroup /home/ap
 COPY go.mod go.sum ./
 
 # Create minimal structure for local replacements
-RUN mkdir -p pkg/client internal/connectors/plugins/public/generic/client/generated
+RUN mkdir -p pkg/client pkg/domain internal/connectors/plugins/public/generic/client/generated
 
 # Copy only the go.mod files for local replacements
 COPY pkg/client/go.mod pkg/client/
+COPY pkg/domain/go.mod pkg/domain/go.sum pkg/domain/
 COPY internal/connectors/plugins/public/generic/client/generated/go.mod internal/connectors/plugins/public/generic/client/generated/
 
 # Download dependencies (this will be cached in Docker layer)
