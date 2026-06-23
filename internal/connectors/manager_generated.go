@@ -13,7 +13,7 @@ import (
 	json "encoding/json"
 	reflect "reflect"
 
-	models "github.com/formancehq/payments/internal/models"
+	models "github.com/formancehq/payments/pkg/domain/models"
 	gomock "go.uber.org/mock/gomock"
 )
 

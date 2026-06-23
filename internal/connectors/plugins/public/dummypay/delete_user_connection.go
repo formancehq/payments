@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest) error {

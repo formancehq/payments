@@ -9,7 +9,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {

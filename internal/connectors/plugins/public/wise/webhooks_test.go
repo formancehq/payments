@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.uber.org/mock/gomock"
 
 	. "github.com/onsi/ginkgo/v2"

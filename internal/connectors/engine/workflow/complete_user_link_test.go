@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/temporal"

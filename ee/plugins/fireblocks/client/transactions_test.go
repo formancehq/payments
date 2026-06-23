@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 )
 
 func TestListTransactionsPinsAfterOneOnFirstSync(t *testing.T) {

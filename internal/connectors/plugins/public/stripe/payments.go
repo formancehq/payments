@@ -10,7 +10,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/pkg/errors"
 	stripesdk "github.com/stripe/stripe-go/v80"
 )

@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	models "github.com/formancehq/payments/internal/models"
+	models "github.com/formancehq/payments/pkg/domain/models"
 	accounts "github.com/get-momo/atlar-v1-go-client/client/accounts"
 	counterparties "github.com/get-momo/atlar-v1-go-client/client/counterparties"
 	credit_transfers "github.com/get-momo/atlar-v1-go-client/client/credit_transfers"

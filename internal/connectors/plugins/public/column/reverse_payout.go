@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (p *Plugin) createReversePayout(ctx context.Context, pr models.PSPPaymentInitiationReversal) (models.ReversePayoutResponse, error) {

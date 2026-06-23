@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/stretchr/testify/require"
 )
 

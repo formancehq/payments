@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (s *Service) ConversionsGet(ctx context.Context, id models.ConversionID) (*models.Conversion, error) {

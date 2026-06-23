@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type PayoutRequest struct {

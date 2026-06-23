@@ -52,6 +52,7 @@ tests:
     -coverprofile coverage.txt \
     -tags it \
     ./...
+  @cd pkg/domain && go test -race ./...
 
 [group('test')]
 generate-sdk: openapi
@@ -60,6 +61,7 @@ generate-sdk: openapi
 [group('test')]
 generate: generate-sdk
     @go generate ./...
+    @cd pkg/domain && go generate ./...
 
 [group('build')]
 build-ce: compile-plugins

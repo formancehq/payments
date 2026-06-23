@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 )

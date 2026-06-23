@@ -4,6 +4,8 @@ go 1.26
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
+replace github.com/formancehq/payments/pkg/domain => ./pkg/domain
+
 replace github.com/formancehq/payments/genericclient/v3 => ./internal/connectors/plugins/public/generic/client/generated
 
 replace gopkg.in/go-jose/go-jose.v4 => github.com/go-jose/go-jose/v4 v4.1.4
@@ -13,9 +15,10 @@ require (
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/emvi/iso-639-1 v1.1.1
-	github.com/formancehq/go-libs/v5 v5.1.1-0.20260522131737-86f3639fcb38
+	github.com/formancehq/go-libs/v5 v5.5.0
 	github.com/formancehq/payments/genericclient/v3 v3.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/domain v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-chi/chi/v5 v5.2.5
@@ -36,8 +39,8 @@ require (
 	github.com/jackc/pgxlisten v0.0.0-20250802141604-12b92425684c
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.49.0
-	github.com/onsi/ginkgo/v2 v2.28.1
-	github.com/onsi/gomega v1.39.1
+	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/gomega v1.42.0
 	github.com/pkg/errors v0.9.1
 	github.com/plaid/plaid-go/v34 v34.0.0
 	github.com/sirupsen/logrus v1.9.4
@@ -48,15 +51,15 @@ require (
 	github.com/uptrace/bun/dialect/pgdialect v1.2.18
 	github.com/uptrace/bun/extra/bundebug v1.2.15
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.66.0
-	go.opentelemetry.io/otel v1.43.0
-	go.opentelemetry.io/otel/metric v1.43.0
-	go.opentelemetry.io/otel/trace v1.43.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
+	go.opentelemetry.io/otel v1.44.0
+	go.opentelemetry.io/otel/metric v1.44.0
+	go.opentelemetry.io/otel/trace v1.44.0
 	go.temporal.io/api v1.62.5
 	go.temporal.io/sdk v1.41.1
 	go.uber.org/fx v1.24.0
 	go.uber.org/mock v0.6.0
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/text v0.37.0
 	google.golang.org/protobuf v1.36.11
@@ -145,7 +148,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
-	github.com/google/pprof v0.0.0-20260302011040-a15ffb7f9dcc // indirect
+	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3 // indirect
@@ -240,8 +243,8 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.41.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.41.0 // indirect
 	go.opentelemetry.io/otel/log v0.17.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.44.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.44.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.temporal.io/sdk/contrib/opentelemetry v0.7.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect

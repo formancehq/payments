@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
 func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (models.PSPPayment, error) {

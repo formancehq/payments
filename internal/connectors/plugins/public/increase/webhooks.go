@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 const (

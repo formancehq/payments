@@ -15,7 +15,7 @@ import (
 
 	management "github.com/adyen/adyen-go-api-library/v7/src/management"
 	webhook "github.com/adyen/adyen-go-api-library/v7/src/webhook"
-	models "github.com/formancehq/payments/internal/models"
+	models "github.com/formancehq/payments/pkg/domain/models"
 	gomock "go.uber.org/mock/gomock"
 )
 

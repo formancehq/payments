@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"math/big"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 /*

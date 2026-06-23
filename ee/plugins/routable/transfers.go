@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // createTransfer mirrors createPayout: Routable maps both flows onto the

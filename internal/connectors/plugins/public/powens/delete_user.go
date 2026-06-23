@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/powens/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func validateDeleteUserRequest(req models.DeleteUserRequest) error {

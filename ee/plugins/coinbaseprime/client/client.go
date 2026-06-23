@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 

@@ -1,6 +1,6 @@
 package bankingcircle
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{

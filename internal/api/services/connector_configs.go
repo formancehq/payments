@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

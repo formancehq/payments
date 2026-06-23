@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"

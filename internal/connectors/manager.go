@@ -11,7 +11,7 @@ import (
 	pluginserrors "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/pkg/errors"
 )
 

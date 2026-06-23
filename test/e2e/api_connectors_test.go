@@ -11,7 +11,7 @@ import (
 
 	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"

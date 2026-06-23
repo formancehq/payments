@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (s *Service) PaymentServiceUsersCompleteLinkFlow(ctx context.Context, connectorID models.ConnectorID, httpCallInformation models.HTTPCallInformation) (string, error) {

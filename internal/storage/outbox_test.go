@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
-	internalErrors "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	internalErrors "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

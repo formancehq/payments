@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // fetchNextConversions scans /api/v2/user_transactions/ on an

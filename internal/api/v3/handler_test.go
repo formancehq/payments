@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"

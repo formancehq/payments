@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 

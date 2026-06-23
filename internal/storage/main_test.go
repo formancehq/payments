@@ -13,7 +13,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/testing/docker"
 	"github.com/formancehq/go-libs/v5/pkg/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v5/pkg/testing/utils"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"

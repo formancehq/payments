@@ -10,7 +10,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // resolveWallets builds a fresh symbol→walletID map from Coinbase Prime each

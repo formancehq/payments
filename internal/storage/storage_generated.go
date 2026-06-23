@@ -16,7 +16,7 @@ import (
 	time "time"
 
 	paginate "github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
-	models "github.com/formancehq/payments/internal/models"
+	models "github.com/formancehq/payments/pkg/domain/models"
 	uuid "github.com/google/uuid"
 	bun "github.com/uptrace/bun"
 	gomock "go.uber.org/mock/gomock"

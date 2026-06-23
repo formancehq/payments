@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (s *Service) ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error) {

@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {

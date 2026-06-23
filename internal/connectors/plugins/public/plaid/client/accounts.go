@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 

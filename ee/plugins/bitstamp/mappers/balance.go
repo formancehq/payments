@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/bitstamp/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // AccountBalanceToPSPBalance derives a PSPBalance from the AccountBalance

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/errors"
 )
 
 type Transaction struct {

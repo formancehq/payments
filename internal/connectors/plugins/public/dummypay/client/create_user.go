@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func (c *client) CreateUser(ctx context.Context, user models.PSPPaymentServiceUser) (string, error) {

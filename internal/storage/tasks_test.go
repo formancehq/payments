@@ -8,7 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/time"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"

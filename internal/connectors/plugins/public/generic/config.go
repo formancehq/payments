@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )

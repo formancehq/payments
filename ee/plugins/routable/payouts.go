@@ -8,7 +8,7 @@ import (
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // createPayout branches on Routable's HTTP status (201 sync vs 202

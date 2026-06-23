@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // CompanyToPSPAccount maps a Routable company onto an external PSPAccount.

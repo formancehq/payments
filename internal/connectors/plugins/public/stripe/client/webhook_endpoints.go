@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stripe/stripe-go/v80"
 )
 

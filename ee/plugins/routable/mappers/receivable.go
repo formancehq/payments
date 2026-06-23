@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func ReceivableToPSPPayment(r client.Receivable) (models.PSPPayment, error) {

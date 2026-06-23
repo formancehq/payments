@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // MemoryStorage provides an in-memory implementation of storage for the workbench.

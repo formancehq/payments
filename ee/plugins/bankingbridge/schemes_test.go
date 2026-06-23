@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/payments/ee/plugins/bankingbridge"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stretchr/testify/assert"
 )
 

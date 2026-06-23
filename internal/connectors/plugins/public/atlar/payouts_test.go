@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/atlar/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/get-momo/atlar-v1-go-client/client/accounts"
 	"github.com/get-momo/atlar-v1-go-client/client/credit_transfers"
 	"github.com/get-momo/atlar-v1-go-client/client/third_parties"

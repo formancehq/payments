@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/models"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/get-momo/atlar-v1-go-client/client/counterparties"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )

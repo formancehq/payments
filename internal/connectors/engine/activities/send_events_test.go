@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/events"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"

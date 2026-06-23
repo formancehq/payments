@@ -1,6 +1,6 @@
 package {{.Connector}}
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 func workflow() models.ConnectorTasksTree {
 	// In here, you will have to define how you want your connector's data

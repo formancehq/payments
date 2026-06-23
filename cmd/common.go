@@ -23,7 +23,7 @@ import (
 	sharedapi "github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine"
-	connectormetrics "github.com/formancehq/payments/internal/connectors/metrics"
+	connectormetrics "github.com/formancehq/payments/pkg/domain/metrics"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

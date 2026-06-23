@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/uptrace/bun"
 )
 

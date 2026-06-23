@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 const ProviderName = "increase"

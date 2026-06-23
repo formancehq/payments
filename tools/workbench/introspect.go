@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // Introspector provides code introspection capabilities for connectors.
