@@ -61,6 +61,7 @@ generate-sdk: openapi
 [group('test')]
 generate: generate-sdk
     @go generate ./...
+    @cd pkg/domain && go generate ./...
 
 [group('build')]
 build-ce: compile-plugins
