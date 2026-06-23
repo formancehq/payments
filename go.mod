@@ -193,7 +193,7 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/opencontainers/runc v1.2.8 // indirect
+	github.com/opencontainers/runc v1.3.6 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/ory/dockertest/v3 v3.12.0 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
