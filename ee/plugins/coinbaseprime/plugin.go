@@ -40,12 +40,6 @@ type Plugin struct {
 	client client.Client
 	config Config
 
-	// accountLookup is injected by the engine via UseAccountLookup right
-	// after plugin instantiation. Orders use it to resolve wallet IDs from
-	// the persisted accounts table instead of a fragile in-process cache.
-	// Set once and read-only thereafter, so no mutex.
-	accountLookup models.AccountLookup
-
 	// assetsMu protects concurrent reads/writes of the cached reference data
 	// below (currencies, networkSymbols, entityID, assetsLastSync). Reads
 	// dominate, so a RWMutex is used.
@@ -98,22 +92,6 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	return models.InstallResponse{
 		Workflow: workflow(),
 	}, nil
-}
-
-// UseAccountLookup is called by the engine immediately after plugin
-// construction to inject a per-connector AccountLookup. Orders use it to
-// resolve wallet IDs from the persisted accounts table rather than keeping
-// an in-process cache that wouldn't survive pod hops.
-func (p *Plugin) UseAccountLookup(lookup models.AccountLookup) {
-	p.accountLookup = lookup
-}
-
-// BootstrapOnInstall declares that the FetchAccounts task must run to
-// completion during the install flow, before any periodic workflows start.
-// This guarantees the accounts table is fully populated before FetchOrders
-// needs to resolve wallet IDs against it.
-func (p *Plugin) BootstrapOnInstall() []models.TaskType {
-	return []models.TaskType{models.TASK_FETCH_ACCOUNTS}
 }
 
 // loadAssets fetches the portfolio entity (once per plugin instance) and the
