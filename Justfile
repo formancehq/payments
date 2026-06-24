@@ -11,6 +11,7 @@ lint:
 
 tidy:
   @go mod tidy
+  @cd pkg/domain && go mod tidy
 
 compile-plugins:
   ./tools/compile-plugins/compile-plugin.sh list.go internal/connectors/plugins/public public github.com/formancehq/payments/internal/connectors/plugins/public
