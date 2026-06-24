@@ -55,7 +55,7 @@ func (p *Plugin) Config() models.PluginInternalConfig {
 }
 
 func (p *Plugin) Install(ctx context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
-	p.logger.Infof("installing routable connector %q (endpoint=%s, polling=%s)", p.name, p.config.resolvedEndpoint(), p.config.PollingPeriod.Duration())
+	p.logger.Infof("installing routable connector %q (endpoint=%s)", p.name, p.config.resolvedEndpoint())
 	// Credential probe: 401/403 surfaces as install error rather than
 	// as the first FETCH_ACCOUNTS run failing in the worker.
 	if _, err := p.client.ListAccounts(ctx, 1, 1); err != nil {

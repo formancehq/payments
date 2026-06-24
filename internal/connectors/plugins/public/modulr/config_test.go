@@ -2,19 +2,13 @@ package modulr
 
 import (
 	"testing"
-	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
-	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
-
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string
@@ -26,33 +20,15 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 			 name:    "Valid Config",
 			 payload: []byte(`{"apiKey":"ak_test","apiSecret":"as_test","endpoint":"https://api.modulr.com"}`),
 			 expected: Config{
-				 APIKey:        "ak_test",
-				 APISecret:     "as_test",
-				 Endpoint:      "https://api.modulr.com",
-				 PollingPeriod: defaultPollingPeriod,
+				 APIKey:    "ak_test",
+				 APISecret: "as_test",
+				 Endpoint:  "https://api.modulr.com",
 			 },
 			 expectError: false,
 		 },
 		 {
 			 name:        "Missing Required Fields",
 			 payload:     []byte(`{"apiKey":"ak_test"}`),
-			 expected:    Config{},
-			 expectError: true,
-		 },
-		 {
-			 name:    "Non default polling period",
-			 payload: []byte(`{"apiKey":"ak_test","apiSecret":"as_test","endpoint":"https://api.modulr.com","pollingPeriod":"45m"}`),
-			 expected: Config{
-				 APIKey:        "ak_test",
-				 APISecret:     "as_test",
-				 Endpoint:      "https://api.modulr.com",
-				 PollingPeriod: longPollingPeriod,
-			 },
-			 expectError: false,
-		 },
-		 {
-			 name:        "Invalid polling period",
-			 payload:     []byte(`{"apiKey":"ak_test","apiSecret":"as_test","endpoint":"https://api.modulr.com","pollingPeriod":"not-a-duration"}`),
 			 expected:    Config{},
 			 expectError: true,
 		 },

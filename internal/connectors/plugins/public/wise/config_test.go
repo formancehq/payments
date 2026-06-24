@@ -3,9 +3,7 @@ package wise
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,11 +21,7 @@ func makePayload(t *testing.T, v any) []byte {
 }
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
-	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
-
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string
@@ -41,29 +35,12 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 			 expected: Config{
 				 APIKey:           "sk_test",
 				 WebhookPublicKey: validRSAPublicKeyPEM,
-				 PollingPeriod:    defaultPollingPeriod,
 			 },
 			 expectError: false,
 		 },
 		 {
 			 name:        "Missing Required Fields",
 			 payload:     makePayload(t, map[string]string{"apiKey": "sk_test"}),
-			 expected:    Config{},
-			 expectError: true,
-		 },
-		 {
-			 name:    "Non default polling period",
-			 payload: makePayload(t, map[string]string{"apiKey": "sk_test", "webhookPublicKey": validRSAPublicKeyPEM, "pollingPeriod": "45m"}),
-			 expected: Config{
-				 APIKey:           "sk_test",
-				 WebhookPublicKey: validRSAPublicKeyPEM,
-				 PollingPeriod:    longPollingPeriod,
-			 },
-			 expectError: false,
-		 },
-		 {
-			 name:        "Invalid polling period",
-			 payload:     makePayload(t, map[string]string{"apiKey": "sk_test", "webhookPublicKey": validRSAPublicKeyPEM, "pollingPeriod": "not-a-duration"}),
 			 expected:    Config{},
 			 expectError: true,
 		 },
@@ -80,15 +57,13 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 			 config, err := unmarshalAndValidateConfig(tt.payload)
 			 if tt.expectError {
 				 require.Error(t, err)
-				 // For invalid polling period and invalid key, ensure error is marked as invalid config
-				 if tt.name == "Invalid polling period" || tt.name == "Invalid public key" {
+				 if tt.name == "Invalid public key" {
 					 assert.ErrorContains(t, err, models.ErrInvalidConfig.Error())
 				 }
 			 } else {
 				 require.NoError(t, err)
 				 assert.Equal(t, tt.expected.APIKey, config.APIKey)
 				 assert.Equal(t, tt.expected.WebhookPublicKey, config.WebhookPublicKey)
-				 assert.Equal(t, tt.expected.PollingPeriod, config.PollingPeriod)
 			 }
 		 })
 	 }

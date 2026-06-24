@@ -2,19 +2,13 @@ package bankingcircle
 
 import (
 	"testing"
-	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
-	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
-
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string
@@ -32,33 +26,12 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 				 AuthorizationEndpoint: "https://auth.bankingcircle.com",
 				 UserCertificate:       "cert",
 				 UserCertificateKey:    "key",
-				 PollingPeriod:         defaultPollingPeriod,
 			 },
 			 expectError: false,
 		 },
 		 {
 			 name:        "Missing Required Fields",
 			 payload:     []byte(`{"username":"user"}`),
-			 expected:    Config{},
-			 expectError: true,
-		 },
-		 {
-			 name:    "Non default polling period",
-			 payload: []byte(`{"username":"user","password":"pass","endpoint":"https://api.bankingcircle.com","authorizationEndpoint":"https://auth.bankingcircle.com","userCertificate":"cert","userCertificateKey":"key","pollingPeriod":"45m"}`),
-			 expected: Config{
-				 Username:              "user",
-				 Password:              "pass",
-				 Endpoint:              "https://api.bankingcircle.com",
-				 AuthorizationEndpoint: "https://auth.bankingcircle.com",
-				 UserCertificate:       "cert",
-				 UserCertificateKey:    "key",
-				 PollingPeriod:         longPollingPeriod,
-			 },
-			 expectError: false,
-		 },
-		 {
-			 name:        "Invalid polling period",
-			 payload:     []byte(`{"username":"user","password":"pass","endpoint":"https://api.bankingcircle.com","authorizationEndpoint":"https://auth.bankingcircle.com","userCertificate":"cert","userCertificateKey":"key","pollingPeriod":"not-a-duration"}`),
 			 expected:    Config{},
 			 expectError: true,
 		 },

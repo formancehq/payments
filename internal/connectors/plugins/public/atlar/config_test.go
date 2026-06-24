@@ -2,19 +2,13 @@ package atlar
 
 import (
 	"testing"
-	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
-	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
-
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string
@@ -26,33 +20,15 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 			 name:    "Valid Config",
 			 payload: []byte(`{"baseUrl":"https://api.atlar.com","accessKey":"ak_test","secret":"sk_test"}`),
 			 expected: Config{
-				 BaseURL:       "https://api.atlar.com",
-				 AccessKey:     "ak_test",
-				 Secret:        "sk_test",
-				 PollingPeriod: defaultPollingPeriod,
+				 BaseURL:   "https://api.atlar.com",
+				 AccessKey: "ak_test",
+				 Secret:    "sk_test",
 			 },
 			 expectError: false,
 		 },
 		 {
 			 name:        "Missing Required Fields",
 			 payload:     []byte(`{"baseUrl":"https://api.atlar.com"}`),
-			 expected:    Config{},
-			 expectError: true,
-		 },
-		 {
-			 name:    "Non default polling period",
-			 payload: []byte(`{"baseUrl":"https://api.atlar.com","accessKey":"ak_test","secret":"sk_test","pollingPeriod":"45m"}`),
-			 expected: Config{
-				 BaseURL:       "https://api.atlar.com",
-				 AccessKey:     "ak_test",
-				 Secret:        "sk_test",
-				 PollingPeriod: longPollingPeriod,
-			 },
-			 expectError: false,
-		 },
-		 {
-			 name:        "Invalid polling period",
-			 payload:     []byte(`{"baseUrl":"https://api.atlar.com","accessKey":"ak_test","secret":"sk_test","pollingPeriod":"not-a-duration"}`),
 			 expected:    Config{},
 			 expectError: true,
 		 },

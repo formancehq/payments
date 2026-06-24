@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/go-playground/validator/v10"
@@ -15,10 +14,9 @@ import (
 )
 
 type Config struct {
-	APIKey        string                     `json:"apiKey" validate:"required"`
-	PrivateKey    string                     `json:"privateKey" validate:"required"`
-	Endpoint      string                     `json:"endpoint"`
-	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
+	APIKey     string `json:"apiKey" validate:"required"`
+	PrivateKey string `json:"privateKey" validate:"required"`
+	Endpoint   string `json:"endpoint"`
 
 	privateKey *rsa.PrivateKey `json:"-"`
 }
@@ -68,29 +66,18 @@ func (c *Config) validate() error {
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {
-		APIKey        string `json:"apiKey"`
-		PrivateKey    string `json:"privateKey"`
-		Endpoint      string `json:"endpoint"`
-		PollingPeriod string `json:"pollingPeriod"`
+		APIKey     string `json:"apiKey"`
+		PrivateKey string `json:"privateKey"`
+		Endpoint   string `json:"endpoint"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
 
-	pp, err := sharedconfig.NewPollingPeriod(
-		raw.PollingPeriod,
-		sharedconfig.GetDefaultPollingPeriod(),
-		sharedconfig.GetMinimumPollingPeriod(),
-	)
-	if err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
-	}
-
 	config := Config{
-		APIKey:        raw.APIKey,
-		PrivateKey:    raw.PrivateKey,
-		Endpoint:      raw.Endpoint,
-		PollingPeriod: pp,
+		APIKey:     raw.APIKey,
+		PrivateKey: raw.PrivateKey,
+		Endpoint:   raw.Endpoint,
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())

@@ -2,7 +2,6 @@ package coinbaseprime
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -24,7 +23,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 	Context("with valid configuration", func() {
 		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"coinbase-api-key-placeholder","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123","pollingPeriod":"45m"}`)
+			payload = json.RawMessage(`{"apiKey":"coinbase-api-key-placeholder","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123"}`)
 		})
 
 		It("should successfully unmarshal and validate", func() {
@@ -33,21 +32,6 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 			Expect(config.APISecret).To(Equal("dGVzdC1zZWNyZXQ="))
 			Expect(config.Passphrase).To(Equal("test-pass"))
 			Expect(config.PortfolioID).To(Equal("portfolio-123"))
-			Expect(config.PollingPeriod.Duration()).To(Equal(45 * time.Minute))
-		})
-	})
-
-	Context("with valid configuration and default polling period", func() {
-		BeforeEach(func() {
-			payload = json.RawMessage(`{"apiKey":"coinbase-api-key-placeholder","apiSecret":"dGVzdC1zZWNyZXQ=","passphrase":"test-pass","portfolioId":"portfolio-123"}`)
-		})
-
-		It("should use default polling period", func() {
-			Expect(err).To(BeNil())
-			Expect(config.APIKey).To(Equal(apiKeyPlaceholder))
-			Expect(config.PortfolioID).To(Equal("portfolio-123"))
-			// Default polling period should be applied
-			Expect(config.PollingPeriod.Duration()).ToNot(Equal(0))
 		})
 	})
 

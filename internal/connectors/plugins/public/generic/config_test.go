@@ -2,19 +2,13 @@ package generic
 
 import (
 	"testing"
-	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnmarshalAndValidateConfig(t *testing.T) {
-	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
 	 t.Parallel()
-
-	 defaultPollingPeriod, _ := sharedconfig.NewPollingPeriod("", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
-	 longPollingPeriod, _ := sharedconfig.NewPollingPeriod("45m", sharedconfig.GetDefaultPollingPeriod(), sharedconfig.GetMinimumPollingPeriod())
 
 	 tests := []struct {
 		 name        string
@@ -26,31 +20,14 @@ func TestUnmarshalAndValidateConfig(t *testing.T) {
 			 name:    "Valid Config",
 			 payload: []byte(`{"apiKey":"sk_test","endpoint":"https://api.generic.example"}`),
 			 expected: Config{
-				 APIKey:        "sk_test",
-				 Endpoint:      "https://api.generic.example",
-				 PollingPeriod: defaultPollingPeriod,
+				 APIKey:   "sk_test",
+				 Endpoint: "https://api.generic.example",
 			 },
 			 expectError: false,
 		 },
 		 {
 			 name:        "Missing Required Fields",
 			 payload:     []byte(`{"apiKey":"sk_test"}`),
-			 expected:    Config{},
-			 expectError: true,
-		 },
-		 {
-			 name:    "Non default polling period",
-			 payload: []byte(`{"apiKey":"sk_test","endpoint":"https://api.generic.example","pollingPeriod":"45m"}`),
-			 expected: Config{
-				 APIKey:        "sk_test",
-				 Endpoint:      "https://api.generic.example",
-				 PollingPeriod: longPollingPeriod,
-			 },
-			 expectError: false,
-		 },
-		 {
-			 name:        "Invalid polling period",
-			 payload:     []byte(`{"apiKey":"sk_test","endpoint":"https://api.generic.example","pollingPeriod":"not-a-duration"}`),
 			 expected:    Config{},
 			 expectError: true,
 		 },
