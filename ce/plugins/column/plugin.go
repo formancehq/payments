@@ -1,0 +1,226 @@
+package column
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/payments/ce/plugins/column/client"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
+	"github.com/formancehq/payments/pkg/domain/models"
+)
+
+const ProviderName = "column"
+
+var Registration = pkgplugins.Registration{
+	PluginType: models.PluginTypePSP,
+	CreateFunc: func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(connectorID, name, logger, rm)
+	},
+	Capabilities: capabilities,
+	RawConf:      Config{},
+	PageSize:     PAGE_SIZE,
+}
+
+/*
+*
+Validation error messages
+*/
+var (
+	ErrMissingAmount         = errors.New("required field amount must be provided")
+	ErrMissingAsset          = errors.New("required field asset must be provided")
+	ErrAccountNumberRequired = errors.New("required field accountNumber must be provided")
+
+	ErrMissingSourceAccount           = errors.New("required field sourceAccount must be provided")
+	ErrMissingSourceAccountName       = errors.New("required sourceAccount field name must be provided")
+	ErrSourceAccountReferenceRequired = errors.New("required sourceAccount field reference must be provided")
+
+	ErrMissingDestinationAccount          = errors.New("required field destinationAccount must be provided")
+	ErrMissingDestinationAccountReference = errors.New("required destinationAccount field reference must be provided")
+
+	// Reference is sent as Column's Idempotency-Key header (EN-1086); it must
+	// be present and satisfy Column's documented key constraints, otherwise the
+	// money movement would run without idempotency protection or be rejected.
+	ErrMissingReference           = errors.New("required field reference must be provided")
+	ErrReferenceTooLong           = fmt.Errorf("field reference must be at most %d characters", columnMaxIdempotencyKeyLength)
+	ErrReferenceInvalidCharacters = errors.New("field reference must contain only ASCII printable characters")
+
+	ErrMissingRelatedPaymentInitiationReference = fmt.Errorf("required field relatedPaymentInitiation.reference must be provided")
+
+	ErrMissingMetadata = errors.New("required field metadata must be provided")
+
+	ErrMissingCountry = errors.New("required field country must be provided")
+
+	// Metadata Address validation error messages (required when addressLine1 is provided)
+	ErrMissingMetadataAddressCity = fmt.Errorf("required metadata field %s must be provided", client.ColumnAddressCityMetadataKey)
+	ErrMissingMetadataCountry     = fmt.Errorf("required metadata field %s must be provided", client.ColumnAddressCountryCodeMetadataKey)
+
+	// Metadata Address validation error messages (not required when addressLine1 is not provided)
+	ErrMetadataAddressLine2NotRequired   = fmt.Errorf("metadata field %s is not required when addressLine1 is not provided", client.ColumnAddressLine2MetadataKey)
+	ErrMetadataAddressCityNotRequired    = fmt.Errorf("metadata field %s is not required when addressLine1 is not provided", client.ColumnAddressCityMetadataKey)
+	ErrMetadataAddressStateNotRequired   = fmt.Errorf("metadata field %s is not required when addressLine1 is not provided", client.ColumnAddressStateMetadataKey)
+	ErrMetadataAddressCountryNotRequired = fmt.Errorf("metadata field %s is not required when addressLine1 is not provided", client.ColumnAddressCountryCodeMetadataKey)
+	ErrMetadataPostalCodeNotRequired     = fmt.Errorf("metadata field %s is not required when addressLine1 is not provided", client.ColumnAddressPostalCodeMetadataKey)
+
+	ErrCountryNotRequired = fmt.Errorf("field country is not required when addressLine1 is not provided")
+
+	// Other metadata validation error messages
+	ErrMissingMetadataAllowOverDrafts = fmt.Errorf("required metadata field %s must be provided", client.ColumnAllowOverdraftMetadataKey)
+	ErrMissingMetadataHold            = fmt.Errorf("required metadata field %s must be provided", client.ColumnHoldMetadataKey)
+	ErrMissingMetadataPayoutType      = fmt.Errorf("required metadata field %s must be provided", client.ColumnPayoutTypeMetadataKey)
+	ErrMissingRoutingNumber           = fmt.Errorf("required metadata field %s must be provided", client.ColumnRoutingNumberMetadataKey)
+	ErrMissingMetadataReason          = fmt.Errorf("required metadata field %s must be provided", client.ColumnReasonMetadataKey)
+	ErrInvalidMetadataPayoutType      = fmt.Errorf("required metadata field %s must be one of: ach, wire, realtime, international-wire", client.ColumnPayoutTypeMetadataKey)
+	ErrInvalidMetadataReason          = fmt.Errorf("required metadata field %s must be a valid reason", client.ColumnReasonMetadataKey)
+)
+
+type Plugin struct {
+	models.Plugin
+
+	name        string
+	connectorID models.ConnectorID
+	logger      logging.Logger
+
+	client            client.Client
+	config            Config
+	supportedWebhooks map[client.EventCategory]supportedWebhook
+	verifier          WebhookVerifier
+}
+
+func New(connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	client := client.New(ProviderName, config.APIKey, config.Endpoint)
+	p := &Plugin{
+		Plugin: pkgplugins.NewBasePlugin(),
+
+		name:        name,
+		connectorID: connectorID,
+		logger:      logger,
+		client:      client,
+		config:      config,
+		verifier:    &defaultVerifier{},
+	}
+
+	if err := p.initWebhookConfig(); err != nil {
+		return p, fmt.Errorf("failed to init webhooks for %s: %w", name, err)
+	}
+	return p, nil
+}
+
+func (p *Plugin) Name() string {
+	return p.name
+}
+
+func (p *Plugin) Config() models.PluginInternalConfig {
+	return p.config
+}
+
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	return models.InstallResponse{
+		Workflow: workflow(),
+	}, nil
+}
+
+func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	if p.client == nil {
+		return models.UninstallResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.uninstall(ctx, req)
+}
+
+func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.fetchNextAccounts(ctx, req)
+}
+
+func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+	if p.client == nil {
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.fetchNextBalances(ctx, req)
+}
+
+func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextExternalAccountsResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.fetchNextExternalAccounts(ctx, req)
+}
+
+func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.fetchNextPayments(ctx, req)
+}
+
+func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+	if p.client == nil {
+		return models.CreateBankAccountResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.createBankAccount(ctx, req.BankAccount)
+}
+
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	if p.client == nil {
+		return models.CreateTransferResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	return models.CreateTransferResponse{
+		Payment: payment,
+	}, nil
+}
+
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	if p.client == nil {
+		return models.CreatePayoutResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+
+	return p.createPayout(ctx, req.PaymentInitiation)
+
+}
+
+func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	if p.client == nil {
+		return models.ReversePayoutResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+
+	return p.createReversePayout(ctx, req.PaymentInitiationReversal)
+
+}
+
+func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	if p.client == nil {
+		return models.CreateWebhooksResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.createWebhooks(ctx, req)
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.verifyWebhook(ctx, req)
+}
+
+func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+	if p.client == nil {
+		return models.TranslateWebhookResponse{}, pkgplugins.ErrNotYetInstalled
+	}
+	return p.translateWebhook(ctx, req)
+}
+
+var _ models.Plugin = &Plugin{}
