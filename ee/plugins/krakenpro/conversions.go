@@ -114,7 +114,7 @@ func (p *Plugin) processConversionsPage(
 		if !ok {
 			next[entry.Refid] = pendingLeg{
 				LedgerID: ledgerID, Time: entry.Time, Type: entry.Type, Subtype: entry.Subtype,
-				Asset: entry.Asset, Amount: entry.Amount, Fee: entry.Fee, Balance: entry.Balance,
+				Aclass: entry.Aclass, Asset: entry.Asset, Amount: entry.Amount, Fee: entry.Fee, Balance: entry.Balance,
 			}
 			continue
 		}

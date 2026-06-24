@@ -81,6 +81,7 @@ type pendingLeg struct {
 	Time     float64 `json:"time"`
 	Type     string  `json:"type"`
 	Subtype  string  `json:"subtype"`
+	Aclass   string  `json:"aclass"`
 	Asset    string  `json:"asset"`
 	Amount   string  `json:"amount"` // raw signed decimal as returned by Kraken
 	Fee      string  `json:"fee"`
@@ -97,6 +98,7 @@ func (p pendingLeg) toLedgerEntry(refid string) client.LedgerEntry {
 		Time:    p.Time,
 		Type:    p.Type,
 		Subtype: p.Subtype,
+		Aclass:  p.Aclass,
 		Asset:   p.Asset,
 		Amount:  p.Amount,
 		Fee:     p.Fee,
