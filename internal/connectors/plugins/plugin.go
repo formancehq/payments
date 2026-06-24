@@ -1,8 +1,5 @@
 package plugins
 
-import "github.com/formancehq/payments/pkg/domain/models"
+import pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 
-type Plugin struct {
-	models.PSPPlugin
-	models.OpenBankingPlugin
-}
+type Plugin = pkgplugins.Plugin

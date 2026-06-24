@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/formancehq/payments/ee/plugins"
-	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
 )

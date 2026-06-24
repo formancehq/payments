@@ -10,7 +10,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
+	_ "github.com/formancehq/payments/internal/connectors/plugins/registry"
 	formance "github.com/formancehq/payments/pkg/client"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe"

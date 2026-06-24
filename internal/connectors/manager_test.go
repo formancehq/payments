@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	// force load of plugins to registry
-	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
 )
 
 func TestManager_Load(t *testing.T) {
