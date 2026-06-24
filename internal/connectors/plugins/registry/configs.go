@@ -18,16 +18,14 @@ type Parameter struct {
 	DefaultValue string `json:"defaultValue"`
 }
 
-var (
-	defaultParameters = map[string]Parameter{
-		"pollingPeriod": {
-			DataType:     TypeDurationNs,
-			Required:     false,
-			DefaultValue: "30m",
-		},
-		"name": {
-			DataType: TypeString,
-			Required: true,
-		},
-	}
-)
+var defaultParameters = map[string]Parameter{
+	"pollingPeriod": {
+		DataType:     TypeDurationNs,
+		Required:     false,
+		DefaultValue: "30m",
+	},
+	"name": {
+		DataType: TypeString,
+		Required: true,
+	},
+}

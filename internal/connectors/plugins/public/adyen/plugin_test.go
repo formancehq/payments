@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/adyen/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"

@@ -3,46 +3,33 @@ package atlar
 import (
 	"encoding/json"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
 
 type Config struct {
-	BaseURL       string                     `json:"baseUrl" validate:"required"`
-	AccessKey     string                     `json:"accessKey" validate:"required"`
-	Secret        string                     `json:"secret" validate:"required"`
-	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
+	BaseURL   string `json:"baseUrl" validate:"required"`
+	AccessKey string `json:"accessKey" validate:"required"`
+	Secret    string `json:"secret" validate:"required"`
 }
 
 const PAGE_SIZE = 100 // max size is 500 according to docs
 
 func unmarshalAndValidateConfig(payload []byte) (Config, error) {
 	var raw struct {
-		BaseURL       string `json:"baseUrl"`
-		AccessKey     string `json:"accessKey"`
-		Secret        string `json:"secret"`
-		PollingPeriod string `json:"pollingPeriod"`
+		BaseURL   string `json:"baseUrl"`
+		AccessKey string `json:"accessKey"`
+		Secret    string `json:"secret"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
 
-	pp, err := sharedconfig.NewPollingPeriod(
-		raw.PollingPeriod,
-		sharedconfig.GetDefaultPollingPeriod(),
-		sharedconfig.GetMinimumPollingPeriod(),
-	)
-	if err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
-	}
-
 	config := Config{
-		BaseURL:       raw.BaseURL,
-		AccessKey:     raw.AccessKey,
-		Secret:        raw.Secret,
-		PollingPeriod: pp,
+		BaseURL:   raw.BaseURL,
+		AccessKey: raw.AccessKey,
+		Secret:    raw.Secret,
 	}
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	return config, validate.Struct(config)

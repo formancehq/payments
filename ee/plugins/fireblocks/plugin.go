@@ -8,9 +8,8 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/fireblocks/client"
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const (
@@ -20,10 +19,14 @@ const (
 	assetRefreshInterval = 24 * time.Hour
 )
 
-func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+var Registration = pkgplugins.Registration{
+	PluginType: models.PluginTypePSP,
+	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{}, PAGE_SIZE)
+	},
+	Capabilities: capabilities,
+	RawConf:      Config{},
+	PageSize:     PAGE_SIZE,
 }
 
 type Plugin struct {
@@ -50,7 +53,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	c := client.New(ProviderName, config.APIKey, config.privateKey, config.Endpoint)
 
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -83,14 +86,14 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	if err := p.ensureAssetsFresh(ctx); err != nil {
 		return models.FetchNextBalancesResponse{}, err
@@ -100,7 +103,7 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	if err := p.ensureAssetsFresh(ctx); err != nil {
 		return models.FetchNextPaymentsResponse{}, err

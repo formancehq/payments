@@ -1,37 +1,73 @@
 #!/bin/sh
 
-# Check if enough arguments are provided
-if [ "$#" -lt 4 ]; then
-    echo "Error: Not enough arguments provided."
-    echo "Usage: $0 <output_filename> <plugins_directory> <package_name> <import_prefix>"
-    exit 1
-fi
+# Regenerates the build-tag-split plugin wiring files:
+#   internal/connectors/plugins/registry/generated_ce.go  (//go:build !ee)
+#   internal/connectors/plugins/registry/generated_ee.go  (//go:build ee)
+#
+# Run from the repository root (or any subdirectory — the script locates the root itself).
 
-output_file="$1"
-plugins_dir="$2"
-package_name="$3"
-import_prefix="$4"
+set -e
 
-# Save current directory to return to it later
-current_dir=$(pwd)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Change to plugins directory
-cd "$plugins_dir" || { echo "Error: Cannot change to directory $plugins_dir"; exit 1; }
+PUBLIC_DIR="$REPO_ROOT/internal/connectors/plugins/public"
+EE_DIR="$REPO_ROOT/ee/plugins"
+OUT_CE="$REPO_ROOT/internal/connectors/plugins/registry/generated_ce.go"
+OUT_EE="$REPO_ROOT/internal/connectors/plugins/registry/generated_ee.go"
+MOD="github.com/formancehq/payments"
 
-# Create output file with package declaration
-printf "package %s\n\n" "$package_name" > "$output_file"
-printf "import (\n" >> "$output_file"
+# ── gather plugin lists ───────────────────────────────────────────────────────
+ce_plugins=$(find "$PUBLIC_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do basename "$d"; done)
+ee_plugins=$(find "$EE_DIR"     -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do basename "$d"; done)
 
-# Find all directories and generate import statements
-find . -mindepth 1 -maxdepth 1 -type d | sort | while read -r dir; do
-    c=$(basename "$dir")
-    printf "    _ \"%s/%s\"\n" "$import_prefix" "$c" >> "$output_file"
-done
+# ── helpers ───────────────────────────────────────────────────────────────────
 
-# Finish import block
-printf ")\n" >> "$output_file"
+# emit one import line per plugin name
+# $1 = import path prefix (e.g. "github.com/formancehq/payments/internal/connectors/plugins/public")
+# reads plugin names from stdin (one per line)
+emit_imports() {
+    prefix="$1"
+    while IFS= read -r name; do
+        printf '\t%s "%s/%s"\n' "$name" "$prefix" "$name"
+    done
+}
 
-# Return to original directory
-cd "$current_dir" || { echo "Error: Cannot return to original directory"; exit 1; }
+# emit one map entry per plugin name
+# dummypay maps to DummyPSPName (a registry-package constant) rather than dummypay.ProviderName
+# reads plugin names from stdin (one per line)
+emit_entries() {
+    while IFS= read -r name; do
+        if [ "$name" = "dummypay" ]; then
+            printf '\t\tDummyPSPName:               %s.Registration,\n' "$name"
+        else
+            printf '\t\t%s.ProviderName:\t%s.Registration,\n' "$name" "$name"
+        fi
+    done
+}
 
-echo "Successfully generated $output_file with plugin imports"
+# ── generated_ce.go ───────────────────────────────────────────────────────────
+{
+    printf '//go:build !ee\n\npackage registry\n\nimport (\n'
+    printf '%s\n' "$ce_plugins" | emit_imports "$MOD/internal/connectors/plugins/public"
+    printf '\tpkgplugins "%s/pkg/domain/plugins"\n)\n\nfunc init() {\n\tload(map[string]pkgplugins.Registration{\n' "$MOD"
+    printf '%s\n' "$ce_plugins" | emit_entries
+    printf '\t})\n}\n'
+} > "$OUT_CE"
+
+# ── generated_ee.go ───────────────────────────────────────────────────────────
+{
+    printf '//go:build ee\n\npackage registry\n\nimport (\n'
+    printf '%s\n' "$ce_plugins" | emit_imports "$MOD/internal/connectors/plugins/public"
+    printf '%s\n' "$ee_plugins" | emit_imports "$MOD/ee/plugins"
+    printf '\tpkgplugins "%s/pkg/domain/plugins"\n)\n\nfunc init() {\n\tload(map[string]pkgplugins.Registration{\n' "$MOD"
+    printf '%s\n' "$ce_plugins" | emit_entries
+    printf '%s\n' "$ee_plugins" | emit_entries
+    printf '\t})\n}\n'
+} > "$OUT_EE"
+
+gofmt -w "$OUT_CE" "$OUT_EE"
+
+echo "Regenerated:"
+echo "  $OUT_CE"
+echo "  $OUT_EE"

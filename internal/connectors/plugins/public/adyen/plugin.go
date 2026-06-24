@@ -6,18 +6,21 @@ import (
 	"errors"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/adyen/client"
-	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const ProviderName = "adyen"
 
-func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+var Registration = pkgplugins.Registration{
+	PluginType: models.PluginTypePSP,
+	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{}, PAGE_SIZE)
+	},
+	Capabilities: capabilities,
+	RawConf:      Config{},
+	PageSize:     PAGE_SIZE,
 }
 
 type Plugin struct {
@@ -47,7 +50,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	)
 
 	p := &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -76,7 +79,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	if p.client == nil {
-		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+		return models.UninstallResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	err := p.client.DeleteWebhook(ctx, req.ConnectorID)
@@ -85,14 +88,14 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
-		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateWebhooksResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	configs, err := p.createWebhooks(ctx, req)
 	if err != nil {
@@ -119,7 +122,7 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 
 func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if p.client == nil {
-		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+		return models.VerifyWebhookResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.verifyWebhook(ctx, req)
@@ -127,7 +130,7 @@ func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
-		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+		return models.TranslateWebhookResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	config, ok := p.supportedWebhooks[req.Name]

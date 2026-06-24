@@ -3,12 +3,10 @@ package stripe
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,10 +18,6 @@ func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Stripe Plugin Suite")
 }
-
-var _ = BeforeSuite(func() {
-	sharedconfig.SetPollingPeriodDefaults(30*time.Minute, 20*time.Minute)
-})
 
 var _ = Describe("Stripe Plugin", func() {
 	var (

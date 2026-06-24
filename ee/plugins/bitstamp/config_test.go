@@ -2,7 +2,6 @@ package bitstamp
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -30,31 +29,15 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 			payload = json.RawMessage(`{
 				"apiKey": "bitstamp-api-key-placeholder",
 				"apiSecret": "bitstamp-api-secret-placeholder",
-				"endpoint": "https://www.bitstamp.net",
-				"pollingPeriod": "45m"
+				"endpoint": "https://www.bitstamp.net"
 			}`)
 		})
 
-		It("populates the struct and honours the explicit polling period", func() {
+		It("populates the struct", func() {
 			Expect(err).To(BeNil())
 			Expect(config.APIKey).To(Equal(apiKeyPlaceholder))
 			Expect(config.APISecret).To(Equal(apiSecretPlaceholder))
 			Expect(config.Endpoint).To(Equal("https://www.bitstamp.net"))
-			Expect(config.PollingPeriod.Duration()).To(Equal(45 * time.Minute))
-		})
-	})
-
-	Context("with valid configuration and default polling period", func() {
-		BeforeEach(func() {
-			payload = json.RawMessage(`{
-				"apiKey": "bitstamp-api-key-placeholder",
-				"apiSecret": "bitstamp-api-secret-placeholder"
-			}`)
-		})
-
-		It("applies the shared default polling period", func() {
-			Expect(err).To(BeNil())
-			Expect(config.PollingPeriod.Duration()).ToNot(Equal(time.Duration(0)))
 		})
 	})
 

@@ -6,9 +6,8 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/bankingbridge/client"
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const (
@@ -17,10 +16,14 @@ const (
 	MetadataPrefix = "cloud.formance.banking-bridge.spec/"
 )
 
-func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+var Registration = pkgplugins.Registration{
+	PluginType: models.PluginTypePSP,
+	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{}, PAGE_SIZE)
+	},
+	Capabilities: capabilities,
+	RawConf:      Config{},
+	PageSize:     PAGE_SIZE,
 }
 
 type Plugin struct {
@@ -41,7 +44,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 
 	client := client.New(name, config.ClientID, config.ClientSecret, config.AuthEndpoint, config.Endpoint)
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -70,67 +73,67 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
-	return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotImplemented
+	return models.FetchNextExternalAccountsResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
-	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
+	return models.FetchNextOthersResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
+	return models.CreateBankAccountResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
+	return models.CreateTransferResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
+	return models.ReverseTransferResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
-	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
+	return models.PollTransferStatusResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
+	return models.CreatePayoutResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
-	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
+	return models.ReversePayoutResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
-	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
+	return models.PollPayoutStatusResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
-	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
+	return models.CreateWebhooksResponse{}, pkgplugins.ErrNotImplemented
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	return models.TranslateWebhookResponse{}, plugins.ErrNotImplemented
+	return models.TranslateWebhookResponse{}, pkgplugins.ErrNotImplemented
 }
 
 var _ models.Plugin = &Plugin{}

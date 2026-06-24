@@ -7,18 +7,21 @@ import (
 	"fmt"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
-	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const ProviderName = "wise"
 
-func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+var Registration = pkgplugins.Registration{
+	PluginType: models.PluginTypePSP,
+	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{}, PAGE_SIZE)
+	},
+	Capabilities: capabilities,
+	RawConf:      Config{},
+	PageSize:     PAGE_SIZE,
 }
 
 var (
@@ -52,7 +55,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	client := client.New(ProviderName, config.APIKey)
 
 	p := &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -94,55 +97,55 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	if p.client == nil {
-		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+		return models.UninstallResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.uninstall(ctx, req)
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextExternalAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchExternalAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
 	if p.client == nil {
-		return models.FetchNextOthersResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextOthersResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	switch req.Name {
 	case fetchProfileName:
 		return p.fetchNextProfiles(ctx, req)
 	default:
-		return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
+		return models.FetchNextOthersResponse{}, pkgplugins.ErrNotImplemented
 	}
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateTransferResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
@@ -157,7 +160,7 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+		return models.CreatePayoutResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	payment, err := p.createPayout(ctx, req.PaymentInitiation)
@@ -172,14 +175,14 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
-		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateWebhooksResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.createWebhooks(ctx, req)
 }
 
 func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if p.client == nil {
-		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+		return models.VerifyWebhookResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	testNotif, ok := req.Webhook.Headers[HeadersTestNotification]
@@ -211,7 +214,7 @@ func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
-		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+		return models.TranslateWebhookResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	testNotif, ok := req.Webhook.Headers[HeadersTestNotification]

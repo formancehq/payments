@@ -10,36 +10,32 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 const DummyPSPName = "dummypay"
 
-type PluginCreateFunction func(
-	models.ConnectorID,
-	string,
-	logging.Logger,
-	json.RawMessage,
-) (models.Plugin, error)
-
-type PluginInformation struct {
-	pluginType   models.PluginType
-	capabilities []models.Capability
-	createFunc   PluginCreateFunction
-	config       Config
-	pageSize     uint64
-}
+// PluginCreateFunction is re-exported so callers referencing this type from
+// the internal package continue to compile unmodified.
+type PluginCreateFunction = pkgplugins.CreateFunc
 
 var (
-	pluginsRegistry map[string]PluginInformation = make(map[string]PluginInformation)
-
 	ErrPluginNotFound       = errors.New("plugin not found")
 	ErrPluginEnterpriseOnly = errors.New("plugin requires Enterprise Edition")
 
 	checkRequired = regexp.MustCompile("required")
 )
 
+var pluginsRegistry map[string]pkgplugins.Registration
+
+func load(registrations map[string]pkgplugins.Registration) {
+	pluginsRegistry = registrations
+}
+
+// RegisterPlugin adds a single plugin to the registry.
+// Used in tests to inject plugin doubles without going through the generated wiring files.
 func RegisterPlugin(
 	provider string,
 	pluginType models.PluginType,
@@ -48,12 +44,15 @@ func RegisterPlugin(
 	conf any,
 	pageSize uint64,
 ) {
-	pluginsRegistry[provider] = PluginInformation{
-		pluginType:   pluginType,
-		capabilities: capabilities,
-		createFunc:   createFunc,
-		config:       setupConfig(conf),
-		pageSize:     pageSize,
+	if pluginsRegistry == nil {
+		pluginsRegistry = make(map[string]pkgplugins.Registration)
+	}
+	pluginsRegistry[provider] = pkgplugins.Registration{
+		PluginType:   pluginType,
+		Capabilities: capabilities,
+		CreateFunc:   createFunc,
+		PageSize:     pageSize,
+		RawConf:      conf,
 	}
 }
 
@@ -114,6 +113,9 @@ func setupConfig(conf any) Config {
 	return config
 }
 
+// GetPlugin instantiates the named plugin and wraps it with the
+// observability layer (tracing + structured logging). This function must
+// stay in internal because the wrapper depends on internal/otel.
 func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
 	provider = strings.ToLower(provider)
 	info, ok := pluginsRegistry[provider]
@@ -124,7 +126,7 @@ func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider s
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 
-	p, err := info.createFunc(connectorID, connectorName, logger, rawConfig)
+	p, err := info.CreateFunc(connectorID, connectorName, logger, rawConfig)
 	if err != nil {
 		return nil, translateError(err)
 	}
@@ -138,8 +140,7 @@ func GetPluginType(provider string) (models.PluginType, error) {
 	if !ok {
 		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
-
-	return info.pluginType, nil
+	return info.PluginType, nil
 }
 
 func GetCapabilities(provider string) ([]models.Capability, error) {
@@ -148,8 +149,7 @@ func GetCapabilities(provider string) ([]models.Capability, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
-
-	return info.capabilities, nil
+	return info.Capabilities, nil
 }
 
 // GetAllCapabilities mirrors GetConfigs: dummypay is the only PSP we expose
@@ -162,19 +162,18 @@ func GetAllCapabilities(debug bool) map[string][]models.Capability {
 		if !debug && key == DummyPSPName {
 			continue
 		}
-		caps[key] = slices.Clone(info.capabilities)
+		caps[key] = slices.Clone(info.Capabilities)
 	}
 	return caps
 }
 
 func GetConfigs(debug bool) Configs {
-	confs := make(Configs)
+	confs := make(Configs, len(pluginsRegistry))
 	for key, info := range pluginsRegistry {
-		// hide dummy PSP outside of debug mode
 		if !debug && key == DummyPSPName {
 			continue
 		}
-		confs[key] = info.config
+		confs[key] = setupConfig(info.RawConf)
 	}
 	return confs
 }
@@ -185,7 +184,7 @@ func GetConfig(provider string) (Config, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
-	return info.config, nil
+	return setupConfig(info.RawConf), nil
 }
 
 func GetPageSize(provider string) (uint64, error) {
@@ -194,5 +193,5 @@ func GetPageSize(provider string) (uint64, error) {
 	if !ok {
 		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
-	return info.pageSize, nil
+	return info.PageSize, nil
 }

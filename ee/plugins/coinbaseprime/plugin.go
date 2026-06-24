@@ -9,11 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/coinbaseprime/client"
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const (
@@ -26,10 +25,14 @@ const (
 	assetRefreshInterval = 24 * time.Hour
 )
 
-func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+var Registration = pkgplugins.Registration{
+	PluginType: models.PluginTypePSP,
+	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities, Config{}, PAGE_SIZE)
+	},
+	Capabilities: capabilities,
+	RawConf:      Config{},
+	PageSize:     PAGE_SIZE,
 }
 
 type Plugin struct {
@@ -64,7 +67,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	c := client.New(ProviderName, config.APIKey, config.APISecret, config.Passphrase, config.PortfolioID)
 
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 		name:   name,
 		logger: logger,
 		client: c,
@@ -192,35 +195,35 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) FetchNextOrders(ctx context.Context, req models.FetchNextOrdersRequest) (models.FetchNextOrdersResponse, error) {
 	if p.client == nil {
-		return models.FetchNextOrdersResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextOrdersResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextOrders(ctx, req)
 }
 
 func (p *Plugin) FetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextConversionsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextConversionsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextConversions(ctx, req)
 }
