@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/formancehq/payments/pkg/domain/metrics"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/stripe/stripe-go/v80"

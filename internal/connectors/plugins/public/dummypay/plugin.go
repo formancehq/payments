@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
@@ -40,7 +39,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}
 
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -128,7 +127,7 @@ func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequ
 
 func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
 	if p.client == nil {
-		return models.CreateUserResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateUserResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.createUser(ctx, req)
@@ -136,7 +135,7 @@ func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (
 
 func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	if p.client == nil {
-		return models.CreateUserLinkResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateUserLinkResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.createUserLink(ctx, req)
@@ -144,7 +143,7 @@ func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRe
 
 func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
 	if p.client == nil {
-		return models.CompleteUserLinkResponse{}, plugins.ErrNotYetInstalled
+		return models.CompleteUserLinkResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.completeUserLink(ctx, req)
@@ -152,7 +151,7 @@ func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLi
 
 func (p *Plugin) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRequest) (models.UpdateUserLinkResponse, error) {
 	if p.client == nil {
-		return models.UpdateUserLinkResponse{}, plugins.ErrNotYetInstalled
+		return models.UpdateUserLinkResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.updateUserLink(ctx, req)
@@ -160,7 +159,7 @@ func (p *Plugin) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 
 func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
 	if p.client == nil {
-		return models.DeleteUserResponse{}, plugins.ErrNotYetInstalled
+		return models.DeleteUserResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.deleteUser(ctx, req)
@@ -168,7 +167,7 @@ func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (
 
 func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
 	if p.client == nil {
-		return models.DeleteUserConnectionResponse{}, plugins.ErrNotYetInstalled
+		return models.DeleteUserConnectionResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.deleteUserConnection(ctx, req)

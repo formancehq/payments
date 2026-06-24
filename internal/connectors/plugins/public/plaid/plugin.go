@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
@@ -47,7 +46,7 @@ func New(name string, logger logging.Logger, connectorID models.ConnectorID, raw
 	}
 
 	p := &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -80,7 +79,7 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.fetchNextAccounts(ctx, req)
@@ -88,14 +87,14 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.fetchNextPayments(ctx, req)
@@ -103,7 +102,7 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
 	if p.client == nil {
-		return models.CreateUserResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateUserResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.createUser(ctx, req)
@@ -111,7 +110,7 @@ func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (
 
 func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	if p.client == nil {
-		return models.CreateUserLinkResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateUserLinkResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.createUserLink(ctx, req)
@@ -119,7 +118,7 @@ func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRe
 
 func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
 	if p.client == nil {
-		return models.CompleteUserLinkResponse{}, plugins.ErrNotYetInstalled
+		return models.CompleteUserLinkResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.completeUserLink(ctx, req)
@@ -127,7 +126,7 @@ func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLi
 
 func (p *Plugin) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRequest) (models.UpdateUserLinkResponse, error) {
 	if p.client == nil {
-		return models.UpdateUserLinkResponse{}, plugins.ErrNotYetInstalled
+		return models.UpdateUserLinkResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.updateUserLink(ctx, req)
@@ -135,7 +134,7 @@ func (p *Plugin) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 
 func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
 	if p.client == nil {
-		return models.DeleteUserResponse{}, plugins.ErrNotYetInstalled
+		return models.DeleteUserResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.deleteUser(ctx, req)
@@ -143,7 +142,7 @@ func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (
 
 func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
 	if p.client == nil {
-		return models.DeleteUserConnectionResponse{}, plugins.ErrNotYetInstalled
+		return models.DeleteUserConnectionResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.deleteUserConnection(ctx, req)
@@ -151,7 +150,7 @@ func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUser
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
-		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateWebhooksResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.createWebhooks(ctx, req)
@@ -159,7 +158,7 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 
 func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if p.client == nil {
-		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+		return models.VerifyWebhookResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.verifyWebhook(ctx, req)
@@ -167,7 +166,7 @@ func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
-		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+		return models.TranslateWebhookResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.translateWebhook(ctx, req)

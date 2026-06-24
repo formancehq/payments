@@ -6,7 +6,6 @@ import (
 	"net/url"
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/atlar/client"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
@@ -46,7 +45,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}
 
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pkgplugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -75,42 +74,42 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextBalancesResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextExternalAccountsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextExternalAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		return models.FetchNextPaymentsResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	if p.client == nil {
-		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
+		return models.CreateBankAccountResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 	return p.createBankAccount(ctx, req.BankAccount)
 }
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+		return models.CreatePayoutResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	payoutID, err := p.createPayout(ctx, req.PaymentInitiation)
@@ -125,7 +124,7 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 
 func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
 	if p.client == nil {
-		return models.PollPayoutStatusResponse{}, plugins.ErrNotYetInstalled
+		return models.PollPayoutStatusResponse{}, pkgplugins.ErrNotYetInstalled
 	}
 
 	return p.pollPayoutStatus(ctx, req.PayoutID)
