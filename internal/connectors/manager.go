@@ -105,7 +105,11 @@ func (m *manager) Load(connectorModel models.Connector, updateExisting bool, str
 	plugin, err := registry.GetPlugin(connectorModel.ID, m.logger, connectorModel.Provider, config.Name, connectorModel.Config)
 	switch {
 	case errors.Is(err, pluginserrors.ErrNotImplemented),
-		errors.Is(err, pluginserrors.ErrInvalidClientRequest):
+		errors.Is(err, pluginserrors.ErrInvalidClientRequest),
+		// An unknown or Enterprise-only provider in an install/update request is a
+		// client error, not a server error: surface it as a 400 rather than a 500.
+		errors.Is(err, registry.ErrPluginNotFound),
+		errors.Is(err, registry.ErrPluginEnterpriseOnly):
 		return "", nil, fmt.Errorf("%w: %w", err, ErrValidation)
 	case err != nil:
 		return "", nil, err

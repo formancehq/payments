@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
-	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const DummyPSPName = "dummypay"
@@ -23,7 +23,7 @@ type PluginCreateFunction = pkgplugins.CreateFunc
 
 var (
 	ErrPluginNotFound       = errors.New("plugin not found")
-	ErrPluginEnterpriseOnly = errors.New("plugin requires Enterprise Edition")
+	ErrPluginEnterpriseOnly = errors.New("connector is only available in the Enterprise Edition")
 
 	checkRequired = regexp.MustCompile("required")
 )
