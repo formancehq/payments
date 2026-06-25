@@ -8,7 +8,7 @@ import (
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
 	"github.com/formancehq/payments/ee/plugins/krakenpro/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // openOrdersInProcessSafetyCap bounds the in-process OpenOrders cursor

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // PairResolution holds the (base, quote) split for a Kraken pair

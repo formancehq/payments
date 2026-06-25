@@ -1,6 +1,6 @@
 package krakenpro
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 // Read-only crypto-exchange capability set per EN-1014.
 // Transfers / payouts / bank accounts / webhooks are intentionally

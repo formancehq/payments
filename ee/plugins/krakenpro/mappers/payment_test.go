@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func TestLedgerEntryToPSPPaymentDeposit(t *testing.T) {
