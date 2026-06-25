@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
@@ -81,6 +82,17 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 		)
 	}
 
+	// A 404 (e.g. unknown source account) is mapped to a nil error by the
+	// client's HttpErrorCheckerFn, leaving an empty body and a nil Transfer.
+	// Surface it as a non-retryable invalid request instead of letting the
+	// caller dereference a nil pointer.
+	if transferResponse.Transfer == nil {
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("moneycorp returned an empty response when initiating transfer"),
+			models.ErrInvalidRequest,
+		)
+	}
+
 	return transferResponse.Transfer, nil
 }
 
@@ -101,6 +113,16 @@ func (c *client) GetTransfer(ctx context.Context, accountID string, transferID s
 		return nil, errorsutils.NewWrappedError(
 			fmt.Errorf("failed to get transfer: %v", errRes.Error()),
 			err,
+		)
+	}
+
+	// A 404 is mapped to a nil error by the client's HttpErrorCheckerFn,
+	// leaving an empty body and a nil Transfer. Surface it instead of
+	// letting the caller dereference a nil pointer.
+	if transferResponse.Transfer == nil {
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("moneycorp returned an empty response when getting transfer"),
+			models.ErrInvalidRequest,
 		)
 	}
 

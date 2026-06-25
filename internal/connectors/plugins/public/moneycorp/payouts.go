@@ -55,6 +55,13 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 }
 
 func payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
+	if from == nil {
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("cannot convert a nil payout to a payment"),
+			models.ErrInvalidRequest,
+		)
+	}
+
 	raw, err := json.Marshal(from)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transaction: %w", err)

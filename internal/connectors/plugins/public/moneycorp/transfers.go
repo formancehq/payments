@@ -54,6 +54,13 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 }
 
 func transferToPayment(transfer *client.TransferResponse) (*models.PSPPayment, error) {
+	if transfer == nil {
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("cannot convert a nil transfer to a payment"),
+			models.ErrInvalidRequest,
+		)
+	}
+
 	raw, err := json.Marshal(transfer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transaction: %w", err)
