@@ -17,10 +17,10 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -621,7 +621,10 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	id := models.TaskIDReference(fmt.Sprintf("reverse-transfer-%s-%s", e.stack, reversal.CreatedAt.String()), reversal.ConnectorID, reversal.ID.String())
+	// The reversal.ID already uniquely identifies this reversal (reference +
+	// connector); including reversal.CreatedAt.String() here only bloated the
+	// Temporal workflow id past its length limit (EN-1346/EN-1347).
+	id := models.TaskIDReference(fmt.Sprintf("reverse-transfer-%s", e.stack), reversal.ConnectorID, reversal.ID.String())
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
@@ -741,7 +744,10 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	id := models.TaskIDReference(fmt.Sprintf("reverse-payout-%s-%s", e.stack, reversal.CreatedAt.String()), reversal.ConnectorID, reversal.ID.String())
+	// The reversal.ID already uniquely identifies this reversal (reference +
+	// connector); including reversal.CreatedAt.String() here only bloated the
+	// Temporal workflow id past its length limit (EN-1346/EN-1347).
+	id := models.TaskIDReference(fmt.Sprintf("reverse-payout-%s", e.stack), reversal.ConnectorID, reversal.ID.String())
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
