@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 )
 
 func TestManager_Load(t *testing.T) {
@@ -126,6 +125,43 @@ func TestManager_Load(t *testing.T) {
 				assert.Equal(t, returnedName, plugin.Name())
 				assert.Equal(t, tt.isScheduledForDeletion, plugin.IsScheduledForDeletion())
 			}
+		})
+	}
+}
+
+func TestManager_Load_ClientErrors(t *testing.T) {
+	t.Parallel()
+
+	minimumPollingPeriod := time.Second
+	defaultPollingPeriod := 3 * time.Minute
+	logger := logging.NewDefaultLogger(io.Discard, false, false, false)
+
+	// Both an unknown provider and an Enterprise-only provider (unavailable in
+	// this CE build) must surface as ErrValidation so the API returns 400 rather
+	// than 500. "bankingbridge" is one of the EE-only connectors.
+	tests := map[string]struct {
+		provider string
+	}{
+		"unknown provider":         {provider: "does-not-exist"},
+		"enterprise-only provider": {provider: "bankingbridge"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod)
+			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
+			connector := models.Connector{
+				ConnectorBase: models.ConnectorBase{
+					ID:       connectorID,
+					Provider: tt.provider,
+				},
+				Config: json.RawMessage(`{"name":"test"}`),
+			}
+
+			_, _, err := manager.Load(connector, false, true)
+			require.Error(t, err)
+			assert.ErrorIs(t, err, ErrValidation)
 		})
 	}
 }
