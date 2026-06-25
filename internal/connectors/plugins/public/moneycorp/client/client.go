@@ -36,30 +36,7 @@ func New(connectorName, clientID, apiKey, endpoint string) *client {
 			endpoint:      endpoint,
 			underlying:    otelhttp.NewTransport(http.DefaultTransport),
 		}}),
-		HttpErrorCheckerFn: func(statusCode int) error {
-			switch statusCode {
-			case http.StatusTooManyRequests:
-				return httpwrapper.ErrStatusCodeTooManyRequests
-			case http.StatusRequestTimeout:
-				return httpwrapper.ErrStatusCodeRequestTimeout
-			case http.StatusMisdirectedRequest:
-				return httpwrapper.ErrStatusCodeMisdirectedRequest
-			case http.StatusLocked:
-				return httpwrapper.ErrStatusCodeLocked
-			case http.StatusTooEarly:
-				return httpwrapper.ErrStatusCodeTooEarly
-			}
-
-			if statusCode == http.StatusNotFound {
-				return nil
-			} else if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
-				return httpwrapper.ErrStatusCodeClientError
-			} else if statusCode >= http.StatusInternalServerError {
-				return httpwrapper.ErrStatusCodeServerError
-			}
-			return nil
-
-		},
+		HttpErrorCheckerFn: httpErrorCheckerFn,
 	}
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
@@ -67,4 +44,35 @@ func New(connectorName, clientID, apiKey, endpoint string) *client {
 		httpClient: httpwrapper.NewClient(config),
 		endpoint:   endpoint,
 	}
+}
+
+// httpErrorCheckerFn maps Moneycorp HTTP status codes to httpwrapper errors.
+//
+// Note: 404 is intentionally treated as a non-error here. Moneycorp returns it
+// for legitimate "empty" read states (e.g. an account with no balances), and
+// the read paths rely on that (see GetAccountBalances). Write paths must not
+// dereference the resulting empty body — InitiateTransfer/InitiatePayout guard
+// against a nil response explicitly.
+func httpErrorCheckerFn(statusCode int) error {
+	switch statusCode {
+	case http.StatusTooManyRequests:
+		return httpwrapper.ErrStatusCodeTooManyRequests
+	case http.StatusRequestTimeout:
+		return httpwrapper.ErrStatusCodeRequestTimeout
+	case http.StatusMisdirectedRequest:
+		return httpwrapper.ErrStatusCodeMisdirectedRequest
+	case http.StatusLocked:
+		return httpwrapper.ErrStatusCodeLocked
+	case http.StatusTooEarly:
+		return httpwrapper.ErrStatusCodeTooEarly
+	}
+
+	if statusCode == http.StatusNotFound {
+		return nil
+	} else if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
+		return httpwrapper.ErrStatusCodeClientError
+	} else if statusCode >= http.StatusInternalServerError {
+		return httpwrapper.ErrStatusCodeServerError
+	}
+	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/pkg/domain/metrics"
+	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 )
 
@@ -87,6 +88,17 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 		return nil, errorsutils.NewWrappedError(
 			fmt.Errorf("failed to initiate payout: %v", errRes.Error()),
 			err,
+		)
+	}
+
+	// A 404 (e.g. unknown source account) is mapped to a nil error by the
+	// client's HttpErrorCheckerFn, leaving an empty body and a nil Payout.
+	// Surface it as a non-retryable invalid request instead of letting the
+	// caller dereference a nil pointer.
+	if res.Payout == nil {
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("moneycorp returned an empty response when initiating payout"),
+			models.ErrInvalidRequest,
 		)
 	}
 
