@@ -77,11 +77,11 @@ release-local:
 
 [group('releases')]
 release-ci:
-    @goreleaser release --nightly --clean
+    @goreleaser release --nightly --clean --parallelism 2
 
 [group('releases')]
 release:
-    @goreleaser release --clean
+    @goreleaser release --clean --parallelism 2
 
 [group('deploy')]
 deploy server auth-token application additional-args:
