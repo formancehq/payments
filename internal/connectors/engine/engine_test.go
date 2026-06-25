@@ -1316,5 +1316,18 @@ var _ = Describe("Engine Tests", func() {
 			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
 			Expect(err).To(MatchError(expectedErr))
 		})
+
+		It("should return ErrNotFound when connector has no matching webhook config", func(ctx SpecContext) {
+			connector := &models.Connector{
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
+			}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			manager.EXPECT().Get(connectorID).Return(models.NewMockPlugin(gomock.NewController(GinkgoT())), nil)
+			store.EXPECT().WebhooksConfigsGetFromConnectorID(gomock.Any(), connectorID).Return(nil, nil)
+			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
 	})
 })
