@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // fetchNextBalances re-reads BalanceEx (cheap single-shot call) and

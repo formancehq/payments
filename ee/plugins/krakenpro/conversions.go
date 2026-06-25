@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
 	"github.com/formancehq/payments/ee/plugins/krakenpro/mappers"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // fetchNextConversions scans /0/private/Ledgers and emits one

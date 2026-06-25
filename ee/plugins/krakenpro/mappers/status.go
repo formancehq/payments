@@ -1,6 +1,6 @@
 package mappers
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 // LedgerTypeKind classifies a Kraken ledger row at the orchestrator
 // level. Trade-related rows belong to FETCH_ORDERS, conversion rows

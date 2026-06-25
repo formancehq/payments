@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 )
 
 const testSecret = "YWJjZA==" // "abcd"

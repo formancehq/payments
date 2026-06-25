@@ -3,17 +3,15 @@ package krakenpro
 import (
 	"encoding/json"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/sharedconfig"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
 
 type Config struct {
-	APIKey        string                     `json:"apiKey" validate:"required"`
-	APISecret     string                     `json:"apiSecret" validate:"required"`
-	Endpoint      string                     `json:"endpoint" validate:"required,url"`
-	PollingPeriod sharedconfig.PollingPeriod `json:"pollingPeriod"`
+	APIKey    string `json:"apiKey" validate:"required"`
+	APISecret string `json:"apiSecret" validate:"required"`
+	Endpoint  string `json:"endpoint" validate:"required,url"`
 }
 
 // PAGE_SIZE is the per-call page bound for Ledgers / ClosedOrders.
@@ -22,31 +20,9 @@ type Config struct {
 const PAGE_SIZE = 50
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
-	var raw struct {
-		APIKey        string `json:"apiKey"`
-		APISecret     string `json:"apiSecret"`
-		Endpoint      string `json:"endpoint"`
-		PollingPeriod string `json:"pollingPeriod"`
-	}
-
-	if err := json.Unmarshal(payload, &raw); err != nil {
+	var config Config
+	if err := json.Unmarshal(payload, &config); err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
-	}
-
-	pp, err := sharedconfig.NewPollingPeriod(
-		raw.PollingPeriod,
-		sharedconfig.GetDefaultPollingPeriod(),
-		sharedconfig.GetMinimumPollingPeriod(),
-	)
-	if err != nil {
-		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
-	}
-
-	config := Config{
-		APIKey:        raw.APIKey,
-		APISecret:     raw.APISecret,
-		Endpoint:      raw.Endpoint,
-		PollingPeriod: pp,
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // spotRef returns the spot account reference for a symbol, or nil when

@@ -1,6 +1,6 @@
 package krakenpro
 
-import "github.com/formancehq/payments/internal/models"
+import "github.com/formancehq/payments/pkg/domain/models"
 
 // workflow declares the periodic task tree. See MAPPINGS §3.
 //
