@@ -56,10 +56,12 @@ func (w *ledgerWindow) advance(pageLen, pageSize int) (hasMore bool) {
 // draining reports whether a frozen window is mid-drain (log field).
 func (w ledgerWindow) draining() bool { return w.End != 0 }
 
-// nowEpoch is the window freeze instant. Whole seconds suffice: a row
-// in the freeze second with a fractional time > the floor is caught by
-// the next window (start is exclusive on the same value).
-func nowEpoch() float64 { return float64(time.Now().Unix()) }
+// nowEpoch is the window freeze instant, at sub-second precision. Kraken
+// ledger/order times are fractional epochs, so freezing End on a whole
+// second could land it exactly on a row's timestamp at the window
+// boundary; a fractional freeze instant is a value no row equals, keeping
+// the (Watermark, End] bounds unambiguous.
+func nowEpoch() float64 { return float64(time.Now().UnixNano()) / 1e9 }
 
 // paymentsState carries the pagination window.
 type paymentsState struct {

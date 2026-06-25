@@ -357,7 +357,7 @@ Both endpoints always pass `trades: true` so each row carries its per-fill txid 
 | K | F field | Notes |
 |---|---|---|
 | (map key) | `Reference` | order id; engine namespaces by ConnectorID |
-| `closetm` if non-zero, else `opentm` | `CreatedAt` | close time when present; open time otherwise |
+| `opentm` | `CreatedAt` | always the open time, so the open→closed upsert keeps a stable creation timestamp; `closetm` (when set) is preserved as the `close_time` metadata key |
 | `descr.pair` → `base` / `quote` (cached AssetPairs) | source/destination asset (see direction below) | normalised via `NormalizeAsset` |
 | `descr.type` (buy/sell) | `Direction` | `buy → ORDER_DIRECTION_BUY`, `sell → ORDER_DIRECTION_SELL` |
 | `descr.ordertype` | `Type` | mapped via `MapOrderType` |

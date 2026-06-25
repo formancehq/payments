@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
 	"github.com/formancehq/payments/pkg/domain/models"
@@ -130,14 +131,18 @@ func OrderEntryToPSPOrder(
 	quoteAsset := FormatAsset(currencies, pairRes.QuoteSymbol)
 	priceAsset := fmt.Sprintf("%s/%d", pairRes.QuoteSymbol, amounts.pricePrecision)
 
+	// CreatedAt is the order's open time and must stay stable across the
+	// open->closed upsert: closed rows carry the same Reference, so deriving
+	// it from closetm would mutate the creation timestamp on each refresh.
+	// Close time is preserved in metadata instead.
 	createdAt := FloatEpochToTime(oe.Opentm)
-	if oe.Closetm > oe.Opentm {
-		createdAt = FloatEpochToTime(oe.Closetm)
-	}
 
 	metadata := OrderMetadata(oe.Descr.Pair, pairRes.Wsname, oe.Trades, oe.Descr.Ordertype, priceAsset)
 	if oe.ClOrdID != "" {
 		metadata[MetadataPrefix+"cl_ord_id"] = oe.ClOrdID
+	}
+	if oe.Closetm > 0 {
+		metadata[MetadataPrefix+"close_time"] = FloatEpochToTime(oe.Closetm).Format(time.RFC3339)
 	}
 
 	return &models.PSPOrder{
