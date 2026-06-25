@@ -1,6 +1,7 @@
 package validation_test
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
@@ -227,6 +228,17 @@ var _ = Describe("Validator custom type checks", func() {
 			Entry("locale: unsupported type for this matcher", "locale", "FieldName", struct {
 				FieldName int `validate:"locale"`
 			}{FieldName: 34}),
+
+			// gtZero
+			Entry("gtZero: negative amount on required field", "gtZero", "FieldName", struct {
+				FieldName *big.Int `validate:"required,gtZero"`
+			}{FieldName: big.NewInt(-100)}),
+			Entry("gtZero: zero amount on required field", "gtZero", "FieldName", struct {
+				FieldName *big.Int `validate:"required,gtZero"`
+			}{FieldName: big.NewInt(0)}),
+			Entry("gtZero: unsupported type for this matcher", "gtZero", "FieldName", struct {
+				FieldName int `validate:"gtZero"`
+			}{FieldName: 5}),
 		)
 
 		It("connectorID supports expected values", func(ctx SpecContext) {
@@ -310,6 +322,12 @@ var _ = Describe("Validator custom type checks", func() {
 				Email:         "dev@formance.com",
 				EmailNullable: pointer.For("dev@formance.com"),
 			})
+			Expect(err).To(BeNil())
+		})
+		It("gtZero supports strictly positive amounts", func(ctx SpecContext) {
+			_, err := validate.Validate(struct {
+				FieldName *big.Int `validate:"required,gtZero"`
+			}{FieldName: big.NewInt(100)})
 			Expect(err).To(BeNil())
 		})
 		It("language supports expected values", func(ctx SpecContext) {

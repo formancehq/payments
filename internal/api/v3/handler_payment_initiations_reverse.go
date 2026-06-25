@@ -10,8 +10,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/otel"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -19,7 +19,7 @@ import (
 type PaymentInitiationsReverseRequest struct {
 	Reference   string            `json:"reference" validate:"required,gte=3,lte=1000"`
 	Description string            `json:"description" validate:"omitempty,lte=10000"`
-	Amount      *big.Int          `json:"amount" validate:"required"`
+	Amount      *big.Int          `json:"amount" validate:"required,gtZero"`
 	Asset       string            `json:"asset" validate:"required,asset"`
 	Metadata    map[string]string `json:"metadata" validate:""`
 }
