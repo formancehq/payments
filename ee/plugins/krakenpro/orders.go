@@ -67,7 +67,6 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 	}
 	state.OpenCursor = openCursor // non-empty only when the cap deferred pages
 
-	pageSize := effectivePageSize(req.PageSize)
 	start, end, ofs := state.Closed.plan(nowEpoch())
 	closedResp, err := p.client.GetClosedOrders(ctx, client.ClosedOrdersParams{
 		Trades: true, WithoutCount: true,
@@ -80,7 +79,8 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 
 	// More work if the closed window is still draining OR the open drain
 	// was deferred at the safety cap — otherwise the deferred tail starves.
-	hasMore := state.Closed.advance(len(closedResp.Closed), pageSize) || state.OpenCursor != ""
+	// Fixed Kraken page size, not req.PageSize (see fetchNextPayments).
+	hasMore := state.Closed.advance(len(closedResp.Closed), PAGE_SIZE) || state.OpenCursor != ""
 
 	payload, err := json.Marshal(state)
 	if err != nil {

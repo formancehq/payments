@@ -3,6 +3,7 @@ package mappers
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
 	"github.com/formancehq/payments/pkg/domain/models"
@@ -109,6 +110,39 @@ func TestOrderEntryToPSPOrder_FilledBuy(t *testing.T) {
 	}
 	if got.Metadata[MetadataPrefix+"fills"] != "T1,T2" {
 		t.Errorf("fills metadata missing or wrong: %v", got.Metadata)
+	}
+}
+
+// CreatedAt must stay anchored to opentm even on a closed order so the
+// open->closed upsert doesn't mutate the creation timestamp; close time
+// is preserved in metadata instead.
+func TestOrderEntryToPSPOrder_CreatedAtFromOpentmNotClosetm(t *testing.T) {
+	t.Parallel()
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+		OrderEntryWithID{OrderID: "O1", Order: filledOrder("buy", "limit")})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if want := FloatEpochToTime(1000); !got.CreatedAt.Equal(want) {
+		t.Errorf("CreatedAt=%v want %v (opentm, not closetm)", got.CreatedAt, want)
+	}
+	if got := got.Metadata[MetadataPrefix+"close_time"]; got != FloatEpochToTime(2000).Format(time.RFC3339) {
+		t.Errorf("close_time metadata=%q", got)
+	}
+}
+
+// An order still open (closetm == 0) must not emit a close_time entry.
+func TestOrderEntryToPSPOrder_NoCloseTimeWhenOpen(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("buy", "limit")
+	oe.Status, oe.Closetm = "open", 0
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+		OrderEntryWithID{OrderID: "O1", Order: oe})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if _, ok := got.Metadata[MetadataPrefix+"close_time"]; ok {
+		t.Errorf("close_time should be absent on an open order: %v", got.Metadata)
 	}
 }
 

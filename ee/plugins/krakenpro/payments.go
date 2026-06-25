@@ -32,7 +32,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	// no DB lookup. The raw variant stays in kraken_asset metadata.
 	wallets := p.snapshotAssetCodes()
 
-	pageSize := effectivePageSize(req.PageSize)
 	start, end, ofs := state.Window.plan(nowEpoch())
 	resp, err := p.client.GetLedgers(ctx, client.LedgersParams{
 		Start: start, End: end, Offset: ofs, WithoutCount: true,
@@ -56,7 +55,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	hasMore := state.Window.advance(len(resp.Ledger), pageSize)
+	// Compare against Kraken's fixed page size, not req.PageSize: Ledgers
+	// sends no count param and always returns a server-capped page, so a
+	// larger requested size would make a full page look short and skip rows.
+	hasMore := state.Window.advance(len(resp.Ledger), PAGE_SIZE)
 
 	payload, err := json.Marshal(state)
 	if err != nil {
@@ -98,13 +100,4 @@ func (p *Plugin) mapLedgerPayments(currencies map[string]int, wallets map[string
 		payments = append(payments, *res.Payment)
 	}
 	return payments, unknown
-}
-
-// effectivePageSize defaults to PAGE_SIZE when the engine passes a
-// non-positive value. HasMore lives off this comparison.
-func effectivePageSize(requested int) int {
-	if requested <= 0 {
-		return PAGE_SIZE
-	}
-	return requested
 }

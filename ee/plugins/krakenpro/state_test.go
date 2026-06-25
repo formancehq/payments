@@ -87,19 +87,6 @@ func TestLedgerWindowFullDrainNoSkip(t *testing.T) {
 	}
 }
 
-func TestEffectivePageSize(t *testing.T) {
-	t.Parallel()
-	if got := effectivePageSize(0); got != PAGE_SIZE {
-		t.Fatalf("zero → default: got %d", got)
-	}
-	if got := effectivePageSize(-1); got != PAGE_SIZE {
-		t.Fatalf("negative → default: got %d", got)
-	}
-	if got := effectivePageSize(25); got != 25 {
-		t.Fatalf("positive → passthrough: got %d", got)
-	}
-}
-
 func TestPendingLegToLedgerEntry(t *testing.T) {
 	t.Parallel()
 	leg := pendingLeg{

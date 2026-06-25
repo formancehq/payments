@@ -35,7 +35,6 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	// asset cache — no DB lookup. The precise variant stays in metadata.
 	wallets := p.snapshotAssetCodes()
 
-	pageSize := effectivePageSize(req.PageSize)
 	start, end, ofs := state.Window.plan(nowEpoch())
 	resp, err := p.client.GetLedgers(ctx, client.LedgersParams{
 		Start: start, End: end, Offset: ofs, WithoutCount: true,
@@ -60,7 +59,8 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	}
 	state.Pending = pending
 
-	hasMore := state.Window.advance(len(resp.Ledger), pageSize)
+	// Fixed Kraken page size, not req.PageSize (see fetchNextPayments).
+	hasMore := state.Window.advance(len(resp.Ledger), PAGE_SIZE)
 
 	payload, err := json.Marshal(state)
 	if err != nil {
