@@ -5,9 +5,8 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/payments/internal/api/backend"
-	"github.com/formancehq/payments/internal/api/common"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/otel"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -31,7 +30,7 @@ func connectorsUninstall(backend backend.Backend) http.HandlerFunc {
 		task, err := backend.ConnectorsUninstall(ctx, connectorID)
 		if err != nil {
 			otel.RecordError(span, err)
-			common.InternalServerError(w, r, err)
+			handleServiceErrors(w, r, err)
 			return
 		}
 
