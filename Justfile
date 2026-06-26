@@ -55,6 +55,7 @@ tests:
     -tags it \
     ./...
   @cd pkg/domain && go test -race ./...
+  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go test -race ./... && cd "{{justfile_directory()}}"; done
 
 [group('test')]
 generate-sdk: openapi
