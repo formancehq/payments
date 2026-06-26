@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/domain/pagination"
@@ -16,6 +16,13 @@ import (
 
 type paymentsState struct {
 	LastCreatedAt time.Time `json:"lastCreatedAt"`
+	// LastProcessedID is the transaction ID of the last transaction emitted at
+	// exactly LastCreatedAt. It lets the watermark filter be inclusive (>=)
+	// without re-skipping distinct transactions that share that timestamp: only
+	// the exact already-processed row is excluded. Keyed on transaction.ID (the
+	// iteration identity), which differs from payment.Reference for "Payment"
+	// types.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -35,10 +42,12 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := paymentsState{
-		LastCreatedAt: oldState.LastCreatedAt,
+		LastCreatedAt:   oldState.LastCreatedAt,
+		LastProcessedID: oldState.LastProcessedID,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
+	processedIDs := make([]string, 0, req.PageSize)
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
@@ -47,7 +56,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		payments, err = p.toPSPPayments(ctx, oldState.LastCreatedAt, payments, pagedTransactions)
+		payments, processedIDs, err = p.toPSPPayments(ctx, oldState.LastCreatedAt, oldState.LastProcessedID, payments, processedIDs, pagedTransactions)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -59,11 +68,15 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	if !needMore {
+		// Trim both slices in lockstep so the watermark and LastProcessedID come
+		// from the last EMITTED payment.
 		payments = payments[:req.PageSize]
+		processedIDs = processedIDs[:req.PageSize]
 	}
 
 	if len(payments) > 0 {
 		newState.LastCreatedAt = payments[len(payments)-1].CreatedAt
+		newState.LastProcessedID = processedIDs[len(processedIDs)-1]
 	}
 
 	payload, err := json.Marshal(newState)
@@ -81,32 +94,37 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 func (p *Plugin) toPSPPayments(
 	ctx context.Context,
 	lastCreatedAt time.Time,
+	lastProcessedID string,
 	payments []models.PSPPayment,
+	processedIDs []string,
 	transactions []*client.Transaction,
-) ([]models.PSPPayment, error) {
+) ([]models.PSPPayment, []string, error) {
 	for _, transaction := range transactions {
 		createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
 		if err != nil {
-			return payments, fmt.Errorf("failed to parse transaction date: %v", err)
+			return payments, processedIDs, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
-		switch createdAt.Compare(lastCreatedAt) {
-		case -1, 0:
+		// Inclusive watermark: skip transactions strictly before it, and the
+		// single already-processed transaction at exactly the watermark. Distinct
+		// transactions sharing that timestamp are kept (M-CON2).
+		cmp := createdAt.Compare(lastCreatedAt)
+		if cmp < 0 || (cmp == 0 && transaction.ID == lastProcessedID) {
 			continue
-		default:
 		}
 
 		payment, err := p.transactionToPayment(ctx, transaction)
 		if err != nil {
-			return payments, err
+			return payments, processedIDs, err
 		}
 		if payment == nil {
 			continue
 		}
 
 		payments = append(payments, *payment)
+		processedIDs = append(processedIDs, transaction.ID)
 	}
-	return payments, nil
+	return payments, processedIDs, nil
 }
 
 func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.Transaction) (*models.PSPPayment, error) {
