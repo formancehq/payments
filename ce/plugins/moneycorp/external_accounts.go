@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/ce/plugins/moneycorp/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/domain/pagination"
@@ -16,6 +16,10 @@ import (
 type externalAccountsState struct {
 	LastPage      int       `json:"lastPage"`
 	LastCreatedAt time.Time `json:"LastCreatedAt"`
+	// LastProcessedID is the reference (recipient ID) of the last account emitted
+	// at exactly LastCreatedAt, so the inclusive (>=) watermark filter excludes
+	// only that already-processed row while keeping distinct same-timestamp ones.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -35,8 +39,9 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	}
 
 	newState := externalAccountsState{
-		LastPage:      oldState.LastPage,
-		LastCreatedAt: oldState.LastCreatedAt,
+		LastPage:        oldState.LastPage,
+		LastCreatedAt:   oldState.LastCreatedAt,
+		LastProcessedID: oldState.LastProcessedID,
 	}
 
 	needMore := false
@@ -50,7 +55,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		accounts, err = recipientToPSPAccounts(oldState.LastCreatedAt, accounts, pagedRecipients)
+		accounts, err = recipientToPSPAccounts(oldState.LastCreatedAt, oldState.LastProcessedID, accounts, pagedRecipients)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
@@ -67,6 +72,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 	if len(accounts) > 0 {
 		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+		newState.LastProcessedID = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -83,6 +89,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 func recipientToPSPAccounts(
 	lastCreatedAt time.Time,
+	lastProcessedID string,
 	accounts []models.PSPAccount,
 	pagedAccounts []*client.Recipient,
 ) ([]models.PSPAccount, error) {
@@ -92,10 +99,12 @@ func recipientToPSPAccounts(
 			return accounts, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
-		switch createdAt.Compare(lastCreatedAt) {
-		case -1, 0:
+		// Inclusive watermark: skip recipients strictly before it, and the single
+		// already-processed recipient at exactly the watermark. Distinct recipients
+		// sharing that timestamp are kept (M-CON2).
+		cmp := createdAt.Compare(lastCreatedAt)
+		if cmp < 0 || (cmp == 0 && recipient.ID == lastProcessedID) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(recipient)
