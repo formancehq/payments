@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/pkg/errors"
 	stripesdk "github.com/stripe/stripe-go/v80"
 )
@@ -18,7 +19,10 @@ import (
 var (
 	ErrUnsupportedTransactionType = errors.New("unsupported TransactionType")
 	ErrUnsupportedAdjustment      = errors.New("unsupported adjustment")
-	ErrUnsupportedCurrency        = errors.New("unsupported currency")
+	// ErrUnsupportedCurrency wraps plugins.ErrCurrencyNotSupported so the fetch
+	// loop can detect it via errors.Is and skip the transaction instead of
+	// failing — a returned error here would freeze ingestion on endless retries.
+	ErrUnsupportedCurrency = fmt.Errorf("unsupported currency: %w", plugins.ErrCurrencyNotSupported)
 )
 
 type paymentsState struct {
@@ -57,6 +61,12 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	for _, rawPayment := range rawPayments {
 		payment, err := p.translatePayment(&from.Reference, rawPayment)
 		if err != nil {
+			if errors.Is(err, plugins.ErrCurrencyNotSupported) {
+				// Skip unsupported currencies rather than failing: a retryable
+				// error here would freeze ingestion for the whole account.
+				p.logger.WithField("reference", rawPayment.ID).Info("skipping payment with unsupported currency")
+				continue
+			}
 			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to translate payment: %w", err)
 		}
 

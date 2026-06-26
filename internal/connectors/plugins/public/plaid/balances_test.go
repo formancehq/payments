@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -19,7 +20,29 @@ var _ = Describe("Plaid *Plugin Balances", func() {
 		)
 
 		BeforeEach(func() {
-			plg = &Plugin{}
+			plg = &Plugin{logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
+		})
+
+		It("should skip balances with unsupported currencies", func(ctx SpecContext) {
+			account := plaid.NewAccountBaseWithDefaults()
+			account.SetAccountId("acc")
+
+			balance := plaid.NewAccountBalanceWithDefaults()
+			balance.SetCurrent(1000.0)
+			balance.SetIsoCurrencyCode("ZZZ")
+			account.SetBalances(*balance)
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{Raw: accountBytes}
+			fromPayload, err := json.Marshal(pspAccount)
+			Expect(err).To(BeNil())
+
+			p := &Plugin{logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
+			res, err := p.fetchNextBalances(ctx, models.FetchNextBalancesRequest{FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(res.Balances).To(BeEmpty())
 		})
 
 		It("should fetch balances successfully", func(ctx SpecContext) {

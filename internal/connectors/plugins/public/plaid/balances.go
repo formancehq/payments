@@ -3,11 +3,13 @@ package plaid
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 
@@ -19,6 +21,12 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	pspBalance, err := toPSPBalance(pspAccount)
 	if err != nil {
+		if errors.Is(err, plugins.ErrCurrencyNotSupported) {
+			// Skip unsupported currencies rather than failing: a retryable
+			// error here would freeze balance ingestion for the account.
+			p.logger.WithField("reference", pspAccount.Reference).Info("skipping balance with unsupported currency")
+			return models.FetchNextBalancesResponse{}, nil
+		}
 		return models.FetchNextBalancesResponse{}, err
 	}
 

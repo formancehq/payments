@@ -3,15 +3,17 @@ package moneycorp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/domain/pagination"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 type paymentsState struct {
@@ -98,6 +100,12 @@ func (p *Plugin) toPSPPayments(
 
 		payment, err := p.transactionToPayment(ctx, transaction)
 		if err != nil {
+			if errors.Is(err, plugins.ErrCurrencyNotSupported) {
+				// Skip unsupported currencies rather than failing: a retryable
+				// error here would freeze ingestion for the whole account.
+				p.logger.WithField("transaction_id", transaction.ID).Info("skipping transaction with unsupported currency")
+				continue
+			}
 			return payments, err
 		}
 		if payment == nil {
@@ -138,6 +146,9 @@ func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.T
 
 	c, err := currency.GetPrecision(supportedCurrenciesWithDecimal, transaction.Attributes.Currency)
 	if err != nil {
+		if errors.Is(err, currency.ErrMissingCurrencies) {
+			return nil, fmt.Errorf("%w: %w", plugins.ErrCurrencyNotSupported, err)
+		}
 		return nil, err
 	}
 

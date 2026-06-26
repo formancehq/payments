@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"go.uber.org/mock/gomock"
@@ -23,7 +24,7 @@ var _ = Describe("Wise Plugin Balances", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg = &Plugin{client: m}
+		plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 	})
 
 	AfterEach(func() {
@@ -71,6 +72,33 @@ var _ = Describe("Wise Plugin Balances", func() {
 			expectedBalance, err := balance.Amount.Value.Float64()
 			Expect(err).To(BeNil())
 			Expect(res.Balances[0].Amount).To(BeEquivalentTo(big.NewInt(int64(expectedBalance * 100))))
+		})
+
+		It("skips balances with unsupported currencies", func(ctx SpecContext) {
+			req := models.FetchNextBalancesRequest{
+				State: json.RawMessage(`{}`),
+				FromPayload: json.RawMessage(fmt.Sprintf(
+					`{"Reference":"%d","Metadata":{"%s":"%d"}}`,
+					expectedProfileID,
+					metadataProfileIDKey,
+					profileVal,
+				)),
+				PageSize: 10,
+			}
+			unsupported := client.Balance{
+				ID:     14556,
+				Type:   "type1",
+				Amount: client.BalanceAmount{Value: json.Number("44.99"), Currency: "ZZZ"},
+			}
+			m.EXPECT().GetBalance(gomock.Any(), profileVal, expectedProfileID).Return(
+				&unsupported,
+				nil,
+			)
+
+			res, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Balances).To(BeEmpty())
+			Expect(res.HasMore).To(BeFalse())
 		})
 	})
 })

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -35,7 +35,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg = &Plugin{client: m}
+			plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 
 			pageSize = 5
 			accRef = 3796
@@ -136,7 +136,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 			ctrl.Finish()
 		})
 
-		It("fails when payments contain unsupported currencies", func(ctx SpecContext) {
+		It("skips payments with unsupported currencies", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 				State:       json.RawMessage(`{}`),
@@ -160,7 +160,8 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 			)
 
 			res, err := plg.FetchNextPayments(ctx, req)
-			Expect(err).To(MatchError(currency.ErrMissingCurrencies))
+			Expect(err).To(BeNil())
+			Expect(res.Payments).To(BeEmpty())
 			Expect(res.HasMore).To(BeFalse())
 		})
 
@@ -239,7 +240,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg = &Plugin{client: m}
+			plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 			accRef = 3796
 			now = time.Now().UTC()
 
