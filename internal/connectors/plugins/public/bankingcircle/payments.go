@@ -13,6 +13,12 @@ import (
 
 type paymentsState struct {
 	LatestStatusChangedTimestamp time.Time `json:"latestStatusChangedTimestamp"`
+	// LatestProcessedID is the PaymentID of the last payment emitted at exactly
+	// LatestStatusChangedTimestamp. It lets the watermark filter be inclusive
+	// (>=) without re-skipping distinct payments that share that timestamp: only
+	// the exact already-processed row is excluded, so the rest of a same-second
+	// group are kept (storage upserts dedup any harmless re-emission).
+	LatestProcessedID string `json:"latestProcessedID"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -25,6 +31,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	newState := paymentsState{
 		LatestStatusChangedTimestamp: oldState.LatestStatusChangedTimestamp,
+		LatestProcessedID:            oldState.LatestProcessedID,
 	}
 
 	var payments []models.PSPPayment
@@ -49,11 +56,17 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	if !needMore {
+		// Trim both slices in lockstep so the watermark and LatestProcessedID are
+		// taken from the last *emitted* payment. Trimming only payments would set
+		// the watermark from a fetched-but-dropped payment and silently skip the
+		// trimmed ones on the next call.
 		payments = payments[:req.PageSize]
+		latestStatusChangedTimestamps = latestStatusChangedTimestamps[:req.PageSize]
 	}
 
 	if len(payments) > 0 {
 		newState.LatestStatusChangedTimestamp = latestStatusChangedTimestamps[len(latestStatusChangedTimestamps)-1]
+		newState.LatestProcessedID = payments[len(payments)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -75,10 +88,13 @@ func fillPayments(
 	oldState paymentsState,
 ) ([]models.PSPPayment, []time.Time, error) {
 	for _, payment := range pagedPayments {
-		switch payment.LatestStatusChangedTimestamp.Compare(oldState.LatestStatusChangedTimestamp) {
-		case -1, 0:
+		// Inclusive watermark: skip payments strictly before the watermark, and
+		// the single already-processed payment at exactly the watermark. Distinct
+		// payments sharing that timestamp are kept (M-CON2: equal-timestamp rows
+		// were previously dropped at page/cycle boundaries).
+		cmp := payment.LatestStatusChangedTimestamp.Compare(oldState.LatestStatusChangedTimestamp)
+		if cmp < 0 || (cmp == 0 && payment.PaymentID == oldState.LatestProcessedID) {
 			continue
-		default:
 		}
 
 		p, err := translatePayment(payment)
