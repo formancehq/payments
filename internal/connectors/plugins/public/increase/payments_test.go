@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
@@ -626,5 +627,48 @@ var _ = Describe("Increase Plugin Payments", func() {
 			Expect(newState.DeclinedTimeline.Cursors).To(HaveLen(0))
 			Expect(newState.DeclinedTimeline.FoundOldest).To(BeTrue())
 		})
+	})
+})
+
+var _ = Describe("Increase Plugin Payments - amount conversion", func() {
+	var plg *Plugin
+
+	BeforeEach(func() {
+		plg = &Plugin{}
+	})
+
+	// Regression for M-CON5: amounts must be converted via big.Int, never round-tripped
+	// through float64 (which loses precision above 2^53 and overflows on MinInt64).
+	It("preserves amounts larger than 2^53 exactly", func() {
+		const amount int64 = 9007199254740993 // 2^53 + 1, not representable as float64
+		tx := &client.Transaction{
+			ID:        "big",
+			AccountID: "account_1",
+			Amount:    amount,
+			CreatedAt: time.Now().UTC().Format(time.RFC3339),
+			Currency:  "USD",
+			Source:    client.Source{Category: "inbound_ach_transfer"},
+		}
+
+		payment, err := plg.mapPayment(tx, models.PAYMENT_STATUS_SUCCEEDED)
+		Expect(err).To(BeNil())
+		Expect(payment.Amount.Cmp(big.NewInt(amount))).To(Equal(0))
+	})
+
+	It("returns the exact absolute value of large negative amounts", func() {
+		const amount int64 = -9007199254740993
+		tx := &client.Transaction{
+			ID:        "big_neg",
+			AccountID: "account_1",
+			Amount:    amount,
+			CreatedAt: time.Now().UTC().Format(time.RFC3339),
+			Currency:  "USD",
+			Source:    client.Source{Category: "inbound_ach_transfer"},
+		}
+
+		payment, err := plg.mapPayment(tx, models.PAYMENT_STATUS_SUCCEEDED)
+		Expect(err).To(BeNil())
+		Expect(payment.Amount.Cmp(big.NewInt(9007199254740993))).To(Equal(0))
+		Expect(payment.Amount.Sign()).To(Equal(1))
 	})
 })

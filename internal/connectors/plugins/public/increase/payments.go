@@ -3,7 +3,6 @@ package increase
 import (
 	"context"
 	"encoding/json"
-	"math"
 	"math/big"
 	"sort"
 	"time"
@@ -212,7 +211,7 @@ func (p *Plugin) mapPayment(transaction *client.Transaction, status models.Payme
 		CreatedAt: createdTime,
 		Asset:     *pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Currency)),
 		Status:    paymentStatus,
-		Amount:    big.NewInt(int64(math.Abs(float64(transaction.Amount)))),
+		Amount:    new(big.Int).Abs(big.NewInt(transaction.Amount)),
 		Type:      mapTransactionType(transaction),
 		Raw:       raw,
 		Metadata: map[string]string{
