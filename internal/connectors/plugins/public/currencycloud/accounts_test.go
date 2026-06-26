@@ -147,7 +147,7 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 1, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s", "lastProcessedID": "%s"}`, 1, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano), sampleAccounts[38].ID)),
 				PageSize: 40,
 			}
 

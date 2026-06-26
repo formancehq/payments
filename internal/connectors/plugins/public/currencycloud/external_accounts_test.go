@@ -149,7 +149,7 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 
 		It("should fetch next external accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 1, sampleBeneficiaries[38].CreatedAt.Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s", "lastProcessedID": "%s"}`, 1, sampleBeneficiaries[38].CreatedAt.Format(time.RFC3339Nano), sampleBeneficiaries[38].ID)),
 				PageSize: 40,
 			}
 

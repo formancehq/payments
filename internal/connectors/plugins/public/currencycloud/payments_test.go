@@ -152,17 +152,22 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%s"}`, sampleTransactions[38].UpdatedAt.Format(time.RFC3339Nano))),
+				State: []byte(fmt.Sprintf(
+					`{"lastUpdatedAt": "%s", "lastProcessedID": "%s"}`,
+					sampleTransactions[38].UpdatedAt.Format(time.RFC3339Nano),
+					sampleTransactions[38].ID,
+				)),
 				PageSize: 40,
 			}
 
+			// Both pages query with the STABLE oldState watermark (no mid-pagination mutation).
 			m.EXPECT().GetTransactions(gomock.Any(), 1, 40, sampleTransactions[38].UpdatedAt.UTC()).Return(
 				sampleTransactions[:40],
 				2,
 				nil,
 			)
 
-			m.EXPECT().GetTransactions(gomock.Any(), 2, 40, sampleTransactions[39].UpdatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 2, 40, sampleTransactions[38].UpdatedAt.UTC()).Return(
 				sampleTransactions[41:],
 				-1,
 				nil,
@@ -179,6 +184,39 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
 			Expect(state.LastUpdatedAt).To(Equal(sampleTransactions[49].UpdatedAt))
+		})
+
+		It("keeps distinct transactions that share the watermark timestamp (M-CON2)", func(ctx SpecContext) {
+			ts := now.Add(-time.Hour).UTC()
+			mk := func(id string) client.Transaction {
+				return client.Transaction{
+					ID:        id,
+					AccountID: "acc",
+					Currency:  "EUR",
+					Type:      "credit",
+					Status:    "completed",
+					CreatedAt: ts,
+					UpdatedAt: ts,
+					Amount:    "100",
+				}
+			}
+
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%s", "lastProcessedID": "a"}`, ts.Format(time.RFC3339Nano))),
+				PageSize: 40,
+			}
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 40, ts.UTC()).Return(
+				[]client.Transaction{mk("a"), mk("b"), mk("c")},
+				-1,
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			// "a" was the already-processed boundary row; "b" and "c" share its
+			// timestamp and must NOT be dropped.
+			Expect(resp.Payments).To(HaveLen(2))
+			Expect([]string{resp.Payments[0].Reference, resp.Payments[1].Reference}).To(ConsistOf("b", "c"))
 		})
 	})
 })

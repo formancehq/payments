@@ -12,6 +12,10 @@ import (
 type externalAccountsState struct {
 	LastPage      int       `json:"lastPage"`
 	LastCreatedAt time.Time `json:"lastCreatedAt"`
+	// LastProcessedID is the reference of the last beneficiary emitted at exactly
+	// LastCreatedAt, so the inclusive (>=) watermark filter excludes only that
+	// already-processed row while keeping distinct same-timestamp beneficiaries.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -27,8 +31,9 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	}
 
 	newState := externalAccountsState{
-		LastPage:      oldState.LastPage,
-		LastCreatedAt: oldState.LastCreatedAt,
+		LastPage:        oldState.LastPage,
+		LastCreatedAt:   oldState.LastCreatedAt,
+		LastProcessedID: oldState.LastProcessedID,
 	}
 
 	var accounts []models.PSPAccount
@@ -61,6 +66,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	newState.LastPage = page
 	if len(accounts) > 0 {
 		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+		newState.LastProcessedID = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -81,11 +87,12 @@ func fillBeneficiaries(
 	oldState externalAccountsState,
 ) ([]models.PSPAccount, error) {
 	for _, beneficiary := range pagedBeneficiaries {
-		switch beneficiary.CreatedAt.Compare(oldState.LastCreatedAt) {
-		case -1, 0:
-			// Account already ingested, skip
+		// Inclusive watermark: skip beneficiaries strictly before it, and the single
+		// already-processed beneficiary at exactly the watermark. Distinct
+		// beneficiaries sharing that timestamp are kept (M-CON2).
+		cmp := beneficiary.CreatedAt.Compare(oldState.LastCreatedAt)
+		if cmp < 0 || (cmp == 0 && beneficiary.ID == oldState.LastProcessedID) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(beneficiary)

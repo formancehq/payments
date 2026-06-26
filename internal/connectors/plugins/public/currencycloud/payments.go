@@ -12,6 +12,10 @@ import (
 
 type paymentsState struct {
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+	// LastProcessedID is the transaction ID of the last transaction emitted at
+	// exactly LastUpdatedAt, so the inclusive (>=) watermark filter excludes only
+	// that already-processed row while keeping distinct same-timestamp rows.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -23,15 +27,20 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := paymentsState{
-		LastUpdatedAt: oldState.LastUpdatedAt,
+		LastUpdatedAt:   oldState.LastUpdatedAt,
+		LastProcessedID: oldState.LastProcessedID,
 	}
 
 	var payments []models.PSPPayment
 	var updatedAts []time.Time
+	var processedIDs []string
 	hasMore := false
 	page := 1
 	for {
-		pagedTransactions, nextPage, err := p.client.GetTransactions(ctx, page, req.PageSize, newState.LastUpdatedAt)
+		// Filter against the STABLE watermark from oldState for the whole drain.
+		// Advancing it mid-pagination (the previous behaviour) would drop rows
+		// sharing a second across a page boundary and mutate the server filter.
+		pagedTransactions, nextPage, err := p.client.GetTransactions(ctx, page, req.PageSize, oldState.LastUpdatedAt)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -40,7 +49,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			break
 		}
 
-		payments, updatedAts, err = fillPayments(payments, updatedAts, pagedTransactions, newState)
+		payments, updatedAts, processedIDs, err = fillPayments(payments, updatedAts, processedIDs, pagedTransactions, oldState)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -48,19 +57,18 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		var needMore bool
 		needMore, hasMore, payments = shouldFetchMore(payments, nextPage, req.PageSize)
 
-		if len(payments) > 0 {
-			newState.LastUpdatedAt = updatedAts[len(payments)-1]
-		}
-
 		if !needMore {
 			break
 		}
 
-		if len(payments) > 0 {
-			newState.LastUpdatedAt = updatedAts[len(payments)-1]
-		}
-
 		page = nextPage
+	}
+
+	// Watermark and dedup key come from the last EMITTED payment, computed once
+	// after the drain (updatedAts/processedIDs stay aligned with payments by index).
+	if len(payments) > 0 {
+		newState.LastUpdatedAt = updatedAts[len(payments)-1]
+		newState.LastProcessedID = processedIDs[len(payments)-1]
 	}
 
 	payload, err := json.Marshal(newState)
@@ -78,28 +86,33 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 func fillPayments(
 	payments []models.PSPPayment,
 	updatedAts []time.Time,
+	processedIDs []string,
 	pagedTransactions []client.Transaction,
-	newState paymentsState,
-) ([]models.PSPPayment, []time.Time, error) {
+	oldState paymentsState,
+) ([]models.PSPPayment, []time.Time, []string, error) {
 	for _, transaction := range pagedTransactions {
-		switch transaction.UpdatedAt.Compare(newState.LastUpdatedAt) {
-		case -1, 0:
+		// Inclusive watermark: skip transactions strictly before it, and the single
+		// already-processed transaction at exactly the watermark. Distinct
+		// transactions sharing that timestamp are kept (M-CON2). Keyed on
+		// transaction.ID, which differs from payment.Reference (RelatedEntityID).
+		cmp := transaction.UpdatedAt.Compare(oldState.LastUpdatedAt)
+		if cmp < 0 || (cmp == 0 && transaction.ID == oldState.LastProcessedID) {
 			continue
-		default:
 		}
 
 		payment, err := transactionToPayment(transaction)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		if payment != nil {
 			payments = append(payments, *payment)
 			updatedAts = append(updatedAts, transaction.UpdatedAt)
+			processedIDs = append(processedIDs, transaction.ID)
 		}
 	}
 
-	return payments, updatedAts, nil
+	return payments, updatedAts, processedIDs, nil
 }
 
 func transactionToPayment(transaction client.Transaction) (*models.PSPPayment, error) {
