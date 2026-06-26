@@ -14,6 +14,10 @@ import (
 
 type paymentsState struct {
 	LastUpdatedAtFrom time.Time `json:"lastUpdatedAtFrom"`
+	// LastProcessedID is the reference of the last payment emitted at exactly
+	// LastUpdatedAtFrom, so the inclusive (>=) watermark filter can exclude only
+	// that already-processed row while keeping distinct same-timestamp payments.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -26,6 +30,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	newState := paymentsState{
 		LastUpdatedAtFrom: oldState.LastUpdatedAtFrom,
+		LastProcessedID:   oldState.LastProcessedID,
 	}
 
 	payments := make([]models.PSPPayment, 0)
@@ -55,7 +60,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	if len(updatedAts) > 0 {
-		newState.LastUpdatedAtFrom = updatedAts[len(payments)-1]
+		newState.LastUpdatedAtFrom = updatedAts[len(updatedAts)-1]
+		newState.LastProcessedID = payments[len(payments)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -77,11 +83,12 @@ func fillPayments(
 	oldState paymentsState,
 ) ([]models.PSPPayment, []time.Time, error) {
 	for _, payment := range pagedPayments {
-		switch payment.UpdatedAt.Compare(oldState.LastUpdatedAtFrom) {
-		case -1, 0:
-			// Payment already ingested, skip
+		// Inclusive watermark: skip payments strictly before it, and the single
+		// already-processed payment at exactly the watermark. Distinct payments
+		// sharing that timestamp are kept (M-CON2).
+		cmp := payment.UpdatedAt.Compare(oldState.LastUpdatedAtFrom)
+		if cmp < 0 || (cmp == 0 && payment.Id == oldState.LastProcessedID) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(payment)

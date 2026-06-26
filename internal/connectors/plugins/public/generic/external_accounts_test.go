@@ -141,7 +141,7 @@ var _ = Describe("Generic Plugin External Accounts", func() {
 
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastCreatedAtFrom": "%s"}`, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAtFrom": "%s", "lastProcessedID": "%s"}`, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano), sampleAccounts[38].Id)),
 				PageSize: 40,
 			}
 

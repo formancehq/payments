@@ -12,6 +12,10 @@ import (
 
 type accountsState struct {
 	LastCreatedAtFrom time.Time `json:"lastCreatedAtFrom"`
+	// LastProcessedID is the reference of the last account emitted at exactly
+	// LastCreatedAtFrom, so the inclusive (>=) watermark filter can exclude only
+	// that already-processed row while keeping distinct same-timestamp accounts.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -24,6 +28,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	newState := accountsState{
 		LastCreatedAtFrom: oldState.LastCreatedAtFrom,
+		LastProcessedID:   oldState.LastProcessedID,
 	}
 
 	accounts := make([]models.PSPAccount, 0)
@@ -52,6 +57,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	if len(accounts) > 0 {
 		newState.LastCreatedAtFrom = accounts[len(accounts)-1].CreatedAt
+		newState.LastProcessedID = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -72,11 +78,12 @@ func fillAccounts(
 	oldState accountsState,
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
-		switch account.CreatedAt.Compare(oldState.LastCreatedAtFrom) {
-		case -1, 0:
-			// Account already ingested, skip
+		// Inclusive watermark: skip accounts strictly before it, and the single
+		// already-processed account at exactly the watermark. Distinct accounts
+		// sharing that timestamp are kept (M-CON2).
+		cmp := account.CreatedAt.Compare(oldState.LastCreatedAtFrom)
+		if cmp < 0 || (cmp == 0 && account.Id == oldState.LastProcessedID) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(account)

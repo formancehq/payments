@@ -151,7 +151,11 @@ var _ = Describe("Generic Plugin Payments", func() {
 
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAtFrom": "%s"}`, samplePayments[38].UpdatedAt.Format(time.RFC3339Nano))),
+				State: []byte(fmt.Sprintf(
+					`{"lastUpdatedAtFrom": "%s", "lastProcessedID": "%s"}`,
+					samplePayments[38].UpdatedAt.Format(time.RFC3339Nano),
+					samplePayments[38].Id,
+				)),
 				PageSize: 40,
 			}
 
@@ -176,6 +180,35 @@ var _ = Describe("Generic Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
 			Expect(state.LastUpdatedAtFrom.UTC()).To(Equal(samplePayments[49].UpdatedAt.UTC()))
+		})
+
+		It("keeps distinct payments that share the watermark timestamp (M-CON2)", func(ctx SpecContext) {
+			ts := now.Add(-time.Hour).UTC()
+			sameSecond := make([]genericclient.Transaction, 0, 3)
+			for _, id := range []string{"a", "b", "c"} {
+				sameSecond = append(sameSecond, genericclient.Transaction{
+					Id:        id,
+					CreatedAt: ts,
+					UpdatedAt: ts,
+					Currency:  "EUR/2",
+					Type:      genericclient.PAYIN,
+					Status:    genericclient.SUCCEEDED,
+					Amount:    "1000",
+				})
+			}
+
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAtFrom": "%s", "lastProcessedID": "a"}`, ts.Format(time.RFC3339Nano))),
+				PageSize: 40,
+			}
+			m.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(40), ts).Return(sameSecond, nil)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			// "a" was the already-processed boundary row; "b" and "c" share its
+			// timestamp and must NOT be dropped.
+			Expect(resp.Payments).To(HaveLen(2))
+			Expect([]string{resp.Payments[0].Reference, resp.Payments[1].Reference}).To(ConsistOf("b", "c"))
 		})
 	})
 })
