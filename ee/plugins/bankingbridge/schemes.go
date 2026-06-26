@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	TransactionCodeDomainPayment = "PMNT"
+	TransactionCodeDomainPayment        = "PMNT"
+	TransactionCodeDomainCashManagement = "CAMT"
 
 	TransactionCodeFamilyCustomerCardTransactions          = "CCRD"
 	TransactionCodeFamilyMerchantCardTransactions          = "MCRD"
@@ -25,7 +26,9 @@ const (
 	TransactionCodeFamilyReceivedRealTimeCreditTransfer    = "RRCT"
 	TransactionCodeFamilyMiscellaneousCredit               = "MCOP"
 	TransactionCodeFamilyMiscellaneousDebit                = "MDOP"
+	TransactionCodeFamilyAccountBalancing                  = "ACCB"
 
+	TransactionCodeSubFamilyZeroBalancing               = "ZABA"
 	TransactionCodeSubFamilyCashDeposit                 = "CDPT"
 	TransactionCodeSubFamilyCashWithdrawl               = "CWDL"
 	TransactionCodeSubFamilyReimbursement               = "RIMB"
@@ -54,11 +57,23 @@ func PaymentSchemeAndType(code string) (models.PaymentScheme, models.PaymentType
 	family := codeParts[1]
 	subFamily := codeParts[2]
 
+	switch domain {
+	case TransactionCodeDomainPayment:
+		return getPaymentDomainSchemeAndType(family, subFamily)
+
+	case TransactionCodeDomainCashManagement:
+		if family == TransactionCodeFamilyAccountBalancing  && subFamily == TransactionCodeSubFamilyZeroBalancing {
+			return models.PAYMENT_SCHEME_A2A, models.PAYMENT_TYPE_TRANSFER
+		}
+		return models.PAYMENT_SCHEME_OTHER, models.PAYMENT_TYPE_OTHER
+
 	// account overdrafts, interest accumulation, fees etc will not be classified as payments
-	if domain != TransactionCodeDomainPayment {
+	default:
 		return models.PAYMENT_SCHEME_OTHER, models.PAYMENT_TYPE_OTHER
 	}
+}
 
+func getPaymentDomainSchemeAndType(family string, subFamily string) (models.PaymentScheme, models.PaymentType) {
 	switch family {
 	case TransactionCodeFamilyCustomerCardTransactions:
 		if subFamily == TransactionCodeSubFamilyCashDeposit || subFamily == TransactionCodeSubFamilyReimbursement {
@@ -157,12 +172,26 @@ func PaymentStatus(code string, isReversal bool) models.PaymentStatus {
 		return models.PAYMENT_STATUS_SUCCEEDED
 	}
 
-	// account overdrafts, interest accumulation, fees etc will not be classified as payments
-	if codeParts[0] != TransactionCodeDomainPayment {
+	domain := codeParts[0]
+	family := codeParts[1]
+	subFamily := codeParts[2]
+
+	switch domain {
+	case TransactionCodeDomainPayment:
+		return getPaymentDomainStatus(subFamily)
+	case TransactionCodeDomainCashManagement:
+		if family == TransactionCodeFamilyAccountBalancing  && subFamily == TransactionCodeSubFamilyZeroBalancing {
+			return models.PAYMENT_STATUS_SUCCEEDED
+		}
+		return models.PAYMENT_STATUS_OTHER
+
+		// account overdrafts, interest accumulation, fees etc will not be classified as payments
+	default:
 		return models.PAYMENT_STATUS_OTHER
 	}
+}
 
-	subFamily := codeParts[2]
+func getPaymentDomainStatus(subFamily string) models.PaymentStatus {
 	switch subFamily {
 	case TransactionCodeSubFamilyReversalReturn, TransactionCodeSubFamilyCrossborderReturn,
 		TransactionCodeSubFamilyDirectDebitReversal, TransactionCodeSubFamilyDirectDebitUnpaid,

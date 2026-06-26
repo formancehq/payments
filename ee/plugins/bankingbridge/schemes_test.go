@@ -13,121 +13,127 @@ func TestPaymentSchemeAndType(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		scheme         string
+		code           string
 		expectedScheme models.PaymentScheme
 		expectedType   models.PaymentType
 	}{
 		{
-			name:           "Unknown scheme",
-			scheme:         "UNKNOWN.SCHEME",
+			name:           "Unknown code",
+			code:           "UNKNOWN.SCHEME",
 			expectedScheme: models.PAYMENT_SCHEME_UNKNOWN,
 			expectedType:   models.PAYMENT_TYPE_UNKNOWN,
 		},
 		{
 			name:           "Not in PMNT domain",
-			scheme:         "ACMT.MCOP.INTR",
+			code:           "ACMT.MCOP.INTR",
 			expectedScheme: models.PAYMENT_SCHEME_OTHER,
 			expectedType:   models.PAYMENT_TYPE_OTHER,
 		},
 		{
 			name:           "Customer card transaction with cash deposit",
-			scheme:         "PMNT.CCRD.CDPT",
+			code:           "PMNT.CCRD.CDPT",
 			expectedScheme: models.PAYMENT_SCHEME_OTHER,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Merchant card transaction with POS payment",
-			scheme:         "PMNT.MCRD.POSC",
+			code:           "PMNT.MCRD.POSC",
 			expectedScheme: models.PAYMENT_SCHEME_OTHER,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Issued cheques",
-			scheme:         "PMNT.ICHQ.CCHQ",
+			code:           "PMNT.ICHQ.CCHQ",
 			expectedScheme: models.PAYMENT_SCHEME_A2A,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
 			name:           "Received cheques",
-			scheme:         "PMNT.RCHQ.CCHQ",
+			code:           "PMNT.RCHQ.CCHQ",
 			expectedScheme: models.PAYMENT_SCHEME_A2A,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Received cheques unpaid",
-			scheme:         "PMNT.RCHQ.UPCQ",
+			code:           "PMNT.RCHQ.UPCQ",
 			expectedScheme: models.PAYMENT_SCHEME_A2A,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
 			name:           "Drafts",
-			scheme:         "PMNT.DRFT.STAM",
+			code:           "PMNT.DRFT.STAM",
 			expectedScheme: models.PAYMENT_SCHEME_A2A,
 			expectedType:   models.PAYMENT_TYPE_TRANSFER,
 		},
 		{
 			name:           "Issued b2b direct debit",
-			scheme:         "PMNT.IDDT.BBDD",
+			code:           "PMNT.IDDT.BBDD",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_DEBIT,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Issued core direct debit",
-			scheme:         "PMNT.IDDT.ESDD",
+			code:           "PMNT.IDDT.ESDD",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_DEBIT,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Issued direct debits reversal",
-			scheme:         "PMNT.IDDT.PRDD",
+			code:           "PMNT.IDDT.PRDD",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_DEBIT,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
 			name:           "Received b2b direct debit",
-			scheme:         "PMNT.RDDT.BBDD",
+			code:           "PMNT.RDDT.BBDD",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_DEBIT,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
 			name:           "Received core direct debit",
-			scheme:         "PMNT.RDDT.ESDD",
+			code:           "PMNT.RDDT.ESDD",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_DEBIT,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
 			name:           "Received direct debits unpaid",
-			scheme:         "PMNT.RDDT.UPDD",
+			code:           "PMNT.RDDT.UPDD",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_DEBIT,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Issued credit transfers SEPA",
-			scheme:         "PMNT.ICDT.ESCT",
+			code:           "PMNT.ICDT.ESCT",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_CREDIT,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
 			name:           "Received credit transfers SEPA",
-			scheme:         "PMNT.RCDT.ESCT",
+			code:           "PMNT.RCDT.ESCT",
 			expectedScheme: models.PAYMENT_SCHEME_SEPA_CREDIT,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Received credit transfers reversal",
-			scheme:         "PMNT.RCDT.RRTN",
+			code:           "PMNT.RCDT.RRTN",
 			expectedScheme: models.PAYMENT_SCHEME_A2A,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
 		{
+			name:           "Zero balancing treasury management",
+			code:           "CAMT.ACCB.ZABA",
+			expectedScheme: models.PAYMENT_SCHEME_A2A,
+			expectedType:   models.PAYMENT_TYPE_TRANSFER,
+		},
+		{
 			name:           "Miscellaneous credit",
-			scheme:         "PMNT.MCOP.OTHR",
+			code:           "PMNT.MCOP.OTHR",
 			expectedScheme: models.PAYMENT_SCHEME_OTHER,
 			expectedType:   models.PAYMENT_TYPE_PAYIN,
 		},
 		{
 			name:           "Miscellaneous debit",
-			scheme:         "PMNT.MDOP.IADD",
+			code:           "PMNT.MDOP.IADD",
 			expectedScheme: models.PAYMENT_SCHEME_OTHER,
 			expectedType:   models.PAYMENT_TYPE_PAYOUT,
 		},
@@ -135,7 +141,7 @@ func TestPaymentSchemeAndType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scheme, paymentType := bankingbridge.PaymentSchemeAndType(tt.scheme)
+			scheme, paymentType := bankingbridge.PaymentSchemeAndType(tt.code)
 			assert.Equal(t, tt.expectedScheme, scheme)
 			assert.Equal(t, tt.expectedType, paymentType)
 		})
@@ -225,6 +231,11 @@ func TestPaymentStatus(t *testing.T) {
 		{
 			name:           "normal direct debit",
 			code:           "PMNT.IDDT.BBDD",
+			expectedStatus: models.PAYMENT_STATUS_SUCCEEDED,
+		},
+		{
+			name:           "Zero balancing treasury management",
+			code:         "CAMT.ACCB.ZABA",
 			expectedStatus: models.PAYMENT_STATUS_SUCCEEDED,
 		},
 	}
