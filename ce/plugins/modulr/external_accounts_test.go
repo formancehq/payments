@@ -142,7 +142,7 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 		It("should fetch next external accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			lastCreatedAt, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleBeneficiaries[38].Created)
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastModifiedSince": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastModifiedSince": "%s", "lastProcessedID": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano), sampleBeneficiaries[38].ID)),
 				PageSize: 40,
 			}
 

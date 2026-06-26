@@ -12,6 +12,10 @@ import (
 
 type externalAccountsState struct {
 	LastModifiedSince time.Time `json:"lastModifiedSince"`
+	// LastProcessedID is the reference of the last beneficiary emitted at exactly
+	// LastModifiedSince, so the inclusive (>=) watermark filter excludes only that
+	// already-processed row while keeping distinct same-timestamp beneficiaries.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -24,6 +28,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 	newState := externalAccountsState{
 		LastModifiedSince: oldState.LastModifiedSince,
+		LastProcessedID:   oldState.LastProcessedID,
 	}
 
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
@@ -52,6 +57,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 	if len(accounts) > 0 {
 		newState.LastModifiedSince = accounts[len(accounts)-1].CreatedAt
+		newState.LastProcessedID = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -82,11 +88,12 @@ func fillBeneficiaries(
 			return nil, err
 		}
 
-		switch createdTime.Compare(oldState.LastModifiedSince) {
-		case -1, 0:
-			// Account already ingested, skip
+		// Inclusive watermark: skip beneficiaries strictly before it, and the single
+		// already-processed beneficiary at exactly the watermark. Distinct
+		// beneficiaries sharing that timestamp are kept (M-CON2).
+		cmp := createdTime.Compare(oldState.LastModifiedSince)
+		if cmp < 0 || (cmp == 0 && beneficiary.ID == oldState.LastProcessedID) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(beneficiary)

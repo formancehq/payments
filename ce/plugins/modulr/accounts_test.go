@@ -143,7 +143,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			lastCreatedAt, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleAccounts[38].CreatedDate)
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedID": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano), sampleAccounts[38].ID)),
 				PageSize: 40,
 			}
 
@@ -169,6 +169,33 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 			// We fetched everything, state should be resetted
 			createdTime, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleAccounts[49].CreatedDate)
 			Expect(state.LastCreatedAt.UTC()).To(Equal(createdTime.UTC()))
+		})
+
+		It("keeps distinct accounts that share the watermark timestamp (M-CON2)", func(ctx SpecContext) {
+			createdDate := now.Add(-time.Hour).UTC().Format("2006-01-02T15:04:05.999-0700")
+			ts, _ := time.Parse("2006-01-02T15:04:05.999-0700", createdDate)
+			sameSecond := make([]client.Account, 0, 3)
+			for _, id := range []string{"a", "b", "c"} {
+				sameSecond = append(sameSecond, client.Account{
+					ID:          id,
+					Name:        "acc " + id,
+					Currency:    "USD",
+					CreatedDate: createdDate,
+				})
+			}
+
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedID": "a"}`, ts.UTC().Format(time.RFC3339Nano))),
+				PageSize: 40,
+			}
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 40, ts.UTC()).Return(sameSecond, nil)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			// "a" was the already-processed boundary row; "b" and "c" share its
+			// timestamp and must NOT be dropped.
+			Expect(resp.Accounts).To(HaveLen(2))
+			Expect([]string{resp.Accounts[0].Reference, resp.Accounts[1].Reference}).To(ConsistOf("b", "c"))
 		})
 	})
 })

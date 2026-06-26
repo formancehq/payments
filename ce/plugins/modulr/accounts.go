@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/ce/plugins/modulr/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/domain/pagination"
@@ -14,6 +14,10 @@ import (
 
 type accountsState struct {
 	LastCreatedAt time.Time `json:"lastCreatedAt"`
+	// LastProcessedID is the reference of the last account emitted at exactly
+	// LastCreatedAt, so the inclusive (>=) watermark filter excludes only that
+	// already-processed row while keeping distinct same-timestamp accounts.
+	LastProcessedID string `json:"lastProcessedID"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -25,7 +29,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	newState := accountsState{
-		LastCreatedAt: oldState.LastCreatedAt,
+		LastCreatedAt:   oldState.LastCreatedAt,
+		LastProcessedID: oldState.LastProcessedID,
 	}
 
 	var accounts []models.PSPAccount
@@ -54,6 +59,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	if len(accounts) > 0 {
 		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+		newState.LastProcessedID = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -84,11 +90,12 @@ func fillAccounts(
 			return nil, err
 		}
 
-		switch createdTime.Compare(oldState.LastCreatedAt) {
-		case -1, 0:
-			// Account already ingested, skip
+		// Inclusive watermark: skip accounts strictly before it, and the single
+		// already-processed account at exactly the watermark. Distinct accounts
+		// sharing that timestamp are kept (M-CON2).
+		cmp := createdTime.Compare(oldState.LastCreatedAt)
+		if cmp < 0 || (cmp == 0 && account.ID == oldState.LastProcessedID) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(account)
