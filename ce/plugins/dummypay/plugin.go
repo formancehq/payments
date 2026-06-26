@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
+	"github.com/formancehq/payments/ce/plugins/dummypay/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 )
 
 const ProviderName = "dummypay"

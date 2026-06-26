@@ -10,6 +10,8 @@ replace github.com/formancehq/payments/genericclient/v3 => ./ce/plugins/generic/
 
 replace github.com/formancehq/payments/ce/plugins/adyen => ./ce/plugins/adyen
 
+replace github.com/formancehq/payments/ce/plugins/dummypay => ./ce/plugins/dummypay
+
 replace github.com/formancehq/payments/ce/plugins/atlar => ./ce/plugins/atlar
 
 replace github.com/formancehq/payments/ce/plugins/bankingcircle => ./ce/plugins/bankingcircle
@@ -51,6 +53,7 @@ require (
 	github.com/formancehq/payments/ce/plugins/bankingcircle v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/ce/plugins/column v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/ce/plugins/currencycloud v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/ce/plugins/dummypay v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/ce/plugins/generic v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/ce/plugins/increase v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/ce/plugins/mangopay v0.0.0-00010101000000-000000000000

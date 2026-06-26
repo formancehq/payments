@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"
+	"github.com/formancehq/payments/ce/plugins/dummypay"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"

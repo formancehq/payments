@@ -8,6 +8,7 @@ import (
 	bankingcircle "github.com/formancehq/payments/ce/plugins/bankingcircle"
 	column "github.com/formancehq/payments/ce/plugins/column"
 	currencycloud "github.com/formancehq/payments/ce/plugins/currencycloud"
+	dummypay "github.com/formancehq/payments/ce/plugins/dummypay"
 	generic "github.com/formancehq/payments/ce/plugins/generic"
 	increase "github.com/formancehq/payments/ce/plugins/increase"
 	mangopay "github.com/formancehq/payments/ce/plugins/mangopay"
@@ -19,7 +20,6 @@ import (
 	stripe "github.com/formancehq/payments/ce/plugins/stripe"
 	tink "github.com/formancehq/payments/ce/plugins/tink"
 	wise "github.com/formancehq/payments/ce/plugins/wise"
-	dummypay "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
@@ -30,6 +30,7 @@ func init() {
 		bankingcircle.ProviderName: bankingcircle.Registration,
 		column.ProviderName:        column.Registration,
 		currencycloud.ProviderName: currencycloud.Registration,
+		DummyPSPName:               dummypay.Registration,
 		generic.ProviderName:       generic.Registration,
 		increase.ProviderName:      increase.Registration,
 		mangopay.ProviderName:      mangopay.Registration,
@@ -41,6 +42,5 @@ func init() {
 		stripe.ProviderName:        stripe.Registration,
 		tink.ProviderName:          tink.Registration,
 		wise.ProviderName:          wise.Registration,
-		DummyPSPName:               dummypay.Registration,
 	})
 }
