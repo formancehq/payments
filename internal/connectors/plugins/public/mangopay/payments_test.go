@@ -157,7 +157,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 10, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 10, lastCreatedAt.UTC().Add(-time.Second)).Return(
 				sampleTransactions[39:49],
 				nil,
 			)
@@ -192,7 +192,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				sampleTransactions[i].CreationDate = sampleTransactions[4].CreationDate
 			}
 			transactionsReturnedByClient := sampleTransactions[5:10]
-			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 5, lastCreatedAt).Times(1).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 5, lastCreatedAt.Add(-time.Second)).Times(1).Return(
 				transactionsReturnedByClient,
 				nil,
 			)
@@ -212,6 +212,38 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			// We fetched everything, state should be resetted
 			Expect(state.LastPage).To(Equal(2))
 			Expect(state.LastCreationDate.UTC()).To(Equal(lastCreatedAt))
+		})
+
+		It("includes a transaction at exactly the watermark second (M-CON3)", func(ctx SpecContext) {
+			watermark := time.Unix(sampleTransactions[10].CreationDate, 0).UTC()
+			req := models.FetchNextPaymentsRequest{
+				State:       []byte(fmt.Sprintf(`{"lastPage": 1, "lastCreationDate": "%s"}`, watermark.Format(time.RFC3339Nano))),
+				PageSize:    60,
+				FromPayload: json.RawMessage(`{"Reference": "test"}`),
+			}
+
+			// A transaction created in the SAME second as the watermark would be
+			// dropped by an exclusive AfterDate=watermark filter. The fix queries
+			// AfterDate=watermark-1s, so the server returns the watermark second and
+			// this row is emitted instead of lost.
+			atWatermark := client.Payment{
+				Id:               "same-second",
+				CreationDate:     watermark.Unix(),
+				DebitedFunds:     client.Funds{Currency: "USD", Amount: "100"},
+				Status:           "SUCCEEDED",
+				Type:             "PAYIN",
+				CreditedWalletID: "acc2",
+				DebitedWalletID:  "acc1",
+			}
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 60, watermark.Add(-time.Second)).Return(
+				[]client.Payment{atWatermark},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(1))
+			Expect(resp.Payments[0].Reference).To(Equal("same-second"))
 		})
 	})
 })
