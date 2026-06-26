@@ -44,12 +44,22 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		LastCreationDate: oldState.LastCreationDate,
 	}
 
+	// Mangopay's AfterDate is an EXCLUSIVE, second-precision server filter. Querying
+	// with the raw watermark drops every transaction in the watermark's own second
+	// (M-CON3). Subtract one second so that second is returned; the LastPage counter
+	// then pages through any same-second group across cycles (mangopay's equivalent
+	// of qonto's Page-based dedup; storage upserts dedup harmless re-emission).
+	afterDate := oldState.LastCreationDate
+	if !afterDate.IsZero() {
+		afterDate = afterDate.Add(-time.Second)
+	}
+
 	var payments []models.PSPPayment
 	needMore := false
 	hasMore := false
 	page := oldState.LastPage
 	for {
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreationDate)
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, afterDate)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
