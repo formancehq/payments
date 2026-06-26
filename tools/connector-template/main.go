@@ -9,6 +9,8 @@ import (
 	"regexp"
 )
 
+const repoModule = "github.com/formancehq/payments"
+
 var (
 	connectorDirPath = flag.String("connector-dir-path", "", "Path where to create the new connector directory")
 	connectorName    = flag.String("connector-name", "", "Name of the new connector")
@@ -33,6 +35,21 @@ func main() {
 
 	connectorPath := filepath.Join(*connectorDirPath, *connectorName)
 
+	absDir, err := filepath.Abs(*connectorDirPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// connector-dir-path is always <repo-root>/{ce,ee}/plugins, so repo root is two levels up.
+	repoRoot := filepath.Dir(filepath.Dir(absDir))
+
+	pluginAbs := filepath.Join(absDir, *connectorName)
+
+	relFromRoot, err := filepath.Rel(repoRoot, pluginAbs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	modulePath := repoModule + "/" + filepath.ToSlash(relFromRoot)
+
 	// Create the new connector's directory
 	if err := os.Mkdir(connectorPath, 0755); err != nil {
 		log.Fatal(err)
@@ -49,6 +66,7 @@ func main() {
 		connectorPath,
 		map[string]interface{}{
 			"Connector": *connectorName,
+			"Module":    modulePath,
 		},
 	); err != nil {
 		log.Fatal(err)

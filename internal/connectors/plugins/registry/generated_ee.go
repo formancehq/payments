@@ -3,28 +3,28 @@
 package registry
 
 import (
+	adyen "github.com/formancehq/payments/ce/plugins/adyen"
+	atlar "github.com/formancehq/payments/ce/plugins/atlar"
+	bankingcircle "github.com/formancehq/payments/ce/plugins/bankingcircle"
+	column "github.com/formancehq/payments/ce/plugins/column"
+	currencycloud "github.com/formancehq/payments/ce/plugins/currencycloud"
+	generic "github.com/formancehq/payments/ce/plugins/generic"
+	increase "github.com/formancehq/payments/ce/plugins/increase"
+	mangopay "github.com/formancehq/payments/ce/plugins/mangopay"
+	modulr "github.com/formancehq/payments/ce/plugins/modulr"
+	moneycorp "github.com/formancehq/payments/ce/plugins/moneycorp"
+	plaid "github.com/formancehq/payments/ce/plugins/plaid"
+	powens "github.com/formancehq/payments/ce/plugins/powens"
+	qonto "github.com/formancehq/payments/ce/plugins/qonto"
+	stripe "github.com/formancehq/payments/ce/plugins/stripe"
+	tink "github.com/formancehq/payments/ce/plugins/tink"
+	wise "github.com/formancehq/payments/ce/plugins/wise"
 	bankingbridge "github.com/formancehq/payments/ee/plugins/bankingbridge"
 	bitstamp "github.com/formancehq/payments/ee/plugins/bitstamp"
 	coinbaseprime "github.com/formancehq/payments/ee/plugins/coinbaseprime"
 	fireblocks "github.com/formancehq/payments/ee/plugins/fireblocks"
 	routable "github.com/formancehq/payments/ee/plugins/routable"
-	adyen "github.com/formancehq/payments/internal/connectors/plugins/public/adyen"
-	atlar "github.com/formancehq/payments/internal/connectors/plugins/public/atlar"
-	bankingcircle "github.com/formancehq/payments/internal/connectors/plugins/public/bankingcircle"
-	column "github.com/formancehq/payments/internal/connectors/plugins/public/column"
-	currencycloud "github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud"
 	dummypay "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"
-	generic "github.com/formancehq/payments/internal/connectors/plugins/public/generic"
-	increase "github.com/formancehq/payments/internal/connectors/plugins/public/increase"
-	mangopay "github.com/formancehq/payments/internal/connectors/plugins/public/mangopay"
-	modulr "github.com/formancehq/payments/internal/connectors/plugins/public/modulr"
-	moneycorp "github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp"
-	plaid "github.com/formancehq/payments/internal/connectors/plugins/public/plaid"
-	powens "github.com/formancehq/payments/internal/connectors/plugins/public/powens"
-	qonto "github.com/formancehq/payments/internal/connectors/plugins/public/qonto"
-	stripe "github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
-	tink "github.com/formancehq/payments/internal/connectors/plugins/public/tink"
-	wise "github.com/formancehq/payments/internal/connectors/plugins/public/wise"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
@@ -35,7 +35,6 @@ func init() {
 		bankingcircle.ProviderName: bankingcircle.Registration,
 		column.ProviderName:        column.Registration,
 		currencycloud.ProviderName: currencycloud.Registration,
-		DummyPSPName:               dummypay.Registration,
 		generic.ProviderName:       generic.Registration,
 		increase.ProviderName:      increase.Registration,
 		mangopay.ProviderName:      mangopay.Registration,
@@ -47,6 +46,7 @@ func init() {
 		stripe.ProviderName:        stripe.Registration,
 		tink.ProviderName:          tink.Registration,
 		wise.ProviderName:          wise.Registration,
+		DummyPSPName:               dummypay.Registration,
 		bankingbridge.ProviderName: bankingbridge.Registration,
 		bitstamp.ProviderName:      bitstamp.Registration,
 		coinbaseprime.ProviderName: coinbaseprime.Registration,

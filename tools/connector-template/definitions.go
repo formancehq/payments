@@ -9,6 +9,11 @@ import (
 )
 
 var (
+	//go:embed template/go.mod.gotpl
+	gomod string
+)
+
+var (
 	//go:embed template/client/client.gotpl
 	client string
 
@@ -71,6 +76,7 @@ var (
 
 func createFiles(ctx context.Context, directoryPath string, params map[string]interface{}) error {
 	files := map[string]string{
+		"go.mod":                      gomod,
 		"client/client.go":            client,
 		"client/accounts.go":          clientAccounts,
 		"client/balances.go":          clientBalances,

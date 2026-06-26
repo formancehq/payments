@@ -3,7 +3,7 @@ package {{ .Connector }}
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/{{ .Connector }}/client"
+	"{{ .Module }}/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 )
 

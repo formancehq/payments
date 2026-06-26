@@ -1,0 +1,5 @@
+module {{ .Module }}
+
+go 1.26
+
+replace github.com/formancehq/payments/pkg/domain => ../../../pkg/domain

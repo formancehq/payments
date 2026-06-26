@@ -167,7 +167,7 @@ func (g *TestGenerator) generateTestFile(groups []SnapshotGroup) (GeneratedTest,
 }
 
 func (g *TestGenerator) generateInstructions() string {
-	connectorPath := fmt.Sprintf("internal/connectors/plugins/public/%s", g.provider)
+	connectorPath := fmt.Sprintf("ce/plugins/%s", g.provider)
 	
 	return fmt.Sprintf(`## Test Setup Instructions
 
