@@ -567,3 +567,59 @@ func TestPaymentsState_Marshaling(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, state.LastUpdatedAtFrom.Equal(decoded.LastUpdatedAtFrom))
 }
+
+func TestFetchNextPayments_WalksLargeSameSecondGroup(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := client.NewMockClient(ctrl)
+	plugin := &Plugin{client: mockClient}
+
+	// Five transactions all sharing the same UpdatedAt second, fetched two per
+	// page. A single LastProcessedID without a page cursor oscillates and never
+	// reaches id3/id4; the page cursor must walk through the whole group.
+	ts := time.Now().UTC().Add(-time.Hour)
+	mk := func(id string) genericclient.Transaction {
+		return genericclient.Transaction{
+			Id:        id,
+			CreatedAt: ts,
+			UpdatedAt: ts,
+			Currency:  "EUR/2",
+			Type:      genericclient.PAYIN,
+			Status:    genericclient.SUCCEEDED,
+			Amount:    "1000",
+		}
+	}
+	all := []genericclient.Transaction{mk("id0"), mk("id1"), mk("id2"), mk("id3"), mk("id4")}
+
+	refs := func(ps []models.PSPPayment) []string {
+		out := make([]string, len(ps))
+		for i := range ps {
+			out[i] = ps[i].Reference
+		}
+		return out
+	}
+
+	// Cycle 1: fresh state, page 1 -> id0, id1.
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(2), time.Time{}).Return(all[0:2], nil)
+	resp, err := plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 2})
+	require.NoError(t, err)
+	require.Equal(t, []string{"id0", "id1"}, refs(resp.Payments))
+	require.True(t, resp.HasMore)
+
+	// Cycle 2: page 1 re-fetched (id1 deduped) then page 2 -> id2, id3 (progress).
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
+	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+	require.NoError(t, err)
+	require.Subset(t, refs(resp.Payments), []string{"id2", "id3"})
+	require.NotContains(t, refs(resp.Payments), "id1") // exact boundary deduped, not lost
+
+	// Cycle 3: page 3 -> id4. The group is fully drained without stalling.
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
+	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+	require.NoError(t, err)
+	require.Contains(t, refs(resp.Payments), "id4")
+}

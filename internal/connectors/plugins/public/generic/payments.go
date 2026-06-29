@@ -18,6 +18,12 @@ type paymentsState struct {
 	// LastUpdatedAtFrom, so the inclusive (>=) watermark filter can exclude only
 	// that already-processed row while keeping distinct same-timestamp payments.
 	LastProcessedID string `json:"lastProcessedID"`
+	// Page is the next page to fetch within the current LastUpdatedAtFrom second.
+	// It advances while the watermark second is unchanged (a same-second group
+	// larger than one page) and resets to 1 once the watermark moves to a newer
+	// second, so a same-second group spanning pages is walked without re-scanning
+	// from page 1 each cycle (which a single LastProcessedID cannot do).
+	Page int `json:"page"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -27,17 +33,25 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
+	if oldState.Page < 1 {
+		oldState.Page = 1
+	}
 
 	newState := paymentsState{
 		LastUpdatedAtFrom: oldState.LastUpdatedAtFrom,
 		LastProcessedID:   oldState.LastProcessedID,
+		Page:              oldState.Page,
 	}
 
 	payments := make([]models.PSPPayment, 0)
 	updatedAts := make([]time.Time, 0)
 	needMore := false
 	hasMore := false
-	for page := 1; ; page++ {
+	// Resume at the persisted page and walk forward. We do NOT trim back to
+	// PageSize and restart at page 1 next cycle: that would skip the trimmed
+	// rows. Instead the page cursor (below) records how far we got.
+	page := oldState.Page
+	for {
 		pagedPayments, err := p.client.ListTransactions(ctx, int64(page), int64(req.PageSize), oldState.LastUpdatedAtFrom)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
@@ -52,16 +66,20 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		if !needMore || !hasMore {
 			break
 		}
-	}
-
-	if !needMore {
-		payments = payments[:req.PageSize]
-		updatedAts = updatedAts[:req.PageSize]
+		page++
 	}
 
 	if len(updatedAts) > 0 {
 		newState.LastUpdatedAtFrom = updatedAts[len(updatedAts)-1]
 		newState.LastProcessedID = payments[len(payments)-1].Reference
+		// If the watermark second did not advance, the whole batch was inside one
+		// same-second group; resume after the pages we just consumed. Otherwise the
+		// watermark moved to a newer second, so re-anchor pagination at page 1.
+		if newState.LastUpdatedAtFrom.Equal(oldState.LastUpdatedAtFrom) {
+			newState.Page = page + 1
+		} else {
+			newState.Page = 1
+		}
 	}
 
 	payload, err := json.Marshal(newState)
