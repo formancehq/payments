@@ -498,5 +498,53 @@ var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 			Expect(resp.Payments).To(HaveLen(2))
 			Expect([]string{resp.Payments[0].Reference, resp.Payments[1].Reference}).To(ConsistOf("b", "c"))
 		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			const createdAtStr = "2024-02-02T00:00:00"
+			ts, _ := time.Parse("2006-01-02T15:04:05.999999999", createdAtStr)
+			mk := func(id string) *client.Transaction {
+				return &client.Transaction{
+					ID: id,
+					Attributes: client.TransactionAttributes{
+						AccountID: accRef,
+						Type:      "Charge",
+						Direction: "Credit",
+						Currency:  "MAD",
+						Amount:    json.Number("100"),
+						CreatedAt: createdAtStr,
+					},
+				}
+			}
+			all := []*client.Transaction{mk("m0"), mk("m1"), mk("m2"), mk("m3"), mk("m4")}
+			refs := func(ps []models.PSPPayment) []string {
+				out := make([]string, len(ps))
+				for i := range ps {
+					out[i] = ps[i].Reference
+				}
+				return out
+			}
+			ref := fmt.Sprintf("%d", accRef)
+			fromPayload := json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef))
+
+			// Cycle 1: page 0 -> m0, m1.
+			m.EXPECT().GetTransactions(gomock.Any(), ref, 0, 2, time.Time{}).Return(all[0:2], nil)
+			resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(Equal([]string{"m0", "m1"}))
+
+			// Cycle 2: page 0 re-fetched (m1 deduped) then page 1 -> m2, m3.
+			m.EXPECT().GetTransactions(gomock.Any(), ref, 0, 2, ts.UTC()).Return(all[0:2], nil)
+			m.EXPECT().GetTransactions(gomock.Any(), ref, 1, 2, ts.UTC()).Return(all[2:4], nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(ContainElements("m2", "m3"))
+			Expect(refs(resp.Payments)).ToNot(ContainElement("m1"))
+
+			// Cycle 3: page 2 -> m4 (group fully drained, no stall).
+			m.EXPECT().GetTransactions(gomock.Any(), ref, 2, 2, ts.UTC()).Return(all[4:5], nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(ContainElement("m4"))
+		})
 	})
 })
