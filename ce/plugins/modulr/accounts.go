@@ -18,6 +18,13 @@ type accountsState struct {
 	// LastCreatedAt, so the inclusive (>=) watermark filter excludes only that
 	// already-processed row while keeping distinct same-timestamp accounts.
 	LastProcessedID string `json:"lastProcessedID"`
+	// Page is the next page to fetch within the current LastCreatedAt second
+	// (0-indexed). It advances while the watermark second is unchanged (a
+	// same-second group larger than one page) and resets to 0 once the watermark
+	// moves to a newer second, so a same-second group spanning pages is walked
+	// without re-scanning from page 0 each cycle (which a single LastProcessedID
+	// cannot do).
+	Page int `json:"page"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -31,18 +38,23 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	newState := accountsState{
 		LastCreatedAt:   oldState.LastCreatedAt,
 		LastProcessedID: oldState.LastProcessedID,
+		Page:            oldState.Page,
 	}
 
 	var accounts []models.PSPAccount
 	needMore := false
 	hasMore := false
-	for page := 0; ; page++ {
+	// Resume at the persisted page and walk forward; the page cursor below
+	// records how far we got. We consume each page fully (no PageSize cap or
+	// trim) so resuming at the next page cannot skip rows.
+	page := oldState.Page
+	for {
 		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		accounts, err = fillAccounts(pagedAccounts, accounts, oldState, req.PageSize)
+		accounts, err = fillAccounts(pagedAccounts, accounts, oldState)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
@@ -51,15 +63,19 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		if !needMore || !hasMore {
 			break
 		}
-	}
-
-	if !needMore {
-		accounts = accounts[:req.PageSize]
+		page++
 	}
 
 	if len(accounts) > 0 {
 		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
 		newState.LastProcessedID = accounts[len(accounts)-1].Reference
+		// Same-second group still draining -> resume after consumed pages; else
+		// the watermark moved to a newer second, so re-anchor at page 0.
+		if newState.LastCreatedAt.Equal(oldState.LastCreatedAt) {
+			newState.Page = page + 1
+		} else {
+			newState.Page = 0
+		}
 	}
 
 	payload, err := json.Marshal(newState)
@@ -78,13 +94,8 @@ func fillAccounts(
 	pagedAccounts []client.Account,
 	accounts []models.PSPAccount,
 	oldState accountsState,
-	pageSize int,
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
-		if len(accounts) >= pageSize {
-			break
-		}
-
 		createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", account.CreatedDate)
 		if err != nil {
 			return nil, err
