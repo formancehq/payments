@@ -189,19 +189,32 @@ var _ = Describe("Generic Plugin External Accounts", func() {
 			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b1"}))
 			Expect(resp.HasMore).To(BeTrue())
 
-			// Cycle 2: page 1 re-fetched (b1 deduped) then page 2 -> b2, b3.
+			// Cycle 2: page 1 re-fetched then page 2 -> b2, b3. The boundary b1 is
+			// deduped; b0 (a same-second sibling on the re-fetched page 1) is
+			// re-emitted by design — storage upserts dedup it. Asserting the exact
+			// set catches any unintended extra re-emission.
 			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
 			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
 			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(ContainElements("b2", "b3"))
-			Expect(refs(resp.ExternalAccounts)).ToNot(ContainElement("b1"))
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b2", "b3"}))
 
-			// Cycle 3: page 3 -> b4 (group fully drained, no stall).
+			// Cycle 3: page 3 -> b4 (group fully drained on a short final page).
 			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
 			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(ContainElement("b4"))
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b4"}))
+
+			// Cycle 4: a newer-second beneficiary b5 lands on the short last page
+			// (3). The cursor must stay on page 3 rather than advance to page 4, or
+			// b5 would be stranded forever behind an empty page.
+			ts2 := ts.Add(time.Second)
+			b5 := genericclient.Beneficiary{Id: "b5", OwnerName: "owner-b5", CreatedAt: ts2}
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(3), int64(2), ts).Return([]genericclient.Beneficiary{all[4], b5}, nil)
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(4), int64(2), ts).Return([]genericclient.Beneficiary{}, nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b5"}))
 		})
 	})
 })
