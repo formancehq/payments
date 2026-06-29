@@ -1,6 +1,7 @@
 package mangopay
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,7 +95,6 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(1))
 			Expect(state.LastCreationDate.IsZero()).To(BeTrue())
 		})
 
@@ -120,7 +120,6 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
 			createdTime := time.Unix(sampleTransactions[49].CreationDate, 0)
-			Expect(state.LastPage).To(Equal(1))
 			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
 		})
 
@@ -144,7 +143,6 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastPage).To(Equal(1))
 			createdTime := time.Unix(sampleTransactions[39].CreationDate, 0)
 			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
 		})
@@ -172,22 +170,22 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(1))
 			createdTime := time.Unix(sampleTransactions[48].CreationDate, 0)
 			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
 		})
 
-		It("should fetch next payments - when last account in current page updatedAt == oldState.updatedAt, we need to fetch next page", func(ctx SpecContext) {
-			// Given
+		It("accumulates the processed-ID set when the batch stays in the watermark second", func(ctx SpecContext) {
+			// Given: the watermark already sits on the shared second, and the next
+			// batch is entirely within it.
 			lastCreatedAt := time.Unix(sampleTransactions[4].CreationDate, 0).UTC()
 
 			req := models.FetchNextPaymentsRequest{
-				State:       []byte(fmt.Sprintf(`{"lastPage": 1, "lastCreationDate": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
+				State:       []byte(fmt.Sprintf(`{"lastCreationDate": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
 				PageSize:    5,
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			// Set all transactions to have the same updatedAt
+			// Set all transactions to have the same CreationDate as the watermark.
 			for i := range sampleTransactions {
 				sampleTransactions[i].CreationDate = sampleTransactions[4].CreationDate
 			}
@@ -209,9 +207,10 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(2))
 			Expect(state.LastCreationDate.UTC()).To(Equal(lastCreatedAt))
+			// Watermark second unchanged -> the emitted IDs are tracked so the next
+			// cycle skips them.
+			Expect(state.LastProcessedIDs).To(ConsistOf("5", "6", "7", "8", "9"))
 		})
 
 		It("includes a transaction at exactly the watermark second (M-CON3)", func(ctx SpecContext) {
@@ -244,6 +243,61 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(1))
 			Expect(resp.Payments[0].Reference).To(Equal("same-second"))
+		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			ts := time.Now().UTC().Add(-time.Hour)
+			mk := func(id string) client.Payment {
+				return client.Payment{
+					Id:               id,
+					CreationDate:     ts.Unix(),
+					DebitedFunds:     client.Funds{Currency: "USD", Amount: "100"},
+					Status:           "SUCCEEDED",
+					Type:             "PAYIN",
+					CreditedWalletID: "acc2",
+					DebitedWalletID:  "acc1",
+				}
+			}
+			all := []client.Payment{mk("t0"), mk("t1"), mk("t2"), mk("t3"), mk("t4")}
+			// Mangopay rescans from page 1 each cycle (AfterDate re-includes the
+			// watermark second); serve the list page by page so the processed-ID set
+			// has to skip already-emitted siblings to make progress.
+			m.EXPECT().GetTransactions(gomock.Any(), "test", gomock.Any(), 2, gomock.Any()).DoAndReturn(
+				func(_ context.Context, _ string, page, _ int, _ time.Time) ([]client.Payment, error) {
+					start := (page - 1) * 2
+					if start >= len(all) {
+						return []client.Payment{}, nil
+					}
+					end := start + 2
+					if end > len(all) {
+						end = len(all)
+					}
+					return all[start:end], nil
+				},
+			).AnyTimes()
+			refs := func(ps []models.PSPPayment) []string {
+				out := make([]string, len(ps))
+				for i := range ps {
+					out[i] = ps[i].Reference
+				}
+				return out
+			}
+			fromPayload := json.RawMessage(`{"Reference": "test"}`)
+
+			// Cycle 1: page 1 -> t0, t1.
+			resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(Equal([]string{"t0", "t1"}))
+
+			// Cycle 2: rescan skips t0,t1 (in set), page 2 -> t2, t3.
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(ConsistOf("t2", "t3"))
+
+			// Cycle 3: page 3 -> t4 (group fully drained, no stall).
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(ContainElement("t4"))
 		})
 	})
 })
