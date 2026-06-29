@@ -28,6 +28,11 @@ type accountsState struct {
 	// JSON keys simply don't bind). The watermark second is re-emitted once after
 	// deploy, which is idempotent (storage upserts dedup it) and triggers no
 	// recrawl.
+	//
+	// Precision: comparison and the ID set use the exact timestamp the API
+	// returns (full precision, as in the qonto reference), not a truncated
+	// second; "same-second" above is shorthand because these PSPs report
+	// timestamps at second granularity, so equal values represent the same second.
 	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 

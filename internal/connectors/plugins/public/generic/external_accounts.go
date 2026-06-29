@@ -24,6 +24,11 @@ type externalAccountsState struct {
 	// Migration note: the old singular lastProcessedID and page fields are
 	// ignored on first decode after deploy, so the watermark second's group is
 	// re-emitted once. This is idempotent via storage upsert — no recrawl.
+	//
+	// Precision: comparison and the ID set use the exact timestamp the API
+	// returns (full precision, as in the qonto reference), not a truncated
+	// second; "same-second" above is shorthand because these PSPs report
+	// timestamps at second granularity, so equal values represent the same second.
 	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 

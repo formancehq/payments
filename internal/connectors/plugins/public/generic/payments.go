@@ -22,6 +22,11 @@ type paymentsState struct {
 	// a same-second group larger than PageSize is walked across cycles without a
 	// drifting page cursor, and a multi-row final page cannot oscillate (every
 	// already-emitted sibling is skipped, not just one).
+	//
+	// Precision: comparison and the ID set use the exact timestamp the API
+	// returns (full precision, as in the qonto reference), not a truncated
+	// second; "same-second" above is shorthand because these PSPs report
+	// timestamps at second granularity, so equal values represent the same second.
 	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 
