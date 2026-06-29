@@ -218,6 +218,50 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 			Expect(resp.Payments).To(HaveLen(2))
 			Expect([]string{resp.Payments[0].Reference, resp.Payments[1].Reference}).To(ConsistOf("b", "c"))
 		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			ts := now.Add(-time.Hour).UTC()
+			mk := func(id string) client.Transaction {
+				return client.Transaction{
+					ID:        id,
+					AccountID: "acc",
+					Currency:  "EUR",
+					Type:      "credit",
+					Status:    "completed",
+					CreatedAt: ts,
+					UpdatedAt: ts,
+					Amount:    "100",
+				}
+			}
+			all := []client.Transaction{mk("t0"), mk("t1"), mk("t2"), mk("t3"), mk("t4")}
+			refs := func(ps []models.PSPPayment) []string {
+				out := make([]string, len(ps))
+				for i := range ps {
+					out[i] = ps[i].Reference
+				}
+				return out
+			}
+
+			// Cycle 1: page 1 -> t0, t1.
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 2, time.Time{}).Return(all[0:2], 2, nil)
+			resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(Equal([]string{"t0", "t1"}))
+
+			// Cycle 2: page 1 re-fetched (t1 deduped) then page 2 -> t2, t3.
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 2, ts.UTC()).Return(all[0:2], 2, nil)
+			m.EXPECT().GetTransactions(gomock.Any(), 2, 2, ts.UTC()).Return(all[2:4], 3, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(ContainElements("t2", "t3"))
+			Expect(refs(resp.Payments)).ToNot(ContainElement("t1"))
+
+			// Cycle 3: page 3 -> t4 (group fully drained, no stall).
+			m.EXPECT().GetTransactions(gomock.Any(), 3, 2, ts.UTC()).Return(all[4:5], -1, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(ContainElement("t4"))
+		})
 	})
 })
 
