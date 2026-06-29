@@ -253,14 +253,35 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 			m.EXPECT().GetTransactions(gomock.Any(), 2, 2, ts.UTC()).Return(all[2:4], 3, nil)
 			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Payments)).To(ContainElements("t2", "t3"))
-			Expect(refs(resp.Payments)).ToNot(ContainElement("t1"))
+			// Boundary t1 is deduped; t0 (a same-second sibling on the re-fetched
+			// page 1) is re-emitted by design — storage upserts dedup it. The exact
+			// assertion catches any unintended extra re-emission.
+			Expect(refs(resp.Payments)).To(Equal([]string{"t0", "t2", "t3"}))
 
-			// Cycle 3: page 3 -> t4 (group fully drained, no stall).
+			// Cycle 3: page 3 -> t4 (group fully drained on a short final page).
 			m.EXPECT().GetTransactions(gomock.Any(), 3, 2, ts.UTC()).Return(all[4:5], -1, nil)
 			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Payments)).To(ContainElement("t4"))
+			Expect(refs(resp.Payments)).To(Equal([]string{"t4"}))
+
+			// Cycle 4: a newer-second transaction t5 lands on the short last page
+			// (3). The cursor must stay on page 3 rather than advance to page 4, or
+			// t5 would be stranded forever behind an empty page.
+			ts2 := ts.Add(time.Second)
+			t5 := client.Transaction{
+				ID:        "t5",
+				AccountID: "acc",
+				Currency:  "EUR",
+				Type:      "credit",
+				Status:    "completed",
+				CreatedAt: ts2,
+				UpdatedAt: ts2,
+				Amount:    "100",
+			}
+			m.EXPECT().GetTransactions(gomock.Any(), 3, 2, ts.UTC()).Return([]client.Transaction{all[4], t5}, -1, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(Equal([]string{"t5"}))
 		})
 	})
 })

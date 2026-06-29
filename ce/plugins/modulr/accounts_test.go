@@ -224,14 +224,27 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 			m.EXPECT().GetAccounts(gomock.Any(), 1, 2, ts.UTC()).Return(all[2:4], nil)
 			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Accounts)).To(ContainElements("a2", "a3"))
-			Expect(refs(resp.Accounts)).ToNot(ContainElement("a1"))
+			// Boundary a1 is deduped; a0 (a same-second sibling on the re-fetched
+			// page 0) is re-emitted by design — storage upserts dedup it. The exact
+			// assertion catches any unintended extra re-emission.
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a2", "a3"}))
 
-			// Cycle 3: page 2 -> a4 (group fully drained, no stall).
+			// Cycle 3: page 2 -> a4 (group fully drained on a short final page).
 			m.EXPECT().GetAccounts(gomock.Any(), 2, 2, ts.UTC()).Return(all[4:5], nil)
 			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Accounts)).To(ContainElement("a4"))
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a4"}))
+
+			// Cycle 4: a newer-second account a5 lands on the short last page (2).
+			// The cursor must stay on page 2 rather than advance to page 3, or a5
+			// would be stranded forever behind an empty page.
+			ts2 := ts.Add(time.Second)
+			a5 := client.Account{ID: "a5", Name: "acc a5", Currency: "USD", CreatedDate: ts2.Format("2006-01-02T15:04:05.999-0700")}
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 2, ts.UTC()).Return([]client.Account{all[4], a5}, nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 3, 2, ts.UTC()).Return([]client.Account{}, nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a5"}))
 		})
 	})
 })

@@ -609,17 +609,38 @@ func TestFetchNextPayments_WalksLargeSameSecondGroup(t *testing.T) {
 	require.Equal(t, []string{"id0", "id1"}, refs(resp.Payments))
 	require.True(t, resp.HasMore)
 
-	// Cycle 2: page 1 re-fetched (id1 deduped) then page 2 -> id2, id3 (progress).
+	// Cycle 2: page 1 re-fetched then page 2 -> id2, id3. The boundary id1 is
+	// deduped; id0 (a same-second sibling on the re-fetched page 1) is re-emitted
+	// by design — storage upserts dedup it. Asserting the exact set catches any
+	// unintended extra re-emission.
 	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
 	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
 	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
 	require.NoError(t, err)
-	require.Subset(t, refs(resp.Payments), []string{"id2", "id3"})
-	require.NotContains(t, refs(resp.Payments), "id1") // exact boundary deduped, not lost
+	require.Equal(t, []string{"id0", "id2", "id3"}, refs(resp.Payments))
 
-	// Cycle 3: page 3 -> id4. The group is fully drained without stalling.
+	// Cycle 3: page 3 -> id4 (group fully drained on a short final page).
 	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
 	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
 	require.NoError(t, err)
-	require.Contains(t, refs(resp.Payments), "id4")
+	require.Equal(t, []string{"id4"}, refs(resp.Payments))
+
+	// Cycle 4: a newer-second transaction id5 lands on the short last page (3).
+	// The cursor must stay on page 3 rather than advance to page 4, or id5 would
+	// be stranded forever behind an empty page.
+	ts2 := ts.Add(time.Second)
+	id5 := genericclient.Transaction{
+		Id:        "id5",
+		CreatedAt: ts2,
+		UpdatedAt: ts2,
+		Currency:  "EUR/2",
+		Type:      genericclient.PAYIN,
+		Status:    genericclient.SUCCEEDED,
+		Amount:    "1000",
+	}
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(3), int64(2), ts).Return([]genericclient.Transaction{all[4], id5}, nil)
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(4), int64(2), ts).Return([]genericclient.Transaction{}, nil)
+	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+	require.NoError(t, err)
+	require.Equal(t, []string{"id5"}, refs(resp.Payments))
 }

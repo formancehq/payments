@@ -191,19 +191,32 @@ var _ = Describe("Generic Plugin Accounts", func() {
 			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a1"}))
 			Expect(resp.HasMore).To(BeTrue())
 
-			// Cycle 2: page 1 re-fetched (a1 deduped) then page 2 -> a2, a3.
+			// Cycle 2: page 1 re-fetched then page 2 -> a2, a3. The boundary a1 is
+			// deduped; a0 (a same-second sibling on the re-fetched page 1) is
+			// re-emitted by design — storage upserts dedup it. Asserting the exact
+			// set catches any unintended extra re-emission.
 			m.EXPECT().ListAccounts(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
 			m.EXPECT().ListAccounts(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
 			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Accounts)).To(ContainElements("a2", "a3"))
-			Expect(refs(resp.Accounts)).ToNot(ContainElement("a1"))
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a2", "a3"}))
 
-			// Cycle 3: page 3 -> a4 (group fully drained, no stall).
+			// Cycle 3: page 3 -> a4 (group fully drained on a short final page).
 			m.EXPECT().ListAccounts(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
 			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Accounts)).To(ContainElement("a4"))
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a4"}))
+
+			// Cycle 4: a newer-second account a5 lands on the short last page (3).
+			// The cursor must stay on page 3 rather than advance to page 4, or a5
+			// would be stranded forever behind an empty page.
+			ts2 := ts.Add(time.Second)
+			a5 := genericclient.Account{Id: "a5", AccountName: "name-a5", CreatedAt: ts2}
+			m.EXPECT().ListAccounts(gomock.Any(), int64(3), int64(2), ts).Return([]genericclient.Account{all[4], a5}, nil)
+			m.EXPECT().ListAccounts(gomock.Any(), int64(4), int64(2), ts).Return([]genericclient.Account{}, nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a5"}))
 		})
 	})
 })

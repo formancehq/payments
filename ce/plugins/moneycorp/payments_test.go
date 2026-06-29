@@ -537,14 +537,36 @@ var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 			m.EXPECT().GetTransactions(gomock.Any(), ref, 1, 2, ts.UTC()).Return(all[2:4], nil)
 			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Payments)).To(ContainElements("m2", "m3"))
-			Expect(refs(resp.Payments)).ToNot(ContainElement("m1"))
+			// Boundary m1 is deduped; m0 (a same-second sibling on the re-fetched
+			// page 0) is re-emitted by design — storage upserts dedup it. The exact
+			// assertion catches any unintended extra re-emission.
+			Expect(refs(resp.Payments)).To(Equal([]string{"m0", "m2", "m3"}))
 
-			// Cycle 3: page 2 -> m4 (group fully drained, no stall).
+			// Cycle 3: page 2 -> m4 (group fully drained on a short final page).
 			m.EXPECT().GetTransactions(gomock.Any(), ref, 2, 2, ts.UTC()).Return(all[4:5], nil)
 			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Payments)).To(ContainElement("m4"))
+			Expect(refs(resp.Payments)).To(Equal([]string{"m4"}))
+
+			// Cycle 4: a newer-second transaction m5 lands on the short last page
+			// (2). The cursor must stay on page 2 rather than advance to page 3, or
+			// m5 would be stranded forever behind an empty page.
+			m5 := &client.Transaction{
+				ID: "m5",
+				Attributes: client.TransactionAttributes{
+					AccountID: accRef,
+					Type:      "Charge",
+					Direction: "Credit",
+					Currency:  "MAD",
+					Amount:    json.Number("100"),
+					CreatedAt: "2024-02-02T00:00:01",
+				},
+			}
+			m.EXPECT().GetTransactions(gomock.Any(), ref, 2, 2, ts.UTC()).Return([]*client.Transaction{all[4], m5}, nil)
+			m.EXPECT().GetTransactions(gomock.Any(), ref, 3, 2, ts.UTC()).Return([]*client.Transaction{}, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Payments)).To(Equal([]string{"m5"}))
 		})
 	})
 })

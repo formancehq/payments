@@ -72,11 +72,18 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if len(updatedAts) > 0 {
 		newState.LastUpdatedAtFrom = updatedAts[len(updatedAts)-1]
 		newState.LastProcessedID = payments[len(payments)-1].Reference
-		// If the watermark second did not advance, the whole batch was inside one
-		// same-second group; resume after the pages we just consumed. Otherwise the
-		// watermark moved to a newer second, so re-anchor pagination at page 1.
+		// While the watermark second is unchanged the batch was one same-second
+		// group: advance past the consumed pages only if there is definitely a
+		// full next page (hasMore). If it drained on a short final page, keep the
+		// cursor there — a newer row appended to that second's >= watermark query
+		// lands on this very page, so advancing past it would strand it forever.
+		// When the watermark moved to a newer second, re-anchor at page 1.
 		if newState.LastUpdatedAtFrom.Equal(oldState.LastUpdatedAtFrom) {
-			newState.Page = page + 1
+			if hasMore {
+				newState.Page = page + 1
+			} else {
+				newState.Page = page
+			}
 		} else {
 			newState.Page = 1
 		}

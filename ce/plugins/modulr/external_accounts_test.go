@@ -196,14 +196,27 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 2, ts.UTC()).Return(all[2:4], nil)
 			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(ContainElements("b2", "b3"))
-			Expect(refs(resp.ExternalAccounts)).ToNot(ContainElement("b1"))
+			// Boundary b1 is deduped; b0 (a same-second sibling on the re-fetched
+			// page 0) is re-emitted by design — storage upserts dedup it. The exact
+			// assertion catches any unintended extra re-emission.
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b2", "b3"}))
 
-			// Cycle 3: page 2 -> b4 (group fully drained, no stall).
+			// Cycle 3: page 2 -> b4 (group fully drained on a short final page).
 			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 2, ts.UTC()).Return(all[4:5], nil)
 			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(ContainElement("b4"))
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b4"}))
+
+			// Cycle 4: a newer-second beneficiary b5 lands on the short last page
+			// (2). The cursor must stay on page 2 rather than advance to page 3, or
+			// b5 would be stranded forever behind an empty page.
+			ts2 := ts.Add(time.Second)
+			b5 := client.Beneficiary{ID: "b5", Name: "ben b5", Created: ts2.Format("2006-01-02T15:04:05.999-0700")}
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 2, ts.UTC()).Return([]client.Beneficiary{all[4], b5}, nil)
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 3, 2, ts.UTC()).Return([]client.Beneficiary{}, nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b5"}))
 		})
 	})
 })
