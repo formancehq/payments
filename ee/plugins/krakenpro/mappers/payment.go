@@ -26,11 +26,11 @@ type PaymentMapResult struct {
 
 // LedgerEntryToPSPPayment maps a single ledger row into a PSPPayment.
 // Trade / order / conversion rows are skipped here — they belong to
-// the orders + conversions pipelines. wallets maps a normalised symbol
-// → spot account reference; the payment is attributed to that account
-// (PAYIN → destination, PAYOUT → source) so it links to a real
-// PSPAccount, with the raw variant kept in kraken_asset metadata.
-func LedgerEntryToPSPPayment(currencies map[string]int, wallets map[string]string, ledgerID string, e client.LedgerEntry) (PaymentMapResult, error) {
+// the orders + conversions pipelines. The payment is attributed to the
+// entry's own asset account (the per-variant PSPAccount, keyed by raw
+// Kraken code) by amount sign: PAYOUT (negative) → source, PAYIN
+// (positive) → destination.
+func LedgerEntryToPSPPayment(currencies map[string]int, ledgerID string, e client.LedgerEntry) (PaymentMapResult, error) {
 	kind, paymentType := ClassifyLedgerType(e.Type)
 	if kind != LedgerKindPayment {
 		return PaymentMapResult{Skip: true}, nil
@@ -73,12 +73,12 @@ func LedgerEntryToPSPPayment(currencies map[string]int, wallets map[string]strin
 		Metadata:  LedgerMetadata(e),
 		Raw:       raw,
 	}
-	// Attribute the spot account by amount sign: a negative amount leaves
-	// the account (source), a positive one enters it (destination). This
-	// holds for PAYOUT/PAYIN and for the TRANSFER's known (spot) leg; the
-	// counterparty wallet (futures/staking/subaccount) isn't tracked, so
-	// the other side stays nil. Refs are optional.
-	if ref := spotRef(wallets, symbol); ref != nil {
+	// Attribute the account by amount sign: a negative amount leaves the
+	// account (source), a positive one enters it (destination). This holds
+	// for PAYOUT/PAYIN and for the TRANSFER's known leg; the counterparty
+	// wallet (futures/staking/subaccount) isn't tracked, so the other side
+	// stays nil. Refs are optional.
+	if ref := accountRef(e.Asset); ref != nil {
 		if IsNegative(e.Amount) {
 			payment.SourceAccountReference = ref
 		} else {

@@ -11,10 +11,16 @@ import (
 )
 
 // fetchNextConversions scans /0/private/Ledgers and emits one
-// PSPConversion per refid that has both a negative and a positive
-// leg. Half-pairs are buffered across cycles via the Pending map so
-// a conversion split across two pages still surfaces atomically.
+// PSPConversion per refid that has both a negative and a positive leg.
+// Half-pairs are buffered across cycles via the Pending map so a
+// conversion split across two pages still surfaces atomically.
 // See MAPPINGS §9. Pagination is the shared frozen-end + ofs window.
+//
+// Concerns are separated: a pre-pass guarantees every row carries a
+// known asset (refreshing the cache once if needed and dropping rows
+// still unknown) so the pairing step can assume valid assets, and so
+// un-convertible legs never enter the persisted Pending map. Pending is
+// pruned once the watermark passes a leg's time, bounding its growth.
 func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextConversionsRequest) (models.FetchNextConversionsResponse, error) {
 	var state conversionsState
 	if len(req.State) > 0 {
@@ -23,17 +29,13 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 		}
 	}
 	if state.Pending == nil {
-		state.Pending = map[string]pendingLeg{}
+		state.Pending = map[string]client.LedgerEntry{}
 	}
 
 	currencies, _, err := p.ensureAssets(ctx)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, err
 	}
-	// Spot account references (symbol -> raw spot code) for attributing
-	// each conversion leg to its asset's trading account, taken from the
-	// asset cache — no DB lookup. The precise variant stays in metadata.
-	wallets := p.snapshotAssetCodes()
 
 	start, end, ofs := state.Window.plan(nowEpoch())
 	resp, err := p.client.GetLedgers(ctx, client.LedgersParams{
@@ -43,31 +45,27 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("fetch ledgers: %w", err)
 	}
 
-	// Process the page; if a pairing references an asset missing from the
-	// cache, force ONE refresh and re-process from the same starting state
-	// before the watermark advances, so legs aren't lost.
-	conversions, pending, unknown := p.processConversionsPage(currencies, wallets, state.Pending, resp.Ledger)
-	if len(unknown) > 0 {
-		if err := p.forceRefreshAssets(ctx); err != nil {
-			return models.FetchNextConversionsResponse{}, fmt.Errorf("refresh assets for unknown conversion asset: %w", err)
-		}
-		conversions, pending, unknown = p.processConversionsPage(p.snapshotAssets(), p.snapshotAssetCodes(), state.Pending, resp.Ledger)
-		if len(unknown) > 0 {
-			p.logger.WithField("assets", unknown).
-				Errorf("conversions: assets still unknown after cache refresh, legs kept pending")
-		}
+	// Pre-pass: keep only known-asset conversion rows. A single forced
+	// refresh covers assets listed after the last cache load; rows still
+	// unknown are dropped (logged) so they never reach pairing or Pending.
+	rows, err := p.knownConversionRows(ctx, currencies, resp.Ledger)
+	if err != nil {
+		return models.FetchNextConversionsResponse{}, err
 	}
-	state.Pending = pending
 
-	// Fixed Kraken page size, not req.PageSize (see fetchNextPayments).
+	conversions := p.pairConversions(p.snapshotAssets(), state.Pending, rows)
+
 	hasMore := state.Window.advance(len(resp.Ledger), PAGE_SIZE)
+	// Prune half-pairs whose window has fully drained: both legs share a
+	// refid+time, so once the watermark passes a leg's time its partner
+	// can no longer arrive. Bounds Pending deterministically.
+	prunePending(state.Pending, state.Window.Watermark)
 
 	payload, err := json.Marshal(state)
 	if err != nil {
 		return models.FetchNextConversionsResponse{}, fmt.Errorf("marshal conversions state: %w", err)
 	}
 
-	// `pending` rides on top of the standard cycle log so unresolved-refid build-up is visible.
 	p.logCycle("fetch_conversions", len(conversions), len(resp.Ledger), state.Window, hasMore,
 		"pending", len(state.Pending))
 	return models.FetchNextConversionsResponse{
@@ -77,31 +75,12 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	}, nil
 }
 
-// conversionMapStatus is the outcome of pairing two conversion legs.
-type conversionMapStatus int
-
-const (
-	convOK           conversionMapStatus = iota // paired + mapped, emit
-	convDrop                                    // same-sign / permanent error, drop the pair
-	convUnknownAsset                            // asset missing from cache, retry after refresh
-)
-
-// processConversionsPage pairs a ledger page against a COPY of pending
-// and returns the emitted conversions, the resulting pending map, and the
-// assets of pairs it couldn't map because of a missing-from-cache asset.
-// It never mutates the input pending map, so the caller can re-run it from
-// the same starting state after a cache refresh. A pending leg is removed
-// only on a successful emit (or a permanent drop), never before mapping.
-func (p *Plugin) processConversionsPage(
-	currencies map[string]int, wallets map[string]string,
-	pending map[string]pendingLeg, ledger map[string]client.LedgerEntry,
-) ([]models.PSPConversion, map[string]pendingLeg, []string) {
-	next := make(map[string]pendingLeg, len(pending))
-	for k, v := range pending {
-		next[k] = v
-	}
-	conversions := make([]models.PSPConversion, 0, len(ledger))
-	var unknown []string
+// knownConversionRows returns the page's conversion rows (ID + refid set)
+// whose asset is in the cache. If any asset is missing it forces one
+// cache refresh and re-checks; rows still unknown are dropped + logged so
+// they never enter pairing or the persisted Pending map.
+func (p *Plugin) knownConversionRows(ctx context.Context, currencies map[string]int, ledger map[string]client.LedgerEntry) ([]client.LedgerEntry, error) {
+	var rows []client.LedgerEntry
 	for ledgerID, entry := range ledger {
 		if kind, _ := mappers.ClassifyLedgerType(entry.Type); kind != mappers.LedgerKindConversion {
 			continue
@@ -110,55 +89,86 @@ func (p *Plugin) processConversionsPage(
 			p.logger.WithField("ledgerID", ledgerID).Infof("conversion row has empty refid, skipping")
 			continue
 		}
-		other, ok := next[entry.Refid]
-		if !ok {
-			next[entry.Refid] = pendingLeg{
-				LedgerID: ledgerID, Time: entry.Time, Type: entry.Type, Subtype: entry.Subtype,
-				Aclass: entry.Aclass, Asset: entry.Asset, Amount: entry.Amount, Fee: entry.Fee, Balance: entry.Balance,
-			}
+		entry.ID = ledgerID
+		rows = append(rows, entry)
+	}
+
+	if !allAssetsKnown(currencies, rows) {
+		if err := p.forceRefreshAssets(ctx); err != nil {
+			return nil, fmt.Errorf("refresh assets for unknown conversion asset: %w", err)
+		}
+		currencies = p.snapshotAssets()
+	}
+
+	known := rows[:0]
+	for _, entry := range rows {
+		if assetKnown(currencies, entry.Asset) {
+			known = append(known, entry)
 			continue
 		}
-		conv, status := p.mapConversionPair(currencies, wallets, ledgerID, entry, other)
-		switch status {
-		case convOK:
-			conversions = append(conversions, *conv)
-			delete(next, entry.Refid)
-		case convUnknownAsset:
-			// Keep both legs available (other stays in next) so the
-			// post-refresh re-run from the original pending re-pairs them.
-			unknown = append(unknown, entry.Asset, other.Asset)
-		case convDrop:
-			delete(next, entry.Refid)
-		}
+		p.logger.WithField("ledgerID", entry.ID).WithField("asset", entry.Asset).
+			Errorf("conversion asset still unknown after cache refresh, dropping row")
 	}
-	return conversions, next, unknown
+	return known, nil
 }
 
-// mapConversionPair pairs a fresh ledger row with its stashed half-pair.
-// It reports convDrop for a same-sign pair or a permanent mapping error,
-// convUnknownAsset when a leg's asset is missing from the cache (the
-// caller refreshes + retries), and convOK with the conversion otherwise.
-func (p *Plugin) mapConversionPair(
-	currencies map[string]int,
-	wallets map[string]string,
-	ledgerID string, entry client.LedgerEntry, other pendingLeg,
-) (*models.PSPConversion, conversionMapStatus) {
-	a := mappers.ConversionLeg{LedgerID: ledgerID, Entry: entry}
-	b := mappers.ConversionLeg{LedgerID: other.LedgerID, Entry: other.toLedgerEntry(entry.Refid)}
-	src, dst, paired := mappers.PairConversionLegs(a, b)
+// pairConversions pairs known-asset rows against the pending buffer,
+// mutating pending in place: a matched refid emits a PSPConversion and
+// is cleared; an unmatched row is buffered for a later page/cycle.
+func (p *Plugin) pairConversions(currencies map[string]int, pending map[string]client.LedgerEntry, rows []client.LedgerEntry) []models.PSPConversion {
+	conversions := make([]models.PSPConversion, 0, len(rows))
+	for _, entry := range rows {
+		other, ok := pending[entry.Refid]
+		if !ok {
+			pending[entry.Refid] = entry
+			continue
+		}
+		delete(pending, entry.Refid)
+		if conv := p.mapConversionPair(currencies, entry, other); conv != nil {
+			conversions = append(conversions, *conv)
+		}
+	}
+	return conversions
+}
+
+// mapConversionPair builds a PSPConversion from two legs sharing a refid,
+// or returns nil (logged) for a same-sign pair or a mapping error.
+func (p *Plugin) mapConversionPair(currencies map[string]int, a, b client.LedgerEntry) *models.PSPConversion {
+	src, dst, paired := mappers.PairConversionLegs(
+		mappers.ConversionLeg{LedgerID: a.ID, Entry: a},
+		mappers.ConversionLeg{LedgerID: b.ID, Entry: b},
+	)
 	if !paired {
-		p.logger.WithField("refid", entry.Refid).Infof("conversion legs have same sign, skipping")
-		return nil, convDrop
+		p.logger.WithField("refid", a.Refid).Infof("conversion legs have same sign, skipping")
+		return nil
 	}
-	if !assetKnown(currencies, src.Entry.Asset) || !assetKnown(currencies, dst.Entry.Asset) {
-		return nil, convUnknownAsset
-	}
-	conv, err := mappers.ConversionPairToPSPConversion(currencies, wallets, src, dst)
+	conv, err := mappers.ConversionPairToPSPConversion(currencies, src, dst)
 	if err != nil {
-		p.logger.WithField("refid", entry.Refid).Errorf("map conversion: %v", err)
-		return nil, convDrop
+		p.logger.WithField("refid", a.Refid).Errorf("map conversion: %v", err)
+		return nil
 	}
-	return conv, convOK
+	return conv
+}
+
+// prunePending drops buffered legs whose time is at or below the committed
+// watermark — their window has fully drained, so the partner leg can no
+// longer arrive.
+func prunePending(pending map[string]client.LedgerEntry, watermark float64) {
+	for refid, leg := range pending {
+		if leg.Time <= watermark {
+			delete(pending, refid)
+		}
+	}
+}
+
+// allAssetsKnown reports whether every row's asset is in the cache.
+func allAssetsKnown(currencies map[string]int, rows []client.LedgerEntry) bool {
+	for _, entry := range rows {
+		if !assetKnown(currencies, entry.Asset) {
+			return false
+		}
+	}
+	return true
 }
 
 // assetKnown reports whether a raw Kraken asset normalises to a symbol

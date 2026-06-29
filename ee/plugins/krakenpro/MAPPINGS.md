@@ -19,7 +19,7 @@ The connector is **read-only spot-only**, one install per Kraken Pro account. It
 | `CAPABILITY_FETCH_ACCOUNTS` | `POST /0/private/BalanceEx` | one PSPAccount per asset present in BalanceEx |
 | `CAPABILITY_FETCH_BALANCES` | `POST /0/private/BalanceEx` | derived from the same BalanceEx call, no extra hop |
 | `CAPABILITY_FETCH_PAYMENTS` | `POST /0/private/Ledgers` (filtered) | deposit / withdrawal / transfer / staking / reward / adjustment / dividend / credit |
-| `CAPABILITY_FETCH_ORDERS` | `POST /0/private/OpenOrders` + `POST /0/private/ClosedOrders` | each row is the order with cumulative `vol_exec`/`cost`/`fee`; per-fill txids ride along when `trades:true` |
+| `CAPABILITY_FETCH_ORDERS` | `POST /0/private/ClosedOrders` | each row is the order with cumulative `vol_exec`/`cost`/`fee`; per-fill txids ride along when `trades:true` (OpenOrders is intentionally not polled — see §8) |
 | `CAPABILITY_FETCH_CONVERSIONS` | `POST /0/private/Ledgers` (filtered) | rows with `type` ∈ {`conversion`, `sale`, `marginconversion`, `margin_conversion`} grouped by `refid` |
 
 The OpenAPI spec served at `https://api.vip.uat.lobster.kraken.com/spec` is the source of truth for request shapes, enums, and parameter names. Response fields are documented at [docs.kraken.com/api/docs/rest-api](https://docs.kraken.com/api/docs/rest-api).
@@ -34,7 +34,7 @@ Defined in [`config.go`](config.go). OpenAPI v3: `V3KrakenproConfig`.
 |---|---|---|---|
 | `apiKey` | yes | — | Sent in `api-key` header |
 | `apiSecret` | yes | — | Base64-encoded HMAC-SHA512 signing secret. Never logged. |
-| `endpoint` | **yes** | — | **Required.** This client speaks the Kraken Pro VIP dialect (JSON body, lowercase `api-*` headers, `with_cursor` on OpenOrders), which is incompatible with the public `api.kraken.com` Spot API (form-encoded, `API-Key` header, no cursor). A blank endpoint must not silently fall back to the public host, so the install fails fast. UAT: `https://api.uat.kraken.com`. Do **not** use `https://api.vip.uat.lobster.kraken.com`: that host 301-redirects every private endpoint, and the Go HTTP client converts POST→GET on 301 (RFC 7231) which strips the signed body and produces a synthetic `EGeneral:Unknown method`. The lobster URL is fine for the browser-facing Pro UI; the API client must point at the un-redirected host directly. |
+| `endpoint` | **yes** | — | **Required.** This client speaks the Kraken Pro VIP dialect (JSON body, lowercase `api-*` headers), which is incompatible with the public `api.kraken.com` Spot API (form-encoded, `API-Key` header). A blank endpoint must not silently fall back to the public host, so the install fails fast. UAT: `https://api.uat.kraken.com`. Do **not** use `https://api.vip.uat.lobster.kraken.com`: that host 301-redirects every private endpoint, and the Go HTTP client converts POST→GET on 301 (RFC 7231) which strips the signed body and produces a synthetic `EGeneral:Unknown method`. The lobster URL is fine for the browser-facing Pro UI; the API client must point at the un-redirected host directly. |
 | `pollingPeriod` | no | `30m` (min `20m`) | Periodic sync cadence |
 
 ### Auth — HMAC-SHA512
@@ -73,7 +73,7 @@ fetch_orders            (periodic root)
 fetch_conversions       (periodic root)
 ```
 
-All tasks are independent periodic roots. `fetch_orders` is **not** nested under `fetch_accounts`: Kraken cannot filter orders by account, so nesting would make the engine fan out one identical full-orders fetch per account. Orders (and payments/conversions) resolve their spot wallet references from the in-process asset cache (`symbol → raw spot code`, e.g. `BTC → XXBT`), which is exactly the reference `fetch_accounts` emits — so there is no DB `AccountLookup` and no accounts dependency.
+All tasks are independent periodic roots. `fetch_orders` is **not** nested under `fetch_accounts`: Kraken cannot filter orders by account, so nesting would make the engine fan out one identical full-orders fetch per account. Orders (and payments/conversions) resolve their account references from each row's own raw Kraken code — for orders, the pair's `base`/`quote` codes; for payments/conversions, the ledger entry's `asset` — which is exactly the per-variant reference `fetch_accounts` emits. So there is no in-process wallet cache, no DB `AccountLookup`, and no accounts dependency.
 
 ### Pagination invariants — frozen-end + ofs window
 
@@ -103,17 +103,15 @@ modern choice — *but* Kraken's Ledgers/ClosedOrders responses are **unordered
 JSON maps**, so we cannot determine a page's boundary ID to drive an ID cursor
 (and a timestamp cursor loops on equal-timestamp full pages). `ofs` is the only
 positional primitive that works with the actual response shape; the frozen `End`
-makes it stable. (OpenOrders is different — it genuinely supports `with_cursor`;
-see §8.)
+makes it stable.
 
 | Capability | Pagination |
 |---|---|
 | Accounts | n/a — BalanceEx single-shot. State tracks `AccountAssetsImportedAt: map[ref]rfc3339` so cycles are idempotent. |
 | Balances | n/a — BalanceEx single-shot, no state. |
 | Payments | frozen-end + ofs window on `/0/private/Ledgers`, classifying each row via `mappers.ClassifyLedgerType`. |
-| Conversions | same window on `/0/private/Ledgers`, separate state struct; half-paired refids carry over via `Pending`. |
-| Orders (closed) | frozen-end + ofs window on `/0/private/ClosedOrders` (`closetime: "close"`). |
-| Orders (open) | in-process `with_cursor` drain of `/0/private/OpenOrders` (cursor at `result.cursor.next`). |
+| Conversions | same window on `/0/private/Ledgers`, separate state struct; half-paired refids carry over via `Pending`, pruned once the watermark passes their time. |
+| Orders | frozen-end + ofs window on `/0/private/ClosedOrders` (`closetime: "close"`). OpenOrders is not polled (unbounded page — see §8). |
 
 `without_count: true` is always set for speed.
 
@@ -185,7 +183,7 @@ Each Kraken asset class is its own account — the coinbaseprime wallet-per-asse
 
 Because distinct variants have distinct account references, the engine never sees a duplicate `(account, asset)` tuple, so balances report the **real per-variant amount** with no summing.
 
-Orders + conversions + payments debit/credit only the **spot (trading)** account. The spot reference is taken straight from the asset cache (`symbol → raw spot code`), so no account lookup is needed; earn/staking accounts are balance-holding only (like coinbaseprime VAULT/ONCHAIN).
+Orders, conversions and payments reference each leg's own raw Kraken code (the per-variant account `fetch_accounts` emits): payments/conversions use the ledger entry's `asset`, orders use the pair's `base`/`quote` codes. No in-process cache or account lookup is needed.
 
 Payments/conversions also keep the precise raw asset in metadata (`kraken_asset`, plus `kraken_source_asset` / `kraken_destination_asset` for conversions).
 
@@ -219,7 +217,7 @@ Each raw BalanceEx key → one PSPAccount keyed by the raw code.
 | (raw row) | `Raw` | the contributing `{code, entry}` |
 | see §9 | `Metadata` | namespaced `com.krakenpro.spec/*` (`wallet_type` only — the raw code is already the `Reference`) |
 
-Every BalanceEx variant that normalizes to a known symbol produces an account — **zero balances are not filtered** (Kraken only returns a row for an asset the account holds or has held). `fetchNextAccounts` and `fetchNextBalances` share one inclusion predicate (`mappers.IncludeBalanceEntry`) so a balance can never reference an account that was not emitted. The **spot/trading account is additionally always emitted** for any held symbol — even if value sits only in an earn variant — using the deterministic `/0/public/Assets` canonical code, so order/conversion/payment wallet resolution always finds a trading account.
+Every BalanceEx variant that normalizes to a known symbol produces an account — **zero balances are not filtered** (Kraken only returns a row for an asset the account holds or has held). `fetchNextAccounts` and `fetchNextBalances` share one inclusion predicate (`mappers.IncludeBalanceEntry`) so a balance can never reference an account that was not emitted. Accounts mirror BalanceEx exactly: no synthetic spot account is generated. If value sits only in an earn variant there is no spot account, so an order referencing that pair's spot code may point at a not-yet-held account — order refs are optional/best-effort.
 
 Cross-cycle de-dup: `accountsState.AccountAssetsImportedAt[reference]` records when an account (raw code) was first emitted; subsequent cycles skip already-seen accounts.
 
@@ -307,21 +305,18 @@ zero) are skipped.
 
 ## 8. Capability: `FETCH_ORDERS`
 
-**Two endpoints, one orchestrator:**
+**One endpoint:**
 
-- `POST /0/private/OpenOrders` — currently-open orders snapshot. Drained in-process within each cycle via Kraken's cursor (`with_cursor: true` + `limit` + `cursor`); the follow-up token is `result.cursor.next` (not a flat `next_cursor`). OpenOrders is the **only** orders/ledger endpoint that supports cursor pagination. Re-emitted every cycle — engine adjustment dedup (`reference`, `status`, `baseFilled`, `fee`) means unchanged orders cost zero adjustments.
 - `POST /0/private/ClosedOrders` — historical/closed orders. No cursor support (spec-confirmed); paged through the shared frozen-end + ofs window (§3) on close time (`closetime: "close"`, so a newly-closed order with an ancient opentm still surfaces).
 
-**Account references are best-effort.** Order source/destination resolve to the
-spot (trading) account of each leg's symbol via the in-process asset cache
-(`symbol → raw spot code`). A symbol absent from the cache emits with a **nil**
-account reference rather than failing the page — `PSPOrder.Validate()` permits
-nil refs, so an unknown asset never blocks the orders stream (Codex item 8).
+**Why not OpenOrders.** Kraken's `OpenOrders` accepts no page-size limit, so a single drain can return an unbounded set (up to thousands of rows) and exceed Temporal's max activity payload. We therefore fetch **only** the page-bounded ClosedOrders. A closed order still carries its per-fill txids (`trades: true`), so fill traceability is preserved; the only thing lost is the in-flight OPEN/PARTIALLY_FILLED interim snapshot, which is deferred until Kraken adds an open-orders page limit (see §8.5 and the deferred-items table).
+
+**Account references.** Order source/destination resolve to each leg's raw Kraken code (the pair's `base`/`quote` codes, e.g. `XXBT`/`ZUSD`) — the per-variant account reference `fetch_accounts` emits. No in-process cache or DB lookup. If the spot account isn't currently held the reference can point at a not-yet-emitted account; `PSPOrder.Validate()` permits this and refs are best-effort, so it never blocks the stream.
 
 **`cl_ord_id`.** When an order carries a client-assigned id it maps to
 `PSPOrder.ClientOrderID` and `metadata."com.krakenpro.spec/cl_ord_id"`.
 
-Both endpoints always pass `trades: true` so each row carries its per-fill txid list inline — **no extra `QueryTrades` call**, audit-grade traceability preserved.
+ClosedOrders always passes `trades: true` so each row carries its per-fill txid list inline — **no extra `QueryTrades` call**, audit-grade traceability preserved.
 
 **Why this is different from a fills-aggregation source** (e.g. TradesHistory): each row already carries the order's cumulative `vol_exec` / `cost` / `fee` / `status`. We don't aggregate across pages, so the emitted `PSPOrder.baseQuantityFilled` never bounces; the engine's adjustment trail collapses to one entry per real status change.
 
@@ -371,8 +366,8 @@ Both endpoints always pass `trades: true` so each row carries its per-fill txid 
 | `descr.price` | `LimitPrice` | nil for market orders |
 | `descr.price2` | `StopPrice` | for stop-limit etc. |
 | `status` + (vol_exec vs vol) | `Status` | via `mapKrakenOrderStatus` (table below) |
-| `models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED` | `TimeInForce` | Kraken's enum doesn't surface TIF on OpenOrders/ClosedOrders; default GTC |
-| (resolved via asset cache) | `SourceAccountReference`, `DestinationAccountReference` | BUY: src=quote wallet, dst=base wallet; SELL: inverted |
+| `models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED` | `TimeInForce` | Kraken's enum doesn't surface TIF on ClosedOrders; default GTC |
+| pair `base`/`quote` raw codes | `SourceAccountReference`, `DestinationAccountReference` | BUY: src=quote code, dst=base code; SELL: inverted |
 | `trades: [...]` | `metadata."com.krakenpro.spec/fills"` | comma-joined trade txids (free of charge — same response, no extra call) |
 
 ### Status mapping (`mapKrakenOrderStatus`)
@@ -410,7 +405,7 @@ Mirrors `coinbaseprime/orders.go::mapCoinbaseStatus`. The Kraken `status` enum i
 
 ### Wallet resolution
 
-Source/destination account references come from the in-process asset cache (`snapshotAssetCodes()`: `symbol → raw spot code`, e.g. `BTC → XXBT`), which is exactly the reference `fetch_accounts` emits for the spot account. This needs no DB `AccountLookup` and no per-account fan-out, which is why `fetch_orders` can be a standalone root. A symbol missing from the cache resolves to a nil reference (best-effort; see above).
+Source/destination account references are the pair's raw Kraken `base`/`quote` codes (e.g. `XXBT`, `ZUSD`) — exactly the per-variant reference `fetch_accounts` emits. This needs no in-process asset cache, no DB `AccountLookup`, and no per-account fan-out, which is why `fetch_orders` can be a standalone root. If the spot account isn't currently held the reference can dangle; refs are optional/best-effort.
 
 ### 8.5 Adjustment granularity — design choice
 
@@ -418,7 +413,7 @@ Source/destination account references come from the in-process asset cache (`sna
 
 #### Why polling-cycle granularity
 
-The engine creates an `OrderAdjustment` per *new* `(reference, status, baseQuantityFilled, fee)` tuple it observes ([`internal/models/orders.go::OrderAdjustmentID`](../../../internal/models/orders.go)). Our connector emits the **cumulative** order state at each polling cycle (`OpenOrders` + `ClosedOrders` already aggregate fills server-side). So:
+The engine creates an `OrderAdjustment` per *new* `(reference, status, baseQuantityFilled, fee)` tuple it observes ([`internal/models/orders.go::OrderAdjustmentID`](../../../internal/models/orders.go)). Our connector emits the **cumulative** order state at each polling cycle (`ClosedOrders` already aggregates fills server-side). Because we only poll ClosedOrders, an order is observed once it closes; intermediate OPEN/PARTIALLY_FILLED snapshots are not captured (deferred — see below). So:
 
 | Order lifecycle observed via polling | Adjustments produced |
 |---|---|
@@ -479,7 +474,7 @@ Same `POST /0/private/Ledgers` stream as §7, filtered to the full conversion-ty
 | `marginconversion`, `margin_conversion` | Margin position close-out conversion |
 | `derivativesflexconversion`, `derivativestaxconversion`, `derivativesconversioncredit`, `collateralconversion` | Derivatives / futures lifecycle conversions — out of scope for spot-only, but classified for exhaustiveness so a margin-enabled account won't fall through to `PAYMENT_TYPE_OTHER` |
 
-A conversion is a **pair** of ledger rows sharing one `refid`: one negative-amount leg (source asset) and one positive-amount leg (destination asset). The orchestrator buffers rows by `refid` within a cycle; pairs not yet closed are deferred to the next cycle (the watermark advances only past **paired** ledger rows).
+A conversion is a **pair** of ledger rows sharing one `refid`: one negative-amount leg (source asset) and one positive-amount leg (destination asset). A pre-pass filters the page to known-asset conversion rows — if any asset is missing it forces one cache refresh, then drops rows still unknown so they never enter the persisted `Pending` map. The pairing step then buffers unmatched (known-asset) legs by `refid`; both legs of a real conversion share a `refid` and timestamp, so they pair within the same frozen window. Once the watermark passes a buffered leg's time its partner can no longer arrive, so it is pruned — bounding `Pending` deterministically.
 
 **Field mapping** (per resolved pair):
 
@@ -529,7 +524,8 @@ The orchestrator passes the raw envelope into `PSPAccount.Raw` / `PSPPayment.Raw
 
 | Kraken error | Action | Severity | Notes |
 |---|---|---|---|
-| `EAPI:Invalid key`, `EAPI:Invalid signature`, `EAPI:Invalid nonce`, `EAPI:Bad request`, `EGeneral:Permission denied`, `EGeneral:Unknown method` | wrap `models.ErrInvalidRequest` so Temporal stops retrying (`client.IsFatalAuthError` in [`client/error.go`](client/error.go)) | fatal | `EAPI:Invalid nonce` is especially important — every retry on a too-low nonce **burns more of the per-key nonce window**. Without fail-fast the install becomes permanently unrecoverable without an operator nonce reset on Kraken's side. |
+| `EAPI:Invalid key`, `EAPI:Invalid signature`, `EAPI:Bad request`, `EGeneral:Permission denied`, `EGeneral:Unknown method` | wrap `models.ErrInvalidRequest` so Temporal stops retrying (`client.IsFatalAuthError` in [`client/error.go`](client/error.go)) | fatal | a revoked key / permission change can't self-heal, so retrying only wastes cycles |
+| `EAPI:Invalid nonce` | wrapped as `httpwrapper.ErrStatusCodeTooEarly` → retry with backoff (**not** fatal) | — | stateless `UnixNano` nonces can momentarily collide under concurrency / cross-pod; the next attempt sends a fresh higher nonce (see the "Nonce & multiple workers" note). The backoff matters because too many invalid-nonce errors temporarily lock the key |
 | `EAPI:Rate limit exceeded`, `EService:Throttled[: ts]` | wrapped as `httpwrapper.ErrStatusCodeTooManyRequests` → `plugins.ErrUpstreamRatelimit` | — | Kraken signals rate limits in the error array (often on HTTP 200), so `client.apiError` detects the code and maps it to the platform rate-limit/retry path rather than a generic retry |
 | `EOrder:*`, `EQuery:Unknown asset pair` | log + skip the offending row | info | per-row error doesn't fail the cycle |
 | HTTP 429 / 5xx | bubble up retryable | warn | `httpwrapper` already retries with backoff |
@@ -562,6 +558,7 @@ The orchestrator passes the raw envelope into `PSPAccount.Raw` / `PSPPayment.Raw
 | Item | Why deferred | Resolution path |
 |---|---|---|
 | Per-tier maker/taker fee schedule application | Not needed for read-only sync (fee is already per-row on ledger / cumulative on order) | n/a |
+| Open / partially-filled order snapshots | `OpenOrders` accepts no page-size limit, so a drain could exceed Temporal's max activity payload. We poll only the page-bounded `ClosedOrders`, so an order is observed once it closes (final cumulative state); in-flight OPEN/PARTIALLY_FILLED states aren't captured. | If Kraken adds an open-orders page limit, reintroduce a bounded OpenOrders drain; or pick it up via the WebSocket `executions` migration below. |
 | Per-fill `OrderAdjustment` granularity | Today we emit one adjustment per polling-cycle state change (§8.5). Materialising 1 adjustment per fill would 1000× the workflow-event volume on high-frequency orders and diverges from coinbaseprime / bitstamp parity. Per-fill detail is still recoverable via `metadata.com.krakenpro.spec/fills` + `QueryTrades`. | Naturally resolved by the WebSocket migration below — each `executions` event becomes one PSPOrder emission, the engine then records one adjustment per fill with no orchestrator-side bookkeeping. |
 | **Spot WebSocket `executions` channel** ([docs](https://docs.kraken.com/api/docs/websocket-v2/executions/)) | REST polling is sufficient for the read-only spot use case in EN-1014 and matches the rest of the connector family. WS streaming would obsolete the polling-cycle approximation, surface PENDING → OPEN → PARTIALLY_FILLED → FILLED transitions in real time, and naturally give per-fill adjustment granularity. | Future ticket — the orchestrator would split into a streaming consumer (for live execution events) and the current REST path (for backfill + reconciliation). The mapper layer in `mappers/order.go` already produces the right PSPOrder shape per event, so the change is concentrated in the orchestrator. |
 | Webhook signature scheme | Out of scope per epic EN-715 (read-only) | future ticket |

@@ -228,44 +228,6 @@ func TestGetAssetPairsDecodes(t *testing.T) {
 	}
 }
 
-func TestGetOpenOrdersPassesAllParams(t *testing.T) {
-	t.Parallel()
-	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/0/private/OpenOrders" {
-			t.Errorf("path=%q", r.URL.Path)
-		}
-		body, _ := io.ReadAll(r.Body)
-		var got map[string]any
-		_ = json.Unmarshal(body, &got)
-		for k, want := range map[string]any{
-			"trades":      true,
-			"with_cursor": true,
-			"cursor":      "abc",
-			"limit":       float64(50),
-			"userref":     float64(7),
-		} {
-			if got[k] != want {
-				t.Errorf("param %q: got %v want %v", k, got[k], want)
-			}
-		}
-		// VIP OpenOrders cursor lives at result.cursor.next, not a flat next_cursor.
-		_, _ = io.WriteString(w, `{"error":[],"result":{"open":{"O-1":{"status":"open","vol":"1","vol_exec":"0","cl_ord_id":"cli-1","descr":{"pair":"XXBTZUSD","type":"buy","ordertype":"limit","price":"27500.0"}}},"cursor":{"next":"nx"}}}`)
-	})
-
-	resp, err := c.GetOpenOrders(context.Background(), OpenOrdersParams{
-		Trades: true, WithCursor: true, Cursor: "abc", Limit: 50, Userref: 7,
-	})
-	if err != nil {
-		t.Fatalf("GetOpenOrders: %v", err)
-	}
-	if resp.Cursor.Next != "nx" {
-		t.Fatalf("cursor.next: %q", resp.Cursor.Next)
-	}
-	if o, ok := resp.Open["O-1"]; !ok || o.ClOrdID != "cli-1" {
-		t.Fatalf("O-1 missing or cl_ord_id not decoded: %#v", resp.Open["O-1"])
-	}
-}
-
 func TestGetClosedOrdersPassesAllParams(t *testing.T) {
 	t.Parallel()
 	_, c := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {

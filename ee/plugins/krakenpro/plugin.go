@@ -51,11 +51,6 @@ type Plugin struct {
 	assetsLoaded  time.Time
 	currencies    map[string]int // canonical symbol → precision
 	assetPairs    map[string]client.AssetPair
-	// assetCodes maps a canonical symbol → its raw Kraken spot code
-	// (the suffix-free /0/public/Assets key, e.g. BTC → XXBT). It is
-	// the deterministic source for the spot/trading account reference
-	// even when BalanceEx returns only an earn variant (XBT.M).
-	assetCodes map[string]string
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {

@@ -48,8 +48,11 @@ type BalanceExEntry struct {
 }
 
 // LedgerEntry is one row from /0/private/Ledgers, indexed by ledger ID.
-// time is a UNIX epoch float (seconds.fractions).
+// time is a UNIX epoch float (seconds.fractions). ID is not part of the
+// wire row (it arrives as the map key); the orchestrator fills it so a
+// buffered conversion leg can be persisted/replayed as a whole entry.
 type LedgerEntry struct {
+	ID      string  `json:"id,omitempty"`
 	Refid   string  `json:"refid"`
 	Time    float64 `json:"time"`
 	Type    string  `json:"type"`
@@ -105,16 +108,6 @@ type OrderEntry struct {
 	Misc     string     `json:"misc,omitempty"`
 	Oflags   string     `json:"oflags,omitempty"`
 	Trades   []string   `json:"trades,omitempty"` // per-fill txids when requested
-}
-
-// OpenOrdersResponse wraps a /0/private/OpenOrders result. The
-// pagination token is nested at cursor.next (not a flat next_cursor),
-// per the VIP spec; empty when the snapshot is exhausted.
-type OpenOrdersResponse struct {
-	Open   map[string]OrderEntry `json:"open"`
-	Cursor struct {
-		Next string `json:"next"`
-	} `json:"cursor"`
 }
 
 // ClosedOrdersResponse wraps a /0/private/ClosedOrders result body.

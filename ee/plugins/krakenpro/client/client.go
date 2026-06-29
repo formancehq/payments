@@ -31,7 +31,6 @@ type Client interface {
 	GetAssetPairs(ctx context.Context) (map[string]AssetPair, error)
 	GetBalanceEx(ctx context.Context) (map[string]BalanceExEntry, error)
 	GetLedgers(ctx context.Context, params LedgersParams) (LedgersResponse, error)
-	GetOpenOrders(ctx context.Context, params OpenOrdersParams) (OpenOrdersResponse, error)
 	GetClosedOrders(ctx context.Context, params ClosedOrdersParams) (ClosedOrdersResponse, error)
 }
 
@@ -45,17 +44,6 @@ type LedgersParams struct {
 	WithoutCount bool
 }
 
-// OpenOrdersParams filters /0/private/OpenOrders. Cursor pagination is
-// OpenOrders-only (ClosedOrders has none); Cursor carries the prior
-// response's cursor.next token.
-type OpenOrdersParams struct {
-	Trades     bool
-	Cursor     string
-	WithCursor bool
-	Limit      int
-	Userref    int
-}
-
 // ClosedOrdersParams filters /0/private/ClosedOrders. Same frozen
 // window + ofs pagination as Ledgers (no cursor).
 type ClosedOrdersParams struct {
@@ -66,6 +54,11 @@ type ClosedOrdersParams struct {
 	Closetime    string // which timestamp Start/End apply to: "open" | "close" | "both"
 	WithoutCount bool
 }
+
+// ClosetimeClose selects the close timestamp for ClosedOrders Start/End
+// filtering, so a newly-closed order with an ancient open time still
+// falls inside the current window.
+const ClosetimeClose = "close"
 
 // DefaultEndpoint is the production base URL. UAT/sandbox is wired by
 // setting Config.Endpoint to the VIP host.
@@ -259,33 +252,6 @@ func (c *client) GetLedgers(ctx context.Context, p LedgersParams) (LedgersRespon
 	var out LedgersResponse
 	if err := c.do(ctx, http.MethodPost, "/0/private/Ledgers", params, &out); err != nil {
 		return LedgersResponse{}, fmt.Errorf("get ledgers: %w", err)
-	}
-	return out, nil
-}
-
-// GetOpenOrders fetches /0/private/OpenOrders. Trades=true makes each
-// row carry its per-fill txids inline, avoiding a separate QueryTrades
-// call. WithCursor/Cursor/Limit drive the cursor drain.
-func (c *client) GetOpenOrders(ctx context.Context, p OpenOrdersParams) (OpenOrdersResponse, error) {
-	params := map[string]any{}
-	if p.Trades {
-		params["trades"] = true
-	}
-	if p.WithCursor {
-		params["with_cursor"] = true
-	}
-	if p.Cursor != "" {
-		params["cursor"] = p.Cursor
-	}
-	if p.Limit > 0 {
-		params["limit"] = p.Limit
-	}
-	if p.Userref != 0 {
-		params["userref"] = p.Userref
-	}
-	var out OpenOrdersResponse
-	if err := c.do(ctx, http.MethodPost, "/0/private/OpenOrders", params, &out); err != nil {
-		return OpenOrdersResponse{}, fmt.Errorf("get open orders: %w", err)
 	}
 	return out, nil
 }

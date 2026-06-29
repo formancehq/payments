@@ -69,55 +69,18 @@ type paymentsState struct {
 }
 
 // conversionsState carries the pagination window + the half-paired
-// buffer. Pending stores half-paired conversion rows by refid so a
-// future page/cycle can complete them when the second leg arrives.
+// buffer. Pending stores half-paired conversion rows by refid (the whole
+// client.LedgerEntry, ID included) so a future page/cycle can complete
+// them when the second leg arrives. Only known-asset legs are buffered,
+// and entries are pruned once the watermark passes their time, so the
+// map can't grow unbounded.
 type conversionsState struct {
-	Window  ledgerWindow          `json:"window"`
-	Pending map[string]pendingLeg `json:"pending,omitempty"`
+	Window  ledgerWindow                  `json:"window"`
+	Pending map[string]client.LedgerEntry `json:"pending,omitempty"`
 }
 
-// pendingLeg holds the data needed to materialise one side of a
-// conversion when the other side arrives in a future page/cycle.
-type pendingLeg struct {
-	LedgerID string  `json:"ledgerID"`
-	Time     float64 `json:"time"`
-	Type     string  `json:"type"`
-	Subtype  string  `json:"subtype"`
-	Aclass   string  `json:"aclass"`
-	Asset    string  `json:"asset"`
-	Amount   string  `json:"amount"` // raw signed decimal as returned by Kraken
-	Fee      string  `json:"fee"`
-	Balance  string  `json:"balance"`
-}
-
-// toLedgerEntry rehydrates the original client.LedgerEntry shape so
-// the conversion mapper can treat carry-over legs uniformly with
-// fresh ones — keeps client wire-field knowledge out of the
-// orchestrator.
-func (p pendingLeg) toLedgerEntry(refid string) client.LedgerEntry {
-	return client.LedgerEntry{
-		Refid:   refid,
-		Time:    p.Time,
-		Type:    p.Type,
-		Subtype: p.Subtype,
-		Aclass:  p.Aclass,
-		Asset:   p.Asset,
-		Amount:  p.Amount,
-		Fee:     p.Fee,
-		Balance: p.Balance,
-	}
-}
-
-// ordersState is the resumable cursor for FetchNextOrders. ClosedOrders
+// ordersState is the pagination state for FetchNextOrders: ClosedOrders
 // pages through the shared frozen-end + ofs window on close time.
-//
-// OpenOrders is drained in-process via Kraken's `with_cursor` paging.
-// OpenCursor is normally empty (each cycle re-drains the snapshot from
-// the start, which is idempotent — the engine dedupes by reference +
-// status + baseFilled + fee). It is only set when a drain hits the
-// in-process safety cap, so the next cycle resumes from where it stopped
-// instead of restarting at page 1 and starving the tail.
 type ordersState struct {
-	Closed     ledgerWindow `json:"closed"`
-	OpenCursor string       `json:"openCursor,omitempty"`
+	Closed ledgerWindow `json:"closed"`
 }

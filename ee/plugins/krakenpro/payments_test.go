@@ -32,8 +32,6 @@ var _ = Describe("Kraken Pro fetch_payments", func() {
 			currencies: map[string]int{
 				"BTC": 8, "USD": 2, "EUR": 2,
 			},
-			// Wallet refs resolve from this cache (symbol -> raw spot code).
-			assetCodes:   map[string]string{"BTC": "XXBT", "USD": "ZUSD", "EUR": "ZEUR"},
 			assetsLoaded: time.Now(),
 		}
 	})
@@ -60,7 +58,6 @@ var _ = Describe("Kraken Pro fetch_payments", func() {
 	It("refreshes the asset cache and retries when a row's asset is unknown (not lost)", func(ctx SpecContext) {
 		// Cache lacks DOGE; the ledger row references XXDG (a new listing).
 		plg.currencies = map[string]int{"BTC": 8}
-		plg.assetCodes = map[string]string{"BTC": "XXBT"}
 		plg.assetsLoaded = time.Now()
 
 		m.EXPECT().GetLedgers(gomock.Any(), gomock.Any()).Return(client.LedgersResponse{
