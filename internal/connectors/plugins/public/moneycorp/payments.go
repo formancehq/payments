@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/domain/pagination"
@@ -16,6 +17,25 @@ import (
 
 type paymentsState struct {
 	LastCreatedAt time.Time `json:"lastCreatedAt"`
+	// LastProcessedIDs holds the transaction IDs of ALL transactions already
+	// emitted at exactly LastCreatedAt, accumulated across cycles while the
+	// watermark second is unchanged and reset when it advances. The server filter
+	// is inclusive (>=), so each cycle rescans from page 0 and skips this whole
+	// set: a same-second group larger than PageSize is walked across cycles
+	// without a drifting page cursor, and a multi-row final page cannot oscillate
+	// (every already-emitted sibling is skipped, not just one). Keyed on
+	// transaction.ID (the iteration identity), which differs from
+	// payment.Reference for "Payment" types.
+	//
+	// Migration note: the old singular lastProcessedID and page fields are
+	// ignored. After deploy the watermark second is re-emitted once (idempotent —
+	// storage upserts dedup it) and no recrawl occurs.
+	//
+	// Precision: comparison and the ID set use the exact timestamp the API
+	// returns (full precision, as in the qonto reference), not a truncated
+	// second; "same-second" above is shorthand because these PSPs report
+	// timestamps at second granularity, so equal values represent the same second.
+	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -35,19 +55,26 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := paymentsState{
-		LastCreatedAt: oldState.LastCreatedAt,
+		LastCreatedAt:    oldState.LastCreatedAt,
+		LastProcessedIDs: oldState.LastProcessedIDs,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
+	processedIDs := make([]string, 0, req.PageSize)
 	needMore := false
 	hasMore := false
+	// Rescan from page 0 each cycle (no page cursor): the processed-ID set skips
+	// every already-emitted sibling at the watermark second, so a same-second
+	// group larger than PageSize is walked across cycles and a multi-row final
+	// page cannot oscillate. The server filter is inclusive (>=), so page 0
+	// re-includes the watermark second.
 	for page := 0; ; page++ {
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		payments, err = p.toPSPPayments(ctx, oldState.LastCreatedAt, payments, pagedTransactions)
+		payments, processedIDs, err = p.toPSPPayments(ctx, oldState.LastCreatedAt, oldState.LastProcessedIDs, payments, processedIDs, pagedTransactions)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -58,12 +85,25 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	if !needMore {
-		payments = payments[:req.PageSize]
-	}
-
 	if len(payments) > 0 {
-		newState.LastCreatedAt = payments[len(payments)-1].CreatedAt
+		last := payments[len(payments)-1].CreatedAt
+
+		// Collect the transaction IDs emitted at exactly the new watermark second.
+		idsAtWatermark := make([]string, 0)
+		for i := range payments {
+			if payments[i].CreatedAt.Equal(last) {
+				idsAtWatermark = append(idsAtWatermark, processedIDs[i])
+			}
+		}
+
+		// Accumulate the processed-ID set while still inside the same watermark
+		// second; reset it when the watermark advances to a newer second.
+		if last.Equal(oldState.LastCreatedAt) {
+			newState.LastProcessedIDs = append(oldState.LastProcessedIDs, idsAtWatermark...)
+		} else {
+			newState.LastProcessedIDs = idsAtWatermark
+		}
+		newState.LastCreatedAt = last
 	}
 
 	payload, err := json.Marshal(newState)
@@ -81,32 +121,37 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 func (p *Plugin) toPSPPayments(
 	ctx context.Context,
 	lastCreatedAt time.Time,
+	lastProcessedIDs []string,
 	payments []models.PSPPayment,
+	processedIDs []string,
 	transactions []*client.Transaction,
-) ([]models.PSPPayment, error) {
+) ([]models.PSPPayment, []string, error) {
 	for _, transaction := range transactions {
 		createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
 		if err != nil {
-			return payments, fmt.Errorf("failed to parse transaction date: %v", err)
+			return payments, processedIDs, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
-		switch createdAt.Compare(lastCreatedAt) {
-		case -1, 0:
+		// Inclusive watermark: skip transactions strictly before it, and any
+		// already-emitted transaction at exactly the watermark second. Distinct
+		// transactions sharing that timestamp are kept (M-CON2).
+		cmp := createdAt.Compare(lastCreatedAt)
+		if cmp < 0 || (cmp == 0 && slices.Contains(lastProcessedIDs, transaction.ID)) {
 			continue
-		default:
 		}
 
 		payment, err := p.transactionToPayment(ctx, transaction)
 		if err != nil {
-			return payments, err
+			return payments, processedIDs, err
 		}
 		if payment == nil {
 			continue
 		}
 
 		payments = append(payments, *payment)
+		processedIDs = append(processedIDs, transaction.ID)
 	}
-	return payments, nil
+	return payments, processedIDs, nil
 }
 
 func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.Transaction) (*models.PSPPayment, error) {

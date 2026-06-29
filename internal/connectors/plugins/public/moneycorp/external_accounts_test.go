@@ -39,6 +39,7 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 			sampleExternalAccounts = make([]*client.Recipient, 0)
 			for i := 0; i < 50; i++ {
 				sampleExternalAccounts = append(sampleExternalAccounts, &client.Recipient{
+					ID: fmt.Sprintf("recipient-%d", i),
 					Attributes: client.RecipientAttributes{
 						BankAccountCurrency: "JPY",
 						CreatedAt:           strings.TrimSuffix(now.Add(-time.Duration(60-i)*time.Minute).UTC().Format(time.RFC3339Nano), "Z"),
@@ -104,7 +105,6 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(0))
 			Expect(state.LastCreatedAt.IsZero()).To(BeTrue())
 		})
 
@@ -130,7 +130,6 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(0))
 			createdAtTime, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[49].Attributes.CreatedAt+"Z")
 			Expect(state.LastCreatedAt.UTC()).To(Equal(createdAtTime.UTC()))
 		})
@@ -156,7 +155,6 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastPage).To(Equal(0))
 			createdAtTime, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[39].Attributes.CreatedAt+"Z")
 			Expect(state.LastCreatedAt.UTC()).To(Equal(createdAtTime.UTC()))
 		})
@@ -164,7 +162,11 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 		It("should fetch next external accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			lastCreaatedAt, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[38].Attributes.CreatedAt+"Z")
 			req := models.FetchNextExternalAccountsRequest{
-				State:       []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 0, lastCreaatedAt.Format(time.RFC3339Nano))),
+				State: []byte(fmt.Sprintf(
+					`{"LastCreatedAt": "%s", "lastProcessedIDs": ["%s"]}`,
+					lastCreaatedAt.Format(time.RFC3339Nano),
+					sampleExternalAccounts[38].ID,
+				)),
 				PageSize:    40,
 				FromPayload: []byte(`{"reference": "baseAcc"}`),
 			}
@@ -189,9 +191,77 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(1))
 			createdAtTime, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[49].Attributes.CreatedAt+"Z")
 			Expect(state.LastCreatedAt.UTC()).To(Equal(createdAtTime.UTC()))
+		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			const createdAtStr = "2024-02-02T00:00:00"
+			mk := func(id string) *client.Recipient {
+				return &client.Recipient{
+					ID: id,
+					Attributes: client.RecipientAttributes{
+						BankAccountCurrency: "JPY",
+						CreatedAt:           createdAtStr,
+						BankAccountName:     "jpy account",
+					},
+				}
+			}
+			// Five recipients sharing the same second, fetched three per page so the
+			// group spans page 0 (m0,m1,m2) and a SHORT final page 1 (m3,m4). The
+			// monotonic LastPage cursor resumes the forward scan (no full rescan from
+			// page 0 once past it) and the processed-ID set dedups the same-second
+			// rows on the re-read page; a single LastProcessedID would oscillate on
+			// the multi-row final page (re-emitting m3/m4 forever).
+			all := []*client.Recipient{mk("m0"), mk("m1"), mk("m2"), mk("m3"), mk("m4")}
+			refs := func(as []models.PSPAccount) []string {
+				out := make([]string, len(as))
+				for i := range as {
+					out[i] = as[i].Reference
+				}
+				return out
+			}
+			accRef := "baseAcc"
+			fromPayload := json.RawMessage(`{"reference": "baseAcc"}`)
+
+			// Cycle 1: fresh state, page 0 -> m0, m1, m2.
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 3).Return(all[0:3], nil)
+			resp, err := plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: []byte(`{}`), PageSize: 3, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"m0", "m1", "m2"}))
+			Expect(resp.HasMore).To(BeTrue())
+
+			// Cycle 2: rescan page 0 (all skipped via the set) then page 1 -> m3, m4.
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 3).Return(all[0:3], nil)
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 1, 3).Return(all[3:5], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"m3", "m4"}))
+
+			// Cycle 3: LastPage is now 1, so we resume there (NOT page 0) and re-read
+			// only the last page. Every row is in the processed-ID set, so it returns
+			// nothing (anti-oscillation) — and crucially does not rescan history.
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 1, 3).Return(all[3:5], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(BeEmpty())
+
+			// Cycle 4: a newer-second recipient m5 appears on the (formerly short)
+			// page 1. Resuming at page 1, the set skips m3/m4 and reaches m5; the
+			// fetch then advances to the now-empty page 2 and stops.
+			m5 := &client.Recipient{
+				ID: "m5",
+				Attributes: client.RecipientAttributes{
+					BankAccountCurrency: "JPY",
+					CreatedAt:           "2024-02-02T00:00:01",
+					BankAccountName:     "jpy account",
+				},
+			}
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 1, 3).Return([]*client.Recipient{all[3], all[4], m5}, nil)
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 2, 3).Return([]*client.Recipient{}, nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3, FromPayload: fromPayload})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"m5"}))
 		})
 	})
 })
