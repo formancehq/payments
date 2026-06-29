@@ -3,6 +3,7 @@ package generic
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/formancehq/payments/genericclient/v3"
@@ -12,16 +13,18 @@ import (
 
 type accountsState struct {
 	LastCreatedAtFrom time.Time `json:"lastCreatedAtFrom"`
-	// LastProcessedID is the reference of the last account emitted at exactly
-	// LastCreatedAtFrom, so the inclusive (>=) watermark filter can exclude only
-	// that already-processed row while keeping distinct same-timestamp accounts.
-	LastProcessedID string `json:"lastProcessedID"`
-	// Page is the next page to fetch within the current LastCreatedAtFrom second.
-	// It advances while the watermark second is unchanged (a same-second group
-	// larger than one page) and resets to 1 once the watermark moves to a newer
-	// second, so a same-second group spanning pages is walked without re-scanning
-	// from page 1 each cycle (which a single LastProcessedID cannot do).
-	Page int `json:"page"`
+	// LastProcessedIDs holds the references of ALL accounts already emitted at
+	// exactly LastCreatedAtFrom, accumulated across cycles while the watermark
+	// second is unchanged and reset when it advances. The server filter is
+	// inclusive (>=), so each cycle rescans from page 1 and skips this whole set:
+	// a same-second group larger than PageSize is walked across cycles without a
+	// drifting page cursor, and a multi-row final page cannot oscillate (every
+	// already-emitted sibling is skipped, not just one).
+	//
+	// Migration note: the old singular lastProcessedID and page fields are
+	// ignored on first decode after deploy, so the watermark second's group is
+	// re-emitted once. This is idempotent via storage upsert — no recrawl.
+	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -31,29 +34,28 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 	}
-	if oldState.Page < 1 {
-		oldState.Page = 1
-	}
 
 	newState := accountsState{
 		LastCreatedAtFrom: oldState.LastCreatedAtFrom,
-		LastProcessedID:   oldState.LastProcessedID,
-		Page:              oldState.Page,
+		LastProcessedIDs:  oldState.LastProcessedIDs,
 	}
 
 	accounts := make([]models.PSPAccount, 0)
+	createdAts := make([]time.Time, 0)
 	needMore := false
 	hasMore := false
-	// Resume at the persisted page and walk forward (no trim-and-restart, which
-	// would skip the trimmed rows); the page cursor below records how far we got.
-	page := oldState.Page
-	for {
+	// Rescan from page 1 each cycle (no page cursor): the processed-ID set skips
+	// every already-emitted sibling at the watermark second, so a same-second
+	// group larger than PageSize is walked across cycles and a multi-row final
+	// page cannot oscillate. The server filter is inclusive (>=), so page 1
+	// re-includes the watermark second.
+	for page := 1; ; page++ {
 		pagedAccounts, err := p.client.ListAccounts(ctx, int64(page), int64(req.PageSize), oldState.LastCreatedAtFrom)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		accounts, err = fillAccounts(pagedAccounts, accounts, oldState)
+		accounts, createdAts, err = fillAccounts(pagedAccounts, accounts, createdAts, oldState)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
@@ -62,27 +64,27 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		if !needMore || !hasMore {
 			break
 		}
-		page++
 	}
 
-	if len(accounts) > 0 {
-		newState.LastCreatedAtFrom = accounts[len(accounts)-1].CreatedAt
-		newState.LastProcessedID = accounts[len(accounts)-1].Reference
-		// Advance past the consumed pages only while there is definitely a full
-		// next page (hasMore). If the same-second group drained on a short final
-		// page, keep the cursor there — a newer row appended to that second's
-		// >= watermark query lands on this very page, so advancing past it would
-		// strand it forever. When the watermark moved to a newer second, re-anchor
-		// at page 1.
-		if newState.LastCreatedAtFrom.Equal(oldState.LastCreatedAtFrom) {
-			if hasMore {
-				newState.Page = page + 1
-			} else {
-				newState.Page = page
+	if len(createdAts) > 0 {
+		lastCreatedAt := createdAts[len(createdAts)-1]
+
+		// Collect the references emitted at exactly the new watermark second.
+		idsAtWatermark := make([]string, 0)
+		for i := range accounts {
+			if createdAts[i].Equal(lastCreatedAt) {
+				idsAtWatermark = append(idsAtWatermark, accounts[i].Reference)
 			}
-		} else {
-			newState.Page = 1
 		}
+
+		// Accumulate the processed-ID set while still inside the same watermark
+		// second; reset it when the watermark advances to a newer second.
+		if lastCreatedAt.Equal(oldState.LastCreatedAtFrom) {
+			newState.LastProcessedIDs = append(oldState.LastProcessedIDs, idsAtWatermark...)
+		} else {
+			newState.LastProcessedIDs = idsAtWatermark
+		}
+		newState.LastCreatedAtFrom = lastCreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -100,20 +102,21 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 func fillAccounts(
 	pagedAccounts []genericclient.Account,
 	accounts []models.PSPAccount,
+	createdAts []time.Time,
 	oldState accountsState,
-) ([]models.PSPAccount, error) {
+) ([]models.PSPAccount, []time.Time, error) {
 	for _, account := range pagedAccounts {
-		// Inclusive watermark: skip accounts strictly before it, and the single
-		// already-processed account at exactly the watermark. Distinct accounts
+		// Inclusive watermark: skip accounts strictly before it, and any already-
+		// emitted account at exactly the watermark second. Distinct accounts
 		// sharing that timestamp are kept (M-CON2).
 		cmp := account.CreatedAt.Compare(oldState.LastCreatedAtFrom)
-		if cmp < 0 || (cmp == 0 && account.Id == oldState.LastProcessedID) {
+		if cmp < 0 || (cmp == 0 && slices.Contains(oldState.LastProcessedIDs, account.Id)) {
 			continue
 		}
 
 		raw, err := json.Marshal(account)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		accounts = append(accounts, models.PSPAccount{
@@ -123,7 +126,8 @@ func fillAccounts(
 			Metadata:  account.Metadata,
 			Raw:       raw,
 		})
+		createdAts = append(createdAts, account.CreatedAt)
 	}
 
-	return accounts, nil
+	return accounts, createdAts, nil
 }

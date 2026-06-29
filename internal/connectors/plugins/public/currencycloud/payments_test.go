@@ -153,7 +153,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State: []byte(fmt.Sprintf(
-					`{"lastUpdatedAt": "%s", "lastProcessedID": "%s"}`,
+					`{"lastUpdatedAt": "%s", "lastProcessedIDs": ["%s"]}`,
 					sampleTransactions[38].UpdatedAt.Format(time.RFC3339Nano),
 					sampleTransactions[38].ID,
 				)),
@@ -202,7 +202,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 			}
 
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%s", "lastProcessedID": "a"}`, ts.Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%s", "lastProcessedIDs": ["a"]}`, ts.Format(time.RFC3339Nano))),
 				PageSize: 40,
 			}
 			m.EXPECT().GetTransactions(gomock.Any(), 1, 40, ts.UTC()).Return(
@@ -220,6 +220,11 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 		})
 
 		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			// Five transactions all sharing the same UpdatedAt second, fetched three
+			// per page so the group spans page 1 (t0,t1,t2) and a SHORT final page 2
+			// (t3,t4). Each cycle rescans from page 1 and skips the processed-ID set;
+			// a single LastProcessedID would oscillate on the multi-row final page
+			// (re-emitting t3/t4 forever) instead of settling and advancing.
 			ts := now.Add(-time.Hour).UTC()
 			mk := func(id string) client.Transaction {
 				return client.Transaction{
@@ -242,31 +247,31 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				return out
 			}
 
-			// Cycle 1: page 1 -> t0, t1.
-			m.EXPECT().GetTransactions(gomock.Any(), 1, 2, time.Time{}).Return(all[0:2], 2, nil)
-			resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 2})
+			// Cycle 1: fresh state, page 1 -> t0, t1, t2.
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 3, time.Time{}).Return(all[0:3], 2, nil)
+			resp, err := plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Payments)).To(Equal([]string{"t0", "t1"}))
+			Expect(refs(resp.Payments)).To(Equal([]string{"t0", "t1", "t2"}))
+			Expect(resp.HasMore).To(BeTrue())
 
-			// Cycle 2: page 1 re-fetched (t1 deduped) then page 2 -> t2, t3.
-			m.EXPECT().GetTransactions(gomock.Any(), 1, 2, ts.UTC()).Return(all[0:2], 2, nil)
-			m.EXPECT().GetTransactions(gomock.Any(), 2, 2, ts.UTC()).Return(all[2:4], 3, nil)
-			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+			// Cycle 2: rescan page 1 (all skipped via the set) then page 2 -> t3, t4.
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 3, ts.UTC()).Return(all[0:3], 2, nil)
+			m.EXPECT().GetTransactions(gomock.Any(), 2, 3, ts.UTC()).Return(all[3:5], -1, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
-			// Boundary t1 is deduped; t0 (a same-second sibling on the re-fetched
-			// page 1) is re-emitted by design — storage upserts dedup it. The exact
-			// assertion catches any unintended extra re-emission.
-			Expect(refs(resp.Payments)).To(Equal([]string{"t0", "t2", "t3"}))
+			Expect(refs(resp.Payments)).To(Equal([]string{"t3", "t4"}))
 
-			// Cycle 3: page 3 -> t4 (group fully drained on a short final page).
-			m.EXPECT().GetTransactions(gomock.Any(), 3, 2, ts.UTC()).Return(all[4:5], -1, nil)
-			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+			// Cycle 3: group fully drained — every row is in the processed-ID set, so
+			// the rescan returns nothing. A single LastProcessedID would re-emit t3 or
+			// t4 here and oscillate; the set settles to empty.
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 3, ts.UTC()).Return(all[0:3], 2, nil)
+			m.EXPECT().GetTransactions(gomock.Any(), 2, 3, ts.UTC()).Return(all[3:5], -1, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Payments)).To(Equal([]string{"t4"}))
+			Expect(refs(resp.Payments)).To(BeEmpty())
 
-			// Cycle 4: a newer-second transaction t5 lands on the short last page
-			// (3). The cursor must stay on page 3 rather than advance to page 4, or
-			// t5 would be stranded forever behind an empty page.
+			// Cycle 4: a newer-second transaction t5 appears on the (formerly short)
+			// page 2. The set skips t3/t4 and reaches t5 — no stranding.
 			ts2 := ts.Add(time.Second)
 			t5 := client.Transaction{
 				ID:        "t5",
@@ -278,8 +283,9 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				UpdatedAt: ts2,
 				Amount:    "100",
 			}
-			m.EXPECT().GetTransactions(gomock.Any(), 3, 2, ts.UTC()).Return([]client.Transaction{all[4], t5}, -1, nil)
-			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 3, ts.UTC()).Return(all[0:3], 2, nil)
+			m.EXPECT().GetTransactions(gomock.Any(), 2, 3, ts.UTC()).Return([]client.Transaction{all[3], all[4], t5}, -1, nil)
+			resp, err = plg.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
 			Expect(refs(resp.Payments)).To(Equal([]string{"t5"}))
 		})
