@@ -16,6 +16,13 @@ type paymentsState struct {
 	// exactly LastUpdatedAt, so the inclusive (>=) watermark filter excludes only
 	// that already-processed row while keeping distinct same-timestamp rows.
 	LastProcessedID string `json:"lastProcessedID"`
+	// Page is the next page to fetch within the current LastUpdatedAt second
+	// (1-indexed). It advances while the watermark second is unchanged (a
+	// same-second group larger than one page) and resets to 1 once the watermark
+	// moves to a newer second, so a same-second group spanning pages is walked
+	// without re-scanning from page 1 each cycle (which a single LastProcessedID
+	// cannot do).
+	Page int `json:"page"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -25,21 +32,28 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
+	if oldState.Page < 1 {
+		oldState.Page = 1
+	}
 
 	newState := paymentsState{
 		LastUpdatedAt:   oldState.LastUpdatedAt,
 		LastProcessedID: oldState.LastProcessedID,
+		Page:            oldState.Page,
 	}
 
 	var payments []models.PSPPayment
 	var updatedAts []time.Time
 	var processedIDs []string
 	hasMore := false
-	page := 1
+	// Resume at the persisted page and walk forward. We filter against the STABLE
+	// oldState watermark for the whole drain (advancing it mid-pagination would
+	// drop rows sharing a second across a page boundary and mutate the server
+	// filter), and we do NOT trim back to PageSize — that would skip the trimmed
+	// rows when resuming at the advanced page. The page cursor below records how
+	// far we got.
+	page := oldState.Page
 	for {
-		// Filter against the STABLE watermark from oldState for the whole drain.
-		// Advancing it mid-pagination (the previous behaviour) would drop rows
-		// sharing a second across a page boundary and mutate the server filter.
 		pagedTransactions, nextPage, err := p.client.GetTransactions(ctx, page, req.PageSize, oldState.LastUpdatedAt)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
@@ -55,13 +69,15 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 
 		var needMore bool
-		needMore, hasMore, payments = shouldFetchMore(payments, nextPage, req.PageSize)
+		// Ignore shouldFetchMore's trimmed slice; keep the full over-fetch so the
+		// page cursor can resume cleanly.
+		needMore, hasMore, _ = shouldFetchMore(payments, nextPage, req.PageSize)
 
 		if !needMore {
 			break
 		}
 
-		page = nextPage
+		page++
 	}
 
 	// Watermark and dedup key come from the last EMITTED payment, computed once
@@ -69,6 +85,13 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if len(payments) > 0 {
 		newState.LastUpdatedAt = updatedAts[len(payments)-1]
 		newState.LastProcessedID = processedIDs[len(payments)-1]
+		// Same-second group still draining -> resume after consumed pages; else
+		// the watermark moved to a newer second, so re-anchor at page 1.
+		if newState.LastUpdatedAt.Equal(oldState.LastUpdatedAt) {
+			newState.Page = page + 1
+		} else {
+			newState.Page = 1
+		}
 	}
 
 	payload, err := json.Marshal(newState)
