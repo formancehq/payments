@@ -178,9 +178,10 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
 			// Five beneficiaries all sharing the same CreatedAt second, fetched three
 			// per page so the group spans page 1 (b0,b1,b2) and a SHORT final page 2
-			// (b3,b4). Each cycle rescans from page 1 and skips the processed-ID set;
-			// a single LastProcessedID would oscillate on the multi-row final page
-			// (re-emitting b3/b4 forever) instead of settling and advancing.
+			// (b3,b4). The monotonic LastPage cursor resumes the forward scan (no full
+			// rescan from page 1 once past it) and the processed-ID set dedups the
+			// same-second rows on the re-read page; a single LastProcessedID would
+			// oscillate on the multi-row final page (re-emitting b3/b4 forever).
 			ts := now.Add(-time.Hour).UTC()
 			mk := func(id string) *client.Beneficiary {
 				return &client.Beneficiary{
@@ -214,19 +215,18 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 			Expect(err).To(BeNil())
 			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b3", "b4"}))
 
-			// Cycle 3: group fully drained — every row is in the processed-ID set, so
-			// the rescan returns nothing (anti-oscillation).
-			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 3).Return(all[0:3], 2, nil)
+			// Cycle 3: LastPage is now 2, so we resume there (NOT page 1) and re-read
+			// only the last page. Every row is in the processed-ID set, so it returns
+			// nothing (anti-oscillation) — and crucially does not rescan history.
 			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 3).Return(all[3:5], -1, nil)
 			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
 			Expect(refs(resp.ExternalAccounts)).To(BeEmpty())
 
 			// Cycle 4: a newer-second beneficiary b5 appears on the (formerly short)
-			// page 2. The set skips b3/b4 and reaches b5 — no stranding.
+			// page 2. Resuming at page 2, the set skips b3/b4 and reaches b5.
 			ts2 := ts.Add(time.Second)
 			b5 := &client.Beneficiary{ID: "b5", BankAccountHolderName: "name-b5", Name: "name-b5", Currency: "EUR", CreatedAt: ts2}
-			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 3).Return(all[0:3], 2, nil)
 			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 3).Return([]*client.Beneficiary{all[3], all[4], b5}, -1, nil)
 			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
