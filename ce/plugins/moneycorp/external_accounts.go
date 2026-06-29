@@ -15,18 +15,21 @@ import (
 )
 
 type externalAccountsState struct {
+	// LastPage is a monotonic forward cursor. This endpoint has NO server-side
+	// time filter, so resuming the scan here (re-reading only the last page, not
+	// the whole history each poll) avoids a full historical rescan on every sync.
+	LastPage      int       `json:"lastPage"`
 	LastCreatedAt time.Time `json:"LastCreatedAt"`
 	// LastProcessedIDs holds the references (recipient IDs) of ALL accounts
-	// already emitted at exactly LastCreatedAt, accumulated across cycles while
-	// the watermark second is unchanged and reset when it advances. Each cycle
-	// rescans from page 0 and skips this whole set: a same-second group larger
-	// than PageSize is walked across cycles without a drifting page cursor, and a
-	// multi-row final page cannot oscillate (every already-emitted sibling is
-	// skipped, not just one).
+	// already emitted at exactly LastCreatedAt, accumulated while the watermark
+	// second is unchanged and reset when it advances. It dedups same-second rows
+	// on the re-read page, so a multi-row boundary settles to empty instead of
+	// oscillating (a single LastProcessedID could exclude only one of several
+	// tied rows).
 	//
-	// Migration note: the old singular lastProcessedID and lastPage fields are
-	// ignored. After deploy the watermark second is re-emitted once (idempotent —
-	// storage upserts dedup it) and no recrawl occurs.
+	// Migration note: the old singular lastProcessedID is ignored. After deploy
+	// the watermark second is re-emitted once (idempotent — storage upserts dedup
+	// it) and no recrawl occurs.
 	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 
@@ -47,6 +50,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	}
 
 	newState := externalAccountsState{
+		LastPage:         oldState.LastPage,
 		LastCreatedAt:    oldState.LastCreatedAt,
 		LastProcessedIDs: oldState.LastProcessedIDs,
 	}
@@ -54,12 +58,12 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	needMore := false
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	// Rescan from page 0 each cycle (no page cursor): the processed-ID set skips
-	// every already-emitted sibling at the watermark second, so a same-second
-	// group larger than PageSize is walked across cycles and a multi-row final
-	// page cannot oscillate. There is no server-side time filter, so the skip is
-	// applied client-side in recipientToPSPAccounts.
-	for page := 0; ; page++ {
+	// No server-side time filter: resume the monotonic forward scan at the
+	// persisted page (re-reading only the last page, not the whole history) and
+	// skip already-emitted same-second rows via the ID set (client-side, in
+	// recipientToPSPAccounts), so a multi-row final page cannot oscillate.
+	page := oldState.LastPage
+	for {
 		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
@@ -74,7 +78,9 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		if !needMore || !hasMore {
 			break
 		}
+		page++
 	}
+	newState.LastPage = page
 
 	if len(accounts) > 0 {
 		last := accounts[len(accounts)-1].CreatedAt
