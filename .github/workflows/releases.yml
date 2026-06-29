@@ -7,6 +7,19 @@ permissions:
   contents: write
 
 jobs:
+  TagDomainModule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create pkg/domain tag
+        run: |
+          DOMAIN_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v[0-9]*/v0/')
+          gh api repos/${{ github.repository }}/git/refs \
+            --method POST \
+            --field ref="refs/tags/pkg/domain/${DOMAIN_VERSION}" \
+            --field sha="${{ github.sha }}"
+        env:
+          GH_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+
   GoReleaser:
     runs-on: "namespace-profile-linux-amd64-4vcpu"
     steps:
