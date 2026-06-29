@@ -39,7 +39,7 @@ func TestConversionPairToPSPConversion(t *testing.T) {
 	dst := ConversionLeg{LedgerID: "L2", Entry: client.LedgerEntry{
 		Refid: "C1", Type: "conversion", Asset: "XXBT", Amount: "0.0036", Fee: "0.0001", Time: 2.0,
 	}}
-	got, err := ConversionPairToPSPConversion(testCurrencies, testWallets, src, dst)
+	got, err := ConversionPairToPSPConversion(testCurrencies, src, dst)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -49,12 +49,12 @@ func TestConversionPairToPSPConversion(t *testing.T) {
 	if got.SourceAsset != "USD/2" || got.DestinationAsset != "BTC/8" {
 		t.Errorf("assets=%s→%s", got.SourceAsset, got.DestinationAsset)
 	}
-	// Account references resolve to the spot account of each leg's symbol.
-	if got.SourceAccountReference == nil || *got.SourceAccountReference != testWallets["USD"] {
-		t.Errorf("source ref=%v want %q", got.SourceAccountReference, testWallets["USD"])
+	// Account references are each leg's own raw Kraken code.
+	if got.SourceAccountReference == nil || *got.SourceAccountReference != "ZUSD" {
+		t.Errorf("source ref=%v want ZUSD", got.SourceAccountReference)
 	}
-	if got.DestinationAccountReference == nil || *got.DestinationAccountReference != testWallets["BTC"] {
-		t.Errorf("dest ref=%v want %q", got.DestinationAccountReference, testWallets["BTC"])
+	if got.DestinationAccountReference == nil || *got.DestinationAccountReference != "XXBT" {
+		t.Errorf("dest ref=%v want XXBT", got.DestinationAccountReference)
 	}
 	if got.SourceAmount.Cmp(big.NewInt(10000)) != 0 {
 		t.Errorf("source amount=%s", got.SourceAmount)
@@ -75,7 +75,7 @@ func TestConversionPairToPSPConversion_SourceFeeMetadataOnly(t *testing.T) {
 	dst := ConversionLeg{LedgerID: "L2", Entry: client.LedgerEntry{
 		Refid: "C1", Type: "conversion", Asset: "XXBT", Amount: "0.0036", Time: 1,
 	}}
-	got, err := ConversionPairToPSPConversion(testCurrencies, testWallets, src, dst)
+	got, err := ConversionPairToPSPConversion(testCurrencies, src, dst)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -91,11 +91,11 @@ func TestConversionPairToPSPConversion_UnknownAsset(t *testing.T) {
 	t.Parallel()
 	src := ConversionLeg{LedgerID: "L1", Entry: client.LedgerEntry{Refid: "C1", Asset: "ZZZ", Amount: "-1"}}
 	dst := ConversionLeg{LedgerID: "L2", Entry: client.LedgerEntry{Refid: "C1", Asset: "XXBT", Amount: "1"}}
-	if _, err := ConversionPairToPSPConversion(testCurrencies, testWallets, src, dst); err == nil {
+	if _, err := ConversionPairToPSPConversion(testCurrencies, src, dst); err == nil {
 		t.Fatal("expected unknown-source-asset error")
 	}
 	src.Entry.Asset, dst.Entry.Asset = "XXBT", "ZZZ"
-	if _, err := ConversionPairToPSPConversion(testCurrencies, testWallets, src, dst); err == nil {
+	if _, err := ConversionPairToPSPConversion(testCurrencies, src, dst); err == nil {
 		t.Fatal("expected unknown-destination-asset error")
 	}
 }

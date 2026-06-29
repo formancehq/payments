@@ -78,7 +78,6 @@ var _ = Describe("Kraken Pro Plugin", func() {
 				client:       m,
 				logger:       logger,
 				currencies:   map[string]int{"BTC": 8},
-				assetCodes:   map[string]string{"BTC": "XXBT"},
 				assetsLoaded: time.Now(),
 			}
 		}

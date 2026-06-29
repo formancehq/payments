@@ -13,12 +13,6 @@ var testPairs = map[string]client.AssetPair{
 	"XXBTZUSD": {Altname: "XBTUSD", Wsname: "XBT/USD", Base: "XXBT", Quote: "ZUSD"},
 }
 
-var testWallets = map[string]string{
-	"BTC": "BTC",
-	"USD": "USD",
-	"EUR": "EUR",
-}
-
 // ---------- Status matrix ----------
 
 func TestMapKrakenOrderStatus(t *testing.T) {
@@ -77,7 +71,7 @@ func filledOrder(side, ordertype string) client.OrderEntry {
 
 func TestOrderEntryToPSPOrder_FilledBuy(t *testing.T) {
 	t.Parallel()
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "O1", Order: filledOrder("buy", "limit")})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -91,9 +85,10 @@ func TestOrderEntryToPSPOrder_FilledBuy(t *testing.T) {
 	if got.Status != models.ORDER_STATUS_FILLED {
 		t.Errorf("status=%v", got.Status)
 	}
-	// BUY → source = quote (USD), destination = base (BTC)
-	if *got.SourceAccountReference != "USD" || *got.DestinationAccountReference != "BTC" {
-		t.Errorf("BUY wallets: src=%v dst=%v", *got.SourceAccountReference, *got.DestinationAccountReference)
+	// BUY → source = quote (ZUSD), destination = base (XXBT); refs are the
+	// pair's raw Kraken codes.
+	if *got.SourceAccountReference != "ZUSD" || *got.DestinationAccountReference != "XXBT" {
+		t.Errorf("BUY refs: src=%v dst=%v", *got.SourceAccountReference, *got.DestinationAccountReference)
 	}
 	if got.BaseQuantityOrdered.Cmp(big.NewInt(100_000_000)) != 0 {
 		t.Errorf("ordered=%s", got.BaseQuantityOrdered)
@@ -118,7 +113,7 @@ func TestOrderEntryToPSPOrder_FilledBuy(t *testing.T) {
 // is preserved in metadata instead.
 func TestOrderEntryToPSPOrder_CreatedAtFromOpentmNotClosetm(t *testing.T) {
 	t.Parallel()
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "O1", Order: filledOrder("buy", "limit")})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -136,7 +131,7 @@ func TestOrderEntryToPSPOrder_NoCloseTimeWhenOpen(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("buy", "limit")
 	oe.Status, oe.Closetm = "open", 0
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "O1", Order: oe})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -148,7 +143,7 @@ func TestOrderEntryToPSPOrder_NoCloseTimeWhenOpen(t *testing.T) {
 
 func TestOrderEntryToPSPOrder_FilledSellInvertsWallets(t *testing.T) {
 	t.Parallel()
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "O2", Order: filledOrder("sell", "market")})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -156,9 +151,9 @@ func TestOrderEntryToPSPOrder_FilledSellInvertsWallets(t *testing.T) {
 	if got.Direction != models.ORDER_DIRECTION_SELL {
 		t.Errorf("direction=%v", got.Direction)
 	}
-	// SELL → source = base (BTC), destination = quote (USD)
-	if *got.SourceAccountReference != "BTC" || *got.DestinationAccountReference != "USD" {
-		t.Errorf("SELL wallets: src=%v dst=%v", *got.SourceAccountReference, *got.DestinationAccountReference)
+	// SELL → source = base (XXBT), destination = quote (ZUSD)
+	if *got.SourceAccountReference != "XXBT" || *got.DestinationAccountReference != "ZUSD" {
+		t.Errorf("SELL refs: src=%v dst=%v", *got.SourceAccountReference, *got.DestinationAccountReference)
 	}
 }
 
@@ -167,7 +162,7 @@ func TestOrderEntryToPSPOrder_OpenStatusFromVolExec(t *testing.T) {
 	oe := filledOrder("buy", "limit")
 	oe.Status = "open"
 	oe.VolExec = "0.30000000" // partial
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "O3", Order: oe})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -184,32 +179,10 @@ func TestOrderEntryToPSPOrder_UnknownPair(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("buy", "limit")
 	oe.Descr.Pair = "BOGUS"
-	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "OZ", Order: oe})
 	if err == nil {
 		t.Fatal("expected unknown-pair error")
-	}
-}
-
-func TestOrderEntryToPSPOrder_UnresolvedWalletYieldsNilRef(t *testing.T) {
-	t.Parallel()
-	// Drop USD wallet; a BUY order needs USD as source. Best-effort
-	// resolution: the order still emits with a nil source ref (the
-	// not-currently-held case) and a resolved destination ref.
-	wallets := map[string]string{"BTC": "BTC"}
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, wallets,
-		OrderEntryWithID{OrderID: "OW", Order: filledOrder("buy", "limit")})
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	if got == nil {
-		t.Fatal("expected order, got nil")
-	}
-	if got.SourceAccountReference != nil {
-		t.Errorf("unresolved source should be nil, got %q", *got.SourceAccountReference)
-	}
-	if got.DestinationAccountReference == nil || *got.DestinationAccountReference != "BTC" {
-		t.Errorf("destination should resolve to BTC, got %v", got.DestinationAccountReference)
 	}
 }
 
@@ -217,7 +190,7 @@ func TestOrderEntryToPSPOrder_ClientOrderID(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("buy", "limit")
 	oe.ClOrdID = "my-client-id-42"
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "OCL", Order: oe})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -233,7 +206,7 @@ func TestOrderEntryToPSPOrder_ClientOrderID(t *testing.T) {
 func TestOrderEntryToPSPOrder_UnknownDirection(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("???", "limit")
-	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "OD", Order: oe})
 	if err == nil {
 		t.Fatal("expected direction error")
@@ -244,7 +217,7 @@ func TestOrderEntryToPSPOrder_BadVolReturnsError(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("buy", "limit")
 	oe.Vol = "not-a-number"
-	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "OB", Order: oe})
 	if err == nil {
 		t.Fatal("expected vol parse error")
@@ -256,7 +229,7 @@ func TestOrderEntryToPSPOrder_BlankFeeIsZero(t *testing.T) {
 	oe := filledOrder("sell", "market")
 	oe.Status = "canceled"
 	oe.Fee = ""
-	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "OC", Order: oe})
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -344,7 +317,7 @@ func TestOrderEntryToPSPOrder_NonEmptyInvalidFeeErrors(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("sell", "market")
 	oe.Fee = "not-a-number"
-	if _, err := OrderEntryToPSPOrder(testCurrencies, testPairs, testWallets,
+	if _, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
 		OrderEntryWithID{OrderID: "OFEE", Order: oe}); err == nil {
 		t.Fatal("a non-empty unparseable fee must return an error, not silently zero")
 	}

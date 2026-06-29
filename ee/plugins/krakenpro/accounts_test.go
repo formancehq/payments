@@ -31,9 +31,6 @@ var _ = Describe("Kraken Pro fetch_accounts", func() {
 			currencies: map[string]int{
 				"BTC": 8, "USD": 2, "EUR": 2, "ADA": 8,
 			},
-			assetCodes: map[string]string{
-				"BTC": "XXBT", "USD": "ZUSD", "EUR": "ZEUR", "ADA": "ADA",
-			},
 			assetsLoaded: time.Now(),
 		}
 	})
@@ -51,9 +48,7 @@ var _ = Describe("Kraken Pro fetch_accounts", func() {
 		return out
 	}
 
-	It("emits one PSPAccount per asset class, keyed by raw code", func(ctx SpecContext) {
-		// XXBT spot + ZUSD spot + ADA.S staked (no ADA spot row) → the
-		// ADA spot account is force-emitted from the /Assets code.
+	It("emits one PSPAccount per BalanceEx variant, keyed by raw code", func(ctx SpecContext) {
 		m.EXPECT().GetBalanceEx(gomock.Any()).Return(map[string]client.BalanceExEntry{
 			"XXBT":  {Balance: "1.0", HoldTrade: "0"},
 			"ZUSD":  {Balance: "100.00", HoldTrade: "10.00"},
@@ -67,14 +62,14 @@ var _ = Describe("Kraken Pro fetch_accounts", func() {
 		Expect(accs).To(HaveKey("XXBT"))
 		Expect(accs).To(HaveKey("ZUSD"))
 		Expect(accs).To(HaveKey("ADA.S"))
-		Expect(accs).To(HaveKey("ADA")) // force-emitted spot
+		// No spot account is synthesised: accounts mirror BalanceEx exactly.
+		Expect(accs).NotTo(HaveKey("ADA"))
 		Expect(walletType(accs["XXBT"])).To(Equal("spot"))
 		Expect(walletType(accs["ADA.S"])).To(Equal("staked"))
-		Expect(walletType(accs["ADA"])).To(Equal("spot"))
 		Expect(*accs["XXBT"].DefaultAsset).To(Equal("BTC/8"))
 	})
 
-	It("force-emits a spot account when value sits only in an earn variant", func(ctx SpecContext) {
+	It("does not synthesise a spot account when value sits only in an earn variant", func(ctx SpecContext) {
 		m.EXPECT().GetBalanceEx(gomock.Any()).Return(map[string]client.BalanceExEntry{
 			"XBT.M": {Balance: "0.3", HoldTrade: "0"},
 		}, nil)
@@ -82,9 +77,8 @@ var _ = Describe("Kraken Pro fetch_accounts", func() {
 		Expect(err).To(BeNil())
 		accs := byRef(resp.Accounts)
 		Expect(accs).To(HaveKey("XBT.M"))
-		Expect(accs).To(HaveKey("XXBT")) // spot, force-emitted at zero
+		Expect(accs).NotTo(HaveKey("XXBT"))
 		Expect(walletType(accs["XBT.M"])).To(Equal("rewards"))
-		Expect(walletType(accs["XXBT"])).To(Equal("spot"))
 	})
 
 	It("skips assets already emitted in a previous cycle (keyed by reference)", func(ctx SpecContext) {

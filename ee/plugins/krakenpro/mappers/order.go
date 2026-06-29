@@ -11,14 +11,30 @@ import (
 	"github.com/formancehq/payments/pkg/domain/models"
 )
 
-// PairResolution holds the (base, quote) split for a Kraken pair
-// code. Looked up via the cached /0/public/AssetPairs map; falls
-// back to splitting `wsname` on '/' for codes the cache hasn't seen.
+// PairResolution holds the (base, quote) split for a Kraken pair code.
+// Looked up via the cached /0/public/AssetPairs map; falls back to
+// matching on altname/wsname for codes the cache hasn't seen. BaseCode
+// and QuoteCode are the raw Kraken codes (e.g. "XXBT", "ZUSD") — these
+// are the per-variant spot account references; BaseSymbol/QuoteSymbol
+// are their normalised tickers.
 type PairResolution struct {
 	Pair        string
 	Wsname      string
 	BaseSymbol  string
 	QuoteSymbol string
+	BaseCode    string
+	QuoteCode   string
+}
+
+func pairResolution(code string, entry client.AssetPair) PairResolution {
+	return PairResolution{
+		Pair:        code,
+		Wsname:      entry.Wsname,
+		BaseSymbol:  NormalizeAsset(entry.Base),
+		QuoteSymbol: NormalizeAsset(entry.Quote),
+		BaseCode:    strings.ToUpper(strings.TrimSpace(entry.Base)),
+		QuoteCode:   strings.ToUpper(strings.TrimSpace(entry.Quote)),
+	}
 }
 
 // ResolvePair maps a Kraken pair code (e.g. "XXBTZUSD") to its
@@ -27,12 +43,7 @@ type PairResolution struct {
 // wsname produces a usable split — the caller logs and skips.
 func ResolvePair(pairs map[string]client.AssetPair, pair string) (PairResolution, bool) {
 	if entry, ok := pairs[pair]; ok {
-		return PairResolution{
-			Pair:        pair,
-			Wsname:      entry.Wsname,
-			BaseSymbol:  NormalizeAsset(entry.Base),
-			QuoteSymbol: NormalizeAsset(entry.Quote),
-		}, true
+		return pairResolution(pair, entry), true
 	}
 	// Fallback: match any cached pair on its code, altname or wsname,
 	// comparing slash-normalized so wsname forms like "XBT/USD" resolve.
@@ -41,12 +52,7 @@ func ResolvePair(pairs map[string]client.AssetPair, pair string) (PairResolution
 		if slashless(code) == candidate ||
 			slashless(entry.Altname) == candidate ||
 			slashless(entry.Wsname) == candidate {
-			return PairResolution{
-				Pair:        code,
-				Wsname:      entry.Wsname,
-				BaseSymbol:  NormalizeAsset(entry.Base),
-				QuoteSymbol: NormalizeAsset(entry.Quote),
-			}, true
+			return pairResolution(code, entry), true
 		}
 	}
 	return PairResolution{}, false
@@ -94,7 +100,6 @@ type orderAmounts struct {
 func OrderEntryToPSPOrder(
 	currencies map[string]int,
 	pairs map[string]client.AssetPair,
-	wallets map[string]string,
 	row OrderEntryWithID,
 ) (*models.PSPOrder, error) {
 	oe := row.Order
@@ -107,12 +112,14 @@ func OrderEntryToPSPOrder(
 	// BUY spends quote / receives base; SELL inverts. src = spent, dst = received.
 	var direction models.OrderDirection
 	srcSym, dstSym := pairRes.QuoteSymbol, pairRes.BaseSymbol
+	srcCode, dstCode := pairRes.QuoteCode, pairRes.BaseCode
 	switch strings.ToLower(oe.Descr.Type) {
 	case "buy":
 		direction = models.ORDER_DIRECTION_BUY
 	case "sell":
 		direction = models.ORDER_DIRECTION_SELL
 		srcSym, dstSym = pairRes.BaseSymbol, pairRes.QuoteSymbol
+		srcCode, dstCode = pairRes.BaseCode, pairRes.QuoteCode
 	default:
 		return nil, fmt.Errorf("unknown direction %q on order %s", oe.Descr.Type, row.OrderID)
 	}
@@ -165,8 +172,8 @@ func OrderEntryToPSPOrder(
 		FeeAsset:                    &quoteAsset,
 		PriceAsset:                  &priceAsset,
 		TimeInForce:                 models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED,
-		SourceAccountReference:      spotRef(wallets, srcSym),
-		DestinationAccountReference: spotRef(wallets, dstSym),
+		SourceAccountReference:      accountRef(srcCode),
+		DestinationAccountReference: accountRef(dstCode),
 		Metadata:                    metadata,
 		Raw:                         raw,
 	}, nil

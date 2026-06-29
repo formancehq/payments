@@ -3,8 +3,6 @@ package krakenpro
 import (
 	"encoding/json"
 	"testing"
-
-	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
 )
 
 func TestLedgerWindowPlanFreezesEnd(t *testing.T) {
@@ -87,22 +85,6 @@ func TestLedgerWindowFullDrainNoSkip(t *testing.T) {
 	}
 }
 
-func TestPendingLegToLedgerEntry(t *testing.T) {
-	t.Parallel()
-	leg := pendingLeg{
-		LedgerID: "L-1", Time: 1700, Type: "conversion", Subtype: "spot",
-		Asset: "XXBT", Amount: "-0.5", Fee: "0.001", Balance: "1.234",
-	}
-	got := leg.toLedgerEntry("REF-42")
-	want := client.LedgerEntry{
-		Refid: "REF-42", Time: 1700, Type: "conversion", Subtype: "spot",
-		Asset: "XXBT", Amount: "-0.5", Fee: "0.001", Balance: "1.234",
-	}
-	if got != want {
-		t.Fatalf("got %+v want %+v", got, want)
-	}
-}
-
 func TestPaymentsStateDecode(t *testing.T) {
 	t.Parallel()
 	raw := []byte(`{"window":{"watermark":1700.5,"end":1800,"offset":50}}`)
@@ -117,13 +99,13 @@ func TestPaymentsStateDecode(t *testing.T) {
 
 func TestConversionsStateDecode(t *testing.T) {
 	t.Parallel()
-	raw := []byte(`{"window":{"watermark":1700},"pending":{"REF-1":{"ledgerID":"L-1","time":1700,"type":"conversion","asset":"XXBT","amount":"-0.5"}}}`)
+	raw := []byte(`{"window":{"watermark":1700},"pending":{"REF-1":{"id":"L-1","refid":"REF-1","time":1700,"type":"conversion","asset":"XXBT","amount":"-0.5"}}}`)
 	var s conversionsState
 	if err := json.Unmarshal(raw, &s); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	leg, ok := s.Pending["REF-1"]
-	if !ok || leg.LedgerID != "L-1" || leg.Amount != "-0.5" {
+	if !ok || leg.ID != "L-1" || leg.Amount != "-0.5" {
 		t.Fatalf("pending leg: %+v (ok=%v)", leg, ok)
 	}
 }

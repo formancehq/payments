@@ -27,10 +27,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
-	// Spot account references (symbol -> raw spot code) for attributing a
-	// payment to its asset's trading account, taken from the asset cache —
-	// no DB lookup. The raw variant stays in kraken_asset metadata.
-	wallets := p.snapshotAssetCodes()
 
 	start, end, ofs := state.Window.plan(nowEpoch())
 	resp, err := p.client.GetLedgers(ctx, client.LedgersParams{
@@ -43,12 +39,12 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	// Map the page; if any row's asset is missing from the cache (likely
 	// listed after the last refresh), force ONE refresh and re-map before
 	// the watermark advances, so the row isn't permanently skipped.
-	payments, unknown := p.mapLedgerPayments(currencies, wallets, resp.Ledger)
+	payments, unknown := p.mapLedgerPayments(currencies, resp.Ledger)
 	if len(unknown) > 0 {
 		if err := p.forceRefreshAssets(ctx); err != nil {
 			return models.FetchNextPaymentsResponse{}, fmt.Errorf("refresh assets for unknown payment asset: %w", err)
 		}
-		payments, unknown = p.mapLedgerPayments(p.snapshotAssets(), p.snapshotAssetCodes(), resp.Ledger)
+		payments, unknown = p.mapLedgerPayments(p.snapshotAssets(), resp.Ledger)
 		if len(unknown) > 0 {
 			p.logger.WithField("assets", unknown).
 				Errorf("payments: assets still unknown after cache refresh, skipping rows")
@@ -77,11 +73,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 // assets of rows skipped because they're missing from the cache (so the
 // caller can refresh + retry). Other skips (trade/conversion rows) are
 // silent; mapping errors are logged and dropped.
-func (p *Plugin) mapLedgerPayments(currencies map[string]int, wallets map[string]string, ledger map[string]client.LedgerEntry) ([]models.PSPPayment, []string) {
+func (p *Plugin) mapLedgerPayments(currencies map[string]int, ledger map[string]client.LedgerEntry) ([]models.PSPPayment, []string) {
 	payments := make([]models.PSPPayment, 0, len(ledger))
 	var unknown []string
 	for ledgerID, entry := range ledger {
-		res, mapErr := mappers.LedgerEntryToPSPPayment(currencies, wallets, ledgerID, entry)
+		res, mapErr := mappers.LedgerEntryToPSPPayment(currencies, ledgerID, entry)
 		if mapErr != nil {
 			p.logger.WithField("ledgerID", ledgerID).Errorf("map payment: %v", mapErr)
 			continue

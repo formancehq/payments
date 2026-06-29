@@ -3,7 +3,6 @@ package krakenpro
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
@@ -31,7 +30,6 @@ func (p *Plugin) refreshAssets(ctx context.Context) error {
 	}
 
 	currencies := make(map[string]int, len(assets))
-	assetCodes := make(map[string]string, len(assets))
 	for raw, info := range assets {
 		symbol := mappers.NormalizeAsset(raw)
 		if symbol == "" {
@@ -43,20 +41,11 @@ func (p *Plugin) refreshAssets(ctx context.Context) error {
 		if existing, ok := currencies[symbol]; !ok || existing < info.Decimals {
 			currencies[symbol] = info.Decimals
 		}
-		// The suffix-free /Assets key is the spot code (XXBT, ADA) — the
-		// deterministic spot account reference even when BalanceEx only
-		// returns an earn variant.
-		if !mappers.HasSuffixFamily(raw) {
-			if _, ok := assetCodes[symbol]; !ok {
-				assetCodes[symbol] = strings.ToUpper(strings.TrimSpace(raw))
-			}
-		}
 	}
 
 	p.assetsMu.Lock()
 	p.currencies = currencies
 	p.assetPairs = pairs
-	p.assetCodes = assetCodes
 	p.assetsLoaded = time.Now()
 	p.assetsMu.Unlock()
 	p.logger.Infof("loaded %d Kraken currencies, %d pairs", len(currencies), len(pairs))
@@ -113,11 +102,4 @@ func (p *Plugin) snapshotPairs() map[string]client.AssetPair {
 	p.assetsMu.RLock()
 	defer p.assetsMu.RUnlock()
 	return p.assetPairs
-}
-
-// snapshotAssetCodes returns the canonical symbol → spot-code map.
-func (p *Plugin) snapshotAssetCodes() map[string]string {
-	p.assetsMu.RLock()
-	defer p.assetsMu.RUnlock()
-	return p.assetCodes
 }

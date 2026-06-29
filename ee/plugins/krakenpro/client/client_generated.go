@@ -114,18 +114,3 @@ func (mr *MockClientMockRecorder) GetLedgers(ctx, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLedgers", reflect.TypeOf((*MockClient)(nil).GetLedgers), ctx, params)
 }
-
-// GetOpenOrders mocks base method.
-func (m *MockClient) GetOpenOrders(ctx context.Context, params OpenOrdersParams) (OpenOrdersResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOpenOrders", ctx, params)
-	ret0, _ := ret[0].(OpenOrdersResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOpenOrders indicates an expected call of GetOpenOrders.
-func (mr *MockClientMockRecorder) GetOpenOrders(ctx, params any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenOrders", reflect.TypeOf((*MockClient)(nil).GetOpenOrders), ctx, params)
-}

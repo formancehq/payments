@@ -18,7 +18,7 @@ func TestLedgerEntryToPSPPaymentDeposit(t *testing.T) {
 		Amount:  "100.00",
 		Balance: "1234.56",
 	}
-	res, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L4UESK-KG3EQ-UFO4T5", entry)
+	res, err := LedgerEntryToPSPPayment(testCurrencies, "L4UESK-KG3EQ-UFO4T5", entry)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -42,9 +42,9 @@ func TestLedgerEntryToPSPPaymentDeposit(t *testing.T) {
 	if p.Status != models.PAYMENT_STATUS_SUCCEEDED {
 		t.Errorf("status=%v", p.Status)
 	}
-	// PAYIN credits the destination (the asset's spot account).
-	if p.DestinationAccountReference == nil || *p.DestinationAccountReference != testWallets["EUR"] {
-		t.Errorf("dest ref=%v want %q", p.DestinationAccountReference, testWallets["EUR"])
+	// PAYIN credits the destination (the entry's own raw-code account).
+	if p.DestinationAccountReference == nil || *p.DestinationAccountReference != "ZEUR" {
+		t.Errorf("dest ref=%v want ZEUR", p.DestinationAccountReference)
 	}
 	if p.SourceAccountReference != nil {
 		t.Errorf("PAYIN should leave source ref nil, got %v", *p.SourceAccountReference)
@@ -56,7 +56,7 @@ func TestLedgerEntryToPSPPaymentWithdrawal(t *testing.T) {
 	entry := client.LedgerEntry{
 		Type: "withdrawal", Asset: "XXBT", Amount: "-0.5", Time: 1.0,
 	}
-	res, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", entry)
+	res, err := LedgerEntryToPSPPayment(testCurrencies, "L1", entry)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -69,9 +69,9 @@ func TestLedgerEntryToPSPPaymentWithdrawal(t *testing.T) {
 	if res.Payment.Amount.Sign() <= 0 {
 		t.Errorf("amount should be positive: %s", res.Payment.Amount)
 	}
-	// PAYOUT debits the source (the asset's spot account).
-	if res.Payment.SourceAccountReference == nil || *res.Payment.SourceAccountReference != testWallets["BTC"] {
-		t.Errorf("source ref=%v want %q", res.Payment.SourceAccountReference, testWallets["BTC"])
+	// PAYOUT debits the source (the entry's own raw-code account).
+	if res.Payment.SourceAccountReference == nil || *res.Payment.SourceAccountReference != "XXBT" {
+		t.Errorf("source ref=%v want XXBT", res.Payment.SourceAccountReference)
 	}
 	if res.Payment.DestinationAccountReference != nil {
 		t.Errorf("PAYOUT should leave dest ref nil, got %v", *res.Payment.DestinationAccountReference)
@@ -83,7 +83,7 @@ func TestLedgerEntryToPSPPaymentTransferIsTransfer(t *testing.T) {
 	// A transfer is an internal movement: always TRANSFER, with the spot
 	// (known) leg attributed by amount sign — negative leaves the account
 	// (source), positive enters it (destination).
-	out, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", client.LedgerEntry{
+	out, err := LedgerEntryToPSPPayment(testCurrencies, "L1", client.LedgerEntry{
 		Type: "transfer", Asset: "ZUSD", Amount: "-50.00", Time: 1.0,
 	})
 	if err != nil {
@@ -99,7 +99,7 @@ func TestLedgerEntryToPSPPaymentTransferIsTransfer(t *testing.T) {
 		t.Error("negative transfer should leave destination nil")
 	}
 
-	in, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L2", client.LedgerEntry{
+	in, err := LedgerEntryToPSPPayment(testCurrencies, "L2", client.LedgerEntry{
 		Type: "transfer", Asset: "ZUSD", Amount: "50.00", Time: 1.0,
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func TestLedgerEntryToPSPPaymentTransferIsTransfer(t *testing.T) {
 
 func TestLedgerEntryToPSPPaymentSkipsTrade(t *testing.T) {
 	t.Parallel()
-	res, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", client.LedgerEntry{
+	res, err := LedgerEntryToPSPPayment(testCurrencies, "L1", client.LedgerEntry{
 		Type: "trade", Asset: "XXBT", Amount: "-0.1", Time: 1.0,
 	})
 	if err != nil {
@@ -131,7 +131,7 @@ func TestLedgerEntryToPSPPaymentSkipsTrade(t *testing.T) {
 
 func TestLedgerEntryToPSPPaymentSkipsConversion(t *testing.T) {
 	t.Parallel()
-	res, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", client.LedgerEntry{
+	res, err := LedgerEntryToPSPPayment(testCurrencies, "L1", client.LedgerEntry{
 		Type: "conversion", Asset: "ZUSD", Amount: "-10.00", Time: 1.0,
 	})
 	if err != nil {
@@ -144,7 +144,7 @@ func TestLedgerEntryToPSPPaymentSkipsConversion(t *testing.T) {
 
 func TestLedgerEntryToPSPPaymentUnknownTypeWarns(t *testing.T) {
 	t.Parallel()
-	res, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", client.LedgerEntry{
+	res, err := LedgerEntryToPSPPayment(testCurrencies, "L1", client.LedgerEntry{
 		Type: "future_unknown", Asset: "ZUSD", Amount: "10.00", Time: 1.0,
 	})
 	if err != nil {
@@ -163,7 +163,7 @@ func TestLedgerEntryToPSPPaymentUnknownTypeWarns(t *testing.T) {
 
 func TestLedgerEntryToPSPPaymentUnknownAssetSkipped(t *testing.T) {
 	t.Parallel()
-	res, err := LedgerEntryToPSPPayment(testCurrencies, testWallets, "L1", client.LedgerEntry{
+	res, err := LedgerEntryToPSPPayment(testCurrencies, "L1", client.LedgerEntry{
 		Type: "deposit", Asset: "XYZ", Amount: "1.0", Time: 1.0,
 	})
 	if err != nil {

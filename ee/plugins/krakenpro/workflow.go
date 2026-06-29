@@ -13,8 +13,8 @@ import "github.com/formancehq/payments/pkg/domain/models"
 // All tasks are independent roots. fetch_orders is NOT nested under
 // fetch_accounts: Kraken can't filter orders by account, so nesting
 // would make the engine fan out one identical full-orders fetch per
-// account. Orders resolve their wallet refs from the in-memory asset
-// cache instead (see orders.go), so they need no accounts dependency.
+// account. Orders resolve their account refs from each pair's raw
+// base/quote codes (see orders.go), so they need no accounts dependency.
 func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{
 		{

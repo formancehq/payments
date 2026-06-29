@@ -3,18 +3,22 @@ package mappers
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/payments/ee/plugins/krakenpro/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 )
 
-// spotRef returns the spot account reference for a symbol, or nil when
-// none is known (the account reference is optional on conversions).
-func spotRef(wallets map[string]string, symbol string) *string {
-	if ref, ok := wallets[symbol]; ok {
-		return &ref
+// accountRef returns the account reference for a raw Kraken code (the
+// per-variant account's Reference), or nil for a blank code. References
+// are optional on payments/orders/conversions, so a blank code maps to
+// no link rather than an error.
+func accountRef(rawCode string) *string {
+	code := strings.ToUpper(strings.TrimSpace(rawCode))
+	if code == "" {
+		return nil
 	}
-	return nil
+	return &code
 }
 
 // ConversionLeg captures one side of a paired conversion row.
@@ -45,11 +49,10 @@ func PairConversionLegs(a, b ConversionLeg) (source, destination ConversionLeg, 
 // PairConversionLegs. Unknown assets surface as a hard error so the
 // pair can be retried later rather than silently dropped.
 //
-// wallets maps a normalised symbol → spot account reference; the
-// source/destination account references are set to the spot account
-// of each leg's symbol (the precise raw variant is kept in metadata).
-// A symbol absent from wallets leaves the optional reference nil.
-func ConversionPairToPSPConversion(currencies map[string]int, wallets map[string]string, source, destination ConversionLeg) (*models.PSPConversion, error) {
+// Source/destination account references are each leg's own raw Kraken
+// code (the per-variant account Reference); the normalised symbol is
+// kept in the asset fields and metadata.
+func ConversionPairToPSPConversion(currencies map[string]int, source, destination ConversionLeg) (*models.PSPConversion, error) {
 	srcSym := NormalizeAsset(source.Entry.Asset)
 	dstSym := NormalizeAsset(destination.Entry.Asset)
 	srcPrec, ok := currencies[srcSym]
@@ -91,8 +94,8 @@ func ConversionPairToPSPConversion(currencies map[string]int, wallets map[string
 		SourceAmount:                srcAmt,
 		DestinationAmount:           dstAmt,
 		Status:                      models.CONVERSION_STATUS_COMPLETED,
-		SourceAccountReference:      spotRef(wallets, srcSym),
-		DestinationAccountReference: spotRef(wallets, dstSym),
+		SourceAccountReference:      accountRef(source.Entry.Asset),
+		DestinationAccountReference: accountRef(destination.Entry.Asset),
 		Metadata: map[string]string{
 			MetadataPrefix + "source_ledger_id":         source.LedgerID,
 			MetadataPrefix + "destination_ledger_id":    destination.LedgerID,
