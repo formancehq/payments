@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
@@ -14,12 +15,19 @@ import (
 )
 
 type externalAccountsState struct {
-	LastPage      int       `json:"lastPage"`
 	LastCreatedAt time.Time `json:"LastCreatedAt"`
-	// LastProcessedID is the reference (recipient ID) of the last account emitted
-	// at exactly LastCreatedAt, so the inclusive (>=) watermark filter excludes
-	// only that already-processed row while keeping distinct same-timestamp ones.
-	LastProcessedID string `json:"lastProcessedID"`
+	// LastProcessedIDs holds the references (recipient IDs) of ALL accounts
+	// already emitted at exactly LastCreatedAt, accumulated across cycles while
+	// the watermark second is unchanged and reset when it advances. Each cycle
+	// rescans from page 0 and skips this whole set: a same-second group larger
+	// than PageSize is walked across cycles without a drifting page cursor, and a
+	// multi-row final page cannot oscillate (every already-emitted sibling is
+	// skipped, not just one).
+	//
+	// Migration note: the old singular lastProcessedID and lastPage fields are
+	// ignored. After deploy the watermark second is re-emitted once (idempotent —
+	// storage upserts dedup it) and no recrawl occurs.
+	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -39,23 +47,25 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	}
 
 	newState := externalAccountsState{
-		LastPage:        oldState.LastPage,
-		LastCreatedAt:   oldState.LastCreatedAt,
-		LastProcessedID: oldState.LastProcessedID,
+		LastCreatedAt:    oldState.LastCreatedAt,
+		LastProcessedIDs: oldState.LastProcessedIDs,
 	}
 
 	needMore := false
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	for page := oldState.LastPage; ; page++ {
-		newState.LastPage = page
-
+	// Rescan from page 0 each cycle (no page cursor): the processed-ID set skips
+	// every already-emitted sibling at the watermark second, so a same-second
+	// group larger than PageSize is walked across cycles and a multi-row final
+	// page cannot oscillate. There is no server-side time filter, so the skip is
+	// applied client-side in recipientToPSPAccounts.
+	for page := 0; ; page++ {
 		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		accounts, err = recipientToPSPAccounts(oldState.LastCreatedAt, oldState.LastProcessedID, accounts, pagedRecipients)
+		accounts, err = recipientToPSPAccounts(oldState.LastCreatedAt, oldState.LastProcessedIDs, accounts, pagedRecipients)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
@@ -66,13 +76,25 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		}
 	}
 
-	if !needMore {
-		accounts = accounts[:req.PageSize]
-	}
-
 	if len(accounts) > 0 {
-		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
-		newState.LastProcessedID = accounts[len(accounts)-1].Reference
+		last := accounts[len(accounts)-1].CreatedAt
+
+		// Collect the references emitted at exactly the new watermark second.
+		idsAtWatermark := make([]string, 0)
+		for i := range accounts {
+			if accounts[i].CreatedAt.Equal(last) {
+				idsAtWatermark = append(idsAtWatermark, accounts[i].Reference)
+			}
+		}
+
+		// Accumulate the processed-ID set while still inside the same watermark
+		// second; reset it when the watermark advances to a newer second.
+		if last.Equal(oldState.LastCreatedAt) {
+			newState.LastProcessedIDs = append(oldState.LastProcessedIDs, idsAtWatermark...)
+		} else {
+			newState.LastProcessedIDs = idsAtWatermark
+		}
+		newState.LastCreatedAt = last
 	}
 
 	payload, err := json.Marshal(newState)
@@ -89,7 +111,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 func recipientToPSPAccounts(
 	lastCreatedAt time.Time,
-	lastProcessedID string,
+	lastProcessedIDs []string,
 	accounts []models.PSPAccount,
 	pagedAccounts []*client.Recipient,
 ) ([]models.PSPAccount, error) {
@@ -99,11 +121,11 @@ func recipientToPSPAccounts(
 			return accounts, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
-		// Inclusive watermark: skip recipients strictly before it, and the single
-		// already-processed recipient at exactly the watermark. Distinct recipients
-		// sharing that timestamp are kept (M-CON2).
+		// Inclusive watermark: skip recipients strictly before it, and any
+		// already-emitted recipient at exactly the watermark second. Distinct
+		// recipients sharing that timestamp are kept (M-CON2).
 		cmp := createdAt.Compare(lastCreatedAt)
-		if cmp < 0 || (cmp == 0 && recipient.ID == lastProcessedID) {
+		if cmp < 0 || (cmp == 0 && slices.Contains(lastProcessedIDs, recipient.ID)) {
 			continue
 		}
 

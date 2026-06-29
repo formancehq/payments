@@ -152,7 +152,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State: []byte(fmt.Sprintf(
-					`{"lastUpdatedAtFrom": "%s", "lastProcessedID": "%s"}`,
+					`{"lastUpdatedAtFrom": "%s", "lastProcessedIDs": ["%s"]}`,
 					samplePayments[38].UpdatedAt.Format(time.RFC3339Nano),
 					samplePayments[38].Id,
 				)),
@@ -198,7 +198,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 			}
 
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAtFrom": "%s", "lastProcessedID": "a"}`, ts.Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAtFrom": "%s", "lastProcessedIDs": ["a"]}`, ts.Format(time.RFC3339Nano))),
 				PageSize: 40,
 			}
 			m.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(40), ts).Return(sameSecond, nil)
@@ -577,9 +577,11 @@ func TestFetchNextPayments_WalksLargeSameSecondGroup(t *testing.T) {
 	mockClient := client.NewMockClient(ctrl)
 	plugin := &Plugin{client: mockClient}
 
-	// Five transactions all sharing the same UpdatedAt second, fetched two per
-	// page. A single LastProcessedID without a page cursor oscillates and never
-	// reaches id3/id4; the page cursor must walk through the whole group.
+	// Five transactions all sharing the same UpdatedAt second, fetched three per
+	// page so the group spans pages 1 (id0,id1,id2) and a SHORT final page 2
+	// (id3,id4). Each cycle rescans from page 1 and skips the processed-ID set;
+	// a single LastProcessedID would oscillate on the multi-row final page
+	// (re-emitting id3/id4 forever) instead of settling and advancing.
 	ts := time.Now().UTC().Add(-time.Hour)
 	mk := func(id string) genericclient.Transaction {
 		return genericclient.Transaction{
@@ -602,32 +604,31 @@ func TestFetchNextPayments_WalksLargeSameSecondGroup(t *testing.T) {
 		return out
 	}
 
-	// Cycle 1: fresh state, page 1 -> id0, id1.
-	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(2), time.Time{}).Return(all[0:2], nil)
-	resp, err := plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 2})
+	// Cycle 1: fresh state, page 1 -> id0, id1, id2.
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(3), time.Time{}).Return(all[0:3], nil)
+	resp, err := plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: []byte(`{}`), PageSize: 3})
 	require.NoError(t, err)
-	require.Equal(t, []string{"id0", "id1"}, refs(resp.Payments))
+	require.Equal(t, []string{"id0", "id1", "id2"}, refs(resp.Payments))
 	require.True(t, resp.HasMore)
 
-	// Cycle 2: page 1 re-fetched then page 2 -> id2, id3. The boundary id1 is
-	// deduped; id0 (a same-second sibling on the re-fetched page 1) is re-emitted
-	// by design — storage upserts dedup it. Asserting the exact set catches any
-	// unintended extra re-emission.
-	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
-	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
-	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+	// Cycle 2: rescan page 1 (all skipped via the set) then page 2 -> id3, id4.
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(3), ts).Return(all[0:3], nil)
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(2), int64(3), ts).Return(all[3:5], nil)
+	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 3})
 	require.NoError(t, err)
-	require.Equal(t, []string{"id0", "id2", "id3"}, refs(resp.Payments))
+	require.Equal(t, []string{"id3", "id4"}, refs(resp.Payments))
 
-	// Cycle 3: page 3 -> id4 (group fully drained on a short final page).
-	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
-	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+	// Cycle 3: group fully drained — every row is in the processed-ID set, so the
+	// rescan returns nothing. A single LastProcessedID would re-emit id3 or id4
+	// here and oscillate; the set settles to empty.
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(3), ts).Return(all[0:3], nil)
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(2), int64(3), ts).Return(all[3:5], nil)
+	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 3})
 	require.NoError(t, err)
-	require.Equal(t, []string{"id4"}, refs(resp.Payments))
+	require.Empty(t, refs(resp.Payments))
 
-	// Cycle 4: a newer-second transaction id5 lands on the short last page (3).
-	// The cursor must stay on page 3 rather than advance to page 4, or id5 would
-	// be stranded forever behind an empty page.
+	// Cycle 4: a newer-second transaction id5 appears on the (formerly short)
+	// page 2. The set skips id3/id4 and reaches id5 — no stranding.
 	ts2 := ts.Add(time.Second)
 	id5 := genericclient.Transaction{
 		Id:        "id5",
@@ -638,9 +639,10 @@ func TestFetchNextPayments_WalksLargeSameSecondGroup(t *testing.T) {
 		Status:    genericclient.SUCCEEDED,
 		Amount:    "1000",
 	}
-	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(3), int64(2), ts).Return([]genericclient.Transaction{all[4], id5}, nil)
-	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(4), int64(2), ts).Return([]genericclient.Transaction{}, nil)
-	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 2})
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(3), ts).Return(all[0:3], nil)
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(2), int64(3), ts).Return([]genericclient.Transaction{all[3], all[4], id5}, nil)
+	mockClient.EXPECT().ListTransactions(gomock.Any(), int64(3), int64(3), ts).Return([]genericclient.Transaction{}, nil)
+	resp, err = plugin.fetchNextPayments(context.Background(), models.FetchNextPaymentsRequest{State: resp.NewState, PageSize: 3})
 	require.NoError(t, err)
 	require.Equal(t, []string{"id5"}, refs(resp.Payments))
 }

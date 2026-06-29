@@ -3,6 +3,7 @@ package currencycloud
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/formancehq/payments/ce/plugins/currencycloud/client"
@@ -10,12 +11,18 @@ import (
 )
 
 type externalAccountsState struct {
-	LastPage      int       `json:"lastPage"`
 	LastCreatedAt time.Time `json:"lastCreatedAt"`
-	// LastProcessedID is the reference of the last beneficiary emitted at exactly
-	// LastCreatedAt, so the inclusive (>=) watermark filter excludes only that
-	// already-processed row while keeping distinct same-timestamp beneficiaries.
-	LastProcessedID string `json:"lastProcessedID"`
+	// LastProcessedIDs holds the IDs of ALL beneficiaries already emitted at
+	// exactly LastCreatedAt, accumulated across cycles while the watermark second
+	// is unchanged and reset when it advances. Each cycle rescans from page 1 and
+	// skips this whole set: a same-second group larger than PageSize is walked
+	// across cycles without a drifting page cursor, and a multi-row final page
+	// cannot oscillate (every already-emitted sibling is skipped, not just one).
+	//
+	// Migration: the old singular lastProcessedID and lastPage fields are ignored.
+	// After deploy the watermark second is re-emitted once (idempotent via storage
+	// upserts), with no recrawl.
+	LastProcessedIDs []string `json:"lastProcessedIDs"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -26,20 +33,18 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		}
 	}
 
-	if oldState.LastPage == 0 {
-		oldState.LastPage = 1
-	}
-
 	newState := externalAccountsState{
-		LastPage:        oldState.LastPage,
-		LastCreatedAt:   oldState.LastCreatedAt,
-		LastProcessedID: oldState.LastProcessedID,
+		LastCreatedAt:    oldState.LastCreatedAt,
+		LastProcessedIDs: oldState.LastProcessedIDs,
 	}
 
 	var accounts []models.PSPAccount
 	hasMore := false
-	page := oldState.LastPage
-	for {
+	// Rescan from page 1 each cycle (no page cursor): the processed-ID set skips
+	// every already-emitted sibling at the watermark second, so a same-second
+	// group larger than PageSize is walked across cycles and a multi-row final
+	// page cannot oscillate. We do NOT trim back to PageSize.
+	for page := 1; ; page++ {
 		pagedBeneficiaries, nextPage, err := p.client.GetBeneficiaries(ctx, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
@@ -55,18 +60,32 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		}
 
 		var needMore bool
-		needMore, hasMore, accounts = shouldFetchMore(accounts, nextPage, req.PageSize)
+		// Ignore shouldFetchMore's trimmed slice; keep the full over-fetch.
+		needMore, hasMore, _ = shouldFetchMore(accounts, nextPage, req.PageSize)
 		if !needMore {
 			break
 		}
-
-		page = nextPage
 	}
 
-	newState.LastPage = page
 	if len(accounts) > 0 {
-		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
-		newState.LastProcessedID = accounts[len(accounts)-1].Reference
+		last := accounts[len(accounts)-1].CreatedAt
+
+		// Collect the IDs emitted at exactly the new watermark second.
+		idsAtWatermark := make([]string, 0)
+		for i := range accounts {
+			if accounts[i].CreatedAt.Equal(last) {
+				idsAtWatermark = append(idsAtWatermark, accounts[i].Reference)
+			}
+		}
+
+		// Accumulate the processed-ID set while still inside the same watermark
+		// second; reset it when the watermark advances to a newer second.
+		if last.Equal(oldState.LastCreatedAt) {
+			newState.LastProcessedIDs = append(oldState.LastProcessedIDs, idsAtWatermark...)
+		} else {
+			newState.LastProcessedIDs = idsAtWatermark
+		}
+		newState.LastCreatedAt = last
 	}
 
 	payload, err := json.Marshal(newState)
@@ -87,11 +106,11 @@ func fillBeneficiaries(
 	oldState externalAccountsState,
 ) ([]models.PSPAccount, error) {
 	for _, beneficiary := range pagedBeneficiaries {
-		// Inclusive watermark: skip beneficiaries strictly before it, and the single
-		// already-processed beneficiary at exactly the watermark. Distinct
+		// Inclusive watermark: skip beneficiaries strictly before it, and any
+		// already-emitted beneficiary at exactly the watermark second. Distinct
 		// beneficiaries sharing that timestamp are kept (M-CON2).
 		cmp := beneficiary.CreatedAt.Compare(oldState.LastCreatedAt)
-		if cmp < 0 || (cmp == 0 && beneficiary.ID == oldState.LastProcessedID) {
+		if cmp < 0 || (cmp == 0 && slices.Contains(oldState.LastProcessedIDs, beneficiary.ID)) {
 			continue
 		}
 

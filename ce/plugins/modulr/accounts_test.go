@@ -143,7 +143,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			lastCreatedAt, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleAccounts[38].CreatedDate)
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedID": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano), sampleAccounts[38].ID)),
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedIDs": ["%s"]}`, lastCreatedAt.UTC().Format(time.RFC3339Nano), sampleAccounts[38].ID)),
 				PageSize: 40,
 			}
 
@@ -185,7 +185,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 			}
 
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedID": "a"}`, ts.UTC().Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedIDs": ["a"]}`, ts.UTC().Format(time.RFC3339Nano))),
 				PageSize: 40,
 			}
 			m.EXPECT().GetAccounts(gomock.Any(), 0, 40, ts.UTC()).Return(sameSecond, nil)
@@ -204,6 +204,11 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 			mk := func(id string) client.Account {
 				return client.Account{ID: id, Name: "acc " + id, Currency: "USD", CreatedDate: createdDate}
 			}
+			// Five accounts all sharing the same CreatedDate second, fetched three
+			// per page so the group spans page 0 (a0,a1,a2) and a SHORT final page 1
+			// (a3,a4). Each cycle rescans from page 0 and skips the processed-ID set;
+			// a single LastProcessedID would oscillate on the multi-row final page
+			// (re-emitting a3/a4 forever) instead of settling and advancing.
 			all := []client.Account{mk("a0"), mk("a1"), mk("a2"), mk("a3"), mk("a4")}
 			refs := func(as []models.PSPAccount) []string {
 				out := make([]string, len(as))
@@ -213,36 +218,37 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				return out
 			}
 
-			// Cycle 1: page 0 -> a0, a1.
-			m.EXPECT().GetAccounts(gomock.Any(), 0, 2, time.Time{}).Return(all[0:2], nil)
-			resp, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: []byte(`{}`), PageSize: 2})
+			// Cycle 1: fresh state, page 0 -> a0, a1, a2.
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 3, time.Time{}).Return(all[0:3], nil)
+			resp, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: []byte(`{}`), PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a1"}))
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a1", "a2"}))
+			Expect(resp.HasMore).To(BeTrue())
 
-			// Cycle 2: page 0 re-fetched (a1 deduped) then page 1 -> a2, a3.
-			m.EXPECT().GetAccounts(gomock.Any(), 0, 2, ts.UTC()).Return(all[0:2], nil)
-			m.EXPECT().GetAccounts(gomock.Any(), 1, 2, ts.UTC()).Return(all[2:4], nil)
-			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			// Cycle 2: rescan page 0 (all skipped via the set) then page 1 -> a3, a4.
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 3, ts.UTC()).Return(all[0:3], nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 3, ts.UTC()).Return(all[3:5], nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
-			// Boundary a1 is deduped; a0 (a same-second sibling on the re-fetched
-			// page 0) is re-emitted by design — storage upserts dedup it. The exact
-			// assertion catches any unintended extra re-emission.
-			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a2", "a3"}))
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a3", "a4"}))
 
-			// Cycle 3: page 2 -> a4 (group fully drained on a short final page).
-			m.EXPECT().GetAccounts(gomock.Any(), 2, 2, ts.UTC()).Return(all[4:5], nil)
-			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			// Cycle 3: group fully drained — every row is in the processed-ID set, so
+			// the rescan returns nothing. A single LastProcessedID would re-emit a3 or
+			// a4 here and oscillate; the set settles to empty.
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 3, ts.UTC()).Return(all[0:3], nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 3, ts.UTC()).Return(all[3:5], nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.Accounts)).To(Equal([]string{"a4"}))
+			Expect(refs(resp.Accounts)).To(BeEmpty())
 
-			// Cycle 4: a newer-second account a5 lands on the short last page (2).
-			// The cursor must stay on page 2 rather than advance to page 3, or a5
-			// would be stranded forever behind an empty page.
+			// Cycle 4: a newer-second account a5 appears on the (formerly short) page
+			// 1. The set skips a3/a4 and reaches a5 — no stranding.
 			ts2 := ts.Add(time.Second)
 			a5 := client.Account{ID: "a5", Name: "acc a5", Currency: "USD", CreatedDate: ts2.Format("2006-01-02T15:04:05.999-0700")}
-			m.EXPECT().GetAccounts(gomock.Any(), 2, 2, ts.UTC()).Return([]client.Account{all[4], a5}, nil)
-			m.EXPECT().GetAccounts(gomock.Any(), 3, 2, ts.UTC()).Return([]client.Account{}, nil)
-			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 3, ts.UTC()).Return(all[0:3], nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 3, ts.UTC()).Return([]client.Account{all[3], all[4], a5}, nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 3, ts.UTC()).Return([]client.Account{}, nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
 			Expect(refs(resp.Accounts)).To(Equal([]string{"a5"}))
 		})

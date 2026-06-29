@@ -141,7 +141,7 @@ var _ = Describe("Generic Plugin External Accounts", func() {
 
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastCreatedAtFrom": "%s", "lastProcessedID": "%s"}`, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano), sampleAccounts[38].Id)),
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAtFrom": "%s", "lastProcessedIDs": ["%s"]}`, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano), sampleAccounts[38].Id)),
 				PageSize: 40,
 			}
 
@@ -169,6 +169,11 @@ var _ = Describe("Generic Plugin External Accounts", func() {
 		})
 
 		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			// Five beneficiaries all sharing the same CreatedAt second, fetched three
+			// per page so the group spans page 1 (b0,b1,b2) and a SHORT final page 2
+			// (b3,b4). Each cycle rescans from page 1 and skips the processed-ID set;
+			// a single LastProcessedID would oscillate on the multi-row final page
+			// (re-emitting b3/b4 forever) instead of settling and advancing.
 			ts := now.Add(-time.Hour).UTC()
 			mk := func(id string) genericclient.Beneficiary {
 				return genericclient.Beneficiary{Id: id, OwnerName: "owner-" + id, CreatedAt: ts}
@@ -182,37 +187,37 @@ var _ = Describe("Generic Plugin External Accounts", func() {
 				return out
 			}
 
-			// Cycle 1: fresh state, page 1 -> b0, b1.
-			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(2), time.Time{}).Return(all[0:2], nil)
-			resp, err := plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: []byte(`{}`), PageSize: 2})
+			// Cycle 1: fresh state, page 1 -> b0, b1, b2.
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(3), time.Time{}).Return(all[0:3], nil)
+			resp, err := plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: []byte(`{}`), PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b1"}))
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b1", "b2"}))
 			Expect(resp.HasMore).To(BeTrue())
 
-			// Cycle 2: page 1 re-fetched then page 2 -> b2, b3. The boundary b1 is
-			// deduped; b0 (a same-second sibling on the re-fetched page 1) is
-			// re-emitted by design — storage upserts dedup it. Asserting the exact
-			// set catches any unintended extra re-emission.
-			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
-			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
-			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			// Cycle 2: rescan page 1 (all skipped via the set) then page 2 -> b3, b4.
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(3), ts).Return(all[0:3], nil)
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(2), int64(3), ts).Return(all[3:5], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b2", "b3"}))
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b3", "b4"}))
 
-			// Cycle 3: page 3 -> b4 (group fully drained on a short final page).
-			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
-			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			// Cycle 3: group fully drained — every row is in the processed-ID set, so
+			// the rescan returns nothing. A single LastProcessedID would re-emit b3 or
+			// b4 here and oscillate; the set settles to empty.
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(3), ts).Return(all[0:3], nil)
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(2), int64(3), ts).Return(all[3:5], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
-			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b4"}))
+			Expect(refs(resp.ExternalAccounts)).To(BeEmpty())
 
-			// Cycle 4: a newer-second beneficiary b5 lands on the short last page
-			// (3). The cursor must stay on page 3 rather than advance to page 4, or
-			// b5 would be stranded forever behind an empty page.
+			// Cycle 4: a newer-second beneficiary b5 appears on the (formerly short)
+			// page 2. The set skips b3/b4 and reaches b5 — no stranding.
 			ts2 := ts.Add(time.Second)
 			b5 := genericclient.Beneficiary{Id: "b5", OwnerName: "owner-b5", CreatedAt: ts2}
-			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(3), int64(2), ts).Return([]genericclient.Beneficiary{all[4], b5}, nil)
-			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(4), int64(2), ts).Return([]genericclient.Beneficiary{}, nil)
-			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(3), ts).Return(all[0:3], nil)
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(2), int64(3), ts).Return([]genericclient.Beneficiary{all[3], all[4], b5}, nil)
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(3), int64(3), ts).Return([]genericclient.Beneficiary{}, nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 3})
 			Expect(err).To(BeNil())
 			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b5"}))
 		})
