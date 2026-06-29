@@ -3,14 +3,16 @@ package moneycorp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
-	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (*models.PSPPayment, error) {
@@ -73,6 +75,12 @@ func transferToPayment(transfer *client.TransferResponse) (*models.PSPPayment, e
 
 	c, err := currency.GetPrecision(supportedCurrenciesWithDecimal, transfer.Attributes.TransferCurrency)
 	if err != nil {
+		if errors.Is(err, currency.ErrMissingCurrencies) {
+			// Wrap so the fetch loop (toPSPPayments) skips the transfer instead of
+			// freezing ingestion. transferToPayment is on the fetch path via
+			// fetchAndTranslateTransfer, not only the create path.
+			return nil, fmt.Errorf("%w: %w", plugins.ErrCurrencyNotSupported, err)
+		}
 		return nil, err
 	}
 
