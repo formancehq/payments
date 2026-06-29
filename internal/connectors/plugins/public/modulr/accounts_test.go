@@ -197,5 +197,41 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 			Expect(resp.Accounts).To(HaveLen(2))
 			Expect([]string{resp.Accounts[0].Reference, resp.Accounts[1].Reference}).To(ConsistOf("b", "c"))
 		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			createdDate := now.Add(-time.Hour).UTC().Format("2006-01-02T15:04:05.999-0700")
+			ts, _ := time.Parse("2006-01-02T15:04:05.999-0700", createdDate)
+			mk := func(id string) client.Account {
+				return client.Account{ID: id, Name: "acc " + id, Currency: "USD", CreatedDate: createdDate}
+			}
+			all := []client.Account{mk("a0"), mk("a1"), mk("a2"), mk("a3"), mk("a4")}
+			refs := func(as []models.PSPAccount) []string {
+				out := make([]string, len(as))
+				for i := range as {
+					out[i] = as[i].Reference
+				}
+				return out
+			}
+
+			// Cycle 1: page 0 -> a0, a1.
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 2, time.Time{}).Return(all[0:2], nil)
+			resp, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: []byte(`{}`), PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a1"}))
+
+			// Cycle 2: page 0 re-fetched (a1 deduped) then page 1 -> a2, a3.
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 2, ts.UTC()).Return(all[0:2], nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 2, ts.UTC()).Return(all[2:4], nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(ContainElements("a2", "a3"))
+			Expect(refs(resp.Accounts)).ToNot(ContainElement("a1"))
+
+			// Cycle 3: page 2 -> a4 (group fully drained, no stall).
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 2, ts.UTC()).Return(all[4:5], nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(ContainElement("a4"))
+		})
 	})
 })

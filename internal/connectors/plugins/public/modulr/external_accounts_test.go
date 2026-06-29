@@ -169,5 +169,41 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 			createdTime, _ := time.Parse("2006-01-02T15:04:05.999-0700", sampleBeneficiaries[49].Created)
 			Expect(state.LastModifiedSince.UTC()).To(Equal(createdTime.UTC()))
 		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			createdDate := now.Add(-time.Hour).UTC().Format("2006-01-02T15:04:05.999-0700")
+			ts, _ := time.Parse("2006-01-02T15:04:05.999-0700", createdDate)
+			mk := func(id string) client.Beneficiary {
+				return client.Beneficiary{ID: id, Name: "ben " + id, Created: createdDate}
+			}
+			all := []client.Beneficiary{mk("b0"), mk("b1"), mk("b2"), mk("b3"), mk("b4")}
+			refs := func(as []models.PSPAccount) []string {
+				out := make([]string, len(as))
+				for i := range as {
+					out[i] = as[i].Reference
+				}
+				return out
+			}
+
+			// Cycle 1: page 0 -> b0, b1.
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 2, time.Time{}).Return(all[0:2], nil)
+			resp, err := plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: []byte(`{}`), PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b1"}))
+
+			// Cycle 2: page 0 re-fetched (b1 deduped) then page 1 -> b2, b3.
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 2, ts.UTC()).Return(all[0:2], nil)
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 2, ts.UTC()).Return(all[2:4], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(ContainElements("b2", "b3"))
+			Expect(refs(resp.ExternalAccounts)).ToNot(ContainElement("b1"))
+
+			// Cycle 3: page 2 -> b4 (group fully drained, no stall).
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 2, ts.UTC()).Return(all[4:5], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(ContainElement("b4"))
+		})
 	})
 })
