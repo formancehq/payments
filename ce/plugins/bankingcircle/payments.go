@@ -3,6 +3,7 @@ package bankingcircle
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
@@ -13,12 +14,15 @@ import (
 
 type paymentsState struct {
 	LatestStatusChangedTimestamp time.Time `json:"latestStatusChangedTimestamp"`
-	// LatestProcessedID is the PaymentID of the last payment emitted at exactly
-	// LatestStatusChangedTimestamp. It lets the watermark filter be inclusive
-	// (>=) without re-skipping distinct payments that share that timestamp: only
-	// the exact already-processed row is excluded, so the rest of a same-second
-	// group are kept (storage upserts dedup any harmless re-emission).
-	LatestProcessedID string `json:"latestProcessedID"`
+	// LatestProcessedIDs holds the PaymentIDs of ALL payments already emitted at
+	// exactly LatestStatusChangedTimestamp, accumulated across cycles while the
+	// watermark second is unchanged and reset when it advances. BankingCircle has
+	// no server-side time filter (we rescan the list from page 1 and filter
+	// client-side), so a single boundary ID is not enough: a same-second group
+	// larger than PageSize would re-emit earlier siblings and oscillate, never
+	// reaching later rows. Tracking the whole set lets the inclusive (>=) filter
+	// skip every already-emitted sibling so the scan reaches new rows.
+	LatestProcessedIDs []string `json:"latestProcessedIDs"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -31,7 +35,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	newState := paymentsState{
 		LatestStatusChangedTimestamp: oldState.LatestStatusChangedTimestamp,
-		LatestProcessedID:            oldState.LatestProcessedID,
+		LatestProcessedIDs:           oldState.LatestProcessedIDs,
 	}
 
 	var payments []models.PSPPayment
@@ -65,8 +69,24 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	if len(payments) > 0 {
-		newState.LatestStatusChangedTimestamp = latestStatusChangedTimestamps[len(latestStatusChangedTimestamps)-1]
-		newState.LatestProcessedID = payments[len(payments)-1].Reference
+		lastTimestamp := latestStatusChangedTimestamps[len(latestStatusChangedTimestamps)-1]
+
+		// Collect the references emitted at exactly the new watermark second.
+		idsAtWatermark := make([]string, 0)
+		for i, ts := range latestStatusChangedTimestamps {
+			if ts.Equal(lastTimestamp) {
+				idsAtWatermark = append(idsAtWatermark, payments[i].Reference)
+			}
+		}
+
+		// Accumulate the processed-ID set while still inside the same watermark
+		// second; reset it when the watermark advances to a newer second.
+		if lastTimestamp.Equal(oldState.LatestStatusChangedTimestamp) {
+			newState.LatestProcessedIDs = append(oldState.LatestProcessedIDs, idsAtWatermark...)
+		} else {
+			newState.LatestProcessedIDs = idsAtWatermark
+		}
+		newState.LatestStatusChangedTimestamp = lastTimestamp
 	}
 
 	payload, err := json.Marshal(newState)
@@ -93,7 +113,7 @@ func fillPayments(
 		// payments sharing that timestamp are kept (M-CON2: equal-timestamp rows
 		// were previously dropped at page/cycle boundaries).
 		cmp := payment.LatestStatusChangedTimestamp.Compare(oldState.LatestStatusChangedTimestamp)
-		if cmp < 0 || (cmp == 0 && payment.PaymentID == oldState.LatestProcessedID) {
+		if cmp < 0 || (cmp == 0 && slices.Contains(oldState.LatestProcessedIDs, payment.PaymentID)) {
 			continue
 		}
 
