@@ -167,5 +167,41 @@ var _ = Describe("Generic Plugin External Accounts", func() {
 			// We fetched everything, state should be resetted
 			Expect(state.LastCreatedAtFrom.UTC()).To(Equal(sampleAccounts[49].CreatedAt.UTC()))
 		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			ts := now.Add(-time.Hour).UTC()
+			mk := func(id string) genericclient.Beneficiary {
+				return genericclient.Beneficiary{Id: id, OwnerName: "owner-" + id, CreatedAt: ts}
+			}
+			all := []genericclient.Beneficiary{mk("b0"), mk("b1"), mk("b2"), mk("b3"), mk("b4")}
+			refs := func(as []models.PSPAccount) []string {
+				out := make([]string, len(as))
+				for i := range as {
+					out[i] = as[i].Reference
+				}
+				return out
+			}
+
+			// Cycle 1: fresh state, page 1 -> b0, b1.
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(2), time.Time{}).Return(all[0:2], nil)
+			resp, err := plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: []byte(`{}`), PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(Equal([]string{"b0", "b1"}))
+			Expect(resp.HasMore).To(BeTrue())
+
+			// Cycle 2: page 1 re-fetched (b1 deduped) then page 2 -> b2, b3.
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(1), int64(2), ts).Return(all[0:2], nil)
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(2), int64(2), ts).Return(all[2:4], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(ContainElements("b2", "b3"))
+			Expect(refs(resp.ExternalAccounts)).ToNot(ContainElement("b1"))
+
+			// Cycle 3: page 3 -> b4 (group fully drained, no stall).
+			m.EXPECT().ListBeneficiaries(gomock.Any(), int64(3), int64(2), ts).Return(all[4:5], nil)
+			resp, err = plg.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{State: resp.NewState, PageSize: 2})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.ExternalAccounts)).To(ContainElement("b4"))
+		})
 	})
 })

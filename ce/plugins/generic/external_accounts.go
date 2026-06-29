@@ -16,6 +16,12 @@ type externalAccountsState struct {
 	// exactly LastCreatedAtFrom, so the inclusive (>=) watermark filter excludes
 	// only that already-processed row while keeping distinct same-timestamp ones.
 	LastProcessedID string `json:"lastProcessedID"`
+	// Page is the next page to fetch within the current LastCreatedAtFrom second.
+	// It advances while the watermark second is unchanged (a same-second group
+	// larger than one page) and resets to 1 once the watermark moves to a newer
+	// second, so a same-second group spanning pages is walked without re-scanning
+	// from page 1 each cycle (which a single LastProcessedID cannot do).
+	Page int `json:"page"`
 }
 
 func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -25,16 +31,23 @@ func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNext
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 	}
+	if oldState.Page < 1 {
+		oldState.Page = 1
+	}
 
 	newState := externalAccountsState{
 		LastCreatedAtFrom: oldState.LastCreatedAtFrom,
 		LastProcessedID:   oldState.LastProcessedID,
+		Page:              oldState.Page,
 	}
 
 	accounts := make([]models.PSPAccount, 0)
 	needMore := false
 	hasMore := false
-	for page := 1; ; page++ {
+	// Resume at the persisted page and walk forward (no trim-and-restart, which
+	// would skip the trimmed rows); the page cursor below records how far we got.
+	page := oldState.Page
+	for {
 		pagedExternalAccounts, err := p.client.ListBeneficiaries(ctx, int64(page), int64(req.PageSize), oldState.LastCreatedAtFrom)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
@@ -49,15 +62,19 @@ func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNext
 		if !needMore || !hasMore {
 			break
 		}
-	}
-
-	if !needMore {
-		accounts = accounts[:req.PageSize]
+		page++
 	}
 
 	if len(accounts) > 0 {
 		newState.LastCreatedAtFrom = accounts[len(accounts)-1].CreatedAt
 		newState.LastProcessedID = accounts[len(accounts)-1].Reference
+		// Same-second group still draining -> resume after consumed pages; else
+		// the watermark moved to a newer second, so re-anchor at page 1.
+		if newState.LastCreatedAtFrom.Equal(oldState.LastCreatedAtFrom) {
+			newState.Page = page + 1
+		} else {
+			newState.Page = 1
+		}
 	}
 
 	payload, err := json.Marshal(newState)
