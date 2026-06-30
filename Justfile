@@ -54,6 +54,15 @@ tests:
     ./...
   @cd pkg/domain && go test -race ./...
 
+# Contract tests call real connector sandbox APIs to detect upstream API drift.
+# Gated behind the `contract` build tag so they never run as part of `tests`.
+# Requires the connector's contract credentials in the environment, e.g. for
+# adyen: ADYEN_CONTRACT_API_KEY and ADYEN_CONTRACT_COMPANY_ID. Without them the
+# suite skips rather than fails. Run daily via .github/workflows/contract-tests.yml.
+[group('test')]
+contract-tests connector="adyen":
+  @go test -tags contract -count=1 ./internal/connectors/plugins/public/{{connector}}/...
+
 [group('test')]
 generate-sdk: openapi
     @export PATH=$PATH:$(go env GOPATH)/bin && cd pkg/client && speakeasy run --skip-versioning
