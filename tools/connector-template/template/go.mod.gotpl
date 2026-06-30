@@ -2,4 +2,4 @@ module {{ .Module }}
 
 go 1.26
 
-replace github.com/formancehq/payments/pkg/domain => ../../../pkg/domain
+require github.com/formancehq/payments/pkg/domain v0.3.2

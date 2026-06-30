@@ -11,10 +11,10 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
-const cePluginsPrefix = "github.com/formancehq/payments/ce/plugins/"
+const repoModule = "github.com/formancehq/payments"
 
 func main() {
-	connectorDirPath := flag.String("connector-dir-path", "", "Path to the ce/plugins directory")
+	connectorDirPath := flag.String("connector-dir-path", "", "Path to the plugins directory (e.g. ce/plugins or ee/plugins)")
 	flag.Parse()
 
 	if *connectorDirPath == "" {
@@ -25,8 +25,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// connector-dir-path is always <repo-root>/ce/plugins, so repo root is two levels up.
+	// connector-dir-path is always <repo-root>/{ce,ee}/plugins, so repo root is two levels up.
 	repoRoot := filepath.Dir(filepath.Dir(pluginsDir))
+
+	relPluginsDir, err := filepath.Rel(repoRoot, pluginsDir)
+	if err != nil {
+		log.Fatalf("computing plugins dir relative path: %v", err)
+	}
+	pluginsPrefix := repoModule + "/" + filepath.ToSlash(relPluginsDir) + "/"
 
 	rootModPath := filepath.Join(repoRoot, "go.mod")
 	rootModData, err := os.ReadFile(rootModPath)
@@ -42,7 +48,7 @@ func main() {
 	live := map[string]string{}
 	entries, err := os.ReadDir(pluginsDir)
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatalf("reading ce/plugins: %v", err)
+		log.Fatalf("reading %s: %v", pluginsDir, err)
 	}
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -58,7 +64,7 @@ func main() {
 			log.Printf("warning: parsing %s: %v", modPath, err)
 			continue
 		}
-		if strings.HasPrefix(f.Module.Mod.Path, cePluginsPrefix) {
+		if strings.HasPrefix(f.Module.Mod.Path, pluginsPrefix) {
 			rel, err := filepath.Rel(repoRoot, filepath.Join(pluginsDir, e.Name()))
 			if err != nil {
 				log.Fatalf("computing relative path: %v", err)
@@ -72,7 +78,7 @@ func main() {
 	// Drop stale replace/require entries for ce/plugins that no longer exist.
 	// Iterate over copies since we modify the slices.
 	for _, r := range append([]*modfile.Replace(nil), rootMod.Replace...) {
-		if !strings.HasPrefix(r.Old.Path, cePluginsPrefix) {
+		if !strings.HasPrefix(r.Old.Path, pluginsPrefix) {
 			continue
 		}
 		if _, ok := live[r.Old.Path]; !ok {
@@ -84,7 +90,7 @@ func main() {
 		}
 	}
 	for _, r := range append([]*modfile.Require(nil), rootMod.Require...) {
-		if !strings.HasPrefix(r.Mod.Path, cePluginsPrefix) {
+		if !strings.HasPrefix(r.Mod.Path, pluginsPrefix) {
 			continue
 		}
 		if _, ok := live[r.Mod.Path]; !ok {

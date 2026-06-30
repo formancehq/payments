@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 const repoModule = "github.com/formancehq/payments"
@@ -48,7 +49,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	modulePath := repoModule + "/" + filepath.ToSlash(relFromRoot)
+	relSlash := filepath.ToSlash(relFromRoot)
+	modulePath := repoModule + "/" + relSlash
+
+	// EE plugins live inside the root module; only CE plugins get their own go.mod.
+	isCE := strings.HasPrefix(relSlash, "ce/plugins/")
 
 	// Create the new connector's directory
 	if err := os.Mkdir(connectorPath, 0755); err != nil {
@@ -64,6 +69,7 @@ func main() {
 	if err := createFiles(
 		context.Background(),
 		connectorPath,
+		isCE,
 		map[string]interface{}{
 			"Connector": *connectorName,
 			"Module":    modulePath,
