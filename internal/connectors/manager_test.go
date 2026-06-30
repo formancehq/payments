@@ -166,6 +166,30 @@ func TestManager_Load_ClientErrors(t *testing.T) {
 	}
 }
 
+func TestManager_Load_MalformedConfig(t *testing.T) {
+	t.Parallel()
+
+	minimumPollingPeriod := time.Second
+	defaultPollingPeriod := 3 * time.Minute
+	logger := logging.NewDefaultLogger(io.Discard, false, false, false)
+
+	manager := NewManager(logger, false, defaultPollingPeriod, minimumPollingPeriod)
+	connectorID := models.ConnectorID{Reference: uuid.New(), Provider: registry.DummyPSPName}
+	connector := models.Connector{
+		ConnectorBase: models.ConnectorBase{
+			ID:       connectorID,
+			Provider: registry.DummyPSPName,
+		},
+		// Malformed JSON body: must be reported as invalid config (=> API 400)
+		// rather than bubbling up as an unclassified error (=> API 500).
+		Config: json.RawMessage(`{bad-json`),
+	}
+
+	_, _, err := manager.Load(connector, false, true)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, models.ErrInvalidConfig)
+}
+
 func TestManager_Unload(t *testing.T) {
 	t.Parallel()
 

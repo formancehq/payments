@@ -78,7 +78,9 @@ func (m *manager) Load(connectorModel models.Connector, updateExisting bool, str
 
 	config := m.configurer.DefaultConfig()
 	if err := json.Unmarshal(connectorModel.Config, &config); err != nil {
-		return "", nil, err
+		// A malformed JSON body is a client error: classify it as invalid config
+		// so install/update surfaces a 400 rather than a 500.
+		return "", nil, fmt.Errorf("%w: %w", models.ErrInvalidConfig, err)
 	}
 
 	// Check if plugin is already installed
