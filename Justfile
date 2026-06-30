@@ -8,13 +8,13 @@ pc: pre-commit
 
 lint:
   @golangci-lint run --fix --build-tags it --timeout 5m
-  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && golangci-lint run --fix --build-tags it --timeout 5m && cd "{{justfile_directory()}}"; done
+  @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && golangci-lint run --fix --build-tags it --timeout 5m && cd "{{justfile_directory()}}"; done
 
 tidy:
   @go run {{justfile_directory()}}/tools/sync-ce-plugins --connector-dir-path {{justfile_directory()}}/ce/plugins
   @go mod tidy
   @cd pkg/domain && go mod tidy
-  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go mod tidy && cd "{{justfile_directory()}}"; done
+  @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go mod tidy && cd "{{justfile_directory()}}"; done
 
 compile-plugins:
   ./tools/compile-plugins/compile-plugin.sh
@@ -56,13 +56,13 @@ tests:
     -tags it \
     ./...
   @cd pkg/domain && go test -race ./...
-  @for d in ce/plugins/*/; do \
-    name=$(basename "$$d"); \
+  @set -e; for d in ce/plugins/*/; do \
+    name=$(basename "$d"); \
     cd "{{justfile_directory()}}/$d" && \
-    go test -race -covermode=atomic -coverprofile "{{justfile_directory()}}/coverage-plugin-$$name.txt" -tags it ./... && \
+    go test -race -covermode=atomic -coverprofile "{{justfile_directory()}}/coverage-plugin-$name.txt" -tags it ./... && \
     cd "{{justfile_directory()}}"; \
   done
-  @for f in coverage-plugin-*.txt; do tail -n +2 "$$f" >> coverage.txt && rm "$$f"; done
+  @for f in coverage-plugin-*.txt; do tail -n +2 "$f" >> coverage.txt && rm "$f"; done
 
 [group('test')]
 generate-sdk: openapi
@@ -72,7 +72,7 @@ generate-sdk: openapi
 generate: generate-sdk
     @go generate ./...
     @cd pkg/domain && go generate ./...
-    @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go generate ./... && cd "{{justfile_directory()}}"; done
+    @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go generate ./... && cd "{{justfile_directory()}}"; done
 
 [group('build')]
 build-ce: compile-plugins
