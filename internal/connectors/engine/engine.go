@@ -1310,7 +1310,7 @@ func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webho
 	}
 
 	if config == nil {
-		return nil, nil, errors.New("webhook config not found")
+		return nil, nil, fmt.Errorf("webhook config %w", ErrNotFound)
 	}
 
 	config.FullURL, err = url.JoinPath(e.stackPublicURL, "/api/payments/v3", urlPath)
