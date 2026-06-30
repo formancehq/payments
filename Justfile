@@ -8,6 +8,7 @@ pc: pre-commit
 
 lint:
   @golangci-lint run --fix --build-tags it --timeout 5m
+  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && golangci-lint run --fix --build-tags it --timeout 5m && cd "{{justfile_directory()}}"; done
 
 tidy:
   @go run {{justfile_directory()}}/tools/sync-ce-plugins --connector-dir-path {{justfile_directory()}}/ce/plugins
@@ -55,7 +56,7 @@ tests:
     -tags it \
     ./...
   @cd pkg/domain && go test -race ./...
-  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go test -race ./... && cd "{{justfile_directory()}}"; done
+  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go test -race -tags it ./... && cd "{{justfile_directory()}}"; done
 
 [group('test')]
 generate-sdk: openapi
@@ -65,6 +66,7 @@ generate-sdk: openapi
 generate: generate-sdk
     @go generate ./...
     @cd pkg/domain && go generate ./...
+    @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go generate ./... && cd "{{justfile_directory()}}"; done
 
 [group('build')]
 build-ce: compile-plugins
