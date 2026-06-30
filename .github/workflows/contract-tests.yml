@@ -1,0 +1,68 @@
+name: Contract Tests
+
+# Contract tests call the real connector sandbox APIs to detect upstream API
+# drift (schema + ordering) in the endpoints the Payments connectors consume.
+# They are gated behind the `contract` build tag and never run on PRs; they run
+# on a daily schedule and on demand.
+on:
+  schedule:
+    # Daily at 06:00 UTC.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+  # TEMPORARY (remove before merge): validate the workflow on its own PR.
+  # Path-scoped so it only fires when the contract-test files change.
+  pull_request:
+    paths:
+      - ".github/workflows/contract-tests.yml"
+      - "internal/connectors/plugins/public/adyen/client/contract_test.go"
+      - "Justfile"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  Contract:
+    # Mirrors the main.yml `Tests` job environment.
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
+    strategy:
+      fail-fast: false
+      matrix:
+        connector:
+          - adyen
+    steps:
+      - uses: 'namespacelabs/nscloud-checkout-action@v9'
+        with:
+          fetch-depth: 0
+      - name: Setup Env
+        uses: ./.github/actions/default
+        with:
+          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - name: Run contract tests
+        run: >
+          nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
+          develop --impure --command just contract-tests ${{ matrix.connector }}
+        env:
+          # Adyen test-environment contract credentials.
+          ADYEN_CONTRACT_API_KEY: ${{ secrets.ADYEN_CONTRACT_API_KEY }}
+          ADYEN_CONTRACT_COMPANY_ID: ${{ secrets.ADYEN_CONTRACT_COMPANY_ID }}
+      # Extension point: notify on drift. A failed run is already a red check;
+      # wire a Slack/issue notification here when desired. The webhook is
+      # guarded inside the script (not in `if:`) because GitHub Actions does
+      # not allow the `secrets` context in `if`, and a step's own `env` is not
+      # reliably available to that step's `if`. Until CONTRACT_SLACK_WEBHOOK is
+      # configured this step is a no-op, so it requires no setup today.
+      - name: Notify on failure (extension point)
+        if: failure()
+        env:
+          CONTRACT_SLACK_WEBHOOK: ${{ secrets.CONTRACT_SLACK_WEBHOOK }}
+        run: |
+          if [ -z "${CONTRACT_SLACK_WEBHOOK}" ]; then
+            echo "No CONTRACT_SLACK_WEBHOOK configured; skipping notification."
+            exit 0
+          fi
+          echo "Contract test failed for connector '${{ matrix.connector }}'."
+          # TODO: post to Slack, e.g.:
+          #   curl -fsS -X POST -H 'Content-type: application/json' \
+          #     --data "{\"text\":\"Contract test failed for ${{ matrix.connector }}\"}" \
+          #     "${CONTRACT_SLACK_WEBHOOK}"
