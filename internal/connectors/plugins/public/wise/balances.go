@@ -41,7 +41,10 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	precision, ok := supportedCurrenciesWithDecimal[balance.Amount.Currency]
 	if !ok {
-		return models.FetchNextBalancesResponse{}, errors.New("unsupported currency")
+		// Skip unsupported currencies rather than failing: a retryable error
+		// here would freeze balance ingestion for the account.
+		p.logger.WithField("currency", balance.Amount.Currency).Info("skipping balance with unsupported currency")
+		return models.FetchNextBalancesResponse{HasMore: false}, nil
 	}
 
 	amount, err := currency.GetAmountWithPrecisionFromString(balance.Amount.Value.String(), precision)

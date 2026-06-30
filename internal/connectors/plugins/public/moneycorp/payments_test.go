@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -35,7 +35,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg = &Plugin{client: m}
+			plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 
 			pageSize = 5
 			accRef = 3796
@@ -136,7 +136,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 			ctrl.Finish()
 		})
 
-		It("fails when payments contain unsupported currencies", func(ctx SpecContext) {
+		It("skips payments with unsupported currencies", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 				State:       json.RawMessage(`{}`),
@@ -160,7 +160,8 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 			)
 
 			res, err := plg.FetchNextPayments(ctx, req)
-			Expect(err).To(MatchError(currency.ErrMissingCurrencies))
+			Expect(err).To(BeNil())
+			Expect(res.Payments).To(BeEmpty())
 			Expect(res.HasMore).To(BeFalse())
 		})
 
@@ -218,6 +219,55 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 			Expect(res.Payments[4].Amount).To(Equal(big.NewInt(expectedAmount * 100))) // after conversion to minors
 
 		})
+
+		It("skips transfer payments with unsupported currency", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
+				State:       json.RawMessage(`{}`),
+				PageSize:    pageSize,
+			}
+
+			unsupportedTransfer := &client.TransferResponse{
+				ID: "transfer-zzz",
+				Attributes: client.TransferAttributes{
+					SendingAccountID:   1234,
+					ReceivingAccountID: 4321,
+					CreatedAt:          strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
+					TransferAmount:     json.Number("65"),
+					TransferCurrency:   "ZZZ", // unsupported
+					TransferStatus:     "Cleared",
+				},
+			}
+			txns := []*client.Transaction{
+				{
+					ID: "transfer-unsupported",
+					Attributes: client.TransactionAttributes{
+						AccountID: accRef,
+						Type:      "Transfer",
+						Direction: "Debit",
+						Currency:  "EUR",
+						Amount:    json.Number("65"),
+						CreatedAt: strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
+					},
+					Relationships: client.RelationShips{
+						Data: client.Data{ID: unsupportedTransfer.ID},
+					},
+				},
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), "3796", gomock.Any(), pageSize, gomock.Any()).Return(
+				txns,
+				nil,
+			)
+			m.EXPECT().GetTransfer(gomock.Any(), "3796", unsupportedTransfer.ID).Return(
+				unsupportedTransfer,
+				nil,
+			)
+
+			res, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Payments).To(BeEmpty())
+		})
 	})
 })
 
@@ -239,7 +289,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg = &Plugin{client: m}
+			plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 			accRef = 3796
 			now = time.Now().UTC()
 

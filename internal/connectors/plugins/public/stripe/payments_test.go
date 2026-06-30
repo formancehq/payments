@@ -213,7 +213,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 			ctrl.Finish()
 		})
 
-		It("fails when payments contain unsupported currencies", func(ctx SpecContext) {
+		It("skips payments with unsupported currencies", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%s"}`, accRef)),
 				State:       json.RawMessage(`{}`),
@@ -237,8 +237,9 @@ var _ = Describe("Stripe Plugin Payments", func() {
 				nil,
 			)
 			res, err := plg.FetchNextPayments(ctx, req)
-			Expect(err).To(MatchError(ContainSubstring(ErrUnsupportedCurrency.Error())))
-			Expect(res.HasMore).To(BeFalse())
+			Expect(err).To(BeNil())
+			Expect(res.Payments).To(BeEmpty())
+			Expect(res.HasMore).To(BeTrue())
 		})
 
 		It("fetches payments", func(ctx SpecContext) {

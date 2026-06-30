@@ -3,11 +3,13 @@ package plaid
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/google/uuid"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
@@ -54,6 +56,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	for _, transaction := range resp.Added {
 		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.PSUID, from.OpenBankingConnection.ConnectionID)
 		if err != nil {
+			if errors.Is(err, plugins.ErrCurrencyNotSupported) {
+				p.logger.WithField("reference", transaction.TransactionId).Info("skipping payment with unsupported currency")
+				continue
+			}
 			return models.FetchNextPaymentsResponse{}, err
 		}
 		payments = append(payments, payment)
@@ -62,6 +68,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	for _, transaction := range resp.Modified {
 		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.PSUID, from.OpenBankingConnection.ConnectionID)
 		if err != nil {
+			if errors.Is(err, plugins.ErrCurrencyNotSupported) {
+				p.logger.WithField("reference", transaction.TransactionId).Info("skipping payment with unsupported currency")
+				continue
+			}
 			return models.FetchNextPaymentsResponse{}, err
 		}
 		payments = append(payments, payment)

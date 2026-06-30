@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
@@ -28,7 +29,7 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		BeforeEach(func() {
 			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg = &Plugin{client: m}
+			plg = &Plugin{client: m, logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false)}
 
 			sampleTransactions = make([]plaid.Transaction, 0)
 			sampleRemovedTransactions = make([]plaid.RemovedTransaction, 0)
@@ -80,6 +81,48 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("test error"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
+		})
+
+		It("should skip payments with unsupported currencies", func(ctx SpecContext) {
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
+					ConnectorID: models.ConnectorID{
+						Reference: uuid.New(),
+						Provider:  "plaid-test",
+					},
+					AccessToken:  &models.Token{Token: "test-token"},
+					ConnectionID: "test-connection",
+				},
+				FromPayload: json.RawMessage(`{}`),
+			}
+			fromPayloadBytes, _ := json.Marshal(fromPayload)
+
+			req := models.FetchNextPaymentsRequest{
+				FromPayload: fromPayloadBytes,
+				PageSize:    10,
+			}
+
+			unsupported := plaid.NewTransactionWithDefaults()
+			unsupported.SetTransactionId("transaction_unsupported")
+			unsupported.SetAccountId("account_unsupported")
+			unsupported.SetAmount(100.0)
+			unsupported.SetDate("2023-01-01")
+			unsupported.SetIsoCurrencyCode("ZZZ")
+
+			m.EXPECT().ListTransactions(gomock.Any(), "test-token", "", 10).Return(
+				plaid.TransactionsSyncResponse{
+					Added:      []plaid.Transaction{*unsupported},
+					Modified:   []plaid.Transaction{},
+					Removed:    []plaid.RemovedTransaction{},
+					HasMore:    false,
+					NextCursor: "next-cursor",
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(BeEmpty())
 		})
 
 		It("should fetch payments successfully - no state", func(ctx SpecContext) {
