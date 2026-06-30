@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/payments/genericclient/v3"
+	"github.com/formancehq/payments/ce/plugins/generic/client/generated"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/domain/pagination"
 )

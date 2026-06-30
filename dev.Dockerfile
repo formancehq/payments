@@ -41,7 +41,6 @@ COPY go.mod go.sum ./
 # Copy go.mod/go.sum for all local replacements so go mod download can resolve them
 COPY --parents pkg/client/go.mod pkg/domain/go.mod pkg/domain/go.sum ./
 COPY --parents ce/plugins/*/go.mod ce/plugins/*/go.sum ./
-COPY --parents ce/plugins/generic/client/generated/go.mod ./
 
 # Download dependencies (this will be cached in Docker layer)
 RUN go mod download

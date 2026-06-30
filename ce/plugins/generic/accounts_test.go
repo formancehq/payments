@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/payments/genericclient/v3"
 	"github.com/formancehq/payments/ce/plugins/generic/client"
+	genericclient "github.com/formancehq/payments/ce/plugins/generic/client/generated"
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

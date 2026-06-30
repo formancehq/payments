@@ -7,8 +7,6 @@ replace github.com/formancehq/payments/pkg/client => ./pkg/client
 // replace => ./pkg/domain means Go will never actually fetch v0.x.x from the proxy but go mod tidy still updates the version number in require to accurately reflect the minimum version. The local directory is what gets compiled — the version is just a bookkeeping number for MVS consistency.
 replace github.com/formancehq/payments/pkg/domain => ./pkg/domain
 
-replace github.com/formancehq/payments/genericclient/v3 => ./ce/plugins/generic/client/generated
-
 replace github.com/formancehq/payments/ce/plugins/adyen => ./ce/plugins/adyen
 
 replace github.com/formancehq/payments/ce/plugins/dummypay => ./ce/plugins/dummypay
@@ -170,7 +168,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/formancehq/payments/genericclient/v3 v3.0.0-00010101000000-000000000000 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/get-momo/atlar-v1-go-client v1.4.0 // indirect
 	github.com/getkin/kin-openapi v0.134.0 // indirect
