@@ -2,11 +2,9 @@ module github.com/formancehq/payments/ce/plugins/atlar
 
 go 1.26
 
-replace github.com/formancehq/payments/pkg/domain => ../../../pkg/domain
-
 require (
 	github.com/formancehq/go-libs/v5 v5.6.1
-	github.com/formancehq/payments/pkg/domain v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/domain v0.3.2
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/go-openapi/runtime v0.32.4
 	github.com/go-openapi/strfmt v0.26.3

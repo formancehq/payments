@@ -2,12 +2,10 @@ module github.com/formancehq/payments/ce/plugins/adyen
 
 go 1.26
 
-replace github.com/formancehq/payments/pkg/domain => ../../../pkg/domain
-
 require (
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/formancehq/go-libs/v5 v5.6.1
-	github.com/formancehq/payments/pkg/domain v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/domain v0.3.2
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1

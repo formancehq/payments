@@ -2,12 +2,10 @@ module github.com/formancehq/payments/ce/plugins/plaid
 
 go 1.26
 
-replace github.com/formancehq/payments/pkg/domain => ../../../pkg/domain
-
 require (
 	github.com/emvi/iso-639-1 v1.1.1
 	github.com/formancehq/go-libs/v5 v5.6.1
-	github.com/formancehq/payments/pkg/domain v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/domain v0.3.2
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0

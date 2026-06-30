@@ -2,11 +2,9 @@ module github.com/formancehq/payments/ce/plugins/powens
 
 go 1.26
 
-replace github.com/formancehq/payments/pkg/domain => ../../../pkg/domain
-
 require (
 	github.com/formancehq/go-libs/v5 v5.6.1
-	github.com/formancehq/payments/pkg/domain v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/domain v0.3.2
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/google/uuid v1.6.0
 	github.com/onsi/ginkgo/v2 v2.32.0
