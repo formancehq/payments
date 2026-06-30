@@ -56,7 +56,13 @@ tests:
     -tags it \
     ./...
   @cd pkg/domain && go test -race ./...
-  @for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go test -race -tags it ./... && cd "{{justfile_directory()}}"; done
+  @for d in ce/plugins/*/; do \
+    name=$(basename "$$d"); \
+    cd "{{justfile_directory()}}/$d" && \
+    go test -race -covermode=atomic -coverprofile "{{justfile_directory()}}/coverage-plugin-$$name.txt" -tags it ./... && \
+    cd "{{justfile_directory()}}"; \
+  done
+  @for f in coverage-plugin-*.txt; do tail -n +2 "$$f" >> coverage.txt && rm "$$f"; done
 
 [group('test')]
 generate-sdk: openapi
