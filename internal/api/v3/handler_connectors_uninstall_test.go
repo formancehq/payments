@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -45,6 +46,20 @@ var _ = Describe("API v3 Connectors uninstall", func() {
 			m.EXPECT().ConnectorsUninstall(gomock.Any(), gomock.Any()).Return(models.Task{}, expectedErr)
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
+		})
+
+		// A non-existent connector trips the tasks->connectors foreign key when the
+		// uninstall task is upserted; this must be a 4xx, not a 500 (EN-1344 / CU-S3).
+		It("should return a 4xx (not a 500) when the connector does not exist", func(ctx SpecContext) {
+			m.EXPECT().ConnectorsUninstall(gomock.Any(), gomock.Any()).Return(models.Task{}, storage.ErrForeignKeyViolation)
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, "VALIDATION")
+		})
+
+		It("should map a not found error to 404", func(ctx SpecContext) {
+			m.EXPECT().ConnectorsUninstall(gomock.Any(), gomock.Any()).Return(models.Task{}, storage.ErrNotFound)
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
+			assertExpectedResponse(w.Result(), http.StatusNotFound, "NOT_FOUND")
 		})
 
 		It("should return status accepted on success", func(ctx SpecContext) {
