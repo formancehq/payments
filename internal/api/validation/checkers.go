@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"math/big"
 	"regexp"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
@@ -163,6 +164,20 @@ func IsEmail(fl validator.FieldLevel) bool {
 	}
 
 	return emailRegexp.MatchString(str)
+}
+
+// IsPositiveBigInt reports whether the field holds a strictly positive
+// (*)big.Int. The validator dereferences non-nil pointers before calling this,
+// so both big.Int and *big.Int are handled; a nil pointer is left to `required`.
+func IsPositiveBigInt(fl validator.FieldLevel) bool {
+	switch v := fl.Field().Interface().(type) {
+	case big.Int:
+		return v.Sign() > 0
+	case *big.Int:
+		return v != nil && v.Sign() > 0
+	default:
+		return false
+	}
 }
 
 func IsLocale(fl validator.FieldLevel) bool {

@@ -11,8 +11,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/otel"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -23,7 +23,7 @@ type PaymentInitiationsCreateRequest struct {
 	ConnectorID string    `json:"connectorID" validate:"required,connectorID"`
 	Description string    `json:"description" validate:"omitempty,lte=10000"`
 	Type        string    `json:"type" validate:"required,paymentInitiationType"`
-	Amount      *big.Int  `json:"amount" validate:"required"`
+	Amount      *big.Int  `json:"amount" validate:"required,gtZero"`
 	Asset       string    `json:"asset" validate:"required,asset"`
 
 	SourceAccountID      *string `json:"sourceAccountID" validate:"omitempty,accountID"`

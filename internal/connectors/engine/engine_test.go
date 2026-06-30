@@ -13,8 +13,8 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -1250,6 +1250,56 @@ var _ = Describe("Engine Tests", func() {
 
 			_, err := eng.CreateTransfer(ctx, piID, 0, false)
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("reversing a payment initiation", func() {
+		var (
+			reverseConnID models.ConnectorID
+			reversal      models.PaymentInitiationReversal
+		)
+		BeforeEach(func() {
+			reverseConnID = models.ConnectorID{Reference: uuid.New(), Provider: "dummypay"}
+			reversal = models.PaymentInitiationReversal{
+				ID:          models.PaymentInitiationReversalID{Reference: "ref", ConnectorID: reverseConnID},
+				ConnectorID: reverseConnID,
+				Reference:   "ref",
+				CreatedAt:   time.Now().UTC(),
+			}
+		})
+
+		// EN-1346/EN-1347: the reverse workflow id must not embed the verbose
+		// CreatedAt timestamp, which pushed it past Temporal's WorkflowId length limit.
+		It("builds a reverse-payout workflow id without the CreatedAt timestamp", func(ctx SpecContext) {
+			var capturedID string
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), workflow.RunReversePayout, gomock.AssignableToTypeOf(workflow.ReversePayout{})).
+				DoAndReturn(func(_ interface{}, options client.StartWorkflowOptions, _ interface{}, _ workflow.ReversePayout) (client.WorkflowRun, error) {
+					capturedID = options.ID
+					return nil, nil
+				})
+
+			_, err := eng.ReversePayout(ctx, reversal, false)
+			Expect(err).To(BeNil())
+			Expect(capturedID).To(HavePrefix("reverse-payout-"))
+			Expect(capturedID).NotTo(ContainSubstring(reversal.CreatedAt.String()))
+			Expect(strings.ContainsAny(capturedID, " ")).To(BeFalse())
+		})
+
+		It("builds a reverse-transfer workflow id without the CreatedAt timestamp", func(ctx SpecContext) {
+			var capturedID string
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), workflow.RunReverseTransfer, gomock.AssignableToTypeOf(workflow.ReverseTransfer{})).
+				DoAndReturn(func(_ interface{}, options client.StartWorkflowOptions, _ interface{}, _ workflow.ReverseTransfer) (client.WorkflowRun, error) {
+					capturedID = options.ID
+					return nil, nil
+				})
+
+			_, err := eng.ReverseTransfer(ctx, reversal, false)
+			Expect(err).To(BeNil())
+			Expect(capturedID).To(HavePrefix("reverse-transfer-"))
+			Expect(capturedID).NotTo(ContainSubstring(reversal.CreatedAt.String()))
+			Expect(strings.ContainsAny(capturedID, " ")).To(BeFalse())
 		})
 	})
 
