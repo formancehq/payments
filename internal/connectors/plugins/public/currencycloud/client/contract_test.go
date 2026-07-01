@@ -32,11 +32,11 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/contracttest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -66,8 +66,8 @@ const (
 // specs print the live IDs to stderr as a paste-ready Go literal (bootstrap log)
 // so a maintainer can fill these in to enable the ordering contract.
 //
-// Both use a growth/mutation-tolerant SUBSEQUENCE match (filterToPinned), not
-// exact equality:
+// Both use a growth/mutation-tolerant SUBSEQUENCE match (contracttest.FilterToPinned),
+// not exact equality:
 //   - accounts are ordered by updated_at asc; a money-movement run can bump an
 //     account's updated_at and reorder the list. If that makes the pin flap,
 //     leave expectedAccountIDs empty (the ordering spec then Skips).
@@ -129,33 +129,6 @@ var expectedTransactionIDs = []string{
 	"b716d91f-b913-4a8f-8f72-27a82db8d962",
 	"e2b227fe-b857-458e-be86-29435c871ad5",
 	"bc77b679-9b05-419a-ab01-f22271eb6170",
-}
-
-// contractRef returns a per-run-unique idempotency reference (unique_request_id),
-// so money-movement specs always create a fresh record and never collide with a
-// prior run's key.
-func contractRef(prefix string) string {
-	return fmt.Sprintf("currencycloud-contract-%s-%d", prefix, time.Now().UnixNano())
-}
-
-// bootstrapEnabled reports whether the schema specs should print paste-ready
-// pinned-ID literals. Off by default (fill the pins once, then leave it off); set
-// CURRENCYCLOUD_CONTRACT_BOOTSTRAP=1 to (re)generate them — e.g. after the demo
-// environment is reseeded, or when first filling a new ordering pin.
-func bootstrapEnabled() bool {
-	return os.Getenv("CURRENCYCLOUD_CONTRACT_BOOTSTRAP") != ""
-}
-
-// logBootstrap prints a paste-ready Go slice literal of the given IDs to stderr,
-// so a maintainer can copy it into the expected*IDs pins above. `go test`
-// discards a passing package's stdout/stderr unless `-v` is set, so the
-// `contract-tests` Justfile target runs with `-v` for this output to surface.
-func logBootstrap(name string, ids []string) {
-	fmt.Fprintf(os.Stderr, "\n// BOOTSTRAP — paste into contract_test.go to pin ordering:\nvar %s = []string{\n", name)
-	for _, id := range ids {
-		fmt.Fprintf(os.Stderr, "\t%q,\n", id)
-	}
-	fmt.Fprintf(os.Stderr, "}\n")
 }
 
 // collectAllAccountIDs pages through every account and returns their IDs in list
@@ -226,23 +199,6 @@ func collectAllTransactionIDs(ctx context.Context, c Client) ([]string, error) {
 	return ids, nil
 }
 
-// filterToPinned keeps only the ids present in pinned, preserving their order in
-// the source slice. Used to assert that the *known* records retain their
-// relative order while ignoring any newly created ones.
-func filterToPinned(ids, pinned []string) []string {
-	set := make(map[string]struct{}, len(pinned))
-	for _, id := range pinned {
-		set[id] = struct{}{}
-	}
-	out := make([]string, 0, len(pinned))
-	for _, id := range ids {
-		if _, ok := set[id]; ok {
-			out = append(out, id)
-		}
-	}
-	return out
-}
-
 // fundedBalance is a demo balance we can safely source a money movement from: it
 // parses and holds at least contractMinFunded major units.
 type fundedBalance struct {
@@ -301,10 +257,10 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Expect(a.CreatedAt.IsZero()).To(BeFalse(), "account created_at is zero/unset")
 			}
 
-			if bootstrapEnabled() {
+			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
 				allIDs, err := collectAllAccountIDs(ctx, c)
 				Expect(err).To(BeNil())
-				logBootstrap("expectedAccountIDs", allIDs)
+				contracttest.LogBootstrap("expectedAccountIDs", allIDs)
 			}
 		})
 
@@ -319,7 +275,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			// all pages so pinned IDs are still found once they spill past page 1.
 			allIDs, err := collectAllAccountIDs(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := filterToPinned(allIDs, expectedAccountIDs)
+			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedAccountIDs)
 			Expect(gotKnownIDs).To(Equal(expectedAccountIDs))
 		})
 	})
@@ -355,10 +311,10 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Expect(b.CreatedAt.IsZero()).To(BeFalse(), "beneficiary created_at is zero/unset")
 			}
 
-			if bootstrapEnabled() {
+			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
 				allIDs, err := collectAllBeneficiaryIDs(ctx, c)
 				Expect(err).To(BeNil())
-				logBootstrap("expectedBeneficiaryIDs", allIDs)
+				contracttest.LogBootstrap("expectedBeneficiaryIDs", allIDs)
 			}
 		})
 
@@ -372,7 +328,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			// order, ignoring any others, walking all pages.
 			allIDs, err := collectAllBeneficiaryIDs(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := filterToPinned(allIDs, expectedBeneficiaryIDs)
+			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedBeneficiaryIDs)
 			Expect(gotKnownIDs).To(Equal(expectedBeneficiaryIDs))
 		})
 	})
@@ -392,10 +348,10 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Expect(perr).To(BeNil(), "transaction amount %q is not numeric", tx.Amount.String())
 			}
 
-			if bootstrapEnabled() {
+			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
 				allIDs, err := collectAllTransactionIDs(ctx, c)
 				Expect(err).To(BeNil())
-				logBootstrap("expectedTransactionIDs", allIDs)
+				contracttest.LogBootstrap("expectedTransactionIDs", allIDs)
 			}
 		})
 
@@ -410,7 +366,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			// newly created ones, walking all pages.
 			allIDs, err := collectAllTransactionIDs(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := filterToPinned(allIDs, expectedTransactionIDs)
+			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedTransactionIDs)
 			Expect(gotKnownIDs).To(Equal(expectedTransactionIDs))
 		})
 	})
@@ -452,7 +408,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Currency:             funded.currency,
 				Amount:               contractMinAmount,
 				Reason:               "Formance Contract Test",
-				UniqueRequestID:      contractRef("transfer"),
+				UniqueRequestID:      contracttest.Ref("currencycloud", "transfer"),
 			})
 			Expect(err).To(BeNil())
 			Expect(resp).ToNot(BeNil())
@@ -515,7 +471,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Amount:          contractMinAmount,
 				Reference:       "Formance Contract Test",
 				Reason:          "Formance Contract Test",
-				UniqueRequestID: contractRef("payout"),
+				UniqueRequestID: contracttest.Ref("currencycloud", "payout"),
 			})
 			Expect(err).To(BeNil())
 			Expect(resp).ToNot(BeNil())
