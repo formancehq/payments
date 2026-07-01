@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -65,6 +66,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	goVersion, err := goVersionFromFlake(repoRoot)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create the new connector's files
 	if err := createFiles(
 		context.Background(),
@@ -73,6 +79,7 @@ func main() {
 		map[string]interface{}{
 			"Connector": *connectorName,
 			"Module":    modulePath,
+			"GoVersion": goVersion,
 		},
 	); err != nil {
 		log.Fatal(err)
@@ -84,4 +91,18 @@ func isValidPackageName(name string) bool {
 		return false
 	}
 	return packageNameRegex.MatchString(name)
+}
+
+var goVersionRegex = regexp.MustCompile(`\bgo_1_(\d+)\b`)
+
+func goVersionFromFlake(repoRoot string) (string, error) {
+	data, err := os.ReadFile(filepath.Join(repoRoot, "flake.nix"))
+	if err != nil {
+		return "", fmt.Errorf("reading flake.nix: %w", err)
+	}
+	m := goVersionRegex.FindSubmatch(data)
+	if m == nil {
+		return "", fmt.Errorf("no go_1_XX package found in flake.nix")
+	}
+	return "1." + string(m[1]), nil
 }

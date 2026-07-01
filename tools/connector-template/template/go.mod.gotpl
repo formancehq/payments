@@ -1,5 +1,5 @@
 module {{ .Module }}
 
-go 1.26
+go {{ .GoVersion }}
 
 require github.com/formancehq/payments/pkg/domain v0.3.2
