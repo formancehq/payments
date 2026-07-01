@@ -8,10 +8,13 @@ pc: pre-commit
 
 lint:
   @golangci-lint run --fix --build-tags it --timeout 5m
+  @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && golangci-lint run --fix --build-tags it --timeout 5m && cd "{{justfile_directory()}}"; done
 
 tidy:
+  @go run {{justfile_directory()}}/tools/sync-ce-plugins --connector-dir-path {{justfile_directory()}}/ce/plugins
   @go mod tidy
   @cd pkg/domain && go mod tidy
+  @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go mod tidy && cd "{{justfile_directory()}}"; done
 
 compile-plugins:
   ./tools/compile-plugins/compile-plugin.sh
@@ -23,12 +26,12 @@ validate-openapi:
 [group('openapi')]
 compile-connector-configs:
     @go build -o compile-configs {{justfile_directory()}}/tools/compile-configs
-    ./compile-configs --path {{justfile_directory()}}/internal/connectors/plugins/public --path {{justfile_directory()}}/ee/plugins --output {{justfile_directory()}}/openapi/v3/v3-connectors-config.yaml
+    ./compile-configs --path {{justfile_directory()}}/ce/plugins --path {{justfile_directory()}}/ee/plugins --output {{justfile_directory()}}/openapi/v3/v3-connectors-config.yaml
     @rm ./compile-configs
 
 compile-connector-capabilities:
     @go build -tags ee -o compile-capabilities {{justfile_directory()}}/tools/compile-capabilities
-    ./compile-capabilities --path {{justfile_directory()}}/internal/connectors/plugins/public --path {{justfile_directory()}}/ee/plugins --output {{justfile_directory()}}/docs/other/connector-capabilities.json
+    ./compile-capabilities --path {{justfile_directory()}}/ce/plugins --path {{justfile_directory()}}/ee/plugins --output {{justfile_directory()}}/docs/other/connector-capabilities.json
     @rm ./compile-capabilities
 
 [group('openapi')]
@@ -53,6 +56,13 @@ tests:
     -tags it \
     ./...
   @cd pkg/domain && go test -race ./...
+  @set -e; for d in ce/plugins/*/; do \
+    name=$(basename "$d"); \
+    cd "{{justfile_directory()}}/$d" && \
+    go test -race -covermode=atomic -coverprofile "{{justfile_directory()}}/coverage-plugin-$name.txt" -tags it ./... && \
+    cd "{{justfile_directory()}}"; \
+  done
+  @for f in coverage-plugin-*.txt; do tail -n +2 "$f" >> coverage.txt && rm "$f"; done
 
 [group('test')]
 generate-sdk: openapi
@@ -62,6 +72,7 @@ generate-sdk: openapi
 generate: generate-sdk
     @go generate ./...
     @cd pkg/domain && go generate ./...
+    @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go generate ./... && cd "{{justfile_directory()}}"; done
 
 [group('build')]
 build-ce: compile-plugins
@@ -94,6 +105,6 @@ bootstrap-plugin CONNECTOR_NAME EDITION="public":
     @if [ "{{EDITION}}" = "enterprise" ]; then \
         ./connector-template --connector-dir-path {{justfile_directory()}}/ee/plugins --connector-name {{CONNECTOR_NAME}}; \
     else \
-        ./connector-template --connector-dir-path {{justfile_directory()}}/internal/connectors/plugins/public --connector-name {{CONNECTOR_NAME}}; \
+        ./connector-template --connector-dir-path {{justfile_directory()}}/ce/plugins --connector-name {{CONNECTOR_NAME}}; \
     fi
     @rm ./connector-template

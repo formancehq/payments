@@ -9,5 +9,13 @@
   "ignorePaths": [
       "**/pkg/client/**",
       "internal/connectors/plugins/public/generic/client/generated/"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["github.com/formancehq/payments/pkg/domain"],
+      "matchFileNames": ["ce/plugins/**/go.mod"],
+      "groupName": "pkg/domain for ce/plugins",
+      "groupSlug": "ce-plugins-pkg-domain"
+    }
   ]
 }

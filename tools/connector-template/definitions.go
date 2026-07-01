@@ -9,6 +9,11 @@ import (
 )
 
 var (
+	//go:embed template/go.mod.gotpl
+	gomod string
+)
+
+var (
 	//go:embed template/client/client.gotpl
 	client string
 
@@ -69,7 +74,7 @@ var (
 	workflow string
 )
 
-func createFiles(ctx context.Context, directoryPath string, params map[string]interface{}) error {
+func createFiles(ctx context.Context, directoryPath string, isCE bool, params map[string]interface{}) error {
 	files := map[string]string{
 		"client/client.go":            client,
 		"client/accounts.go":          clientAccounts,
@@ -90,6 +95,9 @@ func createFiles(ctx context.Context, directoryPath string, params map[string]in
 		"transfers.go":                transfers,
 		"utils.go":                    utils,
 		"workflow.go":                 workflow,
+	}
+	if isCE {
+		files["go.mod"] = gomod
 	}
 
 	for path, tpl := range files {

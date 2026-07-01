@@ -13,7 +13,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-PUBLIC_DIR="$REPO_ROOT/internal/connectors/plugins/public"
+CE_DIR="$REPO_ROOT/ce/plugins"
 EE_DIR="$REPO_ROOT/ee/plugins"
 OUT_CE="$REPO_ROOT/internal/connectors/plugins/registry/generated_ce.go"
 OUT_EE="$REPO_ROOT/internal/connectors/plugins/registry/generated_ee.go"
@@ -22,8 +22,8 @@ OUT_ENTERPRISE_EE="$REPO_ROOT/internal/connectors/plugins/registry/enterprise_ee
 MOD="github.com/formancehq/payments"
 
 # ── gather plugin lists ───────────────────────────────────────────────────────
-ce_plugins=$(find "$PUBLIC_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do basename "$d"; done)
-ee_plugins=$(find "$EE_DIR"     -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do basename "$d"; done)
+ce_plugins=$(find "$CE_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do basename "$d"; done)
+ee_plugins=$(find "$EE_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do basename "$d"; done)
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -65,7 +65,7 @@ emit_enterprise_entries() {
 # ── generated_ce.go ───────────────────────────────────────────────────────────
 {
     printf '//go:build !ee\n\npackage registry\n\nimport (\n'
-    printf '%s\n' "$ce_plugins" | emit_imports "$MOD/internal/connectors/plugins/public"
+    printf '%s\n' "$ce_plugins" | emit_imports "$MOD/ce/plugins"
     printf '\tpkgplugins "%s/pkg/domain/plugins"\n)\n\nfunc init() {\n\tload(map[string]pkgplugins.Registration{\n' "$MOD"
     printf '%s\n' "$ce_plugins" | emit_entries
     printf '\t})\n}\n'
@@ -74,7 +74,7 @@ emit_enterprise_entries() {
 # ── generated_ee.go ───────────────────────────────────────────────────────────
 {
     printf '//go:build ee\n\npackage registry\n\nimport (\n'
-    printf '%s\n' "$ce_plugins" | emit_imports "$MOD/internal/connectors/plugins/public"
+    printf '%s\n' "$ce_plugins" | emit_imports "$MOD/ce/plugins"
     printf '%s\n' "$ee_plugins" | emit_imports "$MOD/ee/plugins"
     printf '\tpkgplugins "%s/pkg/domain/plugins"\n)\n\nfunc init() {\n\tload(map[string]pkgplugins.Registration{\n' "$MOD"
     printf '%s\n' "$ce_plugins" | emit_entries
