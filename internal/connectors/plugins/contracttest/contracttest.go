@@ -13,9 +13,15 @@
 package contracttest
 
 import (
+	"cmp"
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/onsi/gomega"
 )
 
 // BootstrapEnabled reports whether the schema specs should print paste-ready
@@ -61,6 +67,48 @@ func FilterToPinned(ids, pinned []string) []string {
 // Ref returns a per-run-unique idempotency reference of the form
 // "<connector>-contract-<prefix>-<nanos>", so money-movement specs always create
 // a fresh record and never collide with a prior run's idempotency key.
+//
+// NOTE: this form is ~40+ chars. If the PSP caps the idempotency-key length (e.g.
+// Mangopay requires 16–36 chars) or requires a UUID, use UUIDRef instead.
 func Ref(connector, prefix string) string {
 	return fmt.Sprintf("%s-contract-%s-%d", connector, prefix, time.Now().UnixNano())
+}
+
+// UUIDRef returns a random UUIDv4 string — a universally-safe per-run idempotency
+// key: 36 chars, alphanumeric + dashes, high entropy, never colliding. Prefer it
+// over Ref for a PSP that caps the idempotency-key length (e.g. Mangopay's 16–36,
+// which rejects Ref's longer form) or that requires the reference to be a UUID.
+func UUIDRef() string {
+	return uuid.NewString()
+}
+
+// AssertIntegerAmount asserts n (a PSP money amount carried as a json.Number)
+// parses as an integer in minor units, mirroring the connectors that parse
+// balances/amounts via big.Int.SetString(s, 10) and error on a non-integer. label
+// names the field in the failure message.
+func AssertIntegerAmount(n json.Number, label string) {
+	var amt big.Int
+	_, ok := amt.SetString(n.String(), 10)
+	gomega.Expect(ok).To(gomega.BeTrue(), "%s amount %q is not an integer", label, n.String())
+}
+
+// AssertDecimalAmount asserts n (a PSP money amount carried as a json.Number)
+// parses as a decimal, mirroring the connectors whose amounts are major-unit
+// decimal strings (e.g. CurrencyCloud). label names the field in the failure
+// message.
+func AssertDecimalAmount(n json.Number, label string) {
+	_, err := n.Float64()
+	gomega.Expect(err).To(gomega.BeNil(), "%s amount %q is not numeric", label, n.String())
+}
+
+// AssertNonDecreasing asserts values are in non-decreasing order — the ordering
+// contract for a list the connector consumes in a sort order it relies on (e.g. a
+// CreationDate:ASC watermark walk). It is a maintenance-free alternative to
+// pinned-ID subsequences when the real dependency is "the API honors its sort
+// key". label names the list in the failure message.
+func AssertNonDecreasing[T cmp.Ordered](values []T, label string) {
+	for i := 1; i < len(values); i++ {
+		gomega.Expect(values[i] >= values[i-1]).To(gomega.BeTrue(),
+			"%s is not sorted ascending at index %d: %v < %v", label, i, values[i], values[i-1])
+	}
 }
