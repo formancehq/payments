@@ -18,6 +18,7 @@ on:
       - "internal/connectors/plugins/public/column/client/contract_test.go"
       - "internal/connectors/plugins/public/currencycloud/client/contract_test.go"
       - "internal/connectors/plugins/public/increase/client/contract_test.go"
+      - "internal/connectors/plugins/public/mangopay/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -36,6 +37,7 @@ jobs:
           - column
           - currencycloud
           - increase
+          - mangopay
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -65,6 +67,12 @@ jobs:
           # authenticates against the sandbox host. The webhook shared secret is
           # a non-secret test constant, so only the API key is injected here.
           INCREASE_CONTRACT_API_KEY: ${{ secrets.INCREASE_CONTRACT_API_KEY }}
+          # Mangopay sandbox contract credentials. The endpoint
+          # (api.sandbox.mangopay.com) is hardcoded in the test; sandbox and prod
+          # are different hosts. Auth is OAuth2 client-credentials, so BOTH the
+          # ClientId and the API key are required (the suite Skips without both).
+          MANGOPAY_CONTRACT_CLIENT_ID: ${{ secrets.MANGOPAY_CONTRACT_CLIENT_ID }}
+          MANGOPAY_CONTRACT_API_KEY: ${{ secrets.MANGOPAY_CONTRACT_API_KEY }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does
