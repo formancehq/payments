@@ -20,6 +20,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"testing"
@@ -64,6 +65,26 @@ var expectedMerchantIDs = []string{
 	"Formance814_USER_4567_TEST",
 }
 
+// bootstrapEnabled reports whether the schema specs should print paste-ready
+// pinned-ID literals. Off by default (the pins are already filled); set
+// ADYEN_CONTRACT_BOOTSTRAP=1 to (re)generate them — e.g. after the test company
+// is reseeded, or when first filling a new ordering pin.
+func bootstrapEnabled() bool {
+	return os.Getenv("ADYEN_CONTRACT_BOOTSTRAP") != ""
+}
+
+// logBootstrap prints a paste-ready Go slice literal of the given IDs to stderr,
+// so a maintainer can copy it into the expected*IDs pins above. `go test`
+// discards a passing package's stdout/stderr unless `-v` is set, so the
+// `contract-tests` Justfile target runs with `-v` for this output to surface.
+func logBootstrap(name string, ids []string) {
+	fmt.Fprintf(os.Stderr, "\n// BOOTSTRAP — paste into contract_test.go to pin ordering:\nvar %s = []string{\n", name)
+	for _, id := range ids {
+		fmt.Fprintf(os.Stderr, "\t%q,\n", id)
+	}
+	fmt.Fprintf(os.Stderr, "}\n")
+}
+
 var _ = Describe("Adyen API contract", func() {
 	var (
 		ctx       context.Context
@@ -89,12 +110,18 @@ var _ = Describe("Adyen API contract", func() {
 			Expect(err).To(BeNil())
 			Expect(merchants).ToNot(BeEmpty())
 
+			ids := make([]string, 0, len(merchants))
 			for _, m := range merchants {
 				// Fields the connector relies on must be present and typed.
 				Expect(m.Id).ToNot(BeNil())
 				Expect(*m.Id).ToNot(BeEmpty())
 				Expect(m.Name).ToNot(BeNil())
 				Expect(m.Status).ToNot(BeNil())
+				ids = append(ids, *m.Id)
+			}
+
+			if bootstrapEnabled() {
+				logBootstrap("expectedMerchantIDs", ids)
 			}
 		})
 

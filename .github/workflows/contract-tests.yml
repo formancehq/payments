@@ -15,6 +15,7 @@ on:
     paths:
       - ".github/workflows/contract-tests.yml"
       - "internal/connectors/plugins/public/adyen/client/contract_test.go"
+      - "internal/connectors/plugins/public/column/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -30,6 +31,7 @@ jobs:
       matrix:
         connector:
           - adyen
+          - column
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -46,6 +48,9 @@ jobs:
           # Adyen test-environment contract credentials.
           ADYEN_CONTRACT_API_KEY: ${{ secrets.ADYEN_CONTRACT_API_KEY }}
           ADYEN_CONTRACT_COMPANY_ID: ${{ secrets.ADYEN_CONTRACT_COMPANY_ID }}
+          # Column sandbox contract credential. The endpoint (api.column.com) is
+          # hardcoded in the test; a test_-prefixed key selects the sandbox.
+          COLUMN_CONTRACT_API_KEY: ${{ secrets.COLUMN_CONTRACT_API_KEY }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does

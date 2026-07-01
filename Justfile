@@ -69,11 +69,14 @@ tests:
 # Requires the connector's contract credentials in the environment, e.g. for
 # adyen: ADYEN_CONTRACT_API_KEY and ADYEN_CONTRACT_COMPANY_ID. Without them the
 # suite skips rather than fails. Run daily via .github/workflows/contract-tests.yml.
+# Scoped to the `client` package (where contract tests live) and run with -v so
+# bootstrap logs (e.g. paste-ready pinned-ID literals) are visible: `go test`
+# discards a passing package's stdout/stderr unless -v is set.
 [group('test')]
 contract-tests connector="adyen":
   @dir="ce/plugins/{{connector}}"; \
   if [ -d "ee/plugins/{{connector}}" ]; then dir="ee/plugins/{{connector}}"; fi; \
-  cd "$dir" && go test -tags contract -count=1 ./...
+  cd "$dir" && go test -tags contract -v -count=1 ./client/...
 
 [group('test')]
 generate-sdk: openapi
