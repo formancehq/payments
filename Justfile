@@ -76,7 +76,7 @@ tests:
 contract-tests connector="adyen":
   @dir="ce/plugins/{{connector}}"; \
   if [ -d "ee/plugins/{{connector}}" ]; then dir="ee/plugins/{{connector}}"; fi; \
-  cd "$dir" && go test -tags contract -v -count=1 ./client/...
+  cd "$dir" && go test -tags contract -v -count=1 ./client/...  -args -ginkgo.v
 
 [group('test')]
 generate-sdk: openapi
