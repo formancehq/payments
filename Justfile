@@ -64,7 +64,7 @@ tests:
 # discards a passing package's stdout/stderr unless -v is set.
 [group('test')]
 contract-tests connector="adyen":
-  @go test -tags contract -v -count=1 ./internal/connectors/plugins/public/{{connector}}/client/...
+  @go test -tags contract -v -count=1 ./internal/connectors/plugins/public/{{connector}}/client/...  -args -ginkgo.v
 
 [group('test')]
 generate-sdk: openapi

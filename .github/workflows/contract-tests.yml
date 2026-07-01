@@ -16,6 +16,7 @@ on:
       - ".github/workflows/contract-tests.yml"
       - "internal/connectors/plugins/public/adyen/client/contract_test.go"
       - "internal/connectors/plugins/public/column/client/contract_test.go"
+      - "internal/connectors/plugins/public/currencycloud/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -32,6 +33,7 @@ jobs:
         connector:
           - adyen
           - column
+          - currencycloud
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -51,6 +53,11 @@ jobs:
           # Column sandbox contract credential. The endpoint (api.column.com) is
           # hardcoded in the test; a test_-prefixed key selects the sandbox.
           COLUMN_CONTRACT_API_KEY: ${{ secrets.COLUMN_CONTRACT_API_KEY }}
+          # CurrencyCloud demo/sandbox contract credentials. The endpoint
+          # (devapi.currencycloud.com) is hardcoded in the test; demo creds only
+          # authenticate against the demo host.
+          CURRENCYCLOUD_CONTRACT_LOGIN_ID: ${{ secrets.CURRENCYCLOUD_CONTRACT_LOGIN_ID }}
+          CURRENCYCLOUD_CONTRACT_API_KEY: ${{ secrets.CURRENCYCLOUD_CONTRACT_API_KEY }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does
