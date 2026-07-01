@@ -45,13 +45,12 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"math/big"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/formancehq/payments/internal/connectors/plugins/contracttest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -71,25 +70,6 @@ const contractEndpoint = "https://api.sandbox.mangopay.com"
 // must hold for a money-movement spec to safely source a 1-minor-unit movement
 // from it (Mangopay has no overdraft).
 const contractMinFunded = 1
-
-// assertIntegerAmount asserts a Mangopay money amount (a json.Number carrying an
-// integer minor-unit value) parses as an integer, mirroring the connector, which
-// parses these via big.Int.SetString(…, 10) and errors otherwise.
-func assertIntegerAmount(n json.Number, label string) {
-	var amt big.Int
-	_, ok := amt.SetString(n.String(), 10)
-	Expect(ok).To(BeTrue(), "%s amount %q is not an integer", label, n.String())
-}
-
-// assertNonDecreasingCreation asserts a consumed list is returned sorted by
-// CreationDate ascending — the ordering contract the connector's watermark
-// pagination relies on.
-func assertNonDecreasingCreation(dates []int64) {
-	for i := 1; i < len(dates); i++ {
-		Expect(dates[i]).To(BeNumerically(">=", dates[i-1]),
-			"list is not sorted by CreationDate ascending at index %d", i)
-	}
-}
 
 // findUserWithWallets walks users oldest-first and returns the first user's ID
 // that owns >= 1 wallet, together with that user's wallets. ok=false when no user
@@ -213,7 +193,7 @@ var _ = Describe("Mangopay API contract", func() {
 				Expect(u.CreationDate).To(BeNumerically(">", 0), "user CreationDate is not set")
 				dates = append(dates, u.CreationDate)
 			}
-			assertNonDecreasingCreation(dates)
+			contracttest.AssertNonDecreasing(dates, "CreationDate order")
 		})
 	})
 
@@ -235,7 +215,7 @@ var _ = Describe("Mangopay API contract", func() {
 				Expect(w.Currency).ToNot(BeEmpty())
 				dates = append(dates, w.CreationDate)
 			}
-			assertNonDecreasingCreation(dates)
+			contracttest.AssertNonDecreasing(dates, "CreationDate order")
 		})
 	})
 
@@ -253,7 +233,7 @@ var _ = Describe("Mangopay API contract", func() {
 			// Balance.Amount is parsed via big.Int.SetString(…, 10) (errors otherwise);
 			// Balance.Currency feeds FormatAsset.
 			Expect(wallet.Balance.Currency).ToNot(BeEmpty())
-			assertIntegerAmount(wallet.Balance.Amount, "wallet balance")
+			contracttest.AssertIntegerAmount(wallet.Balance.Amount, "wallet balance")
 		})
 	})
 
@@ -276,7 +256,7 @@ var _ = Describe("Mangopay API contract", func() {
 				Expect(ba.CreationDate).To(BeNumerically(">", 0), "bank account CreationDate is not set")
 				dates = append(dates, ba.CreationDate)
 			}
-			assertNonDecreasingCreation(dates)
+			contracttest.AssertNonDecreasing(dates, "CreationDate order")
 		})
 	})
 
@@ -299,10 +279,10 @@ var _ = Describe("Mangopay API contract", func() {
 				Expect(tx.Type).ToNot(BeEmpty())
 				Expect(tx.Status).ToNot(BeEmpty())
 				Expect(tx.DebitedFunds.Currency).ToNot(BeEmpty())
-				assertIntegerAmount(tx.DebitedFunds.Amount, "transaction")
+				contracttest.AssertIntegerAmount(tx.DebitedFunds.Amount, "transaction")
 				dates = append(dates, tx.CreationDate)
 			}
-			assertNonDecreasingCreation(dates)
+			contracttest.AssertNonDecreasing(dates, "CreationDate order")
 		})
 	})
 
@@ -343,7 +323,7 @@ var _ = Describe("Mangopay API contract", func() {
 					Expect(transfer.ID).ToNot(BeEmpty())
 					Expect(transfer.CreationDate).To(BeNumerically(">", 0))
 					Expect(transfer.Status).ToNot(BeEmpty())
-					assertIntegerAmount(transfer.DebitedFunds.Amount, "transfer")
+					contracttest.AssertIntegerAmount(transfer.DebitedFunds.Amount, "transfer")
 					testedTransfer = true
 				case tx.Type == "PAYOUT" && !testedPayout:
 					payout, err := c.GetPayout(ctx, tx.Id)
@@ -352,7 +332,7 @@ var _ = Describe("Mangopay API contract", func() {
 					Expect(payout.ID).ToNot(BeEmpty())
 					Expect(payout.CreationDate).To(BeNumerically(">", 0))
 					Expect(payout.Status).ToNot(BeEmpty())
-					assertIntegerAmount(payout.DebitedFunds.Amount, "payout")
+					contracttest.AssertIntegerAmount(payout.DebitedFunds.Amount, "payout")
 					testedPayout = true
 				case tx.Type == "PAYIN" && !testedPayin:
 					payin, err := c.GetPayin(ctx, tx.Id)
@@ -361,7 +341,7 @@ var _ = Describe("Mangopay API contract", func() {
 					Expect(payin.ID).ToNot(BeEmpty())
 					Expect(payin.CreationDate).To(BeNumerically(">", 0))
 					Expect(payin.Status).ToNot(BeEmpty())
-					assertIntegerAmount(payin.DebitedFunds.Amount, "payin")
+					contracttest.AssertIntegerAmount(payin.DebitedFunds.Amount, "payin")
 					testedPayin = true
 				}
 				if testedTransfer && testedPayout && testedPayin {
@@ -453,7 +433,7 @@ var _ = Describe("Mangopay API contract", func() {
 			// satisfies both, is unique (never collides on the idempotency key), and
 			// mirrors what production sends.
 			resp, err := c.InitiateWalletTransfer(ctx, &TransferRequest{
-				Reference:        uuid.NewString(),
+				Reference:        contracttest.UUIDRef(),
 				AuthorID:         authorID,
 				DebitedWalletID:  sourceID,
 				CreditedWalletID: destID,
@@ -465,7 +445,7 @@ var _ = Describe("Mangopay API contract", func() {
 			Expect(resp.ID).ToNot(BeEmpty())
 			Expect(resp.Status).ToNot(BeEmpty())
 			Expect(resp.CreationDate).To(BeNumerically(">", 0))
-			assertIntegerAmount(resp.DebitedFunds.Amount, "transfer")
+			contracttest.AssertIntegerAmount(resp.DebitedFunds.Amount, "transfer")
 		})
 	})
 
@@ -525,7 +505,7 @@ var _ = Describe("Mangopay API contract", func() {
 			// Per-run UUID: satisfies Mangopay's 16–36 char Idempotency-Key rule and
 			// the connector's UUID Reference requirement; unique per run.
 			resp, err := c.InitiatePayout(ctx, &PayoutRequest{
-				Reference:       uuid.NewString(),
+				Reference:       contracttest.UUIDRef(),
 				AuthorID:        authorID,
 				DebitedWalletID: walletID,
 				BankAccountID:   bankID,
@@ -538,7 +518,7 @@ var _ = Describe("Mangopay API contract", func() {
 			Expect(resp.ID).ToNot(BeEmpty())
 			Expect(resp.Status).ToNot(BeEmpty())
 			Expect(resp.CreationDate).To(BeNumerically(">", 0))
-			assertIntegerAmount(resp.DebitedFunds.Amount, "payout")
+			contracttest.AssertIntegerAmount(resp.DebitedFunds.Amount, "payout")
 		})
 	})
 })

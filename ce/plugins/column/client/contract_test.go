@@ -481,14 +481,10 @@ var _ = Describe("Column API contract", func() {
 
 			// The four amount fields are json.Number — they must be present and
 			// parse as integers (Column amounts are integer minor units).
-			_, err = balance.AvailableAmount.Int64()
-			Expect(err).To(BeNil(), "available_amount %q is not an integer", balance.AvailableAmount)
-			_, err = balance.HoldingAmount.Int64()
-			Expect(err).To(BeNil(), "holding_amount %q is not an integer", balance.HoldingAmount)
-			_, err = balance.LockedAmount.Int64()
-			Expect(err).To(BeNil(), "locked_amount %q is not an integer", balance.LockedAmount)
-			_, err = balance.PendingAmount.Int64()
-			Expect(err).To(BeNil(), "pending_amount %q is not an integer", balance.PendingAmount)
+			contracttest.AssertIntegerAmount(balance.AvailableAmount, "available_amount")
+			contracttest.AssertIntegerAmount(balance.HoldingAmount, "holding_amount")
+			contracttest.AssertIntegerAmount(balance.LockedAmount, "locked_amount")
+			contracttest.AssertIntegerAmount(balance.PendingAmount, "pending_amount")
 		})
 	})
 

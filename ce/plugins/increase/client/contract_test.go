@@ -304,8 +304,7 @@ var _ = Describe("Increase API contract", func() {
 			// minor-unit string. current_balance / type are unused by the
 			// connector, so they are NOT asserted.
 			Expect(balance.AccountID).ToNot(BeEmpty())
-			_, perr := balance.AvailableBalance.Int64()
-			Expect(perr).To(BeNil(), "available_balance %q is not an integer", balance.AvailableBalance.String())
+			contracttest.AssertIntegerAmount(balance.AvailableBalance, "available_balance")
 		})
 	})
 

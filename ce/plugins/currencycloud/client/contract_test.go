@@ -291,8 +291,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				// map key, amount -> parsed via GetAmountWithPrecisionFromString.
 				Expect(b.AccountID).ToNot(BeEmpty())
 				Expect(b.Currency).ToNot(BeEmpty())
-				_, perr := b.Amount.Float64()
-				Expect(perr).To(BeNil(), "balance amount %q is not numeric", b.Amount.String())
+				contracttest.AssertDecimalAmount(b.Amount, "balance")
 			}
 		})
 	})
@@ -344,8 +343,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Expect(tx.Currency).ToNot(BeEmpty())
 				Expect(tx.Status).ToNot(BeEmpty())
 				Expect(tx.UpdatedAt.IsZero()).To(BeFalse(), "transaction updated_at is zero/unset")
-				_, perr := tx.Amount.Float64()
-				Expect(perr).To(BeNil(), "transaction amount %q is not numeric", tx.Amount.String())
+				contracttest.AssertDecimalAmount(tx.Amount, "transaction")
 			}
 
 			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
@@ -416,8 +414,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			Expect(resp.Status).ToNot(BeEmpty())
 			Expect(resp.Currency).ToNot(BeEmpty())
 			Expect(resp.CreatedAt.IsZero()).To(BeFalse(), "transfer created_at is zero/unset")
-			_, perr := resp.Amount.Float64()
-			Expect(perr).To(BeNil(), "transfer amount %q is not numeric", resp.Amount.String())
+				contracttest.AssertDecimalAmount(resp.Amount, "transfer")
 		})
 	})
 
@@ -479,8 +476,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			Expect(resp.Status).ToNot(BeEmpty())
 			Expect(resp.Currency).ToNot(BeEmpty())
 			Expect(resp.BeneficiaryID).ToNot(BeEmpty())
-			_, perr := resp.Amount.Float64()
-			Expect(perr).To(BeNil(), "payout amount %q is not numeric", resp.Amount.String())
+				contracttest.AssertDecimalAmount(resp.Amount, "payout")
 		})
 	})
 })
