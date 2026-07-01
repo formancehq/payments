@@ -29,11 +29,11 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/contracttest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -368,32 +368,6 @@ var (
 	}
 )
 
-// contractRef returns a per-run-unique idempotency reference, so money-movement
-// specs always create a fresh record and never collide with a prior run's key.
-func contractRef(prefix string) string {
-	return fmt.Sprintf("column-contract-%s-%d", prefix, time.Now().UnixNano())
-}
-
-// bootstrapEnabled reports whether the schema specs should print paste-ready
-// pinned-ID literals. Off by default (the pins are already filled); set
-// COLUMN_CONTRACT_BOOTSTRAP=1 to (re)generate them — e.g. after the sandbox is
-// reseeded, or when first filling a new ordering pin.
-func bootstrapEnabled() bool {
-	return os.Getenv("COLUMN_CONTRACT_BOOTSTRAP") != ""
-}
-
-// logBootstrap prints a paste-ready Go slice literal of the given IDs to stderr,
-// so a maintainer can copy it into the expected*IDs pins above. `go test`
-// discards a passing package's stdout/stderr unless `-v` is set, so the
-// `contract-tests` Justfile target runs with `-v` for this output to surface.
-func logBootstrap(name string, ids []string) {
-	fmt.Fprintf(os.Stderr, "\n// BOOTSTRAP — paste into contract_test.go to pin ordering:\nvar %s = []string{\n", name)
-	for _, id := range ids {
-		fmt.Fprintf(os.Stderr, "\t%q,\n", id)
-	}
-	fmt.Fprintf(os.Stderr, "}\n")
-}
-
 // collectAllCounterpartyIDs pages through every counterparty and returns their
 // IDs in list order.
 func collectAllCounterpartyIDs(ctx context.Context, c Client) ([]string, error) {
@@ -440,23 +414,6 @@ func collectAllTransactionIDs(ctx context.Context, c Client) ([]string, error) {
 	return ids, nil
 }
 
-// filterToPinned keeps only the ids present in pinned, preserving their order in
-// the source slice. Used to assert that the *known* records retain their
-// relative order while ignoring any newly created ones.
-func filterToPinned(ids, pinned []string) []string {
-	set := make(map[string]struct{}, len(pinned))
-	for _, id := range pinned {
-		set[id] = struct{}{}
-	}
-	out := make([]string, 0, len(pinned))
-	for _, id := range ids {
-		if _, ok := set[id]; ok {
-			out = append(out, id)
-		}
-	}
-	return out
-}
-
 var _ = Describe("Column API contract", func() {
 	var (
 		ctx context.Context
@@ -491,8 +448,8 @@ var _ = Describe("Column API contract", func() {
 				ids = append(ids, a.ID)
 			}
 
-			if bootstrapEnabled() {
-				logBootstrap("expectedAccountIDs", ids)
+			if contracttest.BootstrapEnabled("COLUMN") {
+				contracttest.LogBootstrap("expectedAccountIDs", ids)
 			}
 		})
 
@@ -550,10 +507,10 @@ var _ = Describe("Column API contract", func() {
 				Expect(perr).To(BeNil(), "counterparty created_at %q is not RFC3339", cp.CreatedAt)
 			}
 
-			if bootstrapEnabled() {
+			if contracttest.BootstrapEnabled("COLUMN") {
 				allIDs, err := collectAllCounterpartyIDs(ctx, c)
 				Expect(err).To(BeNil())
-				logBootstrap("expectedCounterpartyIDs", allIDs)
+				contracttest.LogBootstrap("expectedCounterpartyIDs", allIDs)
 			}
 		})
 
@@ -570,7 +527,7 @@ var _ = Describe("Column API contract", func() {
 			// the list grows, the pinned (older) IDs eventually spill past page 1.
 			allIDs, err := collectAllCounterpartyIDs(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := filterToPinned(allIDs, expectedCounterpartyIDs)
+			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedCounterpartyIDs)
 			Expect(gotKnownIDs).To(Equal(expectedCounterpartyIDs))
 		})
 	})
@@ -590,10 +547,10 @@ var _ = Describe("Column API contract", func() {
 				Expect(tx.CurrencyCode).ToNot(BeEmpty())
 			}
 
-			if bootstrapEnabled() {
+			if contracttest.BootstrapEnabled("COLUMN") {
 				allIDs, err := collectAllTransactionIDs(ctx, c)
 				Expect(err).To(BeNil())
-				logBootstrap("expectedTransactionIDs", allIDs)
+				contracttest.LogBootstrap("expectedTransactionIDs", allIDs)
 			}
 		})
 
@@ -608,7 +565,7 @@ var _ = Describe("Column API contract", func() {
 			// order, ignoring any newly created ones.
 			allIDs, err := collectAllTransactionIDs(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := filterToPinned(allIDs, expectedTransactionIDs)
+			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedTransactionIDs)
 			Expect(gotKnownIDs).To(Equal(expectedTransactionIDs))
 		})
 	})
@@ -684,7 +641,7 @@ var _ = Describe("Column API contract", func() {
 				Details: TransferRequestDetails{
 					SenderName: "Formance Contract Test",
 				},
-				Reference: contractRef("book"),
+				Reference: contracttest.Ref("column", "book"),
 			})
 			Expect(err).To(BeNil())
 			Expect(resp).ToNot(BeNil())
@@ -715,7 +672,7 @@ var _ = Describe("Column API contract", func() {
 				SourceAccount:      accounts[0].ID,
 				DestinationAccount: counterparties[0].ID,
 				Description:        "Formance Contract Test",
-				Reference:          contractRef("ach"),
+				Reference:          contracttest.Ref("column", "ach"),
 				Metadata: map[string]string{
 					ColumnPayoutTypeMetadataKey:     "ach",
 					ColumnTypeMetadataKey:           "CREDIT", // Column ACH type enum is uppercase CREDIT/DEBIT
