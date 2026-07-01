@@ -19,6 +19,7 @@ on:
       - "internal/connectors/plugins/public/currencycloud/client/contract_test.go"
       - "internal/connectors/plugins/public/increase/client/contract_test.go"
       - "internal/connectors/plugins/public/mangopay/client/contract_test.go"
+      - "internal/connectors/plugins/public/modulr/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -38,6 +39,7 @@ jobs:
           - currencycloud
           - increase
           - mangopay
+          - modulr
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -73,6 +75,12 @@ jobs:
           # ClientId and the API key are required (the suite Skips without both).
           MANGOPAY_CONTRACT_CLIENT_ID: ${{ secrets.MANGOPAY_CONTRACT_CLIENT_ID }}
           MANGOPAY_CONTRACT_API_KEY: ${{ secrets.MANGOPAY_CONTRACT_API_KEY }}
+          # Modulr sandbox contract credential. The endpoint
+          # (api-sandbox.modulrfinance.com/api-sandbox-token) is hardcoded in the
+          # test; sandbox token auth passes the API key directly as the
+          # Authorization header, so only the API key is a secret (apiSecret is a
+          # throwaway constant the token endpoint ignores).
+          MODULR_CONTRACT_API_KEY: ${{ secrets.MODULR_CONTRACT_API_KEY }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does

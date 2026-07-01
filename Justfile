@@ -71,12 +71,14 @@ tests:
 # suite skips rather than fails. Run daily via .github/workflows/contract-tests.yml.
 # Scoped to the `client` package (where contract tests live) and run with -v so
 # bootstrap logs (e.g. paste-ready pinned-ID literals) are visible: `go test`
-# discards a passing package's stdout/stderr unless -v is set.
+# discards a passing package's stdout/stderr unless -v is set. Non-recursive
+# (no `/...`) so client SUBpackages (e.g. modulr's `client/hmac`, whose plain
+# tests don't accept the `-ginkgo.v` arg) are not swept into the contract run.
 [group('test')]
 contract-tests connector="adyen":
   @dir="ce/plugins/{{connector}}"; \
   if [ -d "ee/plugins/{{connector}}" ]; then dir="ee/plugins/{{connector}}"; fi; \
-  cd "$dir" && go test -tags contract -v -count=1 ./client/...  -args -ginkgo.v
+  cd "$dir" && go test -tags contract -v -count=1 ./client  -args -ginkgo.v
 
 [group('test')]
 generate-sdk: openapi
