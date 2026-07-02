@@ -23,6 +23,7 @@ on:
       - "internal/connectors/plugins/public/moneycorp/client/contract_test.go"
       - "internal/connectors/plugins/public/qonto/client/contract_test.go"
       - "internal/connectors/plugins/public/stripe/client/contract_test.go"
+      - "internal/connectors/plugins/public/wise/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -52,6 +53,7 @@ jobs:
           # internal/connectors/plugins/public/qonto/client/contract_test.go.
           # - qonto
           - stripe
+          - wise
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -114,6 +116,12 @@ jobs:
           # prefix, so the key MUST be an sk_test_ key and no endpoint is
           # injected (the client's built-in default is used).
           STRIPE_CONTRACT_API_KEY: ${{ secrets.STRIPE_CONTRACT_API_KEY }}
+          # Wise sandbox contract credential. The endpoint
+          # (api.sandbox.transferwise.tech) is hardcoded in the test; sandbox
+          # and prod are different hosts, and a sandbox token only
+          # authenticates against the sandbox host, so only the API key is a
+          # secret.
+          WISE_CONTRACT_API_KEY: ${{ secrets.WISE_CONTRACT_API_KEY }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does
