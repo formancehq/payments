@@ -1,3 +1,9 @@
+//go:build !contract
+
+// Gated !contract: contract_test.go registers its own RunSpecs entrypoint, and
+// Ginkgo fails on a second RunSpecs in the same package. `just tests` runs with
+// -tags it, so this unit suite still runs there.
+
 package client
 
 import (

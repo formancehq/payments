@@ -74,6 +74,9 @@ tests:
 # discards a passing package's stdout/stderr unless -v is set. Non-recursive
 # (no `/...`) so client SUBpackages (e.g. modulr's `client/hmac`, whose plain
 # tests don't accept the `-ginkgo.v` arg) are not swept into the contract run.
+# CE connectors live under ce/plugins/ (each its own Go module); EE connectors
+# (e.g. routable) under ee/plugins/ (root module) — the recipe resolves
+# whichever exists and runs from that directory so the right module is used.
 [group('test')]
 contract-tests connector="adyen":
   @dir="ce/plugins/{{connector}}"; \

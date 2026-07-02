@@ -27,6 +27,7 @@ on:
       - "internal/connectors/plugins/public/stripe/client/contract_test.go"
       - "internal/connectors/plugins/public/tink/client/contract_test.go"
       - "internal/connectors/plugins/public/wise/client/contract_test.go"
+      - "ee/plugins/routable/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -57,6 +58,7 @@ jobs:
           # secrets are updated. The test itself is kept current at
           # internal/connectors/plugins/public/qonto/client/contract_test.go.
           # - qonto
+          - routable
           - stripe
           - tink
           - wise
@@ -135,6 +137,16 @@ jobs:
           QONTO_CONTRACT_CLIENT_ID: ${{ secrets.QONTO_CONTRACT_CLIENT_ID }}
           QONTO_CONTRACT_API_KEY: ${{ secrets.QONTO_CONTRACT_API_KEY }}
           QONTO_CONTRACT_STAGING_TOKEN: ${{ secrets.QONTO_CONTRACT_STAGING_TOKEN }}
+          # Routable sandbox contract credentials. The endpoint
+          # (api.sandbox.routable.com) is hardcoded in the test; sandbox and
+          # prod are different hosts and a sandbox key only authenticates
+          # against the sandbox, so the API key is the only required secret
+          # (the suite Skips without it). The acting team member is a sandbox
+          # team-member UUID required by POST /v1/payables; the create-payable
+          # spec (the only mutation) Skips while it is unset, so it is an
+          # opt-in second secret that keeps the suite read-only until added.
+          ROUTABLE_CONTRACT_API_KEY: ${{ secrets.ROUTABLE_CONTRACT_API_KEY }}
+          ROUTABLE_CONTRACT_ACTING_TEAM_MEMBER: ${{ secrets.ROUTABLE_CONTRACT_ACTING_TEAM_MEMBER }}
           # Stripe test-mode contract credential. Test mode lives on the SAME
           # host as prod (api.stripe.com) and is selected purely by the key
           # prefix, so the key MUST be an sk_test_ key and no endpoint is
