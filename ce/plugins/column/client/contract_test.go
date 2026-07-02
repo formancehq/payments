@@ -374,7 +374,9 @@ var (
 func collectAllCounterpartyIDs(ctx context.Context, c Client) ([]string, error) {
 	var ids []string
 	cursor := ""
-	for {
+	// Bounded like the sibling walkers: a stuck hasMore/cursor is exactly the
+	// kind of drift this suite exists to catch, and must not hang CI.
+	for i := 0; i < 5000; i++ {
 		counterparties, hasMore, err := c.GetCounterparties(ctx, cursor, contractPageSize)
 		if err != nil {
 			return nil, err
