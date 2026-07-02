@@ -116,15 +116,18 @@ var _ = Describe("Plaid API contract", func() {
 
 			userToken, err := c.CreateUser(ctx, userID)
 			Expect(err).To(BeNil())
+			// Registered before ANY assertion so the user is reclaimed even
+			// when an assert below fails; doubles as the DeleteUser coverage.
+			// An empty token is unaddressable — nothing to reclaim.
+			DeferCleanup(func() {
+				if userToken == "" {
+					return
+				}
+				Expect(c.DeleteUser(ctx, userToken)).To(BeNil())
+			})
 			// user_token is stored as PSU metadata and drives the link and
 			// delete-user flows.
 			Expect(userToken).ToNot(BeEmpty())
-
-			// Registered before the link-token assert (which may Skip) so the
-			// user is always reclaimed; it doubles as the DeleteUser coverage.
-			DeferCleanup(func() {
-				Expect(c.DeleteUser(ctx, userToken)).To(BeNil())
-			})
 
 			link, err := c.CreateLinkToken(ctx, CreateLinkTokenRequest{
 				ApplicationName: contractApplicationName,
@@ -164,18 +167,22 @@ var _ = Describe("Plaid API contract", func() {
 				PublicToken: seedResp.GetPublicToken(),
 			})
 			Expect(err).To(BeNil())
-			// AccessToken is the connection's credential for every later
-			// read; ItemID becomes the ConnectionID.
-			Expect(exchanged.AccessToken).ToNot(BeEmpty())
-			Expect(exchanged.ItemID).ToNot(BeEmpty())
-
-			// Reclaims the item even on failure; doubles as the DeleteItem
-			// (connector deleteUserConnection) coverage.
+			// Registered before ANY assertion so the item is reclaimed even
+			// when an assert below fails; doubles as the DeleteItem (connector
+			// deleteUserConnection) coverage. An empty access token is
+			// unaddressable — nothing to reclaim.
 			DeferCleanup(func() {
+				if exchanged.AccessToken == "" {
+					return
+				}
 				Expect(c.DeleteItem(ctx, DeleteItemRequest{
 					AccessToken: exchanged.AccessToken,
 				})).To(BeNil())
 			})
+			// AccessToken is the connection's credential for every later
+			// read; ItemID becomes the ConnectionID.
+			Expect(exchanged.AccessToken).ToNot(BeEmpty())
+			Expect(exchanged.ItemID).ToNot(BeEmpty())
 
 			accounts, err := c.ListAccounts(ctx, exchanged.AccessToken)
 			Expect(err).To(BeNil())

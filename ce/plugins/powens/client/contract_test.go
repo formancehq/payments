@@ -118,10 +118,10 @@ var _ = Describe("Powens API contract", func() {
 
 			secretKey, err := c.CreateWebhookAuth(ctx, name)
 			Expect(err).To(BeNil())
-			// config.secret_key is the HMAC key verifyWebhook uses to
-			// authenticate every incoming Powens webhook.
-			Expect(secretKey).ToNot(BeEmpty())
 
+			// Registered before the secretKey assertion so the auth is
+			// reclaimed even when that assert fails (the cleanup re-finds it
+			// by name, so it does not depend on anything asserted below).
 			var authID int
 			DeferCleanup(func() {
 				// Best-effort re-find by name if the spec failed before the
@@ -150,6 +150,10 @@ var _ = Describe("Powens API contract", func() {
 					Expect(a.Name).ToNot(Equal(name))
 				}
 			})
+
+			// config.secret_key is the HMAC key verifyWebhook uses to
+			// authenticate every incoming Powens webhook.
+			Expect(secretKey).ToNot(BeEmpty())
 
 			// deleteWebhooks lists ALL auth providers and matches by name to
 			// find the ID to delete — so the created auth must come back in
