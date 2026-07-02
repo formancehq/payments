@@ -21,9 +21,11 @@ on:
       - "internal/connectors/plugins/public/mangopay/client/contract_test.go"
       - "internal/connectors/plugins/public/modulr/client/contract_test.go"
       - "internal/connectors/plugins/public/moneycorp/client/contract_test.go"
+      - "internal/connectors/plugins/public/plaid/client/contract_test.go"
       - "internal/connectors/plugins/public/powens/client/contract_test.go"
       - "internal/connectors/plugins/public/qonto/client/contract_test.go"
       - "internal/connectors/plugins/public/stripe/client/contract_test.go"
+      - "internal/connectors/plugins/public/tink/client/contract_test.go"
       - "internal/connectors/plugins/public/wise/client/contract_test.go"
       - "Justfile"
 
@@ -46,6 +48,7 @@ jobs:
           - mangopay
           - modulr
           - moneycorp
+          - plaid
           - powens
           # qonto is disabled: Qonto invalidated our sandbox credentials, so
           # every daily run fails on auth (the suite only Skips when the
@@ -55,6 +58,7 @@ jobs:
           # internal/connectors/plugins/public/qonto/client/contract_test.go.
           # - qonto
           - stripe
+          - tink
           - wise
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
@@ -104,6 +108,13 @@ jobs:
           # suite Skips without both).
           MONEYCORP_CONTRACT_CLIENT_ID: ${{ secrets.MONEYCORP_CONTRACT_CLIENT_ID }}
           MONEYCORP_CONTRACT_API_KEY: ${{ secrets.MONEYCORP_CONTRACT_API_KEY }}
+          # Plaid sandbox contract credentials. isSandbox=true in the test
+          # selects the SDK's built-in sandbox.plaid.com host, so no endpoint
+          # is injected. The redirect URI is the hardcoded constant
+          # https://example.com, which must be allowlisted in the Plaid
+          # dashboard of the team these credentials belong to (it already is).
+          PLAID_CONTRACT_CLIENT_ID: ${{ secrets.PLAID_CONTRACT_CLIENT_ID }}
+          PLAID_CONTRACT_CLIENT_SECRET: ${{ secrets.PLAID_CONTRACT_CLIENT_SECRET }}
           # Powens sandbox contract credentials. The endpoint is PER-TENANT
           # (https://<domain>.biapi.pro, the connector's `endpoint` config
           # field), so it is injected alongside the credentials instead of
@@ -129,6 +140,17 @@ jobs:
           # prefix, so the key MUST be an sk_test_ key and no endpoint is
           # injected (the client's built-in default is used).
           STRIPE_CONTRACT_API_KEY: ${{ secrets.STRIPE_CONTRACT_API_KEY }}
+          # Tink contract credentials. Tink has no separate sandbox host — a
+          # sandbox Console app authenticates against the same api.tink.com
+          # (hardcoded in the test), so only the app credentials are injected.
+          # The Console app must have ALL connector scopes granted (the
+          # client-credentials token requests them all up front). The seeded
+          # user ID is optional: it is the external_user_id of a user a human
+          # linked ONCE to the Tink Demo Bank via Tink Link; the ingestion-read
+          # spec Skips while it is unset.
+          TINK_CONTRACT_CLIENT_ID: ${{ secrets.TINK_CONTRACT_CLIENT_ID }}
+          TINK_CONTRACT_CLIENT_SECRET: ${{ secrets.TINK_CONTRACT_CLIENT_SECRET }}
+          TINK_CONTRACT_SEEDED_USER_ID: ${{ secrets.TINK_CONTRACT_SEEDED_USER_ID }}
           # Wise sandbox contract credential. The endpoint
           # (api.sandbox.transferwise.tech) is hardcoded in the test; sandbox
           # and prod are different hosts, and a sandbox token only
