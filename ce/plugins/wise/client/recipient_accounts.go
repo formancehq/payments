@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -25,6 +26,27 @@ type RecipientAccount struct {
 	Profile  uint64 `json:"profileId"`
 	Currency string `json:"currency"`
 	Name     Name   `json:"name"`
+}
+
+// UnmarshalJSON reconciles the two recipient-account payload shapes: the v2
+// list (GET /v2/accounts) carries the owning profile as "profileId", while
+// the v1 get-by-ID (GET /v1/accounts/{id}) carries it as "profile". Without
+// this, GetRecipientAccount always decoded Profile as 0, which silently
+// disabled the balance enrichment of transfers in GetTransfers (payments
+// were ingested without source/destination account references).
+func (a *RecipientAccount) UnmarshalJSON(data []byte) error {
+	type Alias RecipientAccount
+	aux := struct {
+		*Alias
+		LegacyProfile uint64 `json:"profile"`
+	}{Alias: (*Alias)(a)}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if a.Profile == 0 {
+		a.Profile = aux.LegacyProfile
+	}
+	return nil
 }
 
 func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pageSize int, seekPositionForNext uint64) (*RecipientAccountsResponse, error) {
