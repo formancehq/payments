@@ -37,6 +37,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -81,70 +82,22 @@ const contractMinAmount = int64(1)
 // has no delete for event subscriptions, so uninstall sets status="deleted".
 const eventSubscriptionStatusDeleted = "deleted"
 
-// expectedAccountIDs / expectedTransactionIDs pin the known, seeded order of the
-// sandbox's accounts and posted transactions. They start empty; the schema specs
-// print the live IDs to stderr as a paste-ready Go literal (bootstrap log) so a
-// maintainer can fill these in to enable the ordering contract.
-//
-// Only lists whose ORDER the connector consumes get a pin:
+// Ordering is asserted on the SORT KEY, not on pinned IDs. Only lists whose
+// ORDER the connector consumes get an ordering spec:
 //   - accounts — fetchNextAccounts derives its watermark from list position
-//     (LastCreatedAt = last account's created_at), so order is a dependency. The
-//     suite never creates internal accounts, so a single-page subsequence is
-//     stable and never needs re-bootstrapping.
-//   - posted transactions — the client's Timeline scans reverse-chron, so order
-//     is a dependency. The money-movement specs append new transactions at the
-//     tail, so a growth-tolerant SUBSEQUENCE (contracttest.FilterToPinned) over
-//     the OLDEST, already-settled IDs is used; the walk stops once the pins are
-//     found, so it never pages into the new tail. Do NOT pin recent/unsettled IDs.
-//     Only a small handful of the oldest IDs is pinned — enough to detect a
-//     reordering without walking the whole (growing) history. The bootstrap log
-//     prints the full list; copy just the first (oldest) few.
+//     (LastCreatedAt = last account's created_at), assuming the list is
+//     created_at ascending — asserted directly on the timestamps, with no
+//     pinned IDs to bootstrap or refill.
+//   - posted transactions — the client's Timeline consumes chronological
+//     (oldest→newest) order; same created_at non-decreasing assertion over
+//     the full walk. created_at is immutable, so newly created transactions
+//     (this suite's own money movement) appended at the tail can never
+//     break the assertion.
 //
-// External accounts are intentionally NOT pinned: fetchNextExternalAccounts
-// paginates purely by opaque cursor with no watermark or positional assumption,
-// so their order is not a connector contract — only their schema is asserted.
-// This also avoids a growing pin (the suite creates one external account per run).
-var (
-	expectedAccountIDs = []string{
-		"sandbox_account_ivm86k4k2mgjcdt1vl9e",
-		"sandbox_account_ofldriuquj7pybufeiey",
-		"sandbox_account_llq50lkrzjeaaccwslwu",
-		"sandbox_account_j1u3pqtkfgsnx8maoayv",
-		"sandbox_account_jej5yeeaclda0f8txisq",
-		"sandbox_account_hjy3rdiuxqraisz9xv9e",
-		"sandbox_account_oxniuygbaz3cbz61wfci",
-		"sandbox_account_htjjym0uf6zmuf9dnaot",
-		"sandbox_account_twiam0dikqw1ifu0xal4",
-		"sandbox_account_zh8lecyazbh6vcf3qymo",
-		"sandbox_account_9af0a3d1ldhn1gjcpcb2",
-		"sandbox_account_ughhsp43drgjgytqfnuy",
-		"sandbox_account_x03pxarcusyfcauimf1t",
-	}
-	expectedTransactionIDs = []string{
-		"sandbox_transaction_pwv6ixzydpqqw5uueyqw",
-		"sandbox_transaction_2bxj1cqxbxdfnb6aeg3s",
-		"sandbox_transaction_mlpy0dftp1nt6t1vwq3z",
-		"sandbox_transaction_heqms57g2vkelftb06hk",
-		"sandbox_transaction_vpfw4ebxbqk7vb2nwlds",
-		"sandbox_transaction_ltvoukzcmyzcafzymkc2",
-		"sandbox_transaction_k5ga9kms7v0qccy7vybd",
-		"sandbox_transaction_hdfi55zyulv6ze73t5cu",
-		"sandbox_transaction_aaqlqfucp9zmk0tdutq6",
-		"sandbox_transaction_w711z7j4tiyh4iwwxrlu",
-	}
-)
-
-// accountIDs projects a fetched page of accounts to its IDs in list order.
-// Accounts fit on a single page (page size 100) and the suite never creates
-// internal accounts, so the ordering contract fetches one page rather than
-// walking the whole list.
-func accountIDs(accounts []*Account) []string {
-	ids := make([]string, 0, len(accounts))
-	for _, a := range accounts {
-		ids = append(ids, a.ID)
-	}
-	return ids
-}
+// External accounts intentionally get NO ordering spec:
+// fetchNextExternalAccounts paginates purely by opaque cursor with no
+// watermark or positional assumption, so their order is not a connector
+// contract — only their schema is asserted.
 
 // txListFn is one of GetTransactions / GetPendingTransactions /
 // GetDeclinedTransactions — all share this signature.
@@ -155,22 +108,13 @@ type txListFn func(context.Context, int, Timeline) ([]*Transaction, Timeline, bo
 // no more pages (or, for the ordering check, once every pinned ID is found).
 const guardPages = 2000
 
-// walkTransactionIDs drives a fresh Timeline the way the connector does and
-// returns transaction IDs in the chronological order it consumes them
-// (oldest→newest). Increase's Timeline first scans back to the oldest record
-// (emitting empty batches while it advances), then walks forward, so a single
-// call is not enough. When until is non-nil the walk STOPS as soon as every ID
-// in until has been collected: pinned IDs are the oldest, which the connector
-// emits first, so the ordering check never pages into the growing new tail. With
-// until nil it walks the full list (used only by the on-demand bootstrap log).
-func walkTransactionIDs(ctx context.Context, fn txListFn, until []string) ([]string, error) {
-	want := make(map[string]struct{}, len(until))
-	for _, id := range until {
-		want[id] = struct{}{}
-	}
-
-	var ids []string
-	found := 0
+// walkTransactionCreatedAts drives a fresh Timeline the way the connector does
+// and returns each transaction's created_at sort key in the chronological
+// order it consumes them (oldest→newest). Increase's Timeline first scans back
+// to the oldest record (emitting empty batches while it advances), then walks
+// forward, so a single call is not enough.
+func walkTransactionCreatedAts(ctx context.Context, fn txListFn) ([]int64, error) {
+	var keys []int64
 	timeline := Timeline{}
 	for i := 0; i < guardPages; i++ {
 		batch, tl, hasMore, err := fn(ctx, contractPageSize, timeline)
@@ -179,19 +123,17 @@ func walkTransactionIDs(ctx context.Context, fn txListFn, until []string) ([]str
 		}
 		timeline = tl
 		for _, tx := range batch {
-			ids = append(ids, tx.ID)
-			if _, ok := want[tx.ID]; ok {
-				found++
+			t, err := time.Parse(time.RFC3339, tx.CreatedAt)
+			if err != nil {
+				return nil, fmt.Errorf("transaction %s created_at %q is not RFC3339: %w", tx.ID, tx.CreatedAt, err)
 			}
-		}
-		if len(until) > 0 && found >= len(want) {
-			break
+			keys = append(keys, t.UnixNano())
 		}
 		if !hasMore {
 			break
 		}
 	}
-	return ids, nil
+	return keys, nil
 }
 
 // firstTransactionID returns the first transaction ID the connector would
@@ -268,24 +210,24 @@ var _ = Describe("Increase API contract", func() {
 				Expect(a.Currency).ToNot(BeEmpty())
 			}
 
-			if contracttest.BootstrapEnabled("INCREASE") {
-				contracttest.LogBootstrap("expectedAccountIDs", accountIDs(accounts))
-			}
 		})
 
-		It("keeps the known accounts in their expected, stable relative order", func() {
-			if len(expectedAccountIDs) == 0 {
-				Skip("expectedAccountIDs is not populated — set INCREASE_CONTRACT_BOOTSTRAP=1 and fill it from the bootstrap log to enable the ordering contract")
-			}
-
-			// Accounts fit on a single page (page size 100), so one fetch is
-			// enough. Subsequence-match the pinned IDs against that page (ignoring
-			// any out-of-band additions); re-bootstrap if the list ever exceeds a
-			// page and the oldest pins spill off it.
+		It("returns accounts in the created_at order the connector's watermark assumes", func() {
+			// fetchNextAccounts watermarks on the LAST account's created_at,
+			// which assumes the list is created_at ascending — assert the sort
+			// key directly. Accounts fit on a single page (page size 100), so
+			// one fetch covers the list.
 			accounts, _, err := c.GetAccounts(ctx, contractPageSize, "", time.Time{})
 			Expect(err).To(BeNil())
-			gotKnownIDs := contracttest.FilterToPinned(accountIDs(accounts), expectedAccountIDs)
-			Expect(gotKnownIDs).To(Equal(expectedAccountIDs))
+			Expect(accounts).ToNot(BeEmpty())
+
+			keys := make([]int64, 0, len(accounts))
+			for _, a := range accounts {
+				t, perr := time.Parse(time.RFC3339, a.CreatedAt)
+				Expect(perr).To(BeNil(), "account created_at %q is not RFC3339", a.CreatedAt)
+				keys = append(keys, t.UnixNano())
+			}
+			contracttest.AssertNonDecreasing(keys, "accounts created_at")
 		})
 	})
 
@@ -338,27 +280,17 @@ var _ = Describe("Increase API contract", func() {
 
 			assertTransactionShape(transactions)
 
-			if contracttest.BootstrapEnabled("INCREASE") {
-				allIDs, err := walkTransactionIDs(ctx, c.GetTransactions, nil)
-				Expect(err).To(BeNil())
-				contracttest.LogBootstrap("expectedTransactionIDs", allIDs)
-			}
 		})
 
-		It("keeps the known posted transactions in their expected, stable relative order", func() {
-			if len(expectedTransactionIDs) == 0 {
-				Skip("expectedTransactionIDs is not populated — set INCREASE_CONTRACT_BOOTSTRAP=1 and fill it from the bootstrap log to enable the ordering contract")
-			}
-
-			// The money-movement specs create new transactions each run, which the
-			// oldest→newest walk returns at the tail. Assert only that the pinned
-			// (old, settled) transactions retain their relative order, ignoring any
-			// newly created ones. The walk stops once all pinned IDs are found, so it
-			// never pages into the growing new tail.
-			allIDs, err := walkTransactionIDs(ctx, c.GetTransactions, expectedTransactionIDs)
+		It("returns posted transactions in the chronological order the connector consumes", func() {
+			// The Timeline walk consumes oldest→newest order; assert the
+			// created_at sort key is honored across the full walk. created_at
+			// is immutable, so transactions this suite creates (appended at
+			// the tail) can never break the assertion.
+			keys, err := walkTransactionCreatedAts(ctx, c.GetTransactions)
 			Expect(err).To(BeNil())
-			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedTransactionIDs)
-			Expect(gotKnownIDs).To(Equal(expectedTransactionIDs))
+			Expect(keys).ToNot(BeEmpty())
+			contracttest.AssertNonDecreasing(keys, "posted transactions created_at")
 		})
 
 		It("gets a posted transaction by ID with a valid shape", func() {

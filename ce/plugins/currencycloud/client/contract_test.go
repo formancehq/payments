@@ -61,80 +61,21 @@ const (
 	contractMinFunded = 1.0
 )
 
-// expectedAccountIDs / expectedBeneficiaryIDs pin the known, seeded order of the
-// demo environment's accounts and beneficiaries. They start empty; the schema
-// specs print the live IDs to stderr as a paste-ready Go literal (bootstrap log)
-// so a maintainer can fill these in to enable the ordering contract.
-//
-// Both use a growth/mutation-tolerant SUBSEQUENCE match (contracttest.FilterToPinned),
-// not exact equality:
-//   - accounts are ordered by updated_at asc; a money-movement run can bump an
-//     account's updated_at and reorder the list. If that makes the pin flap,
-//     leave expectedAccountIDs empty (the ordering spec then Skips).
-//   - beneficiaries are ordered by created_at asc (immutable); new/out-of-band
-//     beneficiaries append at the end and do not disturb the pinned order.
-var (
-	expectedAccountIDs = []string{
-		"13b643d7-2e61-4804-9119-3f68ff98fadd",
-		"c8e2ea2b-d54c-412c-abb1-a8b209abf78c",
-		"d2e59ef9-00af-4cee-9d31-e00422a53148",
-		"8d5072c6-cf68-48de-98e6-ea1ec81abdf9",
-	}
-	expectedBeneficiaryIDs = []string{
-		"c7d10d60-163a-4fa5-9975-64a262cc5472",
-		"f97e4501-c1b2-44b4-98f4-05d70b033f97",
-	}
-)
+// Ordering is asserted on the SORT KEY, not on pinned IDs. Every list read
+// requests an explicit order (accounts and transactions: updated_at asc,
+// beneficiaries: created_at asc) and the connector's walk consumes exactly
+// that — so the contract is "the API honors its requested sort key", checked
+// directly with contracttest.AssertNonDecreasing over the full walk. Pinned-ID
+// lists would be maintenance (bootstrap + refills) and would flap on
+// suite-created state: this suite's own money movement bumps the source and
+// destination accounts' updated_at and creates new transactions, reordering
+// any pin between runs without any upstream drift.
 
-// expectedTransactionIDs pins the known transactions in the chronological order
-// the connector consumes them (updated_at asc). Starts empty; set
-// CURRENCYCLOUD_CONTRACT_BOOTSTRAP=1 and fill it from the bootstrap log to enable
-// the ordering contract. Uses a growth/mutation-tolerant SUBSEQUENCE match: the
-// money-movement specs create new transactions each run (appended at the tail of
-// the updated_at asc walk), so exact equality can't hold. Pin OLD, already-settled
-// transactions whose updated_at no longer changes — a pending transaction that
-// later settles would bump its updated_at and reorder, so do NOT pin those.
-var expectedTransactionIDs = []string{
-	"8a06f27a-e264-49f6-93e0-793a9274966e",
-	"6c77f0bf-d92e-48cf-9a51-d09cfbc2d18c",
-	"6c77f0bf-d92e-48cf-9a51-d09cfbc2d18d",
-	"0a8ee85d-f14f-4d62-a631-562f2de3743c",
-	"82ba2d34-8a57-4941-836f-307d4b156471",
-	"96233fdd-dccb-4b7e-a061-c586a4789218",
-	"bff8139f-dac4-4610-9e02-eb9d73999157",
-	"c1dad133-f873-4598-8c7b-1ffb441064c1",
-	"c4daf056-aa94-4497-93e5-a9d9584346b8",
-	"1bc5c09d-41de-4686-b296-7d5fe52bb8c6",
-	"1e61dc50-8845-4001-bfde-9c81b2952a7a",
-	"268c12a7-04f4-44db-bb5c-77a326d470a1",
-	"4e128aff-6cad-4939-8ff3-24f353dc1dd4",
-	"5959c81c-67bb-4c68-8b41-3b6a586fc77e",
-	"8c1b2fc2-ada2-470f-a663-c9558d83fa47",
-	"9be6840c-1745-44d6-9503-d167bfa76775",
-	"da747db7-2f0a-4d52-8def-bfbb3bf53426",
-	"5c438d17-8578-40e3-96cf-b87b68e61848",
-	"028b3e6b-9ff8-4a08-8a2b-b7299b8a249a",
-	"54da3596-0705-40dd-8d43-902ab4f9c104",
-	"cb152e5a-a5f1-46ba-af96-61ce401f3e29",
-	"d3bcc40f-1d72-4c28-b8c5-6446f8c20777",
-	"d62f29ff-1340-419c-9505-3464c9a4d841",
-	"75f4a8de-f775-49b4-a299-2570096c82c0",
-	"ecf1b6ef-298b-497f-b666-ce5b5845e65d",
-	"57ad7754-7693-4979-8371-446d8184888e",
-	"1bfb607f-1fbf-4ea4-89c4-aa0ece714382",
-	"53c52549-67c8-4d73-bb7c-658c56a0b127",
-	"6e44ca23-5d47-475d-abab-9fd77890c8d4",
-	"9ca9ce54-a1b2-4fc9-aa90-efb3358857f4",
-	"14fb6763-7460-49ac-9d14-fb1eff5329ba",
-	"b716d91f-b913-4a8f-8f72-27a82db8d962",
-	"e2b227fe-b857-458e-be86-29435c871ad5",
-	"bc77b679-9b05-419a-ab01-f22271eb6170",
-}
-
-// collectAllAccountIDs pages through every account and returns their IDs in list
-// order (updated_at asc). Bounded to avoid an accidental unbounded loop.
-func collectAllAccountIDs(ctx context.Context, c Client) ([]string, error) {
-	var ids []string
+// collectAllAccountUpdatedAts pages through every account and returns the
+// updated_at sort keys in list order. Bounded to avoid an accidental unbounded
+// loop.
+func collectAllAccountUpdatedAts(ctx context.Context, c Client) ([]int64, error) {
+	var keys []int64
 	for page := 1; page <= 5000; page++ {
 		accounts, nextPage, err := c.GetAccounts(ctx, page, contractPageSize)
 		if err != nil {
@@ -144,19 +85,20 @@ func collectAllAccountIDs(ctx context.Context, c Client) ([]string, error) {
 			break
 		}
 		for _, a := range accounts {
-			ids = append(ids, a.ID)
+			keys = append(keys, a.UpdatedAt.UnixNano())
 		}
 		if nextPage == -1 {
 			break
 		}
 	}
-	return ids, nil
+	return keys, nil
 }
 
-// collectAllBeneficiaryIDs pages through every beneficiary and returns their IDs
-// in list order (created_at asc). Bounded to avoid an accidental unbounded loop.
-func collectAllBeneficiaryIDs(ctx context.Context, c Client) ([]string, error) {
-	var ids []string
+// collectAllBeneficiaryCreatedAts pages through every beneficiary and returns
+// the created_at sort keys in list order. Bounded to avoid an accidental
+// unbounded loop.
+func collectAllBeneficiaryCreatedAts(ctx context.Context, c Client) ([]int64, error) {
+	var keys []int64
 	for page := 1; page <= 5000; page++ {
 		beneficiaries, nextPage, err := c.GetBeneficiaries(ctx, page, contractPageSize)
 		if err != nil {
@@ -166,21 +108,21 @@ func collectAllBeneficiaryIDs(ctx context.Context, c Client) ([]string, error) {
 			break
 		}
 		for _, b := range beneficiaries {
-			ids = append(ids, b.ID)
+			keys = append(keys, b.CreatedAt.UnixNano())
 		}
 		if nextPage == -1 {
 			break
 		}
 	}
-	return ids, nil
+	return keys, nil
 }
 
-// collectAllTransactionIDs walks the transactions list the same way the connector
-// does (a full backlog read: zero updatedAtFrom, updated_at asc) and returns every
-// transaction ID in that chronological order. Bounded to avoid an accidental
-// unbounded loop.
-func collectAllTransactionIDs(ctx context.Context, c Client) ([]string, error) {
-	var ids []string
+// collectAllTransactionUpdatedAts walks the transactions list the same way the
+// connector does (a full backlog read: zero updatedAtFrom, updated_at asc) and
+// returns the updated_at sort keys in that order. Bounded to avoid an
+// accidental unbounded loop.
+func collectAllTransactionUpdatedAts(ctx context.Context, c Client) ([]int64, error) {
+	var keys []int64
 	for page := 1; page <= 5000; page++ {
 		transactions, nextPage, err := c.GetTransactions(ctx, page, contractPageSize, time.Time{})
 		if err != nil {
@@ -190,13 +132,13 @@ func collectAllTransactionIDs(ctx context.Context, c Client) ([]string, error) {
 			break
 		}
 		for _, tx := range transactions {
-			ids = append(ids, tx.ID)
+			keys = append(keys, tx.UpdatedAt.UnixNano())
 		}
 		if nextPage == -1 {
 			break
 		}
 	}
-	return ids, nil
+	return keys, nil
 }
 
 // fundedBalance is a demo balance we can safely source a money movement from: it
@@ -257,26 +199,15 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Expect(a.CreatedAt.IsZero()).To(BeFalse(), "account created_at is zero/unset")
 			}
 
-			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
-				allIDs, err := collectAllAccountIDs(ctx, c)
-				Expect(err).To(BeNil())
-				contracttest.LogBootstrap("expectedAccountIDs", allIDs)
-			}
 		})
 
-		It("keeps the known accounts in their expected, stable relative order", func() {
-			if len(expectedAccountIDs) == 0 {
-				Skip("expectedAccountIDs is not populated — set CURRENCYCLOUD_CONTRACT_BOOTSTRAP=1 and fill it from the bootstrap log to enable the ordering contract")
-			}
-
-			// Accounts are ordered updated_at asc and the money-movement specs can
-			// bump an account's updated_at, so assert only that the *pinned*
-			// accounts retain their relative order (ignoring any others), walking
-			// all pages so pinned IDs are still found once they spill past page 1.
-			allIDs, err := collectAllAccountIDs(ctx, c)
+		It("returns accounts in the updated_at order the connector requests", func() {
+			// The read asks for order=updated_at asc; the walk consumes that
+			// order, so assert the sort key is honored across the full walk.
+			keys, err := collectAllAccountUpdatedAts(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedAccountIDs)
-			Expect(gotKnownIDs).To(Equal(expectedAccountIDs))
+			Expect(keys).ToNot(BeEmpty())
+			contracttest.AssertNonDecreasing(keys, "accounts updated_at")
 		})
 	})
 
@@ -310,25 +241,15 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				Expect(b.CreatedAt.IsZero()).To(BeFalse(), "beneficiary created_at is zero/unset")
 			}
 
-			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
-				allIDs, err := collectAllBeneficiaryIDs(ctx, c)
-				Expect(err).To(BeNil())
-				contracttest.LogBootstrap("expectedBeneficiaryIDs", allIDs)
-			}
 		})
 
-		It("keeps the known beneficiaries in their expected, stable relative order", func() {
-			if len(expectedBeneficiaryIDs) == 0 {
-				Skip("expectedBeneficiaryIDs is not populated — set CURRENCYCLOUD_CONTRACT_BOOTSTRAP=1 and fill it from the bootstrap log to enable the ordering contract")
-			}
-
-			// Beneficiaries are ordered created_at asc (immutable); new ones append
-			// at the end. Assert the pinned beneficiaries retain their relative
-			// order, ignoring any others, walking all pages.
-			allIDs, err := collectAllBeneficiaryIDs(ctx, c)
+		It("returns beneficiaries in the created_at order the connector requests", func() {
+			// The read asks for order=created_at asc (immutable key); assert
+			// the sort key is honored across the full walk.
+			keys, err := collectAllBeneficiaryCreatedAts(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedBeneficiaryIDs)
-			Expect(gotKnownIDs).To(Equal(expectedBeneficiaryIDs))
+			Expect(keys).ToNot(BeEmpty())
+			contracttest.AssertNonDecreasing(keys, "beneficiaries created_at")
 		})
 	})
 
@@ -346,26 +267,17 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				contracttest.AssertDecimalAmount(tx.Amount, "transaction")
 			}
 
-			if contracttest.BootstrapEnabled("CURRENCYCLOUD") {
-				allIDs, err := collectAllTransactionIDs(ctx, c)
-				Expect(err).To(BeNil())
-				contracttest.LogBootstrap("expectedTransactionIDs", allIDs)
-			}
 		})
 
-		It("keeps the known transactions in their expected, stable relative order", func() {
-			if len(expectedTransactionIDs) == 0 {
-				Skip("expectedTransactionIDs is not populated — set CURRENCYCLOUD_CONTRACT_BOOTSTRAP=1 and fill it from the bootstrap log to enable the ordering contract")
-			}
-
-			// The money-movement specs create new transactions each run, which the
-			// updated_at asc walk returns at the tail. Assert only that the *pinned*
-			// (older, settled) transactions retain their relative order, ignoring any
-			// newly created ones, walking all pages.
-			allIDs, err := collectAllTransactionIDs(ctx, c)
+		It("returns transactions in the updated_at order the connector requests", func() {
+			// The full-backlog walk (zero updatedAtFrom) asks for
+			// order=updated_at asc — the exact order the connector's
+			// incremental cursor depends on; assert the sort key is honored
+			// across the full walk.
+			keys, err := collectAllTransactionUpdatedAts(ctx, c)
 			Expect(err).To(BeNil())
-			gotKnownIDs := contracttest.FilterToPinned(allIDs, expectedTransactionIDs)
-			Expect(gotKnownIDs).To(Equal(expectedTransactionIDs))
+			Expect(keys).ToNot(BeEmpty())
+			contracttest.AssertNonDecreasing(keys, "transactions updated_at")
 		})
 	})
 
@@ -414,7 +326,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			Expect(resp.Status).ToNot(BeEmpty())
 			Expect(resp.Currency).ToNot(BeEmpty())
 			Expect(resp.CreatedAt.IsZero()).To(BeFalse(), "transfer created_at is zero/unset")
-				contracttest.AssertDecimalAmount(resp.Amount, "transfer")
+			contracttest.AssertDecimalAmount(resp.Amount, "transfer")
 		})
 	})
 
@@ -476,7 +388,7 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			Expect(resp.Status).ToNot(BeEmpty())
 			Expect(resp.Currency).ToNot(BeEmpty())
 			Expect(resp.BeneficiaryID).ToNot(BeEmpty())
-				contracttest.AssertDecimalAmount(resp.Amount, "payout")
+			contracttest.AssertDecimalAmount(resp.Amount, "payout")
 		})
 	})
 })
