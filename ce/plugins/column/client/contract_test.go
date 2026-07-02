@@ -30,6 +30,7 @@ package client
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -424,6 +425,14 @@ var _ = Describe("Column API contract", func() {
 		apiKey := os.Getenv("COLUMN_CONTRACT_API_KEY")
 		if apiKey == "" {
 			Skip("COLUMN_CONTRACT_API_KEY must be set to run the Column contract test")
+		}
+		// Column serves sandbox and production from the SAME host, selected
+		// purely by the key prefix — and this suite MUTATES state (counterparty,
+		// event subscription, book transfer, ACH payout). A live key here would
+		// run those against production, so fail loudly instead of proceeding
+		// (or silently Skipping a misconfiguration for months).
+		if !strings.HasPrefix(apiKey, "test_") {
+			Fail("COLUMN_CONTRACT_API_KEY is not a test_ key — refusing to run mutating contract specs against what could be production")
 		}
 
 		ctx = context.Background()

@@ -237,6 +237,14 @@ var _ = Describe("Stripe API contract", func() {
 		if apiKey == "" {
 			Skip("STRIPE_CONTRACT_API_KEY must be set to run the Stripe contract test")
 		}
+		// Stripe serves test mode and live mode from the SAME host, selected
+		// purely by the key prefix — and this suite MUTATES state (transfers,
+		// payouts, reversals, webhook endpoints). A live key here would run
+		// those against production, so fail loudly instead of proceeding (or
+		// silently Skipping a misconfiguration for months).
+		if !strings.HasPrefix(apiKey, "sk_test_") {
+			Fail("STRIPE_CONTRACT_API_KEY is not an sk_test_ key — refusing to run mutating contract specs against what could be production")
+		}
 
 		ctx = context.Background()
 		// nil backend => the SDK default (api.stripe.com); test mode is
