@@ -385,6 +385,21 @@ var _ = Describe("Wise API contract", func() {
 
 			profile := contractProfile()
 
+			// Pre-clean subscriptions left behind by a prior run that died
+			// between create and cleanup (or whose cleanup failed): they share
+			// contractWebhookURL, would accumulate in the sandbox forever, and
+			// must not be mistaken for this run's state. Best-effort — a
+			// failed delete here surfaces on the create below, not as its own
+			// red.
+			if stale, lerr := c.ListWebhooksSubscription(ctx, profile.ID); lerr == nil {
+				for _, s := range stale {
+					if s.Delivery.URL == contractWebhookURL {
+						_ = c.DeleteWebhooks(ctx, profile.ID, s.ID)
+					}
+				}
+			}
+
+			createdIDs := make([]string, 0, 2)
 			for _, sub := range []struct {
 				name      string
 				triggerOn string
@@ -401,6 +416,7 @@ var _ = Describe("Wise API contract", func() {
 				Expect(created.ID).ToNot(BeEmpty())
 
 				subscriptionID := created.ID
+				createdIDs = append(createdIDs, subscriptionID)
 				DeferCleanup(func() {
 					derr := c.DeleteWebhooks(ctx, profile.ID, subscriptionID)
 					Expect(derr).To(BeNil())
@@ -418,15 +434,18 @@ var _ = Describe("Wise API contract", func() {
 			Expect(err).To(BeNil())
 			Expect(listed).ToNot(BeEmpty())
 
-			found := 0
+			// Match by the IDs created in THIS run, not by counting URL
+			// matches: anything else breaks on leftovers from a prior run
+			// that the pre-clean could not remove.
+			listedIDs := make(map[string]struct{}, len(listed))
 			for _, s := range listed {
 				Expect(s.ID).ToNot(BeEmpty())
 				Expect(s.Delivery.URL).ToNot(BeEmpty())
-				if s.Delivery.URL == contractWebhookURL {
-					found++
-				}
+				listedIDs[s.ID] = struct{}{}
 			}
-			Expect(found).To(Equal(2), "both created subscriptions should be listed")
+			for _, id := range createdIDs {
+				Expect(listedIDs).To(HaveKey(id), "created subscription %s should be listed", id)
+			}
 		})
 	})
 })
