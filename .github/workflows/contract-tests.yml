@@ -20,6 +20,8 @@ on:
       - "internal/connectors/plugins/public/increase/client/contract_test.go"
       - "internal/connectors/plugins/public/mangopay/client/contract_test.go"
       - "internal/connectors/plugins/public/modulr/client/contract_test.go"
+      - "internal/connectors/plugins/public/moneycorp/client/contract_test.go"
+      - "internal/connectors/plugins/public/qonto/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -40,6 +42,14 @@ jobs:
           - increase
           - mangopay
           - modulr
+          - moneycorp
+          # qonto is disabled: Qonto invalidated our sandbox credentials, so
+          # every daily run fails on auth (the suite only Skips when the
+          # QONTO_CONTRACT_* secrets are absent, and they are still set).
+          # Re-enable once fresh sandbox credentials are provisioned and the
+          # secrets are updated. The test itself is kept current at
+          # internal/connectors/plugins/public/qonto/client/contract_test.go.
+          # - qonto
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -81,6 +91,22 @@ jobs:
           # Authorization header, so only the API key is a secret (apiSecret is a
           # throwaway constant the token endpoint ignores).
           MODULR_CONTRACT_API_KEY: ${{ secrets.MODULR_CONTRACT_API_KEY }}
+          # Moneycorp sandbox contract credentials. The endpoint
+          # (sandbox-corpapi.moneycorp.com) is hardcoded in the test; sandbox and
+          # prod are different hosts. Auth is POST /login with {loginId, apiKey},
+          # so BOTH the client ID (loginId) and the API key are required (the
+          # suite Skips without both).
+          MONEYCORP_CONTRACT_CLIENT_ID: ${{ secrets.MONEYCORP_CONTRACT_CLIENT_ID }}
+          MONEYCORP_CONTRACT_API_KEY: ${{ secrets.MONEYCORP_CONTRACT_API_KEY }}
+          # Qonto sandbox contract credentials. The endpoint
+          # (thirdparty-sandbox.staging.qonto.co) is hardcoded in the test;
+          # sandbox and prod are different hosts. Auth is
+          # "Authorization: <login>:<secret_key>" and the sandbox additionally
+          # requires the X-Qonto-Staging-Token header on every request, so all
+          # THREE are secrets (the suite Skips unless every one is set).
+          QONTO_CONTRACT_CLIENT_ID: ${{ secrets.QONTO_CONTRACT_CLIENT_ID }}
+          QONTO_CONTRACT_API_KEY: ${{ secrets.QONTO_CONTRACT_API_KEY }}
+          QONTO_CONTRACT_STAGING_TOKEN: ${{ secrets.QONTO_CONTRACT_STAGING_TOKEN }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does

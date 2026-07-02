@@ -1,3 +1,9 @@
+//go:build !contract
+
+// Excluded from contract runs (-tags contract): contract_test.go declares its
+// own Ginkgo suite in this package, and Ginkgo does not support two RunSpecs
+// entrypoints in one binary.
+
 package client
 
 import (
