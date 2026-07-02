@@ -45,7 +45,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/contracttest"
+	"github.com/formancehq/payments/pkg/domain/contracttest"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

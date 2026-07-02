@@ -14,19 +14,19 @@ on:
   pull_request:
     paths:
       - ".github/workflows/contract-tests.yml"
-      - "internal/connectors/plugins/public/adyen/client/contract_test.go"
-      - "internal/connectors/plugins/public/column/client/contract_test.go"
-      - "internal/connectors/plugins/public/currencycloud/client/contract_test.go"
-      - "internal/connectors/plugins/public/increase/client/contract_test.go"
-      - "internal/connectors/plugins/public/mangopay/client/contract_test.go"
-      - "internal/connectors/plugins/public/modulr/client/contract_test.go"
-      - "internal/connectors/plugins/public/moneycorp/client/contract_test.go"
-      - "internal/connectors/plugins/public/plaid/client/contract_test.go"
-      - "internal/connectors/plugins/public/powens/client/contract_test.go"
-      - "internal/connectors/plugins/public/qonto/client/contract_test.go"
-      - "internal/connectors/plugins/public/stripe/client/contract_test.go"
-      - "internal/connectors/plugins/public/tink/client/contract_test.go"
-      - "internal/connectors/plugins/public/wise/client/contract_test.go"
+      - "ce/plugins/adyen/client/contract_test.go"
+      - "ce/plugins/column/client/contract_test.go"
+      - "ce/plugins/currencycloud/client/contract_test.go"
+      - "ce/plugins/increase/client/contract_test.go"
+      - "ce/plugins/mangopay/client/contract_test.go"
+      - "ce/plugins/modulr/client/contract_test.go"
+      - "ce/plugins/moneycorp/client/contract_test.go"
+      - "ce/plugins/plaid/client/contract_test.go"
+      - "ce/plugins/powens/client/contract_test.go"
+      - "ce/plugins/qonto/client/contract_test.go"
+      - "ce/plugins/stripe/client/contract_test.go"
+      - "ce/plugins/tink/client/contract_test.go"
+      - "ce/plugins/wise/client/contract_test.go"
       - "ee/plugins/routable/client/contract_test.go"
       - "Justfile"
 
@@ -56,7 +56,7 @@ jobs:
           # QONTO_CONTRACT_* secrets are absent, and they are still set).
           # Re-enable once fresh sandbox credentials are provisioned and the
           # secrets are updated. The test itself is kept current at
-          # internal/connectors/plugins/public/qonto/client/contract_test.go.
+          # ce/plugins/qonto/client/contract_test.go.
           # - qonto
           - routable
           - stripe

@@ -2,7 +2,7 @@ package client_test
 
 import (
 	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
+	"github.com/formancehq/payments/ce/plugins/stripe/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stripe/stripe-go/v80"

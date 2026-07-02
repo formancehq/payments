@@ -38,7 +38,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
-	"github.com/formancehq/payments/internal/connectors/plugins/contracttest"
+	"github.com/formancehq/payments/pkg/domain/contracttest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
