@@ -21,6 +21,7 @@ on:
       - "internal/connectors/plugins/public/mangopay/client/contract_test.go"
       - "internal/connectors/plugins/public/modulr/client/contract_test.go"
       - "internal/connectors/plugins/public/moneycorp/client/contract_test.go"
+      - "internal/connectors/plugins/public/powens/client/contract_test.go"
       - "internal/connectors/plugins/public/qonto/client/contract_test.go"
       - "internal/connectors/plugins/public/stripe/client/contract_test.go"
       - "internal/connectors/plugins/public/wise/client/contract_test.go"
@@ -45,6 +46,7 @@ jobs:
           - mangopay
           - modulr
           - moneycorp
+          - powens
           # qonto is disabled: Qonto invalidated our sandbox credentials, so
           # every daily run fails on auth (the suite only Skips when the
           # QONTO_CONTRACT_* secrets are absent, and they are still set).
@@ -102,6 +104,17 @@ jobs:
           # suite Skips without both).
           MONEYCORP_CONTRACT_CLIENT_ID: ${{ secrets.MONEYCORP_CONTRACT_CLIENT_ID }}
           MONEYCORP_CONTRACT_API_KEY: ${{ secrets.MONEYCORP_CONTRACT_API_KEY }}
+          # Powens sandbox contract credentials. The endpoint is PER-TENANT
+          # (https://<domain>.biapi.pro, the connector's `endpoint` config
+          # field), so it is injected alongside the credentials instead of
+          # being hardcoded. The configuration token is the client-application
+          # Bearer token used by the webhook-auth endpoints; the client
+          # ID/secret pair authenticates auth/init. The suite Skips unless all
+          # FOUR are set.
+          POWENS_CONTRACT_CLIENT_ID: ${{ secrets.POWENS_CONTRACT_CLIENT_ID }}
+          POWENS_CONTRACT_CLIENT_SECRET: ${{ secrets.POWENS_CONTRACT_CLIENT_SECRET }}
+          POWENS_CONTRACT_CONFIGURATION_TOKEN: ${{ secrets.POWENS_CONTRACT_CONFIGURATION_TOKEN }}
+          POWENS_CONTRACT_ENDPOINT: ${{ secrets.POWENS_CONTRACT_ENDPOINT }}
           # Qonto sandbox contract credentials. The endpoint
           # (thirdparty-sandbox.staging.qonto.co) is hardcoded in the test;
           # sandbox and prod are different hosts. Auth is
