@@ -601,8 +601,11 @@ var _ = Describe("Stripe API contract", func() {
 				// EnabledEvents -> stored in the config metadata.
 				Expect(e.ID).ToNot(BeEmpty())
 				Expect(e.Secret).ToNot(BeEmpty())
+				// The failure message deliberately names the endpoint, NOT the
+				// secret value — e.Secret is a live signing secret and Ginkgo
+				// failure output lands in CI logs.
 				Expect(strings.HasPrefix(e.Secret, "whsec_")).To(BeTrue(),
-					"webhook secret %q does not look like a Stripe signing secret", e.Secret)
+					"webhook secret for endpoint %q does not look like a Stripe signing secret", e.ID)
 				Expect(strings.HasPrefix(e.URL, base)).To(BeTrue(),
 					"webhook URL %q does not start with the requested base %q", e.URL, base)
 				Expect(e.EnabledEvents).To(ContainElement(string(stripe.EventTypeBalanceAvailable)))

@@ -44,17 +44,20 @@ func New(
 	companyID string,
 	liveEndpointPrefix string,
 ) Client {
+	// Debug is deliberately off in BOTH environments: the Adyen SDK's debug
+	// mode logs full request/response bodies — including the API key and
+	// webhook HMAC keys — into whatever log sink the process has (stack logs
+	// in production, CI logs for the contract tests).
 	adyenConfig := &common.Config{
 		ApiKey:      apiKey,
 		Environment: common.TestEnv,
-		Debug:       true,
+		Debug:       false,
 		HTTPClient:  metrics.NewHTTPClient(provider, models.DefaultConnectorClientTimeout),
 	}
 
 	if liveEndpointPrefix != "" {
 		adyenConfig.Environment = common.LiveEnv
 		adyenConfig.LiveEndpointURLPrefix = liveEndpointPrefix
-		adyenConfig.Debug = false
 	}
 
 	c := adyen.NewClient(adyenConfig)
