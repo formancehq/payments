@@ -22,6 +22,7 @@ on:
       - "internal/connectors/plugins/public/modulr/client/contract_test.go"
       - "internal/connectors/plugins/public/moneycorp/client/contract_test.go"
       - "internal/connectors/plugins/public/qonto/client/contract_test.go"
+      - "internal/connectors/plugins/public/stripe/client/contract_test.go"
       - "Justfile"
 
 concurrency:
@@ -50,6 +51,7 @@ jobs:
           # secrets are updated. The test itself is kept current at
           # internal/connectors/plugins/public/qonto/client/contract_test.go.
           # - qonto
+          - stripe
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
@@ -107,6 +109,11 @@ jobs:
           QONTO_CONTRACT_CLIENT_ID: ${{ secrets.QONTO_CONTRACT_CLIENT_ID }}
           QONTO_CONTRACT_API_KEY: ${{ secrets.QONTO_CONTRACT_API_KEY }}
           QONTO_CONTRACT_STAGING_TOKEN: ${{ secrets.QONTO_CONTRACT_STAGING_TOKEN }}
+          # Stripe test-mode contract credential. Test mode lives on the SAME
+          # host as prod (api.stripe.com) and is selected purely by the key
+          # prefix, so the key MUST be an sk_test_ key and no endpoint is
+          # injected (the client's built-in default is used).
+          STRIPE_CONTRACT_API_KEY: ${{ secrets.STRIPE_CONTRACT_API_KEY }}
       # Extension point: notify on drift. A failed run is already a red check;
       # wire a Slack/issue notification here when desired. The webhook is
       # guarded inside the script (not in `if:`) because GitHub Actions does
