@@ -197,6 +197,9 @@ func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount 
 	if err != nil {
 		return nil, err
 	}
+	// Wise 500s (internal.server.error) on a JSON body without this header;
+	// nothing downstream sets a default.
+	req.Header.Set("Content-Type", "application/json")
 
 	var transfer Transfer
 	var errRes wiseErrors
