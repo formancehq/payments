@@ -228,6 +228,10 @@ var _ = Describe("CurrencyCloud API contract", func() {
 		It("returns balances whose shape matches what the connector consumes", func() {
 			balances, _, err := c.GetBalances(ctx, 1, contractPageSize)
 			Expect(err).To(BeNil())
+			// Assert non-empty like the sibling account/beneficiary shape specs,
+			// so a demo env returning zero balances fails loudly instead of
+			// silently validating no schema.
+			Expect(balances).ToNot(BeEmpty())
 
 			for _, b := range balances {
 				// account_id, currency and amount are all hard dependencies:
@@ -271,6 +275,11 @@ var _ = Describe("CurrencyCloud API contract", func() {
 			// Fresh (zero) updatedAtFrom drives a full backlog read (updated_at asc).
 			transactions, _, err := c.GetTransactions(ctx, 1, contractPageSize, time.Time{})
 			Expect(err).To(BeNil())
+			// Assert non-empty like the sibling shape specs (the ordering spec
+			// below already relies on the backlog being non-empty), so a demo
+			// env returning zero transactions fails loudly instead of silently
+			// validating no schema.
+			Expect(transactions).ToNot(BeEmpty())
 
 			for _, tx := range transactions {
 				Expect(tx.ID).ToNot(BeEmpty())
