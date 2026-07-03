@@ -327,6 +327,23 @@ func TestGetBalanceExDecodesCredit(t *testing.T) {
 	}
 }
 
+func TestPrivateCallAcceptsResultDespiteError(t *testing.T) {
+	t.Parallel()
+	// Kraken can return a populated result alongside a non-empty error
+	// array (e.g. a non-fatal warning). do() treats the call as failed only
+	// when error is set AND result is empty, so a present result must win.
+	_, c := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"error":["EGeneral:Notice"],"result":{"XXBT":{"balance":"2.5","hold_trade":"0"}}}`)
+	})
+	res, err := c.GetBalanceEx(context.Background())
+	if err != nil {
+		t.Fatalf("result present must be accepted despite non-empty error array, got %v", err)
+	}
+	if res["XXBT"].Balance != "2.5" {
+		t.Fatalf("result not decoded: %#v", res)
+	}
+}
+
 func TestRateLimitEnvelopeMapsToTooManyRequests(t *testing.T) {
 	t.Parallel()
 	// Kraken signals rate limits in the error array, often on HTTP 200.

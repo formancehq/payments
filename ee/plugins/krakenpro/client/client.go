@@ -159,7 +159,8 @@ func (c *client) do(ctx context.Context, method, uriPath string, params map[stri
 		}
 		return fmt.Errorf("%s (status %d): %w", uriPath, status, err)
 	}
-	if len(envelope.Error) > 0 {
+	// Kraken considers a failed or rejected request when only error is defined
+	if len(envelope.Error) > 0 && len(envelope.Result) == 0 {
 		return apiError(uriPath, envelope.Error)
 	}
 	if dst == nil || len(envelope.Result) == 0 {
