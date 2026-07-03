@@ -93,6 +93,16 @@ var contractWebhookEvents = []struct {
 	{RefreshFinished, "/refresh-finished"},
 }
 
+// seededReadDecayHint explains the most likely cause when a seeded-user read
+// returns a 4xx: the one-time Tink Demo Bank link has decayed (Tink consent
+// expires) or TINK_CONTRACT_SEEDED_USER_ID does not belong to the CI Console
+// app's user set. Both are environmental — NOT the upstream schema/ordering
+// drift this suite exists to catch. Re-run seed-tink-contract-user.sh to
+// re-link the Demo Bank, and verify the seed matches the CI credentials.
+const seededReadDecayHint = "seeded-user read failed with a 4xx: the Tink Demo " +
+	"Bank link has likely decayed, or TINK_CONTRACT_SEEDED_USER_ID does not " +
+	"match the CI Console app — re-run seed-tink-contract-user.sh to re-link"
+
 // assertTinkAmount re-asserts the three failure modes of the plugin's
 // MapTinkAmount (which cannot be imported here without an import cycle): the
 // currency must be ISO4217, unscaledValue a base-10 integer and scale an int —
@@ -214,7 +224,7 @@ var _ = Describe("Tink API contract", func() {
 				Expect(page).To(BeNumerically("<", contractMaxPages),
 					"accounts page walk did not terminate")
 				resp, err := c.ListAccounts(ctx, seededUserID, pageToken)
-				Expect(err).To(BeNil())
+				Expect(err).To(BeNil(), seededReadDecayHint)
 				accounts = append(accounts, resp.Accounts...)
 				if resp.NextPageToken == "" {
 					break
@@ -230,7 +240,7 @@ var _ = Describe("Tink API contract", func() {
 
 			// fetchNextAccounts reads exactly ONE account by ID per webhook.
 			got, err := c.GetAccount(ctx, seededUserID, accounts[0].ID)
-			Expect(err).To(BeNil())
+			Expect(err).To(BeNil(), seededReadDecayHint)
 			Expect(got.ID).To(Equal(accounts[0].ID))
 			assertAccount(got)
 
@@ -249,7 +259,7 @@ var _ = Describe("Tink API contract", func() {
 					PageSize:      contractPageSize,
 					NextPageToken: nextPageToken,
 				})
-				Expect(err).To(BeNil())
+				Expect(err).To(BeNil(), seededReadDecayHint)
 				transactions = append(transactions, resp.Transactions...)
 				if resp.NextPageToken == "" {
 					break
