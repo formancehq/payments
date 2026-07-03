@@ -96,7 +96,11 @@ var _ = Describe("Plaid API contract", func() {
 				"must be set to run the Plaid contract test")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		var err error
 		// isSandbox=true selects the SDK's built-in sandbox.plaid.com host.
 		// The connectorID and STACK_PUBLIC_URL only feed the excluded

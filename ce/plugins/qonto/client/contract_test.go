@@ -160,7 +160,11 @@ var _ = Describe("Qonto API contract", func() {
 			Skip("QONTO_CONTRACT_CLIENT_ID, QONTO_CONTRACT_API_KEY and QONTO_CONTRACT_STAGING_TOKEN must be set to run the Qonto contract test")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		// Hardcoded sandbox host: sandbox and prod are different hosts, and the
 		// sandbox requires the staging token on every request.
 		c = New("qonto", clientID, apiKey, sandboxEndpoint, stagingToken)

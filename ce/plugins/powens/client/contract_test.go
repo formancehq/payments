@@ -67,7 +67,11 @@ var _ = Describe("Powens API contract", func() {
 				"must be set to run the Powens contract test")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		var err error
 		c, err = New("powens", clientID, clientSecret, configurationToken, endpoint)
 		Expect(err).To(BeNil())

@@ -140,7 +140,11 @@ var _ = Describe("Tink API contract", func() {
 		}
 		seededUserID = os.Getenv("TINK_CONTRACT_SEEDED_USER_ID")
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		c = New("tink", clientID, clientSecret, tinkAPIEndpoint)
 	})
 

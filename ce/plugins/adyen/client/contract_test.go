@@ -23,6 +23,7 @@ import (
 	"os"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/formancehq/payments/pkg/domain/contracttest"
 	. "github.com/onsi/ginkgo/v2"
@@ -79,7 +80,11 @@ var _ = Describe("Adyen API contract", func() {
 			Skip("ADYEN_CONTRACT_API_KEY and ADYEN_CONTRACT_COMPANY_ID must be set to run the Adyen contract test")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		// liveEndpointPrefix empty => common.TestEnv (Adyen test environment).
 		c = New("adyen", apiKey, "", "", companyID, "")
 	})

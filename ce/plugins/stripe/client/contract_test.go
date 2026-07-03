@@ -49,6 +49,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/pkg/domain/contracttest"
@@ -246,7 +247,11 @@ var _ = Describe("Stripe API contract", func() {
 			Fail("STRIPE_CONTRACT_API_KEY is not an sk_test_ key — refusing to run mutating contract specs against what could be production")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		// nil backend => the SDK default (api.stripe.com); test mode is
 		// selected by the sk_test_ key, exactly like production selects live.
 		// New itself calls GET /v1/account and errors on a drifted/unauthorized

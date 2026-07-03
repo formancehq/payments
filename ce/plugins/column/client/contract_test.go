@@ -437,7 +437,11 @@ var _ = Describe("Column API contract", func() {
 			Fail("COLUMN_CONTRACT_API_KEY is not a test_ key — refusing to run mutating contract specs against what could be production")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		c = New("column", apiKey, contractEndpoint)
 	})
 
