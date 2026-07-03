@@ -36,6 +36,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/go-libs/v5/pkg/types/currency"
 	"github.com/formancehq/payments/pkg/domain/contracttest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -148,11 +149,23 @@ type fundedBalance struct {
 	currency  string
 }
 
+// isTwoDecimalCurrency reports whether code is a 2-decimal ISO4217 currency, the
+// only kind for which contractMinAmount ("0.01") is a valid minor-unit amount.
+// Money-movement source/currency selection restricts to these so a funded
+// 0-decimal (e.g. JPY) or 3-decimal (e.g. BHD) balance can't make CurrencyCloud
+// reject "0.01" and produce a spurious failure unrelated to API drift.
+func isTwoDecimalCurrency(code string) bool {
+	return currency.ISO4217Currencies[code] == 2
+}
+
 // findFundedBalance returns the first balance whose amount parses and is at least
 // contractMinFunded, so a contractMinAmount (0.01) movement won't hit NSF. Returns
 // ok=false when no such balance exists (the caller then Skips).
 func findFundedBalance(balances []*Balance) (fundedBalance, bool) {
 	for _, b := range balances {
+		if !isTwoDecimalCurrency(b.Currency) {
+			continue
+		}
 		amount, err := b.Amount.Float64()
 		if err != nil {
 			continue
@@ -354,6 +367,9 @@ var _ = Describe("CurrencyCloud API contract", func() {
 				matched       bool
 			)
 			for _, b := range balances {
+				if !isTwoDecimalCurrency(b.Currency) {
+					continue
+				}
 				amount, aerr := b.Amount.Float64()
 				if aerr != nil || amount < contractMinFunded {
 					continue
