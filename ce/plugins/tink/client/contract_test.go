@@ -152,17 +152,20 @@ var _ = Describe("Tink API contract", func() {
 
 			user, err := c.CreateUser(ctx, externalUserID, contractMarket, contractLocale)
 			Expect(err).To(BeNil())
-			// user_id becomes the PSPUserID.
-			Expect(user.UserID).ToNot(BeEmpty())
 
 			// Reclaims the user even on failure; doubles as the DeleteUser
 			// coverage and exercises the full delegated-auth chain
-			// (authorization-grant → code exchange → user/delete).
+			// (authorization-grant → code exchange → user/delete). Registered
+			// BEFORE the shape assertions so a failing assertion cannot leak the
+			// user.
 			DeferCleanup(func() {
 				Expect(c.DeleteUser(ctx, DeleteUserRequest{
 					UserID: externalUserID,
 				})).To(BeNil())
 			})
+
+			// user_id becomes the PSPUserID.
+			Expect(user.UserID).ToNot(BeEmpty())
 
 			// createUserLink embeds this code in the Tink Link URL handed to
 			// the PSU; the scope set mirrors the connector's exactly.
@@ -195,16 +198,19 @@ var _ = Describe("Tink API contract", func() {
 			for _, event := range contractWebhookEvents {
 				resp, err := c.CreateWebhook(ctx, event.eventType, "contract-test", baseURL+event.urlPath)
 				Expect(err).To(BeNil(), "creating webhook for %s", event.eventType)
+
+				// Registered BEFORE the shape assertions so a failing assertion
+				// cannot leak the created endpoint.
+				webhookID := resp.ID
+				DeferCleanup(func() {
+					Expect(c.DeleteWebhook(ctx, webhookID)).To(BeNil())
+				})
+
 				// id is stored in the webhook config metadata and is the only
 				// handle uninstall has to delete the endpoint; secret is the
 				// X-Tink-Signature HMAC key verifyWebhook depends on.
 				Expect(resp.ID).ToNot(BeEmpty(), "webhook %s has no id", event.eventType)
 				Expect(resp.Secret).ToNot(BeEmpty(), "webhook %s has no secret", event.eventType)
-
-				webhookID := resp.ID
-				DeferCleanup(func() {
-					Expect(c.DeleteWebhook(ctx, webhookID)).To(BeNil())
-				})
 			}
 		})
 	})
