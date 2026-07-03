@@ -84,10 +84,10 @@ const eventSubscriptionStatusDeleted = "deleted"
 
 // Ordering is asserted on the SORT KEY, not on pinned IDs. Only lists whose
 // ORDER the connector consumes get an ordering spec:
-//   - accounts — fetchNextAccounts derives its watermark from list position
-//     (LastCreatedAt = last account's created_at), assuming the list is
-//     created_at ascending — asserted directly on the timestamps, with no
-//     pinned IDs to bootstrap or refill.
+//   - accounts — Increase returns accounts newest-first (reverse
+//     chronological), and fetchNextAccounts derives its watermark from the
+//     first (newest) account's created_at — asserted directly as a descending
+//     sort key, with no pinned IDs to bootstrap or refill.
 //   - posted transactions — the client's Timeline consumes chronological
 //     (oldest→newest) order; same created_at non-decreasing assertion over
 //     the full walk. created_at is immutable, so newly created transactions
@@ -213,10 +213,10 @@ var _ = Describe("Increase API contract", func() {
 		})
 
 		It("returns accounts in the created_at order the connector's watermark assumes", func() {
-			// fetchNextAccounts watermarks on the LAST account's created_at,
-			// which assumes the list is created_at ascending — assert the sort
-			// key directly. Accounts fit on a single page (page size 100), so
-			// one fetch covers the list.
+			// Increase returns accounts newest-first (reverse chronological), so
+			// fetchNextAccounts watermarks on the FIRST account's created_at (the
+			// max) — assert the sort key is descending directly. Accounts fit on a
+			// single page (page size 100), so one fetch covers the list.
 			accounts, _, err := c.GetAccounts(ctx, contractPageSize, "", time.Time{})
 			Expect(err).To(BeNil())
 			Expect(accounts).ToNot(BeEmpty())
@@ -227,7 +227,12 @@ var _ = Describe("Increase API contract", func() {
 				Expect(perr).To(BeNil(), "account created_at %q is not RFC3339", a.CreatedAt)
 				keys = append(keys, t.UnixNano())
 			}
-			contracttest.AssertNonDecreasing(keys, "accounts created_at")
+			// Increase lists newest-first, so created_at must be non-increasing:
+			// the connector's watermark relies on the first element being the max.
+			for i := 1; i < len(keys); i++ {
+				Expect(keys[i] <= keys[i-1]).To(BeTrue(),
+					"accounts created_at is not sorted descending at index %d: %d > %d", i, keys[i], keys[i-1])
+			}
 		})
 	})
 

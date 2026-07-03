@@ -36,13 +36,15 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			plg.client.SetHttpClient(mockHTTPClient)
 			now = time.Now().UTC()
 
+			// Increase returns accounts newest-first (reverse chronological), so
+			// index 0 is the newest and the created_at descends down the slice.
 			sampleAccounts = make([]*client.Account, 0)
 			for i := 0; i < 50; i++ {
 				sampleAccounts = append(sampleAccounts, &client.Account{
 					ID:        fmt.Sprintf("%d", i),
 					Name:      fmt.Sprintf("Account %d", i),
 					Currency:  "USD",
-					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
+					CreatedAt: now.Add(-time.Duration(i+1) * time.Minute).UTC().Format(time.RFC3339),
 				})
 			}
 		})
@@ -159,6 +161,10 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(BeEmpty())
+			// Increase lists newest-first, so the watermark is the first (newest)
+			// account's created_at, not the last (oldest) one.
+			newest, _ := time.Parse(time.RFC3339, sampleAccounts[0].CreatedAt)
+			Expect(state.LastCreatedAt.Equal(newest)).To(BeTrue())
 		})
 
 		It("should fetch next accounts - no state pageSize < total accounts", func(ctx SpecContext) {
@@ -223,6 +229,37 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(Equal("qsdf"))
+		})
+
+		It("should not regress the watermark when a later cursor page is older", func(ctx SpecContext) {
+			// A prior page already advanced the watermark to the newest account;
+			// the next (older) cursor page must not drag it back to an older value.
+			priorWatermark := now.Add(time.Minute) // newer than every sampleAccount
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(fmt.Sprintf(`{"next_cursor": "wrY4nKh", "last_created_at": "%s"}`, priorWatermark.Format(time.RFC3339Nano))),
+				PageSize: 40,
+			}
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Account]{
+				Data:       sampleAccounts[:40],
+				NextCursor: "qsdf",
+			})
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+
+			var state accountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.LastCreatedAt.Equal(priorWatermark)).To(BeTrue())
 		})
 	})
 })
