@@ -150,8 +150,11 @@ var _ = Describe("Adyen API contract", func() {
 			resp, err := cc.CreateWebhook(ctx, contractWebhookURL, contractWebhookID)
 			Expect(err).To(BeNil())
 			Expect(resp.HMACKey).ToNot(BeEmpty())
+			// The failure message must NOT interpolate resp.HMACKey — it is a
+			// live signing secret and Ginkgo failure output lands in CI logs,
+			// which GitHub only masks for configured secrets, not runtime values.
 			Expect(adyenHMACKeyPattern.MatchString(resp.HMACKey)).To(BeTrue(),
-				"HMAC key %q does not look like an Adyen HMAC key", resp.HMACKey)
+				"the generated webhook HMAC key does not match the expected Adyen format (value omitted from logs)")
 
 			// Re-fetch the webhook from the API to validate the representation
 			// that comes back is valid (not just that creation returned 200).
