@@ -145,19 +145,46 @@ var _ = Describe("Kraken Pro fetch_orders", func() {
 		})
 	})
 
-	Describe("error handling", func() {
-		It("skips an order whose asset precision is unknown without failing the page", func(ctx SpecContext) {
-			plg.currencies = map[string]int{"BTC": 8} // USD (quote) precision absent
+	Describe("unknown pair refresh", func() {
+		It("force-refreshes the cache before advancing when an order's pair is unknown", func(ctx SpecContext) {
+			plg.assetPairs = map[string]client.AssetPair{} // pair not yet known
 			m.EXPECT().GetClosedOrders(gomock.Any(), gomock.Any()).
 				Return(client.ClosedOrdersResponse{
 					Closed: map[string]client.OrderEntry{"OHIST": closedFilledOrder()},
 				}, nil)
+			// The forced refresh now sees the pair + its assets.
+			m.EXPECT().GetAssets(gomock.Any()).Return(map[string]client.AssetInfo{
+				"XXBT": {Altname: "XBT", Decimals: 8},
+				"ZUSD": {Altname: "USD", Decimals: 2},
+			}, nil)
+			m.EXPECT().GetAssetPairs(gomock.Any()).Return(map[string]client.AssetPair{
+				"XXBTZUSD": {Altname: "XBTUSD", Wsname: "XBT/USD", Base: "XXBT", Quote: "ZUSD"},
+			}, nil)
+
+			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
+			Expect(err).To(BeNil())
+			Expect(resp.Orders).To(HaveLen(1), "pair recovered after refresh, not skipped")
+		})
+
+		It("drops an order still unknown after the refresh without failing the page", func(ctx SpecContext) {
+			plg.assetPairs = map[string]client.AssetPair{} // pair unknown
+			m.EXPECT().GetClosedOrders(gomock.Any(), gomock.Any()).
+				Return(client.ClosedOrdersResponse{
+					Closed: map[string]client.OrderEntry{"OHIST": closedFilledOrder()},
+				}, nil)
+			// Refresh still doesn't surface the pair.
+			m.EXPECT().GetAssets(gomock.Any()).Return(map[string]client.AssetInfo{
+				"XXBT": {Altname: "XBT", Decimals: 8},
+			}, nil)
+			m.EXPECT().GetAssetPairs(gomock.Any()).Return(map[string]client.AssetPair{}, nil)
 
 			resp, err := plg.FetchNextOrders(ctx, models.FetchNextOrdersRequest{})
 			Expect(err).To(BeNil(), "an unmappable row must not fail the page")
 			Expect(resp.Orders).To(BeEmpty())
 		})
+	})
 
+	Describe("error handling", func() {
 		It("propagates GetClosedOrders errors", func(ctx SpecContext) {
 			m.EXPECT().GetClosedOrders(gomock.Any(), gomock.Any()).
 				Return(client.ClosedOrdersResponse{}, errors.New("kaboom"))

@@ -108,9 +108,14 @@ func New(connectorName, apiKey, apiSecret, endpoint string) (Client, error) {
 //     since too many invalid-nonce errors temp-lock the key)
 //
 // Both map, via the registry, to a retry-with-delay. Fatal-auth and any
-// other code stay a bare APIError for the caller to classify.
+// other code stay a bare APIError for the caller to classify. Code is the
+// first E-prefixed entry so a leading W warning can't mask the real error.
 func apiError(endpoint string, codes []string) error {
-	e := &APIError{Endpoint: endpoint, Code: codes[0], All: codes}
+	code, ok := firstErrorCode(codes)
+	if !ok {
+		code = codes[0] // defensive: do() only calls this when an E code exists
+	}
+	e := &APIError{Endpoint: endpoint, Code: code, All: codes}
 	switch {
 	case IsRateLimitError(e):
 		return errorsutils.NewWrappedError(e, httpwrapper.ErrStatusCodeTooManyRequests)
@@ -159,8 +164,11 @@ func (c *client) do(ctx context.Context, method, uriPath string, params map[stri
 		}
 		return fmt.Errorf("%s (status %d): %w", uriPath, status, err)
 	}
-	// Kraken considers a failed or rejected request when only error is defined
-	if len(envelope.Error) > 0 && len(envelope.Result) == 0 {
+	// The request failed only if the error array holds a real (E-prefixed)
+	// code. A warnings-only array (W-prefixed) rides alongside a valid
+	// result, so it must not discard it — and a warning must never be taken
+	// as the classification code (see firstErrorCode).
+	if _, isErr := firstErrorCode(envelope.Error); isErr {
 		return apiError(uriPath, envelope.Error)
 	}
 	if dst == nil || len(envelope.Result) == 0 {

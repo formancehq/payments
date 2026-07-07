@@ -40,6 +40,20 @@ func IsAPIError(err error) bool {
 	return errors.As(err, &a)
 }
 
+// firstErrorCode returns the first real error code in a Kraken error
+// array. Kraken prefixes errors with "E" and warnings with "W", and a
+// warning can precede a real error, so classification must skip warnings
+// rather than blindly take the first element. ok is false when the array
+// carries no error (empty, or warnings only).
+func firstErrorCode(codes []string) (string, bool) {
+	for _, c := range codes {
+		if strings.HasPrefix(c, "E") {
+			return c, true
+		}
+	}
+	return "", false
+}
+
 // fatalAuthCodes must not be retried — they mean a misconfigured
 // connector (bad key/secret/permissions or a wrong endpoint), so retries
 // only burn quota. Note "EAPI:Invalid nonce" is deliberately NOT here:

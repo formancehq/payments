@@ -179,6 +179,15 @@ func OrderEntryToPSPOrder(
 	}, nil
 }
 
+// PairResolvable reports whether an order's pair resolves against the
+// cache and both its assets have a known precision — i.e. the row can map
+// without an error. Orchestrators use it to force one cache refresh before
+// advancing past a pair listed after the last refresh.
+func PairResolvable(currencies map[string]int, pairs map[string]client.AssetPair, descrPair string) bool {
+	_, _, _, err := resolveOrderPair(currencies, pairs, descrPair, "")
+	return err == nil
+}
+
 // resolveOrderPair resolves the (base, quote) symbols + their
 // precisions from the cached AssetPairs map.
 func resolveOrderPair(

@@ -48,6 +48,18 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		return models.FetchNextOrdersResponse{}, fmt.Errorf("fetch closed orders: %w", err)
 	}
 
+	// Force one cache refresh before mapping if any order's pair isn't
+	// resolvable yet (a pair listed after the last refresh), so the row
+	// isn't dropped before the watermark advances past it — parity with
+	// the payments/conversions orchestrators.
+	refreshed, err := p.refreshAssetsIfStale(ctx, allOrderPairsKnown(currencies, pairs, resp.Closed))
+	if err != nil {
+		return models.FetchNextOrdersResponse{}, fmt.Errorf("refresh assets for unknown order pair: %w", err)
+	}
+	if refreshed {
+		currencies, pairs = p.snapshotAssets(), p.snapshotPairs()
+	}
+
 	orders := make([]models.PSPOrder, 0, len(resp.Closed))
 	mapErrors := p.appendMappedOrders(currencies, pairs, resp.Closed, &orders)
 
@@ -67,6 +79,17 @@ func (p *Plugin) fetchNextOrders(ctx context.Context, req models.FetchNextOrders
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+// allOrderPairsKnown reports whether every order in the page resolves
+// against the current asset/pair cache.
+func allOrderPairsKnown(currencies map[string]int, pairs map[string]client.AssetPair, entries map[string]client.OrderEntry) bool {
+	for _, oe := range entries {
+		if !mappers.PairResolvable(currencies, pairs, oe.Descr.Pair) {
+			return false
+		}
+	}
+	return true
 }
 
 // appendMappedOrders maps each (id, OrderEntry) row into a PSPOrder and

@@ -141,9 +141,9 @@ var _ = Describe("Kraken Pro fetch_conversions", func() {
 		Expect(st.Pending).To(BeEmpty(), "unknown-asset rows must never enter pending")
 	})
 
-	It("prunes a stale half-pair once its window fully drains", func(ctx SpecContext) {
-		// A pending leg whose time is below the window end: when the short
-		// page promotes the watermark past it, the orphan is pruned.
+	It("prunes an orphan the watermark has moved a full grace past", func(ctx SpecContext) {
+		// leg time is well below (End - grace): once the short page promotes
+		// the watermark to End, the orphan is beyond the grace and pruned.
 		startState := conversionsState{
 			Window:  ledgerWindow{End: 5000, Offset: 0},
 			Pending: map[string]client.LedgerEntry{"OLD": {ID: "LO", Refid: "OLD", Time: 1.0, Type: "conversion", Asset: "XXBT", Amount: "-1"}},
@@ -157,7 +157,25 @@ var _ = Describe("Kraken Pro fetch_conversions", func() {
 		var st conversionsState
 		Expect(json.Unmarshal(resp.NewState, &st)).To(Succeed())
 		Expect(st.Window.Watermark).To(BeNumerically("==", 5000), "watermark promoted to frozen end")
-		Expect(st.Pending).To(BeEmpty(), "orphan pruned once watermark passes its time")
+		Expect(st.Pending).To(BeEmpty(), "orphan beyond the grace is pruned")
+	})
+
+	It("retains a half-pair still within the prune grace", func(ctx SpecContext) {
+		// leg time is within grace of the promoted watermark, so a partner
+		// arriving slightly late still has a chance to pair.
+		startState := conversionsState{
+			Window:  ledgerWindow{End: 5000, Offset: 0},
+			Pending: map[string]client.LedgerEntry{"RECENT": {ID: "LR", Refid: "RECENT", Time: 4900, Type: "conversion", Asset: "XXBT", Amount: "-1"}},
+		}
+		stateBytes, _ := json.Marshal(startState)
+		m.EXPECT().GetLedgers(gomock.Any(), gomock.Any()).
+			Return(client.LedgersResponse{Ledger: map[string]client.LedgerEntry{}}, nil)
+
+		resp, err := plg.FetchNextConversions(ctx, models.FetchNextConversionsRequest{State: stateBytes})
+		Expect(err).To(BeNil())
+		var st conversionsState
+		Expect(json.Unmarshal(resp.NewState, &st)).To(Succeed())
+		Expect(st.Pending).To(HaveKey("RECENT"), "leg within grace is retained")
 	})
 
 	It("propagates GetLedgers errors", func(ctx SpecContext) {

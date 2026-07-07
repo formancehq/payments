@@ -327,20 +327,45 @@ func TestGetBalanceExDecodesCredit(t *testing.T) {
 	}
 }
 
-func TestPrivateCallAcceptsResultDespiteError(t *testing.T) {
+func TestWarningOnlyEnvelopeReturnsResult(t *testing.T) {
 	t.Parallel()
-	// Kraken can return a populated result alongside a non-empty error
-	// array (e.g. a non-fatal warning). do() treats the call as failed only
-	// when error is set AND result is empty, so a present result must win.
+	// A W-prefixed warning can ride alongside a valid result; it must not
+	// discard the result nor be treated as an error.
 	_, c := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = io.WriteString(w, `{"error":["EGeneral:Notice"],"result":{"XXBT":{"balance":"2.5","hold_trade":"0"}}}`)
+		_, _ = io.WriteString(w, `{"error":["WGeneral:Notice"],"result":{"XXBT":{"balance":"2.5","hold_trade":"0"}}}`)
 	})
 	res, err := c.GetBalanceEx(context.Background())
 	if err != nil {
-		t.Fatalf("result present must be accepted despite non-empty error array, got %v", err)
+		t.Fatalf("warning-only array must not fail the call, got %v", err)
 	}
 	if res["XXBT"].Balance != "2.5" {
 		t.Fatalf("result not decoded: %#v", res)
+	}
+}
+
+func TestErrorClassifiedPastLeadingWarning(t *testing.T) {
+	t.Parallel()
+	// A warning preceding a real error must not mask it: classification
+	// picks the first E-prefixed code, so this stays a fatal-auth error.
+	_, c := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"error":["WGeneral:Notice","EAPI:Invalid key"],"result":{}}`)
+	})
+	_, err := c.GetBalanceEx(context.Background())
+	if !IsFatalAuthError(err) {
+		t.Fatalf("expected fatal-auth classification past the leading warning, got %v", err)
+	}
+}
+
+func TestErrorWithResultStillFails(t *testing.T) {
+	t.Parallel()
+	// An E code present means the request failed even if a (stub) result
+	// object is echoed back — the error must win, not be swallowed.
+	_, c := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"error":["EAPI:Invalid key"],"result":{"XXBT":{"balance":"2.5"}}}`)
+	})
+	_, err := c.GetBalanceEx(context.Background())
+	if !IsFatalAuthError(err) {
+		t.Fatalf("error alongside a result must still fail, got %v", err)
 	}
 }
 

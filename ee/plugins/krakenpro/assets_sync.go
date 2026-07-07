@@ -82,6 +82,21 @@ func (p *Plugin) forceRefreshAssets(ctx context.Context) error {
 	return p.refreshAssets(ctx)
 }
 
+// refreshAssetsIfStale forces one asset-cache refresh when allKnown is
+// false — a page referencing an asset/pair listed after the last cache
+// load — and reports whether a refresh happened so the caller re-snapshots.
+// Shared by the ledger + order orchestrators so none advances its watermark
+// past a row it could have mapped after a refresh.
+func (p *Plugin) refreshAssetsIfStale(ctx context.Context, allKnown bool) (refreshed bool, err error) {
+	if allKnown {
+		return false, nil
+	}
+	if err := p.forceRefreshAssets(ctx); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // needsAssetRefresh is the TTL check under a read lock.
 func (p *Plugin) needsAssetRefresh() bool {
 	p.assetsMu.RLock()

@@ -56,9 +56,12 @@ func (p *Plugin) fetchNextConversions(ctx context.Context, req models.FetchNextC
 	conversions := p.pairConversions(p.snapshotAssets(), state.Pending, rows)
 
 	hasMore := state.Window.advance(len(resp.Ledger), PAGE_SIZE)
-	// Prune half-pairs whose window has fully drained: both legs share a
-	// refid+time, so once the watermark passes a leg's time its partner
-	// can no longer arrive. Bounds Pending deterministically.
+	// Prune half-pairs the watermark has moved well past. A conversion's
+	// two legs are the same event (UAT: sub-microsecond apart), so they
+	// fall in the same frozen window and pair before promotion; a leg left
+	// once the watermark is a full grace beyond its time is a real orphan.
+	// The grace is generous vs the observed delta so an unexpectedly-late
+	// partner still pairs, while Pending stays bounded.
 	prunePending(state.Pending, state.Window.Watermark)
 
 	payload, err := json.Marshal(state)
@@ -93,10 +96,11 @@ func (p *Plugin) knownConversionRows(ctx context.Context, currencies map[string]
 		rows = append(rows, entry)
 	}
 
-	if !allAssetsKnown(currencies, rows) {
-		if err := p.forceRefreshAssets(ctx); err != nil {
-			return nil, fmt.Errorf("refresh assets for unknown conversion asset: %w", err)
-		}
+	refreshed, err := p.refreshAssetsIfStale(ctx, allAssetsKnown(currencies, rows))
+	if err != nil {
+		return nil, fmt.Errorf("refresh assets for unknown conversion asset: %w", err)
+	}
+	if refreshed {
 		currencies = p.snapshotAssets()
 	}
 
@@ -150,12 +154,18 @@ func (p *Plugin) mapConversionPair(currencies map[string]int, a, b client.Ledger
 	return conv
 }
 
-// prunePending drops buffered legs whose time is at or below the committed
-// watermark — their window has fully drained, so the partner leg can no
-// longer arrive.
+// pendingPruneGrace is how far past a leg's time the watermark must move
+// before the leg is pruned. Sized far above the observed intra-conversion
+// leg delta (sub-microsecond on UAT) so a delayed partner still pairs,
+// while keeping Pending bounded to at most the last few minutes of orphans.
+const pendingPruneGrace = 300.0 // seconds
+
+// prunePending drops buffered legs the watermark has moved a full grace
+// past — their window drained long ago, so the partner can no longer
+// arrive. The grace guards against a partner landing in a later window.
 func prunePending(pending map[string]client.LedgerEntry, watermark float64) {
 	for refid, leg := range pending {
-		if leg.Time <= watermark {
+		if leg.Time <= watermark-pendingPruneGrace {
 			delete(pending, refid)
 		}
 	}
