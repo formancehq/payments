@@ -213,6 +213,16 @@ func TestOrderEntryToPSPOrder_UnknownDirection(t *testing.T) {
 	}
 }
 
+func TestOrderEntryToPSPOrder_UnknownOrderTypeReturnsError(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("buy", "brand-new-kraken-ordertype")
+	_, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+		OrderEntryWithID{OrderID: "OT", Order: oe})
+	if err == nil {
+		t.Fatal("expected unrecognized order type error")
+	}
+}
+
 func TestOrderEntryToPSPOrder_BadVolReturnsError(t *testing.T) {
 	t.Parallel()
 	oe := filledOrder("buy", "limit")

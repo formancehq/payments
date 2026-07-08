@@ -133,7 +133,10 @@ func OrderEntryToPSPOrder(
 		return nil, fmt.Errorf("order %s marshal: %w", row.OrderID, err)
 	}
 
-	orderType, _ := MapOrderType(oe.Descr.Ordertype)
+	orderType, known := MapOrderType(oe.Descr.Ordertype)
+	if !known {
+		return nil, fmt.Errorf("unrecognized order type %q on order %s", oe.Descr.Ordertype, row.OrderID)
+	}
 	status, _ := MapOrderStatus(oe.Status, oe.Vol, oe.VolExec)
 	quoteAsset := FormatAsset(currencies, pairRes.QuoteSymbol)
 	priceAsset := fmt.Sprintf("%s/%d", pairRes.QuoteSymbol, amounts.pricePrecision)
