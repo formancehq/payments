@@ -24,6 +24,7 @@ import (
 	bitstamp "github.com/formancehq/payments/ee/plugins/bitstamp"
 	coinbaseprime "github.com/formancehq/payments/ee/plugins/coinbaseprime"
 	fireblocks "github.com/formancehq/payments/ee/plugins/fireblocks"
+	krakenpro "github.com/formancehq/payments/ee/plugins/krakenpro"
 	routable "github.com/formancehq/payments/ee/plugins/routable"
 	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
@@ -51,6 +52,7 @@ func init() {
 		bitstamp.ProviderName:      bitstamp.Registration,
 		coinbaseprime.ProviderName: coinbaseprime.Registration,
 		fireblocks.ProviderName:    fireblocks.Registration,
+		krakenpro.ProviderName:     krakenpro.Registration,
 		routable.ProviderName:      routable.Registration,
 	})
 }
