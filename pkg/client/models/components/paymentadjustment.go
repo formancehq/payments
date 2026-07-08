@@ -8,15 +8,12 @@ import (
 	"time"
 )
 
-type PaymentAdjustmentRaw struct {
-}
-
 type PaymentAdjustment struct {
-	Reference string               `json:"reference"`
-	CreatedAt time.Time            `json:"createdAt"`
-	Status    PaymentStatus        `json:"status"`
-	Amount    *big.Int             `json:"amount"`
-	Raw       PaymentAdjustmentRaw `json:"raw"`
+	Reference string         `json:"reference"`
+	CreatedAt time.Time      `json:"createdAt"`
+	Status    PaymentStatus  `json:"status"`
+	Amount    *big.Int       `json:"amount"`
+	Raw       map[string]any `json:"raw"`
 }
 
 func (p PaymentAdjustment) MarshalJSON() ([]byte, error) {
@@ -58,9 +55,9 @@ func (o *PaymentAdjustment) GetAmount() *big.Int {
 	return o.Amount
 }
 
-func (o *PaymentAdjustment) GetRaw() PaymentAdjustmentRaw {
+func (o *PaymentAdjustment) GetRaw() map[string]any {
 	if o == nil {
-		return PaymentAdjustmentRaw{}
+		return map[string]any{}
 	}
 	return o.Raw
 }

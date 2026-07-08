@@ -7,9 +7,6 @@ import (
 	"time"
 )
 
-type V3AccountRaw struct {
-}
-
 type V3Account struct {
 	ID           string            `json:"id"`
 	ConnectorID  string            `json:"connectorID"`
@@ -21,7 +18,7 @@ type V3Account struct {
 	Name         *string           `json:"name,omitempty"`
 	DefaultAsset *string           `json:"defaultAsset,omitempty"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
-	Raw          V3AccountRaw      `json:"raw"`
+	Raw          map[string]any    `json:"raw"`
 }
 
 func (v V3Account) MarshalJSON() ([]byte, error) {
@@ -105,9 +102,9 @@ func (o *V3Account) GetMetadata() map[string]string {
 	return o.Metadata
 }
 
-func (o *V3Account) GetRaw() V3AccountRaw {
+func (o *V3Account) GetRaw() map[string]any {
 	if o == nil {
-		return V3AccountRaw{}
+		return map[string]any{}
 	}
 	return o.Raw
 }

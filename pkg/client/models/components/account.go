@@ -7,9 +7,6 @@ import (
 	"time"
 )
 
-type AccountRaw struct {
-}
-
 type Account struct {
 	ID          string    `json:"id"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -23,7 +20,7 @@ type Account struct {
 	Type            AccountType       `json:"type"`
 	Pools           []string          `json:"pools,omitempty"`
 	Metadata        map[string]string `json:"metadata"`
-	Raw             *AccountRaw       `json:"raw"`
+	Raw             map[string]any    `json:"raw"`
 }
 
 func (a Account) MarshalJSON() ([]byte, error) {
@@ -114,7 +111,7 @@ func (o *Account) GetMetadata() map[string]string {
 	return o.Metadata
 }
 
-func (o *Account) GetRaw() *AccountRaw {
+func (o *Account) GetRaw() map[string]any {
 	if o == nil {
 		return nil
 	}
