@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 9a9342efe139766cf23c5ac1302ff6ff
+  docChecksum: 358e4973d0920efe83b0f8f9edcbc8a5
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -354,7 +354,6 @@ generatedFiles:
   - USAGE.md
   - docs/models/components/account.md
   - docs/models/components/accountbalance.md
-  - docs/models/components/accountraw.md
   - docs/models/components/accountrequest.md
   - docs/models/components/accountresponse.md
   - docs/models/components/accountscursor.md
@@ -393,8 +392,6 @@ generatedFiles:
   - docs/models/components/moneycorpconfig.md
   - docs/models/components/payment.md
   - docs/models/components/paymentadjustment.md
-  - docs/models/components/paymentadjustmentraw.md
-  - docs/models/components/paymentraw.md
   - docs/models/components/paymentrequest.md
   - docs/models/components/paymentresponse.md
   - docs/models/components/paymentscheme.md
@@ -465,7 +462,6 @@ generatedFiles:
   - docs/models/components/updatepoolqueryrequest.md
   - docs/models/components/updatetransferinitiationstatusrequest.md
   - docs/models/components/v3account.md
-  - docs/models/components/v3accountraw.md
   - docs/models/components/v3accountscursorresponse.md
   - docs/models/components/v3accountscursorresponsecursor.md
   - docs/models/components/v3accounttypeenum.md
@@ -556,7 +552,6 @@ generatedFiles:
   - docs/models/components/v3openbankingconnectionattemptstatusenum.md
   - docs/models/components/v3order.md
   - docs/models/components/v3orderadjustment.md
-  - docs/models/components/v3orderadjustmentraw.md
   - docs/models/components/v3orderdirectionenum.md
   - docs/models/components/v3orderscursorresponse.md
   - docs/models/components/v3orderscursorresponsecursor.md
@@ -564,7 +559,6 @@ generatedFiles:
   - docs/models/components/v3ordertypeenum.md
   - docs/models/components/v3payment.md
   - docs/models/components/v3paymentadjustment.md
-  - docs/models/components/v3paymentadjustmentraw.md
   - docs/models/components/v3paymentinitiation.md
   - docs/models/components/v3paymentinitiationadjustment.md
   - docs/models/components/v3paymentinitiationadjustmentscursorresponse.md
@@ -876,7 +870,7 @@ examples:
         application/json: {"reference": "<value>", "connectorID": "<id>", "createdAt": "2025-11-09T01:03:21.011Z", "amount": 100, "type": "OTHER", "status": "REFUNDED_FAILURE", "scheme": "sepa debit", "asset": "USD"}
       responses:
         "200":
-          application/json: {"data": {"id": "XXX", "reference": "<value>", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "type": "PAY-IN", "status": "PENDING", "initialAmount": 100, "amount": 100, "scheme": "ach", "asset": "USD", "createdAt": "2024-04-23T08:26:30.361Z", "raw": {}, "adjustments": [{"reference": "<value>", "createdAt": "2023-07-29T05:53:39.120Z", "status": "EXPIRED", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2023-12-28T05:11:50.197Z", "status": "DISPUTE_WON", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2024-10-30T00:37:27.585Z", "status": "DISPUTE_LOST", "amount": 100, "raw": {}}], "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}}}
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "type": "PAY-IN", "status": "PENDING", "initialAmount": 100, "amount": 100, "scheme": "ach", "asset": "USD", "createdAt": "2024-04-23T08:26:30.361Z", "raw": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "adjustments": [{"reference": "<value>", "createdAt": "2023-07-29T05:53:39.120Z", "status": "EXPIRED", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2023-12-28T05:11:50.197Z", "status": "DISPUTE_WON", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2024-10-30T00:37:27.585Z", "status": "DISPUTE_LOST", "amount": 100, "raw": {}}], "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   listPayments:
@@ -898,7 +892,7 @@ examples:
           paymentId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"id": "XXX", "reference": "<value>", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "type": "PAYOUT", "status": "OTHER", "initialAmount": 100, "amount": 100, "scheme": "alipay", "asset": "USD", "createdAt": "2024-02-18T17:18:36.576Z", "raw": {}, "adjustments": [{"reference": "<value>", "createdAt": "2024-01-26T23:28:34.008Z", "status": "DISPUTE", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2025-02-22T23:33:22.047Z", "status": "REFUNDED_FAILURE", "amount": 100, "raw": {}}], "metadata": {"key": "<value>", "key1": "<value>"}}}
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "type": "PAYOUT", "status": "OTHER", "initialAmount": 100, "amount": 100, "scheme": "alipay", "asset": "USD", "createdAt": "2024-02-18T17:18:36.576Z", "raw": {"key": "<value>"}, "adjustments": [{"reference": "<value>", "createdAt": "2024-01-26T23:28:34.008Z", "status": "DISPUTE", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2025-02-22T23:33:22.047Z", "status": "REFUNDED_FAILURE", "amount": 100, "raw": {}}], "metadata": {"key": "<value>", "key1": "<value>"}}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   updateMetadata:
@@ -1064,7 +1058,7 @@ examples:
         application/json: {"reference": "<value>", "connectorID": "<id>", "createdAt": "2025-08-19T02:15:08.152Z", "type": "INTERNAL"}
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "createdAt": "2023-04-28T00:06:23.447Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "EXTERNAL", "metadata": {"key": "<value>"}, "raw": {}}}
+          application/json: {"data": {"id": "<id>", "createdAt": "2023-04-28T00:06:23.447Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "EXTERNAL", "metadata": {"key": "<value>"}, "raw": {"key": "<value>", "key1": "<value>", "key2": "<value>"}}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   listAccounts:
@@ -1076,7 +1070,7 @@ examples:
           sort: ["date:asc", "status:desc"]
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "createdAt": "2024-03-27T20:54:54.896Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>"}, "raw": {}}, {"id": "<id>", "createdAt": "2023-09-13T13:13:06.843Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>", "key1": "<value>"}, "raw": {}}, {"id": "<id>", "createdAt": "2025-04-06T19:28:56.662Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "EXTERNAL", "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "raw": {}}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "createdAt": "2024-03-27T20:54:54.896Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>"}, "raw": {"key": "<value>", "key1": "<value>", "key2": "<value>"}}, {"id": "<id>", "createdAt": "2023-09-13T13:13:06.843Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>", "key1": "<value>"}, "raw": {"key": "<value>"}}, {"id": "<id>", "createdAt": "2025-04-06T19:28:56.662Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "EXTERNAL", "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "raw": {"key": "<value>"}}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   getAccount:
@@ -1086,7 +1080,7 @@ examples:
           accountId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"id": "<id>", "createdAt": "2023-11-03T16:09:57.355Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "raw": {}}}
+          application/json: {"data": {"id": "<id>", "createdAt": "2023-11-03T16:09:57.355Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "raw": {"key": "<value>"}}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   getAccountBalances:

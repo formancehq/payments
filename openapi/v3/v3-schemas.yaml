@@ -121,6 +121,7 @@ components:
           $ref: '#/components/schemas/V3Metadata'
         raw:
           type: object
+          additionalProperties: true
     V3AccountTypeEnum:
       type: string
       enum:
@@ -861,6 +862,7 @@ components:
           $ref: '#/components/schemas/V3Metadata'
         raw:
           type: object
+          additionalProperties: true
 
     V3PaymentTypeEnum:
       type: string
@@ -1128,6 +1130,7 @@ components:
           $ref: '#/components/schemas/V3Metadata'
         raw:
           type: object
+          additionalProperties: true
           description: Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.
 
     V3OrderDirectionEnum:

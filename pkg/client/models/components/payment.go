@@ -8,9 +8,6 @@ import (
 	"time"
 )
 
-type PaymentRaw struct {
-}
-
 type Payment struct {
 	ID                   string              `json:"id"`
 	Reference            string              `json:"reference"`
@@ -25,7 +22,7 @@ type Payment struct {
 	Scheme               PaymentScheme       `json:"scheme"`
 	Asset                string              `json:"asset"`
 	CreatedAt            time.Time           `json:"createdAt"`
-	Raw                  *PaymentRaw         `json:"raw"`
+	Raw                  map[string]any      `json:"raw"`
 	Adjustments          []PaymentAdjustment `json:"adjustments"`
 	Metadata             map[string]string   `json:"metadata"`
 }
@@ -132,7 +129,7 @@ func (o *Payment) GetCreatedAt() time.Time {
 	return o.CreatedAt
 }
 
-func (o *Payment) GetRaw() *PaymentRaw {
+func (o *Payment) GetRaw() map[string]any {
 	if o == nil {
 		return nil
 	}
