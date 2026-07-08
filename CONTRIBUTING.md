@@ -25,6 +25,7 @@ This guide demonstrates the process of building a basic connector for a hypothet
   - [Launching a new connector](#launching-a-new-connector)
     - [Additional Connector Configuration](#additional-connector-configuration)
   - [Special Implementation details](#special-implementation-details)
+    - [Connector implementation rules](#connector-implementation-rules)
     - [Metadata](#metadata)
       - [Use namespaces for metadata](#use-namespaces-for-metadata)
       - [Extracting Metadata values from Metadata](#extracting-metadata-values-from-metadata)
@@ -822,6 +823,19 @@ http://localhost:8080/v3/connectors/install/dummypay
 
 In order to keep the codebase neat and consistent across different implementations, there are some tips to be aware of when working on the codebase. Follow this pattern to avoid some pitfalls.
 
+### Connector implementation rules
+
+Connector implementations must preserve data correctness and operational safety across polling cycles, retries, and multi-worker deployments. Follow these rules when adding or changing a connector:
+
+- Do not advance state cursors, watermarks, or offsets after dropping data because of a recoverable PSP condition. Refresh, retry, or return a controlled error before committing progress.
+- Match the workflow tree to the PSP filtering capabilities. Do not create per-account child tasks when the PSP endpoint cannot filter by account, asset, or another parent payload field.
+- Do not silently coerce malformed PSP data or unknown enum values into valid-looking PSP models. Unknown statuses, order types, malformed amounts, and malformed fees must be skipped with structured logs or returned as controlled errors.
+- Keep PSP entity identity and timestamps stable across fetch cycles. Updates must not mutate creation timestamps or references when an entity moves between provider states.
+- Classify PSP errors explicitly. Invalid credentials or invalid configuration must be non-retryable, rate limits and nonce conflicts must use retry or backoff behavior, and provider warnings must not discard valid results.
+- Keep install fast. Prefer lazy loading and per-fetch refresh logic over network-dependent install work unless a bootstrap task is explicitly required.
+- Document PSP assumptions that are not obvious from code, especially pagination, timestamp ordering, signing, request encoding, and webhook semantics. Back them with PSP documentation or live verification.
+- Keep HTTP transport, signing, mapping, and workflow orchestration responsibilities separated. Transport wrappers should not own business mapping or mutate request bodies unless the PSP contract requires it and the behavior is documented.
+
 ### Metadata
 
 When working with a connector, there are cases where you need to save more data in the PSP model, but this property is not available in the PSP model. In this case, you will save this property and its value in the PSP Metadata property. There are also some scenarios where you need to collect more information when creating data, but these properties are not provided in the default creation model. Here, you will also use metadata. Below is how to set up the proper Metadata handling.
@@ -1069,3 +1083,10 @@ chmod +x ./speakeasy.sh
 - [ ] Ensure you don't have empty fields. Use “Unknown” as a placeholder instead.
 - [ ] Validate all status covered on the API docs are formatted to `payments` payment status.
 - [ ] Validate that `PAYIN` and PAYOUT status corresponds to the PSP API payment status. Incoming payouts should have `PAYIN` status and outgoing PAYOUT status.
+- [ ] Validate cursor, watermark, and offset advancement cannot skip rows after recoverable PSP errors.
+- [ ] Validate workflow fan-out matches the PSP filtering capabilities.
+- [ ] Validate unknown or malformed PSP values are not silently mapped to valid business states or zero amounts.
+- [ ] Validate entity references and creation timestamps remain stable across updates.
+- [ ] Validate PSP errors are classified as retryable, non-retryable, or warning-only as appropriate.
+- [ ] Validate install does not perform avoidable network work.
+- [ ] Validate non-obvious PSP assumptions are documented and backed by PSP documentation or live verification.
