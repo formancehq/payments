@@ -24,6 +24,7 @@ const (
 	V3UpdateConnectorRequestTypeFireblocks    V3UpdateConnectorRequestType = "Fireblocks"
 	V3UpdateConnectorRequestTypeGeneric       V3UpdateConnectorRequestType = "Generic"
 	V3UpdateConnectorRequestTypeIncrease      V3UpdateConnectorRequestType = "Increase"
+	V3UpdateConnectorRequestTypeKrakenpro     V3UpdateConnectorRequestType = "Krakenpro"
 	V3UpdateConnectorRequestTypeMangopay      V3UpdateConnectorRequestType = "Mangopay"
 	V3UpdateConnectorRequestTypeModulr        V3UpdateConnectorRequestType = "Modulr"
 	V3UpdateConnectorRequestTypeMoneycorp     V3UpdateConnectorRequestType = "Moneycorp"
@@ -58,6 +59,7 @@ type V3UpdateConnectorRequest struct {
 	V3BitstampConfig      *V3BitstampConfig      `queryParam:"inline"`
 	V3CoinbaseprimeConfig *V3CoinbaseprimeConfig `queryParam:"inline"`
 	V3FireblocksConfig    *V3FireblocksConfig    `queryParam:"inline"`
+	V3KrakenproConfig     *V3KrakenproConfig     `queryParam:"inline"`
 	V3RoutableConfig      *V3RoutableConfig      `queryParam:"inline"`
 
 	Type V3UpdateConnectorRequestType
@@ -204,6 +206,18 @@ func CreateV3UpdateConnectorRequestIncrease(increase V3IncreaseConfig) V3UpdateC
 	return V3UpdateConnectorRequest{
 		V3IncreaseConfig: &increase,
 		Type:             typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestKrakenpro(krakenpro V3KrakenproConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeKrakenpro
+
+	typStr := string(typ)
+	krakenpro.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3KrakenproConfig: &krakenpro,
+		Type:              typ,
 	}
 }
 
@@ -447,6 +461,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3IncreaseConfig = v3IncreaseConfig
 		u.Type = V3UpdateConnectorRequestTypeIncrease
 		return nil
+	case "Krakenpro":
+		v3KrakenproConfig := new(V3KrakenproConfig)
+		if err := utils.UnmarshalJSON(data, &v3KrakenproConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Krakenpro) type V3KrakenproConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3KrakenproConfig = v3KrakenproConfig
+		u.Type = V3UpdateConnectorRequestTypeKrakenpro
+		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
 		if err := utils.UnmarshalJSON(data, &v3MangopayConfig, "", true, false); err != nil {
@@ -625,6 +648,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3FireblocksConfig != nil {
 		return utils.MarshalJSON(u.V3FireblocksConfig, "", true)
+	}
+
+	if u.V3KrakenproConfig != nil {
+		return utils.MarshalJSON(u.V3KrakenproConfig, "", true)
 	}
 
 	if u.V3RoutableConfig != nil {

@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 00e18bc07faa4fa95977d7025587de6a
+  docChecksum: 358e4973d0920efe83b0f8f9edcbc8a5
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -180,6 +180,7 @@ generatedFiles:
   - /models/components/v3installconnectorrequest.go
   - /models/components/v3installconnectorresponse.go
   - /models/components/v3instance.go
+  - /models/components/v3krakenproconfig.go
   - /models/components/v3mangopayconfig.go
   - /models/components/v3modulrconfig.go
   - /models/components/v3moneycorpconfig.go
@@ -544,6 +545,7 @@ generatedFiles:
   - docs/models/components/v3installconnectorrequest.md
   - docs/models/components/v3installconnectorresponse.md
   - docs/models/components/v3instance.md
+  - docs/models/components/v3krakenproconfig.md
   - docs/models/components/v3mangopayconfig.md
   - docs/models/components/v3modulrconfig.md
   - docs/models/components/v3moneycorpconfig.md
