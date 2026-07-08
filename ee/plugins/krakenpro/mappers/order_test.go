@@ -249,6 +249,133 @@ func TestOrderEntryToPSPOrder_BlankFeeIsZero(t *testing.T) {
 	}
 }
 
+// Kraken puts the trigger price in descr.price and the limit price in
+// descr.price2 for the stop-loss / take-profit families — the reverse of
+// plain limit orders. These assert the mapping doesn't swap them.
+func TestOrderEntryToPSPOrder_StopLossLimitPriceMapping(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("sell", "stop-loss-limit")
+	oe.Descr.Price = "27500.0"  // trigger (stop) price
+	oe.Descr.Price2 = "27400.0" // limit price
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+		OrderEntryWithID{OrderID: "OSL", Order: oe})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if got.Type != models.ORDER_TYPE_STOP_LIMIT {
+		t.Errorf("type=%v", got.Type)
+	}
+	if got.StopPrice == nil || got.StopPrice.Cmp(big.NewInt(275000)) != 0 {
+		t.Errorf("StopPrice=%v want 275000 (from descr.price)", got.StopPrice)
+	}
+	if got.LimitPrice == nil || got.LimitPrice.Cmp(big.NewInt(274000)) != 0 {
+		t.Errorf("LimitPrice=%v want 274000 (from descr.price2)", got.LimitPrice)
+	}
+}
+
+func TestOrderEntryToPSPOrder_TakeProfitTriggerMapping(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("sell", "take-profit")
+	oe.Descr.Price = "28000.0" // trigger (stop) price; no limit leg
+	oe.Descr.Price2 = ""
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+		OrderEntryWithID{OrderID: "OTP", Order: oe})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if got.Type != models.ORDER_TYPE_TAKE_PROFIT {
+		t.Errorf("type=%v", got.Type)
+	}
+	if got.StopPrice == nil || got.StopPrice.Cmp(big.NewInt(280000)) != 0 {
+		t.Errorf("StopPrice=%v want 280000 (from descr.price)", got.StopPrice)
+	}
+	if got.LimitPrice != nil {
+		t.Errorf("LimitPrice=%v want nil (take-profit has no limit leg)", got.LimitPrice)
+	}
+}
+
+// Plain limit orders keep descr.price as the limit price.
+func TestOrderEntryToPSPOrder_LimitPriceMapping(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("buy", "limit")
+	oe.Descr.Price = "27500.0"
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+		OrderEntryWithID{OrderID: "OL", Order: oe})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if got.LimitPrice == nil || got.LimitPrice.Cmp(big.NewInt(275000)) != 0 {
+		t.Errorf("LimitPrice=%v want 275000 (from descr.price)", got.LimitPrice)
+	}
+	if got.StopPrice != nil {
+		t.Errorf("StopPrice=%v want nil (plain limit has no stop leg)", got.StopPrice)
+	}
+}
+
+// Trailing orders carry relative offsets in descr.price / descr.price2, not
+// absolute prices, so neither StopPrice nor LimitPrice is set.
+func TestOrderEntryToPSPOrder_TrailingOrdersOmitPrices(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		ordertype string
+		want      models.OrderType
+	}{
+		{"trailing-stop", models.ORDER_TYPE_TRAILING_STOP},
+		{"trailing-stop-limit", models.ORDER_TYPE_TRAILING_STOP_LIMIT},
+	} {
+		oe := filledOrder("sell", tc.ordertype)
+		oe.Descr.Price = "+500.0"  // trailing offset, not an absolute price
+		oe.Descr.Price2 = "-100.0" // limit offset (trailing-stop-limit only)
+		got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+			OrderEntryWithID{OrderID: "OTR", Order: oe})
+		if err != nil {
+			t.Fatalf("%s: err: %v", tc.ordertype, err)
+		}
+		if got.Type != tc.want {
+			t.Errorf("%s: type=%v want %v", tc.ordertype, got.Type, tc.want)
+		}
+		if got.StopPrice != nil {
+			t.Errorf("%s: StopPrice=%v want nil", tc.ordertype, got.StopPrice)
+		}
+		if got.LimitPrice != nil {
+			t.Errorf("%s: LimitPrice=%v want nil", tc.ordertype, got.LimitPrice)
+		}
+	}
+}
+
+func TestOrderEntryToPSPOrder_ExpiresAtFromExpiretm(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("buy", "limit")
+	oe.Expiretm = 3000
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+		OrderEntryWithID{OrderID: "OE", Order: oe})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if got.TimeInForce != models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME {
+		t.Errorf("TimeInForce=%v want GOOD_UNTIL_DATE_TIME", got.TimeInForce)
+	}
+	if want := FloatEpochToTime(3000); got.ExpiresAt == nil || !got.ExpiresAt.Equal(want) {
+		t.Errorf("ExpiresAt=%v want %v", got.ExpiresAt, want)
+	}
+}
+
+func TestOrderEntryToPSPOrder_NoExpiryStaysGoodUntilCancelled(t *testing.T) {
+	t.Parallel()
+	oe := filledOrder("buy", "limit") // Expiretm defaults to 0
+	got, err := OrderEntryToPSPOrder(testCurrencies, testPairs,
+		OrderEntryWithID{OrderID: "ONE", Order: oe})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if got.TimeInForce != models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED {
+		t.Errorf("TimeInForce=%v want GOOD_UNTIL_CANCELLED", got.TimeInForce)
+	}
+	if got.ExpiresAt != nil {
+		t.Errorf("ExpiresAt=%v want nil", got.ExpiresAt)
+	}
+}
+
 func TestDynamicOrderPricePrecision_RespectsCap(t *testing.T) {
 	t.Parallel()
 	overlyPrecise := "1.12345678901234567890" // 20 fractional digits

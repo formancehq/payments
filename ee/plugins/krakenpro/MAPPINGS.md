@@ -363,12 +363,22 @@ ClosedOrders always passes `trades: true` so each row carries its per-fill txid 
 | quote symbol + precision | `QuoteAsset`, `FeeAsset` | |
 | quote symbol + dynamic price precision | `PriceAsset` | dynamic = max decimals across `descr.price`/`descr.price2`/`price`, capped at 10 |
 | `price` (top-level avg fill price) | `AverageFillPrice` | parsed once; not derived from fills |
-| `descr.price` | `LimitPrice` | nil for market orders |
-| `descr.price2` | `StopPrice` | for stop-limit etc. |
+| `descr.price` / `descr.price2` | `LimitPrice` / `StopPrice` | order-type dependent — see price-mapping table below |
 | `status` + (vol_exec vs vol) | `Status` | via `mapKrakenOrderStatus` (table below) |
-| `models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED` | `TimeInForce` | Kraken's enum doesn't surface TIF on ClosedOrders; default GTC |
+| `expiretm` (when > 0) | `ExpiresAt` + `TimeInForce` | non-zero → `TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME` with `ExpiresAt` set to that instant; zero/absent → default `TIME_IN_FORCE_GOOD_UNTIL_CANCELLED`, `ExpiresAt` nil |
 | pair `base`/`quote` raw codes | `SourceAccountReference`, `DestinationAccountReference` | BUY: src=quote code, dst=base code; SELL: inverted |
 | `trades: [...]` | `metadata."com.krakenpro.spec/fills"` | comma-joined trade txids (free of charge — same response, no extra call) |
+
+### Price mapping (`descr.price` / `descr.price2`)
+
+Kraken overloads the two price fields by order type, so the mapping is not positional. `parseOrderAmounts` branches on `descr.ordertype`:
+
+| `descr.ordertype` | `descr.price` → | `descr.price2` → | Notes |
+|---|---|---|---|
+| `limit`, `limit-maker`, `market`, `iceberg`, `settle-position` | `LimitPrice` | `StopPrice` | default branch; `LimitPrice` nil for market orders |
+| `stop-loss`, `take-profit` | `StopPrice` (trigger) | — | `descr.price` is the trigger price; no limit leg |
+| `stop-loss-limit`, `take-profit-limit` | `StopPrice` (trigger) | `LimitPrice` | `descr.price` trigger, `descr.price2` limit |
+| `trailing-stop`, `trailing-stop-limit` | — | — | both left nil — `descr.price`/`price2` are **relative offsets** (signed/percent), not absolute prices; the resolved absolute trigger/limit live in Kraken's top-level `stopprice`/`limitprice`, which the connector does not currently decode |
 
 ### Status mapping (`mapKrakenOrderStatus`)
 
@@ -563,5 +573,6 @@ The orchestrator passes the raw envelope into `PSPAccount.Raw` / `PSPPayment.Raw
 | Open / partially-filled order snapshots | `OpenOrders` accepts no page-size limit, so a drain could exceed Temporal's max activity payload. We poll only the page-bounded `ClosedOrders`, so an order is observed once it closes (final cumulative state); in-flight OPEN/PARTIALLY_FILLED states aren't captured. | If Kraken adds an open-orders page limit, reintroduce a bounded OpenOrders drain; or pick it up via the WebSocket `executions` migration below. |
 | Per-fill `OrderAdjustment` granularity | Today we emit one adjustment per polling-cycle state change (§8.5). Materialising 1 adjustment per fill would 1000× the workflow-event volume on high-frequency orders and diverges from coinbaseprime / bitstamp parity. Per-fill detail is still recoverable via `metadata.com.krakenpro.spec/fills` + `QueryTrades`. | Naturally resolved by the WebSocket migration below — each `executions` event becomes one PSPOrder emission, the engine then records one adjustment per fill with no orchestrator-side bookkeeping. |
 | **Spot WebSocket `executions` channel** ([docs](https://docs.kraken.com/api/docs/websocket-v2/executions/)) | REST polling is sufficient for the read-only spot use case in EN-1014 and matches the rest of the connector family. WS streaming would obsolete the polling-cycle approximation, surface PENDING → OPEN → PARTIALLY_FILLED → FILLED transitions in real time, and naturally give per-fill adjustment granularity. | Future ticket — the orchestrator would split into a streaming consumer (for live execution events) and the current REST path (for backfill + reconciliation). The mapper layer in `mappers/order.go` already produces the right PSPOrder shape per event, so the change is concentrated in the orchestrator. |
+| Trailing-stop absolute trigger / limit prices | For `trailing-stop` / `trailing-stop-limit`, `descr.price`/`descr.price2` are relative offsets (signed/percent), so they're not mapped to `StopPrice`/`LimitPrice` (both left nil) to avoid emitting an offset as an absolute price. The resolved absolute values live in Kraken's top-level `stopprice`/`limitprice` fields, which `OrderEntry` does not currently decode. | Add `stopprice`/`limitprice` to `client.OrderEntry` and map them to `StopPrice`/`LimitPrice` for the trailing variants (and optionally as the source of truth for the fixed stop/take-profit variants). |
 | Webhook signature scheme | Out of scope per epic EN-715 (read-only) | future ticket |
 | Per-fill `price`/`vol`/`fee` detail | The `trades: [...]` array on each order is txids only. Full fill-row detail needs a separate `QueryTrades` call (50 txids per request) | On-demand via the operator using the txid list in `adjustment.metadata."com.krakenpro.spec/fills"`. Could be batched into the connector in a follow-up if a consumer needs it pre-materialised. |

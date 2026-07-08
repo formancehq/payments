@@ -78,8 +78,8 @@ type OrderDescr struct {
 	Pair      string `json:"pair"`             // "XBTUSD"
 	Type      string `json:"type"`             // "buy" / "sell"
 	Ordertype string `json:"ordertype"`        // "market" / "limit" / "stop-loss" / ...
-	Price     string `json:"price"`            // limit price
-	Price2    string `json:"price2,omitempty"` // stop price (for stop-limit etc.)
+	Price     string `json:"price"`            // limit price, or trigger price for stop-loss/take-profit orders
+	Price2    string `json:"price2,omitempty"` // limit price for stop-loss-limit/take-profit-limit orders
 	Leverage  string `json:"leverage,omitempty"`
 	Order     string `json:"order,omitempty"` // human-readable description
 }

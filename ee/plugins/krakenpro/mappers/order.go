@@ -155,6 +155,14 @@ func OrderEntryToPSPOrder(
 		metadata[MetadataPrefix+"close_time"] = FloatEpochToTime(oe.Closetm).Format(time.RFC3339)
 	}
 
+	timeInForce := models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED
+	var expiresAt *time.Time
+	if oe.Expiretm > 0 {
+		timeInForce = models.TIME_IN_FORCE_GOOD_UNTIL_DATE_TIME
+		t := FloatEpochToTime(oe.Expiretm)
+		expiresAt = &t
+	}
+
 	return &models.PSPOrder{
 		Reference:                   row.OrderID,
 		ClientOrderID:               oe.ClOrdID,
@@ -174,7 +182,8 @@ func OrderEntryToPSPOrder(
 		Fee:                         amounts.fee,
 		FeeAsset:                    &quoteAsset,
 		PriceAsset:                  &priceAsset,
-		TimeInForce:                 models.TIME_IN_FORCE_GOOD_UNTIL_CANCELLED,
+		TimeInForce:                 timeInForce,
+		ExpiresAt:                   expiresAt,
 		SourceAccountReference:      accountRef(srcCode),
 		DestinationAccountReference: accountRef(dstCode),
 		Metadata:                    metadata,
@@ -240,11 +249,36 @@ func parseOrderAmounts(oe client.OrderEntry, basePrec, quotePrec int, orderID st
 	if a.avgPrice, err = parseOptionalPrice(oe.Price, a.pricePrecision); err != nil {
 		return orderAmounts{}, fmt.Errorf("order %s avg price: %w", orderID, err)
 	}
-	if a.limitPrice, err = parseOptionalPrice(oe.Descr.Price, a.pricePrecision); err != nil {
-		return orderAmounts{}, fmt.Errorf("order %s limit price: %w", orderID, err)
-	}
-	if a.stopPrice, err = parseOptionalPrice(oe.Descr.Price2, a.pricePrecision); err != nil {
-		return orderAmounts{}, fmt.Errorf("order %s stop price: %w", orderID, err)
+	// Kraken overloads descr.price / descr.price2 by order type. For the
+	// stop-loss and take-profit families descr.price is the trigger (stop)
+	// price, and the *-limit variants carry the limit price in descr.price2.
+	// Plain limit orders (and everything else) keep descr.price as the limit
+	// price. See the Kraken AddOrder / OpenOrders docs.
+	switch strings.ToLower(oe.Descr.Ordertype) {
+	case "stop-loss", "take-profit":
+		if a.stopPrice, err = parseOptionalPrice(oe.Descr.Price, a.pricePrecision); err != nil {
+			return orderAmounts{}, fmt.Errorf("order %s stop price: %w", orderID, err)
+		}
+	case "stop-loss-limit", "take-profit-limit":
+		if a.stopPrice, err = parseOptionalPrice(oe.Descr.Price, a.pricePrecision); err != nil {
+			return orderAmounts{}, fmt.Errorf("order %s stop price: %w", orderID, err)
+		}
+		if a.limitPrice, err = parseOptionalPrice(oe.Descr.Price2, a.pricePrecision); err != nil {
+			return orderAmounts{}, fmt.Errorf("order %s limit price: %w", orderID, err)
+		}
+	case "trailing-stop", "trailing-stop-limit":
+		// For trailing orders descr.price / descr.price2 are relative offsets
+		// (signed / percentage), not absolute prices — the resolved absolute
+		// trigger/limit live in Kraken's top-level stopprice / limitprice
+		// fields, which this mapper doesn't decode. Leave both nil rather than
+		// emit an offset as an absolute price.
+	default:
+		if a.limitPrice, err = parseOptionalPrice(oe.Descr.Price, a.pricePrecision); err != nil {
+			return orderAmounts{}, fmt.Errorf("order %s limit price: %w", orderID, err)
+		}
+		if a.stopPrice, err = parseOptionalPrice(oe.Descr.Price2, a.pricePrecision); err != nil {
+			return orderAmounts{}, fmt.Errorf("order %s stop price: %w", orderID, err)
+		}
 	}
 	return a, nil
 }
@@ -304,19 +338,19 @@ func cmpDecimal(a, b string) int {
 // dynamicOrderPricePrecision picks the largest fractional precision
 // seen across the order's price fields, capped at maxPricePrecisionCap.
 func dynamicOrderPricePrecision(prices ...string) int {
-	max := 0
+	maxPrecision := 0
 	for _, p := range prices {
 		if i := strings.IndexByte(p, '.'); i >= 0 {
 			d := len(p) - i - 1
-			if d > max {
-				max = d
+			if d > maxPrecision {
+				maxPrecision = d
 			}
 		}
 	}
-	if max > maxPricePrecisionCap {
-		max = maxPricePrecisionCap
+	if maxPrecision > maxPricePrecisionCap {
+		maxPrecision = maxPricePrecisionCap
 	}
-	return max
+	return maxPrecision
 }
 
 func parseOptionalPrice(s string, precision int) (*big.Int, error) {
