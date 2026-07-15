@@ -41,6 +41,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -49,6 +50,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v5/pkg/types/currency"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -95,13 +97,34 @@ var contractWebhookEvents = []struct {
 
 // seededReadDecayHint explains the most likely cause when a seeded-user read
 // returns a 4xx: the one-time Tink Demo Bank link has decayed (Tink consent
-// expires) or TINK_CONTRACT_SEEDED_USER_ID does not belong to the CI Console
-// app's user set. Both are environmental — NOT the upstream schema/ordering
-// drift this suite exists to catch. Re-run seed-tink-contract-user.sh to
-// re-link the Demo Bank, and verify the seed matches the CI credentials.
+// expires — the Demo Bank test connection lapses within days) or
+// TINK_CONTRACT_SEEDED_USER_ID does not belong to the CI Console app's user
+// set. Both are environmental — NOT the upstream schema/ordering drift this
+// suite exists to catch. Re-run seed-tink-contract-user.sh (colocated) to
+// re-link the Demo Bank; diagnose-tink-contract-seed.sh (colocated) tells you
+// which of the two it is.
 const seededReadDecayHint = "seeded-user read failed with a 4xx: the Tink Demo " +
 	"Bank link has likely decayed, or TINK_CONTRACT_SEEDED_USER_ID does not " +
-	"match the CI Console app — re-run seed-tink-contract-user.sh to re-link"
+	"match the CI Console app — run diagnose-tink-contract-seed.sh, then re-run " +
+	"seed-tink-contract-user.sh to re-link (both colocated with this test)"
+
+// skipIfSeededReadDecayed turns a 4xx from a seeded-user read into a Skip rather
+// than a failure: a decayed Tink Demo Bank consent or a seed/app mismatch is an
+// environmental condition, not the schema/ordering drift this suite exists to
+// catch, so it must not paint a red "contract drift" build. The connector
+// returns the httpwrapper 4xx sentinel unwrapped for these reads (nil error
+// body), so errors.Is detects it precisely. Any non-4xx error (5xx, transport,
+// decode) still fails — that could be real drift. The schema assertions after
+// each read still run whenever data IS returned, so genuine drift is caught.
+func skipIfSeededReadDecayed(err error) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, httpwrapper.ErrStatusCodeClientError) {
+		Skip(seededReadDecayHint)
+	}
+	Expect(err).To(BeNil())
+}
 
 // assertTinkAmount re-asserts the three failure modes of the plugin's
 // MapTinkAmount (which cannot be imported here without an import cycle): the
@@ -234,23 +257,27 @@ var _ = Describe("Tink API contract", func() {
 				Expect(page).To(BeNumerically("<", contractMaxPages),
 					"accounts page walk did not terminate")
 				resp, err := c.ListAccounts(ctx, seededUserID, pageToken)
-				Expect(err).To(BeNil(), seededReadDecayHint)
+				skipIfSeededReadDecayed(err)
 				accounts = append(accounts, resp.Accounts...)
 				if resp.NextPageToken == "" {
 					break
 				}
 				pageToken = resp.NextPageToken
 			}
-			// The seeded user promises a linked Demo Bank; empty means the
-			// seed decayed or the API stopped returning linked accounts.
-			Expect(accounts).ToNot(BeEmpty())
+			// The seeded user promises a linked Demo Bank. Zero accounts on a 200
+			// (so no 4xx skip fired above) is the same environmental decay — the
+			// consent lapsed and Tink stopped returning linked accounts — so skip
+			// rather than paint a red drift build.
+			if len(accounts) == 0 {
+				Skip(seededReadDecayHint)
+			}
 			for _, account := range accounts {
 				assertAccount(account)
 			}
 
 			// fetchNextAccounts reads exactly ONE account by ID per webhook.
 			got, err := c.GetAccount(ctx, seededUserID, accounts[0].ID)
-			Expect(err).To(BeNil(), seededReadDecayHint)
+			skipIfSeededReadDecayed(err)
 			Expect(got.ID).To(Equal(accounts[0].ID))
 			assertAccount(got)
 
@@ -269,7 +296,7 @@ var _ = Describe("Tink API contract", func() {
 					PageSize:      contractPageSize,
 					NextPageToken: nextPageToken,
 				})
-				Expect(err).To(BeNil(), seededReadDecayHint)
+				skipIfSeededReadDecayed(err)
 				transactions = append(transactions, resp.Transactions...)
 				if resp.NextPageToken == "" {
 					break
