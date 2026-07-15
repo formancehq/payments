@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFormatToTransactionDate(t *testing.T) {
+func TestFormatToPostedDate(t *testing.T) {
 	t.Parallel()
 
 	utc := time.FixedZone("", 0)
 
-	// Modulr's toTransactionDate filter is whole-second and inclusive, so truncating a
+	// Modulr's toPostedDate filter is whole-second and inclusive, so truncating a
 	// millisecond ceiling down to its second still returns the ceiling transaction.
 	tests := []struct {
 		name string
@@ -39,7 +39,7 @@ func TestFormatToTransactionDate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tc.want, formatToTransactionDate(tc.in))
+			require.Equal(t, tc.want, formatToPostedDate(tc.in))
 		})
 	}
 }

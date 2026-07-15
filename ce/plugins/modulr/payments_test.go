@@ -41,13 +41,13 @@ var _ = Describe("Modulr Plugin Payments", func() {
 		BeforeEach(func() {
 			now = time.Now().UTC()
 
-			// Modulr returns transactions newest-first (descending by transactionDate),
-			// so index 0 is the most recent. PostedDate intentionally lags TransactionDate
-			// by 2h: the watermark must track TransactionDate (the filtered/compared field),
-			// never the later PostedDate.
+			// Modulr returns transactions newest-first (descending by postedDate), so
+			// index 0 is the most recent. TransactionDate intentionally leads PostedDate
+			// by 2h: the watermark must track PostedDate (the field the endpoint sorts and
+			// paginates by, and the payment's CreatedAt), never TransactionDate.
 			sampleTransactions = make([]client.Transaction, 0)
 			for i := 0; i < 50; i++ {
-				txnDate := now.Add(-time.Duration(i) * time.Minute)
+				postedDate := now.Add(-time.Duration(i) * time.Minute)
 				sampleTransactions = append(sampleTransactions, client.Transaction{
 					ID:              fmt.Sprintf("%d", i),
 					Type:            "PI_FAST",
@@ -55,8 +55,8 @@ var _ = Describe("Modulr Plugin Payments", func() {
 					Credit:          false,
 					SourceID:        fmt.Sprintf("test-%d", i),
 					Description:     fmt.Sprintf("Description %d", i),
-					PostedDate:      txnDate.Add(2 * time.Hour).Format(transactionDateLayout),
-					TransactionDate: txnDate.Format(transactionDateLayout),
+					PostedDate:      postedDate.Format(transactionDateLayout),
+					TransactionDate: postedDate.Add(2 * time.Hour).Format(transactionDateLayout),
 					Account: client.Account{
 						Currency: "USD",
 					},
@@ -118,12 +118,12 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// Nothing newer than the watermark: stay put, no drain in progress.
-			Expect(state.LastTransactionTime.IsZero()).To(BeTrue())
+			Expect(state.LastPostedTime.IsZero()).To(BeTrue())
 			Expect(state.Ceiling.IsZero()).To(BeTrue())
 			Expect(state.Version).To(Equal(paymentsStateVersion))
 		})
 
-		It("should fetch a single page oldest-first and advance the watermark to the newest transactionDate", func(ctx SpecContext) {
+		It("should fetch a single page oldest-first and advance the watermark to the newest postedDate", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
 				State:       []byte(`{}`),
 				PageSize:    60,
@@ -153,11 +153,11 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			Expect(state.Ceiling.IsZero()).To(BeTrue())
 			Expect(state.Version).To(Equal(paymentsStateVersion))
 
-			// Watermark is the newest TransactionDate (index 0), not the PostedDate.
-			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
-			postedNewest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
-			Expect(state.LastTransactionTime.UTC()).ToNot(Equal(postedNewest.UTC()))
+			// Watermark is the newest PostedDate (index 0), not the TransactionDate.
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
+			Expect(state.LastPostedTime.UTC()).To(Equal(newest.UTC()))
+			txnNewest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+			Expect(state.LastPostedTime.UTC()).ToNot(Equal(txnNewest.UTC()))
 		})
 
 		It("should drain a multi-page window oldest-first without losing transactions", func(ctx SpecContext) {
@@ -165,7 +165,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			// page 0 = indices 0..19 (newest), page 1 = 20..39, page 2 = 40..49 (oldest).
 			// They must be emitted oldest-first: page 2, then page 1, then page 0.
 			const pageSize = 20
-			ceiling, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
+			ceiling, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
 
 			// open: peek page 0 (unbounded above) -> freeze ceiling, TotalPages = 3.
 			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, pageSize, timeEq(time.Time{}), timeEq(time.Time{})).Return(
@@ -206,7 +206,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 					Expect(json.Unmarshal(state, &mid)).To(BeNil())
 					Expect(mid.NextPage).To(Equal(2))
 					Expect(mid.Ceiling.UTC()).To(Equal(ceiling.UTC()))
-					Expect(mid.LastTransactionTime.IsZero()).To(BeTrue())
+					Expect(mid.LastPostedTime.IsZero()).To(BeTrue())
 				}
 
 				if !resp.HasMore {
@@ -225,16 +225,16 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			Expect(json.Unmarshal(state, &final)).To(BeNil())
 			Expect(final.Ceiling.IsZero()).To(BeTrue())
 			Expect(final.NextPage).To(Equal(0))
-			Expect(final.LastTransactionTime.UTC()).To(Equal(ceiling.UTC()))
+			Expect(final.LastPostedTime.UTC()).To(Equal(ceiling.UTC()))
 		})
 
 		It("should fetch only transactions newer than the existing watermark", func(ctx SpecContext) {
-			// Watermark sits at index 10's TransactionDate; the API (newest-first) returns
+			// Watermark sits at index 10's PostedDate; the API (newest-first) returns
 			// everything >= the watermark, i.e. indices 0..10, on a single page.
-			watermark, _ := time.Parse(transactionDateLayout, sampleTransactions[10].TransactionDate)
+			watermark, _ := time.Parse(transactionDateLayout, sampleTransactions[10].PostedDate)
 			req := models.FetchNextPaymentsRequest{
 				State: []byte(fmt.Sprintf(
-					`{"lastTransactionTime":"%s","version":%d}`,
+					`{"lastPostedTime":"%s","version":%d}`,
 					watermark.UTC().Format(time.RFC3339Nano), paymentsStateVersion,
 				)),
 				PageSize:    40,
@@ -257,8 +257,8 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			var state paymentsState
 			Expect(json.Unmarshal(resp.NewState, &state)).To(BeNil())
 			Expect(state.Ceiling.IsZero()).To(BeTrue())
-			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
+			Expect(state.LastPostedTime.UTC()).To(Equal(newest.UTC()))
 		})
 
 		It("should restart at page 0 when state has a stale page but no ceiling", func(ctx SpecContext) {
@@ -286,16 +286,17 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			Expect(json.Unmarshal(resp.NewState, &state)).To(BeNil())
 			Expect(state.NextPage).To(Equal(0))
 			Expect(state.Ceiling.IsZero()).To(BeTrue())
-			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
+			Expect(state.LastPostedTime.UTC()).To(Equal(newest.UTC()))
 		})
 
 		It("should reset stale pre-version state (migration) and refetch from zero", func(ctx SpecContext) {
-			// Pre-fix state: a PostedDate-derived watermark and no version field (version 0).
-			stale, _ := time.Parse(transactionDateLayout, sampleTransactions[5].PostedDate)
+			// Pre-fix state: the v1 schema keyed on TransactionDate (older tag
+			// lastTransactionTime, version 1). Version < current must be reset.
+			stale, _ := time.Parse(transactionDateLayout, sampleTransactions[5].TransactionDate)
 			req := models.FetchNextPaymentsRequest{
 				State: []byte(fmt.Sprintf(
-					`{"lastTransactionTime":"%s"}`, stale.UTC().Format(time.RFC3339Nano),
+					`{"lastTransactionTime":"%s","version":1}`, stale.UTC().Format(time.RFC3339Nano),
 				)),
 				PageSize:    60,
 				FromPayload: []byte(`{"reference": "test"}`),
@@ -315,8 +316,8 @@ var _ = Describe("Modulr Plugin Payments", func() {
 			var state paymentsState
 			Expect(json.Unmarshal(resp.NewState, &state)).To(BeNil())
 			Expect(state.Version).To(Equal(paymentsStateVersion))
-			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].TransactionDate)
-			Expect(state.LastTransactionTime.UTC()).To(Equal(newest.UTC()))
+			newest, _ := time.Parse(transactionDateLayout, sampleTransactions[0].PostedDate)
+			Expect(state.LastPostedTime.UTC()).To(Equal(newest.UTC()))
 		})
 	})
 })
