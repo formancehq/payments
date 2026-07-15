@@ -32,9 +32,11 @@
 // Ordering uses monotonic-date assertions (not pinned IDs): accounts come back
 // createdDate-ascending (fetchNextAccounts derives its watermark from the last
 // element), beneficiaries created-ascending (same watermark pattern), and
-// transactions newest-first (the fetchNextPayments drain window freezes its
-// ceiling from page[0] and reverses each page). The real dependency is the sort
-// property, so there is nothing to bootstrap.
+// transactions newest-first by postedDate (verified against the sandbox:
+// postedDate is strictly descending, transactionDate is not — the
+// fetchNextPayments drain window reverses each page and emits payments whose
+// CreatedAt is postedDate). The real dependency is the sort property, so there
+// is nothing to bootstrap.
 //
 // Scope: only methods ingestion actually consumes. GetPayments and GetPayout
 // exist on the client but are UNUSED by any fill*/fetch* path, so they are out
@@ -267,16 +269,20 @@ var _ = Describe("Modulr API contract", func() {
 			Expect(totalPages).To(BeNumerically(">=", 1))
 			assertTransactionShape(txns)
 
-			// The drain window hard-depends on newest-first ordering (it freezes
-			// the ceiling from page[0] and reverses each page). Reverse to
-			// oldest-first and assert non-decreasing transactionDate.
-			transactionDates := make([]int64, 0, len(txns))
+			// Modulr sorts this list newest-first by postedDate (verified against
+			// the sandbox: postedDate is strictly descending, while transactionDate
+			// is NOT — a near-simultaneous transfer pair can post in the opposite
+			// order to its transactionDate). The drain window reverses each page and
+			// emits payments whose CreatedAt is postedDate, so the ordering contract
+			// the connector actually depends on is postedDate. Reverse to
+			// oldest-first and assert non-decreasing postedDate.
+			postedDates := make([]int64, 0, len(txns))
 			for i := len(txns) - 1; i >= 0; i-- {
-				t, perr := time.Parse(modulrDateLayout, txns[i].TransactionDate)
-				Expect(perr).To(BeNil())
-				transactionDates = append(transactionDates, t.UnixNano())
+				t, perr := time.Parse(modulrDateLayout, txns[i].PostedDate)
+				Expect(perr).To(BeNil(), "transaction postedDate %q is not %s", txns[i].PostedDate, modulrDateLayout)
+				postedDates = append(postedDates, t.UnixNano())
 			}
-			contracttest.AssertNonDecreasing(transactionDates, "transaction transactionDate (reversed to oldest-first)")
+			contracttest.AssertNonDecreasing(postedDates, "transaction postedDate (reversed to oldest-first)")
 		})
 	})
 
