@@ -168,14 +168,14 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 			)
 
 			m.EXPECT().GetTransactions(gomock.Any(), 2, 40, sampleTransactions[38].UpdatedAt.UTC()).Return(
-				sampleTransactions[41:],
+				sampleTransactions[40:],
 				-1,
 				nil,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(10))
+			Expect(resp.Payments).To(HaveLen(11))
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.NewState).ToNot(BeNil())
 
