@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -37,21 +38,28 @@ var _ = Describe("API v2 Connector Webhooks", func() {
 		})
 
 		It("should return a bad request error when connector ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest(http.MethodGet, "connectorID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "connector", "mangopay", "connectorID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
+		It("should return not found when the provider never supported v2 webhooks", func(ctx SpecContext) {
+			req := prepareQueryRequest(http.MethodPost, "connector", "stripe", "connectorID", connID.String())
+			handlerFn(w, req)
+
+			assertExpectedResponse(w.Result(), http.StatusNotFound, ErrNotFound)
+		})
+
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			m.EXPECT().ConnectorsHandleWebhooks(gomock.Any(), "/", "/", gomock.Any()).Return(fmt.Errorf("connector webhooks err"))
-			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "connectorID", connID.String(), &config))
+			handlerFn(w, prepareQueryRequestWithBody(http.MethodPost, bytes.NewReader(config), "connector", "mangopay", "connectorID", connID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status ok on success", func(ctx SpecContext) {
 			m.EXPECT().ConnectorsHandleWebhooks(gomock.Any(), "/", "/", gomock.Any()).Return(nil)
-			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "connectorID", connID.String(), &config))
+			handlerFn(w, prepareQueryRequestWithBody(http.MethodPost, bytes.NewReader(config), "connector", "mangopay", "connectorID", connID.String()))
 			assertExpectedResponse(w.Result(), http.StatusOK, "")
 		})
 	})
