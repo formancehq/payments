@@ -9,26 +9,6 @@ on:
     # Daily at 06:00 UTC.
     - cron: "0 6 * * *"
   workflow_dispatch: {}
-  # TEMPORARY (remove before merge): validate the workflow on its own PR.
-  # Path-scoped so it only fires when the contract-test files change.
-  pull_request:
-    paths:
-      - ".github/workflows/contract-tests.yml"
-      - "ce/plugins/adyen/client/contract_test.go"
-      - "ce/plugins/column/client/contract_test.go"
-      - "ce/plugins/currencycloud/client/contract_test.go"
-      - "ce/plugins/increase/client/contract_test.go"
-      - "ce/plugins/mangopay/client/contract_test.go"
-      - "ce/plugins/modulr/client/contract_test.go"
-      - "ce/plugins/moneycorp/client/contract_test.go"
-      - "ce/plugins/plaid/client/contract_test.go"
-      - "ce/plugins/powens/client/contract_test.go"
-      - "ce/plugins/qonto/client/contract_test.go"
-      - "ce/plugins/stripe/client/contract_test.go"
-      - "ce/plugins/tink/client/contract_test.go"
-      - "ce/plugins/wise/client/contract_test.go"
-      - "ee/plugins/routable/client/contract_test.go"
-      - "Justfile"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -61,7 +41,7 @@ jobs:
           - routable
           - stripe
           - tink
-          # Disabling Wise as the sandbox seems to be down right now?! It worked yesterday :/
+          # Old Wise sandbox is not working anymore; that soudns like a step in the direction of whole of making their v1 api deprecated. The v2 is going to be oauth 3-legged, so that'll require a lot of work on our end.
 #          - wise
     steps:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
