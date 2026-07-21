@@ -105,7 +105,11 @@ var _ = Describe("Routable API contract", func() {
 			Skip("ROUTABLE_CONTRACT_API_KEY must be set to run the Routable contract test")
 		}
 
-		ctx = context.Background()
+		// Bound each spec so a hung or slow sandbox call fails fast instead of
+		// stalling the daily CI job indefinitely.
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		DeferCleanup(cancel)
 		c = New("routable", apiKey, contractSandboxEndpoint)
 	})
 
