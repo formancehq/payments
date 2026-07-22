@@ -39,11 +39,17 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	hasMore = nextCursor != ""
 
 	newState := accountsState{
-		NextCursor: nextCursor,
+		NextCursor:    nextCursor,
+		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
-	if len(accounts) > 0 {
-		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+	// Increase returns accounts newest-first (reverse chronological), so the
+	// greatest created_at is the first element of the page. Advance the
+	// watermark monotonically off that max and never let a later (older) cursor
+	// page drag it back, so a fresh incremental poll queries created_at.after
+	// the newest account seen rather than the oldest.
+	if len(accounts) > 0 && accounts[0].CreatedAt.After(newState.LastCreatedAt) {
+		newState.LastCreatedAt = accounts[0].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)

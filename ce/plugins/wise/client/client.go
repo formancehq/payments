@@ -48,16 +48,24 @@ type Client interface {
 
 type client struct {
 	httpClient httpwrapper.Client
+	baseURL    string
 
 	mux                    *sync.Mutex
 	recipientAccountsCache *lru.Cache[uint64, *RecipientAccount]
 }
 
 func (c *client) endpoint(path string) string {
-	return fmt.Sprintf("%s/%s", apiEndpoint, path)
+	return fmt.Sprintf("%s/%s", c.baseURL, path)
 }
 
 func New(connectorName string, apiKey string) Client {
+	return newWithEndpoint(connectorName, apiKey, apiEndpoint)
+}
+
+// newWithEndpoint builds the client against a specific API host. Production
+// always targets apiEndpoint (via New); the contract test injects the Wise
+// sandbox host, which is a different host from production.
+func newWithEndpoint(connectorName string, apiKey string, baseURL string) Client {
 	recipientsCache, _ := lru.New[uint64, *RecipientAccount](2048)
 	config := &httpwrapper.Config{
 		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: &apiTransport{
@@ -68,6 +76,7 @@ func New(connectorName string, apiKey string) Client {
 
 	return &client{
 		httpClient:             httpwrapper.NewClient(config),
+		baseURL:                baseURL,
 		mux:                    &sync.Mutex{},
 		recipientAccountsCache: recipientsCache,
 	}

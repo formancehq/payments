@@ -64,6 +64,25 @@ tests:
   done
   @for f in coverage-plugin-*.txt; do tail -n +2 "$f" >> coverage.txt && rm "$f"; done
 
+# Contract tests call real connector sandbox APIs to detect upstream API drift.
+# Gated behind the `contract` build tag so they never run as part of `tests`.
+# Requires the connector's contract credentials in the environment, e.g. for
+# adyen: ADYEN_CONTRACT_API_KEY and ADYEN_CONTRACT_COMPANY_ID. Without them the
+# suite skips rather than fails. Run daily via .github/workflows/contract-tests.yml.
+# Scoped to the `client` package (where contract tests live) and run with -v so
+# bootstrap logs (e.g. paste-ready pinned-ID literals) are visible: `go test`
+# discards a passing package's stdout/stderr unless -v is set. Non-recursive
+# (no `/...`) so client SUBpackages (e.g. modulr's `client/hmac`, whose plain
+# tests don't accept the `-ginkgo.v` arg) are not swept into the contract run.
+# CE connectors live under ce/plugins/ (each its own Go module); EE connectors
+# (e.g. routable) under ee/plugins/ (root module) — the recipe resolves
+# whichever exists and runs from that directory so the right module is used.
+[group('test')]
+contract-tests connector="adyen":
+  @dir="ce/plugins/{{connector}}"; \
+  if [ -d "ee/plugins/{{connector}}" ]; then dir="ee/plugins/{{connector}}"; fi; \
+  cd "$dir" && go test -tags contract -v -count=1 ./client  -args -ginkgo.v
+
 [group('test')]
 generate-sdk: openapi
     @export PATH=$PATH:$(go env GOPATH)/bin && cd pkg/client && speakeasy run --skip-versioning

@@ -1,0 +1,172 @@
+name: Contract Tests
+
+# Contract tests call the real connector sandbox APIs to detect upstream API
+# drift (schema + ordering) in the endpoints the Payments connectors consume.
+# They are gated behind the `contract` build tag and never run on PRs; they run
+# on a daily schedule and on demand.
+on:
+  schedule:
+    # Daily at 06:00 UTC.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  Contract:
+    # Mirrors the main.yml `Tests` job environment.
+    runs-on: "namespace-profile-linux-amd64-4vcpu"
+    strategy:
+      fail-fast: false
+      matrix:
+        connector:
+          - adyen
+          - column
+          - currencycloud
+          - increase
+          - mangopay
+          - modulr
+          - moneycorp
+          - plaid
+          - powens
+          # qonto is disabled: Qonto invalidated our sandbox credentials, so
+          # every daily run fails on auth (the suite only Skips when the
+          # QONTO_CONTRACT_* secrets are absent, and they are still set).
+          # Re-enable once fresh sandbox credentials are provisioned and the
+          # secrets are updated. The test itself is kept current at
+          # ce/plugins/qonto/client/contract_test.go.
+          # - qonto
+          - routable
+          - stripe
+          - tink
+          # Old Wise sandbox is not working anymore; that soudns like a step in the direction of whole of making their v1 api deprecated. The v2 is going to be oauth 3-legged, so that'll require a lot of work on our end.
+#          - wise
+    steps:
+      - uses: 'namespacelabs/nscloud-checkout-action@v9'
+        with:
+          fetch-depth: 0
+      - name: Setup Env
+        uses: ./.github/actions/default
+        with:
+          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - name: Run contract tests
+        run: >
+          nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
+          develop --impure --command just contract-tests ${{ matrix.connector }}
+        env:
+          # Adyen test-environment contract credentials.
+          ADYEN_CONTRACT_API_KEY: ${{ secrets.ADYEN_CONTRACT_API_KEY }}
+          ADYEN_CONTRACT_COMPANY_ID: ${{ secrets.ADYEN_CONTRACT_COMPANY_ID }}
+          # Column sandbox contract credential. The endpoint (api.column.com) is
+          # hardcoded in the test; a test_-prefixed key selects the sandbox.
+          COLUMN_CONTRACT_API_KEY: ${{ secrets.COLUMN_CONTRACT_API_KEY }}
+          # CurrencyCloud demo/sandbox contract credentials. The endpoint
+          # (devapi.currencycloud.com) is hardcoded in the test; demo creds only
+          # authenticate against the demo host.
+          CURRENCYCLOUD_CONTRACT_LOGIN_ID: ${{ secrets.CURRENCYCLOUD_CONTRACT_LOGIN_ID }}
+          CURRENCYCLOUD_CONTRACT_API_KEY: ${{ secrets.CURRENCYCLOUD_CONTRACT_API_KEY }}
+          # Increase sandbox contract credential. The endpoint
+          # (sandbox.increase.com) is hardcoded in the test; a sandbox key only
+          # authenticates against the sandbox host. The webhook shared secret is
+          # a non-secret test constant, so only the API key is injected here.
+          INCREASE_CONTRACT_API_KEY: ${{ secrets.INCREASE_CONTRACT_API_KEY }}
+          # Mangopay sandbox contract credentials. The endpoint
+          # (api.sandbox.mangopay.com) is hardcoded in the test; sandbox and prod
+          # are different hosts. Auth is OAuth2 client-credentials, so BOTH the
+          # ClientId and the API key are required (the suite Skips without both).
+          MANGOPAY_CONTRACT_CLIENT_ID: ${{ secrets.MANGOPAY_CONTRACT_CLIENT_ID }}
+          MANGOPAY_CONTRACT_API_KEY: ${{ secrets.MANGOPAY_CONTRACT_API_KEY }}
+          # Modulr sandbox contract credential. The endpoint
+          # (api-sandbox.modulrfinance.com/api-sandbox-token) is hardcoded in the
+          # test; sandbox token auth passes the API key directly as the
+          # Authorization header, so only the API key is a secret (apiSecret is a
+          # throwaway constant the token endpoint ignores).
+          MODULR_CONTRACT_API_KEY: ${{ secrets.MODULR_CONTRACT_API_KEY }}
+          # Moneycorp sandbox contract credentials. The endpoint
+          # (sandbox-corpapi.moneycorp.com) is hardcoded in the test; sandbox and
+          # prod are different hosts. Auth is POST /login with {loginId, apiKey},
+          # so BOTH the client ID (loginId) and the API key are required (the
+          # suite Skips without both).
+          MONEYCORP_CONTRACT_CLIENT_ID: ${{ secrets.MONEYCORP_CONTRACT_CLIENT_ID }}
+          MONEYCORP_CONTRACT_API_KEY: ${{ secrets.MONEYCORP_CONTRACT_API_KEY }}
+          # Plaid sandbox contract credentials. isSandbox=true in the test
+          # selects the SDK's built-in sandbox.plaid.com host, so no endpoint
+          # is injected. The redirect URI is the hardcoded constant
+          # https://example.com, which must be allowlisted in the Plaid
+          # dashboard of the team these credentials belong to (it already is).
+          PLAID_CONTRACT_CLIENT_ID: ${{ secrets.PLAID_CONTRACT_CLIENT_ID }}
+          PLAID_CONTRACT_CLIENT_SECRET: ${{ secrets.PLAID_CONTRACT_CLIENT_SECRET }}
+          # Powens sandbox contract credentials. The endpoint is PER-TENANT
+          # (https://<domain>.biapi.pro, the connector's `endpoint` config
+          # field), so it is injected alongside the credentials instead of
+          # being hardcoded. The configuration token is the client-application
+          # Bearer token used by the webhook-auth endpoints; the client
+          # ID/secret pair authenticates auth/init. The suite Skips unless all
+          # FOUR are set.
+          POWENS_CONTRACT_CLIENT_ID: ${{ secrets.POWENS_CONTRACT_CLIENT_ID }}
+          POWENS_CONTRACT_CLIENT_SECRET: ${{ secrets.POWENS_CONTRACT_CLIENT_SECRET }}
+          POWENS_CONTRACT_CONFIGURATION_TOKEN: ${{ secrets.POWENS_CONTRACT_CONFIGURATION_TOKEN }}
+          POWENS_CONTRACT_ENDPOINT: ${{ secrets.POWENS_CONTRACT_ENDPOINT }}
+          # Qonto sandbox contract credentials. The endpoint
+          # (thirdparty-sandbox.staging.qonto.co) is hardcoded in the test;
+          # sandbox and prod are different hosts. Auth is
+          # "Authorization: <login>:<secret_key>" and the sandbox additionally
+          # requires the X-Qonto-Staging-Token header on every request, so all
+          # THREE are secrets (the suite Skips unless every one is set).
+          QONTO_CONTRACT_CLIENT_ID: ${{ secrets.QONTO_CONTRACT_CLIENT_ID }}
+          QONTO_CONTRACT_API_KEY: ${{ secrets.QONTO_CONTRACT_API_KEY }}
+          QONTO_CONTRACT_STAGING_TOKEN: ${{ secrets.QONTO_CONTRACT_STAGING_TOKEN }}
+          # Routable sandbox contract credentials. The endpoint
+          # (api.sandbox.routable.com) is hardcoded in the test; sandbox and
+          # prod are different hosts and a sandbox key only authenticates
+          # against the sandbox, so the API key is the only required secret
+          # (the suite Skips without it). The acting team member is a sandbox
+          # team-member UUID required by POST /v1/payables; the create-payable
+          # spec (the only mutation) Skips while it is unset, so it is an
+          # opt-in second secret that keeps the suite read-only until added.
+          ROUTABLE_CONTRACT_API_KEY: ${{ secrets.ROUTABLE_CONTRACT_API_KEY }}
+          ROUTABLE_CONTRACT_ACTING_TEAM_MEMBER: ${{ secrets.ROUTABLE_CONTRACT_ACTING_TEAM_MEMBER }}
+          # Stripe test-mode contract credential. Test mode lives on the SAME
+          # host as prod (api.stripe.com) and is selected purely by the key
+          # prefix, so the key MUST be an sk_test_ key and no endpoint is
+          # injected (the client's built-in default is used).
+          STRIPE_CONTRACT_API_KEY: ${{ secrets.STRIPE_CONTRACT_API_KEY }}
+          # Tink contract credentials. Tink has no separate sandbox host — a
+          # sandbox Console app authenticates against the same api.tink.com
+          # (hardcoded in the test), so only the app credentials are injected.
+          # The Console app must have ALL connector scopes granted (the
+          # client-credentials token requests them all up front). The seeded
+          # user ID is optional: it is the external_user_id of a user a human
+          # linked ONCE to the Tink Demo Bank via Tink Link; the ingestion-read
+          # spec Skips while it is unset.
+          TINK_CONTRACT_CLIENT_ID: ${{ secrets.TINK_CONTRACT_CLIENT_ID }}
+          TINK_CONTRACT_CLIENT_SECRET: ${{ secrets.TINK_CONTRACT_CLIENT_SECRET }}
+          TINK_CONTRACT_SEEDED_USER_ID: ${{ secrets.TINK_CONTRACT_SEEDED_USER_ID }}
+          # Wise sandbox contract credential. The endpoint
+          # (api.sandbox.transferwise.tech) is hardcoded in the test; sandbox
+          # and prod are different hosts, and a sandbox token only
+          # authenticates against the sandbox host, so only the API key is a
+          # secret.
+          WISE_CONTRACT_API_KEY: ${{ secrets.WISE_CONTRACT_API_KEY }}
+      # Extension point: notify on drift. A failed run is already a red check;
+      # wire a Slack/issue notification here when desired. The webhook is
+      # guarded inside the script (not in `if:`) because GitHub Actions does
+      # not allow the `secrets` context in `if`, and a step's own `env` is not
+      # reliably available to that step's `if`. Until CONTRACT_SLACK_WEBHOOK is
+      # configured this step is a no-op, so it requires no setup today.
+      - name: Notify on failure (extension point)
+        if: failure()
+        env:
+          CONTRACT_SLACK_WEBHOOK: ${{ secrets.CONTRACT_SLACK_WEBHOOK }}
+        run: |
+          if [ -z "${CONTRACT_SLACK_WEBHOOK}" ]; then
+            echo "No CONTRACT_SLACK_WEBHOOK configured; skipping notification."
+            exit 0
+          fi
+          echo "Contract test failed for connector '${{ matrix.connector }}'."
+          # TODO: post to Slack, e.g.:
+          #   curl -fsS -X POST -H 'Content-type: application/json' \
+          #     --data "{\"text\":\"Contract test failed for ${{ matrix.connector }}\"}" \
+          #     "${CONTRACT_SLACK_WEBHOOK}"

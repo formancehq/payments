@@ -79,6 +79,7 @@ func New(
 		accountClient:            accountClient,
 		balanceClient:            balance.Client{B: backend, Key: apiKey},
 		transferClient:           transfer.Client{B: backend, Key: apiKey},
+		transferReversalClient:   transferreversal.Client{B: backend, Key: apiKey},
 		payoutClient:             payout.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},

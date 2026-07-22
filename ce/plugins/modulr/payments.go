@@ -12,19 +12,24 @@ import (
 	"github.com/formancehq/payments/pkg/domain/models"
 )
 
-// transactionDateLayout is the timestamp layout Modulr uses for transaction dates.
+// transactionDateLayout is the timestamp layout Modulr uses for transaction/posted dates.
 const transactionDateLayout = "2006-01-02T15:04:05.999-0700"
 
-// paymentsStateVersion is the current schema version of paymentsState. State written
-// before the newest-first ordering fix has version 0 (watermark derived from PostedDate)
-// and is reset once on read so the corrected logic re-ingests history.
-const paymentsStateVersion = 1
+// paymentsStateVersion is the current schema version of paymentsState. Version 0 derived
+// the watermark from PostedDate but filtered/compared by TransactionDate; version 1 keyed
+// everything on TransactionDate; version 2 keys everything on PostedDate — the field the
+// endpoint actually sorts and paginates by (verified against the sandbox: postedDate is
+// strictly descending, transactionDate is not). State written under an older version is
+// reset once on read so the corrected logic re-ingests history (idempotent by reference).
+const paymentsStateVersion = 2
 
-// The Modulr transactions endpoint returns results newest-first and exposes no sort
-// parameter, while the engine must ingest payments oldest-first: it seeds a payment's
-// base row from the first adjustment it sees for a reference (storage upserts the row
-// with ON CONFLICT DO NOTHING). So each poll drains a frozen window
-// (LastTransactionTime, Ceiling] one page at a time across successive calls:
+// The Modulr transactions endpoint returns results newest-first BY POSTEDDATE and exposes
+// no sort parameter, while the engine must ingest payments oldest-first: it seeds a
+// payment's base row from the first adjustment it sees for a reference (storage upserts the
+// row with ON CONFLICT DO NOTHING). PostedDate is also the payment's CreatedAt, so keying
+// the window on it aligns the sort key, the fromPostedDate/toPostedDate filter, the ceiling
+// and the watermark on one immutable, strictly-ordered field. So each poll drains a frozen
+// window (LastPostedTime, Ceiling] one page at a time across successive calls:
 //
 //  1. open    — peek the newest page (page 0) to freeze Ceiling and read TotalPages, which
 //     tells us the oldest page index.
@@ -36,10 +41,10 @@ const paymentsStateVersion = 1
 // only once the window is fully drained, so an interrupted drain simply re-runs the window
 // (idempotent by reference).
 type paymentsState struct {
-	// LastTransactionTime is the committed watermark: the greatest transactionDate
-	// already ingested. Advanced only when a drain window is fully consumed.
-	LastTransactionTime time.Time `json:"lastTransactionTime"`
-	// Ceiling is the frozen upper bound (transactionDate) of the drain window currently
+	// LastPostedTime is the committed watermark: the greatest postedDate already ingested.
+	// Advanced only when a drain window is fully consumed.
+	LastPostedTime time.Time `json:"lastPostedTime"`
+	// Ceiling is the frozen upper bound (postedDate) of the drain window currently
 	// in progress, and the sole indicator that a window is in progress. A zero Ceiling
 	// means no window is in progress: the next call opens a fresh one by peeking the
 	// newest row. Because the window only ever commits a non-zero Ceiling, we can never
@@ -60,9 +65,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	// Migration: state written before this fix used a PostedDate-derived watermark and
-	// lacked the drain-window fields. Reset it once so the corrected transactionDate
-	// logic re-ingests the available history (payments are idempotent by reference).
+	// Migration: state written under an older version keyed the watermark on a different
+	// field (v0 PostedDate-derived but TransactionDate-filtered; v1 TransactionDate).
+	// Reset it once so the corrected postedDate logic re-ingests the available history
+	// (payments are idempotent by reference).
 	if state.Version < paymentsStateVersion {
 		state = paymentsState{Version: paymentsStateVersion}
 	}
@@ -86,7 +92,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 // commit once drained) and reads TotalPages to find the oldest page. A single page is
 // emitted straight away; a multi-page window starts the oldest-first descent.
 func (p *Plugin) openPaymentsWindow(ctx context.Context, req models.FetchNextPaymentsRequest, from models.PSPAccount, state paymentsState) (models.FetchNextPaymentsResponse, error) {
-	page0, totalPages, err := p.client.GetTransactions(ctx, from.Reference, 0, req.PageSize, state.LastTransactionTime, time.Time{})
+	page0, totalPages, err := p.client.GetTransactions(ctx, from.Reference, 0, req.PageSize, state.LastPostedTime, time.Time{})
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -95,15 +101,16 @@ func (p *Plugin) openPaymentsWindow(ctx context.Context, req models.FetchNextPay
 		return marshalPaymentsResponse(state, nil, false)
 	}
 
-	// Results are newest-first, so the first row carries the greatest transactionDate.
-	state.Ceiling, err = time.Parse(transactionDateLayout, page0[0].TransactionDate)
+	// Results are newest-first by postedDate, so the first row carries the greatest
+	// postedDate — the true window ceiling.
+	state.Ceiling, err = time.Parse(transactionDateLayout, page0[0].PostedDate)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to parse transaction date %s: %w", page0[0].TransactionDate, err)
+		return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to parse posted date %s: %w", page0[0].PostedDate, err)
 	}
 
 	if totalPages <= 1 {
 		// The only page is both newest and oldest: emit it and close the window.
-		payments, err := p.paymentsFromPage(ctx, page0, from, state.LastTransactionTime, state.Ceiling)
+		payments, err := p.paymentsFromPage(ctx, page0, from, state.LastPostedTime, state.Ceiling)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -121,12 +128,12 @@ func (p *Plugin) openPaymentsWindow(ctx context.Context, req models.FetchNextPay
 func (p *Plugin) drainPaymentsWindow(ctx context.Context, req models.FetchNextPaymentsRequest, from models.PSPAccount, state paymentsState) (models.FetchNextPaymentsResponse, error) {
 	// Bound above by the frozen ceiling so transactions arriving mid-drain don't shift
 	// page indices.
-	page, _, err := p.client.GetTransactions(ctx, from.Reference, state.NextPage, req.PageSize, state.LastTransactionTime, state.Ceiling)
+	page, _, err := p.client.GetTransactions(ctx, from.Reference, state.NextPage, req.PageSize, state.LastPostedTime, state.Ceiling)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	payments, err := p.paymentsFromPage(ctx, page, from, state.LastTransactionTime, state.Ceiling)
+	payments, err := p.paymentsFromPage(ctx, page, from, state.LastPostedTime, state.Ceiling)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -142,11 +149,12 @@ func (p *Plugin) drainPaymentsWindow(ctx context.Context, req models.FetchNextPa
 }
 
 // paymentsFromPage maps one newest-first page of transactions into payments inside the
-// window (lower, upper], emitted oldest-first.
+// window (lower, upper], emitted oldest-first. The window is keyed on postedDate, the
+// field the endpoint sorts by.
 func (p *Plugin) paymentsFromPage(ctx context.Context, page []client.Transaction, from models.PSPAccount, lower, upper time.Time) ([]models.PSPPayment, error) {
 	payments := make([]models.PSPPayment, 0, len(page))
 	for _, transaction := range reverseTransactions(page) {
-		date, err := time.Parse(transactionDateLayout, transaction.TransactionDate)
+		date, err := time.Parse(transactionDateLayout, transaction.PostedDate)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +177,8 @@ func (p *Plugin) paymentsFromPage(ctx context.Context, page []client.Transaction
 	return payments, nil
 }
 
-// reverseTransactions returns the page oldest-first; Modulr returns it newest-first.
+// reverseTransactions returns the page oldest-first; Modulr returns it newest-first by
+// postedDate.
 func reverseTransactions(in []client.Transaction) []client.Transaction {
 	out := make([]client.Transaction, len(in))
 	for i := range in {
@@ -181,7 +190,7 @@ func reverseTransactions(in []client.Transaction) []client.Transaction {
 // closeWindow returns state with the watermark advanced to the frozen ceiling and the
 // drain window cleared, so the next poll opens a fresh window.
 func closeWindow(state paymentsState) paymentsState {
-	state.LastTransactionTime = state.Ceiling
+	state.LastPostedTime = state.Ceiling
 	state.Ceiling = time.Time{}
 	state.NextPage = 0
 	return state

@@ -11,8 +11,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/formancehq/go-libs/v5 v5.6.1 h1:l6b/SYKTEOoWEIzB71k53f5ZvIaa3xFN11scuKkmIR4=
 github.com/formancehq/go-libs/v5 v5.6.1/go.mod h1:KlZH1y4NR5HTfWXHt39OMQo+YzYACCHJ+tCRZlcANoE=
-github.com/formancehq/payments/pkg/domain v0.3.2 h1:ANtPsU4UUiZeRR0fbD2vm6uQavulw1ahAZpTfCNpfHA=
-github.com/formancehq/payments/pkg/domain v0.3.2/go.mod h1:nI3coecxTPWqDoFsVBwA3K2eh0i3koZq5Vq47g5WV8U=
+github.com/formancehq/payments/pkg/domain v0.3.3 h1:j+Wa9Trk+omN+MFvE1ZYN1S9tj/m9EvkoFoIeHJiuWc=
+github.com/formancehq/payments/pkg/domain v0.3.3/go.mod h1:nI3coecxTPWqDoFsVBwA3K2eh0i3koZq5Vq47g5WV8U=
 github.com/gabriel-vasile/mimetype v1.4.13 h1:46nXokslUBsAJE/wMsp5gtO500a4F3Nkz9Ufpk2AcUM=
 github.com/gabriel-vasile/mimetype v1.4.13/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
 github.com/gibson042/canonicaljson-go v1.0.3 h1:EAyF8L74AWabkyUmrvEFHEt/AGFQeD6RfwbAuf0j1bI=
