@@ -181,6 +181,7 @@ All keys are defined as constants in [`mappers/metadata.go`](mappers/metadata.go
 | `com.routable.spec/external_id` | `MetadataKeyExternalID` | no | `""` | `external_id` | Caller-supplied external reference (idempotent lookup key on Routable's side). |
 | `com.routable.spec/line_item_description` | `MetadataKeyLineDescription` | no | `PSPPaymentInitiation.Description`, then `"Payment <reference>"` | `line_items[0].description` | Description on the auto-generated single-line item. Required by Routable v1; we always emit a non-empty value. |
 | `com.routable.spec/message` | `MetadataKeyMessage` | no | (omitted) | `message` | Vendor-facing email body sent to the payee's contacts when the payable is processed. A limited subset of HTML is permitted (see [Routable docs](https://developers.routable.com/docs/html-messages)). Omitted from the request body when empty. |
+| `com.routable.spec/send_on` | `MetadataKeySendOn` | no | unset → `send_on: null`, which Routable **does not execute** (see [§5.2](#52-static-body-fields-always-present)) | `send_on` | `YYYY-MM-DD` date on which **Routable** releases the payable. Validated locally; a malformed date fails as `ErrInvalidRequest` before any HTTP call. **This is not `scheduledAt`** — the engine's `scheduledAt` is honoured by sleeping *before* the plugin is called, so the two stack if you set both. |
 
 > `com.routable.spec/memo` is read-only metadata on synced payables/receivables (populated from the Routable response). Routable's v1 `POST /v1/payables` rejects `memo` as an unknown field, so we do not forward this key on create. Use `com.routable.spec/line_item_description` for the message that ends up on the payable.
 
@@ -195,8 +196,20 @@ All keys are defined as constants in [`mappers/metadata.go`](mappers/metadata.go
 | `amount` | `PSPPaymentInitiation.Amount` (minor units) → decimal string via `fromMinorUnits` ([`amounts.go`](amounts.go)) |
 | `currency_code` | `PSPPaymentInitiation.Asset` (e.g. `USD/2` → `USD`) |
 | `line_items` | Single line item with `unit_price = amount = total`, `quantity = 1`, and a non-empty `description` (see metadata table for resolution order) |
-| `send_on` | Always emitted; `null` means "send immediately" (Routable's v1 schema requires the field even when sending now) |
+| `send_on` | Always emitted. `null` — the value sent when no `send_on` is supplied — means **"do not execute"**, *not* "send immediately". See the callout below. |
 | `reference` | `PSPPaymentInitiation.Reference` (also forwarded as the `Idempotency-Key` HTTP header) |
+
+> **`send_on` semantics — `null` does NOT mean "send now".** Routable interprets `send_on` in **Pacific time** and supports exactly three behaviours ([API reference](https://developers.routable.com/reference/create-payable), [Your First Payable](https://developers.routable.com/docs/your-first-payable)):
+>
+> | `send_on` value | Routable behaviour |
+> |---|---|
+> | today's date (Pacific) | Payable is **sent immediately**. |
+> | a future date (Pacific) | Payable is **scheduled**; no email communications go out until that date. |
+> | `null` | Payable is created in **`ready_to_send`** and **is NOT executed**. Routable's own status glossary: *"the payment is waiting to be manually sent, either through the Routable Dashboard or an update to `send_on`."* |
+>
+> The plugin emits `send_on: null` whenever no date is supplied, so **the payable is created but never sent** until it is released manually in the Routable Dashboard. Callers who want the payment to go out must supply a date explicitly — today's Pacific date to send now, a future date to schedule.
+>
+> The field cannot simply be omitted instead: Routable's v1 schema marks `send_on` as `required` on every payable variant (`["delivery_method","send_on"]`, `["send_on","type"]`, …).
 
 ### 5.3 Idempotency
 
