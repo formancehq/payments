@@ -8,6 +8,7 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
+	"github.com/formancehq/payments/ee/plugins/routable/mappers"
 	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -86,6 +87,32 @@ var _ = Describe("Routable createTransfer", func() {
 		bad = pi()
 		bad.DestinationAccount = nil
 		_, err = plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: bad})
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
+	})
+
+	// TS-540: send_on is wired in the shared initiatePayable, so it must be
+	// live on the transfer surface too, not just payouts.
+	It("forwards send_on from metadata on createTransfer", func(ctx SpecContext) {
+		scheduled := pi()
+		scheduled.Metadata = map[string]string{mappers.MetadataKeySendOn: "2026-09-01"}
+
+		var captured client.CreatePayableRequest
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+			captured = req
+			return &client.Payable{ID: "pa_ts", Status: "pending", Amount: "50.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+		})
+
+		_, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: scheduled})
+		Expect(err).To(BeNil())
+		Expect(captured.SendOn).NotTo(BeNil())
+		Expect(*captured.SendOn).To(Equal("2026-09-01"))
+	})
+
+	It("rejects a malformed send_on on createTransfer", func(ctx SpecContext) {
+		invalid := pi()
+		invalid.Metadata = map[string]string{mappers.MetadataKeySendOn: "01/09/2026"}
+		_, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: invalid})
+		Expect(err).To(HaveOccurred())
 		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
 	})
 
