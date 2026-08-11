@@ -36,13 +36,13 @@ compile-connector-capabilities:
 
 [group('openapi')]
 compile-api-yaml: compile-connector-configs
-    @npx openapi-merge-cli --config {{justfile_directory()}}/openapi/openapi-merge.json
+    @npx openapi-merge-cli@2.0.2 --config {{justfile_directory()}}/openapi/openapi-merge.json
     @yq -oy {{justfile_directory()}}/openapi.json > openapi.yaml
     @rm {{justfile_directory()}}/openapi.json
 
 [group('openapi')]
 compile-api-docs:
-    @npx openapi-merge-cli --config {{justfile_directory()}}/openapi/openapi-docs-merge.json
+    @npx openapi-merge-cli@2.0.2 --config {{justfile_directory()}}/openapi/openapi-docs-merge.json
     @npx -y widdershins {{justfile_directory()}}/openapi.json -o {{justfile_directory()}}/docs/api/README.md --search false --language_tabs 'http:HTTP' --summary --omitHeader
     @rm {{justfile_directory()}}/openapi.json
 

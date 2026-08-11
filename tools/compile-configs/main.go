@@ -42,6 +42,11 @@ func main() {
 	caser := cases.Title(language.English)
 
 	output := V3ConnectorConfigYaml{
+		OpenAPI: "3.0.3",
+		Info: Info{
+			Title:   "Payments API",
+			Version: "v3",
+		},
 		Components: Components{
 			Schemas: Schemas{
 				V3ConnectorConfig: V3ConnectorConfig{
