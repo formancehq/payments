@@ -1,3 +1,7 @@
+openapi: 3.0.3
+info:
+    title: Payments API
+    version: v3
 components:
     schemas:
         V3ConnectorConfig:

@@ -1,7 +1,17 @@
 package main
 
+// V3ConnectorConfigYaml is merged with the other openapi/ partials by
+// openapi-merge-cli, which requires every input to declare a full OpenAPI
+// version — even components-only ones like this file.
 type V3ConnectorConfigYaml struct {
+	OpenAPI    string     `yaml:"openapi"`
+	Info       Info       `yaml:"info"`
 	Components Components `yaml:"components"`
+}
+
+type Info struct {
+	Title   string `yaml:"title"`
+	Version string `yaml:"version"`
 }
 
 type Components struct {
