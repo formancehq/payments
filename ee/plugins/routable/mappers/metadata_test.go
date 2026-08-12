@@ -115,3 +115,54 @@ func assertAliasMetadata(t *testing.T, m map[string]string, wantPIRef, wantPayab
 		}
 	}
 }
+
+// TestParseSendOn covers the TS-540 contract: absent/empty means
+// unset, a well-formed YYYY-MM-DD is passed
+// through verbatim, and anything else is rejected locally so the caller
+// can wrap it as a non-retriable ErrInvalidRequest.
+func TestParseSendOn(t *testing.T) {
+	cases := []struct {
+		name    string
+		meta    map[string]string
+		want    string // "" means expect nil
+		wantErr bool
+	}{
+		{name: "nil metadata leaves send_on unset", meta: nil},
+		{name: "absent key leaves send_on unset", meta: map[string]string{MetadataKeyType: "wire"}},
+		{name: "empty value leaves send_on unset", meta: map[string]string{MetadataKeySendOn: ""}},
+		{name: "valid date passes through", meta: map[string]string{MetadataKeySendOn: "2026-09-01"}, want: "2026-09-01"},
+		{name: "leap day is valid", meta: map[string]string{MetadataKeySendOn: "2028-02-29"}, want: "2028-02-29"},
+		{name: "slashes rejected", meta: map[string]string{MetadataKeySendOn: "01/09/2026"}, wantErr: true},
+		{name: "unpadded rejected", meta: map[string]string{MetadataKeySendOn: "2026-9-1"}, wantErr: true},
+		{name: "out of range month rejected", meta: map[string]string{MetadataKeySendOn: "2026-13-45"}, wantErr: true},
+		{name: "non-leap Feb 29 rejected", meta: map[string]string{MetadataKeySendOn: "2027-02-29"}, wantErr: true},
+		{name: "rfc3339 rejected", meta: map[string]string{MetadataKeySendOn: "2026-09-01T00:00:00Z"}, wantErr: true},
+		{name: "free text rejected", meta: map[string]string{MetadataKeySendOn: "tomorrow"}, wantErr: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := ParseSendOn(tc.meta)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("ParseSendOn(%v) = %v, want error", tc.meta, got)
+				}
+				if got != nil {
+					t.Errorf("ParseSendOn returned %q alongside an error; must return nil", *got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseSendOn(%v) unexpected error: %v", tc.meta, err)
+			}
+			switch {
+			case tc.want == "" && got != nil:
+				t.Errorf("ParseSendOn = %q, want nil (send immediately)", *got)
+			case tc.want != "" && got == nil:
+				t.Errorf("ParseSendOn = nil, want %q", tc.want)
+			case tc.want != "" && *got != tc.want:
+				t.Errorf("ParseSendOn = %q, want %q", *got, tc.want)
+			}
+		})
+	}
+}

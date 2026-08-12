@@ -1,6 +1,11 @@
 package mappers
 
-import "github.com/formancehq/payments/ee/plugins/routable/client"
+import (
+	"fmt"
+	"time"
+
+	"github.com/formancehq/payments/ee/plugins/routable/client"
+)
 
 const MetadataPrefix = "com.routable.spec/"
 
@@ -14,7 +19,34 @@ const (
 	MetadataKeyMessage          = MetadataPrefix + "message"
 	MetadataKeyLineDescription  = MetadataPrefix + "line_item_description"
 	MetadataKeyActingTeamMember = MetadataPrefix + "acting_team_member"
+	MetadataKeySendOn           = MetadataPrefix + "send_on"
 )
+
+// SendOnLayout is the only date format Routable's v1 `send_on` accepts.
+const SendOnLayout = "2006-01-02"
+
+// ParseSendOn resolves the send_on metadata key into the value for
+// CreatePayableRequest.SendOn. A missing or empty key yields nil, leaving
+// the existing default untouched.
+//
+// The date is validated here rather than left to Routable so a typo fails
+// as a non-retriable ErrInvalidRequest (see payable_create.go) instead of
+// burning Temporal retries on a 400 that can never succeed.
+//
+// Note this is Routable-side scheduling — Routable holds the payable until
+// the date — and is deliberately NOT wired to PaymentInitiation.ScheduledAt,
+// which the engine implements by sleeping before the plugin is ever called.
+// Setting both stacks the two delays.
+func ParseSendOn(meta map[string]string) (*string, error) {
+	raw, ok := meta[MetadataKeySendOn]
+	if !ok || raw == "" {
+		return nil, nil
+	}
+	if _, err := time.Parse(SendOnLayout, raw); err != nil {
+		return nil, fmt.Errorf("invalid %s %q: expected a YYYY-MM-DD date", MetadataKeySendOn, raw)
+	}
+	return &raw, nil
+}
 
 // Self-describing aliases written on synced PSPPayment metadata so
 // dashboards and operators don't have to know Routable's wire

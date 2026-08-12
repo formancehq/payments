@@ -47,9 +47,18 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		lineDescription = "Payment " + pi.Reference
 	}
 
-	// SendOn nil => JSON null => "send now". An explicit YYYY-MM-DD can
-	// be wired through metadata for future-dated payables.
-	var sendOn *string
+	// An explicit YYYY-MM-DD in metadata future-dates the payable at
+	// Routable (TS-540).
+	//
+	// Absent, SendOn stays nil => JSON null, and Routable puts the payable
+	// in `ready_to_send`: it is created but WILL NOT BE EXECUTED until
+	// someone releases it in the Routable Dashboard or send_on is updated.
+	// null does NOT mean "send now" — sending today is `send_on` = today's
+	// date in Pacific time. See MAPPINGS.md §5.1.
+	sendOn, err := mappers.ParseSendOn(pi.Metadata)
+	if err != nil {
+		return nil, 0, errorsutils.NewWrappedError(err, models.ErrInvalidRequest)
+	}
 
 	req := client.CreatePayableRequest{
 		Type:                mappers.FieldOr(pi.Metadata, mappers.MetadataKeyType, mappers.DefaultPayableType),

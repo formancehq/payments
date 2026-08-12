@@ -64,7 +64,7 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 			Expect(req.ActingTeamMember).To(Equal("tm_default"))
 			Expect(req.IdempotencyKey).To(Equal("pi_1"))
 			// Routable's v1 schema requires both: line_items[0].description
-			// non-empty AND send_on present (null = send-now).
+			// non-empty AND send_on present (null = ready_to_send, i.e. held).
 			Expect(req.LineItems).To(HaveLen(1))
 			Expect(req.LineItems[0].Description).NotTo(BeEmpty())
 			return &client.Payable{ID: "pa_1", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
@@ -77,6 +77,9 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		Expect(*resp.PollingPayoutID).To(Equal("pa_1"))
 	})
 
+	// send_on stays JSON null when no date is supplied. Note this leaves the
+	// payable in Routable's `ready_to_send` — created but NOT executed until
+	// released manually; null is not "send now". See MAPPINGS.md §5.2.
 	It("synthesizes a non-empty line description and emits send_on as JSON null when the PI has neither", func(ctx SpecContext) {
 		bare := pi()
 		bare.Description = "" // no description from PI
@@ -96,6 +99,57 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		body, err := json.Marshal(captured)
 		Expect(err).To(BeNil())
 		Expect(string(body)).To(ContainSubstring(`"send_on":null`))
+	})
+
+	// TS-540: future-dating a payable is opt-in via metadata. This is
+	// Routable-side scheduling (Routable holds the payable) and is NOT
+	// PaymentInitiation.ScheduledAt, which the engine honours by sleeping
+	// before the plugin is ever called — setting both stacks the delays.
+	It("forwards an explicit send_on date from metadata", func(ctx SpecContext) {
+		scheduled := pi()
+		scheduled.Metadata = map[string]string{mappers.MetadataKeySendOn: "2026-09-01"}
+
+		var captured client.CreatePayableRequest
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+			captured = req
+			return &client.Payable{ID: "pa_s", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+		})
+
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: scheduled})
+		Expect(err).To(BeNil())
+		Expect(captured.SendOn).NotTo(BeNil())
+		Expect(*captured.SendOn).To(Equal("2026-09-01"))
+		body, err := json.Marshal(captured)
+		Expect(err).To(BeNil())
+		Expect(string(body)).To(ContainSubstring(`"send_on":"2026-09-01"`))
+	})
+
+	It("leaves send_on at its default when the metadata value is empty", func(ctx SpecContext) {
+		blank := pi()
+		blank.Metadata = map[string]string{mappers.MetadataKeySendOn: ""}
+
+		var captured client.CreatePayableRequest
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+			captured = req
+			return &client.Payable{ID: "pa_e", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+		})
+
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: blank})
+		Expect(err).To(BeNil())
+		Expect(captured.SendOn).To(BeNil(), "an empty value must fall back to the default, not an empty-string date")
+	})
+
+	// A malformed date must fail before the HTTP call: Routable would 400,
+	// and without ErrInvalidRequest Temporal would retry a request that can
+	// never succeed. No EXPECT() here — any call to CreatePayable fails the test.
+	It("rejects a malformed send_on before any network call and wraps ErrInvalidRequest", func(ctx SpecContext) {
+		for _, bad := range []string{"01/09/2026", "2026-9-1", "tomorrow", "2026-13-45", "2026-09-01T00:00:00Z"} {
+			invalid := pi()
+			invalid.Metadata = map[string]string{mappers.MetadataKeySendOn: bad}
+			_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: invalid})
+			Expect(err).To(HaveOccurred(), "send_on %q must be rejected", bad)
+			Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue(), "send_on %q must wrap ErrInvalidRequest", bad)
+		}
 	})
 
 	It("returns the Payment immediately when the response is terminal", func(ctx SpecContext) {

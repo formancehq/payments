@@ -169,9 +169,17 @@ type PayableLineItem struct {
 // CreatePayableRequest is the body for POST /v1/payables. IdempotencyKey is
 // sent via the Idempotency-Key header (see Client.CreatePayable).
 //
-// SendOn is documented as a YYYY-MM-DD date, with a nil pointer meaning
-// "send immediately". Routable's v1 schema marks the field required even
-// when sending immediately, so we always emit it as JSON null (not omitted).
+// SendOn is a YYYY-MM-DD date interpreted by Routable in PACIFIC time:
+//   - today's date  => the payable is sent immediately
+//   - a future date => the payable is scheduled for that date
+//   - nil (JSON null) => the payable is created in `ready_to_send` and is
+//     NOT executed until released manually in the Routable Dashboard, or
+//     until send_on is updated.
+//
+// A nil pointer therefore does NOT mean "send immediately". The field is
+// still always emitted (no omitempty) because Routable's v1 schema marks
+// send_on required on every payable variant.
+// https://developers.routable.com/reference/create-payable
 type CreatePayableRequest struct {
 	Type                string            `json:"type"`
 	DeliveryMethod      string            `json:"delivery_method"`
