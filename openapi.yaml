@@ -3031,8 +3031,7 @@ components:
       properties:
         data:
           type: object
-          description: Configuration schema of every available connector, keyed by
-            provider
+          description: Configuration schema of every available connector, keyed by provider
           additionalProperties:
             type: object
             additionalProperties:
@@ -3150,8 +3149,7 @@ components:
           default: 30m
         apiKey:
           type: string
-          description: API key issued by Stripe, used to authenticate the connector's
-            requests
+          description: API key issued by Stripe, used to authenticate the connector's requests
           example: XXX
         pageSize:
           type: integer
@@ -3211,8 +3209,7 @@ components:
           description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
-          description: API key issued by Wise, used to authenticate the connector's
-            requests
+          description: API key issued by Wise, used to authenticate the connector's requests
           example: XXX
         pollingPeriod:
           type: string
@@ -3237,13 +3234,11 @@ components:
           description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
-          description: API key issued by Modulr, used to authenticate the connector's
-            requests
+          description: API key issued by Modulr, used to authenticate the connector's requests
           example: XXX
         apiSecret:
           type: string
-          description: API secret issued by Modulr, paired with the API key to sign
-            requests
+          description: API secret issued by Modulr, paired with the API key to sign requests
           example: XXX
         endpoint:
           type: string
@@ -3276,13 +3271,11 @@ components:
           description: Identifies the payment provider this configuration targets
         username:
           type: string
-          description: Username issued by Banking Circle, used to authenticate the
-            connector
+          description: Username issued by Banking Circle, used to authenticate the connector
           example: XXX
         password:
           type: string
-          description: Password issued by Banking Circle, used to authenticate the
-            connector
+          description: Password issued by Banking Circle, used to authenticate the connector
           example: XXX
         endpoint:
           type: string
@@ -3294,8 +3287,7 @@ components:
           example: XXX
         userCertificate:
           type: string
-          description: Client certificate presented on the mutual-TLS connection to
-            Banking Circle
+          description: Client certificate presented on the mutual-TLS connection to Banking Circle
           example: XXX
         userCertificateKey:
           type: string
@@ -3364,8 +3356,7 @@ components:
           example: XXX
         apiKey:
           type: string
-          description: API key issued by MangoPay, used to authenticate the connector's
-            requests
+          description: API key issued by MangoPay, used to authenticate the connector's requests
           example: XXX
         endpoint:
           type: string
@@ -3393,8 +3384,7 @@ components:
           example: XXX
         apiKey:
           type: string
-          description: API key issued by Moneycorp, used to authenticate the connector's
-            requests
+          description: API key issued by Moneycorp, used to authenticate the connector's requests
           example: XXX
         endpoint:
           type: string
@@ -3423,8 +3413,7 @@ components:
           description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
-          description: API key issued by Currencycloud, used to authenticate the connector's
-            requests
+          description: API key issued by Currencycloud, used to authenticate the connector's requests
           example: XXX
         loginID:
           type: string
@@ -3456,8 +3445,7 @@ components:
           description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
-          description: API key issued by Adyen, used to authenticate the connector's
-            requests
+          description: API key issued by Adyen, used to authenticate the connector's requests
           example: XXX
         hmacKey:
           type: string
@@ -3465,8 +3453,7 @@ components:
           example: XXX
         liveEndpointPrefix:
           type: string
-          description: Prefix of your live Adyen endpoint. Required when the connector
-            runs against production
+          description: Prefix of your live Adyen endpoint. Required when the connector runs against production
           example: XXX
         pollingPeriod:
           type: string
@@ -3580,8 +3567,7 @@ components:
           description: Name of the payment provider behind the connector
         type:
           type: string
-          description: Whether the funds move between your accounts or out to a third
-            party
+          description: Whether the funds move between your accounts or out to a third party
           enum:
             - TRANSFER
             - PAYOUT
@@ -3690,8 +3676,7 @@ components:
           description: Country the account is held in, as an ISO 3166-1 alpha-2 code
         connectorID:
           type: string
-          description: Identifier of the connector the account has been forwarded
-            to
+          description: Identifier of the connector the account has been forwarded to
         accountID:
           type: string
           description: Identifier of the provider-side account created by forwarding
@@ -3700,19 +3685,16 @@ components:
           description: Name of the payment provider behind the connector
         iban:
           type: string
-          description: International bank account number, when the account is identified
-            that way
+          description: International bank account number, when the account is identified that way
         accountNumber:
           type: string
-          description: Domestic account number, when the account is identified that
-            way
+          description: Domestic account number, when the account is identified that way
         swiftBicCode:
           type: string
           description: SWIFT/BIC code identifying the bank
         relatedAccounts:
           type: array
-          description: Provider-side accounts this bank account has been forwarded
-            to
+          description: Provider-side accounts this bank account has been forwarded to
           items:
             $ref: '#/components/schemas/BankAccountRelatedAccounts'
         metadata:
@@ -3728,8 +3710,7 @@ components:
       properties:
         id:
           type: string
-          description: Unique identifier of the link between the bank account and
-            the provider
+          description: Unique identifier of the link between the bank account and the provider
         createdAt:
           type: string
           format: date-time
@@ -3922,8 +3903,7 @@ components:
           type: integer
           format: bigint
           minimum: 0
-          description: Total held across the pool for this asset, in the asset's smallest
-            unit
+          description: Total held across the pool for this asset, in the asset's smallest unit
           example: 100
         asset:
           type: string
@@ -4059,8 +4039,7 @@ components:
           description: Why the task failed, absent when it succeeded
     TaskStatus:
       type: string
-      description: Where a task stands, from pending or active through to stopped,
-        terminated or failed
+      description: Where a task stands, from pending or active through to stopped, terminated or failed
       enum:
         - PENDING
         - ACTIVE
@@ -4217,8 +4196,7 @@ components:
           example: acct_1Gqj58KZcSIg2N2q
         source:
           type: string
-          description: Provider-side account the funds leave. Defaults to the connector's
-            main account
+          description: Provider-side account the funds leave. Defaults to the connector's main account
           example: acct_1Gqj58KZcSIg2N2q
     ForwardBankAccountRequest:
       type: object
@@ -4257,8 +4235,7 @@ components:
           description: Domestic account number. Supply this or an IBAN
         iban:
           type: string
-          description: International bank account number. Supply this or an account
-            number
+          description: International bank account number. Supply this or an account number
         swiftBicCode:
           type: string
           description: SWIFT/BIC code identifying the bank
@@ -4296,8 +4273,7 @@ components:
           additionalProperties: true
         accountIDs:
           type: array
-          description: Accounts to place in the pool. Omit when the pool is driven
-            by a query
+          description: Accounts to place in the pool. Omit when the pool is driven by a query
           items:
             type: string
     AccountRequest:
@@ -4387,8 +4363,7 @@ components:
       properties:
         reference:
           type: string
-          description: Caller-supplied identifier for the initiation, used to deduplicate
-            retries
+          description: Caller-supplied identifier for the initiation, used to deduplicate retries
           example: XXX
         scheduledAt:
           type: string
@@ -4408,8 +4383,7 @@ components:
           description: Identifier of the connector to execute the transfer through
         type:
           type: string
-          description: Whether the funds move between your accounts or out to a third
-            party
+          description: Whether the funds move between your accounts or out to a third party
           enum:
             - TRANSFER
             - PAYOUT
@@ -4423,8 +4397,7 @@ components:
           example: USD
         validated:
           type: boolean
-          description: When true, the transfer executes immediately instead of waiting
-            for approval
+          description: When true, the transfer executes immediately instead of waiting for approval
         metadata:
           type: object
           additionalProperties:
@@ -4442,8 +4415,7 @@ components:
       properties:
         reference:
           type: string
-          description: Caller-supplied identifier for the reversal, used to deduplicate
-            retries
+          description: Caller-supplied identifier for the reversal, used to deduplicate retries
           example: XXX
         description:
           type: string
@@ -4475,8 +4447,7 @@ components:
             - VALIDATED
     AccountType:
       type: string
-      description: Whether an account is internal to the provider or belongs to an
-        external party
+      description: Whether an account is internal to the provider or belongs to an external party
       enum:
         - UNKNOWN
         - INTERNAL
@@ -4716,8 +4687,7 @@ components:
           additionalProperties: true
     V3AccountTypeEnum:
       type: string
-      description: Whether an account is internal to the provider or belongs to an
-        external party
+      description: Whether an account is internal to the provider or belongs to an external party
       enum:
         - UNKNOWN
         - INTERNAL
@@ -4793,8 +4763,7 @@ components:
           description: Domestic account number. Supply this or an IBAN
         iban:
           type: string
-          description: International bank account number. Supply this or an account
-            number
+          description: International bank account number. Supply this or an account number
         swiftBicCode:
           type: string
           description: SWIFT/BIC code identifying the bank
@@ -4901,13 +4870,11 @@ components:
         accountNumber:
           type: string
           nullable: true
-          description: Domestic account number, when the account is identified that
-            way
+          description: Domestic account number, when the account is identified that way
         iban:
           type: string
           nullable: true
-          description: International bank account number, when the account is identified
-            that way
+          description: International bank account number, when the account is identified that way
         swiftBicCode:
           type: string
           nullable: true
@@ -4920,8 +4887,7 @@ components:
           $ref: '#/components/schemas/V3Metadata'
         relatedAccounts:
           type: array
-          description: Provider-side accounts this bank account has been forwarded
-            to
+          description: Provider-side accounts this bank account has been forwarded to
           items:
             $ref: '#/components/schemas/V3BankAccountRelatedAccount'
     V3BankAccountRelatedAccount:
@@ -5019,8 +4985,7 @@ components:
       properties:
         data:
           type: object
-          description: Configuration schema of every available connector, keyed by
-            provider
+          description: Configuration schema of every available connector, keyed by provider
           additionalProperties:
             type: object
             additionalProperties:
@@ -5473,8 +5438,7 @@ components:
         adjustments:
           type: array
           nullable: true
-          description: Successive changes to the payment's amount and status, newest
-            first
+          description: Successive changes to the payment's amount and status, newest first
           items:
             $ref: '#/components/schemas/V3PaymentAdjustment'
     V3PaymentAdjustment:
@@ -5985,8 +5949,7 @@ components:
           type: string
           minLength: 3
           maxLength: 1000
-          description: Caller-supplied identifier for the initiation, used to deduplicate
-            retries
+          description: Caller-supplied identifier for the initiation, used to deduplicate retries
         scheduledAt:
           type: string
           format: date-time
@@ -6079,8 +6042,7 @@ components:
           type: string
           minLength: 3
           maxLength: 1000
-          description: Caller-supplied identifier for the reversal, used to deduplicate
-            retries
+          description: Caller-supplied identifier for the reversal, used to deduplicate retries
         description:
           type: string
           maxLength: 10000
@@ -6322,8 +6284,7 @@ components:
         - REVERSED
     V3PaymentInitiationTypeEnum:
       type: string
-      description: Kind of movement a payment initiation performs, such as a transfer
-        or a payout
+      description: Kind of movement a payment initiation performs, such as a transfer or a payout
       enum:
         - UNKNOWN
         - TRANSFER
@@ -6528,8 +6489,7 @@ components:
                 $ref: '#/components/schemas/V3PaymentServiceUserLinkAttempt'
     V3PaymentServiceUser:
       type: object
-      description: An end user on whose behalf payments and open banking connections
-        are made
+      description: An end user on whose behalf payments and open banking connections are made
       required:
         - id
         - name
@@ -6603,8 +6563,7 @@ components:
           description: Unique identifier of the link attempt
         psuID:
           type: string
-          description: Identifier of the payment service user the attempt belongs
-            to
+          description: Identifier of the payment service user the attempt belongs to
         connectorID:
           type: string
           description: Identifier of the connector the user is linking to
@@ -6687,16 +6646,13 @@ components:
               type: string
     V3ConnectionStatusEnum:
       type: string
-      description: Whether an open banking connection is still usable or needs the
-        user to reconnect
+      description: Whether an open banking connection is still usable or needs the user to reconnect
       enum:
         - ACTIVE
         - ERROR
     V3OpenBankingConnectionAttemptStatusEnum:
       type: string
-      description: Where a link attempt stands, from pending through to completed
-        on success or exited when the user abandoned the flow or the provider reported
-        an error
+      description: Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error
       enum:
         - pending
         - completed
@@ -6766,8 +6722,7 @@ components:
           additionalProperties: true
         accountIDs:
           type: array
-          description: Accounts to place in the pool. Omit when the pool is driven
-            by a query
+          description: Accounts to place in the pool. Omit when the pool is driven by a query
           items:
             type: string
     V3CreatePoolResponse:
@@ -6879,8 +6834,7 @@ components:
         amount:
           type: integer
           format: bigint
-          description: Total held across the pool for this asset, in the asset's smallest
-            unit
+          description: Total held across the pool for this asset, in the asset's smallest unit
         relatedAccounts:
           nullable: true
           type: array
@@ -6902,8 +6856,7 @@ components:
           $ref: '#/components/schemas/V3Task'
     V3Task:
       type: object
-      description: An asynchronous unit of work, tracking an operation that completes
-        in the background
+      description: An asynchronous unit of work, tracking an operation that completes in the background
       required:
         - id
         - status
