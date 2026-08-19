@@ -8008,7 +8008,7 @@ An asynchronous unit of work, tracking an operation that completes in the backgr
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |id|string|true|none|Unique identifier of the task|
-|status|[V3TaskStatusEnum](#schemav3taskstatusenum)|true|none|Where a task stands, from pending through to succeeded or failed|
+|status|[V3TaskStatusEnum](#schemav3taskstatusenum)|true|none|Where a task stands, from processing through to succeeded or failed|
 |createdAt|string(date-time)|true|none|When the task was created|
 |updatedAt|string(date-time)|true|none|When the task was last updated|
 |connectorID|string(byte)|false|none|Identifier of the connector the task runs against|
@@ -8027,13 +8027,13 @@ An asynchronous unit of work, tracking an operation that completes in the backgr
 
 ```
 
-Where a task stands, from pending through to succeeded or failed
+Where a task stands, from processing through to succeeded or failed
 
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|Where a task stands, from pending through to succeeded or failed|
+|*anonymous*|string|false|none|Where a task stands, from processing through to succeeded or failed|
 
 #### Enumerated Values
 

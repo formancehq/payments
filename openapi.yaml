@@ -4059,7 +4059,8 @@ components:
           description: Why the task failed, absent when it succeeded
     TaskStatus:
       type: string
-      description: Where a task stands, from pending through to succeeded or failed
+      description: Where a task stands, from pending or active through to stopped,
+        terminated or failed
       enum:
         - PENDING
         - ACTIVE
@@ -6935,7 +6936,7 @@ components:
           description: Why the task failed, absent when it succeeded
     V3TaskStatusEnum:
       type: string
-      description: Where a task stands, from pending through to succeeded or failed
+      description: Where a task stands, from processing through to succeeded or failed
       enum:
         - PROCESSING
         - SUCCEEDED
