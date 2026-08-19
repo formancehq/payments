@@ -7696,7 +7696,7 @@ Query and dynamic pools are available from Connectivity v3.1
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |name|string|true|none|Human-readable name for the pool|
-|query|object|false|none|The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.|
+|query|object|false|none|The same query as in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.|
 |accountIDs|[string]|false|none|Accounts to place in the pool. Omit when the pool is driven by a query|
 
 <h2 id="tocS_V3CreatePoolResponse">V3CreatePoolResponse</h2>

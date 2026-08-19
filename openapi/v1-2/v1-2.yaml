@@ -2660,7 +2660,7 @@ components:
           type: string
           description: Human-readable name for the pool
         query:
-          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+          description: The same query as in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
           type: object
           additionalProperties: true
         accountIDs:
