@@ -1162,15 +1162,19 @@ components:
           format: int64
           minimum: 1
           maximum: 1000
+          description: Number of items requested per page
           example: 15
         hasMore:
           type: boolean
+          description: Whether further pages are available
           example: false
         previous:
           type: string
+          description: Cursor for the previous page, absent on the first page
           example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
         next:
           type: string
+          description: Cursor for the next page, absent on the last page
           example: ''
     PaymentsCursor:
       type: object
@@ -1178,6 +1182,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of payments
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1194,6 +1199,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of pools
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1210,6 +1216,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of transfer initiations
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1226,6 +1233,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of bank accounts
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1242,6 +1250,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of accounts
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1258,6 +1267,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of balances
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1274,6 +1284,7 @@ components:
         - cursor
       properties:
         cursor:
+          description: Paginated cursor wrapping the list of tasks
           allOf:
             - $ref: '#/components/schemas/CursorBase'
             - type: object
@@ -1348,6 +1359,7 @@ components:
       properties:
         data:
           type: object
+          description: The connector that was installed
           required:
             - connectorID
           properties:
@@ -1360,6 +1372,7 @@ components:
       properties:
         data:
           type: array
+          description: The connectors installed on this stack
           items:
             type: object
             required:
@@ -1389,6 +1402,7 @@ components:
       properties:
         data:
           type: object
+          description: Configuration schema of every available connector, keyed by provider
           additionalProperties:
             type: object
             additionalProperties:
@@ -1409,6 +1423,7 @@ components:
         - data
       properties:
         data:
+          description: The requested task
           oneOf:
             - $ref: '#/components/schemas/TaskStripe'
             - $ref: '#/components/schemas/TaskWise'
@@ -1423,8 +1438,10 @@ components:
       properties:
         id:
           type: string
+          description: Identifier of the transfer created at the provider
     Connector:
       type: string
+      description: The payment provider behind a connector
       enum:
         - STRIPE
         - DUMMY-PAY
@@ -1439,6 +1456,7 @@ components:
         - GENERIC
     TransferInitiationStatus:
       type: string
+      description: Where a transfer initiation stands in its lifecycle
       enum:
         - WAITING_FOR_VALIDATION
         - PROCESSING
@@ -1453,6 +1471,7 @@ components:
         - PARTIALLY_REVERSED
         - REVERSED
     ConnectorConfig:
+      description: A connector's configuration, whose shape depends on the provider
       discriminator:
         propertyName: provider
         mapping:
@@ -1487,10 +1506,12 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Stripe Account
         provider:
           type: string
           default: Stripe
+          description: Identifies the payment provider this configuration targets
         pollingPeriod:
           type: string
           example: 120m
@@ -1500,6 +1521,7 @@ components:
           default: 30m
         apiKey:
           type: string
+          description: API key issued by Stripe, used to authenticate the connector's requests
           example: XXX
         pageSize:
           type: integer
@@ -1517,10 +1539,12 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My DummyPay Account
         provider:
           type: string
           default: Dummypay
+          description: Identifies the payment provider this configuration targets
         filePollingPeriod:
           type: string
           example: 60s
@@ -1530,15 +1554,19 @@ components:
           default: 30s
         directory:
           type: string
+          description: Filesystem directory the connector reads payment files from
           example: /tmp/dummypay
         prefixFileToIngest:
           type: string
+          description: Only ingest files whose name starts with this prefix
         numberOfAccountsPreGenerated:
           type: integer
           format: int64
+          description: How many synthetic accounts to create on startup
         numberOfPaymentsPreGenerated:
           type: integer
           format: int64
+          description: How many synthetic payments to create on startup
     WiseConfig:
       type: object
       required:
@@ -1547,12 +1575,15 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Wise Account
         provider:
           type: string
           default: Wise
+          description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
+          description: API key issued by Wise, used to authenticate the connector's requests
           example: XXX
         pollingPeriod:
           type: string
@@ -1570,18 +1601,23 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Modulr Account
         provider:
           type: string
           default: Modulr
+          description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
+          description: API key issued by Modulr, used to authenticate the connector's requests
           example: XXX
         apiSecret:
           type: string
+          description: API secret issued by Modulr, paired with the API key to sign requests
           example: XXX
         endpoint:
           type: string
+          description: Base URL of the Modulr API the connector calls
           example: XXX
         pollingPeriod:
           type: string
@@ -1603,27 +1639,35 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Banking Circle Account
         provider:
           type: string
           default: Bankingcircle
+          description: Identifies the payment provider this configuration targets
         username:
           type: string
+          description: Username issued by Banking Circle, used to authenticate the connector
           example: XXX
         password:
           type: string
+          description: Password issued by Banking Circle, used to authenticate the connector
           example: XXX
         endpoint:
           type: string
+          description: Base URL of the Banking Circle API the connector calls
           example: XXX
         authorizationEndpoint:
           type: string
+          description: URL the connector calls to obtain an access token
           example: XXX
         userCertificate:
           type: string
+          description: Client certificate presented on the mutual-TLS connection to Banking Circle
           example: XXX
         userCertificateKey:
           type: string
+          description: Private key matching the client certificate
           example: XXX
         pollingPeriod:
           type: string
@@ -1641,15 +1685,19 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Generic Account
         provider:
           type: string
           default: Generic
+          description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
+          description: API key used to authenticate the connector's requests
           example: XXX
         endpoint:
           type: string
+          description: Base URL of the API the connector calls
           example: XXX
         pollingPeriod:
           type: string
@@ -1668,10 +1716,12 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My MangoPay Account
         provider:
           type: string
           default: Mangopay
+          description: Identifies the payment provider this configuration targets
         pollingPeriod:
           type: string
           example: 120m
@@ -1681,12 +1731,15 @@ components:
           default: 30m
         clientID:
           type: string
+          description: Client ID issued by MangoPay
           example: XXX
         apiKey:
           type: string
+          description: API key issued by MangoPay, used to authenticate the connector's requests
           example: XXX
         endpoint:
           type: string
+          description: Base URL of the MangoPay API the connector calls
           example: XXX
     MoneycorpConfig:
       type: object
@@ -1698,18 +1751,23 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Moneycorp Account
         provider:
           type: string
           default: Moneycorp
+          description: Identifies the payment provider this configuration targets
         clientID:
           type: string
+          description: Client ID issued by Moneycorp
           example: XXX
         apiKey:
           type: string
+          description: API key issued by Moneycorp, used to authenticate the connector's requests
           example: XXX
         endpoint:
           type: string
+          description: Base URL of the Moneycorp API the connector calls
           example: XXX
         pollingPeriod:
           type: string
@@ -1727,12 +1785,15 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My CurrencyCloud Account
         provider:
           type: string
           default: Currencycloud
+          description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
+          description: API key issued by Currencycloud, used to authenticate the connector's requests
           example: XXX
         loginID:
           type: string
@@ -1758,18 +1819,23 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Adyen Account
         provider:
           type: string
           default: Adyen
+          description: Identifies the payment provider this configuration targets
         apiKey:
           type: string
+          description: API key issued by Adyen, used to authenticate the connector's requests
           example: XXX
         hmacKey:
           type: string
+          description: HMAC key used to verify the signature on webhooks sent by Adyen
           example: XXX
         liveEndpointPrefix:
           type: string
+          description: Prefix of your live Adyen endpoint. Required when the connector runs against production
           example: XXX
         pollingPeriod:
           type: string
@@ -1787,10 +1853,12 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name identifying this connector instance
           example: My Atlar Account
         provider:
           type: string
           default: Atlar
+          description: Identifies the payment provider this configuration targets
         baseUrl:
           type: string
           example: https://api.example.com
@@ -1841,6 +1909,7 @@ components:
           example: 50
     TransferInitiation:
       type: object
+      description: A transfer Formance asked a connector to execute
       required:
         - id
         - reference
@@ -1859,57 +1928,74 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the transfer initiation
           example: XXX
         reference:
           type: string
+          description: Caller-supplied identifier for the initiation
         createdAt:
           type: string
           format: date-time
+          description: When the initiation was created
         scheduledAt:
           type: string
           format: date-time
+          description: When the transfer is scheduled to execute
         description:
           type: string
+          description: Human-readable description carried with the transfer
         sourceAccountID:
           type: string
+          description: Identifier of the account the funds leave
         destinationAccountID:
           type: string
+          description: Identifier of the account the funds reach
         connectorID:
           type: string
+          description: Identifier of the connector executing the transfer
         provider:
           type: string
           nullable: true
+          description: Name of the payment provider behind the connector
         type:
           type: string
+          description: Whether the funds move between your accounts or out to a third party
           enum:
             - TRANSFER
             - PAYOUT
         amount:
           type: integer
           format: bigint
+          description: Amount to move, in the asset's smallest unit
         initialAmount:
           type: integer
           format: bigint
+          description: Amount the initiation was created with, before any adjustment
         asset:
           type: string
+          description: Asset the transfer is denominated in
           example: USD
         status:
           $ref: '#/components/schemas/TransferInitiationStatus'
         error:
           type: string
           nullable: true
+          description: Why the initiation failed, absent when it succeeded
         metadata:
           type: object
           additionalProperties:
             type: string
           nullable: true
+          description: Arbitrary key/value pairs attached to the initiation
         relatedPayments:
           type: array
           nullable: true
+          description: Payments produced by this initiation
           items:
             $ref: '#/components/schemas/TransferInitiationPayments'
         relatedAdjustments:
           type: array
+          description: Successive status changes recorded against the initiation
           items:
             $ref: '#/components/schemas/TransferInitiationAdjustments'
     TransferInitiationAdjustments:
@@ -1921,19 +2007,23 @@ components:
       properties:
         adjustmentID:
           type: string
+          description: Unique identifier of the adjustment
         createdAt:
           type: string
           format: date-time
+          description: When the adjustment was recorded
         status:
           $ref: '#/components/schemas/TransferInitiationStatus'
         error:
           type: string
           nullable: true
+          description: Why this step failed, absent when it succeeded
         metadata:
           type: object
           additionalProperties:
             type: string
           nullable: true
+          description: Arbitrary key/value pairs attached to the adjustment
     TransferInitiationPayments:
       type: object
       required:
@@ -1943,16 +2033,20 @@ components:
       properties:
         paymentID:
           type: string
+          description: Identifier of the payment produced by the initiation
         createdAt:
           type: string
           format: date-time
+          description: When the payment was produced
         status:
           $ref: '#/components/schemas/LegacyPaymentStatus'
         error:
           type: string
           nullable: true
+          description: Why the payment failed, absent when it succeeded
     BankAccount:
       type: object
+      description: A bank account registered with Formance and forwardable to connectors
       required:
         - id
         - name
@@ -1961,27 +2055,38 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the bank account within Formance
         name:
           type: string
+          description: Human-readable name of the bank account
         createdAt:
           type: string
           format: date-time
+          description: When the bank account was registered
         country:
           type: string
+          description: Country the account is held in, as an ISO 3166-1 alpha-2 code
         connectorID:
           type: string
+          description: Identifier of the connector the account has been forwarded to
         accountID:
           type: string
+          description: Identifier of the provider-side account created by forwarding
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         iban:
           type: string
+          description: International bank account number, when the account is identified that way
         accountNumber:
           type: string
+          description: Domestic account number, when the account is identified that way
         swiftBicCode:
           type: string
+          description: SWIFT/BIC code identifying the bank
         relatedAccounts:
           type: array
+          description: Provider-side accounts this bank account has been forwarded to
           items:
             $ref: '#/components/schemas/BankAccountRelatedAccounts'
         metadata:
@@ -1997,22 +2102,29 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the link between the bank account and the provider
         createdAt:
           type: string
           format: date-time
+          description: When the bank account was forwarded to this provider
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         connectorID:
           type: string
+          description: Identifier of the connector holding the provider-side account
         accountID:
           type: string
+          description: Identifier of the provider-side account
     BankAccountMetadata:
       type: object
       additionalProperties:
         type: string
       nullable: true
+      description: Arbitrary key/value pairs attached to the bank account
     Payment:
       type: object
+      description: A payment observed at a provider and surfaced through a connector
       required:
         - id
         - reference
@@ -2032,15 +2144,20 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the payment within Formance
           example: XXX
         reference:
           type: string
+          description: Identifier the payment carries at the provider
         sourceAccountID:
           type: string
+          description: Identifier of the account the funds left
         destinationAccountID:
           type: string
+          description: Identifier of the account the funds reached
         connectorID:
           type: string
+          description: Identifier of the connector the payment belongs to
         provider:
           $ref: '#/components/schemas/Connector'
         type:
@@ -2051,26 +2168,32 @@ components:
           type: integer
           format: bigint
           minimum: 0
+          description: Amount the payment was created with, before any adjustment
           example: 100
         amount:
           type: integer
           format: bigint
           minimum: 0
+          description: Current amount of the payment after applying its adjustments
           example: 100
         scheme:
           $ref: '#/components/schemas/PaymentScheme'
         asset:
           type: string
+          description: Asset the payment is denominated in
           example: USD
         createdAt:
           type: string
           format: date-time
+          description: When the payment was created at the provider
         raw:
           type: object
           nullable: true
+          description: The provider's original payload, passed through untouched
           additionalProperties: true
         adjustments:
           type: array
+          description: Successive changes to the payment's amount and status
           items:
             $ref: '#/components/schemas/PaymentAdjustment'
         metadata:
@@ -2086,31 +2209,38 @@ components:
       properties:
         reference:
           type: string
+          description: Identifier the adjustment carries at the provider
         createdAt:
           type: string
           format: date-time
+          description: When the adjustment occurred at the provider
         status:
           $ref: '#/components/schemas/PaymentStatus'
         amount:
           type: integer
           format: bigint
           minimum: 0
+          description: Amount carried by this adjustment
           example: 100
         raw:
           type: object
+          description: The provider's original payload for this adjustment
           additionalProperties: true
     PaymentMetadata:
       type: object
       additionalProperties:
         type: string
       nullable: true
+      description: Arbitrary key/value pairs attached to the payment
     AccountMetadata:
       type: object
       additionalProperties:
         type: string
       nullable: true
+      description: Arbitrary key/value pairs attached to the account
     Pool:
       type: object
+      description: A named group of accounts whose balances are aggregated together
       required:
         - id
         - name
@@ -2118,33 +2248,41 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the pool
         name:
           type: string
+          description: Human-readable name of the pool
         type:
           $ref: '#/components/schemas/PoolTypeEnum'
         query:
           type: object
+          description: Filter selecting the accounts a dynamic pool contains
           additionalProperties: true
         accounts:
           type: array
+          description: Accounts currently in the pool
           items:
             type: string
     PoolTypeEnum:
       type: string
+      description: Whether a pool holds a fixed account list or is driven by a query
       enum:
         - STATIC
         - DYNAMIC
     PoolBalances:
       type: object
+      description: Aggregated balances across a pool's accounts
       required:
         - balances
       properties:
         balances:
           type: array
+          description: Aggregated balance per asset across the pool's accounts
           items:
             $ref: '#/components/schemas/PoolBalance'
     PoolBalancesLatest:
       type: array
+      description: Most recent aggregated balances across a pool's accounts
       items:
             $ref: '#/components/schemas/PoolBalance'
     PoolBalance:
@@ -2157,17 +2295,21 @@ components:
           type: integer
           format: bigint
           minimum: 0
+          description: Total held across the pool for this asset, in the asset's smallest unit
           example: 100
         asset:
           type: string
+          description: Asset the balance is denominated in
           example: USD
         relatedAccounts:
           nullable: true
           type: array
+          description: Accounts contributing to this balance
           items:
             type: string
     Account:
       type: object
+      description: An account held at a payment provider, surfaced through a connector
       required:
         - id
         - createdAt
@@ -2182,26 +2324,35 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the account within Formance
         createdAt:
           type: string
           format: date-time
+          description: When the account was created at the provider
         reference:
           type: string
+          description: Identifier the account carries at the provider
         connectorID:
           type: string
+          description: Identifier of the connector the account belongs to
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         defaultCurrency:
           type: string
           deprecated: true
+          description: Deprecated alias of defaultAsset, kept for backwards compatibility
         defaultAsset:
           type: string
+          description: Asset the account is denominated in by default
         accountName:
           type: string
+          description: Human-readable name of the account
         type:
           $ref: '#/components/schemas/AccountType'
         pools:
           type: array
+          description: Pools this account belongs to
           items:
             type: string
         metadata:
@@ -2209,6 +2360,7 @@ components:
         raw:
           type: object
           nullable: true
+          description: The provider's original payload, passed through untouched
           additionalProperties: true
     AccountBalance:
       type: object
@@ -2222,20 +2374,26 @@ components:
       properties:
         accountId:
           type: string
+          description: Identifier of the account this balance belongs to
         createdAt:
           type: string
           format: date-time
+          description: Start of the period this balance covers
         lastUpdatedAt:
           type: string
           format: date-time
+          description: When the balance was last refreshed from the provider
         currency:
           type: string
           deprecated: true
+          description: Deprecated alias of asset, kept for backwards compatibility
         asset:
           type: string
+          description: Asset the balance is denominated in
         balance:
           type: integer
           format: bigint
+          description: Amount held, in the asset's smallest unit
     TaskBase:
       type: object
       required:
@@ -2249,24 +2407,31 @@ components:
         id:
           type: string
           format: uuid
+          description: Unique identifier of the task
         connectorID:
           type: string
+          description: Identifier of the connector the task runs against
         createdAt:
           type: string
           format: date-time
+          description: When the task was created
         updatedAt:
           type: string
           format: date-time
+          description: When the task was last updated
         status:
           $ref: '#/components/schemas/TaskStatus'
         state:
           nullable: true
           type: object
+          description: Internal progress state the task resumes from
         error:
           type: string
           nullable: true
+          description: Why the task failed, absent when it succeeded
     TaskStatus:
       type: string
+      description: Where a task stands, from pending through to succeeded or failed
       enum:
         - PENDING
         - ACTIVE
@@ -2411,15 +2576,19 @@ components:
           type: integer
           format: bigint
           minimum: 0
+          description: Amount to transfer, in the asset's smallest unit
           example: 100
         asset:
           type: string
+          description: Asset the transfer is denominated in
           example: USD
         destination:
           type: string
+          description: Provider-side account receiving the funds
           example: acct_1Gqj58KZcSIg2N2q
         source:
           type: string
+          description: Provider-side account the funds leave. Defaults to the connector's main account
           example: acct_1Gqj58KZcSIg2N2q
     ForwardBankAccountRequest:
       type: object
@@ -2428,6 +2597,7 @@ components:
       properties:
         connectorID:
           type: string
+          description: Identifier of the connector to forward the bank account to
     UpdateBankAccountMetadataRequest:
       type: object
       required:
@@ -2443,18 +2613,24 @@ components:
       properties:
         country:
           type: string
+          description: Country the account is held in, as an ISO 3166-1 alpha-2 code
           example: GB
         connectorID:
           type: string
+          description: Connector to forward the bank account to on creation
         name:
           type: string
+          description: Human-readable name for the bank account
           example: My account
         accountNumber:
           type: string
+          description: Domestic account number. Supply this or an IBAN
         iban:
           type: string
+          description: International bank account number. Supply this or an account number
         swiftBicCode:
           type: string
+          description: SWIFT/BIC code identifying the bank
         metadata:
           $ref: '#/components/schemas/BankAccountMetadata'
     UpdatePoolQueryRequest:
@@ -2464,6 +2640,7 @@ components:
       properties:
         query:
           type: object
+          description: Filter selecting the accounts a dynamic pool contains
           additionalProperties: true
     AddAccountToPoolRequest:
       type: object
@@ -2472,6 +2649,7 @@ components:
       properties:
         accountID:
           type: string
+          description: Identifier of the account to add to the pool
     PoolRequest:
       type: object
       description: Query and dynamic pools are available from Connectivity v3.1
@@ -2480,12 +2658,14 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name for the pool
         query:
           description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
           type: object
           additionalProperties: true
         accountIDs:
           type: array
+          description: Accounts to place in the pool. Omit when the pool is driven by a query
           items:
             type: string
     AccountRequest:
@@ -2498,17 +2678,22 @@ components:
       properties:
         reference:
           type: string
+          description: Identifier the account carries at the provider
         connectorID:
           type: string
+          description: Identifier of the connector the account belongs to
         createdAt:
           type: string
           format: date-time
+          description: When the account was created at the provider
         type:
           $ref: '#/components/schemas/AccountType'
         defaultAsset:
           type: string
+          description: Asset the account is denominated in by default
         accountName:
           type: string
+          description: Human-readable name of the account
         metadata:
           $ref: '#/components/schemas/AccountMetadata'
     PaymentRequest:
@@ -2525,15 +2710,19 @@ components:
       properties:
         reference:
           type: string
+          description: Identifier the payment carries at the provider
         connectorID:
           type: string
+          description: Identifier of the connector the payment belongs to
         createdAt:
           type: string
           format: date-time
+          description: When the payment was created at the provider
         amount:
           type: integer
           format: bigint
           minimum: 0
+          description: Amount of the payment, in the asset's smallest unit
           example: 100
         type:
           $ref: '#/components/schemas/PaymentType'
@@ -2543,11 +2732,14 @@ components:
           $ref: '#/components/schemas/PaymentScheme'
         asset:
           type: string
+          description: Asset the payment is denominated in
           example: USD
         sourceAccountID:
           type: string
+          description: Identifier of the account the funds leave
         destinationAccountID:
           type: string
+          description: Identifier of the account the funds reach
     TransferInitiationRequest:
       type: object
       required:
@@ -2563,36 +2755,47 @@ components:
       properties:
         reference:
           type: string
+          description: Caller-supplied identifier for the initiation, used to deduplicate retries
           example: XXX
         scheduledAt:
           type: string
           format: date-time
+          description: When the transfer should be executed
         description:
           type: string
+          description: Human-readable description carried with the transfer
         sourceAccountID:
           type: string
+          description: Identifier of the account the funds leave
         destinationAccountID:
           type: string
+          description: Identifier of the account the funds reach
         connectorID:
           type: string
+          description: Identifier of the connector to execute the transfer through
         type:
           type: string
+          description: Whether the funds move between your accounts or out to a third party
           enum:
             - TRANSFER
             - PAYOUT
         amount:
           type: integer
           format: bigint
+          description: Amount to move, in the asset's smallest unit
         asset:
           type: string
+          description: Asset the transfer is denominated in
           example: USD
         validated:
           type: boolean
+          description: When true, the transfer executes immediately instead of waiting for approval
         metadata:
           type: object
           additionalProperties:
             type: string
           nullable: true
+          description: Arbitrary key/value pairs to attach to the initiation
     ReverseTransferInitiationRequest:
       type: object
       required:
@@ -2604,20 +2807,25 @@ components:
       properties:
         reference:
           type: string
+          description: Caller-supplied identifier for the reversal, used to deduplicate retries
           example: XXX
         description:
           type: string
+          description: Human-readable reason for the reversal
         amount:
           type: integer
           format: bigint
+          description: Amount to reverse, in the asset's smallest unit
         asset:
           type: string
+          description: Asset the reversal is denominated in
           example: USD
         metadata:
           type: object
           additionalProperties:
             type: string
           nullable: true
+          description: Arbitrary key/value pairs to attach to the reversal
     UpdateTransferInitiationStatusRequest:
       type: object
       required:
@@ -2625,17 +2833,20 @@ components:
       properties:
         status:
           type: string
+          description: Whether to approve or reject the pending transfer
           enum:
             - REJECTED
             - VALIDATED
     AccountType:
       type: string
+      description: Whether an account is internal to the provider or belongs to an external party
       enum:
         - UNKNOWN
         - INTERNAL
         - EXTERNAL
     PaymentType:
       type: string
+      description: Direction of a payment
       enum:
         - PAY-IN
         - PAYOUT
@@ -2643,6 +2854,7 @@ components:
         - OTHER
     PaymentScheme:
       type: string
+      description: Payment scheme or rail a payment travels over
       enum:
         - unknown
         - other
@@ -2670,6 +2882,7 @@ components:
         - rtp
     LegacyPaymentStatus:
       type: string
+      description: Status of a payment as reported by the legacy payments API
       enum:
         - PENDING
         - SUCCEEDED
@@ -2696,6 +2909,7 @@ components:
         - REVERSED
     PaymentStatus:
       type: string
+      description: Where a payment stands in its lifecycle
       enum:
         - PENDING
         - SUCCEEDED
@@ -2718,9 +2932,11 @@ components:
           $ref: '#/components/schemas/PaymentsErrorsEnum'
         errorMessage:
           type: string
+          description: Human-readable description of the error
           example: '[VALIDATION] missing reference'
     PaymentsErrorsEnum:
       type: string
+      description: Machine-readable error code identifying the failure
       enum:
         - INTERNAL
         - VALIDATION
@@ -2731,5 +2947,7 @@ components:
       properties:
         version:
           type: string
+          description: Version of the payments service
         debug:
           type: boolean
+          description: Whether the service is running in debug mode
