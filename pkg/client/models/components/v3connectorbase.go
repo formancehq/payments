@@ -7,12 +7,18 @@ import (
 	"time"
 )
 
+// V3ConnectorBase - Summary of a connector, without its configuration
 type V3ConnectorBase struct {
-	ID        *string    `json:"id,omitempty"`
-	Reference *string    `json:"reference,omitempty"`
-	Name      *string    `json:"name,omitempty"`
+	// Unique identifier of the connector
+	ID *string `json:"id,omitempty"`
+	// Stable reference identifying the connector
+	Reference *string `json:"reference,omitempty"`
+	// Human-readable name of the connector instance
+	Name *string `json:"name,omitempty"`
+	// When the connector was installed
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Provider  *string    `json:"provider,omitempty"`
+	// Name of the payment provider behind the connector
+	Provider *string `json:"provider,omitempty"`
 }
 
 func (v V3ConnectorBase) MarshalJSON() ([]byte, error) {

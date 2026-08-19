@@ -1,5 +1,7 @@
 # V3UninstallConnectorResponseData
 
+The task tracking the uninstall, which completes asynchronously
+
 
 ## Fields
 

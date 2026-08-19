@@ -7,12 +7,18 @@ import (
 	"time"
 )
 
+// V3Schedule - A recurring job a connector runs to fetch data from its provider
 type V3Schedule struct {
-	ID           string     `json:"id"`
-	ConnectorID  string     `json:"connectorID"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	PausedAt     *time.Time `json:"pausedAt,omitempty"`
-	PausedReason *string    `json:"pausedReason,omitempty"`
+	// Unique identifier of the schedule
+	ID string `json:"id"`
+	// Identifier of the connector this schedule belongs to
+	ConnectorID string `json:"connectorID"`
+	// When the schedule was created
+	CreatedAt time.Time `json:"createdAt"`
+	// When the schedule was paused, absent while it is running
+	PausedAt *time.Time `json:"pausedAt,omitempty"`
+	// Why the schedule was paused
+	PausedReason *string `json:"pausedReason,omitempty"`
 }
 
 func (v V3Schedule) MarshalJSON() ([]byte, error) {

@@ -1,5 +1,7 @@
 # V3ConnectorSchedulesCursorResponseCursor
 
+Paginated cursor wrapping the connector's schedules
+
 
 ## Fields
 

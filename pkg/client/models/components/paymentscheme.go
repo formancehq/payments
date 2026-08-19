@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// PaymentScheme - Payment scheme or rail a payment travels over
 type PaymentScheme string
 
 const (

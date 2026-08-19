@@ -31,6 +31,7 @@ func (o *ConnectorsConfigsResponseData) GetDefaultValue() *string {
 
 // ConnectorsConfigsResponse - OK
 type ConnectorsConfigsResponse struct {
+	// Configuration schema of every available connector, keyed by provider
 	Data map[string]map[string]ConnectorsConfigsResponseData `json:"data"`
 }
 

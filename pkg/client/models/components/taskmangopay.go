@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// TaskMangoPayState - Internal progress state the task resumes from
 type TaskMangoPayState struct {
 }
 
@@ -38,14 +39,21 @@ func (o *TaskMangoPayDescriptor) GetUserID() *string {
 }
 
 type TaskMangoPay struct {
-	ID          string                 `json:"id"`
-	ConnectorID string                 `json:"connectorID"`
-	CreatedAt   time.Time              `json:"createdAt"`
-	UpdatedAt   time.Time              `json:"updatedAt"`
-	Status      TaskStatus             `json:"status"`
-	State       *TaskMangoPayState     `json:"state,omitempty"`
-	Error       *string                `json:"error,omitempty"`
-	Descriptor  TaskMangoPayDescriptor `json:"descriptor"`
+	// Unique identifier of the task
+	ID string `json:"id"`
+	// Identifier of the connector the task runs against
+	ConnectorID string `json:"connectorID"`
+	// When the task was created
+	CreatedAt time.Time `json:"createdAt"`
+	// When the task was last updated
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Where a task stands, from pending or active through to stopped, terminated or failed
+	Status TaskStatus `json:"status"`
+	// Internal progress state the task resumes from
+	State *TaskMangoPayState `json:"state,omitempty"`
+	// Why the task failed, absent when it succeeded
+	Error      *string                `json:"error,omitempty"`
+	Descriptor TaskMangoPayDescriptor `json:"descriptor"`
 }
 
 func (t TaskMangoPay) MarshalJSON() ([]byte, error) {

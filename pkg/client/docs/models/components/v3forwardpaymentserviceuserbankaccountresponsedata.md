@@ -1,5 +1,7 @@
 # V3ForwardPaymentServiceUserBankAccountResponseData
 
+The task tracking the forwarding, which completes asynchronously
+
 
 ## Fields
 

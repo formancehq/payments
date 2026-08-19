@@ -1,5 +1,7 @@
 # V3RetryPaymentInitiationResponseData
 
+The task tracking the retry, which completes asynchronously
+
 
 ## Fields
 

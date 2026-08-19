@@ -2,12 +2,18 @@
 
 package components
 
+// Pool - A named group of accounts whose balances are aggregated together
 type Pool struct {
-	ID       string         `json:"id"`
-	Name     string         `json:"name"`
-	Type     *PoolTypeEnum  `json:"type,omitempty"`
-	Query    map[string]any `json:"query,omitempty"`
-	Accounts []string       `json:"accounts"`
+	// Unique identifier of the pool
+	ID string `json:"id"`
+	// Human-readable name of the pool
+	Name string `json:"name"`
+	// Whether a pool holds a fixed account list or is driven by a query
+	Type *PoolTypeEnum `json:"type,omitempty"`
+	// Filter selecting the accounts a dynamic pool contains
+	Query map[string]any `json:"query,omitempty"`
+	// Accounts currently in the pool
+	Accounts []string `json:"accounts"`
 }
 
 func (o *Pool) GetID() string {

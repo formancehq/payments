@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// TaskDummyPayState - Internal progress state the task resumes from
 type TaskDummyPayState struct {
 }
 
@@ -38,14 +39,21 @@ func (o *TaskDummyPayDescriptor) GetFileName() *string {
 }
 
 type TaskDummyPay struct {
-	ID          string                 `json:"id"`
-	ConnectorID string                 `json:"connectorID"`
-	CreatedAt   time.Time              `json:"createdAt"`
-	UpdatedAt   time.Time              `json:"updatedAt"`
-	Status      TaskStatus             `json:"status"`
-	State       *TaskDummyPayState     `json:"state,omitempty"`
-	Error       *string                `json:"error,omitempty"`
-	Descriptor  TaskDummyPayDescriptor `json:"descriptor"`
+	// Unique identifier of the task
+	ID string `json:"id"`
+	// Identifier of the connector the task runs against
+	ConnectorID string `json:"connectorID"`
+	// When the task was created
+	CreatedAt time.Time `json:"createdAt"`
+	// When the task was last updated
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Where a task stands, from pending or active through to stopped, terminated or failed
+	Status TaskStatus `json:"status"`
+	// Internal progress state the task resumes from
+	State *TaskDummyPayState `json:"state,omitempty"`
+	// Why the task failed, absent when it succeeded
+	Error      *string                `json:"error,omitempty"`
+	Descriptor TaskDummyPayDescriptor `json:"descriptor"`
 }
 
 func (t TaskDummyPay) MarshalJSON() ([]byte, error) {

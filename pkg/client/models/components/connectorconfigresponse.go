@@ -4,6 +4,7 @@ package components
 
 // ConnectorConfigResponse - OK
 type ConnectorConfigResponse struct {
+	// A connector's configuration, whose shape depends on the provider
 	Data ConnectorConfig `json:"data"`
 }
 

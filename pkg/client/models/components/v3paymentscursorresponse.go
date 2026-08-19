@@ -2,6 +2,7 @@
 
 package components
 
+// V3PaymentsCursorResponseCursor - Paginated cursor wrapping the list of payments
 type V3PaymentsCursorResponseCursor struct {
 	PageSize int64       `json:"pageSize"`
 	HasMore  bool        `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3PaymentsCursorResponseCursor) GetData() []V3Payment {
 }
 
 type V3PaymentsCursorResponse struct {
+	// Paginated cursor wrapping the list of payments
 	Cursor V3PaymentsCursorResponseCursor `json:"cursor"`
 }
 

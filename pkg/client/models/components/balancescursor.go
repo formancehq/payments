@@ -2,12 +2,17 @@
 
 package components
 
+// BalancesCursorCursor - Paginated cursor wrapping the list of balances
 type BalancesCursorCursor struct {
-	PageSize int64            `json:"pageSize"`
-	HasMore  bool             `json:"hasMore"`
-	Previous *string          `json:"previous,omitempty"`
-	Next     *string          `json:"next,omitempty"`
-	Data     []AccountBalance `json:"data"`
+	// Number of items requested per page
+	PageSize int64 `json:"pageSize"`
+	// Whether further pages are available
+	HasMore bool `json:"hasMore"`
+	// Cursor for the previous page, absent on the first page
+	Previous *string `json:"previous,omitempty"`
+	// Cursor for the next page, absent on the last page
+	Next *string          `json:"next,omitempty"`
+	Data []AccountBalance `json:"data"`
 }
 
 func (o *BalancesCursorCursor) GetPageSize() int64 {
@@ -47,6 +52,7 @@ func (o *BalancesCursorCursor) GetData() []AccountBalance {
 
 // BalancesCursor - OK
 type BalancesCursor struct {
+	// Paginated cursor wrapping the list of balances
 	Cursor BalancesCursorCursor `json:"cursor"`
 }
 

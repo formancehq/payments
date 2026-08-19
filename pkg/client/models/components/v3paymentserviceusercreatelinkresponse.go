@@ -3,8 +3,10 @@
 package components
 
 type V3PaymentServiceUserCreateLinkResponse struct {
+	// Identifier of the link attempt this URL belongs to
 	AttemptID string `json:"attemptID"`
-	Link      string `json:"link"`
+	// URL to send the user to so they can authorise the connection
+	Link string `json:"link"`
 }
 
 func (o *V3PaymentServiceUserCreateLinkResponse) GetAttemptID() string {

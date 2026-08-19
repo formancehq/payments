@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// V3ConnectionStatusEnum - Whether an open banking connection is still usable or needs the user to reconnect
 type V3ConnectionStatusEnum string
 
 const (

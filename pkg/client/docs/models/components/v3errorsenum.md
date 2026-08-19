@@ -1,5 +1,7 @@
 # V3ErrorsEnum
 
+Machine-readable error code identifying the failure
+
 
 ## Values
 

@@ -1,5 +1,7 @@
 # V3ReversePaymentInitiationResponseData
 
+The task tracking the reversal, which completes asynchronously
+
 
 ## Fields
 

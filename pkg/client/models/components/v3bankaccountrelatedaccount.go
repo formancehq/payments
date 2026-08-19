@@ -8,7 +8,9 @@ import (
 )
 
 type V3BankAccountRelatedAccount struct {
-	AccountID string    `json:"accountID"`
+	// Identifier of the provider-side account
+	AccountID string `json:"accountID"`
+	// When the bank account was forwarded to this provider
 	CreatedAt time.Time `json:"createdAt"`
 }
 

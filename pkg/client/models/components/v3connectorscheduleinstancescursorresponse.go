@@ -2,6 +2,7 @@
 
 package components
 
+// V3ConnectorScheduleInstancesCursorResponseCursor - Paginated cursor wrapping the schedule's runs
 type V3ConnectorScheduleInstancesCursorResponseCursor struct {
 	PageSize int64        `json:"pageSize"`
 	HasMore  bool         `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3ConnectorScheduleInstancesCursorResponseCursor) GetData() []V3Instanc
 }
 
 type V3ConnectorScheduleInstancesCursorResponse struct {
+	// Paginated cursor wrapping the schedule's runs
 	Cursor V3ConnectorScheduleInstancesCursorResponseCursor `json:"cursor"`
 }
 
