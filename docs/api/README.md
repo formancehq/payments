@@ -7382,9 +7382,9 @@ An end user on whose behalf payments and open banking connections are made
 |psuID|string|true|none|Identifier of the payment service user the attempt belongs to|
 |connectorID|string|true|none|Identifier of the connector the user is linking to|
 |createdAt|string(date-time)|true|none|When the attempt was started|
-|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|true|none|Where a link attempt stands, from pending through to completed or failed|
+|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|true|none|Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error|
 |clientRedirectURL|string(url)|true|none|URL the user is sent back to once the provider's flow finishes|
-|error|string¦null|false|none|Why the attempt failed, absent when it succeeded|
+|error|string¦null|false|none|Why the attempt exited, absent when it completed|
 
 <h2 id="tocS_V3ContactDetails">V3ContactDetails</h2>
 <!-- backwards compatibility -->
@@ -7567,13 +7567,13 @@ Whether an open banking connection is still usable or needs the user to reconnec
 
 ```
 
-Where a link attempt stands, from pending through to completed or failed
+Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error
 
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|Where a link attempt stands, from pending through to completed or failed|
+|*anonymous*|string|false|none|Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error|
 
 #### Enumerated Values
 

@@ -2129,7 +2129,7 @@ components:
         error:
           type: string
           nullable: true
-          description: Why the attempt failed, absent when it succeeded
+          description: Why the attempt exited, absent when it completed
 
     V3ContactDetails:
       type: object
@@ -2209,7 +2209,7 @@ components:
 
     V3OpenBankingConnectionAttemptStatusEnum:
       type: string
-      description: Where a link attempt stands, from pending through to completed or failed
+      description: Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error
       enum:
         - pending
         - completed
