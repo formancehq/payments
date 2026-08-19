@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -15,6 +18,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/plaid/plaid-go/v34/plaid"
+)
+
+const (
+	plaidWebhookMaxAge     = 5 * time.Minute
+	plaidWebhookFutureSkew = time.Minute
 )
 
 type supportedWebhook struct {
@@ -100,7 +108,48 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid token: %w", models.ErrInvalidRequest)
 	}
 
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid token claims: %w", models.ErrInvalidRequest)
+	}
+
+	if err := verifyPlaidWebhookIAT(claims, time.Now()); err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+	if err := verifyPlaidWebhookBodyHash(claims, req.Webhook.Body); err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+
 	return models.VerifyWebhookResponse{}, nil
+}
+
+// Plaid signs iat plus request_body_sha256, not the HTTP body itself.
+// https://plaid.com/docs/api/webhooks/webhook-verification/
+func verifyPlaidWebhookIAT(claims jwt.MapClaims, now time.Time) error {
+	iat, err := claims.GetIssuedAt()
+	if err != nil || iat == nil {
+		return fmt.Errorf("missing iat: %w", models.ErrInvalidRequest)
+	}
+	if now.Sub(iat.Time) > plaidWebhookMaxAge {
+		return fmt.Errorf("webhook iat is older than 5 minutes: %w", models.ErrInvalidRequest)
+	}
+	if iat.Time.After(now.Add(plaidWebhookFutureSkew)) {
+		return fmt.Errorf("webhook iat is in the future: %w", models.ErrInvalidRequest)
+	}
+	return nil
+}
+
+func verifyPlaidWebhookBodyHash(claims jwt.MapClaims, body []byte) error {
+	want, ok := claims["request_body_sha256"].(string)
+	if !ok || want == "" {
+		return fmt.Errorf("missing request_body_sha256: %w", models.ErrInvalidRequest)
+	}
+	sum := sha256.Sum256(body)
+	got := hex.EncodeToString(sum[:])
+	if subtle.ConstantTimeCompare([]byte(strings.ToLower(got)), []byte(strings.ToLower(want))) != 1 {
+		return fmt.Errorf("request_body_sha256 mismatch: %w", models.ErrInvalidRequest)
+	}
+	return nil
 }
 
 func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
