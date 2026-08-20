@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	engineutils "github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
@@ -1378,6 +1379,33 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().WebhooksConfigsGetFromConnectorID(gomock.Any(), connectorID).Return(nil, nil)
 			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
 			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should reject a formanceRedirectURL query value that doesn't match this app's public URL, before touching storage", func(ctx SpecContext) {
+			webhook.QueryValues = map[string][]string{
+				engineutils.FormanceRedirectURLQueryParamID: {"https://evil.example.com/steal"},
+			}
+			// stackPublicURL is "" for the shared eng fixture, so any
+			// non-empty value here is necessarily a mismatch - no storage
+			// mock expectations are set, proving the rejection happens
+			// before any lookup.
+			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(engineutils.ErrInvalidFormanceRedirectURL))
+		})
+
+		It("should proceed past validation when the formanceRedirectURL query value matches this app's public URL", func(ctx SpecContext) {
+			stackPublicURL := "https://my-stack.example.com"
+			engWithPublicURL := engine.New(logging.NewDefaultLogger(GinkgoWriter, false, false, false), cl, store, manager, stackName, stackPublicURL)
+
+			webhook.QueryValues = map[string][]string{
+				engineutils.FormanceRedirectURLQueryParamID: {stackPublicURL + "/api/payments/v3/connectors/open-banking/abc/redirect"},
+			}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(nil, storage.ErrNotFound)
+
+			err := engWithPublicURL.HandleWebhook(ctx, "/url", "/path", webhook)
+			// storage.ErrNotFound (not ErrInvalidFormanceRedirectURL) proves
+			// validation passed and processing continued as normal.
+			Expect(err).To(MatchError(storage.ErrNotFound))
 		})
 	})
 })
