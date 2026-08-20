@@ -207,7 +207,33 @@ var _ = Describe("Plaid *Plugin Webhooks", func() {
 			Expect(err.Error()).To(ContainSubstring("missing attemptID"))
 		})
 
-		It("should return an error - missing formanceRedirectURL", func(ctx SpecContext) {
+		It("should return an error - ambiguous formanceRedirectURL", func(ctx SpecContext) {
+			attemptID := uuid.New()
+			req := models.TranslateWebhookRequest{
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{}`),
+					QueryValues: map[string][]string{
+						client.AttemptIDQueryParamID:           {attemptID.String()},
+						client.FormanceRedirectURLQueryParamID: {"https://a.example.com", "https://b.example.com"},
+					},
+				},
+			}
+
+			m.EXPECT().TranslateSessionFinishedWebhook(req.Webhook.Body).Return(plaid.LinkSessionFinishedWebhook{}, nil)
+
+			_, err := p.handleSessionFinishedWebhook(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("invalid formanceRedirectURL"))
+		})
+
+		It("should fall back to the legacy redirect construction for a pre-FormanceRedirectURL Link session", func(ctx SpecContext) {
+			// Simulates a Link session created by a version of this plugin
+			// predating the FormanceRedirectURL query param: its registered
+			// webhook URL carries only attemptID, and it can still finish
+			// after this plugin is redeployed. That must not drop the
+			// webhook - it should fall back to letting
+			// FormanceOpenBankingRedirect reconstruct the legacy URL
+			// (RedirectURL == "").
 			attemptID := uuid.New()
 			req := models.TranslateWebhookRequest{
 				Webhook: models.PSPWebhook{
@@ -218,16 +244,31 @@ var _ = Describe("Plaid *Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().TranslateSessionFinishedWebhook(req.Webhook.Body).Return(plaid.LinkSessionFinishedWebhook{}, nil)
+			webhook := plaid.LinkSessionFinishedWebhook{
+				Status:       "SUCCESS",
+				LinkToken:    "link-token-123",
+				PublicTokens: &[]string{"public-token-123"},
+			}
 
-			_, err := p.handleSessionFinishedWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("missing formanceRedirectURL"))
+			m.EXPECT().TranslateSessionFinishedWebhook(req.Webhook.Body).Return(webhook, nil)
+			m.EXPECT().FormanceOpenBankingRedirect(ctx, client.FormanceOpenBankingRedirectRequest{
+				RedirectURL: "",
+				LinkToken:   "link-token-123",
+				PublicToken: "public-token-123",
+				AttemptID:   attemptID,
+			}).Return(nil)
+
+			resp, err := p.handleSessionFinishedWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp).To(HaveLen(1))
+			Expect(resp[0].UserLinkSessionFinished).ToNot(BeNil())
+			Expect(resp[0].UserLinkSessionFinished.AttemptID).To(Equal(attemptID))
+			Expect(resp[0].UserLinkSessionFinished.Status).To(Equal(models.OpenBankingConnectionAttemptStatusCompleted))
 		})
 
 		It("should notify the caller-supplied formanceRedirectURL and report completed status", func(ctx SpecContext) {
 			attemptID := uuid.New()
-			redirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			redirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.TranslateWebhookRequest{
 				Webhook: models.PSPWebhook{
 					Body: []byte(`{}`),
@@ -262,7 +303,7 @@ var _ = Describe("Plaid *Plugin Webhooks", func() {
 
 		It("should propagate an error from FormanceOpenBankingRedirect", func(ctx SpecContext) {
 			attemptID := uuid.New()
-			redirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			redirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.TranslateWebhookRequest{
 				Webhook: models.PSPWebhook{
 					Body: []byte(`{}`),

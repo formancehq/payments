@@ -18,8 +18,15 @@ const (
 type FormanceOpenBankingRedirectRequest struct {
 	// RedirectURL is the caller-supplied destination to notify that the Link
 	// session finished (the same URL passed as FormanceRedirectURL when the
-	// link/update-link token was created) - this package builds no part of
-	// it itself, so it stays usable outside the payments connector engine.
+	// link/update-link token was created). It's empty for a Link session
+	// created by a version of this plugin that predates FormanceRedirectURL
+	// - its registered webhook URL has no way to carry it, since Plaid fixes
+	// that URL at link-token-creation time and a stale link/hosted-link
+	// token can still complete after this plugin is redeployed. In that case
+	// FormanceOpenBankingRedirect falls back to the connectorID/
+	// STACK_PUBLIC_URL construction this package used before RedirectURL
+	// existed, so those older sessions still resolve rather than being
+	// dropped.
 	RedirectURL string
 	LinkToken   string
 	PublicToken string
@@ -27,7 +34,16 @@ type FormanceOpenBankingRedirectRequest struct {
 }
 
 func (c *client) FormanceOpenBankingRedirect(ctx context.Context, req FormanceOpenBankingRedirectRequest) error {
-	u, err := url.Parse(req.RedirectURL)
+	redirectURL := req.RedirectURL
+	if redirectURL == "" {
+		var err error
+		redirectURL, err = url.JoinPath(c.formanceStackEndpoint, "connectors", "open-banking", c.connectorID, "redirect")
+		if err != nil {
+			return err
+		}
+	}
+
+	u, err := url.Parse(redirectURL)
 	if err != nil {
 		return err
 	}

@@ -35,12 +35,12 @@ var _ = Describe("Plaid *Plugin", func() {
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			_, err := plaid.New("plaid", logger, config)
+			_, err := plaid.New("plaid", logger, "connector-id", config)
 			Expect(err.Error()).To(ContainSubstring("validation"))
 		})
 
 		It("returns valid install response", func(ctx SpecContext) {
-			_, err := plaid.New("plaid", logger, config)
+			_, err := plaid.New("plaid", logger, "connector-id", config)
 			Expect(err).To(BeNil())
 			res, err := plg.Install(context.Background(), models.InstallRequest{})
 			Expect(err).To(BeNil())

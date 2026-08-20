@@ -177,7 +177,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -204,7 +204,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -232,7 +232,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -262,7 +262,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "invalid-locale"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -294,7 +294,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "xx-XX"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -327,7 +327,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 			webhookURL := "https://example.com/webhook"
 			attemptID := uuid.New()
 
@@ -386,7 +386,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
-			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			formanceRedirectURL := "https://caller.example.com/open-banking/connections/attempt-1/callback"
 
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
