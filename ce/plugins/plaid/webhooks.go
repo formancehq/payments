@@ -179,6 +179,12 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 		return nil, fmt.Errorf("invalid attemptID: %w", models.ErrInvalidRequest)
 	}
 
+	redirectURLs, ok := req.Webhook.QueryValues[client.FormanceRedirectURLQueryParamID]
+	if !ok || len(redirectURLs) != 1 {
+		return nil, fmt.Errorf("missing formanceRedirectURL: %w", models.ErrInvalidRequest)
+	}
+	formanceRedirectURL := redirectURLs[0]
+
 	status := models.OpenBankingConnectionAttemptStatusPending
 	var errMsg *string
 	switch strings.ToLower(webhook.GetStatus()) {
@@ -191,6 +197,7 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 
 	for _, publicToken := range webhook.GetPublicTokens() {
 		if err := p.client.FormanceOpenBankingRedirect(ctx, client.FormanceOpenBankingRedirectRequest{
+			RedirectURL: formanceRedirectURL,
 			LinkToken:   webhook.LinkToken,
 			PublicToken: publicToken,
 			AttemptID:   attemptID,

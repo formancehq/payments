@@ -14,8 +14,8 @@ const ProviderName = "plaid"
 
 var Registration = pkgplugins.Registration{
 	PluginType: models.PluginTypeOpenBanking,
-	CreateFunc: func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, connectorID, rm)
+	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, logger, rm)
 	},
 	Capabilities: capabilities,
 	RawConf:      Config{},
@@ -34,13 +34,13 @@ type Plugin struct {
 	supportedWebhooks map[string]supportedWebhook
 }
 
-func New(name string, logger logging.Logger, connectorID models.ConnectorID, rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := client.New(name, config.ClientID, config.ClientSecret, connectorID, config.IsSandbox)
+	client, err := client.New(name, config.ClientID, config.ClientSecret, config.IsSandbox)
 	if err != nil {
 		return nil, err
 	}

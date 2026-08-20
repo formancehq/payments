@@ -148,7 +148,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
-		It("should return an error - missing open banking connections", func(ctx SpecContext) {
+		It("should return an error - missing formance redirect URL", func(ctx SpecContext) {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
@@ -169,6 +169,33 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("missing formance redirect URL"))
+			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
+		})
+
+		It("should return an error - missing open banking connections", func(ctx SpecContext) {
+			locale := "en-US"
+			country := "US"
+			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
+			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
+					ID:   uuid.New(),
+					Name: "John Doe",
+					ContactDetails: &models.ContactDetails{
+						Locale: &locale,
+					},
+					Address: &models.Address{
+						Country: &country,
+					},
+				},
+				ClientRedirectURL:   &redirectURL,
+				FormanceRedirectURL: &formanceRedirectURL,
+			}
+
+			resp, err := plg.CreateUserLink(ctx, req)
+			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("missing open banking connections"))
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
@@ -177,6 +204,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -190,6 +218,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL:        &redirectURL,
+				FormanceRedirectURL:      &formanceRedirectURL,
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
@@ -203,6 +232,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -215,7 +245,8 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL: &redirectURL,
+				ClientRedirectURL:   &redirectURL,
+				FormanceRedirectURL: &formanceRedirectURL,
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{},
 				},
@@ -231,6 +262,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "invalid-locale"
 			country := "US"
 			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -243,7 +275,8 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL: &redirectURL,
+				ClientRedirectURL:   &redirectURL,
+				FormanceRedirectURL: &formanceRedirectURL,
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
@@ -261,6 +294,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "xx-XX"
 			country := "US"
 			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
@@ -273,7 +307,8 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL: &redirectURL,
+				ClientRedirectURL:   &redirectURL,
+				FormanceRedirectURL: &formanceRedirectURL,
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
@@ -292,6 +327,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
 			webhookURL := "https://example.com/webhook"
 			attemptID := uuid.New()
 
@@ -307,9 +343,10 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL: &redirectURL,
-				WebhookBaseURL:    webhookURL,
-				AttemptID:         attemptID.String(),
+				ClientRedirectURL:   &redirectURL,
+				FormanceRedirectURL: &formanceRedirectURL,
+				WebhookBaseURL:      webhookURL,
+				AttemptID:           attemptID.String(),
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
@@ -318,14 +355,15 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			}
 
 			expectedReq := client.CreateLinkTokenRequest{
-				ApplicationName: "Test",
-				UserID:          userID.String(),
-				UserToken:       "user-token-123",
-				Language:        "en",
-				CountryCode:     "US",
-				RedirectURI:     "https://example.com/callback",
-				WebhookBaseURL:  "https://example.com/webhook",
-				AttemptID:       attemptID.String(),
+				ApplicationName:     "Test",
+				UserID:              userID.String(),
+				UserToken:           "user-token-123",
+				Language:            "en",
+				CountryCode:         "US",
+				RedirectURI:         "https://example.com/callback",
+				WebhookBaseURL:      "https://example.com/webhook",
+				AttemptID:           attemptID.String(),
+				FormanceRedirectURL: formanceRedirectURL,
 			}
 
 			expectedResp := client.CreateLinkTokenResponse{
@@ -348,6 +386,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
+			formanceRedirectURL := "https://coordinator.example.com/open-banking/connections/attempt-1/callback"
 
 			req := models.CreateUserLinkRequest{
 				ApplicationName: "Test",
@@ -361,7 +400,8 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL: &redirectURL,
+				ClientRedirectURL:   &redirectURL,
+				FormanceRedirectURL: &formanceRedirectURL,
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",

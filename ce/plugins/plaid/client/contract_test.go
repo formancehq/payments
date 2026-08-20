@@ -43,7 +43,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -103,9 +102,7 @@ var _ = Describe("Plaid API contract", func() {
 		DeferCleanup(cancel)
 		var err error
 		// isSandbox=true selects the SDK's built-in sandbox.plaid.com host.
-		// The connectorID and STACK_PUBLIC_URL only feed the excluded
-		// FormanceOpenBankingRedirect path, so zero values are fine.
-		c, err = New("plaid", clientID, clientSecret, models.ConnectorID{}, true)
+		c, err = New("plaid", clientID, clientSecret, true)
 		Expect(err).To(BeNil())
 		// cc gives access to the wrapped plaid.APIClient for the sandbox-only
 		// seeding call; the test lives in package client to enable this.

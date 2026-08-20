@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/ce/plugins/plaid"
 	"github.com/formancehq/payments/pkg/domain/models"
-	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -36,14 +35,12 @@ var _ = Describe("Plaid *Plugin", func() {
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: "plaid"}
-			_, err := plaid.New("plaid", logger, connectorID, config)
+			_, err := plaid.New("plaid", logger, config)
 			Expect(err.Error()).To(ContainSubstring("validation"))
 		})
 
 		It("returns valid install response", func(ctx SpecContext) {
-			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: "plaid"}
-			_, err := plaid.New("plaid", logger, connectorID, config)
+			_, err := plaid.New("plaid", logger, config)
 			Expect(err).To(BeNil())
 			res, err := plg.Install(context.Background(), models.InstallRequest{})
 			Expect(err).To(BeNil())

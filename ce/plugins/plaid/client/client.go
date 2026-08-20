@@ -2,8 +2,6 @@ package client
 
 import (
 	"context"
-	"net/url"
-	"os"
 
 	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/formancehq/payments/pkg/domain/metrics"
@@ -33,22 +31,15 @@ type Client interface {
 }
 
 type client struct {
-	client      *plaid.APIClient
-	connectorID models.ConnectorID
+	client *plaid.APIClient
 
-	formanceHTTPClient    httpwrapper.Client
-	formanceStackEndpoint string
+	formanceHTTPClient httpwrapper.Client
 
 	webhookKeysCache *lru.Cache[string, *plaid.JWKPublicKey]
 }
 
 // TODO(polo): enable compression ? We have to activate compression directly in the http client
-func New(name, clientID, clientSecret string, connectorID models.ConnectorID, isSandbox bool) (Client, error) {
-	formanceStackEndpoint, err := url.JoinPath(os.Getenv("STACK_PUBLIC_URL"), "api", "payments", "v3")
-	if err != nil {
-		return nil, err
-	}
-
+func New(name, clientID, clientSecret string, isSandbox bool) (Client, error) {
 	configuration := plaid.NewConfiguration()
 
 	configuration.AddDefaultHeader("PLAID-CLIENT-ID", clientID)
@@ -68,10 +59,8 @@ func New(name, clientID, clientSecret string, connectorID models.ConnectorID, is
 	})
 
 	return &client{
-		client:                plaid.NewAPIClient(configuration),
-		connectorID:           connectorID,
-		formanceStackEndpoint: formanceStackEndpoint,
-		formanceHTTPClient:    formanceHTTPClient,
-		webhookKeysCache:      webhookKeysCache,
+		client:             plaid.NewAPIClient(configuration),
+		formanceHTTPClient: formanceHTTPClient,
+		webhookKeysCache:   webhookKeysCache,
 	}, nil
 }

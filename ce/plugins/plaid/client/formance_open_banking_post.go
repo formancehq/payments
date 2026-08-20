@@ -16,18 +16,18 @@ const (
 )
 
 type FormanceOpenBankingRedirectRequest struct {
+	// RedirectURL is the caller-supplied destination to notify that the Link
+	// session finished (the same URL passed as FormanceRedirectURL when the
+	// link/update-link token was created) - this package builds no part of
+	// it itself, so it stays usable outside the payments connector engine.
+	RedirectURL string
 	LinkToken   string
 	PublicToken string
 	AttemptID   uuid.UUID
 }
 
 func (c *client) FormanceOpenBankingRedirect(ctx context.Context, req FormanceOpenBankingRedirectRequest) error {
-	endpoint, err := url.JoinPath(c.formanceStackEndpoint, "connectors", "open-banking", c.connectorID.String(), "redirect")
-	if err != nil {
-		return err
-	}
-
-	u, err := url.Parse(endpoint)
+	u, err := url.Parse(req.RedirectURL)
 	if err != nil {
 		return err
 	}

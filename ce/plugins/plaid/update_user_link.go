@@ -43,6 +43,10 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
 	}
 
+	if req.FormanceRedirectURL == nil || *req.FormanceRedirectURL == "" {
+		return fmt.Errorf("missing formance redirect URL: %w", models.ErrInvalidRequest)
+	}
+
 	if req.OpenBankingForwardedUser == nil {
 		return fmt.Errorf("missing open banking connections: %w", models.ErrInvalidRequest)
 	}
@@ -69,16 +73,17 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 	}
 
 	resp, err := p.client.UpdateLinkToken(ctx, client.UpdateLinkTokenRequest{
-		AttemptID:       req.AttemptID,
-		ApplicationName: req.ApplicationName,
-		UserID:          req.PaymentServiceUser.ID.String(),
-		UserToken:       req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey],
-		Language:        language,
-		CountryCode:     *req.PaymentServiceUser.Address.Country,
-		RedirectURI:     *req.ClientRedirectURL,
-		AccessToken:     req.Connection.AccessToken.Token,
-		ItemID:          req.Connection.ConnectionID,
-		WebhookBaseURL:  req.WebhookBaseURL,
+		AttemptID:           req.AttemptID,
+		ApplicationName:     req.ApplicationName,
+		UserID:              req.PaymentServiceUser.ID.String(),
+		UserToken:           req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey],
+		Language:            language,
+		CountryCode:         *req.PaymentServiceUser.Address.Country,
+		RedirectURI:         *req.ClientRedirectURL,
+		AccessToken:         req.Connection.AccessToken.Token,
+		ItemID:              req.Connection.ConnectionID,
+		WebhookBaseURL:      req.WebhookBaseURL,
+		FormanceRedirectURL: *req.FormanceRedirectURL,
 	})
 	if err != nil {
 		return models.UpdateUserLinkResponse{}, err
