@@ -43,7 +43,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -63,6 +62,11 @@ const (
 	// Plaid does not probe the webhook URL at link-token-create time, so a
 	// syntactically valid constant is enough (delivery is not exercised).
 	contractWebhookBaseURL = "https://example.com/webhooks"
+
+	// Embedded as a query param on the webhook URL above (like AttemptID),
+	// not sent to Plaid directly, so it isn't subject to the redirect-URI
+	// allowlist below - a syntactically valid constant is enough.
+	contractFormanceRedirectURL = "https://example.com/formance-redirect"
 
 	// Plaid only accepts redirect URIs allowlisted in the dashboard
 	// (Dashboard → API → Allowed redirect URIs); https://example.com is
@@ -103,9 +107,9 @@ var _ = Describe("Plaid API contract", func() {
 		DeferCleanup(cancel)
 		var err error
 		// isSandbox=true selects the SDK's built-in sandbox.plaid.com host.
-		// The connectorID and STACK_PUBLIC_URL only feed the excluded
-		// FormanceOpenBankingRedirect path, so zero values are fine.
-		c, err = New("plaid", clientID, clientSecret, models.ConnectorID{}, true)
+		// connectorID and STACK_PUBLIC_URL only feed the excluded
+		// FormanceOpenBankingRedirect fallback path, so a zero value is fine.
+		c, err = New("plaid", clientID, clientSecret, "", true)
 		Expect(err).To(BeNil())
 		// cc gives access to the wrapped plaid.APIClient for the sandbox-only
 		// seeding call; the test lives in package client to enable this.
@@ -134,14 +138,15 @@ var _ = Describe("Plaid API contract", func() {
 			Expect(userToken).ToNot(BeEmpty())
 
 			link, err := c.CreateLinkToken(ctx, CreateLinkTokenRequest{
-				ApplicationName: contractApplicationName,
-				UserID:          userID,
-				UserToken:       userToken,
-				Language:        "en",
-				CountryCode:     "US",
-				RedirectURI:     contractRedirectURI,
-				WebhookBaseURL:  contractWebhookBaseURL,
-				AttemptID:       uuid.NewString(),
+				ApplicationName:     contractApplicationName,
+				UserID:              userID,
+				UserToken:           userToken,
+				Language:            "en",
+				CountryCode:         "US",
+				RedirectURI:         contractRedirectURI,
+				WebhookBaseURL:      contractWebhookBaseURL,
+				AttemptID:           uuid.NewString(),
+				FormanceRedirectURL: contractFormanceRedirectURL,
 			})
 			Expect(err).To(BeNil())
 			// LinkToken becomes the attempt's temporary token, HostedLinkUrl
@@ -326,15 +331,16 @@ var _ = Describe("Plaid API contract", func() {
 			// The update flow re-issues a hosted link against the existing
 			// item's access token.
 			updated, err := c.UpdateLinkToken(ctx, UpdateLinkTokenRequest{
-				ApplicationName: contractApplicationName,
-				AttemptID:       uuid.NewString(),
-				UserID:          uuid.NewString(),
-				Language:        "en",
-				CountryCode:     "US",
-				RedirectURI:     contractRedirectURI,
-				AccessToken:     exchanged.AccessToken,
-				ItemID:          exchanged.ItemID,
-				WebhookBaseURL:  contractWebhookBaseURL,
+				ApplicationName:     contractApplicationName,
+				AttemptID:           uuid.NewString(),
+				UserID:              uuid.NewString(),
+				Language:            "en",
+				CountryCode:         "US",
+				RedirectURI:         contractRedirectURI,
+				AccessToken:         exchanged.AccessToken,
+				ItemID:              exchanged.ItemID,
+				WebhookBaseURL:      contractWebhookBaseURL,
+				FormanceRedirectURL: contractFormanceRedirectURL,
 			})
 			Expect(err).To(BeNil())
 			Expect(updated.LinkToken).ToNot(BeEmpty())

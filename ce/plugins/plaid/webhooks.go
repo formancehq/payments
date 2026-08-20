@@ -179,6 +179,21 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 		return nil, fmt.Errorf("invalid attemptID: %w", models.ErrInvalidRequest)
 	}
 
+	// formanceRedirectURL is absent for a Link session whose webhook URL was
+	// registered by a version of this plugin predating FormanceRedirectURL -
+	// Plaid fixes that URL at link-token-creation time, and a stale
+	// link/hosted-link token can still finish after this plugin is
+	// redeployed. Tolerate that instead of dropping the webhook:
+	// FormanceOpenBankingRedirect falls back to the pre-existing
+	// connectorID/STACK_PUBLIC_URL construction when this is empty.
+	var formanceRedirectURL string
+	if redirectURLs, ok := req.Webhook.QueryValues[client.FormanceRedirectURLQueryParamID]; ok {
+		if len(redirectURLs) != 1 {
+			return nil, fmt.Errorf("invalid formanceRedirectURL: %w", models.ErrInvalidRequest)
+		}
+		formanceRedirectURL = redirectURLs[0]
+	}
+
 	status := models.OpenBankingConnectionAttemptStatusPending
 	var errMsg *string
 	switch strings.ToLower(webhook.GetStatus()) {
@@ -191,6 +206,7 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 
 	for _, publicToken := range webhook.GetPublicTokens() {
 		if err := p.client.FormanceOpenBankingRedirect(ctx, client.FormanceOpenBankingRedirectRequest{
+			RedirectURL: formanceRedirectURL,
 			LinkToken:   webhook.LinkToken,
 			PublicToken: publicToken,
 			AttemptID:   attemptID,

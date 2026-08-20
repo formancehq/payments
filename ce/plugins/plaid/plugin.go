@@ -15,7 +15,7 @@ const ProviderName = "plaid"
 var Registration = pkgplugins.Registration{
 	PluginType: models.PluginTypeOpenBanking,
 	CreateFunc: func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, connectorID, rm)
+		return New(name, logger, connectorID.String(), rm)
 	},
 	Capabilities: capabilities,
 	RawConf:      Config{},
@@ -34,7 +34,14 @@ type Plugin struct {
 	supportedWebhooks map[string]supportedWebhook
 }
 
-func New(name string, logger logging.Logger, connectorID models.ConnectorID, rawConfig json.RawMessage) (*Plugin, error) {
+// connectorID is a plain string, not models.ConnectorID, so that callers
+// outside the payments connector engine can instantiate this plugin without
+// depending on payments' domain models package. Any stable value is fine -
+// it's only consumed as a fallback URL
+// segment by client.FormanceOpenBankingRedirect, for Link sessions created
+// by a version of this plugin predating FormanceRedirectURL. See
+// client.FormanceOpenBankingRedirectRequest for why the fallback exists.
+func New(name string, logger logging.Logger, connectorID string, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err

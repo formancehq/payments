@@ -34,7 +34,7 @@ type Client interface {
 
 type client struct {
 	client      *plaid.APIClient
-	connectorID models.ConnectorID
+	connectorID string
 
 	formanceHTTPClient    httpwrapper.Client
 	formanceStackEndpoint string
@@ -43,7 +43,13 @@ type client struct {
 }
 
 // TODO(polo): enable compression ? We have to activate compression directly in the http client
-func New(name, clientID, clientSecret string, connectorID models.ConnectorID, isSandbox bool) (Client, error) {
+//
+// connectorID (plain string, not models.ConnectorID - see FormanceOpenBankingRedirect)
+// and STACK_PUBLIC_URL are ONLY used as a fallback to reconstruct the
+// pre-FormanceRedirectURL redirect target for Link sessions created by an
+// older version of this plugin, whose registered webhook URL predates the
+// FormanceRedirectURL query param - see FormanceOpenBankingRedirect.
+func New(name, clientID, clientSecret, connectorID string, isSandbox bool) (Client, error) {
 	formanceStackEndpoint, err := url.JoinPath(os.Getenv("STACK_PUBLIC_URL"), "api", "payments", "v3")
 	if err != nil {
 		return nil, err
@@ -70,8 +76,8 @@ func New(name, clientID, clientSecret string, connectorID models.ConnectorID, is
 	return &client{
 		client:                plaid.NewAPIClient(configuration),
 		connectorID:           connectorID,
-		formanceStackEndpoint: formanceStackEndpoint,
 		formanceHTTPClient:    formanceHTTPClient,
+		formanceStackEndpoint: formanceStackEndpoint,
 		webhookKeysCache:      webhookKeysCache,
 	}, nil
 }
