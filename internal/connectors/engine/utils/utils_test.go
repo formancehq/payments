@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -11,58 +13,67 @@ import (
 func TestValidateFormanceRedirectURLQueryValues(t *testing.T) {
 	t.Parallel()
 
+	const stackPublicURL = "https://my-stack.example.com"
+	connectorID := models.ConnectorID{Reference: uuid.New(), Provider: "plaid"}
+	otherConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "plaid"}
+
+	canonical, err := GetFormanceRedirectURL(stackPublicURL, connectorID)
+	require.NoError(t, err)
+
+	canonicalForOtherConnector, err := GetFormanceRedirectURL(stackPublicURL, otherConnectorID)
+	require.NoError(t, err)
+
 	tests := map[string]struct {
-		stackPublicURL string
-		queryValues    map[string][]string
-		expectError    bool
+		queryValues map[string][]string
+		expectError bool
 	}{
 		"absent - nothing to validate": {
-			stackPublicURL: "https://my-stack.example.com",
-			queryValues:    map[string][]string{},
+			queryValues: map[string][]string{},
 		},
 		"nil query values": {
-			stackPublicURL: "https://my-stack.example.com",
-			queryValues:    nil,
+			queryValues: nil,
 		},
-		"matches stack public URL": {
-			stackPublicURL: "https://my-stack.example.com",
+		"matches this connector's exact canonical path": {
 			queryValues: map[string][]string{
-				FormanceRedirectURLQueryParamID: {"https://my-stack.example.com/api/payments/v3/connectors/open-banking/abc/redirect"},
+				FormanceRedirectURLQueryParamID: {canonical},
 			},
 		},
+		"same origin as this connector's canonical path, but a different path - rejected": {
+			// A forged/replayed webhook pointing at some other same-origin
+			// path (which could itself redirect elsewhere) must not pass
+			// just because the host matches.
+			queryValues: map[string][]string{
+				FormanceRedirectURLQueryParamID: {stackPublicURL + "/some-other-endpoint"},
+			},
+			expectError: true,
+		},
+		"another connector's otherwise-valid canonical path - rejected": {
+			// Matching *a* legitimate-looking open-banking redirect path
+			// isn't enough - it must be THIS connector's.
+			queryValues: map[string][]string{
+				FormanceRedirectURLQueryParamID: {canonicalForOtherConnector},
+			},
+			expectError: true,
+		},
 		"different host - rejected": {
-			stackPublicURL: "https://my-stack.example.com",
 			queryValues: map[string][]string{
 				FormanceRedirectURLQueryParamID: {"https://evil.example.com/steal"},
 			},
 			expectError: true,
 		},
 		"different scheme - rejected": {
-			stackPublicURL: "https://my-stack.example.com",
 			queryValues: map[string][]string{
-				FormanceRedirectURLQueryParamID: {"http://my-stack.example.com/api/payments/v3/connectors/open-banking/abc/redirect"},
-			},
-			expectError: true,
-		},
-		"malformed URL - rejected": {
-			stackPublicURL: "https://my-stack.example.com",
-			queryValues: map[string][]string{
-				FormanceRedirectURLQueryParamID: {"not a url\x7f"},
+				FormanceRedirectURLQueryParamID: {"http://" + canonical[len("https://"):]},
 			},
 			expectError: true,
 		},
 		"ambiguous - more than one value - rejected": {
-			stackPublicURL: "https://my-stack.example.com",
 			queryValues: map[string][]string{
-				FormanceRedirectURLQueryParamID: {
-					"https://my-stack.example.com/a",
-					"https://my-stack.example.com/b",
-				},
+				FormanceRedirectURLQueryParamID: {canonical, canonical},
 			},
 			expectError: true,
 		},
 		"present but empty - rejected": {
-			stackPublicURL: "https://my-stack.example.com",
 			queryValues: map[string][]string{
 				FormanceRedirectURLQueryParamID: {},
 			},
@@ -74,7 +85,7 @@ func TestValidateFormanceRedirectURLQueryValues(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			err := ValidateFormanceRedirectURLQueryValues(tt.stackPublicURL, tt.queryValues)
+			err := ValidateFormanceRedirectURLQueryValues(stackPublicURL, connectorID, tt.queryValues)
 			if tt.expectError {
 				require.Error(t, err)
 				assert.ErrorIs(t, err, ErrInvalidFormanceRedirectURL)
@@ -88,10 +99,12 @@ func TestValidateFormanceRedirectURLQueryValues(t *testing.T) {
 func TestValidateFormanceRedirectURLQueryValues_MalformedStackPublicURL(t *testing.T) {
 	t.Parallel()
 
+	connectorID := models.ConnectorID{Reference: uuid.New(), Provider: "plaid"}
+
 	// A malformed stackPublicURL is our own misconfiguration, not an
 	// untrusted caller value - it must still be rejected, but it
 	// deliberately isn't classified as ErrInvalidFormanceRedirectURL.
-	err := ValidateFormanceRedirectURLQueryValues("not a url\x7f", map[string][]string{
+	err := ValidateFormanceRedirectURLQueryValues("not a url\x7f", connectorID, map[string][]string{
 		FormanceRedirectURLQueryParamID: {"https://my-stack.example.com/redirect"},
 	})
 	require.Error(t, err)

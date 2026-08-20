@@ -1247,7 +1247,7 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 
 	// Reject before this webhook is handed to any plugin - see
 	// ValidateFormanceRedirectURLQueryValues.
-	if err := utils.ValidateFormanceRedirectURLQueryValues(e.stackPublicURL, in.QueryValues); err != nil {
+	if err := utils.ValidateFormanceRedirectURLQueryValues(e.stackPublicURL, in.ConnectorID, in.QueryValues); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}

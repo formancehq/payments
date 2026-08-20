@@ -1393,19 +1393,38 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(engineutils.ErrInvalidFormanceRedirectURL))
 		})
 
-		It("should proceed past validation when the formanceRedirectURL query value matches this app's public URL", func(ctx SpecContext) {
+		It("should proceed past validation when the formanceRedirectURL query value matches this connector's exact canonical path", func(ctx SpecContext) {
 			stackPublicURL := "https://my-stack.example.com"
 			engWithPublicURL := engine.New(logging.NewDefaultLogger(GinkgoWriter, false, false, false), cl, store, manager, stackName, stackPublicURL)
 
+			canonical, err := engineutils.GetFormanceRedirectURL(stackPublicURL, connectorID)
+			Expect(err).To(BeNil())
+
 			webhook.QueryValues = map[string][]string{
-				engineutils.FormanceRedirectURLQueryParamID: {stackPublicURL + "/api/payments/v3/connectors/open-banking/abc/redirect"},
+				engineutils.FormanceRedirectURLQueryParamID: {canonical},
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(nil, storage.ErrNotFound)
 
-			err := engWithPublicURL.HandleWebhook(ctx, "/url", "/path", webhook)
+			err = engWithPublicURL.HandleWebhook(ctx, "/url", "/path", webhook)
 			// storage.ErrNotFound (not ErrInvalidFormanceRedirectURL) proves
 			// validation passed and processing continued as normal.
 			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should reject a formanceRedirectURL query value that is same-origin but for a different connector", func(ctx SpecContext) {
+			stackPublicURL := "https://my-stack.example.com"
+			engWithPublicURL := engine.New(logging.NewDefaultLogger(GinkgoWriter, false, false, false), cl, store, manager, stackName, stackPublicURL)
+
+			otherConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+			canonicalForOtherConnector, err := engineutils.GetFormanceRedirectURL(stackPublicURL, otherConnectorID)
+			Expect(err).To(BeNil())
+
+			webhook.QueryValues = map[string][]string{
+				engineutils.FormanceRedirectURLQueryParamID: {canonicalForOtherConnector},
+			}
+
+			err = engWithPublicURL.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(engineutils.ErrInvalidFormanceRedirectURL))
 		})
 	})
 })
