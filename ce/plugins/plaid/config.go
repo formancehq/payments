@@ -64,6 +64,9 @@ type Config struct {
 	ClientID     string `json:"clientID" validate:"required"`
 	ClientSecret string `json:"clientSecret" validate:"required"`
 	IsSandbox    bool   `json:"isSandbox" validate:""`
+	// BaseURL overrides the Plaid API base URL. Test-only: lets e2e tests point
+	// the plugin at a fake Plaid server instead of Production/Sandbox.
+	BaseURL string `json:"baseURL" validate:""`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
