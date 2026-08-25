@@ -6977,6 +6977,8 @@ components:
         - clientID
         - clientSecret
       properties:
+        baseURL:
+          type: string
         clientID:
           type: string
         clientSecret:
