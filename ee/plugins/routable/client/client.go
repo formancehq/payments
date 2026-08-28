@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/formancehq/payments/pkg/domain/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -138,12 +139,10 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 		return statusCode, nil
 	}
 
-	// Attach the Routable error envelope when the response carried one.
-	// Transport errors (DNS, timeout, connection refused) leave apiErr
-	// at its zero value, in which case appending the formatted envelope
-	// just produces a misleading "empty body" suffix.
+	// Keep provider feedback first because the engine persists the first cause;
+	// retain the HTTP error as a second target for errors.Is classification.
 	if apiErr.hasContent() {
-		return statusCode, fmt.Errorf("%w: %s", doErr, apiErr.Error())
+		return statusCode, errorsutils.NewWrappedError(&apiErr, doErr)
 	}
 	return statusCode, doErr
 }

@@ -239,6 +239,29 @@ func TestPayableToPSPPayment_FullShape(t *testing.T) {
 	}
 }
 
+func TestPayableToPSPPayment_PreservesFailureEvidence(t *testing.T) {
+	const raw = `{"id":"pa_failed","type":"paypal","delivery_method":"paypal_direct","status":"failed","amount":"66.66","currency_code":"USD","pay_to_payment_method":{"id":"pm_42","type":"paypal"},"failure_detail":{"code":"recipient_not_found","message":"PayPal recipient was not found"},"created_at":"2026-08-19T00:00:00Z","provider_extension":"kept"}`
+	var payable client.Payable
+	if err := json.Unmarshal([]byte(raw), &payable); err != nil {
+		t.Fatalf("unmarshal payable: %v", err)
+	}
+
+	got, err := PayableToPSPPayment(payable)
+	if err != nil {
+		t.Fatalf("map payable: %v", err)
+	}
+	if string(got.Raw) != raw {
+		t.Errorf("Raw response changed:\n got: %s\nwant: %s", got.Raw, raw)
+	}
+	if got.Metadata[MetadataKeyPayToPaymentMethod] != "pm_42" {
+		t.Errorf("payment method metadata missing: %v", got.Metadata)
+	}
+	wantFailure := `{"code":"recipient_not_found","message":"PayPal recipient was not found"}`
+	if got.Metadata[MetadataKeyFailureDetail] != wantFailure {
+		t.Errorf("failure detail = %q, want %q", got.Metadata[MetadataKeyFailureDetail], wantFailure)
+	}
+}
+
 // Invariant: an unsupported currency on a payable surfaces as an error
 // (skip-and-log path in the parent fetcher), never a silent wrong-
 // precision Payment.

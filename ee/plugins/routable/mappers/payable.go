@@ -10,9 +10,13 @@ import (
 )
 
 func PayableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
-	raw, err := json.Marshal(pa)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("marshaling raw: %w", err)
+	raw := append(json.RawMessage(nil), pa.Raw...)
+	if len(raw) == 0 {
+		var err error
+		raw, err = json.Marshal(pa)
+		if err != nil {
+			return models.PSPPayment{}, fmt.Errorf("marshaling raw: %w", err)
+		}
 	}
 	precision, err := PrecisionFor(pa.CurrencyCode)
 	if err != nil {

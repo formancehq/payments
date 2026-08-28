@@ -267,6 +267,8 @@ func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentInitiationsAdjustmentsSt
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_Error() {
+	const providerFailure = `raw_response={"request_id":"req_42"}`
+
 	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationPayout, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.DestinationAccountID).Once().Return(&s.account, nil)
@@ -276,10 +278,11 @@ func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_Error() {
 	})
 	s.env.OnActivity(activities.PluginCreatePayoutActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", errors.New("error-test")),
+		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", errors.New(providerFailure)),
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED, adj.Status)
+		s.ErrorContains(adj.Error, providerFailure)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
