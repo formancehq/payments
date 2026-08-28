@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/formancehq/go-libs/v5 v5.6.1
-	github.com/formancehq/payments/pkg/domain v0.3.2
+	github.com/formancehq/payments/pkg/domain v0.4.2
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/go-openapi/runtime v0.32.4
 	github.com/go-openapi/strfmt v0.26.3

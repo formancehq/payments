@@ -47,7 +47,7 @@ func New(name string, logger logging.Logger, connectorID string, rawConfig json.
 		return nil, err
 	}
 
-	client, err := client.New(name, config.ClientID, config.ClientSecret, connectorID, config.IsSandbox)
+	client, err := client.New(name, config.ClientID, config.ClientSecret, connectorID, config.IsSandbox, config.BaseURL)
 	if err != nil {
 		return nil, err
 	}

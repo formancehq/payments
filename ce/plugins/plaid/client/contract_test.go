@@ -109,7 +109,7 @@ var _ = Describe("Plaid API contract", func() {
 		// isSandbox=true selects the SDK's built-in sandbox.plaid.com host.
 		// connectorID and STACK_PUBLIC_URL only feed the excluded
 		// FormanceOpenBankingRedirect fallback path, so a zero value is fine.
-		c, err = New("plaid", clientID, clientSecret, "", true)
+		c, err = New("plaid", clientID, clientSecret, "", true, "")
 		Expect(err).To(BeNil())
 		// cc gives access to the wrapped plaid.APIClient for the sandbox-only
 		// seeding call; the test lives in package client to enable this.

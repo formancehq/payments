@@ -8780,6 +8780,7 @@ xor
 
 ```json
 {
+  "baseURL": "string",
   "clientID": "string",
   "clientSecret": "string",
   "isSandbox": true,
@@ -8795,6 +8796,7 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|baseURL|string|false|none|none|
 |clientID|string|true|none|none|
 |clientSecret|string|true|none|none|
 |isSandbox|boolean|false|none|none|

@@ -49,7 +49,7 @@ type client struct {
 // pre-FormanceRedirectURL redirect target for Link sessions created by an
 // older version of this plugin, whose registered webhook URL predates the
 // FormanceRedirectURL query param - see FormanceOpenBankingRedirect.
-func New(name, clientID, clientSecret, connectorID string, isSandbox bool) (Client, error) {
+func New(name, clientID, clientSecret, connectorID string, isSandbox bool, baseURL string) (Client, error) {
 	formanceStackEndpoint, err := url.JoinPath(os.Getenv("STACK_PUBLIC_URL"), "api", "payments", "v3")
 	if err != nil {
 		return nil, err
@@ -60,11 +60,15 @@ func New(name, clientID, clientSecret, connectorID string, isSandbox bool) (Clie
 	configuration.AddDefaultHeader("PLAID-CLIENT-ID", clientID)
 	configuration.AddDefaultHeader("PLAID-SECRET", clientSecret)
 
-	env := plaid.Production
-	if isSandbox {
-		env = plaid.Sandbox
+	if baseURL != "" {
+		configuration.UseEnvironment(plaid.Environment(baseURL))
+	} else {
+		env := plaid.Production
+		if isSandbox {
+			env = plaid.Sandbox
+		}
+		configuration.UseEnvironment(env)
 	}
-	configuration.UseEnvironment(env)
 
 	webhookKeysCache, _ := lru.New[string, *plaid.JWKPublicKey](2048)
 	configuration.HTTPClient = metrics.NewHTTPClient(name, models.DefaultConnectorClientTimeout)
