@@ -2,6 +2,7 @@
 
 package components
 
+// V3ConnectorsCursorResponseCursor - Paginated cursor wrapping the list of connectors
 type V3ConnectorsCursorResponseCursor struct {
 	PageSize int64         `json:"pageSize"`
 	HasMore  bool          `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3ConnectorsCursorResponseCursor) GetData() []V3Connector {
 }
 
 type V3ConnectorsCursorResponse struct {
+	// Paginated cursor wrapping the list of connectors
 	Cursor V3ConnectorsCursorResponseCursor `json:"cursor"`
 }
 

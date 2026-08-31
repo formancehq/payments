@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// PaymentsErrorsEnum - Machine-readable error code identifying the failure
 type PaymentsErrorsEnum string
 
 const (

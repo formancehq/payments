@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// LegacyPaymentStatus - Status of a payment as reported by the legacy payments API
 type LegacyPaymentStatus string
 
 const (

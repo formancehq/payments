@@ -3,6 +3,7 @@
 package components
 
 type V3UpdatePoolQueryRequest struct {
+	// Filter selecting the accounts a dynamic pool contains
 	Query map[string]any `json:"query"`
 }
 

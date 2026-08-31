@@ -7,13 +7,20 @@ import (
 	"time"
 )
 
+// V3Pool - A named group of accounts whose balances are aggregated together
 type V3Pool struct {
-	ID           string          `json:"id"`
-	Name         string          `json:"name"`
-	CreatedAt    time.Time       `json:"createdAt"`
-	Type         *V3PoolTypeEnum `json:"type,omitempty"`
-	Query        map[string]any  `json:"query,omitempty"`
-	PoolAccounts []string        `json:"poolAccounts"`
+	// Unique identifier of the pool
+	ID string `json:"id"`
+	// Human-readable name of the pool
+	Name string `json:"name"`
+	// When the pool was created
+	CreatedAt time.Time `json:"createdAt"`
+	// Whether a pool holds a fixed account list or is driven by a query
+	Type *V3PoolTypeEnum `json:"type,omitempty"`
+	// Filter selecting the accounts a dynamic pool contains
+	Query map[string]any `json:"query,omitempty"`
+	// Accounts currently in the pool
+	PoolAccounts []string `json:"poolAccounts"`
 }
 
 func (v V3Pool) MarshalJSON() ([]byte, error) {

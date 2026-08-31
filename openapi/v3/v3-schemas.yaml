@@ -16,6 +16,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of accounts
           required:
             - pageSize
             - hasMore
@@ -59,20 +60,25 @@ components:
       properties:
         reference:
           type: string
+          description: Identifier the account carries at the provider
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector the account belongs to
         createdAt:
           type: string
           format: date-time
+          description: When the account was created at the provider
         accountName:
           type: string
+          description: Human-readable name of the account
         type:
           $ref: '#/components/schemas/V3AccountTypeEnum'
         defaultAsset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
           nullable: true
+          description: Asset the account is denominated in by default
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -86,6 +92,7 @@ components:
 
     V3Account:
       type: object
+      description: An account held at a payment provider, surfaced through a connector
       required:
         - id
         - connectorID
@@ -97,33 +104,42 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the account within Formance
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector the account belongs to
         connector:
           $ref: '#/components/schemas/V3ConnectorBase'
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         reference:
           type: string
+          description: Identifier the account carries at the provider
         createdAt:
           type: string
           format: date-time
+          description: When the account was created at the provider
         type:
           $ref: '#/components/schemas/V3AccountTypeEnum'
         name:
           type: string
           nullable: true
+          description: Human-readable name of the account
         defaultAsset:
           type: string
           nullable: true
+          description: Asset the account is denominated in by default
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         raw:
           type: object
+          description: The provider's original payload, passed through untouched
           additionalProperties: true
     V3AccountTypeEnum:
       type: string
+      description: Whether an account is internal to the provider or belongs to an external party
       enum:
         - UNKNOWN
         - INTERNAL
@@ -137,6 +153,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of balances
           required:
             - pageSize
             - hasMore
@@ -171,17 +188,22 @@ components:
       properties:
         accountID:
           type: string
+          description: Identifier of the account this balance belongs to
         createdAt:
           type: string
           format: date-time
+          description: Start of the period this balance covers
         lastUpdatedAt:
           type: string
           format: date-time
+          description: When the balance was last refreshed from the provider
         asset:
           type: string
+          description: Asset the balance is denominated in
         balance:
           type: integer
           format: bigint
+          description: Amount held, in the asset's smallest unit
 
     # BANK ACCOUNTS
     V3CreateBankAccountRequest:
@@ -191,14 +213,19 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name for the bank account
         accountNumber:
           type: string
+          description: Domestic account number. Supply this or an IBAN
         iban:
           type: string
+          description: International bank account number. Supply this or an account number
         swiftBicCode:
           type: string
+          description: SWIFT/BIC code identifying the bank
         country:
           type: string
+          description: Country the account is held in, as an ISO 3166-1 alpha-2 code
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -227,6 +254,7 @@ components:
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector to forward the bank account to
 
     V3ForwardBankAccountResponse:
       type: object
@@ -235,6 +263,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the forwarding, which completes asynchronously
           required:
             - taskID
           properties:
@@ -251,6 +280,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of bank accounts
           required:
             - pageSize
             - hasMore
@@ -285,6 +315,7 @@ components:
 
     V3BankAccount:
       type: object
+      description: A bank account registered with Formance and forwardable to connectors
       required:
         - id
         - createdAt
@@ -292,27 +323,35 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the bank account within Formance
         createdAt:
           type: string
           format: date-time
+          description: When the bank account was registered
         name:
           type: string
+          description: Human-readable name of the bank account
         accountNumber:
           type: string
           nullable: true
+          description: Domestic account number, when the account is identified that way
         iban:
           type: string
           nullable: true
+          description: International bank account number, when the account is identified that way
         swiftBicCode:
           type: string
           nullable: true
+          description: SWIFT/BIC code identifying the bank
         country:
           type: string
           nullable: true
+          description: Country the account is held in, as an ISO 3166-1 alpha-2 code
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         relatedAccounts:
           type: array
+          description: Provider-side accounts this bank account has been forwarded to
           items:
             $ref: '#/components/schemas/V3BankAccountRelatedAccount'
 
@@ -324,9 +363,11 @@ components:
       properties:
         accountID:
           type: string
+          description: Identifier of the provider-side account
         createdAt:
           type: string
           format: date-time
+          description: When the bank account was forwarded to this provider
 
     # CONNECTORS
     V3InstallConnectorRequest:
@@ -348,6 +389,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the uninstall, which completes asynchronously
           required:
             - taskID
           properties:
@@ -410,6 +452,7 @@ components:
       properties:
         data:
           type: array
+          description: Operations this connector supports
           items:
             $ref: '#/components/schemas/V3Capability'
 
@@ -420,6 +463,7 @@ components:
       properties:
         data:
           type: object
+          description: Configuration schema of every available connector, keyed by provider
           additionalProperties:
             type: object
             additionalProperties:
@@ -453,6 +497,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of connectors
           required:
             - pageSize
             - hasMore
@@ -484,6 +529,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the connector's schedules
           required:
             - pageSize
             - hasMore
@@ -523,6 +569,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the schedule's runs
           required:
             - pageSize
             - hasMore
@@ -560,19 +607,26 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the connector
         reference:
           type: string
+          description: Stable reference identifying the connector
         name:
           type: string
+          description: Human-readable name of the connector instance
         createdAt:
           type: string
           format: date-time
+          description: When the connector was installed
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         scheduledForDeletion:
           type: boolean
+          description: Whether the connector is being uninstalled
         config:
           type: object
+          description: The connector's configuration, whose shape depends on the provider
         capabilities:
           type: array
           description: Plugin capabilities advertised by the connector's provider.
@@ -582,24 +636,32 @@ components:
           type: string
           format: date-time
           nullable: true
+          description: When the connector's configuration was last changed
 
     V3ConnectorBase:
       type: object
+      description: Summary of a connector, without its configuration
       properties:
         id:
           type: string
+          description: Unique identifier of the connector
         reference:
           type: string
+          description: Stable reference identifying the connector
         name:
           type: string
+          description: Human-readable name of the connector instance
         createdAt:
           type: string
           format: date-time
+          description: When the connector was installed
         provider:
           type: string
+          description: Name of the payment provider behind the connector
 
     V3Schedule:
       type: object
+      description: A recurring job a connector runs to fetch data from its provider
       required:
         - id
         - connectorID
@@ -607,19 +669,24 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the schedule
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector this schedule belongs to
         createdAt:
           type: string
           format: date-time
+          description: When the schedule was created
         pausedAt:
           type: string
           format: date-time
           nullable: true
+          description: When the schedule was paused, absent while it is running
         pausedReason:
           type: string
           nullable: true
+          description: Why the schedule was paused
 
     V3Instance:
       type: object
@@ -633,25 +700,33 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the run
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector this run belongs to
         scheduleID:
           type: string
+          description: Identifier of the schedule that started this run
         createdAt:
           type: string
           format: date-time
+          description: When the run started
         updatedAt:
           type: string
           format: date-time
+          description: When the run was last updated
         terminated:
           type: boolean
+          description: Whether the run has finished, successfully or not
         terminatedAt:
           type: string
           format: date-time
+          description: When the run finished, absent while it is still running
         error:
           type: string
           nullable: true
+          description: Why the run failed, absent when it succeeded
 
     # PAYMENTS
     V3CreatePaymentRequest:
@@ -668,35 +743,45 @@ components:
       properties:
         reference:
           type: string
+          description: Identifier the payment carries at the provider
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector the payment belongs to
         createdAt:
           type: string
           format: date-time
+          description: When the payment was created at the provider
         type:
           $ref: '#/components/schemas/V3PaymentTypeEnum'
         initialAmount:
           type: integer
           format: bigint
+          description: Amount the payment was created with, before any adjustment
         amount:
           type: integer
           format: bigint
+          description: Current amount of the payment, in the asset's smallest unit
         asset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
+          description: Asset the payment is denominated in
         scheme:
           type: string
+          description: Payment scheme or rail the payment travels over
         sourceAccountID:
           type: string
           format: byte
+          description: Identifier of the account the funds leave
         destinationAccountID:
           type: string
           format: byte
+          description: Identifier of the account the funds reach
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         adjustments:
           type: array
+          description: Status and amount changes to record alongside the payment
           items:
             $ref: '#/components/schemas/V3CreatePaymentAdjustmentRequest'
 
@@ -709,17 +794,21 @@ components:
       properties:
         reference:
           type: string
+          description: Identifier the adjustment carries at the provider
         createdAt:
           type: string
           format: date-time
+          description: When the adjustment occurred at the provider
         status:
           $ref: '#/components/schemas/V3PaymentStatusEnum'
         amount:
           type: integer
           format: bigint
+          description: Amount carried by this adjustment
         asset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
+          description: Asset the adjustment is denominated in
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -746,6 +835,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of payments
           required:
             - pageSize
             - hasMore
@@ -780,6 +870,7 @@ components:
 
     V3Payment:
       type: object
+      description: A payment observed at a provider and surfaced through a connector
       required:
         - id
         - connectorID
@@ -795,43 +886,55 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the payment within Formance
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector the payment belongs to
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         reference:
           type: string
+          description: Identifier the payment carries at the provider
         createdAt:
           type: string
           format: date-time
+          description: When the payment was created at the provider
         type:
           $ref: '#/components/schemas/V3PaymentTypeEnum'
         initialAmount:
           type: integer
           format: bigint
+          description: Amount the payment was created with, before any adjustment
         amount:
           type: integer
           format: bigint
+          description: Current amount of the payment after applying its adjustments
         asset:
           type: string
+          description: Asset the payment is denominated in
         scheme:
           type: string
+          description: Payment scheme or rail the payment travelled over
         status:
           $ref: '#/components/schemas/V3PaymentStatusEnum'
         sourceAccountID:
           type: string
           format: byte
           nullable: true
+          description: Identifier of the account the funds left
         destinationAccountID:
           type: string
           format: byte
           nullable: true
+          description: Identifier of the account the funds reached
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         adjustments:
           type: array
           nullable: true
+          description: Successive changes to the payment's amount and status, newest first
           items:
             $ref: '#/components/schemas/V3PaymentAdjustment'
 
@@ -846,26 +949,33 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the adjustment
         reference:
           type: string
+          description: Identifier the adjustment carries at the provider
         createdAt:
           type: string
           format: date-time
+          description: When the adjustment occurred at the provider
         status:
           $ref: '#/components/schemas/V3PaymentStatusEnum'
         amount:
           type: integer
           format: bigint
+          description: Amount carried by this adjustment
         asset:
           type: string
+          description: Asset the adjustment is denominated in
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         raw:
           type: object
+          description: The provider's original payload for this adjustment
           additionalProperties: true
 
     V3PaymentTypeEnum:
       type: string
+      description: Direction of a payment
       enum:
         - UNKNOWN
         - PAY-IN
@@ -875,6 +985,7 @@ components:
 
     V3PaymentStatusEnum:
       type: string
+      description: Where a payment stands in its lifecycle
       enum:
         - UNKNOWN
         - PENDING
@@ -902,6 +1013,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of orders
           required:
             - pageSize
             - hasMore
@@ -1208,6 +1320,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of conversions
           required:
             - pageSize
             - hasMore
@@ -1351,30 +1464,38 @@ components:
           type: string
           minLength: 3
           maxLength: 1000
+          description: Caller-supplied identifier for the initiation, used to deduplicate retries
         scheduledAt:
           type: string
           format: date-time
+          description: When the payment should be executed
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector to execute the payment through
         description:
           type: string
           maxLength: 10000
+          description: Human-readable description carried with the payment
         type:
           $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
         amount:
           type: integer
           format: bigint
+          description: Amount to move, in the asset's smallest unit
         asset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
+          description: Asset the payment is denominated in
         sourceAccountID:
           type: string
           format: byte
           nullable: true
+          description: Identifier of the account the funds leave
         destinationAccountID:
           type: string
           format: byte
+          description: Identifier of the account the funds reach
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -1385,6 +1506,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the initiation, which completes asynchronously
           properties:
             paymentInitiationID:
               description: >
@@ -1403,6 +1525,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the retry, which completes asynchronously
           required:
             - taskID
           properties:
@@ -1419,6 +1542,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the approval, which completes asynchronously
           required:
             - taskID
           properties:
@@ -1440,15 +1564,19 @@ components:
           type: string
           minLength: 3
           maxLength: 1000
+          description: Caller-supplied identifier for the reversal, used to deduplicate retries
         description:
           type: string
           maxLength: 10000
+          description: Human-readable reason for the reversal
         amount:
           type: integer
           format: bigint
+          description: Amount to reverse, in the asset's smallest unit
         asset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
+          description: Asset the reversal is denominated in
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -1459,6 +1587,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the reversal, which completes asynchronously
           properties:
             taskID:
               description: >
@@ -1477,6 +1606,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of payment initiations
           required:
             - pageSize
             - hasMore
@@ -1508,6 +1638,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the initiation's adjustments
           required:
             - pageSize
             - hasMore
@@ -1539,6 +1670,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the payments produced by the initiation
           required:
             - pageSize
             - hasMore
@@ -1565,6 +1697,7 @@ components:
 
     V3PaymentInitiation:
       type: object
+      description: A payment Formance asked a connector to execute
       required:
         - id
         - connectorID
@@ -1580,39 +1713,51 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the payment initiation
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector executing the payment
         provider:
           type: string
+          description: Name of the payment provider behind the connector
         reference:
           type: string
+          description: Caller-supplied identifier for the initiation
         createdAt:
           type: string
           format: date-time
+          description: When the initiation was created
         scheduledAt:
           type: string
           format: date-time
+          description: When the payment is scheduled to execute
         description:
           type: string
+          description: Human-readable description carried with the payment
         type:
           $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
         amount:
           type: integer
           format: bigint
+          description: Amount to move, in the asset's smallest unit
         asset:
           type: string
+          description: Asset the payment is denominated in
         status:
           $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
         sourceAccountID:
           type: string
           format: byte
+          description: Identifier of the account the funds leave
         destinationAccountID:
           type: string
           format: byte
+          description: Identifier of the account the funds reach
         error:
           type: string
           nullable: true
+          description: Why the initiation failed, absent when it succeeded
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -1625,19 +1770,24 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the adjustment
         createdAt:
           type: string
           format: date-time
+          description: When the adjustment was recorded
         status:
           $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
         amount:
           type: integer
           format: bigint
+          description: Amount carried by this adjustment
         asset:
           type: string
+          description: Asset the adjustment is denominated in
         error:
           type: string
           nullable: true
+          description: Why this step failed, absent when it succeeded
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -1651,6 +1801,7 @@ components:
 
     V3PaymentInitiationStatusEnum:
       type: string
+      description: Where a payment initiation stands in its lifecycle
       enum:
         - UNKNOWN
         - WAITING_FOR_VALIDATION
@@ -1665,6 +1816,7 @@ components:
 
     V3PaymentInitiationTypeEnum:
       type: string
+      description: Kind of movement a payment initiation performs, such as a transfer or a payout
       enum:
         - UNKNOWN
         - TRANSFER
@@ -1678,6 +1830,7 @@ components:
       properties:
         name:
           type: string
+          description: Full name of the payment service user
         contactDetails:
           $ref: '#/components/schemas/V3ContactDetailsRequest'
         address:
@@ -1687,32 +1840,43 @@ components:
           items:
             type: string
           nullable: true
+          description: Bank accounts to associate with the user
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
     V3AddressRequest:
       type: object
+      description: A postal address to record on the payment service user
       properties: 
         streetNumber:
           type: string
+          description: Street number of the address
         streetName:
           type: string
+          description: Street name of the address
         city:
           type: string
+          description: City of the address
         region:
           type: string
+          description: Region, state or province of the address
         postalCode:
           type: string
+          description: Postal or ZIP code of the address
         country:
           type: string
+          description: Country of the address, as an ISO 3166-1 alpha-2 code
     
     V3ContactDetailsRequest:
       type: object
+      description: How to reach the payment service user
       properties:
         email:
           type: string
+          description: Email address of the user
         phoneNumber:
           type: string
+          description: Phone number of the user, in international format
 
     V3CreatePaymentServiceUserResponse:
       type: object
@@ -1730,6 +1894,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the deletion, which completes asynchronously
           required:
             - taskID
           properties:
@@ -1746,6 +1911,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the deletion, which completes asynchronously
           required:
             - taskID
           properties:
@@ -1762,6 +1928,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the deletion, which completes asynchronously
           required:
             - taskID
           properties:
@@ -1778,6 +1945,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of payment service users
           required:
             - pageSize
             - hasMore
@@ -1809,6 +1977,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the user's open banking connections
           required:
             - pageSize
             - hasMore
@@ -1840,6 +2009,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the user's link attempts
           required:
             - pageSize
             - hasMore
@@ -1866,6 +2036,7 @@ components:
 
     V3PaymentServiceUser:
       type: object
+      description: An end user on whose behalf payments and open banking connections are made
       required:
         - id
         - name
@@ -1873,11 +2044,14 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the payment service user
         name:
           type: string
+          description: Full name of the payment service user
         createdAt:
           type: string
           format: date-time
+          description: When the user was registered
         contactDetails:
           $ref: '#/components/schemas/V3ContactDetails'
         address:
@@ -1887,6 +2061,7 @@ components:
           items:
             type: string
           nullable: true
+          description: Bank accounts associated with the user
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -1901,19 +2076,24 @@ components:
       properties:
         connectionID:
           type: string
+          description: Identifier of the open banking connection at the provider
         connectorID:
           type: string
+          description: Identifier of the connector holding the connection
         createdAt:
           type: string
           format: date-time
+          description: When the connection was established
         dataUpdatedAt:
           type: string
           format: date-time
+          description: When data was last refreshed over this connection
         status:
           $ref: '#/components/schemas/V3ConnectionStatusEnum'
         error:
           type: string
           nullable: true
+          description: Why the connection is failing, absent while it is healthy
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 
@@ -1929,45 +2109,61 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the link attempt
         psuID:
           type: string
+          description: Identifier of the payment service user the attempt belongs to
         connectorID:
           type: string
+          description: Identifier of the connector the user is linking to
         createdAt:
           type: string
           format: date-time
+          description: When the attempt was started
         status:
           $ref: '#/components/schemas/V3OpenBankingConnectionAttemptStatusEnum'
         clientRedirectURL:
           type: string
           format: url
+          description: URL the user is sent back to once the provider's flow finishes
         error:
           type: string
           nullable: true
+          description: Why the attempt exited, absent when it completed
 
     V3ContactDetails:
       type: object
+      description: How to reach a payment service user
       properties:
         email:
           type: string
+          description: Email address of the user
         phoneNumber:
           type: string
+          description: Phone number of the user, in international format
 
     V3Address:
       type: object
+      description: A postal address
       properties: 
         streetNumber:
           type: string
+          description: Street number of the address
         streetName:
           type: string
+          description: Street name of the address
         city:
           type: string
+          description: City of the address
         region:
           type: string
+          description: Region, state or province of the address
         postalCode:
           type: string
+          description: Postal or ZIP code of the address
         country:
           type: string
+          description: Country of the address, as an ISO 3166-1 alpha-2 code
 
     V3GetPaymentServiceUserResponse:
       type: object
@@ -1985,6 +2181,7 @@ components:
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector to forward the bank account to
 
     V3ForwardPaymentServiceUserBankAccountResponse:
       type: object
@@ -1993,6 +2190,7 @@ components:
       properties:
         data:
           type: object
+          description: The task tracking the forwarding, which completes asynchronously
           required:
             - taskID
           properties:
@@ -2004,12 +2202,14 @@ components:
 
     V3ConnectionStatusEnum:
       type: string
+      description: Whether an open banking connection is still usable or needs the user to reconnect
       enum:
         - ACTIVE
         - ERROR
 
     V3OpenBankingConnectionAttemptStatusEnum:
       type: string
+      description: Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error
       enum:
         - pending
         - completed
@@ -2036,9 +2236,11 @@ components:
       properties:
         attemptID:
           type: string
+          description: Identifier of the link attempt this URL belongs to
         link:
           type: string
           format: url
+          description: URL to send the user to so they can authorise the connection
 
     V3PaymentServiceUserUpdateLinkRequest:
       type: object
@@ -2051,6 +2253,7 @@ components:
         clientRedirectURL:
           type: string
           format: url
+          description: URL to send the user back to once the provider's flow finishes
 
     V3PaymentServiceUserUpdateLinkResponse:
       type: object
@@ -2060,9 +2263,11 @@ components:
       properties:
         attemptID:
           type: string
+          description: Identifier of the link attempt this URL belongs to
         link:
           type: string
           format: url
+          description: URL to send the user to so they can renew the connection
 
     # POOLS
     V3CreatePoolRequest:
@@ -2073,12 +2278,14 @@ components:
       properties:
         name:
           type: string
+          description: Human-readable name for the pool
         query:
-          description: The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
+          description: The same query as in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.
           type: object
           additionalProperties: true
         accountIDs:
           type: array
+          description: Accounts to place in the pool. Omit when the pool is driven by a query
           items:
             type: string
 
@@ -2098,6 +2305,7 @@ components:
       properties:
         query:
           type: object
+          description: Filter selecting the accounts a dynamic pool contains
           additionalProperties: true
 
     V3PoolsCursorResponse:
@@ -2107,6 +2315,7 @@ components:
       properties:
         cursor:
           type: object
+          description: Paginated cursor wrapping the list of pools
           required:
             - pageSize
             - hasMore
@@ -2149,6 +2358,7 @@ components:
 
     V3Pool:
       type: object
+      description: A named group of accounts whose balances are aggregated together
       required:
         - id
         - name
@@ -2157,23 +2367,29 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the pool
         name:
           type: string
+          description: Human-readable name of the pool
         createdAt:
           type: string
           format: date-time
+          description: When the pool was created
         type:
           $ref: '#/components/schemas/V3PoolTypeEnum'
         query:
           type: object
+          description: Filter selecting the accounts a dynamic pool contains
           additionalProperties: true
         poolAccounts:
           type: array
+          description: Accounts currently in the pool
           items:
             $ref: '#/components/schemas/V3AccountID'
 
     V3PoolBalances:
       type: array
+      description: Aggregated balances across a pool's accounts
       items:
         $ref: '#/components/schemas/V3PoolBalance'
 
@@ -2185,17 +2401,21 @@ components:
       properties:
         asset:
           type: string
+          description: Asset the balance is denominated in
         amount:
           type: integer
           format: bigint
+          description: Total held across the pool for this asset, in the asset's smallest unit
         relatedAccounts:
           nullable: true
           type: array
+          description: Accounts contributing to this balance
           items:
             type: string
 
     V3PoolTypeEnum:
       type: string
+      description: Whether a pool holds a fixed account list or is driven by a query
       enum:
         - STATIC
         - DYNAMIC
@@ -2211,6 +2431,7 @@ components:
 
     V3Task:
       type: object
+      description: An asynchronous unit of work, tracking an operation that completes in the background
       required:
         - id
         - status
@@ -2219,25 +2440,32 @@ components:
       properties:
         id:
           type: string
+          description: Unique identifier of the task
         status:
           $ref: '#/components/schemas/V3TaskStatusEnum'
         createdAt:
           type: string
           format: date-time
+          description: When the task was created
         updatedAt:
           type: string
           format: date-time
+          description: When the task was last updated
         connectorID:
           type: string
           format: byte
+          description: Identifier of the connector the task runs against
         createdObjectID:
           type: string
+          description: Identifier of the object the task created, once it has succeeded
         error:
           type: string
           nullable: true
+          description: Why the task failed, absent when it succeeded
 
     V3TaskStatusEnum:
       type: string
+      description: Where a task stands, from processing through to succeeded or failed
       enum:
         - PROCESSING
         - SUCCEEDED
@@ -2253,6 +2481,7 @@ components:
       additionalProperties:
         type: string
       nullable: true
+      description: Arbitrary key/value pairs attached to the resource
 
     V3ErrorResponse:
       type: object
@@ -2264,11 +2493,14 @@ components:
           $ref: '#/components/schemas/V3ErrorsEnum'
         errorMessage:
           type: string
+          description: Human-readable description of the error
           example: '[VALIDATION] missing required config field: pollingPeriod'
         details:
           type: string
+          description: Optional link carrying additional context about the error
     V3ErrorsEnum:
       type: string
+      description: Machine-readable error code identifying the failure
       enum:
         - INTERNAL
         - VALIDATION

@@ -7,19 +7,32 @@ import (
 	"time"
 )
 
+// BankAccount - A bank account registered with Formance and forwardable to connectors
 type BankAccount struct {
-	ID              string                       `json:"id"`
-	Name            string                       `json:"name"`
-	CreatedAt       time.Time                    `json:"createdAt"`
-	Country         string                       `json:"country"`
-	ConnectorID     *string                      `json:"connectorID,omitempty"`
-	AccountID       *string                      `json:"accountID,omitempty"`
-	Provider        *string                      `json:"provider,omitempty"`
-	Iban            *string                      `json:"iban,omitempty"`
-	AccountNumber   *string                      `json:"accountNumber,omitempty"`
-	SwiftBicCode    *string                      `json:"swiftBicCode,omitempty"`
+	// Unique identifier of the bank account within Formance
+	ID string `json:"id"`
+	// Human-readable name of the bank account
+	Name string `json:"name"`
+	// When the bank account was registered
+	CreatedAt time.Time `json:"createdAt"`
+	// Country the account is held in, as an ISO 3166-1 alpha-2 code
+	Country string `json:"country"`
+	// Identifier of the connector the account has been forwarded to
+	ConnectorID *string `json:"connectorID,omitempty"`
+	// Identifier of the provider-side account created by forwarding
+	AccountID *string `json:"accountID,omitempty"`
+	// Name of the payment provider behind the connector
+	Provider *string `json:"provider,omitempty"`
+	// International bank account number, when the account is identified that way
+	Iban *string `json:"iban,omitempty"`
+	// Domestic account number, when the account is identified that way
+	AccountNumber *string `json:"accountNumber,omitempty"`
+	// SWIFT/BIC code identifying the bank
+	SwiftBicCode *string `json:"swiftBicCode,omitempty"`
+	// Provider-side accounts this bank account has been forwarded to
 	RelatedAccounts []BankAccountRelatedAccounts `json:"relatedAccounts,omitempty"`
-	Metadata        map[string]string            `json:"metadata,omitempty"`
+	// Arbitrary key/value pairs attached to the bank account
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (b BankAccount) MarshalJSON() ([]byte, error) {

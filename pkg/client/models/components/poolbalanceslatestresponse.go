@@ -4,6 +4,7 @@ package components
 
 // PoolBalancesLatestResponse - OK
 type PoolBalancesLatestResponse struct {
+	// Most recent aggregated balances across a pool's accounts
 	Data []PoolBalance `json:"data"`
 }
 

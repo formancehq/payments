@@ -1,5 +1,7 @@
 # V3ConnectorsCursorResponseCursor
 
+Paginated cursor wrapping the list of connectors
+
 
 ## Fields
 

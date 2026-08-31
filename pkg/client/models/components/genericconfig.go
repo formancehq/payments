@@ -7,10 +7,14 @@ import (
 )
 
 type GenericConfig struct {
-	Name     string  `json:"name"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
 	Provider *string `default:"Generic" json:"provider"`
-	APIKey   string  `json:"apiKey"`
-	Endpoint string  `json:"endpoint"`
+	// API key used to authenticate the connector's requests
+	APIKey string `json:"apiKey"`
+	// Base URL of the API the connector calls
+	Endpoint string `json:"endpoint"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from the API.
 	//
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`

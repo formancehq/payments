@@ -1,5 +1,7 @@
 # LegacyPaymentStatus
 
+Status of a payment as reported by the legacy payments API
+
 
 ## Values
 

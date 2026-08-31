@@ -3,6 +3,7 @@
 package components
 
 type V3GetTaskResponse struct {
+	// An asynchronous unit of work, tracking an operation that completes in the background
 	Data V3Task `json:"data"`
 }
 

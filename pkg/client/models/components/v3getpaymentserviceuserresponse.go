@@ -3,6 +3,7 @@
 package components
 
 type V3GetPaymentServiceUserResponse struct {
+	// An end user on whose behalf payments and open banking connections are made
 	Data V3PaymentServiceUser `json:"data"`
 }
 

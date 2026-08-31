@@ -1,5 +1,7 @@
 # V3PaymentServiceUserLinkAttemptsCursorResponseCursor
 
+Paginated cursor wrapping the user's link attempts
+
 
 ## Fields
 

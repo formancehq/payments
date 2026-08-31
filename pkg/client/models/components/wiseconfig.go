@@ -7,9 +7,12 @@ import (
 )
 
 type WiseConfig struct {
-	Name     string  `json:"name"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
 	Provider *string `default:"Wise" json:"provider"`
-	APIKey   string  `json:"apiKey"`
+	// API key issued by Wise, used to authenticate the connector's requests
+	APIKey string `json:"apiKey"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Wise API.
 	//
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`

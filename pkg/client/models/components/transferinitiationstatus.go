@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// TransferInitiationStatus - Where a transfer initiation stands in its lifecycle
 type TransferInitiationStatus string
 
 const (

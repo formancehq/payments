@@ -7,20 +7,34 @@ import (
 	"time"
 )
 
+// Account - An account held at a payment provider, surfaced through a connector
 type Account struct {
-	ID          string    `json:"id"`
-	CreatedAt   time.Time `json:"createdAt"`
-	Reference   string    `json:"reference"`
-	ConnectorID string    `json:"connectorID"`
-	Provider    *string   `json:"provider,omitempty"`
+	// Unique identifier of the account within Formance
+	ID string `json:"id"`
+	// When the account was created at the provider
+	CreatedAt time.Time `json:"createdAt"`
+	// Identifier the account carries at the provider
+	Reference string `json:"reference"`
+	// Identifier of the connector the account belongs to
+	ConnectorID string `json:"connectorID"`
+	// Name of the payment provider behind the connector
+	Provider *string `json:"provider,omitempty"`
+	// Deprecated alias of defaultAsset, kept for backwards compatibility
+	//
 	// Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
-	DefaultCurrency string            `json:"defaultCurrency"`
-	DefaultAsset    string            `json:"defaultAsset"`
-	AccountName     string            `json:"accountName"`
-	Type            AccountType       `json:"type"`
-	Pools           []string          `json:"pools,omitempty"`
-	Metadata        map[string]string `json:"metadata"`
-	Raw             map[string]any    `json:"raw"`
+	DefaultCurrency string `json:"defaultCurrency"`
+	// Asset the account is denominated in by default
+	DefaultAsset string `json:"defaultAsset"`
+	// Human-readable name of the account
+	AccountName string `json:"accountName"`
+	// Whether an account is internal to the provider or belongs to an external party
+	Type AccountType `json:"type"`
+	// Pools this account belongs to
+	Pools []string `json:"pools,omitempty"`
+	// Arbitrary key/value pairs attached to the account
+	Metadata map[string]string `json:"metadata"`
+	// The provider's original payload, passed through untouched
+	Raw map[string]any `json:"raw"`
 }
 
 func (a Account) MarshalJSON() ([]byte, error) {

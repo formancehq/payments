@@ -1,5 +1,7 @@
 # V3OrdersCursorResponseCursor
 
+Paginated cursor wrapping the list of orders
+
 
 ## Fields
 

@@ -8,13 +8,20 @@ import (
 )
 
 type V3PaymentServiceUserConnection struct {
-	ConnectionID  string                 `json:"connectionID"`
-	ConnectorID   string                 `json:"connectorID"`
-	CreatedAt     time.Time              `json:"createdAt"`
-	DataUpdatedAt time.Time              `json:"dataUpdatedAt"`
-	Status        V3ConnectionStatusEnum `json:"status"`
-	Error         *string                `json:"error,omitempty"`
-	Metadata      map[string]string      `json:"metadata,omitempty"`
+	// Identifier of the open banking connection at the provider
+	ConnectionID string `json:"connectionID"`
+	// Identifier of the connector holding the connection
+	ConnectorID string `json:"connectorID"`
+	// When the connection was established
+	CreatedAt time.Time `json:"createdAt"`
+	// When data was last refreshed over this connection
+	DataUpdatedAt time.Time `json:"dataUpdatedAt"`
+	// Whether an open banking connection is still usable or needs the user to reconnect
+	Status V3ConnectionStatusEnum `json:"status"`
+	// Why the connection is failing, absent while it is healthy
+	Error *string `json:"error,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (v V3PaymentServiceUserConnection) MarshalJSON() ([]byte, error) {

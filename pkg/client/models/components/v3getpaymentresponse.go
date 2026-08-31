@@ -3,6 +3,7 @@
 package components
 
 type V3GetPaymentResponse struct {
+	// A payment observed at a provider and surfaced through a connector
 	Data V3Payment `json:"data"`
 }
 

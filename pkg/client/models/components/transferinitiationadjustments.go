@@ -8,11 +8,16 @@ import (
 )
 
 type TransferInitiationAdjustments struct {
-	AdjustmentID string                   `json:"adjustmentID"`
-	CreatedAt    time.Time                `json:"createdAt"`
-	Status       TransferInitiationStatus `json:"status"`
-	Error        *string                  `json:"error,omitempty"`
-	Metadata     map[string]string        `json:"metadata,omitempty"`
+	// Unique identifier of the adjustment
+	AdjustmentID string `json:"adjustmentID"`
+	// When the adjustment was recorded
+	CreatedAt time.Time `json:"createdAt"`
+	// Where a transfer initiation stands in its lifecycle
+	Status TransferInitiationStatus `json:"status"`
+	// Why this step failed, absent when it succeeded
+	Error *string `json:"error,omitempty"`
+	// Arbitrary key/value pairs attached to the adjustment
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (t TransferInitiationAdjustments) MarshalJSON() ([]byte, error) {

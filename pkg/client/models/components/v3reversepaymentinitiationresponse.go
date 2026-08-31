@@ -2,6 +2,7 @@
 
 package components
 
+// V3ReversePaymentInitiationResponseData - The task tracking the reversal, which completes asynchronously
 type V3ReversePaymentInitiationResponseData struct {
 	// Since this call is asynchronous, the response will contain the ID of the task that was created to reverse the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.
 	//
@@ -26,6 +27,7 @@ func (o *V3ReversePaymentInitiationResponseData) GetPaymentInitiationReversalID(
 }
 
 type V3ReversePaymentInitiationResponse struct {
+	// The task tracking the reversal, which completes asynchronously
 	Data V3ReversePaymentInitiationResponseData `json:"data"`
 }
 

@@ -1,5 +1,7 @@
 # V3PoolsCursorResponseCursor
 
+Paginated cursor wrapping the list of pools
+
 
 ## Fields
 

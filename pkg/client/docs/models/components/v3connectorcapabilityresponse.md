@@ -5,4 +5,4 @@
 
 | Field                                                                | Type                                                                 | Required                                                             | Description                                                          |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `Data`                                                               | [][components.V3Capability](../../models/components/v3capability.md) | :heavy_check_mark:                                                   | N/A                                                                  |
+| `Data`                                                               | [][components.V3Capability](../../models/components/v3capability.md) | :heavy_check_mark:                                                   | Operations this connector supports                                   |

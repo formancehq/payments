@@ -8,22 +8,38 @@ import (
 	"time"
 )
 
+// V3PaymentInitiation - A payment Formance asked a connector to execute
 type V3PaymentInitiation struct {
-	ID                   string                        `json:"id"`
-	ConnectorID          string                        `json:"connectorID"`
-	Provider             string                        `json:"provider"`
-	Reference            string                        `json:"reference"`
-	CreatedAt            time.Time                     `json:"createdAt"`
-	ScheduledAt          time.Time                     `json:"scheduledAt"`
-	Description          string                        `json:"description"`
-	Type                 V3PaymentInitiationTypeEnum   `json:"type"`
-	Amount               *big.Int                      `json:"amount"`
-	Asset                string                        `json:"asset"`
-	Status               V3PaymentInitiationStatusEnum `json:"status"`
-	SourceAccountID      *string                       `json:"sourceAccountID,omitempty"`
-	DestinationAccountID *string                       `json:"destinationAccountID,omitempty"`
-	Error                *string                       `json:"error,omitempty"`
-	Metadata             map[string]string             `json:"metadata,omitempty"`
+	// Unique identifier of the payment initiation
+	ID string `json:"id"`
+	// Identifier of the connector executing the payment
+	ConnectorID string `json:"connectorID"`
+	// Name of the payment provider behind the connector
+	Provider string `json:"provider"`
+	// Caller-supplied identifier for the initiation
+	Reference string `json:"reference"`
+	// When the initiation was created
+	CreatedAt time.Time `json:"createdAt"`
+	// When the payment is scheduled to execute
+	ScheduledAt time.Time `json:"scheduledAt"`
+	// Human-readable description carried with the payment
+	Description string `json:"description"`
+	// Kind of movement a payment initiation performs, such as a transfer or a payout
+	Type V3PaymentInitiationTypeEnum `json:"type"`
+	// Amount to move, in the asset's smallest unit
+	Amount *big.Int `json:"amount"`
+	// Asset the payment is denominated in
+	Asset string `json:"asset"`
+	// Where a payment initiation stands in its lifecycle
+	Status V3PaymentInitiationStatusEnum `json:"status"`
+	// Identifier of the account the funds leave
+	SourceAccountID *string `json:"sourceAccountID,omitempty"`
+	// Identifier of the account the funds reach
+	DestinationAccountID *string `json:"destinationAccountID,omitempty"`
+	// Why the initiation failed, absent when it succeeded
+	Error *string `json:"error,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (v V3PaymentInitiation) MarshalJSON() ([]byte, error) {

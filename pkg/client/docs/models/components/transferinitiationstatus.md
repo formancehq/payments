@@ -1,5 +1,7 @@
 # TransferInitiationStatus
 
+Where a transfer initiation stands in its lifecycle
+
 
 ## Values
 

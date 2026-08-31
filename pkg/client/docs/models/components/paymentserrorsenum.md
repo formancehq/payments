@@ -1,5 +1,7 @@
 # PaymentsErrorsEnum
 
+Machine-readable error code identifying the failure
+
 
 ## Values
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// V3AccountTypeEnum - Whether an account is internal to the provider or belongs to an external party
 type V3AccountTypeEnum string
 
 const (

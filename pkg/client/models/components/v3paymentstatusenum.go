@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// V3PaymentStatusEnum - Where a payment stands in its lifecycle
 type V3PaymentStatusEnum string
 
 const (

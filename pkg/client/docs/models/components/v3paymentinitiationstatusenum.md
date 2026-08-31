@@ -1,5 +1,7 @@
 # V3PaymentInitiationStatusEnum
 
+Where a payment initiation stands in its lifecycle
+
 
 ## Values
 

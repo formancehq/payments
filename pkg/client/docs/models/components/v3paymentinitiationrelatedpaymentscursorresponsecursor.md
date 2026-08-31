@@ -1,5 +1,7 @@
 # V3PaymentInitiationRelatedPaymentsCursorResponseCursor
 
+Paginated cursor wrapping the payments produced by the initiation
+
 
 ## Fields
 

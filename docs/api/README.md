@@ -4221,12 +4221,12 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of accounts|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Account](#schemav3account)]|true|none|none|
+|» data|[[V3Account](#schemav3account)]|true|none|[An account held at a payment provider, surfaced through a connector]|
 
 <h2 id="tocS_V3GetAccountResponse">V3GetAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -4267,7 +4267,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Account](#schemav3account)|true|none|none|
+|data|[V3Account](#schemav3account)|true|none|An account held at a payment provider, surfaced through a connector|
 
 <h2 id="tocS_V3CreateAccountRequest">V3CreateAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -4296,13 +4296,13 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reference|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|accountName|string|true|none|none|
-|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|true|none|none|
-|defaultAsset|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|reference|string|true|none|Identifier the account carries at the provider|
+|connectorID|string(byte)|true|none|Identifier of the connector the account belongs to|
+|createdAt|string(date-time)|true|none|When the account was created at the provider|
+|accountName|string|true|none|Human-readable name of the account|
+|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|true|none|Whether an account is internal to the provider or belongs to an external party|
+|defaultAsset|string¦null|false|none|Asset the account is denominated in by default|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3CreateAccountResponse">V3CreateAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -4343,7 +4343,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Account](#schemav3account)|true|none|none|
+|data|[V3Account](#schemav3account)|true|none|An account held at a payment provider, surfaced through a connector|
 
 <h2 id="tocS_V3Account">V3Account</h2>
 <!-- backwards compatibility -->
@@ -4378,21 +4378,23 @@ None ( Scopes: payments:read )
 
 ```
 
+An account held at a payment provider, surfaced through a connector
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|connector|[V3ConnectorBase](#schemav3connectorbase)|false|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|true|none|none|
-|name|string¦null|false|none|none|
-|defaultAsset|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|raw|object|true|none|none|
+|id|string|true|none|Unique identifier of the account within Formance|
+|connectorID|string(byte)|true|none|Identifier of the connector the account belongs to|
+|connector|[V3ConnectorBase](#schemav3connectorbase)|false|none|Summary of a connector, without its configuration|
+|provider|string|true|none|Name of the payment provider behind the connector|
+|reference|string|true|none|Identifier the account carries at the provider|
+|createdAt|string(date-time)|true|none|When the account was created at the provider|
+|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|true|none|Whether an account is internal to the provider or belongs to an external party|
+|name|string¦null|false|none|Human-readable name of the account|
+|defaultAsset|string¦null|false|none|Asset the account is denominated in by default|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
+|raw|object|true|none|The provider's original payload, passed through untouched|
 
 <h2 id="tocS_V3AccountTypeEnum">V3AccountTypeEnum</h2>
 <!-- backwards compatibility -->
@@ -4406,11 +4408,13 @@ None ( Scopes: payments:read )
 
 ```
 
+Whether an account is internal to the provider or belongs to an external party
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Whether an account is internal to the provider or belongs to an external party|
 
 #### Enumerated Values
 
@@ -4452,7 +4456,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of balances|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -4481,11 +4485,11 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|accountID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|lastUpdatedAt|string(date-time)|true|none|none|
-|asset|string|true|none|none|
-|balance|integer(bigint)|true|none|none|
+|accountID|string|true|none|Identifier of the account this balance belongs to|
+|createdAt|string(date-time)|true|none|Start of the period this balance covers|
+|lastUpdatedAt|string(date-time)|true|none|When the balance was last refreshed from the provider|
+|asset|string|true|none|Asset the balance is denominated in|
+|balance|integer(bigint)|true|none|Amount held, in the asset's smallest unit|
 
 <h2 id="tocS_V3CreateBankAccountRequest">V3CreateBankAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -4513,12 +4517,12 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|name|string|true|none|none|
-|accountNumber|string|false|none|none|
-|iban|string|false|none|none|
-|swiftBicCode|string|false|none|none|
-|country|string|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|name|string|true|none|Human-readable name for the bank account|
+|accountNumber|string|false|none|Domestic account number. Supply this or an IBAN|
+|iban|string|false|none|International bank account number. Supply this or an account number|
+|swiftBicCode|string|false|none|SWIFT/BIC code identifying the bank|
+|country|string|false|none|Country the account is held in, as an ISO 3166-1 alpha-2 code|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3CreateBankAccountResponse">V3CreateBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -4561,7 +4565,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|metadata|[V3Metadata](#schemav3metadata)|true|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|true|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3ForwardBankAccountRequest">V3ForwardBankAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -4581,7 +4585,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|connectorID|string(byte)|true|none|none|
+|connectorID|string(byte)|true|none|Identifier of the connector to forward the bank account to|
 
 <h2 id="tocS_V3ForwardBankAccountResponse">V3ForwardBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -4603,7 +4607,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the forwarding, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.|
 
 <h2 id="tocS_V3BankAccountsCursorResponse">V3BankAccountsCursorResponse</h2>
@@ -4650,12 +4654,12 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of bank accounts|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3BankAccount](#schemav3bankaccount)]|true|none|none|
+|» data|[[V3BankAccount](#schemav3bankaccount)]|true|none|[A bank account registered with Formance and forwardable to connectors]|
 
 <h2 id="tocS_V3GetBankAccountResponse">V3GetBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -4693,7 +4697,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3BankAccount](#schemav3bankaccount)|true|none|none|
+|data|[V3BankAccount](#schemav3bankaccount)|true|none|A bank account registered with Formance and forwardable to connectors|
 
 <h2 id="tocS_V3BankAccount">V3BankAccount</h2>
 <!-- backwards compatibility -->
@@ -4725,19 +4729,21 @@ None ( Scopes: payments:read )
 
 ```
 
+A bank account registered with Formance and forwardable to connectors
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|name|string|true|none|none|
-|accountNumber|string¦null|false|none|none|
-|iban|string¦null|false|none|none|
-|swiftBicCode|string¦null|false|none|none|
-|country|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|relatedAccounts|[[V3BankAccountRelatedAccount](#schemav3bankaccountrelatedaccount)]|false|none|none|
+|id|string|true|none|Unique identifier of the bank account within Formance|
+|createdAt|string(date-time)|true|none|When the bank account was registered|
+|name|string|true|none|Human-readable name of the bank account|
+|accountNumber|string¦null|false|none|Domestic account number, when the account is identified that way|
+|iban|string¦null|false|none|International bank account number, when the account is identified that way|
+|swiftBicCode|string¦null|false|none|SWIFT/BIC code identifying the bank|
+|country|string¦null|false|none|Country the account is held in, as an ISO 3166-1 alpha-2 code|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
+|relatedAccounts|[[V3BankAccountRelatedAccount](#schemav3bankaccountrelatedaccount)]|false|none|Provider-side accounts this bank account has been forwarded to|
 
 <h2 id="tocS_V3BankAccountRelatedAccount">V3BankAccountRelatedAccount</h2>
 <!-- backwards compatibility -->
@@ -4758,8 +4764,8 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|accountID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
+|accountID|string|true|none|Identifier of the provider-side account|
+|createdAt|string(date-time)|true|none|When the bank account was forwarded to this provider|
 
 <h2 id="tocS_V3InstallConnectorRequest">V3InstallConnectorRequest</h2>
 <!-- backwards compatibility -->
@@ -4827,7 +4833,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the uninstall, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and get the results.|
 
 <h2 id="tocS_V3ResetConnectorResponse">V3ResetConnectorResponse</h2>
@@ -4937,7 +4943,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[[V3Capability](#schemav3capability)]|true|none|[Plugin capability advertised by a connector. Distinct from the Formance gateway "module capabilities" (which are version-gated); these reflect what the underlying PSP integration actually exposes.<br>]|
+|data|[[V3Capability](#schemav3capability)]|true|none|Operations this connector supports|
 
 <h2 id="tocS_V3ConnectorConfigsResponse">V3ConnectorConfigsResponse</h2>
 <!-- backwards compatibility -->
@@ -4982,7 +4988,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|Configuration schema of every available connector, keyed by provider|
 |» **additionalProperties**|object|false|none|none|
 |»» **additionalProperties**|object|false|none|none|
 |»»» dataType|string|true|none|none|
@@ -5083,7 +5089,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of connectors|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -5122,12 +5128,12 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the connector's schedules|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Schedule](#schemav3schedule)]|true|none|none|
+|» data|[[V3Schedule](#schemav3schedule)]|true|none|[A recurring job a connector runs to fetch data from its provider]|
 
 <h2 id="tocS_V3ConnectorScheduleResponse">V3ConnectorScheduleResponse</h2>
 <!-- backwards compatibility -->
@@ -5153,7 +5159,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Schedule](#schemav3schedule)|true|none|none|
+|data|[V3Schedule](#schemav3schedule)|true|none|A recurring job a connector runs to fetch data from its provider|
 
 <h2 id="tocS_V3ConnectorScheduleInstancesCursorResponse">V3ConnectorScheduleInstancesCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -5190,7 +5196,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the schedule's runs|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -5225,15 +5231,15 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|reference|string|true|none|none|
-|name|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|provider|string|true|none|none|
-|scheduledForDeletion|boolean|true|none|none|
-|config|object|true|none|none|
+|id|string|true|none|Unique identifier of the connector|
+|reference|string|true|none|Stable reference identifying the connector|
+|name|string|true|none|Human-readable name of the connector instance|
+|createdAt|string(date-time)|true|none|When the connector was installed|
+|provider|string|true|none|Name of the payment provider behind the connector|
+|scheduledForDeletion|boolean|true|none|Whether the connector is being uninstalled|
+|config|object|true|none|The connector's configuration, whose shape depends on the provider|
 |capabilities|[[V3Capability](#schemav3capability)]|false|none|Plugin capabilities advertised by the connector's provider.|
-|updatedAt|string(date-time)¦null|false|none|none|
+|updatedAt|string(date-time)¦null|false|none|When the connector's configuration was last changed|
 
 <h2 id="tocS_V3ConnectorBase">V3ConnectorBase</h2>
 <!-- backwards compatibility -->
@@ -5253,15 +5259,17 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 ```
 
+Summary of a connector, without its configuration
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|false|none|none|
-|reference|string|false|none|none|
-|name|string|false|none|none|
-|createdAt|string(date-time)|false|none|none|
-|provider|string|false|none|none|
+|id|string|false|none|Unique identifier of the connector|
+|reference|string|false|none|Stable reference identifying the connector|
+|name|string|false|none|Human-readable name of the connector instance|
+|createdAt|string(date-time)|false|none|When the connector was installed|
+|provider|string|false|none|Name of the payment provider behind the connector|
 
 <h2 id="tocS_V3Schedule">V3Schedule</h2>
 <!-- backwards compatibility -->
@@ -5281,15 +5289,17 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 ```
 
+A recurring job a connector runs to fetch data from its provider
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|pausedAt|string(date-time)¦null|false|none|none|
-|pausedReason|string¦null|false|none|none|
+|id|string|true|none|Unique identifier of the schedule|
+|connectorID|string(byte)|true|none|Identifier of the connector this schedule belongs to|
+|createdAt|string(date-time)|true|none|When the schedule was created|
+|pausedAt|string(date-time)¦null|false|none|When the schedule was paused, absent while it is running|
+|pausedReason|string¦null|false|none|Why the schedule was paused|
 
 <h2 id="tocS_V3Instance">V3Instance</h2>
 <!-- backwards compatibility -->
@@ -5316,14 +5326,14 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|scheduleID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|true|none|none|
-|terminated|boolean|true|none|none|
-|terminatedAt|string(date-time)|false|none|none|
-|error|string¦null|false|none|none|
+|id|string|true|none|Unique identifier of the run|
+|connectorID|string(byte)|true|none|Identifier of the connector this run belongs to|
+|scheduleID|string|true|none|Identifier of the schedule that started this run|
+|createdAt|string(date-time)|true|none|When the run started|
+|updatedAt|string(date-time)|true|none|When the run was last updated|
+|terminated|boolean|true|none|Whether the run has finished, successfully or not|
+|terminatedAt|string(date-time)|false|none|When the run finished, absent while it is still running|
+|error|string¦null|false|none|Why the run failed, absent when it succeeded|
 
 <h2 id="tocS_V3CreatePaymentRequest">V3CreatePaymentRequest</h2>
 <!-- backwards compatibility -->
@@ -5369,18 +5379,18 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reference|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|true|none|none|
-|initialAmount|integer(bigint)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|scheme|string|true|none|none|
-|sourceAccountID|string(byte)|false|none|none|
-|destinationAccountID|string(byte)|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|adjustments|[[V3CreatePaymentAdjustmentRequest](#schemav3createpaymentadjustmentrequest)]|false|none|none|
+|reference|string|true|none|Identifier the payment carries at the provider|
+|connectorID|string(byte)|true|none|Identifier of the connector the payment belongs to|
+|createdAt|string(date-time)|true|none|When the payment was created at the provider|
+|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|true|none|Direction of a payment|
+|initialAmount|integer(bigint)|true|none|Amount the payment was created with, before any adjustment|
+|amount|integer(bigint)|true|none|Current amount of the payment, in the asset's smallest unit|
+|asset|string|true|none|Asset the payment is denominated in|
+|scheme|string|true|none|Payment scheme or rail the payment travels over|
+|sourceAccountID|string(byte)|false|none|Identifier of the account the funds leave|
+|destinationAccountID|string(byte)|false|none|Identifier of the account the funds reach|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
+|adjustments|[[V3CreatePaymentAdjustmentRequest](#schemav3createpaymentadjustmentrequest)]|false|none|Status and amount changes to record alongside the payment|
 
 <h2 id="tocS_V3CreatePaymentAdjustmentRequest">V3CreatePaymentAdjustmentRequest</h2>
 <!-- backwards compatibility -->
@@ -5408,12 +5418,12 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|none|
-|amount|integer(bigint)|false|none|none|
-|asset|string|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|reference|string|true|none|Identifier the adjustment carries at the provider|
+|createdAt|string(date-time)|true|none|When the adjustment occurred at the provider|
+|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|Where a payment stands in its lifecycle|
+|amount|integer(bigint)|false|none|Amount carried by this adjustment|
+|asset|string|false|none|Asset the adjustment is denominated in|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3CreatePaymentResponse">V3CreatePaymentResponse</h2>
 <!-- backwards compatibility -->
@@ -5466,7 +5476,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Payment](#schemav3payment)|true|none|none|
+|data|[V3Payment](#schemav3payment)|true|none|A payment observed at a provider and surfaced through a connector|
 
 <h2 id="tocS_V3UpdatePaymentMetadataRequest">V3UpdatePaymentMetadataRequest</h2>
 <!-- backwards compatibility -->
@@ -5489,7 +5499,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|metadata|[V3Metadata](#schemav3metadata)|true|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|true|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3PaymentsCursorResponse">V3PaymentsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -5550,12 +5560,12 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of payments|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Payment](#schemav3payment)]|true|none|none|
+|» data|[[V3Payment](#schemav3payment)]|true|none|[A payment observed at a provider and surfaced through a connector]|
 
 <h2 id="tocS_V3GetPaymentResponse">V3GetPaymentResponse</h2>
 <!-- backwards compatibility -->
@@ -5608,7 +5618,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Payment](#schemav3payment)|true|none|none|
+|data|[V3Payment](#schemav3payment)|true|none|A payment observed at a provider and surfaced through a connector|
 
 <h2 id="tocS_V3Payment">V3Payment</h2>
 <!-- backwards compatibility -->
@@ -5655,25 +5665,27 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 ```
 
+A payment observed at a provider and surfaced through a connector
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|true|none|none|
-|initialAmount|integer(bigint)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|scheme|string|true|none|none|
-|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|none|
-|sourceAccountID|string(byte)¦null|false|none|none|
-|destinationAccountID|string(byte)¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|adjustments|[[V3PaymentAdjustment](#schemav3paymentadjustment)]¦null|false|none|none|
+|id|string|true|none|Unique identifier of the payment within Formance|
+|connectorID|string(byte)|true|none|Identifier of the connector the payment belongs to|
+|provider|string|true|none|Name of the payment provider behind the connector|
+|reference|string|true|none|Identifier the payment carries at the provider|
+|createdAt|string(date-time)|true|none|When the payment was created at the provider|
+|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|true|none|Direction of a payment|
+|initialAmount|integer(bigint)|true|none|Amount the payment was created with, before any adjustment|
+|amount|integer(bigint)|true|none|Current amount of the payment after applying its adjustments|
+|asset|string|true|none|Asset the payment is denominated in|
+|scheme|string|true|none|Payment scheme or rail the payment travelled over|
+|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|Where a payment stands in its lifecycle|
+|sourceAccountID|string(byte)¦null|false|none|Identifier of the account the funds left|
+|destinationAccountID|string(byte)¦null|false|none|Identifier of the account the funds reached|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
+|adjustments|[[V3PaymentAdjustment](#schemav3paymentadjustment)]¦null|false|none|Successive changes to the payment's amount and status, newest first|
 
 <h2 id="tocS_V3PaymentAdjustment">V3PaymentAdjustment</h2>
 <!-- backwards compatibility -->
@@ -5703,14 +5715,14 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|none|
-|amount|integer(bigint)|false|none|none|
-|asset|string|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|raw|object|true|none|none|
+|id|string|true|none|Unique identifier of the adjustment|
+|reference|string|true|none|Identifier the adjustment carries at the provider|
+|createdAt|string(date-time)|true|none|When the adjustment occurred at the provider|
+|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|Where a payment stands in its lifecycle|
+|amount|integer(bigint)|false|none|Amount carried by this adjustment|
+|asset|string|false|none|Asset the adjustment is denominated in|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
+|raw|object|true|none|The provider's original payload for this adjustment|
 
 <h2 id="tocS_V3PaymentTypeEnum">V3PaymentTypeEnum</h2>
 <!-- backwards compatibility -->
@@ -5724,11 +5736,13 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 ```
 
+Direction of a payment
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Direction of a payment|
 
 #### Enumerated Values
 
@@ -5752,11 +5766,13 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 ```
 
+Where a payment stands in its lifecycle
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Where a payment stands in its lifecycle|
 
 #### Enumerated Values
 
@@ -5854,7 +5870,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of orders|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -6024,7 +6040,7 @@ adjustment is a point-in-time snapshot from the PSP.
 |priceAsset|string¦null|false|none|Currency + precision under which `limitPrice`, `stopPrice`, and<br>`averageFillPrice` should be interpreted. Separate from<br>`quoteAsset` because some PSPs return price strings with more<br>decimal digits than the quote currency's natural precision.|
 |sourceAccountID|string¦null|false|none|Formance account ID of the wallet the source asset was debited<br>from. Null if the PSP did not return enough information to<br>resolve it at ingestion time.|
 |destinationAccountID|string¦null|false|none|Formance account ID of the wallet the destination asset was credited to. Null if unresolvable.|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 |adjustments|[[V3OrderAdjustment](#schemav3orderadjustment)]¦null|false|none|Ordered history of state snapshots for this order. The most recent element reflects the current `status`.|
 |error|string¦null|false|none|Human-readable error from the PSP (e.g. rejection reason) when `status` is `FAILED`. Null otherwise.|
 
@@ -6070,7 +6086,7 @@ events over its lifetime.
 |baseQuantityFilled|integer(bigint)¦null|false|none|Base asset filled at this observation, at the base asset's precision.|
 |fee|integer(bigint)¦null|false|none|Cumulative fee at this observation, at `feeAsset` precision.|
 |feeAsset|string¦null|false|none|Currency the fee is denominated in, in `SYMBOL/precision` form.|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 |raw|object|false|none|Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.|
 
 <h2 id="tocS_V3OrderDirectionEnum">V3OrderDirectionEnum</h2>
@@ -6264,7 +6280,7 @@ How long an order is valid on the exchange.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of conversions|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -6370,7 +6386,7 @@ Formance records the final state only.
 |status|[V3ConversionStatusEnum](#schemav3conversionstatusenum)|true|none|Lifecycle of a conversion.<br>`PENDING` — accepted by the PSP, not yet settled.<br>`COMPLETED` — settled, terminal.<br>`FAILED` — rejected or reverted, terminal. See `error`.|
 |sourceAccountID|string¦null|false|none|Formance account ID of the wallet the source asset was debited from.|
 |destinationAccountID|string¦null|false|none|Formance account ID of the wallet the destination asset was credited to.|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 |error|string¦null|false|none|Human-readable error from the PSP when `status` is `FAILED`. Null otherwise.|
 
 <h2 id="tocS_V3ConversionStatusEnum">V3ConversionStatusEnum</h2>
@@ -6435,16 +6451,16 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reference|string|true|none|none|
-|scheduledAt|string(date-time)|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|description|string|true|none|none|
-|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|sourceAccountID|string(byte)¦null|false|none|none|
-|destinationAccountID|string(byte)|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|reference|string|true|none|Caller-supplied identifier for the initiation, used to deduplicate retries|
+|scheduledAt|string(date-time)|true|none|When the payment should be executed|
+|connectorID|string(byte)|true|none|Identifier of the connector to execute the payment through|
+|description|string|true|none|Human-readable description carried with the payment|
+|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|true|none|Kind of movement a payment initiation performs, such as a transfer or a payout|
+|amount|integer(bigint)|true|none|Amount to move, in the asset's smallest unit|
+|asset|string|true|none|Asset the payment is denominated in|
+|sourceAccountID|string(byte)¦null|false|none|Identifier of the account the funds leave|
+|destinationAccountID|string(byte)|false|none|Identifier of the account the funds reach|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3InitiatePaymentResponse">V3InitiatePaymentResponse</h2>
 <!-- backwards compatibility -->
@@ -6467,7 +6483,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the initiation, which completes asynchronously|
 |» paymentInitiationID|string|false|none|Related payment initiation object ID created.|
 |» taskID|string|false|none|Will be filled if the noValidation query parameter is set to true. Since this call is asynchronous, the response will contain the ID of the task that was created to create the payment on the PSP. You can use the task API to check the status of the task and get the resulting payment ID|
 
@@ -6491,7 +6507,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the retry, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID.|
 
 <h2 id="tocS_V3ApprovePaymentInitiationResponse">V3ApprovePaymentInitiationResponse</h2>
@@ -6514,7 +6530,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the approval, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.|
 
 <h2 id="tocS_V3ReversePaymentInitiationRequest">V3ReversePaymentInitiationRequest</h2>
@@ -6542,11 +6558,11 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|reference|string|true|none|none|
-|description|string|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|reference|string|true|none|Caller-supplied identifier for the reversal, used to deduplicate retries|
+|description|string|true|none|Human-readable reason for the reversal|
+|amount|integer(bigint)|true|none|Amount to reverse, in the asset's smallest unit|
+|asset|string|true|none|Asset the reversal is denominated in|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3ReversePaymentInitiationResponse">V3ReversePaymentInitiationResponse</h2>
 <!-- backwards compatibility -->
@@ -6569,7 +6585,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the reversal, which completes asynchronously|
 |» taskID|string|false|none|Since this call is asynchronous, the response will contain the ID of the task that was created to reverse the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.|
 |» paymentInitiationReversalID|string|false|none|Related payment initiation reversal object ID created.|
 
@@ -6618,12 +6634,12 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of payment initiations|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3PaymentInitiation](#schemav3paymentinitiation)]|true|none|none|
+|» data|[[V3PaymentInitiation](#schemav3paymentinitiation)]|true|none|[A payment Formance asked a connector to execute]|
 
 <h2 id="tocS_V3PaymentInitiationAdjustmentsCursorResponse">V3PaymentInitiationAdjustmentsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -6662,7 +6678,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the initiation's adjustments|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -6728,12 +6744,12 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the payments produced by the initiation|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Payment](#schemav3payment)]|true|none|none|
+|» data|[[V3Payment](#schemav3payment)]|true|none|[A payment observed at a provider and surfaced through a connector]|
 
 <h2 id="tocS_V3PaymentInitiation">V3PaymentInitiation</h2>
 <!-- backwards compatibility -->
@@ -6766,25 +6782,27 @@ Lifecycle of a conversion.
 
 ```
 
+A payment Formance asked a connector to execute
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|scheduledAt|string(date-time)|true|none|none|
-|description|string|true|none|none|
-|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|none|
-|sourceAccountID|string(byte)|false|none|none|
-|destinationAccountID|string(byte)|false|none|none|
-|error|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|id|string|true|none|Unique identifier of the payment initiation|
+|connectorID|string(byte)|true|none|Identifier of the connector executing the payment|
+|provider|string|true|none|Name of the payment provider behind the connector|
+|reference|string|true|none|Caller-supplied identifier for the initiation|
+|createdAt|string(date-time)|true|none|When the initiation was created|
+|scheduledAt|string(date-time)|true|none|When the payment is scheduled to execute|
+|description|string|true|none|Human-readable description carried with the payment|
+|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|true|none|Kind of movement a payment initiation performs, such as a transfer or a payout|
+|amount|integer(bigint)|true|none|Amount to move, in the asset's smallest unit|
+|asset|string|true|none|Asset the payment is denominated in|
+|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|Where a payment initiation stands in its lifecycle|
+|sourceAccountID|string(byte)|false|none|Identifier of the account the funds leave|
+|destinationAccountID|string(byte)|false|none|Identifier of the account the funds reach|
+|error|string¦null|false|none|Why the initiation failed, absent when it succeeded|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3PaymentInitiationAdjustment">V3PaymentInitiationAdjustment</h2>
 <!-- backwards compatibility -->
@@ -6813,13 +6831,13 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|none|
-|amount|integer(bigint)|false|none|none|
-|asset|string|false|none|none|
-|error|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|id|string|true|none|Unique identifier of the adjustment|
+|createdAt|string(date-time)|true|none|When the adjustment was recorded|
+|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|Where a payment initiation stands in its lifecycle|
+|amount|integer(bigint)|false|none|Amount carried by this adjustment|
+|asset|string|false|none|Asset the adjustment is denominated in|
+|error|string¦null|false|none|Why this step failed, absent when it succeeded|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3GetPaymentInitiationResponse">V3GetPaymentInitiationResponse</h2>
 <!-- backwards compatibility -->
@@ -6858,7 +6876,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3PaymentInitiation](#schemav3paymentinitiation)|true|none|none|
+|data|[V3PaymentInitiation](#schemav3paymentinitiation)|true|none|A payment Formance asked a connector to execute|
 
 <h2 id="tocS_V3PaymentInitiationStatusEnum">V3PaymentInitiationStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -6872,11 +6890,13 @@ Lifecycle of a conversion.
 
 ```
 
+Where a payment initiation stands in its lifecycle
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Where a payment initiation stands in its lifecycle|
 
 #### Enumerated Values
 
@@ -6905,11 +6925,13 @@ Lifecycle of a conversion.
 
 ```
 
+Kind of movement a payment initiation performs, such as a transfer or a payout
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Kind of movement a payment initiation performs, such as a transfer or a payout|
 
 #### Enumerated Values
 
@@ -6956,11 +6978,11 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|name|string|true|none|none|
-|contactDetails|[V3ContactDetailsRequest](#schemav3contactdetailsrequest)|false|none|none|
-|address|[V3AddressRequest](#schemav3addressrequest)|false|none|none|
-|bankAccountIDs|[string]¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|name|string|true|none|Full name of the payment service user|
+|contactDetails|[V3ContactDetailsRequest](#schemav3contactdetailsrequest)|false|none|How to reach the payment service user|
+|address|[V3AddressRequest](#schemav3addressrequest)|false|none|A postal address to record on the payment service user|
+|bankAccountIDs|[string]¦null|false|none|Bank accounts to associate with the user|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3AddressRequest">V3AddressRequest</h2>
 <!-- backwards compatibility -->
@@ -6981,16 +7003,18 @@ Lifecycle of a conversion.
 
 ```
 
+A postal address to record on the payment service user
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|streetNumber|string|false|none|none|
-|streetName|string|false|none|none|
-|city|string|false|none|none|
-|region|string|false|none|none|
-|postalCode|string|false|none|none|
-|country|string|false|none|none|
+|streetNumber|string|false|none|Street number of the address|
+|streetName|string|false|none|Street name of the address|
+|city|string|false|none|City of the address|
+|region|string|false|none|Region, state or province of the address|
+|postalCode|string|false|none|Postal or ZIP code of the address|
+|country|string|false|none|Country of the address, as an ISO 3166-1 alpha-2 code|
 
 <h2 id="tocS_V3ContactDetailsRequest">V3ContactDetailsRequest</h2>
 <!-- backwards compatibility -->
@@ -7007,12 +7031,14 @@ Lifecycle of a conversion.
 
 ```
 
+How to reach the payment service user
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|email|string|false|none|none|
-|phoneNumber|string|false|none|none|
+|email|string|false|none|Email address of the user|
+|phoneNumber|string|false|none|Phone number of the user, in international format|
 
 <h2 id="tocS_V3CreatePaymentServiceUserResponse">V3CreatePaymentServiceUserResponse</h2>
 <!-- backwards compatibility -->
@@ -7054,7 +7080,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the deletion, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to delete the payment service user. You can use the task API to check the status of the task.|
 
 <h2 id="tocS_V3PaymentServiceUserDeleteConnectorResponse">V3PaymentServiceUserDeleteConnectorResponse</h2>
@@ -7077,7 +7103,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the deletion, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to delete the payment service user on the connector. You can use the task API to check the status of the task.|
 
 <h2 id="tocS_V3PaymentServiceUserDeleteConnectionResponse">V3PaymentServiceUserDeleteConnectionResponse</h2>
@@ -7100,7 +7126,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the deletion, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to delete the connection. You can use the task API to check the status of the task.|
 
 <h2 id="tocS_V3PaymentServiceUsersCursorResponse">V3PaymentServiceUsersCursorResponse</h2>
@@ -7152,12 +7178,12 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of payment service users|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3PaymentServiceUser](#schemav3paymentserviceuser)]|true|none|none|
+|» data|[[V3PaymentServiceUser](#schemav3paymentserviceuser)]|true|none|[An end user on whose behalf payments and open banking connections are made]|
 
 <h2 id="tocS_V3PaymentServiceUserConnectionsCursorResponse">V3PaymentServiceUserConnectionsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -7196,7 +7222,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the user's open banking connections|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -7237,7 +7263,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the user's link attempts|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
@@ -7279,17 +7305,19 @@ Lifecycle of a conversion.
 
 ```
 
+An end user on whose behalf payments and open banking connections are made
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|name|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|contactDetails|[V3ContactDetails](#schemav3contactdetails)|false|none|none|
-|address|[V3Address](#schemav3address)|false|none|none|
-|bankAccountIDs|[string]¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|id|string|true|none|Unique identifier of the payment service user|
+|name|string|true|none|Full name of the payment service user|
+|createdAt|string(date-time)|true|none|When the user was registered|
+|contactDetails|[V3ContactDetails](#schemav3contactdetails)|false|none|How to reach a payment service user|
+|address|[V3Address](#schemav3address)|false|none|A postal address|
+|bankAccountIDs|[string]¦null|false|none|Bank accounts associated with the user|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3PaymentServiceUserConnection">V3PaymentServiceUserConnection</h2>
 <!-- backwards compatibility -->
@@ -7318,13 +7346,13 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|connectionID|string|true|none|none|
-|connectorID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|dataUpdatedAt|string(date-time)|true|none|none|
-|status|[V3ConnectionStatusEnum](#schemav3connectionstatusenum)|true|none|none|
-|error|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+|connectionID|string|true|none|Identifier of the open banking connection at the provider|
+|connectorID|string|true|none|Identifier of the connector holding the connection|
+|createdAt|string(date-time)|true|none|When the connection was established|
+|dataUpdatedAt|string(date-time)|true|none|When data was last refreshed over this connection|
+|status|[V3ConnectionStatusEnum](#schemav3connectionstatusenum)|true|none|Whether an open banking connection is still usable or needs the user to reconnect|
+|error|string¦null|false|none|Why the connection is failing, absent while it is healthy|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3PaymentServiceUserLinkAttempt">V3PaymentServiceUserLinkAttempt</h2>
 <!-- backwards compatibility -->
@@ -7350,13 +7378,13 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|psuID|string|true|none|none|
-|connectorID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|true|none|none|
-|clientRedirectURL|string(url)|true|none|none|
-|error|string¦null|false|none|none|
+|id|string|true|none|Unique identifier of the link attempt|
+|psuID|string|true|none|Identifier of the payment service user the attempt belongs to|
+|connectorID|string|true|none|Identifier of the connector the user is linking to|
+|createdAt|string(date-time)|true|none|When the attempt was started|
+|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|true|none|Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error|
+|clientRedirectURL|string(url)|true|none|URL the user is sent back to once the provider's flow finishes|
+|error|string¦null|false|none|Why the attempt exited, absent when it completed|
 
 <h2 id="tocS_V3ContactDetails">V3ContactDetails</h2>
 <!-- backwards compatibility -->
@@ -7373,12 +7401,14 @@ Lifecycle of a conversion.
 
 ```
 
+How to reach a payment service user
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|email|string|false|none|none|
-|phoneNumber|string|false|none|none|
+|email|string|false|none|Email address of the user|
+|phoneNumber|string|false|none|Phone number of the user, in international format|
 
 <h2 id="tocS_V3Address">V3Address</h2>
 <!-- backwards compatibility -->
@@ -7399,16 +7429,18 @@ Lifecycle of a conversion.
 
 ```
 
+A postal address
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|streetNumber|string|false|none|none|
-|streetName|string|false|none|none|
-|city|string|false|none|none|
-|region|string|false|none|none|
-|postalCode|string|false|none|none|
-|country|string|false|none|none|
+|streetNumber|string|false|none|Street number of the address|
+|streetName|string|false|none|Street name of the address|
+|city|string|false|none|City of the address|
+|region|string|false|none|Region, state or province of the address|
+|postalCode|string|false|none|Postal or ZIP code of the address|
+|country|string|false|none|Country of the address, as an ISO 3166-1 alpha-2 code|
 
 <h2 id="tocS_V3GetPaymentServiceUserResponse">V3GetPaymentServiceUserResponse</h2>
 <!-- backwards compatibility -->
@@ -7451,7 +7483,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3PaymentServiceUser](#schemav3paymentserviceuser)|true|none|none|
+|data|[V3PaymentServiceUser](#schemav3paymentserviceuser)|true|none|An end user on whose behalf payments and open banking connections are made|
 
 <h2 id="tocS_V3ForwardPaymentServiceUserBankAccountRequest">V3ForwardPaymentServiceUserBankAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -7471,7 +7503,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|connectorID|string(byte)|true|none|none|
+|connectorID|string(byte)|true|none|Identifier of the connector to forward the bank account to|
 
 <h2 id="tocS_V3ForwardPaymentServiceUserBankAccountResponse">V3ForwardPaymentServiceUserBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -7493,7 +7525,7 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|object|true|none|none|
+|data|object|true|none|The task tracking the forwarding, which completes asynchronously|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.|
 
 <h2 id="tocS_V3ConnectionStatusEnum">V3ConnectionStatusEnum</h2>
@@ -7508,11 +7540,13 @@ Lifecycle of a conversion.
 
 ```
 
+Whether an open banking connection is still usable or needs the user to reconnect
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Whether an open banking connection is still usable or needs the user to reconnect|
 
 #### Enumerated Values
 
@@ -7533,11 +7567,13 @@ Lifecycle of a conversion.
 
 ```
 
+Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error|
 
 #### Enumerated Values
 
@@ -7588,8 +7624,8 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|attemptID|string|true|none|none|
-|link|string(url)|true|none|none|
+|attemptID|string|true|none|Identifier of the link attempt this URL belongs to|
+|link|string(url)|true|none|URL to send the user to so they can authorise the connection|
 
 <h2 id="tocS_V3PaymentServiceUserUpdateLinkRequest">V3PaymentServiceUserUpdateLinkRequest</h2>
 <!-- backwards compatibility -->
@@ -7611,7 +7647,7 @@ Lifecycle of a conversion.
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |applicationName|string|false|none|The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.|
-|clientRedirectURL|string(url)|true|none|none|
+|clientRedirectURL|string(url)|true|none|URL to send the user back to once the provider's flow finishes|
 
 <h2 id="tocS_V3PaymentServiceUserUpdateLinkResponse">V3PaymentServiceUserUpdateLinkResponse</h2>
 <!-- backwards compatibility -->
@@ -7632,8 +7668,8 @@ Lifecycle of a conversion.
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|attemptID|string|true|none|none|
-|link|string(url)|true|none|none|
+|attemptID|string|true|none|Identifier of the link attempt this URL belongs to|
+|link|string(url)|true|none|URL to send the user to so they can renew the connection|
 
 <h2 id="tocS_V3CreatePoolRequest">V3CreatePoolRequest</h2>
 <!-- backwards compatibility -->
@@ -7659,9 +7695,9 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|name|string|true|none|none|
-|query|object|false|none|The same query than in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.|
-|accountIDs|[string]|false|none|none|
+|name|string|true|none|Human-readable name for the pool|
+|query|object|false|none|The same query as in ListAccount. Allowed properties are id, reference, connector_id, type, default_asset, name, psu_id, open_banking_connection_id and metadata.|
+|accountIDs|[string]|false|none|Accounts to place in the pool. Omit when the pool is driven by a query|
 
 <h2 id="tocS_V3CreatePoolResponse">V3CreatePoolResponse</h2>
 <!-- backwards compatibility -->
@@ -7701,7 +7737,7 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|query|object|true|none|none|
+|query|object|true|none|Filter selecting the accounts a dynamic pool contains|
 
 <h2 id="tocS_V3PoolsCursorResponse">V3PoolsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -7738,12 +7774,12 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|cursor|object|true|none|none|
+|cursor|object|true|none|Paginated cursor wrapping the list of pools|
 |» pageSize|integer(int64)|true|none|none|
 |» hasMore|boolean|true|none|none|
 |» previous|string|false|none|none|
 |» next|string|false|none|none|
-|» data|[[V3Pool](#schemav3pool)]|true|none|none|
+|» data|[[V3Pool](#schemav3pool)]|true|none|[A named group of accounts whose balances are aggregated together]|
 
 <h2 id="tocS_V3GetPoolResponse">V3GetPoolResponse</h2>
 <!-- backwards compatibility -->
@@ -7772,7 +7808,7 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Pool](#schemav3pool)|true|none|none|
+|data|[V3Pool](#schemav3pool)|true|none|A named group of accounts whose balances are aggregated together|
 
 <h2 id="tocS_V3PoolBalancesResponse">V3PoolBalancesResponse</h2>
 <!-- backwards compatibility -->
@@ -7800,7 +7836,7 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3PoolBalances](#schemav3poolbalances)|true|none|none|
+|data|[V3PoolBalances](#schemav3poolbalances)|true|none|Aggregated balances across a pool's accounts|
 
 <h2 id="tocS_V3Pool">V3Pool</h2>
 <!-- backwards compatibility -->
@@ -7823,16 +7859,18 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+A named group of accounts whose balances are aggregated together
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|name|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3PoolTypeEnum](#schemav3pooltypeenum)|false|none|none|
-|query|object|false|none|none|
-|poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|none|
+|id|string|true|none|Unique identifier of the pool|
+|name|string|true|none|Human-readable name of the pool|
+|createdAt|string(date-time)|true|none|When the pool was created|
+|type|[V3PoolTypeEnum](#schemav3pooltypeenum)|false|none|Whether a pool holds a fixed account list or is driven by a query|
+|query|object|false|none|Filter selecting the accounts a dynamic pool contains|
+|poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|Accounts currently in the pool|
 
 <h2 id="tocS_V3PoolBalances">V3PoolBalances</h2>
 <!-- backwards compatibility -->
@@ -7854,11 +7892,13 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+Aggregated balances across a pool's accounts
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[[V3PoolBalance](#schemav3poolbalance)]|false|none|none|
+|*anonymous*|[[V3PoolBalance](#schemav3poolbalance)]|false|none|Aggregated balances across a pool's accounts|
 
 <h2 id="tocS_V3PoolBalance">V3PoolBalance</h2>
 <!-- backwards compatibility -->
@@ -7882,9 +7922,9 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|asset|string|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|relatedAccounts|[string]¦null|false|none|none|
+|asset|string|true|none|Asset the balance is denominated in|
+|amount|integer(bigint)|true|none|Total held across the pool for this asset, in the asset's smallest unit|
+|relatedAccounts|[string]¦null|false|none|Accounts contributing to this balance|
 
 <h2 id="tocS_V3PoolTypeEnum">V3PoolTypeEnum</h2>
 <!-- backwards compatibility -->
@@ -7898,11 +7938,13 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+Whether a pool holds a fixed account list or is driven by a query
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Whether a pool holds a fixed account list or is driven by a query|
 
 #### Enumerated Values
 
@@ -7937,7 +7979,7 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3Task](#schemav3task)|true|none|none|
+|data|[V3Task](#schemav3task)|true|none|An asynchronous unit of work, tracking an operation that completes in the background|
 
 <h2 id="tocS_V3Task">V3Task</h2>
 <!-- backwards compatibility -->
@@ -7959,17 +8001,19 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+An asynchronous unit of work, tracking an operation that completes in the background
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|id|string|true|none|none|
-|status|[V3TaskStatusEnum](#schemav3taskstatusenum)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|true|none|none|
-|connectorID|string(byte)|false|none|none|
-|createdObjectID|string|false|none|none|
-|error|string¦null|false|none|none|
+|id|string|true|none|Unique identifier of the task|
+|status|[V3TaskStatusEnum](#schemav3taskstatusenum)|true|none|Where a task stands, from processing through to succeeded or failed|
+|createdAt|string(date-time)|true|none|When the task was created|
+|updatedAt|string(date-time)|true|none|When the task was last updated|
+|connectorID|string(byte)|false|none|Identifier of the connector the task runs against|
+|createdObjectID|string|false|none|Identifier of the object the task created, once it has succeeded|
+|error|string¦null|false|none|Why the task failed, absent when it succeeded|
 
 <h2 id="tocS_V3TaskStatusEnum">V3TaskStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -7983,11 +8027,13 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+Where a task stands, from processing through to succeeded or failed
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Where a task stands, from processing through to succeeded or failed|
 
 #### Enumerated Values
 
@@ -8028,6 +8074,8 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+Arbitrary key/value pairs attached to the resource
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
@@ -8054,9 +8102,9 @@ Query and dynamic pools are available from Connectivity v3.1
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|errorCode|[V3ErrorsEnum](#schemav3errorsenum)|true|none|none|
-|errorMessage|string|true|none|none|
-|details|string|false|none|none|
+|errorCode|[V3ErrorsEnum](#schemav3errorsenum)|true|none|Machine-readable error code identifying the failure|
+|errorMessage|string|true|none|Human-readable description of the error|
+|details|string|false|none|Optional link carrying additional context about the error|
 
 <h2 id="tocS_V3ErrorsEnum">V3ErrorsEnum</h2>
 <!-- backwards compatibility -->
@@ -8070,11 +8118,13 @@ Query and dynamic pools are available from Connectivity v3.1
 
 ```
 
+Machine-readable error code identifying the failure
+
 ### Properties
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+|*anonymous*|string|false|none|Machine-readable error code identifying the failure|
 
 #### Enumerated Values
 

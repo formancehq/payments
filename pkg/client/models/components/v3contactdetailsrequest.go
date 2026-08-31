@@ -2,8 +2,11 @@
 
 package components
 
+// V3ContactDetailsRequest - How to reach the payment service user
 type V3ContactDetailsRequest struct {
-	Email       *string `json:"email,omitempty"`
+	// Email address of the user
+	Email *string `json:"email,omitempty"`
+	// Phone number of the user, in international format
 	PhoneNumber *string `json:"phoneNumber,omitempty"`
 }
 

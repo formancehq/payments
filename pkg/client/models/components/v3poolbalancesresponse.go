@@ -3,6 +3,7 @@
 package components
 
 type V3PoolBalancesResponse struct {
+	// Aggregated balances across a pool's accounts
 	Data []V3PoolBalance `json:"data"`
 }
 

@@ -7,7 +7,9 @@ import (
 )
 
 type AtlarConfig struct {
-	Name     string  `json:"name"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
 	Provider *string `default:"Atlar" json:"provider"`
 	// The base URL the client uses for making requests towards the Atlar API.
 	//
