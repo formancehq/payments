@@ -10,8 +10,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -215,6 +215,36 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: piWithOverrides})
 		Expect(err).To(BeNil())
 	})
+
+	DescribeTable("maps payment-method based payable routes",
+		func(ctx SpecContext, payableType, deliveryMethod, responseCurrency string) {
+			withRoute := pi()
+			withRoute.Metadata = map[string]string{
+				mappers.MetadataKeyType:               payableType,
+				mappers.MetadataKeyDeliveryMethod:     deliveryMethod,
+				mappers.MetadataKeyPayToPaymentMethod: "pm_42",
+				mappers.MetadataKeySendOn:             "2026-08-19",
+			}
+
+			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+				Expect(req.Type).To(Equal(payableType))
+				Expect(req.DeliveryMethod).To(Equal(deliveryMethod))
+				Expect(req.PayToPaymentMethod).To(Equal("pm_42"))
+				Expect(req.SendOn).NotTo(BeNil())
+				Expect(*req.SendOn).To(Equal("2026-08-19"))
+				Expect(req.LineItems).To(ConsistOf(client.PayableLineItem{
+					UnitPrice: "123.45", Amount: "123.45", Quantity: 1,
+					Description: "rent",
+				}))
+				return &client.Payable{ID: "pa_route", Type: payableType, Status: "pending", Amount: "123.45", CurrencyCode: responseCurrency, CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+			})
+
+			_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: withRoute})
+			Expect(err).To(BeNil())
+		},
+		Entry("PayPal direct without response currency", "paypal", "paypal_direct", ""),
+		Entry("international ACH", "international", "international_ach", "USD"),
+	)
 
 	It("forwards com.routable.spec/message to Routable.message when set", func(ctx SpecContext) {
 		piWithMsg := pi()

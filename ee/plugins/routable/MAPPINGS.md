@@ -93,7 +93,7 @@ Implemented in [`external_accounts.go`](external_accounts.go) (`companyToPSPAcco
 | `Metadata` | `object`, `type`, `status`, `country_code`, `is_vendor`, `is_customer`, `is_archived`, `external_id`, `business_name`, `display_name`, `registered_address.{line_1,line_2,city,state,postal_code,country}` | See [`metadata.go`](metadata.go) → `companyMetadata`. |
 | `Raw` | full JSON | Verbatim Routable response. |
 
-> **No N+1.** Unlike the legacy Generic-Connector adapter (`connector-routable`), we do **not** fan out to `GET /v1/companies/{id}/payment-methods` per row during list. Payment-method resolution happens on demand at payable-creation time only.
+> **No N+1.** Unlike the legacy Generic-Connector adapter (`connector-routable`), we do **not** fan out to `GET /v1/companies/{id}/payment-methods` per row during list. The caller supplies the selected payment-method ID when creating a route that requires one.
 
 ### 3.4 Payable → `PSPPayment` (PAYOUT)
 
@@ -105,13 +105,13 @@ Implemented in [`payments.go`](payments.go) (`payableToPSPPayment`).
 | `CreatedAt` | `created_at` | Forwarded as-is. |
 | `Type` | constant `PAYMENT_TYPE_PAYOUT` | All Routable payables are money-out flows. Overridden to `PAYMENT_TYPE_TRANSFER` only when the row was created via `CreateTransfer` (see [`transfers.go`](transfers.go)). |
 | `Amount` | `amount` × `precision(currency_code)` | Decimal → minor units. Unsupported currencies cause the row to be skipped with a log line. |
-| `Asset` | `currency_code` | `USD/2`, `EUR/2`, `KWD/3`, … |
+| `Asset` | `currency_code` | `USD/2`, `EUR/2`, `KWD/3`, … Routable defines an omitted/null value as USD, and the mapper applies that default. |
 | `Scheme` | `delivery_method` | Mapped via [`scheme.go`](scheme.go) → `deliveryMethodToScheme` (`ach*` → `PAYMENT_SCHEME_ACH`, everything else → `PAYMENT_SCHEME_OTHER`). |
 | `Status` | `status` | Mapped via [`status.go`](status.go) → `payableStatus`. See [§4](#4-status-mapping). |
 | `SourceAccountReference` | `withdraw_from_account.id` | Routable settings account ID (matches a `PSPAccount` of internal type). |
 | `DestinationAccountReference` | `pay_to_company.id` | Routable company ID (matches a `PSPAccount` of external type). |
-| `Metadata` | `type`, `delivery_method`, `status`, `external_id`, `memo`, `reference`, plus the correlation aliases `payment_initiation_reference` (= `external_id`) and `payable_id` (= the Routable UUID) | See [`metadata.go`](metadata.go) → `payableMetadata`. The aliases make the Transfer ↔ Payment link discoverable without grepping for Routable-specific keys; see [§5.5](#55-correlating-a-transfer-paymentinitiation-with-the-synced-payment). |
-| `Raw` | full JSON | Verbatim Routable response. |
+| `Metadata` | `type`, `delivery_method`, `status`, `external_id`, `memo`, `reference`, `pay_to_payment_method`, `failure_detail`, plus the correlation aliases `payment_initiation_reference` (= `external_id`) and `payable_id` (= the Routable UUID) | `failure_detail` is retained as JSON for failed payments. See [`metadata.go`](metadata.go) → `payableMetadata`. |
+| `Raw` | full JSON | Verbatim Routable response, including unmodeled and provider-specific failure fields. |
 
 ### 3.5 Receivable → `PSPPayment` (PAYIN)
 
@@ -175,13 +175,14 @@ All keys are defined as constants in [`mappers/metadata.go`](mappers/metadata.go
 
 | Metadata key | Const | Required | Default | Maps to Routable field | Purpose |
 |---|---|---|---|---|---|
-| `com.routable.spec/type` | `MetadataKeyType` | no | `ach` | `type` | Payable rail (`ach`, `wire`, `check`, `international`, `external`, `vendor_choice`). |
-| `com.routable.spec/delivery_method` | `MetadataKeyDeliveryMethod` | no | `ach_standard` | `delivery_method` | Specific delivery option (`ach_standard`, `ach_same_day`, `wire`, `check`, …). Must be compatible with `type`. |
+| `com.routable.spec/type` | `MetadataKeyType` | no | `ach` | `type` | Payable rail (`ach`, `wire`, `check`, `international`, `paypal`, `external`, `vendor_choice`). |
+| `com.routable.spec/delivery_method` | `MetadataKeyDeliveryMethod` | no | `ach_standard` | `delivery_method` | Specific delivery option (`ach_standard`, `international_ach`, `paypal_direct`, …). Must be compatible with `type`. |
 | `com.routable.spec/acting_team_member` | `MetadataKeyActingTeamMember` | conditional¹ | config `actingTeamMember` | `acting_team_member` | Routable team member ID initiating the payable. |
 | `com.routable.spec/external_id` | `MetadataKeyExternalID` | no | `""` | `external_id` | Caller-supplied external reference (idempotent lookup key on Routable's side). |
 | `com.routable.spec/line_item_description` | `MetadataKeyLineDescription` | no | `PSPPaymentInitiation.Description`, then `"Payment <reference>"` | `line_items[0].description` | Description on the auto-generated single-line item. Required by Routable v1; we always emit a non-empty value. |
 | `com.routable.spec/message` | `MetadataKeyMessage` | no | (omitted) | `message` | Vendor-facing email body sent to the payee's contacts when the payable is processed. A limited subset of HTML is permitted (see [Routable docs](https://developers.routable.com/docs/html-messages)). Omitted from the request body when empty. |
 | `com.routable.spec/send_on` | `MetadataKeySendOn` | no | unset → `send_on: null`, which Routable **does not execute** (see [§5.2](#52-static-body-fields-always-present)) | `send_on` | `YYYY-MM-DD` date on which **Routable** releases the payable. Validated locally; a malformed date fails as `ErrInvalidRequest` before any HTTP call. **This is not `scheduledAt`** — the engine's `scheduledAt` is honoured by sleeping *before* the plugin is called, so the two stack if you set both. |
+| `com.routable.spec/pay_to_payment_method` | `MetadataKeyPayToPaymentMethod` | conditional | none | `pay_to_payment_method` | Routable payment-method UUID selected by the caller. Required for PayPal; international routes may use it to select an existing vendor payment method. |
 
 > `com.routable.spec/memo` is read-only metadata on synced payables/receivables (populated from the Routable response). Routable's v1 `POST /v1/payables` rejects `memo` as an unknown field, so we do not forward this key on create. Use `com.routable.spec/line_item_description` for the message that ends up on the payable.
 
@@ -226,6 +227,8 @@ Routable's `POST /v1/payables` answers in two distinct shapes; the plugin branch
 | `201 Created` (sync) with non-terminal status (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = `Payment.Reference` | Engine schedules a polling round; the first poll returns the Payment, links it to the PI, and ends. The initial sync mapping is discarded — its `Reference` carries forward as the polling token. |
 
 Once a Payment is linked, subsequent status transitions (PENDING → PROCESSING → SUCCEEDED, etc.) are picked up by the `FETCH_PAYMENTS` cursor (§3.6) rather than by re-polling. `PollPayoutStatus` returns an empty response only when `GET /v1/payables/{id}` returns 404 — Routable's eventual-consistency window after a 202; see [`client.go`](client/client.go) (`ErrPayableNotFound`).
+
+Provider error envelopes returned while initiating a payable are retained in the failed PaymentInitiation adjustment error as `raw_response=<JSON>`, alongside the parsed field errors and Routable `request_id`. This makes the original rejection discoverable without relying on transient logs.
 
 ### 5.5 Correlating a Transfer (PaymentInitiation) with the synced Payment
 

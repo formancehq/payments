@@ -7,8 +7,8 @@ import (
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // initiatePayable is shared by createPayout and createTransfer. It
@@ -64,6 +64,7 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		Type:                mappers.FieldOr(pi.Metadata, mappers.MetadataKeyType, mappers.DefaultPayableType),
 		DeliveryMethod:      mappers.FieldOr(pi.Metadata, mappers.MetadataKeyDeliveryMethod, mappers.DefaultDeliveryMethod),
 		PayToCompany:        pi.DestinationAccount.Reference,
+		PayToPaymentMethod:  models.ExtractNamespacedMetadata(pi.Metadata, mappers.MetadataKeyPayToPaymentMethod),
 		WithdrawFromAccount: pi.SourceAccount.Reference,
 		Amount:              amount,
 		CurrencyCode:        currencyCode,
