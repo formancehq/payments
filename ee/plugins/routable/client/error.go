@@ -12,14 +12,9 @@ import (
 // poll workflow uses errors.Is to keep polling instead of failing.
 var ErrPayableNotFound = errors.New("payable not found")
 
-// hasContent reports whether the envelope carries anything worth surfacing
-// in a wrapped error message. An "empty" envelope is the zero value, and
-// appending it to a transport error just produces a misleading suffix.
+// hasContent reports whether provider feedback is available. Typed fields
+// cover known envelopes; Raw retains unknown or schema-drifted JSON.
 func (e ErrorResponse) hasContent() bool {
-	raw := bytes.TrimSpace(e.Raw)
-	if len(raw) > 0 && !bytes.Equal(raw, []byte("null")) {
-		return true
-	}
 	if e.Title != "" || e.Message != "" || e.Code != "" || e.RequestID != "" {
 		return true
 	}
@@ -28,7 +23,8 @@ func (e ErrorResponse) hasContent() bool {
 			return true
 		}
 	}
-	return false
+	raw := bytes.TrimSpace(e.Raw)
+	return len(raw) > 0 && !bytes.Equal(raw, []byte("null"))
 }
 
 // Error renders the Routable error response into a single line that keeps

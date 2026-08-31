@@ -217,7 +217,7 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 	})
 
 	DescribeTable("maps payment-method based payable routes",
-		func(ctx SpecContext, payableType, deliveryMethod string) {
+		func(ctx SpecContext, payableType, deliveryMethod, responseCurrency string) {
 			withRoute := pi()
 			withRoute.Metadata = map[string]string{
 				mappers.MetadataKeyType:               payableType,
@@ -236,14 +236,14 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 					UnitPrice: "123.45", Amount: "123.45", Quantity: 1,
 					Description: "rent",
 				}))
-				return &client.Payable{ID: "pa_route", Status: "pending", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+				return &client.Payable{ID: "pa_route", Type: payableType, Status: "pending", Amount: "123.45", CurrencyCode: responseCurrency, CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
 			})
 
 			_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: withRoute})
 			Expect(err).To(BeNil())
 		},
-		Entry("PayPal direct", "paypal", "paypal_direct"),
-		Entry("international ACH", "international", "international_ach"),
+		Entry("PayPal direct without response currency", "paypal", "paypal_direct", ""),
+		Entry("international ACH", "international", "international_ach", "USD"),
 	)
 
 	It("forwards com.routable.spec/message to Routable.message when set", func(ctx SpecContext) {

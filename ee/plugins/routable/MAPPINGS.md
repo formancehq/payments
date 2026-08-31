@@ -105,7 +105,7 @@ Implemented in [`payments.go`](payments.go) (`payableToPSPPayment`).
 | `CreatedAt` | `created_at` | Forwarded as-is. |
 | `Type` | constant `PAYMENT_TYPE_PAYOUT` | All Routable payables are money-out flows. Overridden to `PAYMENT_TYPE_TRANSFER` only when the row was created via `CreateTransfer` (see [`transfers.go`](transfers.go)). |
 | `Amount` | `amount` × `precision(currency_code)` | Decimal → minor units. Unsupported currencies cause the row to be skipped with a log line. |
-| `Asset` | `currency_code` | `USD/2`, `EUR/2`, `KWD/3`, … |
+| `Asset` | `currency_code` | `USD/2`, `EUR/2`, `KWD/3`, … Routable defines an omitted/null value as USD, and the mapper applies that default. |
 | `Scheme` | `delivery_method` | Mapped via [`scheme.go`](scheme.go) → `deliveryMethodToScheme` (`ach*` → `PAYMENT_SCHEME_ACH`, everything else → `PAYMENT_SCHEME_OTHER`). |
 | `Status` | `status` | Mapped via [`status.go`](status.go) → `payableStatus`. See [§4](#4-status-mapping). |
 | `SourceAccountReference` | `withdraw_from_account.id` | Routable settings account ID (matches a `PSPAccount` of internal type). |

@@ -262,6 +262,28 @@ func TestPayableToPSPPayment_PreservesFailureEvidence(t *testing.T) {
 	}
 }
 
+func TestPayableToPSPPayment_PayPalWithoutCurrencyDefaultsToUSD(t *testing.T) {
+	const raw = `{"object":"Payable","id":"pa_paypal","type":"paypal","delivery_method":"paypal_direct","status":"ready_to_send","amount":"594.40","created_at":"2026-08-19T00:00:00Z"}`
+	var payable client.Payable
+	if err := json.Unmarshal([]byte(raw), &payable); err != nil {
+		t.Fatalf("unmarshal payable: %v", err)
+	}
+
+	got, err := PayableToPSPPayment(payable)
+	if err != nil {
+		t.Fatalf("map payable: %v", err)
+	}
+	if got.Asset != "USD/2" {
+		t.Errorf("Asset = %q, want USD/2", got.Asset)
+	}
+	if got.Amount == nil || got.Amount.Cmp(big.NewInt(59440)) != 0 {
+		t.Errorf("Amount = %v, want 59440", got.Amount)
+	}
+	if string(got.Raw) != raw {
+		t.Errorf("Raw response changed:\n got: %s\nwant: %s", got.Raw, raw)
+	}
+}
+
 // Invariant: an unsupported currency on a payable surfaces as an error
 // (skip-and-log path in the parent fetcher), never a silent wrong-
 // precision Payment.
