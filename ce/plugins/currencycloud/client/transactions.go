@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/pkg/domain/metrics"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -48,6 +48,13 @@ func (c *client) GetTransactions(ctx context.Context, page int, pageSize int, up
 	q.Add("page", fmt.Sprint(page))
 	q.Add("per_page", fmt.Sprint(pageSize))
 	if !updatedAtFrom.IsZero() {
+		// Day-granular server filter: it re-pulls the whole watermark day each
+		// cycle (an over-fetch), but this is correctness-safe — the caller applies
+		// an inclusive watermark + per-ID dedup (EN-1095 M-CON2), so same-second
+		// rows are never lost regardless of server granularity. Tightening this to
+		// a second/datetime filter requires confirming CurrencyCloud's
+		// updated_at_from accepts an ISO8601 datetime and its inclusivity; left as
+		// a follow-up rather than risk an unverified format on a live connector.
 		q.Add("updated_at_from", updatedAtFrom.Format(time.DateOnly))
 	}
 	q.Add("order", "updated_at")
