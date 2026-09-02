@@ -11,12 +11,13 @@ import (
 type V3ErrorsEnum string
 
 const (
-	V3ErrorsEnumInternal             V3ErrorsEnum = "INTERNAL"
-	V3ErrorsEnumValidation           V3ErrorsEnum = "VALIDATION"
-	V3ErrorsEnumInvalidID            V3ErrorsEnum = "INVALID_ID"
-	V3ErrorsEnumMissingOrInvalidBody V3ErrorsEnum = "MISSING_OR_INVALID_BODY"
-	V3ErrorsEnumConflict             V3ErrorsEnum = "CONFLICT"
-	V3ErrorsEnumNotFound             V3ErrorsEnum = "NOT_FOUND"
+	V3ErrorsEnumInternal                        V3ErrorsEnum = "INTERNAL"
+	V3ErrorsEnumValidation                      V3ErrorsEnum = "VALIDATION"
+	V3ErrorsEnumInvalidID                       V3ErrorsEnum = "INVALID_ID"
+	V3ErrorsEnumMissingOrInvalidBody            V3ErrorsEnum = "MISSING_OR_INVALID_BODY"
+	V3ErrorsEnumConflict                        V3ErrorsEnum = "CONFLICT"
+	V3ErrorsEnumConnectorCapabilityNotSupported V3ErrorsEnum = "CONNECTOR_CAPABILITY_NOT_SUPPORTED"
+	V3ErrorsEnumNotFound                        V3ErrorsEnum = "NOT_FOUND"
 )
 
 func (e V3ErrorsEnum) ToPointer() *V3ErrorsEnum {
@@ -37,6 +38,8 @@ func (e *V3ErrorsEnum) UnmarshalJSON(data []byte) error {
 	case "MISSING_OR_INVALID_BODY":
 		fallthrough
 	case "CONFLICT":
+		fallthrough
+	case "CONNECTOR_CAPABILITY_NOT_SUPPORTED":
 		fallthrough
 	case "NOT_FOUND":
 		*e = V3ErrorsEnum(v)
