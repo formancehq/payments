@@ -8135,6 +8135,7 @@ Machine-readable error code identifying the failure
 |*anonymous*|INVALID_ID|
 |*anonymous*|MISSING_OR_INVALID_BODY|
 |*anonymous*|CONFLICT|
+|*anonymous*|CONNECTOR_CAPABILITY_NOT_SUPPORTED|
 |*anonymous*|NOT_FOUND|
 
 <h2 id="tocS_V3ConnectorConfig">V3ConnectorConfig</h2>

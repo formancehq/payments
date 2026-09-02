@@ -11,9 +11,13 @@ import (
 type PaymentsErrorsEnum string
 
 const (
-	PaymentsErrorsEnumInternal   PaymentsErrorsEnum = "INTERNAL"
-	PaymentsErrorsEnumValidation PaymentsErrorsEnum = "VALIDATION"
-	PaymentsErrorsEnumNotFound   PaymentsErrorsEnum = "NOT_FOUND"
+	PaymentsErrorsEnumInternal                        PaymentsErrorsEnum = "INTERNAL"
+	PaymentsErrorsEnumValidation                      PaymentsErrorsEnum = "VALIDATION"
+	PaymentsErrorsEnumInvalidID                       PaymentsErrorsEnum = "INVALID_ID"
+	PaymentsErrorsEnumMissingOrInvalidBody            PaymentsErrorsEnum = "MISSING_OR_INVALID_BODY"
+	PaymentsErrorsEnumConflict                        PaymentsErrorsEnum = "CONFLICT"
+	PaymentsErrorsEnumConnectorCapabilityNotSupported PaymentsErrorsEnum = "CONNECTOR_CAPABILITY_NOT_SUPPORTED"
+	PaymentsErrorsEnumNotFound                        PaymentsErrorsEnum = "NOT_FOUND"
 )
 
 func (e PaymentsErrorsEnum) ToPointer() *PaymentsErrorsEnum {
@@ -28,6 +32,14 @@ func (e *PaymentsErrorsEnum) UnmarshalJSON(data []byte) error {
 	case "INTERNAL":
 		fallthrough
 	case "VALIDATION":
+		fallthrough
+	case "INVALID_ID":
+		fallthrough
+	case "MISSING_OR_INVALID_BODY":
+		fallthrough
+	case "CONFLICT":
+		fallthrough
+	case "CONNECTOR_CAPABILITY_NOT_SUPPORTED":
 		fallthrough
 	case "NOT_FOUND":
 		*e = PaymentsErrorsEnum(v)
