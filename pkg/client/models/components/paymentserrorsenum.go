@@ -13,6 +13,7 @@ type PaymentsErrorsEnum string
 const (
 	PaymentsErrorsEnumInternal   PaymentsErrorsEnum = "INTERNAL"
 	PaymentsErrorsEnumValidation PaymentsErrorsEnum = "VALIDATION"
+	PaymentsErrorsEnumConflict   PaymentsErrorsEnum = "CONFLICT"
 	PaymentsErrorsEnumNotFound   PaymentsErrorsEnum = "NOT_FOUND"
 )
 
@@ -28,6 +29,8 @@ func (e *PaymentsErrorsEnum) UnmarshalJSON(data []byte) error {
 	case "INTERNAL":
 		fallthrough
 	case "VALIDATION":
+		fallthrough
+	case "CONFLICT":
 		fallthrough
 	case "NOT_FOUND":
 		*e = PaymentsErrorsEnum(v)

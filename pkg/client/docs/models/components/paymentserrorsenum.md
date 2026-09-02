@@ -9,4 +9,5 @@ Machine-readable error code identifying the failure
 | ------------------------------ | ------------------------------ |
 | `PaymentsErrorsEnumInternal`   | INTERNAL                       |
 | `PaymentsErrorsEnumValidation` | VALIDATION                     |
+| `PaymentsErrorsEnumConflict`   | CONFLICT                       |
 | `PaymentsErrorsEnumNotFound`   | NOT_FOUND                      |

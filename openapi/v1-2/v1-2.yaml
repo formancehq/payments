@@ -2940,6 +2940,7 @@ components:
       enum:
         - INTERNAL
         - VALIDATION
+        - CONFLICT
         - NOT_FOUND
       example: VALIDATION
     ServerInfo:
