@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
           dissociate: true
 
-      - uses: formancehq/ci/actions/setup-release@main
+      - uses: formancehq/ci/actions/setup-release@v1
         with:
           token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
           nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
