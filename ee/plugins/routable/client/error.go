@@ -12,6 +12,12 @@ import (
 // poll workflow uses errors.Is to keep polling instead of failing.
 var ErrPayableNotFound = errors.New("payable not found")
 
+// ErrValidation marks a request rejected by client-side validation before
+// any HTTP call was made. Callers use errors.Is to distinguish it from
+// upstream/transport failures so it can be wrapped as a non-retryable
+// error rather than retried forever.
+var ErrValidation = errors.New("validation error")
+
 // hasContent reports whether provider feedback is available. Typed fields
 // cover known envelopes; Raw retains unknown or schema-drifted JSON.
 func (e ErrorResponse) hasContent() bool {
