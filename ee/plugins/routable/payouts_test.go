@@ -152,6 +152,21 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		}
 	})
 
+	// Regression: a missing acting_team_member is rejected by the client's
+	// own pre-flight validation (client.ErrValidation), not by initiatePayable
+	// itself. Without translating that into models.ErrInvalidRequest here,
+	// Temporal has nothing to classify as non-retriable and retries the
+	// payout forever, since PluginCreateTransfer/PluginCreatePayout run
+	// under an infinite retry policy.
+	It("wraps ErrInvalidRequest when the client rejects a missing acting_team_member", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
+			nil, 0, client.ErrValidation,
+		)
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
+		Expect(err).To(HaveOccurred())
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
+	})
+
 	It("returns the Payment immediately when the response is terminal", func(ctx SpecContext) {
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
 			&client.Payable{ID: "pa_2", Status: "completed", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},

@@ -216,19 +216,19 @@ func (c *client) CreatePayable(ctx context.Context, req CreatePayableRequest) (*
 func validateCreatePayable(req CreatePayableRequest) error {
 	switch {
 	case req.Type == "":
-		return errors.New("create payable: type is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: type is required"), ErrValidation)
 	case req.DeliveryMethod == "":
-		return errors.New("create payable: delivery_method is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: delivery_method is required"), ErrValidation)
 	case req.PayToCompany == "":
-		return errors.New("create payable: pay_to_company is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: pay_to_company is required"), ErrValidation)
 	case req.WithdrawFromAccount == "":
-		return errors.New("create payable: withdraw_from_account is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: withdraw_from_account is required"), ErrValidation)
 	case req.Amount == "":
-		return errors.New("create payable: amount is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: amount is required"), ErrValidation)
 	case len(req.LineItems) == 0:
-		return errors.New("create payable: at least one line item is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: at least one line item is required"), ErrValidation)
 	case req.ActingTeamMember == "":
-		return errors.New("create payable: acting_team_member is required")
+		return errorsutils.NewWrappedError(errors.New("create payable: acting_team_member is required"), ErrValidation)
 	}
 	return nil
 }

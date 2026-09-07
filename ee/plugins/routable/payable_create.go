@@ -88,6 +88,13 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		req.Type, req.DeliveryMethod, req.Amount, req.CurrencyCode, req.Reference)
 	payable, status, err := p.client.CreatePayable(ctx, req)
 	if err != nil {
+		if errors.Is(err, client.ErrValidation) {
+			// Rejected by client-side validation before any HTTP call was
+			// made (e.g. missing acting_team_member): the request can
+			// never succeed as-is, so mark it non-retriable like the
+			// other validation errors in this function.
+			return nil, status, errorsutils.NewWrappedError(err, models.ErrInvalidRequest)
+		}
 		return nil, status, err
 	}
 	// A 2xx with no ID is a Routable contract violation; surface it
