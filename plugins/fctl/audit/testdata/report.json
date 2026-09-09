@@ -1,0 +1,3568 @@
+{
+  "specDocument": "openapi.yaml",
+  "baselineRevision": "693c58e27865f83332e6c3199d61fed81b742f41",
+  "totals": {
+    "specOperations": 109,
+    "uniqueOperationIds": 109,
+    "v1Operations": 45,
+    "v3Operations": 64,
+    "deprecatedOperations": 5,
+    "baselineCommands": 45,
+    "baselineMapped": 44,
+    "baselineExcluded": 1,
+    "v3WithBaseline": 44,
+    "v3WithoutBaseline": 20,
+    "v3Blocked": 19,
+    "v3Admissible": 45
+  },
+  "v3": [
+    {
+      "operationId": "v3AddAccountToPool",
+      "method": "POST",
+      "path": "/v3/pools/{poolID}/accounts/{accountID}",
+      "tag": "payments.v3",
+      "sdkMethod": "AddAccountToPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "accountID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools add-account \u003cpoolID\u003e \u003caccountID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3AddBankAccountToPaymentServiceUser",
+      "method": "POST",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}",
+      "tag": "payments.v3",
+      "sdkMethod": "AddBankAccountToPaymentServiceUser",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "bankAccountID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3ApprovePaymentInitiation",
+      "method": "POST",
+      "path": "/v3/payment-initiations/{paymentInitiationID}/approve",
+      "tag": "payments.v3",
+      "sdkMethod": "ApprovePaymentInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3ApprovePaymentInitiationResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation approve \u003ctransferInitiationID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3CreateAccount",
+      "method": "POST",
+      "path": "/v3/accounts",
+      "tag": "payments.v3",
+      "sdkMethod": "CreateAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "V3CreateAccountRequest",
+      "successCode": "201",
+      "successBody": "V3CreateAccountResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments accounts create \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3CreateBankAccount",
+      "method": "POST",
+      "path": "/v3/bank-accounts",
+      "tag": "payments.v3",
+      "sdkMethod": "CreateBankAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "V3CreateBankAccountRequest",
+      "successCode": "201",
+      "successBody": "V3CreateBankAccountResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments bank_accounts create \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3CreateLinkForPaymentServiceUser",
+      "method": "POST",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/create-link",
+      "tag": "payments.v3",
+      "sdkMethod": "CreateLinkForPaymentServiceUser",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3PaymentServiceUserCreateLinkRequest",
+      "successCode": "201",
+      "successBody": "V3PaymentServiceUserCreateLinkResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": true,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3CreatePayment",
+      "method": "POST",
+      "path": "/v3/payments",
+      "tag": "payments.v3",
+      "sdkMethod": "CreatePayment",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "V3CreatePaymentRequest",
+      "successCode": "201",
+      "successBody": "V3CreatePaymentResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments payments create \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3CreatePaymentServiceUser",
+      "method": "POST",
+      "path": "/v3/payment-service-users",
+      "tag": "payments.v3",
+      "sdkMethod": "CreatePaymentServiceUser",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "V3CreatePaymentServiceUserRequest",
+      "successCode": "201",
+      "successBody": "V3CreatePaymentServiceUserResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3CreatePool",
+      "method": "POST",
+      "path": "/v3/pools",
+      "tag": "payments.v3",
+      "sdkMethod": "CreatePool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "V3CreatePoolRequest",
+      "successCode": "201",
+      "successBody": "V3CreatePoolResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools create \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3DeletePaymentInitiation",
+      "method": "DELETE",
+      "path": "/v3/payment-initiations/{paymentInitiationID}",
+      "tag": "payments.v3",
+      "sdkMethod": "DeletePaymentInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation delete \u003ctransferID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3DeletePaymentServiceUser",
+      "method": "DELETE",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}",
+      "tag": "payments.v3",
+      "sdkMethod": "DeletePaymentServiceUser",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3PaymentServiceUserDeleteResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3DeletePaymentServiceUserConnectionFromConnectorID",
+      "method": "DELETE",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}",
+      "tag": "payments.v3",
+      "sdkMethod": "DeletePaymentServiceUserConnectionFromConnectorID",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectionID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3PaymentServiceUserDeleteConnectionResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3DeletePaymentServiceUserConnector",
+      "method": "DELETE",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}",
+      "tag": "payments.v3",
+      "sdkMethod": "DeletePaymentServiceUserConnector",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3PaymentServiceUserDeleteConnectorResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3DeletePool",
+      "method": "DELETE",
+      "path": "/v3/pools/{poolID}",
+      "tag": "payments.v3",
+      "sdkMethod": "DeletePool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools delete \u003cpoolID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3ForwardBankAccount",
+      "method": "POST",
+      "path": "/v3/bank-accounts/{bankAccountID}/forward",
+      "tag": "payments.v3",
+      "sdkMethod": "ForwardBankAccount",
+      "deprecated": false,
+      "hasSecurity": false,
+      "scopes": null,
+      "parameters": [
+        {
+          "name": "bankAccountID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3ForwardBankAccountRequest",
+      "successCode": "202",
+      "successBody": "V3ForwardBankAccountResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments bank_accounts forward \u003cbankAccountID\u003e \u003cconnectorID\u003e"
+      ],
+      "blockers": [
+        "B1-undeclared-scopes"
+      ]
+    },
+    {
+      "operationId": "v3ForwardPaymentServiceUserBankAccount",
+      "method": "POST",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward",
+      "tag": "payments.v3",
+      "sdkMethod": "ForwardPaymentServiceUserBankAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "bankAccountID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3ForwardPaymentServiceUserBankAccountRequest",
+      "successCode": "202",
+      "successBody": "V3ForwardPaymentServiceUserBankAccountResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3ForwardPaymentServiceUserToProvider",
+      "method": "POST",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward",
+      "tag": "payments.v3",
+      "sdkMethod": "ForwardPaymentServiceUserToProvider",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetAccount",
+      "method": "GET",
+      "path": "/v3/accounts/{accountID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "accountID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetAccountResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments accounts get \u003caccountID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetAccountBalances",
+      "method": "GET",
+      "path": "/v3/accounts/{accountID}/balances",
+      "tag": "payments.v3",
+      "sdkMethod": "GetAccountBalances",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "accountID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "asset",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "fromTimestamp",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "toTimestamp",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3BalancesCursorResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments accounts balances \u003caccountID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetBankAccount",
+      "method": "GET",
+      "path": "/v3/bank-accounts/{bankAccountID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetBankAccount",
+      "deprecated": false,
+      "hasSecurity": false,
+      "scopes": null,
+      "parameters": [
+        {
+          "name": "bankAccountID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetBankAccountResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments bank_accounts get \u003cbankAccountID\u003e"
+      ],
+      "blockers": [
+        "B1-undeclared-scopes"
+      ]
+    },
+    {
+      "operationId": "v3GetConnectorCapabilities",
+      "method": "GET",
+      "path": "/v3/connectors/{connectorID}/capabilities",
+      "tag": "payments.v3",
+      "sdkMethod": "GetConnectorCapabilities",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3ConnectorCapabilityResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetConnectorConfig",
+      "method": "GET",
+      "path": "/v3/connectors/{connectorID}/config",
+      "tag": "payments.v3",
+      "sdkMethod": "GetConnectorConfig",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetConnectorConfigResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "response",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors get-config"
+      ],
+      "blockers": [
+        "B3-unredacted-connector-config"
+      ]
+    },
+    {
+      "operationId": "v3GetConnectorSchedule",
+      "method": "GET",
+      "path": "/v3/connectors/{connectorID}/schedules/{scheduleID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetConnectorSchedule",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "scheduleID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3ConnectorScheduleResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors schedules get \u003cconnectorID\u003e \u003cscheduleID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetConversion",
+      "method": "GET",
+      "path": "/v3/conversions/{conversionID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetConversion",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "conversionID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetConversionResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments conversions get \u003cconversionID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetOrder",
+      "method": "GET",
+      "path": "/v3/orders/{orderID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetOrder",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "orderID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetOrderResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments orders get \u003corderID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPayment",
+      "method": "GET",
+      "path": "/v3/payments/{paymentID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPayment",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetPaymentResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments payments get \u003cpaymentID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPaymentInitiation",
+      "method": "GET",
+      "path": "/v3/payment-initiations/{paymentInitiationID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPaymentInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetPaymentInitiationResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation get \u003ctransferID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPaymentServiceUser",
+      "method": "GET",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPaymentServiceUser",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetPaymentServiceUserResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPaymentServiceUserLinkAttemptFromConnectorID",
+      "method": "GET",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts/{attemptID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPaymentServiceUserLinkAttemptFromConnectorID",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "attemptID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3PaymentServiceUserLinkAttempt",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPool",
+      "method": "GET",
+      "path": "/v3/pools/{poolID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetPoolResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools get \u003cpoolID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPoolBalances",
+      "method": "GET",
+      "path": "/v3/pools/{poolID}/balances",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPoolBalances",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "at",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3PoolBalancesResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools balances \u003cpoolID\u003e \u003cat\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetPoolBalancesLatest",
+      "method": "GET",
+      "path": "/v3/pools/{poolID}/balances/latest",
+      "tag": "payments.v3",
+      "sdkMethod": "GetPoolBalancesLatest",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3PoolBalancesResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools latest-balances \u003cpoolID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3GetTask",
+      "method": "GET",
+      "path": "/v3/tasks/{taskID}",
+      "tag": "payments.v3",
+      "sdkMethod": "GetTask",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "taskID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3GetTaskResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments tasks get \u003ctaskID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3InitiatePayment",
+      "method": "POST",
+      "path": "/v3/payment-initiations",
+      "tag": "payments.v3",
+      "sdkMethod": "InitiatePayment",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "noValidation",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3InitiatePaymentRequest",
+      "successCode": "202",
+      "successBody": "V3InitiatePaymentResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation create \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3InstallConnector",
+      "method": "POST",
+      "path": "/v3/connectors/install/{connector}",
+      "tag": "payments.v3",
+      "sdkMethod": "InstallConnector",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3InstallConnectorRequest",
+      "successCode": "202",
+      "successBody": "V3InstallConnectorResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "request",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors install \u003cconnector\u003e \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3ListAccounts",
+      "method": "GET",
+      "path": "/v3/accounts",
+      "tag": "payments.v3",
+      "sdkMethod": "ListAccounts",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3AccountsCursorResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments accounts list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListBankAccounts",
+      "method": "GET",
+      "path": "/v3/bank-accounts",
+      "tag": "payments.v3",
+      "sdkMethod": "ListBankAccounts",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3BankAccountsCursorResponse",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments bank_accounts list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListConnectorCapabilities",
+      "method": "GET",
+      "path": "/v3/connectors/capabilities",
+      "tag": "payments.v3",
+      "sdkMethod": "ListConnectorCapabilities",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "If-None-Match",
+          "in": "header",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3ConnectorCapabilitiesResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3ListConnectorConfigs",
+      "method": "GET",
+      "path": "/v3/connectors/configs",
+      "tag": "payments.v3",
+      "sdkMethod": "ListConnectorConfigs",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": null,
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3ConnectorConfigsResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors install \u003cconnector\u003e \u003cfile\u003e|-",
+        "payments connectors list-available",
+        "payments connectors update-config \u003cconnector\u003e \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3ListConnectorScheduleInstances",
+      "method": "GET",
+      "path": "/v3/connectors/{connectorID}/schedules/{scheduleID}/instances",
+      "tag": "payments.v3",
+      "sdkMethod": "ListConnectorScheduleInstances",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "scheduleID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "V3ConnectorScheduleInstancesCursorResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors schedules instances list \u003cconnectorID\u003e \u003cscheduleID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3ListConnectorSchedules",
+      "method": "GET",
+      "path": "/v3/connectors/{connectorID}/schedules",
+      "tag": "payments.v3",
+      "sdkMethod": "ListConnectorSchedules",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3ConnectorSchedulesCursorResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments connectors schedules list \u003cconnectorID\u003e"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListConnectors",
+      "method": "GET",
+      "path": "/v3/connectors",
+      "tag": "payments.v3",
+      "sdkMethod": "ListConnectors",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3ConnectorsCursorResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments connectors get-config",
+        "payments connectors list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListConversions",
+      "method": "GET",
+      "path": "/v3/conversions",
+      "tag": "payments.v3",
+      "sdkMethod": "ListConversions",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3ConversionsCursorResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments conversions list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListOrders",
+      "method": "GET",
+      "path": "/v3/orders",
+      "tag": "payments.v3",
+      "sdkMethod": "ListOrders",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3OrdersCursorResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments orders list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentInitiationAdjustments",
+      "method": "GET",
+      "path": "/v3/payment-initiations/{paymentInitiationID}/adjustments",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentInitiationAdjustments",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentInitiationAdjustmentsCursorResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": null,
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentInitiationRelatedPayments",
+      "method": "GET",
+      "path": "/v3/payment-initiations/{paymentInitiationID}/payments",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentInitiationRelatedPayments",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentInitiationRelatedPaymentsCursorResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": null,
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentInitiations",
+      "method": "GET",
+      "path": "/v3/payment-initiations",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentInitiations",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentInitiationsCursorResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments transfer_initiation list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentServiceUserConnections",
+      "method": "GET",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connections",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentServiceUserConnections",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentServiceUserConnectionsCursorResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": null,
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentServiceUserConnectionsFromConnectorID",
+      "method": "GET",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentServiceUserConnectionsFromConnectorID",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentServiceUserConnectionsCursorResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": null,
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentServiceUserLinkAttemptsFromConnectorID",
+      "method": "GET",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentServiceUserLinkAttemptsFromConnectorID",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentServiceUserLinkAttemptsCursorResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": null,
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPaymentServiceUsers",
+      "method": "GET",
+      "path": "/v3/payment-service-users",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPaymentServiceUsers",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentServiceUsersCursorResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": null,
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPayments",
+      "method": "GET",
+      "path": "/v3/payments",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPayments",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PaymentsCursorResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments payments list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3ListPools",
+      "method": "GET",
+      "path": "/v3/pools",
+      "tag": "payments.v3",
+      "sdkMethod": "ListPools",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "V3QueryBuilder",
+      "successCode": "200",
+      "successBody": "V3PoolsCursorResponse",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": true,
+        "getWithBody": true
+      },
+      "baselineCommands": [
+        "payments pools list"
+      ],
+      "blockers": [
+        "B2-get-with-body"
+      ]
+    },
+    {
+      "operationId": "v3RejectPaymentInitiation",
+      "method": "POST",
+      "path": "/v3/payment-initiations/{paymentInitiationID}/reject",
+      "tag": "payments.v3",
+      "sdkMethod": "RejectPaymentInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation reject \u003ctransferInitiationID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3RemoveAccountFromPool",
+      "method": "DELETE",
+      "path": "/v3/pools/{poolID}/accounts/{accountID}",
+      "tag": "payments.v3",
+      "sdkMethod": "RemoveAccountFromPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "accountID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": "",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools remove-account \u003cpoolID\u003e \u003caccountID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3ResetConnector",
+      "method": "POST",
+      "path": "/v3/connectors/{connectorID}/reset",
+      "tag": "payments.v3",
+      "sdkMethod": "ResetConnector",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3ResetConnectorResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3RetryPaymentInitiation",
+      "method": "POST",
+      "path": "/v3/payment-initiations/{paymentInitiationID}/retry",
+      "tag": "payments.v3",
+      "sdkMethod": "RetryPaymentInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3RetryPaymentInitiationResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation retry \u003ctransferID\u003e"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3ReversePaymentInitiation",
+      "method": "POST",
+      "path": "/v3/payment-initiations/{paymentInitiationID}/reverse",
+      "tag": "payments.v3",
+      "sdkMethod": "ReversePaymentInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentInitiationID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3ReversePaymentInitiationRequest",
+      "successCode": "202",
+      "successBody": "V3ReversePaymentInitiationResponse",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments transfer_initiation reverse \u003ctransferID\u003e \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3UninstallConnector",
+      "method": "DELETE",
+      "path": "/v3/connectors/{connectorID}",
+      "tag": "payments.v3",
+      "sdkMethod": "UninstallConnector",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "202",
+      "successBody": "V3UninstallConnectorResponse",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": true,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors uninstall"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3UpdateBankAccountMetadata",
+      "method": "PATCH",
+      "path": "/v3/bank-accounts/{bankAccountID}/metadata",
+      "tag": "payments.v3",
+      "sdkMethod": "UpdateBankAccountMetadata",
+      "deprecated": false,
+      "hasSecurity": false,
+      "scopes": null,
+      "parameters": [
+        {
+          "name": "bankAccountID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3UpdateBankAccountMetadataRequest",
+      "successCode": "204",
+      "successBody": "",
+      "family": "accounts/bank-accounts",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments bank_accounts update-metadata \u003cbankAccountID\u003e [\u003ckey\u003e=\u003cvalue\u003e...]"
+      ],
+      "blockers": [
+        "B1-undeclared-scopes"
+      ]
+    },
+    {
+      "operationId": "v3UpdateConnectorConfig",
+      "method": "PATCH",
+      "path": "/v3/connectors/{connectorID}/config",
+      "tag": "payments.v3",
+      "sdkMethod": "v3UpdateConnectorConfig",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3UpdateConnectorRequest",
+      "successCode": "204",
+      "successBody": "",
+      "family": "connectors/schedules",
+      "risk": {
+        "destructive": false,
+        "secret": "request",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments connectors update-config \u003cconnector\u003e \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3UpdateLinkForPaymentServiceUserOnConnector",
+      "method": "POST",
+      "path": "/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}/update-link",
+      "tag": "payments.v3",
+      "sdkMethod": "UpdateLinkForPaymentServiceUserOnConnector",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connectionID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorID",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "paymentServiceUserID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3PaymentServiceUserUpdateLinkRequest",
+      "successCode": "201",
+      "successBody": "V3PaymentServiceUserUpdateLinkResponse",
+      "family": "payment-service-users",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": true,
+        "replaySafe": false,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": null,
+      "blockers": null
+    },
+    {
+      "operationId": "v3UpdatePaymentMetadata",
+      "method": "PATCH",
+      "path": "/v3/payments/{paymentID}/metadata",
+      "tag": "payments.v3",
+      "sdkMethod": "UpdatePaymentMetadata",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3UpdatePaymentMetadataRequest",
+      "successCode": "204",
+      "successBody": "",
+      "family": "payments/payment-initiations",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments payments set-metadata \u003cpaymentID\u003e [\u003ckey\u003e=\u003cvalue\u003e...]"
+      ],
+      "blockers": null
+    },
+    {
+      "operationId": "v3UpdatePoolQuery",
+      "method": "PATCH",
+      "path": "/v3/pools/{poolID}/query",
+      "tag": "payments.v3",
+      "sdkMethod": "UpdatePoolQuery",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "poolID",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "V3UpdatePoolQueryRequest",
+      "successCode": "204",
+      "successBody": "",
+      "family": "pools/orders/conversions/tasks",
+      "risk": {
+        "destructive": false,
+        "secret": "",
+        "displayOnce": false,
+        "replaySafe": true,
+        "paginated": false,
+        "getWithBody": false
+      },
+      "baselineCommands": [
+        "payments pools update-query \u003cpoolID\u003e \u003cfile\u003e|-"
+      ],
+      "blockers": null
+    }
+  ],
+  "v1": [
+    {
+      "operationId": "addAccountToPool",
+      "method": "POST",
+      "path": "/pools/{poolId}/accounts",
+      "tag": "payments.v1",
+      "sdkMethod": "addAccountToPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "AddAccountToPoolRequest",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "connectorsTransfer",
+      "method": "POST",
+      "path": "/connectors/{connector}/transfers",
+      "tag": "payments.v1",
+      "sdkMethod": "connectorsTransfer",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "TransferRequest",
+      "successCode": "200",
+      "successBody": "TransferResponse"
+    },
+    {
+      "operationId": "createAccount",
+      "method": "POST",
+      "path": "/accounts",
+      "tag": "payments.v1",
+      "sdkMethod": "createAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "AccountRequest",
+      "successCode": "200",
+      "successBody": "AccountResponse"
+    },
+    {
+      "operationId": "createBankAccount",
+      "method": "POST",
+      "path": "/bank-accounts",
+      "tag": "payments.v1",
+      "sdkMethod": "createBankAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "BankAccountRequest",
+      "successCode": "200",
+      "successBody": "BankAccountResponse"
+    },
+    {
+      "operationId": "createPayment",
+      "method": "POST",
+      "path": "/payments",
+      "tag": "payments.v1",
+      "sdkMethod": "createPayment",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "PaymentRequest",
+      "successCode": "200",
+      "successBody": "PaymentResponse"
+    },
+    {
+      "operationId": "createPool",
+      "method": "POST",
+      "path": "/pools",
+      "tag": "payments.v1",
+      "sdkMethod": "createPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "PoolRequest",
+      "successCode": "200",
+      "successBody": "PoolResponse"
+    },
+    {
+      "operationId": "createTransferInitiation",
+      "method": "POST",
+      "path": "/transfer-initiations",
+      "tag": "payments.v1",
+      "sdkMethod": "createTransferInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": null,
+      "requestBody": "TransferInitiationRequest",
+      "successCode": "200",
+      "successBody": "TransferInitiationResponse"
+    },
+    {
+      "operationId": "deletePool",
+      "method": "DELETE",
+      "path": "/pools/{poolId}",
+      "tag": "payments.v1",
+      "sdkMethod": "deletePool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "deleteTransferInitiation",
+      "method": "DELETE",
+      "path": "/transfer-initiations/{transferId}",
+      "tag": "payments.v1",
+      "sdkMethod": "deleteTransferInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "transferId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "forwardBankAccount",
+      "method": "POST",
+      "path": "/bank-accounts/{bankAccountId}/forward",
+      "tag": "payments.v1",
+      "sdkMethod": "forwardBankAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "bankAccountId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "ForwardBankAccountRequest",
+      "successCode": "200",
+      "successBody": "BankAccountResponse"
+    },
+    {
+      "operationId": "getAccount",
+      "method": "GET",
+      "path": "/accounts/{accountId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "accountId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "AccountResponse"
+    },
+    {
+      "operationId": "getAccountBalances",
+      "method": "GET",
+      "path": "/accounts/{accountId}/balances",
+      "tag": "payments.v1",
+      "sdkMethod": "getAccountBalances",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "accountId",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "asset",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "from",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "BalancesCursor"
+    },
+    {
+      "operationId": "getBankAccount",
+      "method": "GET",
+      "path": "/bank-accounts/{bankAccountId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getBankAccount",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "bankAccountId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "BankAccountResponse"
+    },
+    {
+      "operationId": "getConnectorTask",
+      "method": "GET",
+      "path": "/connectors/{connector}/tasks/{taskId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getConnectorTask",
+      "deprecated": true,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "taskId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "TaskResponse"
+    },
+    {
+      "operationId": "getConnectorTaskV1",
+      "method": "GET",
+      "path": "/connectors/{connector}/{connectorId}/tasks/{taskId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getConnectorTaskV1",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorId",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "taskId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "TaskResponse"
+    },
+    {
+      "operationId": "getPayment",
+      "method": "GET",
+      "path": "/payments/{paymentId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getPayment",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "paymentId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "PaymentResponse"
+    },
+    {
+      "operationId": "getPool",
+      "method": "GET",
+      "path": "/pools/{poolId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "PoolResponse"
+    },
+    {
+      "operationId": "getPoolBalances",
+      "method": "GET",
+      "path": "/pools/{poolId}/balances",
+      "tag": "payments.v1",
+      "sdkMethod": "getPoolBalances",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "at",
+          "in": "query",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "PoolBalancesResponse"
+    },
+    {
+      "operationId": "getPoolBalancesLatest",
+      "method": "GET",
+      "path": "/pools/{poolId}/balances/latest",
+      "tag": "payments.v1",
+      "sdkMethod": "getPoolBalancesLatest",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "PoolBalancesLatestResponse"
+    },
+    {
+      "operationId": "getServerInfo",
+      "method": "GET",
+      "path": "/_info",
+      "tag": "payments.v1",
+      "sdkMethod": "getServerInfo",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": null,
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "ServerInfo"
+    },
+    {
+      "operationId": "getTransferInitiation",
+      "method": "GET",
+      "path": "/transfer-initiations/{transferId}",
+      "tag": "payments.v1",
+      "sdkMethod": "getTransferInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "transferId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "TransferInitiationResponse"
+    },
+    {
+      "operationId": "installConnector",
+      "method": "POST",
+      "path": "/connectors/{connector}",
+      "tag": "payments.v1",
+      "sdkMethod": "installConnector",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "ConnectorConfig",
+      "successCode": "201",
+      "successBody": "ConnectorResponse"
+    },
+    {
+      "operationId": "listAccounts",
+      "method": "GET",
+      "path": "/accounts",
+      "tag": "payments.v1",
+      "sdkMethod": "listAccounts",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "AccountsCursor"
+    },
+    {
+      "operationId": "listAllConnectors",
+      "method": "GET",
+      "path": "/connectors",
+      "tag": "payments.v1",
+      "sdkMethod": "listAllConnectors",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": null,
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "ConnectorsResponse"
+    },
+    {
+      "operationId": "listBankAccounts",
+      "method": "GET",
+      "path": "/bank-accounts",
+      "tag": "payments.v1",
+      "sdkMethod": "listBankAccounts",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "BankAccountsCursor"
+    },
+    {
+      "operationId": "listConfigsAvailableConnectors",
+      "method": "GET",
+      "path": "/connectors/configs",
+      "tag": "payments.v1",
+      "sdkMethod": "listConfigsAvailableConnectors",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": null,
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "ConnectorsConfigsResponse"
+    },
+    {
+      "operationId": "listConnectorTasks",
+      "method": "GET",
+      "path": "/connectors/{connector}/tasks",
+      "tag": "payments.v1",
+      "sdkMethod": "listConnectorTasks",
+      "deprecated": true,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "TasksCursor"
+    },
+    {
+      "operationId": "listConnectorTasksV1",
+      "method": "GET",
+      "path": "/connectors/{connector}/{connectorId}/tasks",
+      "tag": "payments.v1",
+      "sdkMethod": "listConnectorTasksV1",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorId",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "TasksCursor"
+    },
+    {
+      "operationId": "listPayments",
+      "method": "GET",
+      "path": "/payments",
+      "tag": "payments.v1",
+      "sdkMethod": "listPayments",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "PaymentsCursor"
+    },
+    {
+      "operationId": "listPools",
+      "method": "GET",
+      "path": "/pools",
+      "tag": "payments.v1",
+      "sdkMethod": "listPools",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "PoolsCursor"
+    },
+    {
+      "operationId": "listTransferInitiations",
+      "method": "GET",
+      "path": "/transfer-initiations",
+      "tag": "payments.v1",
+      "sdkMethod": "listTransferInitiations",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "pageSize",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "TransferInitiationsCursor"
+    },
+    {
+      "operationId": "readConnectorConfig",
+      "method": "GET",
+      "path": "/connectors/{connector}/config",
+      "tag": "payments.v1",
+      "sdkMethod": "readConnectorConfig",
+      "deprecated": true,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "ConnectorConfigResponse"
+    },
+    {
+      "operationId": "readConnectorConfigV1",
+      "method": "GET",
+      "path": "/connectors/{connector}/{connectorId}/config",
+      "tag": "payments.v1",
+      "sdkMethod": "readConnectorConfigV1",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:read"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "200",
+      "successBody": "ConnectorConfigResponse"
+    },
+    {
+      "operationId": "removeAccountFromPool",
+      "method": "DELETE",
+      "path": "/pools/{poolId}/accounts/{accountId}",
+      "tag": "payments.v1",
+      "sdkMethod": "removeAccountFromPool",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "accountId",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "resetConnector",
+      "method": "POST",
+      "path": "/connectors/{connector}/reset",
+      "tag": "payments.v1",
+      "sdkMethod": "resetConnector",
+      "deprecated": true,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "resetConnectorV1",
+      "method": "POST",
+      "path": "/connectors/{connector}/{connectorId}/reset",
+      "tag": "payments.v1",
+      "sdkMethod": "resetConnectorV1",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "retryTransferInitiation",
+      "method": "POST",
+      "path": "/transfer-initiations/{transferId}/retry",
+      "tag": "payments.v1",
+      "sdkMethod": "retryTransferInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "transferId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "reverseTransferInitiation",
+      "method": "POST",
+      "path": "/transfer-initiations/{transferId}/reverse",
+      "tag": "payments.v1",
+      "sdkMethod": "reverseTransferInitiation",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "transferId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "ReverseTransferInitiationRequest",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "uninstallConnector",
+      "method": "DELETE",
+      "path": "/connectors/{connector}",
+      "tag": "payments.v1",
+      "sdkMethod": "uninstallConnector",
+      "deprecated": true,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "uninstallConnectorV1",
+      "method": "DELETE",
+      "path": "/connectors/{connector}/{connectorId}",
+      "tag": "payments.v1",
+      "sdkMethod": "uninstallConnectorV1",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "updateBankAccountMetadata",
+      "method": "PATCH",
+      "path": "/bank-accounts/{bankAccountId}/metadata",
+      "tag": "payments.v1",
+      "sdkMethod": "updateBankAccountMetadata",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "bankAccountId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "UpdateBankAccountMetadataRequest",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "updateConnectorConfigV1",
+      "method": "POST",
+      "path": "/connectors/{connector}/{connectorId}/config",
+      "tag": "payments.v1",
+      "sdkMethod": "updateConnectorConfigV1",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "connector",
+          "in": "path",
+          "required": true
+        },
+        {
+          "name": "connectorId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "ConnectorConfig",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "updateMetadata",
+      "method": "PATCH",
+      "path": "/payments/{paymentId}/metadata",
+      "tag": "payments.v1",
+      "sdkMethod": "updateMetadata",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "paymentId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "PaymentMetadata",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "updatePoolQuery",
+      "method": "PATCH",
+      "path": "/pools/{poolId}/query",
+      "tag": "payments.v1",
+      "sdkMethod": "updatePoolQuery",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "poolId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "UpdatePoolQueryRequest",
+      "successCode": "204",
+      "successBody": ""
+    },
+    {
+      "operationId": "updateTransferInitiationStatus",
+      "method": "POST",
+      "path": "/transfer-initiations/{transferId}/status",
+      "tag": "payments.v1",
+      "sdkMethod": "updateTransferInitiationStatus",
+      "deprecated": false,
+      "hasSecurity": true,
+      "scopes": [
+        "payments:write"
+      ],
+      "parameters": [
+        {
+          "name": "transferId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "requestBody": "UpdateTransferInitiationStatusRequest",
+      "successCode": "204",
+      "successBody": ""
+    }
+  ]
+}
