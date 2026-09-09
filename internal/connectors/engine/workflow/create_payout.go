@@ -22,6 +22,11 @@ func (w Workflow) runCreatePayout(
 	ctx workflow.Context,
 	createPayout CreatePayout,
 ) error {
+	// Everything but the PSP call runs on the default queue, including the
+	// updateTasksError below: this workflow's own queue may be rate limited
+	// (see models.PluginWithPayoutThrottle).
+	ctx = workflow.WithTaskQueue(ctx, w.getDefaultTaskQueue())
+
 	err := w.createPayout(ctx, createPayout)
 	if err != nil {
 		errUpdateTask := w.updateTasksError(
@@ -104,7 +109,7 @@ func (w Workflow) createPayout(
 	}
 
 	createPayoutResponse, errPlugin := activities.PluginCreatePayout(
-		infiniteRetryContext(ctx),
+		pspRetryContext(ctx),
 		createPayout.ConnectorID,
 		models.CreatePayoutRequest{
 			PaymentInitiation: pspPI,
