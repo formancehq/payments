@@ -40,6 +40,7 @@ func Catalogue() []sdk.Command {
 }
 
 func (spec commandSpec) command() sdk.Command {
+	id := "payments.v3." + strings.Join(spec.path, ".")
 	operations := make([]sdk.OperationPolicy, 0, len(spec.operations))
 	paginated := false
 	for _, operation := range spec.operations {
@@ -91,15 +92,24 @@ func (spec commandSpec) command() sdk.Command {
 		publicOutputSchema = arraySchema
 		rawOutputSchema = arraySchema
 	}
+	// A cursor listing is only reachable past its first page when the caller can
+	// hand the emitted next cursor back. The host injects one continuation
+	// control (`--all`) and carries no cursor, so the resume point has to be a
+	// command flag. Declaring it here keeps the flag and the pagination
+	// declaration structurally inseparable.
+	flags := spec.flags
+	if paginated {
+		flags = append(append(make([]sdk.Flag, 0, len(spec.flags)+1), spec.flags...), flag("cursor", sdk.FlagString, false))
+	}
 	return sdk.Command{
-		ID: "payments.v3." + strings.Join(spec.path, "."), ExecutionKind: sdk.ExecutionKindService, AuthMode: sdk.AuthModeCapability,
+		ID: id, ExecutionKind: sdk.ExecutionKindService, AuthMode: sdk.AuthModeCapability,
 		Path: spec.path, Target: sdk.TargetRequirement{Kind: sdk.TargetStack}, Summary: "Payments " + strings.Join(spec.path, " "),
 		Long: "Execute the Payments v3 operation through the host-owned endpoint, authentication and transport.", Example: strings.Join(spec.path, " ") + " --help",
-		Arguments: spec.arguments, Flags: spec.flags, Auth: []sdk.AuthRequirement{{Capability: "auth.stack"}}, Operations: operations,
+		Arguments: spec.arguments, Flags: flags, Auth: []sdk.AuthRequirement{{Capability: "auth.stack"}}, Operations: operations,
 		Compatibility: []sdk.ServiceCompatibility{{Service: sdk.ServicePayments, Majors: []uint32{3}}}, Risk: risk,
-		InputSchema: inputSchema(spec.arguments, spec.flags), RawOutputSchema: rawOutputSchema, PublicOutputSchema: publicOutputSchema,
+		InputSchema: inputSchema(spec.arguments, flags), RawOutputSchema: rawOutputSchema, PublicOutputSchema: publicOutputSchema,
 		InputArtifacts: artifacts, Pagination: sdk.PaginationSpec{Supported: paginated}, OutputMediaType: "application/json",
-		ExecutionPolicy: &sdk.CommandExecutionPolicy{MaxHostRequests: maxRequests},
+		Render: renderHints(id), ExecutionPolicy: &sdk.CommandExecutionPolicy{MaxHostRequests: maxRequests},
 	}
 }
 

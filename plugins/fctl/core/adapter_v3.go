@@ -30,6 +30,9 @@ func executeV3(ctx context.Context, request sdk.ExecuteRequest, host sdk.Host) e
 	if err != nil {
 		return err
 	}
+	if err := rejectFilteredCursor(command, flags); err != nil {
+		return err
+	}
 
 	var response []byte
 	var pageInfo *sdk.PageInfo
@@ -55,9 +58,31 @@ func executeV3(ctx context.Context, request sdk.ExecuteRequest, host sdk.Host) e
 	return host.Emit(sdk.Event{Kind: sdk.EventResult, Result: &sdk.ResultEnvelope{OperationID: command.ID, Shape: shape, MediaType: "application/json", Data: response, Page: pageInfo}})
 }
 
+// rejectFilteredCursor refuses a resume cursor alongside any other flag. A
+// Payments cursor already encodes the filters and page size of the listing that
+// produced it, so the product ignores a re-sent filter: accepting the
+// combination would silently drop the caller's flag instead of honouring it.
+func rejectFilteredCursor(command sdk.Command, flags map[string][]string) error {
+	if first(flags["cursor"]) == "" {
+		return nil
+	}
+	for _, declared := range command.Flags {
+		if declared.Name == "cursor" || len(flags[declared.Name]) == 0 {
+			continue
+		}
+		return invalid("cursor cannot be combined with %q: the cursor already encodes the original filters", declared.Name)
+	}
+	return nil
+}
+
 func executePages(ctx context.Context, host sdk.Host, policy sdk.OperationPolicy, operation operationSpec, arguments, flags map[string][]string, control sdk.ContinuationControl, priorResponse []byte) ([]byte, *sdk.PageInfo, error) {
+	resume := first(flags["cursor"])
 	if control.Mode != sdk.ContinuationAllPages {
-		body, _, err := executeOperation(ctx, host, policy, operation, arguments, flags, "", nil, priorResponse)
+		var firstPageBody []byte
+		if resume != "" {
+			firstPageBody = []byte{}
+		}
+		body, _, err := executeOperation(ctx, host, policy, operation, arguments, flags, resume, firstPageBody, priorResponse)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -81,7 +106,10 @@ func executePages(ctx context.Context, host sdk.Host, policy sdk.OperationPolicy
 	}
 	items := make([]json.RawMessage, 0)
 	seen := map[string]struct{}{}
-	cursor := ""
+	cursor := resume
+	if cursor != "" {
+		seen[cursor] = struct{}{}
+	}
 	var aggregate uint64
 	for page := uint32(0); page < control.MaxPages; page++ {
 		pageBody := bodyOverride
@@ -268,15 +296,26 @@ func invalid(format string, values ...any) error {
 	return sdk.Failure{Code: string(sdk.FailureInvalidArgument), Message: fmt.Sprintf(format, values...)}
 }
 
+// credentialFieldNames is the connector-configuration redaction denylist. It is
+// exhaustive by construction: connector_secrets_test.go fails when a
+// regenerated client introduces a configuration property that appears neither
+// here nor in the reviewed non-credential acknowledgement list.
+var credentialFieldNames = map[string]struct{}{
+	"accessKey": {}, "apiKey": {}, "apiSecret": {}, "clientSecret": {},
+	"configurationToken": {}, "passphrase": {}, "password": {}, "privateKey": {},
+	"secret": {}, "stagingToken": {}, "userCertificate": {}, "userCertificateKey": {},
+	"webhookPassword": {}, "webhookSharedSecret": {},
+}
+
+func isCredentialFieldName(name string) bool {
+	_, sensitive := credentialFieldNames[name]
+	return sensitive
+}
+
 func redactConnectorConfig(encoded []byte) ([]byte, error) {
 	var response paymentscomponents.V3GetConnectorConfigResponse
 	if err := json.Unmarshal(encoded, &response); err != nil {
 		return nil, invalid("invalid connector config response")
-	}
-	credentialKeys := map[string]struct{}{
-		"apiKey": {}, "apiSecret": {}, "clientSecret": {}, "privateKey": {}, "password": {}, "passphrase": {},
-		"accessKey": {}, "secret": {}, "userCertificate": {}, "userCertificateKey": {}, "configurationToken": {},
-		"stagingToken": {}, "webhookPassword": {}, "webhookSharedSecret": {},
 	}
 	var walk func(reflect.Value)
 	walk = func(current reflect.Value) {
@@ -297,7 +336,7 @@ func redactConnectorConfig(encoded []byte) ([]byte, error) {
 			field := current.Field(index)
 			metadata := current.Type().Field(index)
 			key := strings.Split(metadata.Tag.Get("json"), ",")[0]
-			if _, sensitive := credentialKeys[key]; sensitive {
+			if isCredentialFieldName(key) {
 				switch field.Kind() {
 				case reflect.String:
 					if field.CanSet() {

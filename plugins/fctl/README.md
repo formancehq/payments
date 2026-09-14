@@ -37,6 +37,31 @@ exclusively owns both concerns. The host's `--all` control asks the plugin to
 follow opaque Payments cursors within the canonical limits of 100 pages,
 10,000 items and 4 MiB.
 
+Every paginated command also declares an optional `--cursor` flag. The host
+continuation contract carries a mode only, so a cursor the plugin emits in
+`PageInfo.NextCursor` has no host-owned route back; without the flag a listing
+larger than the `--all` ceiling is unreachable past its first page, because
+`--all` fails wholesale on breach and offers no resume point. `--cursor`
+resumes a single page or an `--all` sweep from the supplied position. A
+Payments cursor already encodes the filters and page size of the listing that
+produced it, so combining `--cursor` with any other flag on the same command is
+rejected rather than silently dropped.
+
+Commands whose emitted payload can back truthful fixed columns declare compact
+table render hints; the host keeps rendering the exhaustive payload for JSON
+and YAML. A column field is a dot-separated JSON path into the emitted payload:
+one collection item for a listing, the product envelope for an object result.
+Thirteen commands declare no hints and the reason is recorded per command in
+`core/render_test.go`: nine emit `204 No Content`, two emit an array under
+`data`, one a provider-keyed map, and `connectors get-config` a redacted,
+provider-specific configuration union.
+
+Connector-configuration redaction is exhaustive by construction rather than by
+a hand-maintained list: every JSON property reachable from the generated
+`V3ConnectorConfig` union must be either redacted or explicitly acknowledged as
+carrying no credential, and a regenerated client that introduces an unreviewed
+property fails the suite instead of forwarding it.
+
 Nine admitted listing commands preserve the Payments API's JSON body on `GET`.
 That contract works through the native host transport, but browser `fetch`
 rejects `GET` requests with a body. Browser acceptance for those commands is
