@@ -28,6 +28,8 @@ expect_failure() {
 
 test_root="$(mktemp -d)"
 trap 'rm -rf "$test_root"' EXIT
+# The wrapper reports canonical paths; compare against canonical paths too.
+test_root="$(cd "$test_root" && pwd -P)"
 sdk_root="$test_root/fctl-source"
 archive_root="$test_root/archive-source"
 fake_bin="$test_root/bin"
@@ -116,9 +118,6 @@ chmod +x "$test_root/signal-wrapper.sh"
 
 [[ -x "$wrapper" ]] || fail "wrapper is missing or not executable: $wrapper"
 
-expect_failure 'FCTL_SDK_ROOT is required' env -u FCTL_SDK_ROOT \
-  PATH="$fake_bin:$PATH" FAKE_NAR_HASH="$expected_nar_hash" "$wrapper" true
-
 expect_failure 'fctl SDK content hash mismatch' env \
   PATH="$fake_bin:$PATH" FCTL_SDK_ROOT="$sdk_root" FAKE_NAR_HASH='sha256-wrong' "$wrapper" true
 
@@ -187,6 +186,103 @@ cp "$archive_root/wit/formance/fctl/plugin/v1/plugin.wit" "$sdk_root/wit/formanc
 unlink "$sdk_root/pkg/plugin/tampered.go"
 env PATH="$fake_bin:$PATH" FCTL_SDK_ROOT="$sdk_root" FAKE_NAR_HASH="$expected_nar_hash" \
   "$wrapper" true
+
+# --- Materialisation: a machine with no fctl checkout must still build. ------
+materialise_bin="$test_root/materialise-bin"
+cache_root="$test_root/sdk-cache"
+mkdir -p "$materialise_bin"
+
+cat >"$materialise_bin/nix" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "${!#}" == */pkg/plugin ]] || { printf 'nix hashed wrong path: %s\n' "${!#}" >&2; exit 97; }
+printf '%s\n' "${FAKE_NAR_HASH:?}"
+EOF
+chmod +x "$materialise_bin/nix"
+
+cat >"$materialise_bin/git" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == '-C' ]] || { printf 'materialisation git ran outside a staging repository: %s\n' "$*" >&2; exit 98; }
+staging="$2"
+shift 2
+case "${1:-}" in
+  init)
+    exit 0
+    ;;
+  fetch)
+    [[ -z "${FAKE_GIT_FETCH_FORBIDDEN:-}" ]] || { printf 'fetched when the cache or override should have been used\n' >&2; exit 96; }
+    url="${@: -2:1}"
+    ref="${@: -1:1}"
+    [[ "$url" == "${FAKE_EXPECTED_REPOSITORY:?}" ]] || { printf 'fetched wrong repository: %s\n' "$url" >&2; exit 98; }
+    [[ "$ref" == "${FAKE_EXPECTED_COMMIT:?}" ]] || { printf 'fetched a non-pinned reference: %s\n' "$ref" >&2; exit 98; }
+    printf '%s\n' "$ref" >"$staging/fetch-head"
+    exit 0
+    ;;
+  rev-parse)
+    [[ "${2:-}" == 'FETCH_HEAD' ]] || { printf 'unexpected rev-parse: %s\n' "${2:-}" >&2; exit 98; }
+    printf '%s\n' "${FAKE_FETCHED_COMMIT:-$(cat "$staging/fetch-head")}"
+    exit 0
+    ;;
+  archive)
+    [[ "${2:-}" == "${FAKE_EXPECTED_COMMIT:?}" ]] || { printf 'archived wrong commit: %s\n' "${2:-}" >&2; exit 98; }
+    [[ "${3:-}" == 'pkg/plugin' && "${4:-}" == 'wit/formance/fctl/plugin/v1/plugin.wit' ]] || {
+      printf 'archived wrong paths: %s %s\n' "${3:-}" "${4:-}" >&2
+      exit 98
+    }
+    tar -C "${FAKE_GIT_ARCHIVE_SOURCE:?}" -cf - "$3" "$4"
+    exit 0
+    ;;
+  *)
+    printf 'unexpected materialisation git subcommand: %s\n' "${1:-}" >&2
+    exit 98
+    ;;
+esac
+EOF
+chmod +x "$materialise_bin/git"
+
+cat >"$test_root/inspect-materialised.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+resolved="$(go list -m -f '{{.Dir}}' github.com/formancehq/fctl-v2-poc/pkg/plugin)"
+[[ "$resolved" == "$FCTL_SDK_ROOT/pkg/plugin" ]] || { printf 'workspace and materialised SDK root disagree\n' >&2; exit 91; }
+[[ "$resolved" == "$EXPECTED_CACHE_ENTRY/pkg/plugin" ]] || { printf 'materialised SDK is not the cache entry: %s\n' "$resolved" >&2; exit 91; }
+go list -m all >/dev/null
+EOF
+chmod +x "$test_root/inspect-materialised.sh"
+
+# 1. No FCTL_SDK_ROOT and no prior checkout: the locked commit is fetched by
+#    exact revision and published into the cache.
+env -u FCTL_SDK_ROOT PATH="$materialise_bin:$PATH" \
+  FCTL_SDK_CACHE_DIR="$cache_root" FAKE_NAR_HASH="$expected_nar_hash" \
+  FAKE_EXPECTED_REPOSITORY="$expected_repository" FAKE_EXPECTED_COMMIT="$expected_commit" \
+  FAKE_GIT_ARCHIVE_SOURCE="$archive_root" EXPECTED_CACHE_ENTRY="$cache_root/$expected_commit" \
+  "$wrapper" "$test_root/inspect-materialised.sh"
+[[ -f "$cache_root/$expected_commit/pkg/plugin/go.mod" ]] || fail 'materialisation did not publish the SDK module into the cache'
+[[ -f "$cache_root/$expected_commit/wit/formance/fctl/plugin/v1/plugin.wit" ]] || fail 'materialisation did not publish the WIT into the cache'
+[[ -z "$(find "$cache_root" -maxdepth 1 -name '.staging.*' -print -quit)" ]] || fail 'materialisation left a staging directory behind'
+
+# 2. Replaying the same intent reuses the cache instead of fetching again.
+env -u FCTL_SDK_ROOT PATH="$materialise_bin:$PATH" \
+  FCTL_SDK_CACHE_DIR="$cache_root" FAKE_NAR_HASH="$expected_nar_hash" \
+  FAKE_EXPECTED_REPOSITORY="$expected_repository" FAKE_EXPECTED_COMMIT="$expected_commit" \
+  FAKE_GIT_ARCHIVE_SOURCE="$archive_root" EXPECTED_CACHE_ENTRY="$cache_root/$expected_commit" \
+  FAKE_GIT_FETCH_FORBIDDEN=1 "$wrapper" "$test_root/inspect-materialised.sh"
+
+# 3. An explicit FCTL_SDK_ROOT still wins and performs no network access.
+env PATH="$materialise_bin:$PATH" FCTL_SDK_ROOT="$sdk_root" \
+  FCTL_SDK_CACHE_DIR="$test_root/unused-cache" FAKE_NAR_HASH="$expected_nar_hash" \
+  FAKE_EXPECTED_REPOSITORY="$expected_repository" FAKE_EXPECTED_COMMIT="$expected_commit" \
+  FAKE_GIT_FETCH_FORBIDDEN=1 "$wrapper" true
+[[ ! -d "$test_root/unused-cache" ]] || fail 'explicit FCTL_SDK_ROOT still populated the materialisation cache'
+
+# 4. A server that answers with a different commit is refused.
+expect_failure 'materialised fctl SDK revision mismatch' env -u FCTL_SDK_ROOT \
+  PATH="$materialise_bin:$PATH" FCTL_SDK_CACHE_DIR="$test_root/mismatch-cache" \
+  FAKE_NAR_HASH="$expected_nar_hash" FAKE_EXPECTED_REPOSITORY="$expected_repository" \
+  FAKE_EXPECTED_COMMIT="$expected_commit" FAKE_GIT_ARCHIVE_SOURCE="$archive_root" \
+  FAKE_FETCHED_COMMIT='0000000000000000000000000000000000000000' "$wrapper" true
+[[ ! -e "$test_root/mismatch-cache/$expected_commit" ]] || fail 'a mismatched revision was published into the cache'
 
 actual_wit_hash="$(shasum -a 256 "$plugin_root/wit/plugin.wit" | awk '{print $1}')"
 [[ "$actual_wit_hash" == "$expected_wit_hash" ]] || fail 'vendored plugin WIT differs from the SDK lock'

@@ -61,11 +61,22 @@ admission blocker.
 ## Verification
 
 `fctl-sdk.lock.json` pins the SDK module, source repository, commit, NAR content
-hash and canonical WIT hash without embedding a checkout path. Point
-`FCTL_SDK_ROOT` at either the matching Git checkout or an exact
-content-addressed source tree. Every Go test and component build runs through a
-wrapper that validates the lock, creates an ephemeral `go.work`, and removes it
-on both success and failure:
+hash and canonical WIT hash without embedding a checkout path. With no
+`FCTL_SDK_ROOT` set, the wrapper materialises the locked commit itself: it
+fetches that exact revision — never a branch, tag or default reference — from
+the locked repository into a content-addressed cache
+(`$FCTL_SDK_CACHE_DIR`, default `${XDG_CACHE_HOME:-~/.cache}/formancehq/fctl-sdk`)
+and reuses it on every later run. No developer checkout is required, so ordinary
+repository CI runs the same gate as a workstation. The SDK repository is
+private; CI obtains the credential from the `GIT_PRIVATE_TOKEN` secret, which
+`formancehq/ci`'s `setup-nix` turns into a `github.com/formancehq` Git
+credential. The wrapper itself reads, logs and writes no token.
+
+For local development, `FCTL_SDK_ROOT` still overrides materialisation and
+points at either the matching Git checkout or an exact content-addressed source
+tree. Every Go test and component build runs through a wrapper that validates
+the lock, creates an ephemeral `go.work`, and removes it on both success and
+failure:
 
 The additive optional-query descriptor requires the SDK's optional
 `InputArtifactSpec` source field. The lock is sealed at fctl revision
