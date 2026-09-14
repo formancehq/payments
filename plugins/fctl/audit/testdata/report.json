@@ -2314,7 +2314,7 @@
         "destructive": false,
         "secret": "",
         "displayOnce": false,
-        "replaySafe": true,
+        "replaySafe": false,
         "paginated": false,
         "getWithBody": false
       },
@@ -2352,7 +2352,7 @@
         "destructive": false,
         "secret": "request",
         "displayOnce": false,
-        "replaySafe": true,
+        "replaySafe": false,
         "paginated": false,
         "getWithBody": false
       },
@@ -2432,7 +2432,7 @@
         "destructive": false,
         "secret": "",
         "displayOnce": false,
-        "replaySafe": true,
+        "replaySafe": false,
         "paginated": false,
         "getWithBody": false
       },
@@ -2468,7 +2468,7 @@
         "destructive": false,
         "secret": "",
         "displayOnce": false,
-        "replaySafe": true,
+        "replaySafe": false,
         "paginated": false,
         "getWithBody": false
       },

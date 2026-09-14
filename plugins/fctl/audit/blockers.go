@@ -54,6 +54,45 @@ var ReleaseGaps = []ReleaseGap{
 	},
 }
 
+// CompatibilityGap records a host-specific portability limit without
+// classifying an otherwise executable operation as source-admission blocked.
+type CompatibilityGap struct {
+	OperationIDs []string
+	ID           string
+	Host         string
+	Summary      string
+	Evidence     string
+}
+
+// CompatibilityGaps keeps the browser GET-body boundary explicit until the
+// product API offers a proven body-free equivalent or the browser transport can
+// execute the documented semantics without silently dropping the query.
+var CompatibilityGaps = []CompatibilityGap{
+	{
+		ID:   "C1-browser-get-with-body",
+		Host: "browser",
+		OperationIDs: []string{
+			"v3ListAccounts",
+			"v3ListBankAccounts",
+			"v3ListConnectorSchedules",
+			"v3ListConnectors",
+			"v3ListConversions",
+			"v3ListOrders",
+			"v3ListPaymentInitiationAdjustments",
+			"v3ListPaymentInitiationRelatedPayments",
+			"v3ListPaymentInitiations",
+			"v3ListPaymentServiceUserConnections",
+			"v3ListPaymentServiceUserConnectionsFromConnectorID",
+			"v3ListPaymentServiceUserLinkAttemptsFromConnectorID",
+			"v3ListPaymentServiceUsers",
+			"v3ListPayments",
+			"v3ListPools",
+		},
+		Summary:  "The Payments API requires JSON bodies on these GET operations, but browser fetch rejects GET requests with a body.",
+		Evidence: "openapi/v3/v3-api.yaml declares V3QueryBuilder request bodies; the generated client preserves them and browser fetch cannot send them.",
+	},
+}
+
 // BlockedOperationIDs returns the sorted, de-duplicated set of operationIds
 // carrying at least one blocker.
 func BlockedOperationIDs() []string {

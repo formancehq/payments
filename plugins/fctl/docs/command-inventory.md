@@ -266,8 +266,9 @@ or re-rendered from a stored result. Both sit in the non-frozen
 is a second effect, so no automatic retry may be applied to
 `v3InitiatePayment`, `v3CreatePayment`, `v3CreateAccount`,
 `v3CreateBankAccount`, `v3CreatePool`, `v3InstallConnector`,
-`v3ResetConnector`, or any other `POST`. `GET`, `PUT`, `PATCH` and `DELETE` are
-HTTP-idempotent and marked replay-safe. The one dedup-adjacent field in the
+`v3ResetConnector`, or any other `POST`. `GET`, `PUT` and `DELETE` are
+HTTP-idempotent and marked replay-safe. `PATCH` is never assumed replay-safe
+without operation-specific proof, which this document does not provide. The one dedup-adjacent field in the
 document, `clientOrderID`, explicitly documents itself as "stored for
 traceability only — Formance does NOT dedup on this field".
 
@@ -275,9 +276,10 @@ traceability only — Formance does NOT dedup on this field".
 `pageSize` as query parameters. No operation in the document is a stream: every
 success response is a single JSON body.
 
-**`get-with-body` — 15 paginated `GET`s carry a JSON request body.** This
-remains an explicit transport risk fact; historical blocker B2 is closed by
-the generated-client adapter and no longer appears in the active blocker set.
+**`get-with-body` — 15 paginated `GET`s carry a JSON request body.** The
+generated-client adapter preserves the body through `Host.Request`, which
+keeps native semantics exact. Browser `fetch` rejects `GET` requests with a
+body, so compatibility gap C1 remains open for browser execution.
 
 ## 8. Admission blockers, release gaps and divergences
 
@@ -304,7 +306,7 @@ scope set for protected bearer-only operations. The missing scope names remain
 an upstream source-contract gap; the fix belongs in this repository, in
 `openapi/v3/v3-api.yaml`.
 
-**B2 — `GET` with a request body (historical, closed in the adapter).** 15 operations, all the paginated /v3
+**C1 — browser `GET` with a request body (compatibility gap).** 15 operations, all the paginated /v3
 listings: `v3ListAccounts`, `v3ListBankAccounts`, `v3ListConnectorSchedules`,
 `v3ListConnectors`, `v3ListConversions`, `v3ListOrders`,
 `v3ListPaymentInitiationAdjustments`,
@@ -320,9 +322,11 @@ cursor, requestBody map[string]any, …)`. The original admission risk was that
 a host transport that drops `GET` bodies degrades a filtered query into an
 **unfiltered listing** — a wrong answer returned successfully, not an error.
 The `producthttp` boundary preserves these bodies and the Payments adapter
-tests the mapping through `Host.Request`; these operations are therefore
-admitted without rewriting the query semantics and B2 is absent from the
-machine-readable blocker report. Two of the 17 paginated operations
+tests the mapping through `Host.Request`, so native execution is admitted
+without rewriting the query semantics. Browser `fetch`, however, rejects a
+body on `GET`; the exact operation set is pinned as compatibility gap
+`C1-browser-get-with-body`, and browser acceptance remains blocked. Two of the
+17 paginated operations
 (`v3GetAccountBalances`, `v3ListConnectorScheduleInstances`) declare no body
 and are unaffected.
 
@@ -370,7 +374,7 @@ client; the 45-command legacy baseline mapped 44/1 with the one exclusion
 evidenced; the four families frozen and the open-banking surface recorded;
 per-operation scopes, request and response models, and risks read from source;
 0 admission-blocked operations, 3 executable operations carrying release gap
-G1, 2 closed historical blockers and 4 divergences recorded and separated from
+G1, browser compatibility gap C1, 1 closed historical blocker and 4 divergences recorded and separated from
 facts;
 determinism held by a golden report plus invariant tests over operationId
 uniqueness, tag partition, family completeness, baseline consistency, blocker
@@ -403,7 +407,10 @@ Remaining external or upstream gates:
 4. **Open-banking scope decision** — accept or defer the 15
    `payment-service-user` operations, with the two `display_once` link
    operations handled explicitly if accepted.
-5. **Release evidence** — build the component in the declared authoring shell,
+5. **Browser `GET`-body compatibility** — provide a proven body-free Payments
+   API alternative for C1 before claiming browser acceptance; never drop the
+   query body and return an unfiltered listing.
+6. **Release evidence** — build the component in the declared authoring shell,
    install it through the supported OCI path, and run the real Payments
    scenarios on both native and browser hosts. No live service or publication
    is claimed by the local unit evidence.

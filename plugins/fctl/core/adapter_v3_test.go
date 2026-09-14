@@ -125,6 +125,94 @@ func TestExecuteInstallConnectorRejectsNullConfiguration(t *testing.T) {
 	}
 }
 
+func TestExecuteInstallConnectorDoesNotEchoSecretInGeneratedDecodeError(t *testing.T) {
+	const secret = "must-not-escape"
+	memory := sdk.NewMemoryHost(func(_ context.Context, request sdk.Request) (sdk.Responses, error) {
+		if request.Operation != "v3ListConnectorConfigs" {
+			t.Fatalf("unexpected operation: %s", request.Operation)
+		}
+		return sdk.NewResponseStream(sdk.Response{Status: 200, ContentType: "application/json", Body: []byte(`{"data":{"Stripe":{}}}`)}), nil
+	})
+	host := &inputHost{MemoryHost: memory, input: []byte(`{"apiKey":"` + secret + `","name":123}`)}
+	err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
+		CommandID: "payments.v3.connectors.install", Arguments: []string{"stripe", "opaque-input"}, Target: stackTarget, ServiceVersions: paymentsV3,
+	}, host)
+	if err == nil {
+		t.Fatal("expected generated connector decode error")
+	}
+	if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "apiKey") {
+		t.Fatalf("connector decode error leaked input: %v", err)
+	}
+}
+
+func TestExecuteGetConnectorConfigDoesNotEchoSecretBeforeRedaction(t *testing.T) {
+	const secret = "must-not-escape"
+	memory := sdk.NewMemoryHost(func(_ context.Context, request sdk.Request) (sdk.Responses, error) {
+		switch request.Operation {
+		case "v3ListConnectors":
+			return sdk.NewResponseStream(sdk.Response{Status: 200, ContentType: "application/json", Body: []byte(`{"cursor":{"data":[],"hasMore":false}}`)}), nil
+		case "v3GetConnectorConfig":
+			return sdk.NewResponseStream(sdk.Response{Status: 200, ContentType: "application/json", Body: []byte(`{"data":{"provider":"Future","apiKey":"` + secret + `"}}`)}), nil
+		default:
+			t.Fatalf("unexpected operation: %s", request.Operation)
+			return nil, nil
+		}
+	})
+	err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
+		CommandID: "payments.v3.connectors.get-config", Flags: []sdk.FlagOccurrence{{Name: "connector-id", Value: "connector_1"}}, Target: stackTarget, ServiceVersions: paymentsV3,
+	}, memory)
+	if err == nil {
+		t.Fatal("expected generated connector response decode error")
+	}
+	if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "apiKey") {
+		t.Fatalf("connector response error leaked output: %v", err)
+	}
+}
+
+func TestExecuteGetConnectorConfigPreservesUpstreamHTTPFailure(t *testing.T) {
+	memory := sdk.NewMemoryHost(func(_ context.Context, request sdk.Request) (sdk.Responses, error) {
+		switch request.Operation {
+		case "v3ListConnectors":
+			return sdk.NewResponseStream(sdk.Response{Status: 200, ContentType: "application/json", Body: []byte(`{"cursor":{"data":[],"hasMore":false}}`)}), nil
+		case "v3GetConnectorConfig":
+			return sdk.NewResponseStream(sdk.Response{Status: 404, ContentType: "application/json", Body: []byte(`{"errorCode":"NOT_FOUND"}`)}), nil
+		default:
+			t.Fatalf("unexpected operation: %s", request.Operation)
+			return nil, nil
+		}
+	})
+	err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
+		CommandID: "payments.v3.connectors.get-config", Flags: []sdk.FlagOccurrence{{Name: "connector-id", Value: "missing"}}, Target: stackTarget, ServiceVersions: paymentsV3,
+	}, memory)
+	if err == nil {
+		t.Fatal("expected upstream HTTP failure")
+	}
+	if strings.Contains(err.Error(), "invalid connector config response") {
+		t.Fatalf("upstream HTTP failure was misclassified as response decoding: %v", err)
+	}
+}
+
+func TestExecuteInstallConnectorRejectsProviderAbsentFromLiveCatalogue(t *testing.T) {
+	calls := 0
+	memory := sdk.NewMemoryHost(func(_ context.Context, request sdk.Request) (sdk.Responses, error) {
+		calls++
+		if request.Operation != "v3ListConnectorConfigs" {
+			t.Fatalf("provider absent from live catalogue reached %s", request.Operation)
+		}
+		return sdk.NewResponseStream(sdk.Response{Status: 200, ContentType: "application/json", Body: []byte(`{"data":{"Adyen":{}}}`)}), nil
+	})
+	host := &inputHost{MemoryHost: memory, input: []byte(`{"apiKey":"secret","name":"primary"}`)}
+	err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{
+		CommandID: "payments.v3.connectors.install", Arguments: []string{"Stripe", "opaque-input"}, Target: stackTarget, ServiceVersions: paymentsV3,
+	}, host)
+	if err == nil {
+		t.Fatal("expected absent live provider rejection")
+	}
+	if calls != 1 {
+		t.Fatalf("host requests = %d, want only catalogue lookup", calls)
+	}
+}
+
 func TestExecuteRejectsInvalidGeneratedRequestDTOBeforeHostRequest(t *testing.T) {
 	body := []byte(`{"createdAt":{}}`)
 	calls := 0
@@ -424,6 +512,25 @@ func TestExecuteMetadataBuildsRequestBody(t *testing.T) {
 	}
 }
 
+func TestExecuteMetadataRequiresAtLeastOneEntry(t *testing.T) {
+	for _, commandID := range []string{"payments.v3.payments.set-metadata", "payments.v3.bank_accounts.update-metadata"} {
+		t.Run(commandID, func(t *testing.T) {
+			calls := 0
+			host := sdk.NewMemoryHost(func(_ context.Context, _ sdk.Request) (sdk.Responses, error) {
+				calls++
+				return sdk.NewResponseStream(sdk.Response{Status: 204}), nil
+			})
+			err := (Plugin{}).Execute(context.Background(), sdk.ExecuteRequest{CommandID: commandID, Arguments: []string{"resource_1"}, Target: stackTarget, ServiceVersions: paymentsV3}, host)
+			if err == nil {
+				t.Fatal("expected missing metadata rejection")
+			}
+			if calls != 0 {
+				t.Fatalf("host requests = %d, want 0", calls)
+			}
+		})
+	}
+}
+
 func TestExecuteGetConnectorConfigRedactsCredentialFields(t *testing.T) {
 	host := sdk.NewMemoryHost(func(_ context.Context, _ sdk.Request) (sdk.Responses, error) {
 		return sdk.NewResponseStream(sdk.Response{Status: 200, ContentType: "application/json", Body: []byte(`{"data":{"provider":"Stripe","apiKey":"secret","name":"primary","pageSize":9007199254740993,"pollingPeriod":"30m"}}`)}), nil
@@ -460,5 +567,16 @@ func TestRedactConnectorConfigCoversEveryCredentialKey(t *testing.T) {
 				t.Fatalf("%s was not redacted: %s", test.key, redacted)
 			}
 		})
+	}
+}
+
+func TestRedactConnectorConfigDoesNotCreateAbsentOptionalSecret(t *testing.T) {
+	encoded := []byte(`{"data":{"provider":"Adyen","apiKey":"credential","name":"primary","pollingPeriod":"30m"}}`)
+	redacted, err := redactConnectorConfig(encoded)
+	if err != nil {
+		t.Fatalf("redact: %v", err)
+	}
+	if strings.Contains(string(redacted), "webhookPassword") {
+		t.Fatalf("redaction created absent optional credential: %s", redacted)
 	}
 }

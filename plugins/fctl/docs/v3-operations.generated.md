@@ -38,7 +38,7 @@ Legacy fctl baseline revision: `693c58e27865f83332e6c3199d61fed81b742f41`
 | `v3GetBankAccount` | `GetBankAccount` | GET | `/v3/bank-accounts/{bankAccountID}` | **none declared** | — | 200 `V3GetBankAccountResponse` | — | `payments bank_accounts get <bankAccountID>` | — | G1-undeclared-scopes |
 | `v3ListAccounts` | `ListAccounts` | GET | `/v3/accounts` | `payments:read` | `V3QueryBuilder` | 200 `V3AccountsCursorResponse` | get-with-body, paginated | `payments accounts list` | — | — |
 | `v3ListBankAccounts` | `ListBankAccounts` | GET | `/v3/bank-accounts` | `payments:read` | `V3QueryBuilder` | 200 `V3BankAccountsCursorResponse` | get-with-body, paginated | `payments bank_accounts list` | — | — |
-| `v3UpdateBankAccountMetadata` | `UpdateBankAccountMetadata` | PATCH | `/v3/bank-accounts/{bankAccountID}/metadata` | **none declared** | `V3UpdateBankAccountMetadataRequest` | 204 (no body) | — | `payments bank_accounts update-metadata <bankAccountID> [<key>=<value>...]` | — | G1-undeclared-scopes |
+| `v3UpdateBankAccountMetadata` | `UpdateBankAccountMetadata` | PATCH | `/v3/bank-accounts/{bankAccountID}/metadata` | **none declared** | `V3UpdateBankAccountMetadataRequest` | 204 (no body) | not-replay-safe | `payments bank_accounts update-metadata <bankAccountID> [<key>=<value>...]` | — | G1-undeclared-scopes |
 
 ### connectors/schedules (12)
 
@@ -55,7 +55,7 @@ Legacy fctl baseline revision: `693c58e27865f83332e6c3199d61fed81b742f41`
 | `v3ListConnectors` | `ListConnectors` | GET | `/v3/connectors` | `payments:read` | `V3QueryBuilder` | 200 `V3ConnectorsCursorResponse` | get-with-body, paginated | `payments connectors get-config`<br>`payments connectors list` | — | — |
 | `v3ResetConnector` | `ResetConnector` | POST | `/v3/connectors/{connectorID}/reset` | `payments:write` | — | 202 `V3ResetConnectorResponse` | destructive, not-replay-safe | — (no legacy precedent) | — | — |
 | `v3UninstallConnector` | `UninstallConnector` | DELETE | `/v3/connectors/{connectorID}` | `payments:write` | — | 202 `V3UninstallConnectorResponse` | destructive | `payments connectors uninstall` | — | — |
-| `v3UpdateConnectorConfig` | `v3UpdateConnectorConfig` | PATCH | `/v3/connectors/{connectorID}/config` | `payments:write` | `V3UpdateConnectorRequest` | 204 (no body) | secret:request | `payments connectors update-config <connector> <file>\|-` | — | — |
+| `v3UpdateConnectorConfig` | `v3UpdateConnectorConfig` | PATCH | `/v3/connectors/{connectorID}/config` | `payments:write` | `V3UpdateConnectorRequest` | 204 (no body) | secret:request, not-replay-safe | `payments connectors update-config <connector> <file>\|-` | — | — |
 
 ### payment-service-users (15)
 
@@ -94,7 +94,7 @@ Legacy fctl baseline revision: `693c58e27865f83332e6c3199d61fed81b742f41`
 | `v3RejectPaymentInitiation` | `RejectPaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/reject` | `payments:write` | — | 204 (no body) | not-replay-safe | `payments transfer_initiation reject <transferInitiationID>` | — | — |
 | `v3RetryPaymentInitiation` | `RetryPaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/retry` | `payments:write` | — | 202 `V3RetryPaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation retry <transferID>` | — | — |
 | `v3ReversePaymentInitiation` | `ReversePaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/reverse` | `payments:write` | `V3ReversePaymentInitiationRequest` | 202 `V3ReversePaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation reverse <transferID> <file>\|-` | — | — |
-| `v3UpdatePaymentMetadata` | `UpdatePaymentMetadata` | PATCH | `/v3/payments/{paymentID}/metadata` | `payments:write` | `V3UpdatePaymentMetadataRequest` | 204 (no body) | — | `payments payments set-metadata <paymentID> [<key>=<value>...]` | — | — |
+| `v3UpdatePaymentMetadata` | `UpdatePaymentMetadata` | PATCH | `/v3/payments/{paymentID}/metadata` | `payments:write` | `V3UpdatePaymentMetadataRequest` | 204 (no body) | not-replay-safe | `payments payments set-metadata <paymentID> [<key>=<value>...]` | — | — |
 
 ### pools/orders/conversions/tasks (14)
 
@@ -113,7 +113,7 @@ Legacy fctl baseline revision: `693c58e27865f83332e6c3199d61fed81b742f41`
 | `v3ListOrders` | `ListOrders` | GET | `/v3/orders` | `payments:read` | `V3QueryBuilder` | 200 `V3OrdersCursorResponse` | get-with-body, paginated | `payments orders list` | — | — |
 | `v3ListPools` | `ListPools` | GET | `/v3/pools` | `payments:read` | `V3QueryBuilder` | 200 `V3PoolsCursorResponse` | get-with-body, paginated | `payments pools list` | — | — |
 | `v3RemoveAccountFromPool` | `RemoveAccountFromPool` | DELETE | `/v3/pools/{poolID}/accounts/{accountID}` | `payments:write` | — | 204 (no body) | destructive | `payments pools remove-account <poolID> <accountID>` | — | — |
-| `v3UpdatePoolQuery` | `UpdatePoolQuery` | PATCH | `/v3/pools/{poolID}/query` | `payments:write` | `V3UpdatePoolQueryRequest` | 204 (no body) | — | `payments pools update-query <poolID> <file>\|-` | — | — |
+| `v3UpdatePoolQuery` | `UpdatePoolQuery` | PATCH | `/v3/pools/{poolID}/query` | `payments:write` | `V3UpdatePoolQueryRequest` | 204 (no body) | not-replay-safe | `payments pools update-query <poolID> <file>\|-` | — | — |
 
 ## Legacy baseline mapping
 

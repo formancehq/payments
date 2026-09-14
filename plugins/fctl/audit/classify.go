@@ -172,7 +172,8 @@ type Risk struct {
 	Secret SecretDirection `json:"secret"`
 	// DisplayOnce is true when the success body carries a one-shot value.
 	DisplayOnce bool `json:"displayOnce"`
-	// ReplaySafe is true for HTTP-idempotent methods (GET, PUT, PATCH, DELETE).
+	// ReplaySafe is true for HTTP-idempotent methods (GET, PUT, DELETE). PATCH
+	// requires operation-specific proof and is not assumed replay-safe.
 	// The Payments v3 document declares no idempotency key on any operation, so
 	// POST operations are never replay-safe: see NoIdempotencyKey.
 	ReplaySafe bool `json:"replaySafe"`
@@ -204,7 +205,7 @@ func RiskOf(op Operation) Risk {
 		Destructive: op.Method == "DELETE" || resetLike,
 		Secret:      secretBearing[op.OperationID],
 		DisplayOnce: once,
-		ReplaySafe:  op.Method == "GET" || op.Method == "PUT" || op.Method == "PATCH" || op.Method == "DELETE",
+		ReplaySafe:  op.Method == "GET" || op.Method == "PUT" || op.Method == "DELETE",
 		Paginated:   op.Paginated(),
 		GetWithBody: op.Method == "GET" && op.HasRequestBody(),
 	}

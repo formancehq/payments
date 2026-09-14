@@ -111,6 +111,23 @@ func TestCatalogueHasExactCommandAndRequestDenominators(t *testing.T) {
 	}
 }
 
+func TestCatalogueMarksOnlyConnectorCredentialInputsSensitive(t *testing.T) {
+	wantSensitive := map[string]bool{
+		"payments.v3.connectors.install":       true,
+		"payments.v3.connectors.update-config": true,
+	}
+	for _, command := range Catalogue() {
+		for _, artifact := range command.InputArtifacts {
+			if artifact.ArgumentName != "input" {
+				continue
+			}
+			if got, want := artifact.Sensitive, wantSensitive[command.ID]; got != want {
+				t.Errorf("%s input sensitive = %t, want %t", command.ID, got, want)
+			}
+		}
+	}
+}
+
 func TestCatalogueOperationsMatchTheCurrentOpenAPISpec(t *testing.T) {
 	report, err := audit.Build("../../../openapi.yaml")
 	if err != nil {

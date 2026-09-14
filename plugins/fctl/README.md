@@ -35,11 +35,20 @@ exclusively owns both concerns. The host's `--all` control asks the plugin to
 follow opaque Payments cursors within the canonical limits of 100 pages,
 10,000 items and 4 MiB.
 
+Nine admitted listing commands preserve the Payments API's JSON body on `GET`.
+That contract works through the native host transport, but browser `fetch`
+rejects `GET` requests with a body. Browser acceptance for those commands is
+therefore explicitly blocked pending a body-free product API alternative; the
+plugin never drops the body and silently broadens a filtered query.
+
 All 44 admitted v3 operations have a generated-client mapping. Connector
 install and update canonicalize the requested provider against the live
 connector-config catalogue before decoding its generated union. A newly added
 provider that is absent from the pinned generated client fails closed and
 requires client regeneration; it is never forwarded as untyped JSON.
+Credential-bearing install and update inputs are declared sensitive host
+artifacts, and connector decode failures return constant diagnostics without
+embedding request or response bytes.
 
 Three bank-account operations currently have an explicitly empty scope set:
 the Payments OpenAPI document protects the routes but omits their scopes. This

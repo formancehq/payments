@@ -68,10 +68,16 @@ func (spec commandSpec) command() sdk.Command {
 	if paginated {
 		maxRequests += sdk.DefaultAllPagesMaxPages - 1
 	}
+	sensitiveInput := false
+	for _, operation := range spec.operations {
+		if operation.id == "v3InstallConnector" || operation.id == "v3UpdateConnectorConfig" {
+			sensitiveInput = true
+		}
+	}
 	artifacts := make([]sdk.InputArtifactSpec, 0, 2)
 	for _, argument := range spec.arguments {
 		if argument.Name == "input" {
-			artifacts = append(artifacts, sdk.InputArtifactSpec{ArgumentName: "input", MediaTypes: []string{"application/json"}, MaxBytes: requestBytes, AllowFile: true, AllowStdin: true})
+			artifacts = append(artifacts, sdk.InputArtifactSpec{ArgumentName: "input", MediaTypes: []string{"application/json"}, MaxBytes: requestBytes, AllowFile: true, AllowStdin: true, Sensitive: sensitiveInput})
 		}
 	}
 	for _, flag := range spec.flags {
@@ -101,7 +107,7 @@ func arg(name string) sdk.Argument {
 	return sdk.Argument{Name: name, Usage: name, Type: sdk.ArgumentString, Required: true, Completion: sdk.CompletionSpec{Kind: sdk.CompletionNone}}
 }
 func repeatedArg(name string) sdk.Argument {
-	return sdk.Argument{Name: name, Usage: name + " as key=value", Type: sdk.ArgumentStringArray, Repeated: true, Completion: sdk.CompletionSpec{Kind: sdk.CompletionNone}}
+	return sdk.Argument{Name: name, Usage: name + " as key=value", Type: sdk.ArgumentStringArray, Required: true, Repeated: true, Completion: sdk.CompletionSpec{Kind: sdk.CompletionNone}}
 }
 func flag(name string, kind sdk.FlagType, required bool) sdk.Flag {
 	return sdk.Flag{Name: name, Usage: name, Type: kind, Required: required, Completion: sdk.CompletionSpec{Kind: sdk.CompletionNone}}
@@ -195,6 +201,9 @@ func inputSchema(arguments []sdk.Argument, flags []sdk.Flag) []byte {
 		schema := `{"type":` + strconv.Quote(value.typ)
 		if value.typ == "array" {
 			schema += `,"items":{"type":"string"}`
+			if value.required {
+				schema += `,"minItems":1`
+			}
 		}
 		schema += `}`
 		properties = append(properties, strconv.Quote(name)+":"+schema)

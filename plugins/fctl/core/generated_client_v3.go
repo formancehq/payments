@@ -70,6 +70,9 @@ func executeOperation(ctx context.Context, host sdk.Host, policy sdk.OperationPo
 		}),
 	)
 	if err := invokeGeneratedV3(ctx, generated.Payments.V3, operation, arguments, flags, cursor, body, priorResponse); err != nil {
+		if operation.id == "v3GetConnectorConfig" && len(captured.body) != 0 {
+			return nil, "", invalid("invalid connector config response")
+		}
 		return nil, "", err
 	}
 	if operation.id == "v3GetConnectorConfig" {
@@ -316,7 +319,7 @@ func generatedBody[T any](body []byte) (*T, error) {
 	}
 	var request *T
 	if err := json.Unmarshal(body, &request); err != nil {
-		return nil, invalid("invalid generated request body: %v", err)
+		return nil, invalid("generated request body does not match the operation schema")
 	}
 	if request == nil {
 		return nil, invalid("generated request body must be an object")
@@ -351,7 +354,7 @@ func generatedConnectorBody(body []byte, requested string, priorResponse []byte)
 	if config == nil {
 		return nil, "", invalid("connector configuration must be an object")
 	}
-	canonical := requested
+	canonical := ""
 	var available struct {
 		Data map[string]json.RawMessage `json:"data"`
 	}
@@ -365,6 +368,9 @@ func generatedConnectorBody(body []byte, requested string, priorResponse []byte)
 				break
 			}
 		}
+	}
+	if canonical == "" {
+		return nil, "", invalid("connector provider is absent from the live catalogue")
 	}
 	provider, err := json.Marshal(canonical)
 	if err != nil {

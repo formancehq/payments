@@ -214,6 +214,9 @@ func collectArguments(command sdk.Command, values []string) (map[string][]string
 	position := 0
 	for _, argument := range command.Arguments {
 		if argument.Repeated {
+			if argument.Required && position == len(values) {
+				return nil, invalid("missing required argument %q", argument.Name)
+			}
 			out[argument.Name] = append([]string(nil), values[position:]...)
 			position = len(values)
 			continue
@@ -268,7 +271,7 @@ func invalid(format string, values ...any) error {
 func redactConnectorConfig(encoded []byte) ([]byte, error) {
 	var response paymentscomponents.V3GetConnectorConfigResponse
 	if err := json.Unmarshal(encoded, &response); err != nil {
-		return nil, invalid("invalid connector config response: %v", err)
+		return nil, invalid("invalid connector config response")
 	}
 	credentialKeys := map[string]struct{}{
 		"apiKey": {}, "apiSecret": {}, "clientSecret": {}, "privateKey": {}, "password": {}, "passphrase": {},
@@ -301,7 +304,7 @@ func redactConnectorConfig(encoded []byte) ([]byte, error) {
 						field.SetString("[REDACTED]")
 					}
 				case reflect.Pointer:
-					if field.Type().Elem().Kind() == reflect.String && field.CanSet() {
+					if !field.IsNil() && field.Type().Elem().Kind() == reflect.String && field.CanSet() {
 						redacted := reflect.New(field.Type().Elem())
 						redacted.Elem().SetString("[REDACTED]")
 						field.Set(redacted)

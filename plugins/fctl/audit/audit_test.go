@@ -82,6 +82,35 @@ func TestOperationIDsAreUnique(t *testing.T) {
 	}
 }
 
+func TestPatchIsNotAssumedReplaySafe(t *testing.T) {
+	risk := audit.RiskOf(audit.Operation{OperationID: "patch-without-explicit-idempotency", Method: "PATCH"})
+	if risk.ReplaySafe {
+		t.Fatal("PATCH must not be classified replay-safe without an operation-specific proof")
+	}
+}
+
+func TestBrowserGETBodyCompatibilityGapIsExplicit(t *testing.T) {
+	if len(audit.CompatibilityGaps) != 1 {
+		t.Fatalf("compatibility gaps = %d, want one browser GET-body gap", len(audit.CompatibilityGaps))
+	}
+	gap := audit.CompatibilityGaps[0]
+	if gap.ID != "C1-browser-get-with-body" || gap.Host != "browser" || len(gap.OperationIDs) != 15 {
+		t.Fatalf("browser compatibility gap = %#v", gap)
+	}
+	registered := make(map[string]bool, len(gap.OperationIDs))
+	for _, operationID := range gap.OperationIDs {
+		if registered[operationID] {
+			t.Errorf("browser compatibility gap repeats %s", operationID)
+		}
+		registered[operationID] = true
+	}
+	for _, record := range build(t).V3 {
+		if got, want := registered[record.OperationID], record.Risk.GetWithBody; got != want {
+			t.Errorf("browser GET-body compatibility for %s = %t, want %t", record.OperationID, got, want)
+		}
+	}
+}
+
 // TestTagPartition asserts the two tags partition the document with nothing
 // left over, so "the v3 surface" is a well-defined denominator.
 func TestTagPartition(t *testing.T) {
