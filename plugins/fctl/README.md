@@ -27,9 +27,11 @@ absent: v3 exposes the same two transitions as the explicit `approve` and
 | `audit/`, `cmd/specaudit/` | Deterministic inventory extraction and drift checks. |
 
 JSON request files and list query bodies are read through the host input
-artifact capability. The plugin never opens local paths. Product requests are
-constructed and decoded by the Payments-generated v3 client over
-`producthttp`, so the plugin never receives an endpoint or credential.
+artifact capability. Query artifacts are optional, matching the `--query`
+flag, while operation input arguments remain required. The plugin never opens
+local paths. Product requests are constructed and decoded by the
+Payments-generated v3 client over `producthttp`, so the plugin never receives
+an endpoint or credential.
 Generated-client ambient authentication and retries are disabled; the host
 exclusively owns both concerns. The host's `--all` control asks the plugin to
 follow opaque Payments cursors within the canonical limits of 100 pages,
@@ -64,6 +66,12 @@ hash and canonical WIT hash without embedding a checkout path. Point
 content-addressed source tree. Every Go test and component build runs through a
 wrapper that validates the lock, creates an ephemeral `go.work`, and removes it
 on both success and failure:
+
+The additive optional-query descriptor currently depends on fctl core commits
+`ac0d305fb54ca5f42dc441a696dee4d1095f61e5` and
+`5dbc0e93680eebbd695819d79682c10680cc9df0`. The checked-in SDK lock remains at
+its previous sealed revision until integration can produce the canonical NAR
+and WIT hashes; local validation must project the exact dependency checkout.
 
 ```sh
 export FCTL_SDK_ROOT=/path/to/fctl-v2-poc

@@ -18,6 +18,59 @@ func TestDescribeExportsAllPaymentsCommands(t *testing.T) {
 	if descriptor.Metadata.Name != "payments" || len(descriptor.Commands) != 44 {
 		t.Fatalf("descriptor identity/commands = %q/%d", descriptor.Metadata.Name, len(descriptor.Commands))
 	}
+	queryArtifacts := 0
+	for _, command := range descriptor.Commands {
+		for _, artifact := range command.InputArtifacts {
+			if artifact.FlagName == "query" {
+				queryArtifacts++
+				if !artifact.Optional {
+					t.Errorf("%s query artifact optional=false after guest round trip", command.ID)
+				}
+			}
+		}
+	}
+	if queryArtifacts != 9 {
+		t.Fatalf("query artifacts = %d, want 9", queryArtifacts)
+	}
+}
+
+func TestPaymentsLifecycleAcceptsAbsentAndPresentOptionalQuery(t *testing.T) {
+	start := func(executionID string, flags []*pb.FlagOccurrence) [][]byte {
+		return Start(executionID, lifecycleInput(t, executionID, pb.MessageKind_MESSAGE_KIND_START_EXECUTION, &pb.StartPayload{
+			Start: &pb.StartPayload_Command{Command: &pb.CommandStart{
+				CommandId: "payments.v3.accounts.list", Flags: flags,
+				Target:          &pb.TargetCoordinates{OrganizationId: "org-1", StackId: "stack-1"},
+				ServiceVersions: []*pb.ServiceVersion{{Service: pb.Service_SERVICE_PAYMENTS, Version: "3.0.0", Major: 3}},
+			}},
+		}))
+	}
+
+	const absentID = "payments-query-absent"
+	frames := start(absentID, nil)
+	request := lifecycleHostRequest(t, frames)
+	if product := request.GetProduct(); product.GetOperationId() != "v3ListAccounts" || len(product.GetHttp().GetBody()) != 0 {
+		t.Fatalf("absent query request = %#v", product)
+	}
+	Close(absentID)
+
+	const presentID = "payments-query-present"
+	frames = start(presentID, []*pb.FlagOccurrence{{Name: "query", Value: "opaque-query"}})
+	request = lifecycleHostRequest(t, frames)
+	if request.GetInputArtifact().GetOpaqueHandle() != "opaque-query" {
+		t.Fatalf("present query first request = %#v", request)
+	}
+	const query = `{"sort":"createdAt:desc"}`
+	frames = Resume(presentID, lifecycleInput(t, presentID, pb.MessageKind_MESSAGE_KIND_HOST_RESPONSE, &pb.HostResponsePayload{
+		CorrelationId: request.GetCorrelationId(),
+		Response: &pb.HostResponsePayload_InputArtifact{InputArtifact: &pb.InputArtifactReadResponse{
+			Chunk: []byte(query), Final: true,
+		}},
+	}))
+	request = lifecycleHostRequest(t, frames)
+	if product := request.GetProduct(); product.GetOperationId() != "v3ListAccounts" || string(product.GetHttp().GetBody()) != query {
+		t.Fatalf("present query product request = %#v", product)
+	}
+	Close(presentID)
 }
 
 func TestPaymentsLifecycleExecutesSensitiveArtifactAndCleansUp(t *testing.T) {

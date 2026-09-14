@@ -82,7 +82,7 @@ func (spec commandSpec) command() sdk.Command {
 	}
 	for _, flag := range spec.flags {
 		if flag.Name == "query" {
-			artifacts = append(artifacts, sdk.InputArtifactSpec{FlagName: "query", MediaTypes: []string{"application/json"}, MaxBytes: requestBytes, AllowFile: true, AllowStdin: true})
+			artifacts = append(artifacts, sdk.InputArtifactSpec{FlagName: "query", MediaTypes: []string{"application/json"}, MaxBytes: requestBytes, AllowFile: true, AllowStdin: true, Optional: true})
 		}
 	}
 	publicOutputSchema := objectSchema

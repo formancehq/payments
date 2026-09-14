@@ -121,10 +121,31 @@ func TestCatalogueMarksOnlyConnectorCredentialInputsSensitive(t *testing.T) {
 			if artifact.ArgumentName != "input" {
 				continue
 			}
+			if artifact.Optional {
+				t.Errorf("%s required input artifact is optional", command.ID)
+			}
 			if got, want := artifact.Sensitive, wantSensitive[command.ID]; got != want {
 				t.Errorf("%s input sensitive = %t, want %t", command.ID, got, want)
 			}
 		}
+	}
+}
+
+func TestCatalogueMarksEveryOptionalQueryArtifactOptional(t *testing.T) {
+	queryArtifacts := 0
+	for _, command := range Catalogue() {
+		for _, artifact := range command.InputArtifacts {
+			if artifact.FlagName != "query" {
+				continue
+			}
+			queryArtifacts++
+			if !artifact.Optional || artifact.Repeated || artifact.Sensitive {
+				t.Errorf("%s query artifact = %#v, want optional single non-sensitive", command.ID, artifact)
+			}
+		}
+	}
+	if queryArtifacts != 9 {
+		t.Fatalf("query artifacts = %d, want 9", queryArtifacts)
 	}
 }
 
