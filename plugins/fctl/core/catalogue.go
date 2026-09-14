@@ -183,9 +183,10 @@ func inputSchema(arguments []sdk.Argument, flags []sdk.Flag) []byte {
 	}
 	for _, value := range flags {
 		typ := "string"
-		if value.Type == sdk.FlagBool {
+		switch value.Type {
+		case sdk.FlagBool:
 			typ = "boolean"
-		} else if value.Type == sdk.FlagInt32 {
+		case sdk.FlagInt32:
 			typ = "integer"
 		}
 		fields[value.Name] = field{typ, value.Required}
