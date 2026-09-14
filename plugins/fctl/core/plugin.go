@@ -6,10 +6,12 @@ import (
 	"github.com/formancehq/fctl-v2-poc/pkg/plugin/sdk"
 )
 
-const (
-	Name    = "payments"
-	Version = "0.1.0"
-)
+const Name = "payments"
+
+// Version is the plugin's SemVer identity. It is a variable, not a constant, so
+// a release build can inject the exact published version at link time with
+// `-ldflags -X`; the default is the development value.
+var Version = "0.1.0"
 
 type Plugin struct{}
 

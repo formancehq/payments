@@ -93,6 +93,12 @@ The module gate exercises the catalogue, adapter and component entry point
 with the race detector, and fails when aggregate plugin statement coverage is
 below 80%. The root `just tests` recipe invokes this same gate.
 
+`core.Version` is the plugin's single build-time variable. A release build
+injects the published SemVer by exporting `FCTL_PLUGIN_VERSION` before
+`just build-component`; the value is validated as SemVer 2.0.0 and linked with
+`-ldflags -X`. Unset means a development build, which keeps the compiled
+default and produces byte-identical artifacts.
+
 When Git metadata is present, the wrapper requires the locked commit and origin
 URL, exports only the SDK and WIT from that commit, and validates the exported
 projection. Dirty or ignored checkout files never enter the Go workspace. A

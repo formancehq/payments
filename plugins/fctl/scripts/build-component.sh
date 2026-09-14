@@ -7,6 +7,16 @@ entrypoint="$plugin_root/entrypoints/payments/implementation.go"
 wit_root="$plugin_root/wit"
 module_path="github.com/formancehq/payments/plugins/fctl"
 
+# A release build passes the exact published SemVer; anything else is refused
+# rather than baked into an artifact that then misreports its own identity.
+if [[ -n "${FCTL_PLUGIN_VERSION:-}" ]]; then
+  semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+  [[ "$FCTL_PLUGIN_VERSION" =~ $semver ]] || {
+    printf 'FCTL_PLUGIN_VERSION is not a SemVer 2.0.0 version: %s\n' "$FCTL_PLUGIN_VERSION" >&2
+    exit 2
+  }
+fi
+
 for tool in cmp componentize-go go wasi-virt wasm-opt wasm-tools; do
   command -v "$tool" >/dev/null || {
     printf 'required build tool is unavailable: %s\n' "$tool" >&2
