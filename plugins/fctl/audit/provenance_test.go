@@ -123,7 +123,7 @@ func TestGeneratedClientAdoptionProvenanceIsExact(t *testing.T) {
 		t.Fatalf("working generated client or OpenAPI differs from recorded product revision: %v", err)
 	}
 
-	if provenance.FctlSDK.Revision != "545521bfa222250af6b4419b194c7967cded0379" || provenance.RFC0011.Revision != provenance.FctlSDK.Revision {
+	if provenance.FctlSDK.Revision != "e9b1395f46f3100b381dbe00f5213de28e6df0e1" || provenance.RFC0011.Revision != provenance.FctlSDK.Revision {
 		t.Fatalf("unexpected fctl/RFC revision: fctl=%s rfc=%s", provenance.FctlSDK.Revision, provenance.RFC0011.Revision)
 	}
 	lockEncoded, err := os.ReadFile(filepath.Join(moduleRoot, "fctl-sdk.lock.json"))
@@ -153,7 +153,7 @@ func TestGeneratedClientAdoptionProvenanceIsExact(t *testing.T) {
 	if filepath.IsAbs(provenance.RFC0011.Path) || filepath.Clean(provenance.RFC0011.Path) != "docs/rfcs/0011-generated-product-client-host-adapters.md" {
 		t.Fatalf("RFC path must be the canonical repository-relative path, got %q", provenance.RFC0011.Path)
 	}
-	if provenance.RFC0011.Status != "Validated" || provenance.RFC0011.SHA256 != "e12b973a0cbb214550c36316afc2fc691f6d5f89ab236b0f3ce01de5e76b6ffe" {
+	if provenance.RFC0011.Status != "Validated" || provenance.RFC0011.SHA256 != "177ebf0a9a0906b6d4c2bb5dc5ff483aa8a80f74c104254463b23a4ed85a665d" {
 		t.Fatalf("RFC 0011 proof does not match the pinned source metadata")
 	}
 	if provenance.Evidence.ExecutableOperations != 44 || provenance.Evidence.AdmissionBlocked != 0 || provenance.Evidence.ReleaseGapOperations != 3 ||

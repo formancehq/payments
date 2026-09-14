@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const authoringFctlSDKRevision = "545521bfa222250af6b4419b194c7967cded0379"
+const authoringFctlSDKRevision = "e9b1395f46f3100b381dbe00f5213de28e6df0e1"
 
 func TestAuthoringDevShellPinsTheFctlComponentToolchain(t *testing.T) {
 	paths := []string{

@@ -11,10 +11,10 @@
   },
   "fctlSdk": {
     "modulePath": "github.com/formancehq/fctl-v2-poc/pkg/plugin",
-    "repository": "https://github.com/Dav-14/fctl-v2-poc.git",
-    "revision": "545521bfa222250af6b4419b194c7967cded0379",
+    "repository": "https://github.com/formancehq/fctl-v2-poc.git",
+    "revision": "e9b1395f46f3100b381dbe00f5213de28e6df0e1",
     "sdkPath": "pkg/plugin",
-    "sdkNarHash": "sha256-HUMOWv4j015MJaM/RNm2h8W8cIZlkyOrXveQlHUfQfE=",
+    "sdkNarHash": "sha256-DnTiEFya3R9KCYmgv5SO/1StKTCPmndObQrrVHf79Xk=",
     "witPath": "wit/formance/fctl/plugin/v1/plugin.wit",
     "witSha256": "38fdf377264eeada82b23fef153e6bf106ed0624e8916ff62cabdf210d6255f5",
     "wrapper": "./scripts/with-fctl-sdk.sh"
@@ -22,8 +22,8 @@
   "rfc0011": {
     "status": "Validated",
     "path": "docs/rfcs/0011-generated-product-client-host-adapters.md",
-    "sha256": "e12b973a0cbb214550c36316afc2fc691f6d5f89ab236b0f3ce01de5e76b6ffe",
-    "fctlRevision": "545521bfa222250af6b4419b194c7967cded0379"
+    "sha256": "177ebf0a9a0906b6d4c2bb5dc5ff483aa8a80f74c104254463b23a4ed85a665d",
+    "fctlRevision": "e9b1395f46f3100b381dbe00f5213de28e6df0e1"
   },
   "evidence": {
     "executableOperations": 44,

@@ -18,7 +18,7 @@ none is transcribed by hand.
 |---|---|---|
 | `formancehq/payments` (this repo) | `6066bb9296157465fbe11ea7f347f6b46f27a550`, live `origin/main` HEAD verified 2026-09-12 | Authoritative: `openapi.yaml`, `openapi/v3/*`, server routes (`internal/api/`), storage (`internal/storage/`), generated client (`pkg/client/`) |
 | historical fctl baseline | `693c58e27865f83332e6c3199d61fed81b742f41` (read-only source revision) | The prior command surface used to measure compatibility (`cmd/payments/**`) |
-| fctl-v2 SDK | `545521bfa222250af6b4419b194c7967cded0379`, SDK NAR `sha256-HUMOWv4j015MJaM/RNm2h8W8cIZlkyOrXveQlHUfQfE=`, WIT SHA-256 `38fdf377264eeada82b23fef153e6bf106ed0624e8916ff62cabdf210d6255f5` | Public plugin SDK, `producthttp` adapter, RFC 0011 and portable lifecycle contract used by this module |
+| fctl-v2 SDK | `e9b1395f46f3100b381dbe00f5213de28e6df0e1`, SDK NAR `sha256-DnTiEFya3R9KCYmgv5SO/1StKTCPmndObQrrVHf79Xk=`, WIT SHA-256 `38fdf377264eeada82b23fef153e6bf106ed0624e8916ff62cabdf210d6255f5` | Public plugin SDK, `producthttp` adapter, RFC 0011 and portable lifecycle contract used by this module |
 | `go-libs` | `v5.6.1` (this repo's `go.mod`) | Authentication middleware behaviour behind §6 |
 
 `generated-client-provenance.json` records the exact product revision, Git

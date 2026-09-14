@@ -3,7 +3,7 @@
 let
   # The definitions and patch below are copied from the authoring toolchain
   # frozen by this fctl SDK revision.
-  fctlSDKRevision = "545521bfa222250af6b4419b194c7967cded0379";
+  fctlSDKRevision = "e9b1395f46f3100b381dbe00f5213de28e6df0e1";
   rustToolchain = rust-bin.stable."1.91.1".minimal;
   rustPlatform = makeRustPlatform {
     cargo = rustToolchain;

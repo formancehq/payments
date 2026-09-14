@@ -67,11 +67,11 @@ content-addressed source tree. Every Go test and component build runs through a
 wrapper that validates the lock, creates an ephemeral `go.work`, and removes it
 on both success and failure:
 
-The additive optional-query descriptor currently depends on fctl core commits
-`ac0d305fb54ca5f42dc441a696dee4d1095f61e5` and
-`5dbc0e93680eebbd695819d79682c10680cc9df0`. The checked-in SDK lock remains at
-its previous sealed revision until integration can produce the canonical NAR
-and WIT hashes; local validation must project the exact dependency checkout.
+The additive optional-query descriptor requires the SDK's optional
+`InputArtifactSpec` source field. The lock is sealed at fctl revision
+`e9b1395f46f3100b381dbe00f5213de28e6df0e1`, which integrates it. The canonical
+WIT hash is unchanged from the previous pin, so the portable lifecycle
+interface is untouched by this repin.
 
 ```sh
 export FCTL_SDK_ROOT=/path/to/fctl-v2-poc
