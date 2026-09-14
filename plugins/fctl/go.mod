@@ -10,6 +10,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/ericlagergren/decimal v0.0.0-20221120152707-495c53812d05 // indirect
+// Raised above the generated client's own requirement: earlier revisions gate
+// the scale constants on a GOARCH list that omits wasm, so the component guest
+// target cannot compile them.
+require github.com/ericlagergren/decimal v0.0.0-20240411145413-00de7ca16731 // indirect
 
 replace github.com/formancehq/payments/pkg/client => ../../pkg/client
