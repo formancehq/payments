@@ -86,12 +86,11 @@ func (spec commandSpec) command() sdk.Command {
 			artifacts = append(artifacts, sdk.InputArtifactSpec{FlagName: "query", MediaTypes: []string{"application/json"}, MaxBytes: requestBytes, AllowFile: true, AllowStdin: true, Optional: true})
 		}
 	}
-	publicOutputSchema := objectSchema
-	rawOutputSchema := objectSchema
-	if paginated {
-		publicOutputSchema = arraySchema
-		rawOutputSchema = arraySchema
-	}
+	publicOutputSchema := outputSchemaForRender(id, paginated)
+	// Ordinary JSON raw and public payloads are the same bytes. The schema stays
+	// permissive beyond the compact table projection, so JSON/YAML remain
+	// exhaustive while the SDK's identical-schema invariant is preserved.
+	rawOutputSchema := publicOutputSchema
 	// A cursor listing is only reachable past its first page when the caller can
 	// hand the emitted next cursor back. The host injects one continuation
 	// control (`--all`) and carries no cursor, so the resume point has to be a

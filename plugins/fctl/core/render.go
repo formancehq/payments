@@ -1,6 +1,11 @@
 package core
 
-import "github.com/formancehq/fctl-v2-poc/pkg/plugin/sdk"
+import (
+	"encoding/json"
+	"strings"
+
+	"github.com/formancehq/fctl-v2-poc/pkg/plugin/sdk"
+)
 
 // Table render hints are a compact projection over the payload this plugin
 // already emits; the host keeps rendering the exhaustive payload for JSON and
@@ -129,4 +134,86 @@ func renderHints(commandID string) sdk.RenderHints {
 		return sdk.RenderHints{}
 	}
 	return sdk.RenderHints{Table: &sdk.TableRenderHint{Columns: append([]sdk.TableColumn(nil), columns...)}}
+}
+
+// outputSchemaForRender returns a command-specific public schema whenever the
+// command exposes a table projection. Each dotted column path is represented
+// explicitly, while properties outside the compact table remain allowed for
+// exhaustive JSON and YAML output.
+func outputSchemaForRender(commandID string, collection bool) []byte {
+	columns, ok := commandTableColumns[commandID]
+	if !ok {
+		if collection {
+			return arraySchema
+		}
+		return objectSchema
+	}
+	root := map[string]any{"type": "object", "properties": map[string]any{}}
+	for _, column := range columns {
+		segments := strings.Split(column.Field, ".")
+		leafType := any(renderFieldSchemaType(segments[len(segments)-1]))
+		if nullableRenderColumns[commandID+"\x00"+column.Field] {
+			leafType = []any{leafType, "null"}
+		}
+		addSchemaPath(root, segments, leafType)
+	}
+	var schema map[string]any
+	if collection {
+		schema = map[string]any{"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "array", "items": root}
+	} else {
+		root["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+		schema = root
+	}
+	encoded, err := json.Marshal(schema)
+	if err != nil {
+		panic("payments: encode static public output schema: " + err.Error())
+	}
+	return encoded
+}
+
+func addSchemaPath(root map[string]any, segments []string, leafType any) {
+	current := root
+	for index, segment := range segments {
+		properties := current["properties"].(map[string]any)
+		if index == len(segments)-1 {
+			properties[segment] = map[string]any{"type": leafType}
+			return
+		}
+		next, ok := properties[segment].(map[string]any)
+		if !ok {
+			next = map[string]any{"type": "object", "properties": map[string]any{}}
+			properties[segment] = next
+		}
+		current = next
+	}
+}
+
+var nullableRenderColumns = map[string]bool{
+	"payments.v3.accounts.list\x00defaultAsset":                                   true,
+	"payments.v3.accounts.get\x00data.defaultAsset":                               true,
+	"payments.v3.accounts.create\x00data.defaultAsset":                            true,
+	"payments.v3.bank_accounts.list\x00country":                                   true,
+	"payments.v3.bank_accounts.get\x00data.country":                               true,
+	"payments.v3.connectors.schedules.list\x00pausedAt":                           true,
+	"payments.v3.connectors.schedules.get\x00data.pausedAt":                       true,
+	"payments.v3.transfer_initiation.create\x00data.paymentInitiationID":          true,
+	"payments.v3.transfer_initiation.create\x00data.taskID":                       true,
+	"payments.v3.transfer_initiation.reverse\x00data.paymentInitiationReversalID": true,
+	"payments.v3.transfer_initiation.reverse\x00data.taskID":                      true,
+	"payments.v3.pools.list\x00type":                                              true,
+	"payments.v3.pools.get\x00data.type":                                          true,
+	"payments.v3.conversions.list\x00destinationAmount":                           true,
+	"payments.v3.conversions.get\x00data.destinationAmount":                       true,
+	"payments.v3.tasks.get\x00data.connectorID":                                   true,
+}
+
+func renderFieldSchemaType(field string) string {
+	switch field {
+	case "amount", "balance", "sourceAmount", "destinationAmount":
+		return "integer"
+	case "terminated":
+		return "boolean"
+	default:
+		return "string"
+	}
 }

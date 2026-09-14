@@ -1,8 +1,10 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -299,6 +301,258 @@ func TestEveryTableColumnFieldResolvesToAScalarGeneratedProperty(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestEveryTableColumnResolvesInPublicSchemaAndTypedEmittedJSON(t *testing.T) {
+	shapes := wantResultShapes()
+	for _, command := range Catalogue() {
+		if command.Render.Table == nil {
+			continue
+		}
+		shape := shapes[command.ID]
+		var schema map[string]any
+		if err := json.Unmarshal(command.PublicOutputSchema, &schema); err != nil {
+			t.Fatalf("%s public schema: %v", command.ID, err)
+		}
+		payload := populatedGeneratedJSON(t, shape)
+		var decoded any
+		if err := json.Unmarshal(payload, &decoded); err != nil {
+			t.Fatalf("%s typed payload: %v", command.ID, err)
+		}
+		if shape.collected {
+			schema, _ = schema["items"].(map[string]any)
+			items := decoded.([]any)
+			decoded = items[0]
+		}
+		for _, column := range command.Render.Table.Columns {
+			schemaNode, err := resolveSchemaPath(schema, column.Field)
+			if err != nil {
+				t.Errorf("%s public schema does not expose %q: %v", command.ID, column.Field, err)
+			}
+			if _, err := resolveJSONPath(decoded, column.Field); err != nil {
+				t.Errorf("%s typed emitted JSON does not expose %q: %v\npayload=%s", command.ID, column.Field, err, payload)
+			}
+			generatedField, err := resolveGeneratedStructField(shape.root, column.Field)
+			if err == nil {
+				want := any(generatedJSONSchemaType(generatedField.Type))
+				if strings.Contains(generatedField.Tag.Get("json"), "omitempty") {
+					want = []any{want, "null"}
+				}
+				if got := schemaNode["type"]; !reflect.DeepEqual(got, want) {
+					t.Errorf("%s public schema type for %q = %#v, want %q from generated result", command.ID, column.Field, got, want)
+				}
+			}
+		}
+	}
+}
+
+func resolveGeneratedStructField(root reflect.Type, field string) (reflect.StructField, error) {
+	current := root
+	var resolved reflect.StructField
+	for _, segment := range strings.Split(field, ".") {
+		for current.Kind() == reflect.Pointer {
+			current = current.Elem()
+		}
+		if current.Kind() != reflect.Struct {
+			return reflect.StructField{}, fmt.Errorf("segment %q cannot be resolved on non-struct %s", segment, current)
+		}
+		found := false
+		for index := 0; index < current.NumField(); index++ {
+			candidate := current.Field(index)
+			if strings.Split(candidate.Tag.Get("json"), ",")[0] == segment {
+				resolved = candidate
+				current = candidate.Type
+				found = true
+				break
+			}
+		}
+		if !found {
+			return reflect.StructField{}, fmt.Errorf("segment %q is not a JSON property of %s", segment, current)
+		}
+	}
+	return resolved, nil
+}
+
+func generatedJSONSchemaType(kind reflect.Type) string {
+	for kind.Kind() == reflect.Pointer {
+		kind = kind.Elem()
+	}
+	if kind == reflect.TypeOf(time.Time{}) {
+		return "string"
+	}
+	if kind == reflect.TypeOf(big.Int{}) {
+		return "integer"
+	}
+	switch kind.Kind() {
+	case reflect.Bool:
+		return "boolean"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return "integer"
+	case reflect.Float32, reflect.Float64:
+		return "number"
+	default:
+		return "string"
+	}
+}
+
+func TestEveryRenderHintOmissionIsBoundToTheGeneratedSuccessShape(t *testing.T) {
+	type operationRecord struct {
+		OperationID string `json:"operationId"`
+		SuccessCode string `json:"successCode"`
+		SuccessBody string `json:"successBody"`
+	}
+	var report struct {
+		V3 []operationRecord `json:"v3"`
+	}
+	data, err := os.ReadFile("../audit/testdata/report.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, &report); err != nil {
+		t.Fatal(err)
+	}
+	operations := map[string]operationRecord{}
+	for _, operation := range report.V3 {
+		operations[operation.OperationID] = operation
+	}
+
+	nonTabular := map[string]reflect.Type{
+		"payments.v3.pools.balances":            reflect.TypeOf(paymentscomponents.V3PoolBalancesResponse{}),
+		"payments.v3.pools.latest-balances":     reflect.TypeOf(paymentscomponents.V3PoolBalancesResponse{}),
+		"payments.v3.connectors.list-available": reflect.TypeOf(paymentscomponents.V3ConnectorConfigsResponse{}),
+		"payments.v3.connectors.get-config":     reflect.TypeOf(paymentscomponents.V3GetConnectorConfigResponse{}),
+	}
+	for _, command := range Catalogue() {
+		reason, omitted := commandsWithoutTableRenderHints()[command.ID]
+		if !omitted {
+			continue
+		}
+		_, spec, _ := commandByID(command.ID)
+		operation := operations[spec.operations[len(spec.operations)-1].id]
+		if operation.OperationID == "" {
+			t.Errorf("%s omission has no generated operation evidence", command.ID)
+			continue
+		}
+		if strings.Contains(reason, "204 No Content") {
+			if operation.SuccessCode != "204" || operation.SuccessBody != "" {
+				t.Errorf("%s omission claims no content but generated operation is %#v", command.ID, operation)
+			}
+			continue
+		}
+		root, ok := nonTabular[command.ID]
+		if !ok {
+			t.Errorf("%s omission is not bound to a generated result shape", command.ID)
+			continue
+		}
+		dataField, ok := root.FieldByName("Data")
+		if !ok {
+			t.Errorf("%s generated result %s has no Data field", command.ID, root)
+			continue
+		}
+		kind := dataField.Type.Kind()
+		if command.ID == "payments.v3.connectors.get-config" {
+			if kind != reflect.Struct || dataField.Type != reflect.TypeOf(paymentscomponents.V3ConnectorConfig{}) {
+				t.Errorf("%s generated data = %s, want provider union", command.ID, dataField.Type)
+			}
+		} else if kind != reflect.Slice && kind != reflect.Map {
+			t.Errorf("%s generated data = %s, want slice or map", command.ID, dataField.Type)
+		}
+	}
+}
+
+func populatedGeneratedJSON(t *testing.T, shape resultShape) []byte {
+	t.Helper()
+	value := populatedValue(shape.root, 0)
+	if shape.collected {
+		slice := reflect.MakeSlice(reflect.SliceOf(shape.root), 1, 1)
+		slice.Index(0).Set(value)
+		value = slice
+	}
+	encoded, err := json.Marshal(value.Interface())
+	if err != nil {
+		t.Fatalf("marshal populated %s: %v", shape.root, err)
+	}
+	return encoded
+}
+
+func populatedValue(kind reflect.Type, depth int) reflect.Value {
+	if kind == reflect.TypeOf(time.Time{}) {
+		return reflect.ValueOf(time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC))
+	}
+	if kind == reflect.TypeOf(big.Int{}) {
+		return reflect.ValueOf(*big.NewInt(42))
+	}
+	if depth > 8 {
+		return reflect.Zero(kind)
+	}
+	switch kind.Kind() {
+	case reflect.Pointer:
+		value := reflect.New(kind.Elem())
+		value.Elem().Set(populatedValue(kind.Elem(), depth+1))
+		return value
+	case reflect.Struct:
+		value := reflect.New(kind).Elem()
+		for index := 0; index < kind.NumField(); index++ {
+			if value.Field(index).CanSet() {
+				value.Field(index).Set(populatedValue(kind.Field(index).Type, depth+1))
+			}
+		}
+		return value
+	case reflect.String:
+		return reflect.ValueOf("value").Convert(kind)
+	case reflect.Bool:
+		return reflect.ValueOf(true).Convert(kind)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		value := reflect.New(kind).Elem()
+		value.SetInt(42)
+		return value
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		value := reflect.New(kind).Elem()
+		value.SetUint(42)
+		return value
+	case reflect.Float32, reflect.Float64:
+		value := reflect.New(kind).Elem()
+		value.SetFloat(42)
+		return value
+	case reflect.Slice:
+		return reflect.MakeSlice(kind, 0, 0)
+	case reflect.Map:
+		return reflect.MakeMap(kind)
+	default:
+		return reflect.Zero(kind)
+	}
+}
+
+func resolveSchemaPath(schema map[string]any, path string) (map[string]any, error) {
+	current := schema
+	for _, segment := range strings.Split(path, ".") {
+		properties, ok := current["properties"].(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("schema node has no properties")
+		}
+		next, ok := properties[segment].(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("schema has no property %q", segment)
+		}
+		current = next
+	}
+	return current, nil
+}
+
+func resolveJSONPath(payload any, path string) (any, error) {
+	current := payload
+	for _, segment := range strings.Split(path, ".") {
+		object, ok := current.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("payload node is not an object")
+		}
+		current, ok = object[segment]
+		if !ok {
+			return nil, fmt.Errorf("payload has no property %q", segment)
+		}
+	}
+	return current, nil
 }
 
 func resolveGeneratedField(root reflect.Type, field string) (reflect.Type, error) {

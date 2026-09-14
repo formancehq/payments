@@ -51,6 +51,9 @@ Commands whose emitted payload can back truthful fixed columns declare compact
 table render hints; the host keeps rendering the exhaustive payload for JSON
 and YAML. A column field is a dot-separated JSON path into the emitted payload:
 one collection item for a listing, the product envelope for an object result.
+Each hinted command's public JSON Schema explicitly carries those paths and
+their generated scalar types; tests resolve them through both that schema and a
+marshalled generated-client result instead of accepting a type-only schema.
 Thirteen commands declare no hints and the reason is recorded per command in
 `core/render_test.go`: nine emit `204 No Content`, two emit an array under
 `data`, one a provider-keyed map, and `connectors get-config` a redacted,
