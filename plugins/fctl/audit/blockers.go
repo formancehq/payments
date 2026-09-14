@@ -17,19 +17,33 @@ type Blocker struct {
 
 // Blockers are the recorded admission blockers for the /v3 surface. Each one
 // blocks only the operations it lists; no service-wide or family-wide blocking.
-var Blockers = []Blocker{
+var Blockers = []Blocker{}
+
+// ReleaseGap is a source-contract defect that does not prevent local command
+// execution, but must be closed before release evidence can be claimed.
+type ReleaseGap struct {
+	OperationIDs []string
+	ID           string
+	Summary      string
+	Evidence     string
+}
+
+// ReleaseGaps are deliberately separate from admission blockers. The three
+// bank-account commands remain executable with the SDK's explicit empty exact
+// scope set, while their missing named scopes remain an upstream release gap.
+var ReleaseGaps = []ReleaseGap{
 	{
-		ID: "B1-undeclared-scopes",
+		ID: "G1-undeclared-scopes",
 		OperationIDs: []string{
 			"v3ForwardBankAccount",
 			"v3GetBankAccount",
 			"v3UpdateBankAccountMetadata",
 		},
 		Summary: "The document declares no security block for these three " +
-			"operations, so no exact per-operation scope array can be read for " +
-			"them, while the server does require authentication. Until the " +
-			"document declares their scopes, an exact-scope catalogue entry " +
-			"would have to be invented.",
+			"operations while the server does require authentication. The " +
+			"catalogue therefore preserves the exact absence as an empty scope " +
+			"set; named per-operation authorization cannot be claimed until the " +
+			"document declares the scopes.",
 		Evidence: "openapi/v3/v3-api.yaml: GET /v3/bank-accounts/{bankAccountID}, " +
 			"PATCH /v3/bank-accounts/{bankAccountID}/metadata and POST " +
 			"/v3/bank-accounts/{bankAccountID}/forward carry no `security:` key, " +
@@ -37,56 +51,6 @@ var Blockers = []Blocker{
 			"internal/api/v3/router.go registers all three inside the group " +
 			"wrapped by jwt.Middleware(a) (\"Authenticated routes\"), so the " +
 			"server rejects unauthenticated calls.",
-	},
-	{
-		ID: "B2-get-with-body",
-		OperationIDs: []string{
-			"v3ListAccounts",
-			"v3ListBankAccounts",
-			"v3ListConnectorSchedules",
-			"v3ListConnectors",
-			"v3ListConversions",
-			"v3ListOrders",
-			"v3ListPaymentInitiationAdjustments",
-			"v3ListPaymentInitiationRelatedPayments",
-			"v3ListPaymentInitiations",
-			"v3ListPaymentServiceUserConnections",
-			"v3ListPaymentServiceUserConnectionsFromConnectorID",
-			"v3ListPaymentServiceUserLinkAttemptsFromConnectorID",
-			"v3ListPaymentServiceUsers",
-			"v3ListPayments",
-			"v3ListPools",
-		},
-		Summary: "These GET operations carry their query in a JSON request " +
-			"body (the free-form V3QueryBuilder object). A host transport that " +
-			"drops or forbids GET request bodies silently degrades them into " +
-			"unfiltered listings, which is a wrong answer rather than an error, " +
-			"so the request boundary has to be proven to preserve GET bodies " +
-			"before these are admitted.",
-		Evidence: "openapi.yaml: each listed operation declares " +
-			"`requestBody.content.application/json.schema: V3QueryBuilder` " +
-			"alongside method GET; components.schemas.V3QueryBuilder is " +
-			"`type: object, additionalProperties: true`. The generated client " +
-			"signature matches: pkg/client/v3.go ListAccounts(ctx, pageSize, " +
-			"cursor, requestBody map[string]any, …).",
-	},
-	{
-		ID: "B3-unredacted-connector-config",
-		OperationIDs: []string{
-			"v3GetConnectorConfig",
-		},
-		Summary: "The read path returns PSP credentials in cleartext and the " +
-			"legacy fctl commands printed them verbatim, so admitting this " +
-			"operation requires a redaction decision that changes observable " +
-			"behaviour relative to the baseline.",
-		Evidence: "internal/api/services/connector_configs.go ConnectorsConfig " +
-			"re-marshals the stored config unchanged; " +
-			"internal/storage/connectors.go ConnectorsGet selects " +
-			"pgp_sym_decrypt(config, …) AS decrypted_config. At legacy fctl " +
-			BaselineRevision + " the per-connector views print credentials " +
-			"directly (for example cmd/payments/connectors/views/stripe.go " +
-			"renders config.APIKey) and the tree contains no redaction or " +
-			"masking helper.",
 	},
 }
 
@@ -96,6 +60,23 @@ func BlockedOperationIDs() []string {
 	seen := map[string]struct{}{}
 	for _, b := range Blockers {
 		for _, id := range b.OperationIDs {
+			seen[id] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for id := range seen {
+		out = append(out, id)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// ReleaseGapOperationIDs returns the sorted, de-duplicated operationIds that
+// carry at least one release gap without being admission-blocked.
+func ReleaseGapOperationIDs() []string {
+	seen := map[string]struct{}{}
+	for _, gap := range ReleaseGaps {
+		for _, id := range gap.OperationIDs {
 			seen[id] = struct{}{}
 		}
 	}

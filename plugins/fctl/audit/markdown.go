@@ -34,6 +34,7 @@ func (r *Report) Markdown() string {
 		{"/v3 operations with no legacy precedent", t.V3WithoutBaseline},
 		{"/v3 operations carrying a blocker", t.V3Blocked},
 		{"/v3 operations with no recorded blocker", t.V3Admissible},
+		{"/v3 executable operations carrying a release gap", t.V3ReleaseGaps},
 	} {
 		fmt.Fprintf(&b, "| %v | %v |\n", row[0], row[1])
 	}
@@ -48,10 +49,10 @@ func (r *Report) Markdown() string {
 
 	for _, f := range families {
 		fmt.Fprintf(&b, "### %s (%d)\n\n", f, len(groups[f]))
-		b.WriteString("| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Blockers |\n")
-		b.WriteString("|---|---|---|---|---|---|---|---|---|---|\n")
+		b.WriteString("| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Admission blockers | Release gaps |\n")
+		b.WriteString("|---|---|---|---|---|---|---|---|---|---|---|\n")
 		for _, rec := range groups[f] {
-			fmt.Fprintf(&b, "| `%s` | `%s` | %s | `%s` | %s | %s | %s | %s | %s | %s |\n",
+			fmt.Fprintf(&b, "| `%s` | `%s` | %s | `%s` | %s | %s | %s | %s | %s | %s | %s |\n",
 				rec.OperationID,
 				rec.SDKMethod,
 				rec.Method,
@@ -62,6 +63,7 @@ func (r *Report) Markdown() string {
 				riskCell(rec.Risk),
 				commandCell(rec.BaselineCommands),
 				listCell(rec.Blockers),
+				listCell(rec.ReleaseGaps),
 			)
 		}
 		b.WriteString("\n")

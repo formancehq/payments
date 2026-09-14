@@ -1,11 +1,13 @@
-# Payments → fctl command inventory (plugin preparation source of truth)
+# Payments → fctl command inventory
 
-Status: **preparation only.** This document establishes what the fctl Payments
-plugin will cover and what stands in the way. It accepts no operation into a
-catalogue, freezes no ABI, and claims no runtime, component-build, OCI or
-dual-host behaviour. §9 lists the gates that remain.
+Status: **implemented in source; local unit contract verified.** This document
+retains the reproducible source inventory behind the 44-command Payments v3 catalogue. The core adapter,
+portable descriptor, lifecycle entry point, deterministic component build and
+focused tests live alongside it. This is not installed or live execution
+acceptance; §9 distinguishes the local unit contract from external release
+gates.
 
-Audit date: 2026-09-09. Every count in §3 and every table in
+Audit refreshed: 2026-09-12. Every count in §3 and every table in
 `v3-operations.generated.md` is derived by `plugins/fctl/cmd/specaudit` from
 this repository's own committed OpenAPI document and pinned by a golden test —
 none is transcribed by hand.
@@ -14,14 +16,18 @@ none is transcribed by hand.
 
 | Source | Revision | Role |
 |---|---|---|
-| `formancehq/payments` (this repo) | `6066bb9296157465fbe11ea7f347f6b46f27a550`, `origin/main` HEAD on 2026-09-09 (committed 2026-09-09T16:59:43+02:00) | Authoritative: `openapi.yaml`, `openapi/v3/*`, server routes (`internal/api/`), storage (`internal/storage/`), generated client (`pkg/client/`) |
-| legacy fctl baseline | `693c58e27865f83332e6c3199d61fed81b742f41` at `/Users/davidragot/fctl-baseline-safe` (read-only) | The command surface this plugin has to be measured against (`cmd/payments/**`) |
-| fctl-v2 destination | `main` @ `3dd0f0a43a45c7b040f49163cfb80e458f6d4683` at `/Users/davidragot/fctl-v2-safe` (read-only) | Destination programme and its Task 8 scope; **not** a dependency of this module |
+| `formancehq/payments` (this repo) | `6066bb9296157465fbe11ea7f347f6b46f27a550`, live `origin/main` HEAD verified 2026-09-12 | Authoritative: `openapi.yaml`, `openapi/v3/*`, server routes (`internal/api/`), storage (`internal/storage/`), generated client (`pkg/client/`) |
+| historical fctl baseline | `693c58e27865f83332e6c3199d61fed81b742f41` (read-only source revision) | The prior command surface used to measure compatibility (`cmd/payments/**`) |
+| fctl-v2 SDK | `545521bfa222250af6b4419b194c7967cded0379`, SDK NAR `sha256-HUMOWv4j015MJaM/RNm2h8W8cIZlkyOrXveQlHUfQfE=`, WIT SHA-256 `38fdf377264eeada82b23fef153e6bf106ed0624e8916ff62cabdf210d6255f5` | Public plugin SDK, `producthttp` adapter, RFC 0011 and portable lifecycle contract used by this module |
 | `go-libs` | `v5.6.1` (this repo's `go.mod`) | Authentication middleware behaviour behind §6 |
 
-Working tree for this preparation:
-`/Users/davidragot/payments-worktrees/task8-payments-fctl-plugin`, branch
-`plugin-develop`, from the non-iCloud clone `/Users/davidragot/payments-safe`.
+`generated-client-provenance.json` records the exact product revision, Git
+object IDs and OpenAPI SHA-256, plus the validated RFC 0011 digest and exact
+fctl SDK source lock used here. `with-fctl-sdk.sh` accepts the checkout location
+through `FCTL_SDK_ROOT`. For a Git source it validates repository/commit and
+exports the locked SDK and WIT from that commit before checking the NAR content
+and WIT digest; dirty checkout files are excluded by construction. It then
+creates a disposable Go workspace. No workstation path is committed.
 
 Provenance note, stated rather than hidden: an earlier fctl-v2 audit pinned
 Payments at `faac9792eb45fcc092e76adfb4a3d56b9b171575` (2026-09-02). That head
@@ -74,8 +80,9 @@ just fctl-audit-check   # fail if they drifted from openapi.yaml
 | Legacy commands excluded with evidence | **1** |
 | /v3 operations reached by the legacy baseline | **44** |
 | /v3 operations with no legacy precedent | **20** |
-| /v3 operations carrying a recorded blocker | **19** |
-| /v3 operations with no recorded blocker | **45** |
+| /v3 operations carrying an admission blocker | **0** |
+| /v3 operations with no admission blocker | **64** |
+| /v3 executable operations carrying a release gap | **3** |
 
 Cross-check against the generated client, which is independent of this audit's
 parser: `pkg/client/v3.go` declares exactly **64** operation methods and
@@ -97,8 +104,8 @@ other.
 
 ## 4. Frozen operation families
 
-The programme freezes four families for this plugin. The generated tables list
-every operation per family.
+The executable compatibility surface covers four operation families. The
+generated tables list every operation per family.
 
 | Family | /v3 operations | Reached by legacy baseline |
 |---|---:|---:|
@@ -196,7 +203,8 @@ Two facts constrain how far that can be trusted:
   a per-operation scope catalogue is provable from the document but not
   verifiable against this service's own behaviour. See divergence D2.
 - **Three operations declare no scopes at all** while the server does require
-  authentication for them. See blocker B1.
+  authentication for them. They remain executable with the explicit empty
+  exact-scope representation; see release gap G1.
 
 `GET /_info` needs its own statement: the document declares it under
 `payments:read`, but the server registers it on the root router outside every
@@ -235,8 +243,9 @@ selects `pgp_sym_decrypt(config, …) AS decrypted_config`. So
 fctl `693c58e2` the per-connector views printed them directly — for example
 `cmd/payments/connectors/views/stripe.go` renders `config.APIKey` — and the
 legacy tree contains no redaction or masking helper anywhere. Redacting in the
-plugin is therefore a **deliberate behaviour change** relative to the baseline,
-recorded as blocker B3 so it is decided rather than assumed.
+plugin is therefore a **deliberate behaviour change** relative to the baseline.
+Historical blocker B3 recorded the decision; the generated-DTO redaction closes
+it before emission.
 
 **`destructive` — removes or resets server state.** 8 operations: the 7 /v3
 `DELETE` operations, plus `v3ResetConnector`, which is a `POST` and is listed
@@ -266,28 +275,36 @@ traceability only — Formance does NOT dedup on this field".
 `pageSize` as query parameters. No operation in the document is a stream: every
 success response is a single JSON body.
 
-**`get-with-body` — 15 paginated `GET`s carry a JSON request body.** This is
-both a risk and blocker B2; see below.
+**`get-with-body` — 15 paginated `GET`s carry a JSON request body.** This
+remains an explicit transport risk fact; historical blocker B2 is closed by
+the generated-client adapter and no longer appears in the active blocker set.
 
-## 8. Blockers and divergences
+## 8. Admission blockers, release gaps and divergences
 
-Kept strictly separate from the verified facts above. A blocker stops the
-operations it names, and only those — never a family, never the service.
+Kept strictly separate from the verified facts above. An admission blocker
+stops the operations it names. A release gap does not stop local execution but
+must close before release evidence can be claimed.
 
-### Blockers
+### Admission blockers
 
-**B1 — undeclared scopes.** `v3GetBankAccount`,
+None for source implementation. All 44 compatibility operations are represented
+by the local unit contract; installed execution acceptance remains a separate
+gate.
+
+### Release gaps
+
+**G1 — undeclared scopes.** `v3GetBankAccount`,
 `v3UpdateBankAccountMetadata`, `v3ForwardBankAccount`.
 `openapi/v3/v3-api.yaml` gives these three no `security:` key, unlike every
 other /v3 operation, while `internal/api/v3/router.go` registers all three
 inside the `jwt.Middleware(a)` group, so the server does reject
-unauthenticated calls. An exact-scope catalogue entry for them would have to
-be invented. All three are legacy-baseline targets, so the blocker is on the
-critical path: `payments bank_accounts get`, `update-metadata` and `forward`
-cannot be admitted until the document declares their scopes. **Fix belongs in
-this repository**, in `openapi/v3/v3-api.yaml`.
+unauthenticated calls. A named scope for them would have to be invented. The
+plugin admits the three baseline commands with the SDK's explicit empty exact
+scope set for protected bearer-only operations. The missing scope names remain
+an upstream source-contract gap; the fix belongs in this repository, in
+`openapi/v3/v3-api.yaml`.
 
-**B2 — `GET` with a request body.** 15 operations, all the paginated /v3
+**B2 — `GET` with a request body (historical, closed in the adapter).** 15 operations, all the paginated /v3
 listings: `v3ListAccounts`, `v3ListBankAccounts`, `v3ListConnectorSchedules`,
 `v3ListConnectors`, `v3ListConversions`, `v3ListOrders`,
 `v3ListPaymentInitiationAdjustments`,
@@ -299,17 +316,22 @@ listings: `v3ListAccounts`, `v3ListBankAccounts`, `v3ListConnectorSchedules`,
 `requestBody.content.application/json.schema: V3QueryBuilder` alongside method
 `GET`, where `V3QueryBuilder` is `type: object, additionalProperties: true`.
 The generated client matches: `pkg/client/v3.go` `ListAccounts(ctx, pageSize,
-cursor, requestBody map[string]any, …)`. Why this is a blocker and not a note:
+cursor, requestBody map[string]any, …)`. The original admission risk was that
 a host transport that drops `GET` bodies degrades a filtered query into an
 **unfiltered listing** — a wrong answer returned successfully, not an error.
-The request boundary has to be proven to preserve `GET` bodies before these are
-admitted. Two of the 17 paginated operations
+The `producthttp` boundary preserves these bodies and the Payments adapter
+tests the mapping through `Host.Request`; these operations are therefore
+admitted without rewriting the query semantics and B2 is absent from the
+machine-readable blocker report. Two of the 17 paginated operations
 (`v3GetAccountBalances`, `v3ListConnectorScheduleInstances`) declare no body
 and are unaffected.
 
-**B3 — unredacted connector config.** `v3GetConnectorConfig`. Evidence in §7.
-Admitting it requires an explicit redaction decision that changes observable
-behaviour relative to the legacy baseline.
+**B3 — unredacted connector config (historical, closed in the adapter).**
+`v3GetConnectorConfig` recursively redacts the credential keys enumerated in
+§7 on the generated response DTO before emitting the public result, while
+preserving non-secret fields and exact `int64` values outside JavaScript's safe
+integer range. This is an intentional safety improvement over the historical
+command, and B3 is absent from the machine-readable blocker report.
 
 ### Divergences
 
@@ -321,9 +343,9 @@ unauthenticated on the root router. fctl must rely on the server behaviour,
 because it needs the major before it can authenticate against the right
 provider. The **document** is the side to fix.
 
-**D2 — scopes not enforced in this service.** §6. The scope contract is real
-but is enforced upstream, so an exact-scope catalogue cannot be validated
-against this service's behaviour.
+**D2 — scopes not enforced in this service.** §6. The named scope contract is
+enforced upstream; the three omitted declarations remain represented as an
+explicit empty exact scope set rather than guessed from neighbouring routes.
 
 **D3 — deprecated v1 connector paths.** `uninstallConnector`,
 `readConnectorConfig`, `resetConnector`, `listConnectorTasks`,
@@ -340,50 +362,48 @@ adapter: any code that derives the client method from the operationId by
 convention gets exactly this one wrong. Fixable in
 `openapi/v3/v3-api.yaml` in this repository.
 
-## 9. Checkpoint and remaining gates
+## 9. Current implementation and remaining gates
 
 **Done in this tranche.** Reproducible operation extraction from the pinned
 current source; the 109/45/64 denominators cross-checked against the generated
 client; the 45-command legacy baseline mapped 44/1 with the one exclusion
 evidenced; the four families frozen and the open-banking surface recorded;
 per-operation scopes, request and response models, and risks read from source;
-19 blocked operations and 4 divergences recorded and separated from facts;
+0 admission-blocked operations, 3 executable operations carrying release gap
+G1, 2 closed historical blockers and 4 divergences recorded and separated from
+facts;
 determinism held by a golden report plus invariant tests over operationId
 uniqueness, tag partition, family completeness, baseline consistency, blocker
 coverage, credential classification, pagination, and the idempotency finding.
 
-**Not done, and not claimed.** No catalogue, no adapter, no `producthttp`
-bridge, no component entry point, no WASM build, no OCI artefact, no parity
-report, no `plugin_incompatible` proof, no real-API scenario, and no `go-libs`
-decision. None of the Task 8 acceptance boxes is ticked.
+**Implemented in source; local unit contract verified.** The product-owned
+module contains the 44-command v3 catalogue and its 47 ordered request policies (including the three composite
+connector commands), exact operation policies, the Payments-generated v3 client over the
+host-only `producthttp` endpoint/auth transport, host-owned JSON inputs, opaque
+cursor traversal, connector-secret redaction, portable descriptor and WIT
+lifecycle, and a two-lane deterministic component build with validation and a
+16 MiB ceiling. Static tests compare every carried method, path, body,
+pagination, scope and mutation classification with the current OpenAPI
+document; the race-enabled module gate enforces at least 80% statement
+coverage. Generated-client ambient authentication and retries are
+disabled because the host owns both concerns.
 
-Gates that must clear before a portable Payments component can exist:
+Remaining external or upstream gates:
 
-1. **fctl-v2 MVP4 contract freeze** — gates 4B (portable component lifecycle,
-   frame codec, checkpoint quota), 4C (exact per-operation authorisation
-   scopes), 4D (host-owned credential generation and profile/endpoint
-   cutouts). Owned by fctl-v2 Lane A, not by this repository. Until these
-   close, a catalogue would be written against an unfrozen ABI.
-2. **B1, in this repository** — declare the three missing `security` blocks in
+1. **G1, in this repository** — declare the three missing `security` blocks in
    `openapi/v3/v3-api.yaml`, regenerate, and re-run `just fctl-audit`. This is
-   the one blocker Payments can clear unilaterally, and it unblocks three
-   baseline commands.
-3. **B2** — prove the fctl-v2 host request boundary transmits `GET` request
-   bodies on both the Go host and the browser host, or agree an alternative
-   query transport with fctl-v2 Lane A. 15 operations depend on the answer.
-4. **B3** — decide connector-config redaction, accepting that it diverges from
-   the legacy baseline, and put the decision in Payments-owned rendering code.
-5. **D1** — fix the `/_info` security declaration in the document, and confirm
+   the remaining source-contract gap. Until then the catalogue uses the
+   explicit empty exact-scope set permitted for protected bearer-only routes;
+   it does not invent scope names.
+2. **D1** — fix the `/_info` security declaration in the document, and confirm
    fctl-v2's unauthenticated major probe against it.
-6. **Product-major selection** — prove that a `/_info` response reporting a
+3. **Product-major selection** — prove that a `/_info` response reporting a
    non-3 major yields `plugin_incompatible` before any Payments request is
-   issued. Requires the fctl-v2 runtime.
-7. **Open-banking scope decision** — accept or defer the 15
+   issued in an installed-host scenario.
+4. **Open-banking scope decision** — accept or defer the 15
    `payment-service-user` operations, with the two `display_once` link
    operations handled explicitly if accepted.
-8. **Retry policy** — record that no automatic retry may wrap any `POST`, given
-   §7's idempotency finding, in whatever request policy the frozen contract
-   provides.
-
-Steps 2, 4 and 7 are Payments-owned and can proceed now. Steps 1, 3 and 6
-depend on fctl-v2.
+5. **Release evidence** — build the component in the declared authoring shell,
+   install it through the supported OCI path, and run the real Payments
+   scenarios on both native and browser hosts. No live service or publication
+   is claimed by the local unit evidence.

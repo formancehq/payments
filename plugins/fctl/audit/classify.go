@@ -3,7 +3,7 @@ package audit
 import "sort"
 
 // Family is a frozen operation family of the Payments /v3 surface. The first
-// four families are the ones the fctl-v2 programme freezes for this plugin
+// four families are the executable compatibility surface for this plugin
 // (connectors/schedules, payments/payment initiations, accounts/bank accounts,
 // pools/orders/conversions/tasks). FamilyOpenBanking holds the /v3
 // payment-service-user surface, which exists in v3 but has no legacy fctl

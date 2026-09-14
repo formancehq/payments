@@ -12,8 +12,9 @@
     "baselineExcluded": 1,
     "v3WithBaseline": 44,
     "v3WithoutBaseline": 20,
-    "v3Blocked": 19,
-    "v3Admissible": 45
+    "v3Blocked": 0,
+    "v3Admissible": 64,
+    "v3ReleaseGaps": 3
   },
   "v3": [
     {
@@ -54,7 +55,8 @@
       "baselineCommands": [
         "payments pools add-account \u003cpoolID\u003e \u003caccountID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3AddBankAccountToPaymentServiceUser",
@@ -92,7 +94,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ApprovePaymentInitiation",
@@ -127,7 +130,8 @@
       "baselineCommands": [
         "payments transfer_initiation approve \u003ctransferInitiationID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3CreateAccount",
@@ -156,7 +160,8 @@
       "baselineCommands": [
         "payments accounts create \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3CreateBankAccount",
@@ -185,7 +190,8 @@
       "baselineCommands": [
         "payments bank_accounts create \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3CreateLinkForPaymentServiceUser",
@@ -223,7 +229,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3CreatePayment",
@@ -252,7 +259,8 @@
       "baselineCommands": [
         "payments payments create \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3CreatePaymentServiceUser",
@@ -279,7 +287,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3CreatePool",
@@ -308,7 +317,8 @@
       "baselineCommands": [
         "payments pools create \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3DeletePaymentInitiation",
@@ -343,7 +353,8 @@
       "baselineCommands": [
         "payments transfer_initiation delete \u003ctransferID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3DeletePaymentServiceUser",
@@ -376,7 +387,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3DeletePaymentServiceUserConnectionFromConnectorID",
@@ -419,7 +431,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3DeletePaymentServiceUserConnector",
@@ -457,7 +470,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3DeletePool",
@@ -492,7 +506,8 @@
       "baselineCommands": [
         "payments pools delete \u003cpoolID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ForwardBankAccount",
@@ -525,8 +540,9 @@
       "baselineCommands": [
         "payments bank_accounts forward \u003cbankAccountID\u003e \u003cconnectorID\u003e"
       ],
-      "blockers": [
-        "B1-undeclared-scopes"
+      "blockers": null,
+      "releaseGaps": [
+        "G1-undeclared-scopes"
       ]
     },
     {
@@ -565,7 +581,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ForwardPaymentServiceUserToProvider",
@@ -603,7 +620,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetAccount",
@@ -638,7 +656,8 @@
       "baselineCommands": [
         "payments accounts get \u003caccountID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetAccountBalances",
@@ -698,7 +717,8 @@
       "baselineCommands": [
         "payments accounts balances \u003caccountID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetBankAccount",
@@ -731,8 +751,9 @@
       "baselineCommands": [
         "payments bank_accounts get \u003cbankAccountID\u003e"
       ],
-      "blockers": [
-        "B1-undeclared-scopes"
+      "blockers": null,
+      "releaseGaps": [
+        "G1-undeclared-scopes"
       ]
     },
     {
@@ -766,7 +787,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetConnectorConfig",
@@ -801,9 +823,8 @@
       "baselineCommands": [
         "payments connectors get-config"
       ],
-      "blockers": [
-        "B3-unredacted-connector-config"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetConnectorSchedule",
@@ -843,7 +864,8 @@
       "baselineCommands": [
         "payments connectors schedules get \u003cconnectorID\u003e \u003cscheduleID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetConversion",
@@ -878,7 +900,8 @@
       "baselineCommands": [
         "payments conversions get \u003cconversionID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetOrder",
@@ -913,7 +936,8 @@
       "baselineCommands": [
         "payments orders get \u003corderID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPayment",
@@ -948,7 +972,8 @@
       "baselineCommands": [
         "payments payments get \u003cpaymentID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPaymentInitiation",
@@ -983,7 +1008,8 @@
       "baselineCommands": [
         "payments transfer_initiation get \u003ctransferID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPaymentServiceUser",
@@ -1016,7 +1042,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPaymentServiceUserLinkAttemptFromConnectorID",
@@ -1059,7 +1086,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPool",
@@ -1094,7 +1122,8 @@
       "baselineCommands": [
         "payments pools get \u003cpoolID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPoolBalances",
@@ -1134,7 +1163,8 @@
       "baselineCommands": [
         "payments pools balances \u003cpoolID\u003e \u003cat\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetPoolBalancesLatest",
@@ -1169,7 +1199,8 @@
       "baselineCommands": [
         "payments pools latest-balances \u003cpoolID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3GetTask",
@@ -1204,7 +1235,8 @@
       "baselineCommands": [
         "payments tasks get \u003ctaskID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3InitiatePayment",
@@ -1239,7 +1271,8 @@
       "baselineCommands": [
         "payments transfer_initiation create \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3InstallConnector",
@@ -1274,7 +1307,8 @@
       "baselineCommands": [
         "payments connectors install \u003cconnector\u003e \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListAccounts",
@@ -1314,9 +1348,8 @@
       "baselineCommands": [
         "payments accounts list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListBankAccounts",
@@ -1356,9 +1389,8 @@
       "baselineCommands": [
         "payments bank_accounts list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListConnectorCapabilities",
@@ -1391,7 +1423,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListConnectorConfigs",
@@ -1422,7 +1455,8 @@
         "payments connectors list-available",
         "payments connectors update-config \u003cconnector\u003e \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListConnectorScheduleInstances",
@@ -1472,7 +1506,8 @@
       "baselineCommands": [
         "payments connectors schedules instances list \u003cconnectorID\u003e \u003cscheduleID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListConnectorSchedules",
@@ -1517,9 +1552,8 @@
       "baselineCommands": [
         "payments connectors schedules list \u003cconnectorID\u003e"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListConnectors",
@@ -1560,9 +1594,8 @@
         "payments connectors get-config",
         "payments connectors list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListConversions",
@@ -1602,9 +1635,8 @@
       "baselineCommands": [
         "payments conversions list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListOrders",
@@ -1644,9 +1676,8 @@
       "baselineCommands": [
         "payments orders list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentInitiationAdjustments",
@@ -1689,9 +1720,8 @@
         "getWithBody": true
       },
       "baselineCommands": null,
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentInitiationRelatedPayments",
@@ -1734,9 +1764,8 @@
         "getWithBody": true
       },
       "baselineCommands": null,
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentInitiations",
@@ -1776,9 +1805,8 @@
       "baselineCommands": [
         "payments transfer_initiation list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentServiceUserConnections",
@@ -1821,9 +1849,8 @@
         "getWithBody": true
       },
       "baselineCommands": null,
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentServiceUserConnectionsFromConnectorID",
@@ -1871,9 +1898,8 @@
         "getWithBody": true
       },
       "baselineCommands": null,
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentServiceUserLinkAttemptsFromConnectorID",
@@ -1921,9 +1947,8 @@
         "getWithBody": true
       },
       "baselineCommands": null,
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPaymentServiceUsers",
@@ -1961,9 +1986,8 @@
         "getWithBody": true
       },
       "baselineCommands": null,
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPayments",
@@ -2003,9 +2027,8 @@
       "baselineCommands": [
         "payments payments list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ListPools",
@@ -2045,9 +2068,8 @@
       "baselineCommands": [
         "payments pools list"
       ],
-      "blockers": [
-        "B2-get-with-body"
-      ]
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3RejectPaymentInitiation",
@@ -2082,7 +2104,8 @@
       "baselineCommands": [
         "payments transfer_initiation reject \u003ctransferInitiationID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3RemoveAccountFromPool",
@@ -2122,7 +2145,8 @@
       "baselineCommands": [
         "payments pools remove-account \u003cpoolID\u003e \u003caccountID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ResetConnector",
@@ -2155,7 +2179,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3RetryPaymentInitiation",
@@ -2190,7 +2215,8 @@
       "baselineCommands": [
         "payments transfer_initiation retry \u003ctransferID\u003e"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3ReversePaymentInitiation",
@@ -2225,7 +2251,8 @@
       "baselineCommands": [
         "payments transfer_initiation reverse \u003ctransferID\u003e \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3UninstallConnector",
@@ -2260,7 +2287,8 @@
       "baselineCommands": [
         "payments connectors uninstall"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3UpdateBankAccountMetadata",
@@ -2293,8 +2321,9 @@
       "baselineCommands": [
         "payments bank_accounts update-metadata \u003cbankAccountID\u003e [\u003ckey\u003e=\u003cvalue\u003e...]"
       ],
-      "blockers": [
-        "B1-undeclared-scopes"
+      "blockers": null,
+      "releaseGaps": [
+        "G1-undeclared-scopes"
       ]
     },
     {
@@ -2330,7 +2359,8 @@
       "baselineCommands": [
         "payments connectors update-config \u003cconnector\u003e \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3UpdateLinkForPaymentServiceUserOnConnector",
@@ -2373,7 +2403,8 @@
         "getWithBody": false
       },
       "baselineCommands": null,
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3UpdatePaymentMetadata",
@@ -2408,7 +2439,8 @@
       "baselineCommands": [
         "payments payments set-metadata \u003cpaymentID\u003e [\u003ckey\u003e=\u003cvalue\u003e...]"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     },
     {
       "operationId": "v3UpdatePoolQuery",
@@ -2443,7 +2475,8 @@
       "baselineCommands": [
         "payments pools update-query \u003cpoolID\u003e \u003cfile\u003e|-"
       ],
-      "blockers": null
+      "blockers": null,
+      "releaseGaps": null
     }
   ],
   "v1": [

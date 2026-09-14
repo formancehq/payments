@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -81,6 +83,36 @@ func TestWriteIsReproducible(t *testing.T) {
 			t.Errorf("%s differs from the committed artefact", rel)
 		}
 	}
+}
+
+func TestCommandCheckPassesWithExplicitPaths(t *testing.T) {
+	var stderr bytes.Buffer
+	code := command([]string{"-spec", specPath, "-out", moduleRoot, "-check"}, &stderr)
+	if code != 0 || stderr.Len() != 0 {
+		t.Fatalf("command exit=%d stderr=%q", code, stderr.String())
+	}
+}
+
+func TestCommandReportsFlagAndAuditFailures(t *testing.T) {
+	t.Run("unknown flag", func(t *testing.T) {
+		var stderr bytes.Buffer
+		if code := command([]string{"-unknown"}, &stderr); code != 2 {
+			t.Fatalf("exit=%d, want 2", code)
+		}
+		if !strings.Contains(stderr.String(), "flag provided but not defined") {
+			t.Fatalf("stderr=%q", stderr.String())
+		}
+	})
+
+	t.Run("invalid spec", func(t *testing.T) {
+		var stderr bytes.Buffer
+		if code := command([]string{"-spec", filepath.Join(t.TempDir(), "missing.yaml"), "-check"}, &stderr); code != 1 {
+			t.Fatalf("exit=%d, want 1", code)
+		}
+		if !strings.Contains(stderr.String(), "specaudit:") {
+			t.Fatalf("stderr=%q", stderr.String())
+		}
+	})
 }
 
 func snapshot(t *testing.T) string {

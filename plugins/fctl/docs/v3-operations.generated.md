@@ -20,99 +20,100 @@ Legacy fctl baseline revision: `693c58e27865f83332e6c3199d61fed81b742f41`
 | Legacy commands excluded with evidence | 1 |
 | /v3 operations reached by the legacy baseline | 44 |
 | /v3 operations with no legacy precedent | 20 |
-| /v3 operations carrying a blocker | 19 |
-| /v3 operations with no recorded blocker | 45 |
+| /v3 operations carrying a blocker | 0 |
+| /v3 operations with no recorded blocker | 64 |
+| /v3 executable operations carrying a release gap | 3 |
 
 ## Operations by family
 
 ### accounts/bank-accounts (9)
 
-| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Blockers |
-|---|---|---|---|---|---|---|---|---|---|
-| `v3CreateAccount` | `CreateAccount` | POST | `/v3/accounts` | `payments:write` | `V3CreateAccountRequest` | 201 `V3CreateAccountResponse` | not-replay-safe | `payments accounts create <file>\|-` | — |
-| `v3CreateBankAccount` | `CreateBankAccount` | POST | `/v3/bank-accounts` | `payments:write` | `V3CreateBankAccountRequest` | 201 `V3CreateBankAccountResponse` | not-replay-safe | `payments bank_accounts create <file>\|-` | — |
-| `v3ForwardBankAccount` | `ForwardBankAccount` | POST | `/v3/bank-accounts/{bankAccountID}/forward` | **none declared** | `V3ForwardBankAccountRequest` | 202 `V3ForwardBankAccountResponse` | not-replay-safe | `payments bank_accounts forward <bankAccountID> <connectorID>` | B1-undeclared-scopes |
-| `v3GetAccount` | `GetAccount` | GET | `/v3/accounts/{accountID}` | `payments:read` | — | 200 `V3GetAccountResponse` | — | `payments accounts get <accountID>` | — |
-| `v3GetAccountBalances` | `GetAccountBalances` | GET | `/v3/accounts/{accountID}/balances` | `payments:read` | — | 200 `V3BalancesCursorResponse` | paginated | `payments accounts balances <accountID>` | — |
-| `v3GetBankAccount` | `GetBankAccount` | GET | `/v3/bank-accounts/{bankAccountID}` | **none declared** | — | 200 `V3GetBankAccountResponse` | — | `payments bank_accounts get <bankAccountID>` | B1-undeclared-scopes |
-| `v3ListAccounts` | `ListAccounts` | GET | `/v3/accounts` | `payments:read` | `V3QueryBuilder` | 200 `V3AccountsCursorResponse` | get-with-body, paginated | `payments accounts list` | B2-get-with-body |
-| `v3ListBankAccounts` | `ListBankAccounts` | GET | `/v3/bank-accounts` | `payments:read` | `V3QueryBuilder` | 200 `V3BankAccountsCursorResponse` | get-with-body, paginated | `payments bank_accounts list` | B2-get-with-body |
-| `v3UpdateBankAccountMetadata` | `UpdateBankAccountMetadata` | PATCH | `/v3/bank-accounts/{bankAccountID}/metadata` | **none declared** | `V3UpdateBankAccountMetadataRequest` | 204 (no body) | — | `payments bank_accounts update-metadata <bankAccountID> [<key>=<value>...]` | B1-undeclared-scopes |
+| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Admission blockers | Release gaps |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v3CreateAccount` | `CreateAccount` | POST | `/v3/accounts` | `payments:write` | `V3CreateAccountRequest` | 201 `V3CreateAccountResponse` | not-replay-safe | `payments accounts create <file>\|-` | — | — |
+| `v3CreateBankAccount` | `CreateBankAccount` | POST | `/v3/bank-accounts` | `payments:write` | `V3CreateBankAccountRequest` | 201 `V3CreateBankAccountResponse` | not-replay-safe | `payments bank_accounts create <file>\|-` | — | — |
+| `v3ForwardBankAccount` | `ForwardBankAccount` | POST | `/v3/bank-accounts/{bankAccountID}/forward` | **none declared** | `V3ForwardBankAccountRequest` | 202 `V3ForwardBankAccountResponse` | not-replay-safe | `payments bank_accounts forward <bankAccountID> <connectorID>` | — | G1-undeclared-scopes |
+| `v3GetAccount` | `GetAccount` | GET | `/v3/accounts/{accountID}` | `payments:read` | — | 200 `V3GetAccountResponse` | — | `payments accounts get <accountID>` | — | — |
+| `v3GetAccountBalances` | `GetAccountBalances` | GET | `/v3/accounts/{accountID}/balances` | `payments:read` | — | 200 `V3BalancesCursorResponse` | paginated | `payments accounts balances <accountID>` | — | — |
+| `v3GetBankAccount` | `GetBankAccount` | GET | `/v3/bank-accounts/{bankAccountID}` | **none declared** | — | 200 `V3GetBankAccountResponse` | — | `payments bank_accounts get <bankAccountID>` | — | G1-undeclared-scopes |
+| `v3ListAccounts` | `ListAccounts` | GET | `/v3/accounts` | `payments:read` | `V3QueryBuilder` | 200 `V3AccountsCursorResponse` | get-with-body, paginated | `payments accounts list` | — | — |
+| `v3ListBankAccounts` | `ListBankAccounts` | GET | `/v3/bank-accounts` | `payments:read` | `V3QueryBuilder` | 200 `V3BankAccountsCursorResponse` | get-with-body, paginated | `payments bank_accounts list` | — | — |
+| `v3UpdateBankAccountMetadata` | `UpdateBankAccountMetadata` | PATCH | `/v3/bank-accounts/{bankAccountID}/metadata` | **none declared** | `V3UpdateBankAccountMetadataRequest` | 204 (no body) | — | `payments bank_accounts update-metadata <bankAccountID> [<key>=<value>...]` | — | G1-undeclared-scopes |
 
 ### connectors/schedules (12)
 
-| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Blockers |
-|---|---|---|---|---|---|---|---|---|---|
-| `v3GetConnectorCapabilities` | `GetConnectorCapabilities` | GET | `/v3/connectors/{connectorID}/capabilities` | `payments:read` | — | 200 `V3ConnectorCapabilityResponse` | — | — (no legacy precedent) | — |
-| `v3GetConnectorConfig` | `GetConnectorConfig` | GET | `/v3/connectors/{connectorID}/config` | `payments:read` | — | 200 `V3GetConnectorConfigResponse` | secret:response | `payments connectors get-config` | B3-unredacted-connector-config |
-| `v3GetConnectorSchedule` | `GetConnectorSchedule` | GET | `/v3/connectors/{connectorID}/schedules/{scheduleID}` | `payments:read` | — | 200 `V3ConnectorScheduleResponse` | — | `payments connectors schedules get <connectorID> <scheduleID>` | — |
-| `v3InstallConnector` | `InstallConnector` | POST | `/v3/connectors/install/{connector}` | `payments:write` | `V3InstallConnectorRequest` | 202 `V3InstallConnectorResponse` | secret:request, not-replay-safe | `payments connectors install <connector> <file>\|-` | — |
-| `v3ListConnectorCapabilities` | `ListConnectorCapabilities` | GET | `/v3/connectors/capabilities` | `payments:read` | — | 200 `V3ConnectorCapabilitiesResponse` | — | — (no legacy precedent) | — |
-| `v3ListConnectorConfigs` | `ListConnectorConfigs` | GET | `/v3/connectors/configs` | `payments:read` | — | 200 `V3ConnectorConfigsResponse` | — | `payments connectors install <connector> <file>\|-`<br>`payments connectors list-available`<br>`payments connectors update-config <connector> <file>\|-` | — |
-| `v3ListConnectorScheduleInstances` | `ListConnectorScheduleInstances` | GET | `/v3/connectors/{connectorID}/schedules/{scheduleID}/instances` | `payments:read` | — | 200 `V3ConnectorScheduleInstancesCursorResponse` | paginated | `payments connectors schedules instances list <connectorID> <scheduleID>` | — |
-| `v3ListConnectorSchedules` | `ListConnectorSchedules` | GET | `/v3/connectors/{connectorID}/schedules` | `payments:read` | `V3QueryBuilder` | 200 `V3ConnectorSchedulesCursorResponse` | get-with-body, paginated | `payments connectors schedules list <connectorID>` | B2-get-with-body |
-| `v3ListConnectors` | `ListConnectors` | GET | `/v3/connectors` | `payments:read` | `V3QueryBuilder` | 200 `V3ConnectorsCursorResponse` | get-with-body, paginated | `payments connectors get-config`<br>`payments connectors list` | B2-get-with-body |
-| `v3ResetConnector` | `ResetConnector` | POST | `/v3/connectors/{connectorID}/reset` | `payments:write` | — | 202 `V3ResetConnectorResponse` | destructive, not-replay-safe | — (no legacy precedent) | — |
-| `v3UninstallConnector` | `UninstallConnector` | DELETE | `/v3/connectors/{connectorID}` | `payments:write` | — | 202 `V3UninstallConnectorResponse` | destructive | `payments connectors uninstall` | — |
-| `v3UpdateConnectorConfig` | `v3UpdateConnectorConfig` | PATCH | `/v3/connectors/{connectorID}/config` | `payments:write` | `V3UpdateConnectorRequest` | 204 (no body) | secret:request | `payments connectors update-config <connector> <file>\|-` | — |
+| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Admission blockers | Release gaps |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v3GetConnectorCapabilities` | `GetConnectorCapabilities` | GET | `/v3/connectors/{connectorID}/capabilities` | `payments:read` | — | 200 `V3ConnectorCapabilityResponse` | — | — (no legacy precedent) | — | — |
+| `v3GetConnectorConfig` | `GetConnectorConfig` | GET | `/v3/connectors/{connectorID}/config` | `payments:read` | — | 200 `V3GetConnectorConfigResponse` | secret:response | `payments connectors get-config` | — | — |
+| `v3GetConnectorSchedule` | `GetConnectorSchedule` | GET | `/v3/connectors/{connectorID}/schedules/{scheduleID}` | `payments:read` | — | 200 `V3ConnectorScheduleResponse` | — | `payments connectors schedules get <connectorID> <scheduleID>` | — | — |
+| `v3InstallConnector` | `InstallConnector` | POST | `/v3/connectors/install/{connector}` | `payments:write` | `V3InstallConnectorRequest` | 202 `V3InstallConnectorResponse` | secret:request, not-replay-safe | `payments connectors install <connector> <file>\|-` | — | — |
+| `v3ListConnectorCapabilities` | `ListConnectorCapabilities` | GET | `/v3/connectors/capabilities` | `payments:read` | — | 200 `V3ConnectorCapabilitiesResponse` | — | — (no legacy precedent) | — | — |
+| `v3ListConnectorConfigs` | `ListConnectorConfigs` | GET | `/v3/connectors/configs` | `payments:read` | — | 200 `V3ConnectorConfigsResponse` | — | `payments connectors install <connector> <file>\|-`<br>`payments connectors list-available`<br>`payments connectors update-config <connector> <file>\|-` | — | — |
+| `v3ListConnectorScheduleInstances` | `ListConnectorScheduleInstances` | GET | `/v3/connectors/{connectorID}/schedules/{scheduleID}/instances` | `payments:read` | — | 200 `V3ConnectorScheduleInstancesCursorResponse` | paginated | `payments connectors schedules instances list <connectorID> <scheduleID>` | — | — |
+| `v3ListConnectorSchedules` | `ListConnectorSchedules` | GET | `/v3/connectors/{connectorID}/schedules` | `payments:read` | `V3QueryBuilder` | 200 `V3ConnectorSchedulesCursorResponse` | get-with-body, paginated | `payments connectors schedules list <connectorID>` | — | — |
+| `v3ListConnectors` | `ListConnectors` | GET | `/v3/connectors` | `payments:read` | `V3QueryBuilder` | 200 `V3ConnectorsCursorResponse` | get-with-body, paginated | `payments connectors get-config`<br>`payments connectors list` | — | — |
+| `v3ResetConnector` | `ResetConnector` | POST | `/v3/connectors/{connectorID}/reset` | `payments:write` | — | 202 `V3ResetConnectorResponse` | destructive, not-replay-safe | — (no legacy precedent) | — | — |
+| `v3UninstallConnector` | `UninstallConnector` | DELETE | `/v3/connectors/{connectorID}` | `payments:write` | — | 202 `V3UninstallConnectorResponse` | destructive | `payments connectors uninstall` | — | — |
+| `v3UpdateConnectorConfig` | `v3UpdateConnectorConfig` | PATCH | `/v3/connectors/{connectorID}/config` | `payments:write` | `V3UpdateConnectorRequest` | 204 (no body) | secret:request | `payments connectors update-config <connector> <file>\|-` | — | — |
 
 ### payment-service-users (15)
 
-| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Blockers |
-|---|---|---|---|---|---|---|---|---|---|
-| `v3AddBankAccountToPaymentServiceUser` | `AddBankAccountToPaymentServiceUser` | POST | `/v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}` | `payments:write` | — | 204 (no body) | not-replay-safe | — (no legacy precedent) | — |
-| `v3CreateLinkForPaymentServiceUser` | `CreateLinkForPaymentServiceUser` | POST | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/create-link` | `payments:write` | `V3PaymentServiceUserCreateLinkRequest` | 201 `V3PaymentServiceUserCreateLinkResponse` | display-once, not-replay-safe | — (no legacy precedent) | — |
-| `v3CreatePaymentServiceUser` | `CreatePaymentServiceUser` | POST | `/v3/payment-service-users` | `payments:write` | `V3CreatePaymentServiceUserRequest` | 201 `V3CreatePaymentServiceUserResponse` | not-replay-safe | — (no legacy precedent) | — |
-| `v3DeletePaymentServiceUser` | `DeletePaymentServiceUser` | DELETE | `/v3/payment-service-users/{paymentServiceUserID}` | `payments:write` | — | 202 `V3PaymentServiceUserDeleteResponse` | destructive | — (no legacy precedent) | — |
-| `v3DeletePaymentServiceUserConnectionFromConnectorID` | `DeletePaymentServiceUserConnectionFromConnectorID` | DELETE | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}` | `payments:write` | — | 202 `V3PaymentServiceUserDeleteConnectionResponse` | destructive | — (no legacy precedent) | — |
-| `v3DeletePaymentServiceUserConnector` | `DeletePaymentServiceUserConnector` | DELETE | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}` | `payments:write` | — | 202 `V3PaymentServiceUserDeleteConnectorResponse` | destructive | — (no legacy precedent) | — |
-| `v3ForwardPaymentServiceUserBankAccount` | `ForwardPaymentServiceUserBankAccount` | POST | `/v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward` | `payments:write` | `V3ForwardPaymentServiceUserBankAccountRequest` | 202 `V3ForwardPaymentServiceUserBankAccountResponse` | not-replay-safe | — (no legacy precedent) | — |
-| `v3ForwardPaymentServiceUserToProvider` | `ForwardPaymentServiceUserToProvider` | POST | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward` | `payments:write` | — | 204 (no body) | not-replay-safe | — (no legacy precedent) | — |
-| `v3GetPaymentServiceUser` | `GetPaymentServiceUser` | GET | `/v3/payment-service-users/{paymentServiceUserID}` | `payments:read` | — | 200 `V3GetPaymentServiceUserResponse` | — | — (no legacy precedent) | — |
-| `v3GetPaymentServiceUserLinkAttemptFromConnectorID` | `GetPaymentServiceUserLinkAttemptFromConnectorID` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts/{attemptID}` | `payments:read` | — | 200 `V3PaymentServiceUserLinkAttempt` | — | — (no legacy precedent) | — |
-| `v3ListPaymentServiceUserConnections` | `ListPaymentServiceUserConnections` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connections` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUserConnectionsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | B2-get-with-body |
-| `v3ListPaymentServiceUserConnectionsFromConnectorID` | `ListPaymentServiceUserConnectionsFromConnectorID` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUserConnectionsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | B2-get-with-body |
-| `v3ListPaymentServiceUserLinkAttemptsFromConnectorID` | `ListPaymentServiceUserLinkAttemptsFromConnectorID` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUserLinkAttemptsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | B2-get-with-body |
-| `v3ListPaymentServiceUsers` | `ListPaymentServiceUsers` | GET | `/v3/payment-service-users` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUsersCursorResponse` | get-with-body, paginated | — (no legacy precedent) | B2-get-with-body |
-| `v3UpdateLinkForPaymentServiceUserOnConnector` | `UpdateLinkForPaymentServiceUserOnConnector` | POST | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}/update-link` | `payments:write` | `V3PaymentServiceUserUpdateLinkRequest` | 201 `V3PaymentServiceUserUpdateLinkResponse` | display-once, not-replay-safe | — (no legacy precedent) | — |
+| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Admission blockers | Release gaps |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v3AddBankAccountToPaymentServiceUser` | `AddBankAccountToPaymentServiceUser` | POST | `/v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}` | `payments:write` | — | 204 (no body) | not-replay-safe | — (no legacy precedent) | — | — |
+| `v3CreateLinkForPaymentServiceUser` | `CreateLinkForPaymentServiceUser` | POST | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/create-link` | `payments:write` | `V3PaymentServiceUserCreateLinkRequest` | 201 `V3PaymentServiceUserCreateLinkResponse` | display-once, not-replay-safe | — (no legacy precedent) | — | — |
+| `v3CreatePaymentServiceUser` | `CreatePaymentServiceUser` | POST | `/v3/payment-service-users` | `payments:write` | `V3CreatePaymentServiceUserRequest` | 201 `V3CreatePaymentServiceUserResponse` | not-replay-safe | — (no legacy precedent) | — | — |
+| `v3DeletePaymentServiceUser` | `DeletePaymentServiceUser` | DELETE | `/v3/payment-service-users/{paymentServiceUserID}` | `payments:write` | — | 202 `V3PaymentServiceUserDeleteResponse` | destructive | — (no legacy precedent) | — | — |
+| `v3DeletePaymentServiceUserConnectionFromConnectorID` | `DeletePaymentServiceUserConnectionFromConnectorID` | DELETE | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}` | `payments:write` | — | 202 `V3PaymentServiceUserDeleteConnectionResponse` | destructive | — (no legacy precedent) | — | — |
+| `v3DeletePaymentServiceUserConnector` | `DeletePaymentServiceUserConnector` | DELETE | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}` | `payments:write` | — | 202 `V3PaymentServiceUserDeleteConnectorResponse` | destructive | — (no legacy precedent) | — | — |
+| `v3ForwardPaymentServiceUserBankAccount` | `ForwardPaymentServiceUserBankAccount` | POST | `/v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward` | `payments:write` | `V3ForwardPaymentServiceUserBankAccountRequest` | 202 `V3ForwardPaymentServiceUserBankAccountResponse` | not-replay-safe | — (no legacy precedent) | — | — |
+| `v3ForwardPaymentServiceUserToProvider` | `ForwardPaymentServiceUserToProvider` | POST | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward` | `payments:write` | — | 204 (no body) | not-replay-safe | — (no legacy precedent) | — | — |
+| `v3GetPaymentServiceUser` | `GetPaymentServiceUser` | GET | `/v3/payment-service-users/{paymentServiceUserID}` | `payments:read` | — | 200 `V3GetPaymentServiceUserResponse` | — | — (no legacy precedent) | — | — |
+| `v3GetPaymentServiceUserLinkAttemptFromConnectorID` | `GetPaymentServiceUserLinkAttemptFromConnectorID` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts/{attemptID}` | `payments:read` | — | 200 `V3PaymentServiceUserLinkAttempt` | — | — (no legacy precedent) | — | — |
+| `v3ListPaymentServiceUserConnections` | `ListPaymentServiceUserConnections` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connections` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUserConnectionsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | — | — |
+| `v3ListPaymentServiceUserConnectionsFromConnectorID` | `ListPaymentServiceUserConnectionsFromConnectorID` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUserConnectionsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | — | — |
+| `v3ListPaymentServiceUserLinkAttemptsFromConnectorID` | `ListPaymentServiceUserLinkAttemptsFromConnectorID` | GET | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUserLinkAttemptsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | — | — |
+| `v3ListPaymentServiceUsers` | `ListPaymentServiceUsers` | GET | `/v3/payment-service-users` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentServiceUsersCursorResponse` | get-with-body, paginated | — (no legacy precedent) | — | — |
+| `v3UpdateLinkForPaymentServiceUserOnConnector` | `UpdateLinkForPaymentServiceUserOnConnector` | POST | `/v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}/update-link` | `payments:write` | `V3PaymentServiceUserUpdateLinkRequest` | 201 `V3PaymentServiceUserUpdateLinkResponse` | display-once, not-replay-safe | — (no legacy precedent) | — | — |
 
 ### payments/payment-initiations (14)
 
-| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Blockers |
-|---|---|---|---|---|---|---|---|---|---|
-| `v3ApprovePaymentInitiation` | `ApprovePaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/approve` | `payments:write` | — | 202 `V3ApprovePaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation approve <transferInitiationID>` | — |
-| `v3CreatePayment` | `CreatePayment` | POST | `/v3/payments` | `payments:write` | `V3CreatePaymentRequest` | 201 `V3CreatePaymentResponse` | not-replay-safe | `payments payments create <file>\|-` | — |
-| `v3DeletePaymentInitiation` | `DeletePaymentInitiation` | DELETE | `/v3/payment-initiations/{paymentInitiationID}` | `payments:write` | — | 204 (no body) | destructive | `payments transfer_initiation delete <transferID>` | — |
-| `v3GetPayment` | `GetPayment` | GET | `/v3/payments/{paymentID}` | `payments:read` | — | 200 `V3GetPaymentResponse` | — | `payments payments get <paymentID>` | — |
-| `v3GetPaymentInitiation` | `GetPaymentInitiation` | GET | `/v3/payment-initiations/{paymentInitiationID}` | `payments:read` | — | 200 `V3GetPaymentInitiationResponse` | — | `payments transfer_initiation get <transferID>` | — |
-| `v3InitiatePayment` | `InitiatePayment` | POST | `/v3/payment-initiations` | `payments:write` | `V3InitiatePaymentRequest` | 202 `V3InitiatePaymentResponse` | not-replay-safe | `payments transfer_initiation create <file>\|-` | — |
-| `v3ListPaymentInitiationAdjustments` | `ListPaymentInitiationAdjustments` | GET | `/v3/payment-initiations/{paymentInitiationID}/adjustments` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentInitiationAdjustmentsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | B2-get-with-body |
-| `v3ListPaymentInitiationRelatedPayments` | `ListPaymentInitiationRelatedPayments` | GET | `/v3/payment-initiations/{paymentInitiationID}/payments` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentInitiationRelatedPaymentsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | B2-get-with-body |
-| `v3ListPaymentInitiations` | `ListPaymentInitiations` | GET | `/v3/payment-initiations` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentInitiationsCursorResponse` | get-with-body, paginated | `payments transfer_initiation list` | B2-get-with-body |
-| `v3ListPayments` | `ListPayments` | GET | `/v3/payments` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentsCursorResponse` | get-with-body, paginated | `payments payments list` | B2-get-with-body |
-| `v3RejectPaymentInitiation` | `RejectPaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/reject` | `payments:write` | — | 204 (no body) | not-replay-safe | `payments transfer_initiation reject <transferInitiationID>` | — |
-| `v3RetryPaymentInitiation` | `RetryPaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/retry` | `payments:write` | — | 202 `V3RetryPaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation retry <transferID>` | — |
-| `v3ReversePaymentInitiation` | `ReversePaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/reverse` | `payments:write` | `V3ReversePaymentInitiationRequest` | 202 `V3ReversePaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation reverse <transferID> <file>\|-` | — |
-| `v3UpdatePaymentMetadata` | `UpdatePaymentMetadata` | PATCH | `/v3/payments/{paymentID}/metadata` | `payments:write` | `V3UpdatePaymentMetadataRequest` | 204 (no body) | — | `payments payments set-metadata <paymentID> [<key>=<value>...]` | — |
+| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Admission blockers | Release gaps |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v3ApprovePaymentInitiation` | `ApprovePaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/approve` | `payments:write` | — | 202 `V3ApprovePaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation approve <transferInitiationID>` | — | — |
+| `v3CreatePayment` | `CreatePayment` | POST | `/v3/payments` | `payments:write` | `V3CreatePaymentRequest` | 201 `V3CreatePaymentResponse` | not-replay-safe | `payments payments create <file>\|-` | — | — |
+| `v3DeletePaymentInitiation` | `DeletePaymentInitiation` | DELETE | `/v3/payment-initiations/{paymentInitiationID}` | `payments:write` | — | 204 (no body) | destructive | `payments transfer_initiation delete <transferID>` | — | — |
+| `v3GetPayment` | `GetPayment` | GET | `/v3/payments/{paymentID}` | `payments:read` | — | 200 `V3GetPaymentResponse` | — | `payments payments get <paymentID>` | — | — |
+| `v3GetPaymentInitiation` | `GetPaymentInitiation` | GET | `/v3/payment-initiations/{paymentInitiationID}` | `payments:read` | — | 200 `V3GetPaymentInitiationResponse` | — | `payments transfer_initiation get <transferID>` | — | — |
+| `v3InitiatePayment` | `InitiatePayment` | POST | `/v3/payment-initiations` | `payments:write` | `V3InitiatePaymentRequest` | 202 `V3InitiatePaymentResponse` | not-replay-safe | `payments transfer_initiation create <file>\|-` | — | — |
+| `v3ListPaymentInitiationAdjustments` | `ListPaymentInitiationAdjustments` | GET | `/v3/payment-initiations/{paymentInitiationID}/adjustments` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentInitiationAdjustmentsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | — | — |
+| `v3ListPaymentInitiationRelatedPayments` | `ListPaymentInitiationRelatedPayments` | GET | `/v3/payment-initiations/{paymentInitiationID}/payments` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentInitiationRelatedPaymentsCursorResponse` | get-with-body, paginated | — (no legacy precedent) | — | — |
+| `v3ListPaymentInitiations` | `ListPaymentInitiations` | GET | `/v3/payment-initiations` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentInitiationsCursorResponse` | get-with-body, paginated | `payments transfer_initiation list` | — | — |
+| `v3ListPayments` | `ListPayments` | GET | `/v3/payments` | `payments:read` | `V3QueryBuilder` | 200 `V3PaymentsCursorResponse` | get-with-body, paginated | `payments payments list` | — | — |
+| `v3RejectPaymentInitiation` | `RejectPaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/reject` | `payments:write` | — | 204 (no body) | not-replay-safe | `payments transfer_initiation reject <transferInitiationID>` | — | — |
+| `v3RetryPaymentInitiation` | `RetryPaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/retry` | `payments:write` | — | 202 `V3RetryPaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation retry <transferID>` | — | — |
+| `v3ReversePaymentInitiation` | `ReversePaymentInitiation` | POST | `/v3/payment-initiations/{paymentInitiationID}/reverse` | `payments:write` | `V3ReversePaymentInitiationRequest` | 202 `V3ReversePaymentInitiationResponse` | not-replay-safe | `payments transfer_initiation reverse <transferID> <file>\|-` | — | — |
+| `v3UpdatePaymentMetadata` | `UpdatePaymentMetadata` | PATCH | `/v3/payments/{paymentID}/metadata` | `payments:write` | `V3UpdatePaymentMetadataRequest` | 204 (no body) | — | `payments payments set-metadata <paymentID> [<key>=<value>...]` | — | — |
 
 ### pools/orders/conversions/tasks (14)
 
-| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Blockers |
-|---|---|---|---|---|---|---|---|---|---|
-| `v3AddAccountToPool` | `AddAccountToPool` | POST | `/v3/pools/{poolID}/accounts/{accountID}` | `payments:write` | — | 204 (no body) | not-replay-safe | `payments pools add-account <poolID> <accountID>` | — |
-| `v3CreatePool` | `CreatePool` | POST | `/v3/pools` | `payments:write` | `V3CreatePoolRequest` | 201 `V3CreatePoolResponse` | not-replay-safe | `payments pools create <file>\|-` | — |
-| `v3DeletePool` | `DeletePool` | DELETE | `/v3/pools/{poolID}` | `payments:write` | — | 204 (no body) | destructive | `payments pools delete <poolID>` | — |
-| `v3GetConversion` | `GetConversion` | GET | `/v3/conversions/{conversionID}` | `payments:read` | — | 200 `V3GetConversionResponse` | — | `payments conversions get <conversionID>` | — |
-| `v3GetOrder` | `GetOrder` | GET | `/v3/orders/{orderID}` | `payments:read` | — | 200 `V3GetOrderResponse` | — | `payments orders get <orderID>` | — |
-| `v3GetPool` | `GetPool` | GET | `/v3/pools/{poolID}` | `payments:read` | — | 200 `V3GetPoolResponse` | — | `payments pools get <poolID>` | — |
-| `v3GetPoolBalances` | `GetPoolBalances` | GET | `/v3/pools/{poolID}/balances` | `payments:read` | — | 200 `V3PoolBalancesResponse` | — | `payments pools balances <poolID> <at>` | — |
-| `v3GetPoolBalancesLatest` | `GetPoolBalancesLatest` | GET | `/v3/pools/{poolID}/balances/latest` | `payments:read` | — | 200 `V3PoolBalancesResponse` | — | `payments pools latest-balances <poolID>` | — |
-| `v3GetTask` | `GetTask` | GET | `/v3/tasks/{taskID}` | `payments:read` | — | 200 `V3GetTaskResponse` | — | `payments tasks get <taskID>` | — |
-| `v3ListConversions` | `ListConversions` | GET | `/v3/conversions` | `payments:read` | `V3QueryBuilder` | 200 `V3ConversionsCursorResponse` | get-with-body, paginated | `payments conversions list` | B2-get-with-body |
-| `v3ListOrders` | `ListOrders` | GET | `/v3/orders` | `payments:read` | `V3QueryBuilder` | 200 `V3OrdersCursorResponse` | get-with-body, paginated | `payments orders list` | B2-get-with-body |
-| `v3ListPools` | `ListPools` | GET | `/v3/pools` | `payments:read` | `V3QueryBuilder` | 200 `V3PoolsCursorResponse` | get-with-body, paginated | `payments pools list` | B2-get-with-body |
-| `v3RemoveAccountFromPool` | `RemoveAccountFromPool` | DELETE | `/v3/pools/{poolID}/accounts/{accountID}` | `payments:write` | — | 204 (no body) | destructive | `payments pools remove-account <poolID> <accountID>` | — |
-| `v3UpdatePoolQuery` | `UpdatePoolQuery` | PATCH | `/v3/pools/{poolID}/query` | `payments:write` | `V3UpdatePoolQueryRequest` | 204 (no body) | — | `payments pools update-query <poolID> <file>\|-` | — |
+| operationId | SDK method | Method | Path | Scopes | Request | Success | Risk | Legacy command(s) | Admission blockers | Release gaps |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `v3AddAccountToPool` | `AddAccountToPool` | POST | `/v3/pools/{poolID}/accounts/{accountID}` | `payments:write` | — | 204 (no body) | not-replay-safe | `payments pools add-account <poolID> <accountID>` | — | — |
+| `v3CreatePool` | `CreatePool` | POST | `/v3/pools` | `payments:write` | `V3CreatePoolRequest` | 201 `V3CreatePoolResponse` | not-replay-safe | `payments pools create <file>\|-` | — | — |
+| `v3DeletePool` | `DeletePool` | DELETE | `/v3/pools/{poolID}` | `payments:write` | — | 204 (no body) | destructive | `payments pools delete <poolID>` | — | — |
+| `v3GetConversion` | `GetConversion` | GET | `/v3/conversions/{conversionID}` | `payments:read` | — | 200 `V3GetConversionResponse` | — | `payments conversions get <conversionID>` | — | — |
+| `v3GetOrder` | `GetOrder` | GET | `/v3/orders/{orderID}` | `payments:read` | — | 200 `V3GetOrderResponse` | — | `payments orders get <orderID>` | — | — |
+| `v3GetPool` | `GetPool` | GET | `/v3/pools/{poolID}` | `payments:read` | — | 200 `V3GetPoolResponse` | — | `payments pools get <poolID>` | — | — |
+| `v3GetPoolBalances` | `GetPoolBalances` | GET | `/v3/pools/{poolID}/balances` | `payments:read` | — | 200 `V3PoolBalancesResponse` | — | `payments pools balances <poolID> <at>` | — | — |
+| `v3GetPoolBalancesLatest` | `GetPoolBalancesLatest` | GET | `/v3/pools/{poolID}/balances/latest` | `payments:read` | — | 200 `V3PoolBalancesResponse` | — | `payments pools latest-balances <poolID>` | — | — |
+| `v3GetTask` | `GetTask` | GET | `/v3/tasks/{taskID}` | `payments:read` | — | 200 `V3GetTaskResponse` | — | `payments tasks get <taskID>` | — | — |
+| `v3ListConversions` | `ListConversions` | GET | `/v3/conversions` | `payments:read` | `V3QueryBuilder` | 200 `V3ConversionsCursorResponse` | get-with-body, paginated | `payments conversions list` | — | — |
+| `v3ListOrders` | `ListOrders` | GET | `/v3/orders` | `payments:read` | `V3QueryBuilder` | 200 `V3OrdersCursorResponse` | get-with-body, paginated | `payments orders list` | — | — |
+| `v3ListPools` | `ListPools` | GET | `/v3/pools` | `payments:read` | `V3QueryBuilder` | 200 `V3PoolsCursorResponse` | get-with-body, paginated | `payments pools list` | — | — |
+| `v3RemoveAccountFromPool` | `RemoveAccountFromPool` | DELETE | `/v3/pools/{poolID}/accounts/{accountID}` | `payments:write` | — | 204 (no body) | destructive | `payments pools remove-account <poolID> <accountID>` | — | — |
+| `v3UpdatePoolQuery` | `UpdatePoolQuery` | PATCH | `/v3/pools/{poolID}/query` | `payments:write` | `V3UpdatePoolQueryRequest` | 204 (no body) | — | `payments pools update-query <poolID> <file>\|-` | — | — |
 
 ## Legacy baseline mapping
 

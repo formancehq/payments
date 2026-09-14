@@ -1,10 +1,76 @@
 package audit_test
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/formancehq/payments/plugins/fctl/audit"
 )
+
+func TestRootRunsTheCompletePluginGateWithoutCycles(t *testing.T) {
+	justfile, err := os.ReadFile("../../../Justfile")
+	if err != nil {
+		t.Fatalf("read root Justfile: %v", err)
+	}
+	text := string(justfile)
+	for _, required := range []string{
+		"pre-commit: tidy generate lint openapi compile-plugins compile-connector-capabilities fctl-audit-check fctl-audit-tidy-check fctl-plugin-test",
+		"fctl-plugin-test:",
+		"FCTL_PLUGIN_COVERAGE_PROFILE=\"{{justfile_directory()}}/coverage-fctl.txt\" just fctl-plugin-test",
+		"cd {{justfile_directory()}}/plugins/fctl && just test",
+	} {
+		if !strings.Contains(text, required) {
+			t.Errorf("root Justfile is missing complete plugin gate wiring %q", required)
+		}
+	}
+	if strings.Contains(text, "fctl-plugin-test: pre-commit") || strings.Contains(text, "fctl-plugin-test: tests") {
+		t.Fatal("fctl-plugin-test must not depend on an aggregate gate that invokes it")
+	}
+}
+
+func TestDocumentationDoesNotClaimExecutableAcceptanceFromLocalTests(t *testing.T) {
+	for _, path := range []string{"../README.md", "../docs/command-inventory.md"} {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+		lower := strings.ToLower(string(content))
+		for _, forbidden := range []string{"implemented locally", "executable locally"} {
+			if strings.Contains(lower, forbidden) {
+				t.Errorf("%s uses acceptance-like local wording %q", path, forbidden)
+			}
+		}
+		if !strings.Contains(lower, "implemented in source") || !strings.Contains(lower, "local unit contract") {
+			t.Errorf("%s must distinguish source implementation and local unit contract from acceptance", path)
+		}
+	}
+}
+
+func TestOnlyKnownClaudeFlowWorkingStateIsIgnored(t *testing.T) {
+	content, err := os.ReadFile("../../../.gitignore")
+	if err != nil {
+		t.Fatalf("read root .gitignore: %v", err)
+	}
+	want := map[string]bool{
+		"/.claude-flow/": false,
+		"/pkg/client/models/components/.claude-flow/": false,
+		"/plugins/fctl/.claude-flow/":                 false,
+	}
+	for _, line := range strings.Split(string(content), "\n") {
+		if _, ok := want[line]; ok {
+			want[line] = true
+		}
+	}
+	for pattern, found := range want {
+		if !found {
+			t.Errorf("root .gitignore is missing exact working-state pattern %q", pattern)
+		}
+	}
+	if strings.Contains(string(content), "\n.claude-flow/\n") {
+		t.Fatal("broad .claude-flow ignore would hide unrelated nested state")
+	}
+}
 
 // The tests in this file pin the numbers quoted in prose in
 // docs/command-inventory.md. The generated tables are already covered by the
@@ -29,8 +95,9 @@ func TestDocumentedDenominators(t *testing.T) {
 		{"legacy commands excluded", tot.BaselineExcluded, 1},
 		{"/v3 reached by baseline", tot.V3WithBaseline, 44},
 		{"/v3 without legacy precedent", tot.V3WithoutBaseline, 20},
-		{"/v3 blocked", tot.V3Blocked, 19},
-		{"/v3 without blocker", tot.V3Admissible, 45},
+		{"/v3 blocked", tot.V3Blocked, 0},
+		{"/v3 without blocker", tot.V3Admissible, 64},
+		{"/v3 carrying release gap", tot.V3ReleaseGaps, 3},
 	} {
 		if c.got != c.want {
 			t.Errorf("%s: got %d, document says %d", c.name, c.got, c.want)

@@ -200,15 +200,15 @@ func TestFrozenFamiliesCoverEveryBaselineTarget(t *testing.T) {
 	}
 }
 
-// TestUndeclaredScopeOperationsAreBlocked asserts the exact-scope rule: any /v3
-// operation the document leaves without a security block must carry a recorded
-// blocker rather than a guessed scope array.
-func TestUndeclaredScopeOperationsAreBlocked(t *testing.T) {
+// TestUndeclaredScopeOperationsCarryReleaseGaps asserts the exact-scope rule:
+// operations with no security block remain executable only with an explicit
+// empty scope set and a recorded release gap, never with guessed scopes.
+func TestUndeclaredScopeOperationsCarryReleaseGaps(t *testing.T) {
 	report := build(t)
 
-	blocked := map[string]bool{}
-	for _, id := range audit.BlockedOperationIDs() {
-		blocked[id] = true
+	gapped := map[string]bool{}
+	for _, id := range audit.ReleaseGapOperationIDs() {
+		gapped[id] = true
 	}
 
 	for _, rec := range report.V3 {
@@ -218,38 +218,47 @@ func TestUndeclaredScopeOperationsAreBlocked(t *testing.T) {
 			}
 			continue
 		}
-		if !blocked[rec.OperationID] {
-			t.Errorf("%s declares no scopes and carries no blocker", rec.OperationID)
+		if !gapped[rec.OperationID] {
+			t.Errorf("%s declares no scopes and carries no release gap", rec.OperationID)
 		}
 	}
 }
 
-// TestGetWithBodyOperationsAreBlocked asserts every GET that smuggles its query
-// in a request body is recorded as a portability blocker, since a transport
-// that drops the body turns a filtered read into a wrong answer.
-func TestGetWithBodyOperationsAreBlocked(t *testing.T) {
+// TestGetWithBodyOperationsRemainRiskFacts asserts the generated-client audit
+// continues to expose these unusual requests without misreporting the closed
+// host-adapter compatibility risk as an active admission blocker.
+func TestGetWithBodyOperationsRemainRiskFacts(t *testing.T) {
 	report := build(t)
-
-	blocked := map[string]bool{}
 	for _, b := range audit.Blockers {
-		if b.ID != "B2-get-with-body" {
-			continue
-		}
-		for _, id := range b.OperationIDs {
-			blocked[id] = true
+		if b.ID == "B2-get-with-body" {
+			t.Fatal("closed B2-get-with-body remains in active blockers")
 		}
 	}
-
+	count := 0
 	for _, rec := range report.V3 {
-		if !rec.Risk.GetWithBody {
-			if blocked[rec.OperationID] {
-				t.Errorf("%s is recorded under B2-get-with-body but is not a GET with a body", rec.OperationID)
+		if rec.Risk.GetWithBody {
+			count++
+		}
+		for _, blocker := range rec.Blockers {
+			if blocker == "B2-get-with-body" || blocker == "B3-unredacted-connector-config" {
+				t.Errorf("%s carries closed blocker %s", rec.OperationID, blocker)
 			}
-			continue
 		}
-		if !blocked[rec.OperationID] {
-			t.Errorf("%s is a GET with a request body and is not recorded under B2-get-with-body", rec.OperationID)
-		}
+	}
+	if count != 15 {
+		t.Errorf("GET-with-body risk facts = %d, want 15", count)
+	}
+}
+
+func TestAdmissionBlockersAreEmptyAndReleaseGapsAreExact(t *testing.T) {
+	got := audit.BlockedOperationIDs()
+	if len(got) != 0 {
+		t.Fatalf("admission blocker IDs = %v, want none", got)
+	}
+	got = audit.ReleaseGapOperationIDs()
+	want := []string{"v3ForwardBankAccount", "v3GetBankAccount", "v3UpdateBankAccountMetadata"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("release-gap operation IDs = %v, want %v", got, want)
 	}
 }
 
@@ -275,9 +284,9 @@ func TestNoIdempotencyKeyIsDeclared(t *testing.T) {
 	}
 }
 
-// TestBlockersAndDivergencesAreWellFormed keeps the recorded blockers and
-// divergences usable: stable unique IDs, a summary, and named evidence.
-func TestBlockersAndDivergencesAreWellFormed(t *testing.T) {
+// TestGapsBlockersAndDivergencesAreWellFormed keeps all three classifications
+// usable: stable unique IDs, a summary, and named evidence.
+func TestGapsBlockersAndDivergencesAreWellFormed(t *testing.T) {
 	report := build(t)
 	present := map[string]bool{}
 	for _, rec := range report.V3 {
@@ -303,6 +312,23 @@ func TestBlockersAndDivergencesAreWellFormed(t *testing.T) {
 		for _, id := range b.OperationIDs {
 			if !present[id] {
 				t.Errorf("blocker %s names %q, which is not a current /v3 operation", b.ID, id)
+			}
+		}
+	}
+	for _, gap := range audit.ReleaseGaps {
+		if gap.ID == "" || gap.Summary == "" || gap.Evidence == "" {
+			t.Errorf("release gap %+v is missing ID, Summary or Evidence", gap)
+		}
+		if seen[gap.ID] {
+			t.Errorf("duplicate blocker/release-gap ID %q", gap.ID)
+		}
+		seen[gap.ID] = true
+		if len(gap.OperationIDs) == 0 || !sort.StringsAreSorted(gap.OperationIDs) {
+			t.Errorf("release gap %s has empty or unsorted operationIds: %v", gap.ID, gap.OperationIDs)
+		}
+		for _, id := range gap.OperationIDs {
+			if !present[id] {
+				t.Errorf("release gap %s names %q, which is not a current /v3 operation", gap.ID, id)
 			}
 		}
 	}

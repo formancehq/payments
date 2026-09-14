@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "product": {
+    "repository": "https://github.com/formancehq/payments.git",
+    "authoritativeRef": "refs/heads/main",
+    "revision": "6066bb9296157465fbe11ea7f347f6b46f27a550",
+    "remoteVerifiedAt": "2026-09-12T11:19:42Z",
+    "generatedClientTreeGitOid": "c38568e3d3031ffb20646338c4fd241fcd94b86f",
+    "openapiBlobGitOid": "9ed80e2e169ba220c60f73166c379eb616ceee3d",
+    "openapiSha256": "e8c00a21a4610cfedbab22c29be63310eed6f4d43f68046867e41c26b2b00506"
+  },
+  "fctlSdk": {
+    "modulePath": "github.com/formancehq/fctl-v2-poc/pkg/plugin",
+    "repository": "https://github.com/Dav-14/fctl-v2-poc.git",
+    "revision": "545521bfa222250af6b4419b194c7967cded0379",
+    "sdkPath": "pkg/plugin",
+    "sdkNarHash": "sha256-HUMOWv4j015MJaM/RNm2h8W8cIZlkyOrXveQlHUfQfE=",
+    "witPath": "wit/formance/fctl/plugin/v1/plugin.wit",
+    "witSha256": "38fdf377264eeada82b23fef153e6bf106ed0624e8916ff62cabdf210d6255f5",
+    "wrapper": "./scripts/with-fctl-sdk.sh"
+  },
+  "rfc0011": {
+    "status": "Validated",
+    "path": "docs/rfcs/0011-generated-product-client-host-adapters.md",
+    "sha256": "e12b973a0cbb214550c36316afc2fc691f6d5f89ab236b0f3ce01de5e76b6ffe",
+    "fctlRevision": "545521bfa222250af6b4419b194c7967cded0379"
+  },
+  "evidence": {
+    "executableOperations": 44,
+    "admissionBlockedOperations": 0,
+    "releaseGapOperations": 3,
+    "commonPayloadBytes": 4194304,
+    "generatedMethodBoundary": true,
+    "ambientAuthDisabled": true,
+    "automaticRetriesDisabled": true,
+    "getWithBodyPreserved": true,
+    "losslessWideIntegers": true
+  }
+}

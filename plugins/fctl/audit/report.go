@@ -16,6 +16,8 @@ type Record struct {
 	BaselineCommands []string `json:"baselineCommands"`
 	// Blockers are the blocker IDs recorded against this operation, sorted.
 	Blockers []string `json:"blockers"`
+	// ReleaseGaps are source-contract gaps that do not prevent local execution.
+	ReleaseGaps []string `json:"releaseGaps"`
 }
 
 // Totals are the counts the inventory document quotes. Every one of them is
@@ -46,6 +48,8 @@ type Totals struct {
 	// V3Admissible is V3Operations minus V3Blocked: proven facts, no recorded
 	// blocker. It is not an acceptance claim; the runtime gates are separate.
 	V3Admissible int `json:"v3Admissible"`
+	// V3ReleaseGaps counts executable operations that still carry a release gap.
+	V3ReleaseGaps int `json:"v3ReleaseGaps"`
 }
 
 // Report is the whole deterministic inventory.
@@ -89,6 +93,12 @@ func Build(specPath string) (*Report, error) {
 			blockersByOp[op] = append(blockersByOp[op], b.ID)
 		}
 	}
+	releaseGapsByOp := map[string][]string{}
+	for _, gap := range ReleaseGaps {
+		for _, op := range gap.OperationIDs {
+			releaseGapsByOp[op] = append(releaseGapsByOp[op], gap.ID)
+		}
+	}
 
 	report := &Report{SpecDocument: filepath.Base(specPath), BaselineRevision: BaselineRevision}
 
@@ -105,12 +115,15 @@ func Build(specPath string) (*Report, error) {
 			sort.Strings(commands)
 			blocks := append([]string(nil), blockersByOp[op.OperationID]...)
 			sort.Strings(blocks)
+			gaps := append([]string(nil), releaseGapsByOp[op.OperationID]...)
+			sort.Strings(gaps)
 			report.V3 = append(report.V3, Record{
 				Operation:        op,
 				Family:           family,
 				Risk:             RiskOf(op),
 				BaselineCommands: commands,
 				Blockers:         blocks,
+				ReleaseGaps:      gaps,
 			})
 		default:
 			return nil, fmt.Errorf("operation %s carries unknown tag %q", op.OperationID, op.Tag)
@@ -139,6 +152,9 @@ func Build(specPath string) (*Report, error) {
 		}
 		if len(r.Blockers) > 0 {
 			t.V3Blocked++
+		}
+		if len(r.ReleaseGaps) > 0 {
+			t.V3ReleaseGaps++
 		}
 	}
 	t.V3Admissible = t.V3Operations - t.V3Blocked

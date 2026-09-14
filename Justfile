@@ -3,20 +3,20 @@ set dotenv-load
 default:
   @just --list
 
-pre-commit: tidy generate lint openapi compile-plugins compile-connector-capabilities fctl-audit-check
+pre-commit: tidy generate lint openapi compile-plugins compile-connector-capabilities fctl-audit-check fctl-audit-tidy-check fctl-plugin-test
 pc: pre-commit
 
 lint:
   @golangci-lint run --fix --build-tags it --timeout 5m
   @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && golangci-lint run --fix --build-tags it --timeout 5m && cd "{{justfile_directory()}}"; done
-  @cd {{justfile_directory()}}/plugins/fctl && golangci-lint run --fix --timeout 5m
+  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh golangci-lint run --fix --timeout 5m
 
 tidy:
   @go run {{justfile_directory()}}/tools/sync-ce-plugins --connector-dir-path {{justfile_directory()}}/ce/plugins
   @go mod tidy
   @cd pkg/domain && go mod tidy
   @set -e; for d in ce/plugins/*/; do cd "{{justfile_directory()}}/$d" && go mod tidy && cd "{{justfile_directory()}}"; done
-  @cd {{justfile_directory()}}/plugins/fctl && go mod tidy
+  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh ./scripts/tidy-with-fctl-sdk.sh
 
 compile-plugins:
   ./tools/compile-plugins/compile-plugin.sh
@@ -65,7 +65,7 @@ tests:
     cd "{{justfile_directory()}}"; \
   done
   @for f in coverage-plugin-*.txt; do tail -n +2 "$f" >> coverage.txt && rm "$f"; done
-  @cd {{justfile_directory()}}/plugins/fctl && go test -race -covermode=atomic -coverprofile "{{justfile_directory()}}/coverage-fctl.txt" ./...
+  @FCTL_PLUGIN_COVERAGE_PROFILE="{{justfile_directory()}}/coverage-fctl.txt" just fctl-plugin-test
   @tail -n +2 coverage-fctl.txt >> coverage.txt && rm coverage-fctl.txt
 
 # Regenerates the committed fctl Payments plugin operation inventory from
@@ -74,12 +74,22 @@ tests:
 # blockers.
 [group('plugins')]
 fctl-audit:
-  @cd {{justfile_directory()}}/plugins/fctl && go run ./cmd/specaudit -spec ../../openapi.yaml -out .
+  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh go run ./cmd/specaudit -spec ../../openapi.yaml -out .
 
 # Fails when the committed inventory no longer matches openapi.yaml.
 [group('plugins')]
 fctl-audit-check:
-  @cd {{justfile_directory()}}/plugins/fctl && go run ./cmd/specaudit -spec ../../openapi.yaml -out . -check
+  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh go run ./cmd/specaudit -spec ../../openapi.yaml -out . -check
+
+[group('plugins')]
+fctl-audit-tidy-check:
+  @cd {{justfile_directory()}}/plugins/fctl && ./scripts/with-fctl-sdk.sh ./scripts/tidy-with-fctl-sdk.sh --check
+
+# Runs the complete product-owned plugin gate. `tests` supplies an aggregate
+# coverage destination; pre-commit uses the module's ignored local default.
+[group('plugins')]
+fctl-plugin-test:
+  @cd {{justfile_directory()}}/plugins/fctl && just test
 
 # Contract tests call real connector sandbox APIs to detect upstream API drift.
 # Gated behind the `contract` build tag so they never run as part of `tests`.

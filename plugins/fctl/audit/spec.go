@@ -2,11 +2,9 @@
 // HTTP surface from this repository's own merged OpenAPI document, and pins the
 // legacy fctl command baseline it has to be measured against.
 //
-// The package is deliberately read-only and dependency-light: it is the
-// preparation artefact for the fctl Payments plugin (fctl-v2 programme Task 8)
-// and must stay usable before any plugin runtime, component ABI, or transport
-// exists. It contains no HTTP client, no plugin entry point, and no generated
-// bindings.
+// The package is deliberately read-only and dependency-light. It remains the
+// provenance and drift-checking boundary for the executable plugin; runtime,
+// transport, and generated WIT bindings live in separate packages.
 package audit
 
 import (
