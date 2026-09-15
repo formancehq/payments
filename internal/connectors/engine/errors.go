@@ -25,8 +25,19 @@ func (e *ErrConnectorCapabilityNotSupported) Error() string {
 	return fmt.Sprintf("%s capability is not supported by the provider %s. Check here the supported features: https://docs.formance.com/modules/connectivity/capabilities", e.Capability, e.Provider)
 }
 
-// handleWorkflowError processes Temporal workflow errors and wraps validation errors
-// with ErrValidation to provide consistent error handling for API responses.
+// notFoundError reports a missing object while keeping the underlying message
+// as-is: it already spells out what was not found, so there is nothing to add.
+type notFoundError struct {
+	msg string
+}
+
+func (e *notFoundError) Error() string { return e.msg }
+
+func (e *notFoundError) Unwrap() error { return ErrNotFound }
+
+// handleWorkflowError processes Temporal workflow errors and wraps validation
+// and not found errors with ErrValidation/ErrNotFound to provide consistent
+// error handling for API responses.
 func handleWorkflowError(err error) error {
 	var applicationErr *temporal.ApplicationError
 	if errors.As(err, &applicationErr) {
@@ -36,6 +47,10 @@ func handleWorkflowError(err error) error {
 				errorsutils.Cause(err),
 				ErrValidation,
 			)
+		case activities.ErrTypeStorageNotFound:
+			// Message() is the only clean rendering of the failure: the error
+			// itself is decorated by temporal with its type and retry policy.
+			return &notFoundError{msg: applicationErr.Message()}
 		default:
 			return err
 		}
