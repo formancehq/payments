@@ -9,9 +9,13 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, nur }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, nur, rust-overlay }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -25,7 +29,7 @@
           let
             pkgs = import nixpkgs {
               inherit system;
-              overlays = [ nur.overlays.default ];
+              overlays = [ nur.overlays.default rust-overlay.overlays.default ];
               config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [
                 "goreleaser-pro"
               ];
@@ -53,8 +57,20 @@
 
     in
     {
+      # The fctl Payments plugin builds a portable WebAssembly component. Its
+      # authoring toolchain is not published in nixpkgs, so the pinned
+      # definitions are carried in-tree. Keep it out of the default shell:
+      # these are Rust builds, and making every Go CI job fetch crates turns a
+      # crates.io rate limit into an unrelated red build. `just
+      # fctl-component-build` enters this explicit tool environment instead.
       packages = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
+        let
+          componentTools = pkgs.callPackage ./nix/fctl-component-tools.nix { };
+        in
         {
+          inherit (componentTools) componentize-go wasi-virt wasm-tools;
+          wasm-opt = pkgs.binaryen;
+
           speakeasy = pkgs.stdenv.mkDerivation {
             pname = "speakeasy";
             version = speakeasyVersion;
