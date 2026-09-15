@@ -133,7 +133,7 @@ func verifyPlaidWebhookIAT(claims jwt.MapClaims, now time.Time) error {
 	if now.Sub(iat.Time) > plaidWebhookMaxAge {
 		return fmt.Errorf("webhook iat is older than 5 minutes: %w", models.ErrInvalidRequest)
 	}
-	if iat.Time.After(now.Add(plaidWebhookFutureSkew)) {
+	if iat.After(now.Add(plaidWebhookFutureSkew)) {
 		return fmt.Errorf("webhook iat is in the future: %w", models.ErrInvalidRequest)
 	}
 	return nil

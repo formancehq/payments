@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/formancehq/payments/ce/plugins/plaid/client"
@@ -21,13 +20,10 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
+const p256CoordLen = 32
+
 func encodePlaidCoord(b []byte) string {
-	if len(b) < 32 {
-		padded := make([]byte, 32)
-		copy(padded[32-len(b):], b)
-		b = padded
-	}
-	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "=")
+	return base64.RawURLEncoding.EncodeToString(b)
 }
 
 func signPlaidWebhookJWT(priv *ecdsa.PrivateKey, kid string, claims jwt.MapClaims) string {
@@ -39,9 +35,15 @@ func signPlaidWebhookJWT(priv *ecdsa.PrivateKey, kid string, claims jwt.MapClaim
 }
 
 func plaidJWK(priv *ecdsa.PrivateKey) *plaid.JWKPublicKey {
+	// Bytes returns the uncompressed point encoding: 0x04 || X || Y, both
+	// coordinates zero-padded to the curve's byte size (32 for P-256).
+	uncompressed, err := priv.PublicKey.Bytes()
+	Expect(err).To(BeNil())
+	Expect(uncompressed).To(HaveLen(1 + 2*p256CoordLen))
+
 	key := plaid.NewJWKPublicKeyWithDefaults()
-	key.SetX(encodePlaidCoord(priv.PublicKey.X.Bytes()))
-	key.SetY(encodePlaidCoord(priv.PublicKey.Y.Bytes()))
+	key.SetX(encodePlaidCoord(uncompressed[1 : 1+p256CoordLen]))
+	key.SetY(encodePlaidCoord(uncompressed[1+p256CoordLen:]))
 	return key
 }
 
