@@ -25,6 +25,7 @@ const (
 	ConnectorConfigTypeGeneric       ConnectorConfigType = "Generic"
 )
 
+// ConnectorConfig - A connector's configuration, whose shape depends on the provider
 type ConnectorConfig struct {
 	StripeConfig        *StripeConfig        `queryParam:"inline"`
 	DummyPayConfig      *DummyPayConfig      `queryParam:"inline"`

@@ -2,13 +2,20 @@
 
 package components
 
+// V3AddressRequest - A postal address to record on the payment service user
 type V3AddressRequest struct {
+	// Street number of the address
 	StreetNumber *string `json:"streetNumber,omitempty"`
-	StreetName   *string `json:"streetName,omitempty"`
-	City         *string `json:"city,omitempty"`
-	Region       *string `json:"region,omitempty"`
-	PostalCode   *string `json:"postalCode,omitempty"`
-	Country      *string `json:"country,omitempty"`
+	// Street name of the address
+	StreetName *string `json:"streetName,omitempty"`
+	// City of the address
+	City *string `json:"city,omitempty"`
+	// Region, state or province of the address
+	Region *string `json:"region,omitempty"`
+	// Postal or ZIP code of the address
+	PostalCode *string `json:"postalCode,omitempty"`
+	// Country of the address, as an ISO 3166-1 alpha-2 code
+	Country *string `json:"country,omitempty"`
 }
 
 func (o *V3AddressRequest) GetStreetNumber() *string {

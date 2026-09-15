@@ -19,9 +19,20 @@ type PluginWithBootstrapOnInstall interface {
 }
 
 // PluginWithPayoutThrottle is an optional upgrade on Plugin. A plugin that
-// implements it signals to the engine that CreatePayout and CreateTransfer
-// workflows should run on a dedicated Temporal task queue whose worker has
-// TaskQueueActivitiesPerSecond set to the returned value.
+// implements it caps how many payout and transfer initiations the engine sends
+// to the PSP per second: CreatePayout and CreateTransfer run on a dedicated
+// Temporal task queue whose worker has TaskQueueActivitiesPerSecond set to the
+// returned value, and those workflows route every activity except the plugin
+// call itself back to the default queue. So the returned value counts calls
+// that reach the PSP, not activities.
+//
+// The budget covers initiations only. Polling a payout's status, reversals and
+// the periodic fetch tasks all run unthrottled on the default queue.
+//
+// Returning 0 (or dropping the interface) stops the dedicated worker from being
+// started at all. Payout workflows already in flight live on that queue until
+// they finish - including while sleeping until a future ScheduledAt - so drain
+// them before making that change, or they will sit with no poller.
 type PluginWithPayoutThrottle interface {
 	PayoutsPerSecond() float64
 }

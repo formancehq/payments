@@ -3,6 +3,7 @@
 package components
 
 type ForwardBankAccountRequest struct {
+	// Identifier of the connector to forward the bank account to
 	ConnectorID string `json:"connectorID"`
 }
 

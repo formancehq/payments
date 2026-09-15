@@ -7,14 +7,20 @@ import (
 )
 
 type DummyPayConfig struct {
-	Name     string  `json:"name"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
 	Provider *string `default:"Dummypay" json:"provider"`
 	// The frequency at which the connector will try to fetch new payment objects from the directory
-	FilePollingPeriod            *string `default:"30s" json:"filePollingPeriod"`
-	Directory                    string  `json:"directory"`
-	PrefixFileToIngest           *string `json:"prefixFileToIngest,omitempty"`
-	NumberOfAccountsPreGenerated *int64  `json:"numberOfAccountsPreGenerated,omitempty"`
-	NumberOfPaymentsPreGenerated *int64  `json:"numberOfPaymentsPreGenerated,omitempty"`
+	FilePollingPeriod *string `default:"30s" json:"filePollingPeriod"`
+	// Filesystem directory the connector reads payment files from
+	Directory string `json:"directory"`
+	// Only ingest files whose name starts with this prefix
+	PrefixFileToIngest *string `json:"prefixFileToIngest,omitempty"`
+	// How many synthetic accounts to create on startup
+	NumberOfAccountsPreGenerated *int64 `json:"numberOfAccountsPreGenerated,omitempty"`
+	// How many synthetic payments to create on startup
+	NumberOfPaymentsPreGenerated *int64 `json:"numberOfPaymentsPreGenerated,omitempty"`
 }
 
 func (d DummyPayConfig) MarshalJSON() ([]byte, error) {

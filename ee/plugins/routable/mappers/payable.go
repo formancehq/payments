@@ -10,11 +10,21 @@ import (
 )
 
 func PayableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
-	raw, err := json.Marshal(pa)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("marshaling raw: %w", err)
+	raw := append(json.RawMessage(nil), pa.Raw...)
+	if len(raw) == 0 {
+		var err error
+		raw, err = json.Marshal(pa)
+		if err != nil {
+			return models.PSPPayment{}, fmt.Errorf("marshaling raw: %w", err)
+		}
 	}
-	precision, err := PrecisionFor(pa.CurrencyCode)
+	currencyCode := pa.CurrencyCode
+	if currencyCode == "" {
+		// Routable's common payable response makes this nullable and
+		// defaults it to USD.
+		currencyCode = "USD"
+	}
+	precision, err := PrecisionFor(currencyCode)
 	if err != nil {
 		return models.PSPPayment{}, err
 	}
@@ -29,7 +39,7 @@ func PayableToPSPPayment(pa client.Payable) (models.PSPPayment, error) {
 		CreatedAt: StatusChangedAtOrCreated(pa.StatusChangedAt, pa.CreatedAt),
 		Type:      models.PAYMENT_TYPE_PAYOUT,
 		Amount:    amount,
-		Asset:     FormatAsset(pa.CurrencyCode),
+		Asset:     FormatAsset(currencyCode),
 		Scheme:    DeliveryMethodToScheme(pa.DeliveryMethod),
 		Status:    PayableStatus(pa.Status),
 		Metadata:  PayableMetadata(pa),

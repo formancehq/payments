@@ -7,14 +7,22 @@ import (
 )
 
 type BankingCircleConfig struct {
-	Name                  string  `json:"name"`
-	Provider              *string `default:"Bankingcircle" json:"provider"`
-	Username              string  `json:"username"`
-	Password              string  `json:"password"`
-	Endpoint              string  `json:"endpoint"`
-	AuthorizationEndpoint string  `json:"authorizationEndpoint"`
-	UserCertificate       string  `json:"userCertificate"`
-	UserCertificateKey    string  `json:"userCertificateKey"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
+	Provider *string `default:"Bankingcircle" json:"provider"`
+	// Username issued by Banking Circle, used to authenticate the connector
+	Username string `json:"username"`
+	// Password issued by Banking Circle, used to authenticate the connector
+	Password string `json:"password"`
+	// Base URL of the Banking Circle API the connector calls
+	Endpoint string `json:"endpoint"`
+	// URL the connector calls to obtain an access token
+	AuthorizationEndpoint string `json:"authorizationEndpoint"`
+	// Client certificate presented on the mutual-TLS connection to Banking Circle
+	UserCertificate string `json:"userCertificate"`
+	// Private key matching the client certificate
+	UserCertificateKey string `json:"userCertificateKey"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Banking Circle API.
 	//
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`

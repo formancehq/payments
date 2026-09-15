@@ -10,8 +10,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -152,6 +152,21 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		}
 	})
 
+	// Regression: a missing acting_team_member is rejected by the client's
+	// own pre-flight validation (client.ErrValidation), not by initiatePayable
+	// itself. Without translating that into models.ErrInvalidRequest here,
+	// Temporal has nothing to classify as non-retriable and retries the
+	// payout forever, since PluginCreateTransfer/PluginCreatePayout run
+	// under an infinite retry policy.
+	It("wraps ErrInvalidRequest when the client rejects a missing acting_team_member", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
+			nil, 0, client.ErrValidation,
+		)
+		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: pi()})
+		Expect(err).To(HaveOccurred())
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
+	})
+
 	It("returns the Payment immediately when the response is terminal", func(ctx SpecContext) {
 		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
 			&client.Payable{ID: "pa_2", Status: "completed", Amount: "123.45", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
@@ -215,6 +230,36 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 		_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: piWithOverrides})
 		Expect(err).To(BeNil())
 	})
+
+	DescribeTable("maps payment-method based payable routes",
+		func(ctx SpecContext, payableType, deliveryMethod, responseCurrency string) {
+			withRoute := pi()
+			withRoute.Metadata = map[string]string{
+				mappers.MetadataKeyType:               payableType,
+				mappers.MetadataKeyDeliveryMethod:     deliveryMethod,
+				mappers.MetadataKeyPayToPaymentMethod: "pm_42",
+				mappers.MetadataKeySendOn:             "2026-08-19",
+			}
+
+			mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).DoAndReturn(func(_ any, req client.CreatePayableRequest) (*client.Payable, int, error) {
+				Expect(req.Type).To(Equal(payableType))
+				Expect(req.DeliveryMethod).To(Equal(deliveryMethod))
+				Expect(req.PayToPaymentMethod).To(Equal("pm_42"))
+				Expect(req.SendOn).NotTo(BeNil())
+				Expect(*req.SendOn).To(Equal("2026-08-19"))
+				Expect(req.LineItems).To(ConsistOf(client.PayableLineItem{
+					UnitPrice: "123.45", Amount: "123.45", Quantity: 1,
+					Description: "rent",
+				}))
+				return &client.Payable{ID: "pa_route", Type: payableType, Status: "pending", Amount: "123.45", CurrencyCode: responseCurrency, CreatedAt: time.Now().UTC()}, http.StatusCreated, nil
+			})
+
+			_, err := plg.createPayout(ctx, models.CreatePayoutRequest{PaymentInitiation: withRoute})
+			Expect(err).To(BeNil())
+		},
+		Entry("PayPal direct without response currency", "paypal", "paypal_direct", ""),
+		Entry("international ACH", "international", "international_ach", "USD"),
+	)
 
 	It("forwards com.routable.spec/message to Routable.message when set", func(ctx SpecContext) {
 		piWithMsg := pi()
@@ -324,14 +369,14 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 
 	// Terminal failures return Payment (not Error) so the engine links
 	// PI ↔ Payment regardless of outcome.
-	It("returns the Payment (not an Error) for failed/cancelled/expired terminal states", func(ctx SpecContext) {
+	It("returns the Payment (not an Error) for failed/issue/canceled terminal states", func(ctx SpecContext) {
 		for _, tc := range []struct {
 			raw    string
 			mapped models.PaymentStatus
 		}{
 			{"failed", models.PAYMENT_STATUS_FAILED},
+			{"issue", models.PAYMENT_STATUS_FAILED},
 			{"canceled", models.PAYMENT_STATUS_CANCELLED},
-			{"expired", models.PAYMENT_STATUS_EXPIRED},
 		} {
 			mock.EXPECT().GetPayable(gomock.Any(), "pa_"+tc.raw).Return(
 				&client.Payable{ID: "pa_" + tc.raw, Status: tc.raw, Amount: "10.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},

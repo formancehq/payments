@@ -7,15 +7,25 @@ import (
 	"time"
 )
 
+// V3BankAccount - A bank account registered with Formance and forwardable to connectors
 type V3BankAccount struct {
-	ID              string                        `json:"id"`
-	CreatedAt       time.Time                     `json:"createdAt"`
-	Name            string                        `json:"name"`
-	AccountNumber   *string                       `json:"accountNumber,omitempty"`
-	Iban            *string                       `json:"iban,omitempty"`
-	SwiftBicCode    *string                       `json:"swiftBicCode,omitempty"`
-	Country         *string                       `json:"country,omitempty"`
-	Metadata        map[string]string             `json:"metadata,omitempty"`
+	// Unique identifier of the bank account within Formance
+	ID string `json:"id"`
+	// When the bank account was registered
+	CreatedAt time.Time `json:"createdAt"`
+	// Human-readable name of the bank account
+	Name string `json:"name"`
+	// Domestic account number, when the account is identified that way
+	AccountNumber *string `json:"accountNumber,omitempty"`
+	// International bank account number, when the account is identified that way
+	Iban *string `json:"iban,omitempty"`
+	// SWIFT/BIC code identifying the bank
+	SwiftBicCode *string `json:"swiftBicCode,omitempty"`
+	// Country the account is held in, as an ISO 3166-1 alpha-2 code
+	Country *string `json:"country,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
+	// Provider-side accounts this bank account has been forwarded to
 	RelatedAccounts []V3BankAccountRelatedAccount `json:"relatedAccounts,omitempty"`
 }
 

@@ -3,6 +3,7 @@
 package components
 
 type V3ForwardBankAccountRequest struct {
+	// Identifier of the connector to forward the bank account to
 	ConnectorID string `json:"connectorID"`
 }
 

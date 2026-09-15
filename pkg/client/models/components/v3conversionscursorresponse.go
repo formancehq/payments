@@ -2,6 +2,7 @@
 
 package components
 
+// V3ConversionsCursorResponseCursor - Paginated cursor wrapping the list of conversions
 type V3ConversionsCursorResponseCursor struct {
 	PageSize int64          `json:"pageSize"`
 	HasMore  bool           `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3ConversionsCursorResponseCursor) GetData() []V3Conversion {
 }
 
 type V3ConversionsCursorResponse struct {
+	// Paginated cursor wrapping the list of conversions
 	Cursor V3ConversionsCursorResponseCursor `json:"cursor"`
 }
 

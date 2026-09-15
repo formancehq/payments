@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// PoolTypeEnum - Whether a pool holds a fixed account list or is driven by a query
 type PoolTypeEnum string
 
 const (

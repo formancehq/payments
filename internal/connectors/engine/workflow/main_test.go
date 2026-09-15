@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -18,6 +19,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/converter"
 	temporallog "go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/testsuite"
 	temporalworkflow "go.temporal.io/sdk/workflow"
@@ -86,6 +89,31 @@ func (s *UnitTestSuite) mockPollingPeriod(pollingPeriod time.Duration) {
 		pollingPeriod,
 		nil,
 	)
+}
+
+// recordActivityTaskQueues captures the task queue each activity was dispatched
+// to. Used to assert that a throttled connector's payout queue is only spent on
+// the activity that reaches the PSP (see models.PluginWithPayoutThrottle). The
+// listener fires before the OnActivity mocks return, so mocked activities are
+// recorded too.
+func (s *UnitTestSuite) recordActivityTaskQueues() map[string]string {
+	queues := make(map[string]string)
+	s.env.SetOnActivityStartedListener(func(info *activity.Info, _ context.Context, _ converter.EncodedValues) {
+		queues[info.ActivityType.Name] = info.TaskQueue
+	})
+	return queues
+}
+
+// assertOnlyPSPActivityThrottled checks that pspActivity ran on pspTaskQueue and
+// that every other activity ran on the default queue instead.
+func (s *UnitTestSuite) assertOnlyPSPActivityThrottled(queues map[string]string, pspActivity, pspTaskQueue string) {
+	s.Equal(pspTaskQueue, queues[pspActivity], "%s must run on the throttled queue", pspActivity)
+	for name, queue := range queues {
+		if name == pspActivity {
+			continue
+		}
+		s.Equalf(s.w.getDefaultTaskQueue(), queue, "activity %s must not run on the throttled queue", name)
+	}
 }
 
 func TestUnitTestSuite(t *testing.T) {

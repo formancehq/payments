@@ -3,6 +3,7 @@
 package components
 
 type AddAccountToPoolRequest struct {
+	// Identifier of the account to add to the pool
 	AccountID string `json:"accountID"`
 }
 

@@ -99,8 +99,9 @@ type V3Order struct {
 	//
 	SourceAccountID *string `json:"sourceAccountID,omitempty"`
 	// Formance account ID of the wallet the destination asset was credited to. Null if unresolvable.
-	DestinationAccountID *string           `json:"destinationAccountID,omitempty"`
-	Metadata             map[string]string `json:"metadata,omitempty"`
+	DestinationAccountID *string `json:"destinationAccountID,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 	// Ordered history of state snapshots for this order. The most recent element reflects the current `status`.
 	Adjustments []V3OrderAdjustment `json:"adjustments,omitempty"`
 	// Human-readable error from the PSP (e.g. rejection reason) when `status` is `FAILED`. Null otherwise.

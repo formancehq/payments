@@ -8,14 +8,22 @@ import (
 )
 
 type V3Instance struct {
-	ID           string     `json:"id"`
-	ConnectorID  string     `json:"connectorID"`
-	ScheduleID   string     `json:"scheduleID"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
-	Terminated   bool       `json:"terminated"`
+	// Unique identifier of the run
+	ID string `json:"id"`
+	// Identifier of the connector this run belongs to
+	ConnectorID string `json:"connectorID"`
+	// Identifier of the schedule that started this run
+	ScheduleID string `json:"scheduleID"`
+	// When the run started
+	CreatedAt time.Time `json:"createdAt"`
+	// When the run was last updated
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Whether the run has finished, successfully or not
+	Terminated bool `json:"terminated"`
+	// When the run finished, absent while it is still running
 	TerminatedAt *time.Time `json:"terminatedAt,omitempty"`
-	Error        *string    `json:"error,omitempty"`
+	// Why the run failed, absent when it succeeded
+	Error *string `json:"error,omitempty"`
 }
 
 func (v V3Instance) MarshalJSON() ([]byte, error) {

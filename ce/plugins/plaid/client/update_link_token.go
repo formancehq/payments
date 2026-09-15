@@ -12,16 +12,17 @@ import (
 )
 
 type UpdateLinkTokenRequest struct {
-	ApplicationName string
-	AttemptID       string
-	UserID          string
-	UserToken       string
-	Language        string
-	CountryCode     string
-	RedirectURI     string
-	AccessToken     string
-	ItemID          string
-	WebhookBaseURL  string
+	ApplicationName     string
+	AttemptID           string
+	UserID              string
+	UserToken           string
+	Language            string
+	CountryCode         string
+	RedirectURI         string
+	AccessToken         string
+	ItemID              string
+	WebhookBaseURL      string
+	FormanceRedirectURL string
 }
 
 type UpdateLinkTokenResponse struct {
@@ -56,6 +57,7 @@ func (c *client) UpdateLinkToken(ctx context.Context, req UpdateLinkTokenRequest
 	url = url.JoinPath("all")
 	query := url.Query()
 	query.Set(AttemptIDQueryParamID, req.AttemptID)
+	query.Set(FormanceRedirectURLQueryParamID, req.FormanceRedirectURL)
 	url.RawQuery = query.Encode()
 
 	webhookURL := url.String()

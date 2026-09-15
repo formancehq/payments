@@ -8,8 +8,11 @@ import (
 )
 
 type PoolBalance struct {
-	Amount          *big.Int `json:"amount"`
-	Asset           string   `json:"asset"`
+	// Total held across the pool for this asset, in the asset's smallest unit
+	Amount *big.Int `json:"amount"`
+	// Asset the balance is denominated in
+	Asset string `json:"asset"`
+	// Accounts contributing to this balance
 	RelatedAccounts []string `json:"relatedAccounts,omitempty"`
 }
 

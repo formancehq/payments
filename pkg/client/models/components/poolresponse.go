@@ -4,6 +4,7 @@ package components
 
 // PoolResponse - OK
 type PoolResponse struct {
+	// A named group of accounts whose balances are aggregated together
 	Data Pool `json:"data"`
 }
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// V3TaskStatusEnum - Where a task stands, from processing through to succeeded or failed
 type V3TaskStatusEnum string
 
 const (

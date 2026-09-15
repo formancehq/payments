@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/stretchr/testify/mock"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 )
 
@@ -68,6 +69,111 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithPayment_Success() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
+}
+
+func (s *UnitTestSuite) Test_CreateTransfer_OnlyPSPActivityRunsOnThrottledQueue() {
+	// A connector implementing models.PluginWithPayoutThrottle gets its transfer
+	// workflows started on a dedicated rate limited queue. Only
+	// PluginCreateTransfer may be dispatched there; the storage activities must
+	// fall back to the default queue or they eat the PSP's budget.
+	payoutTaskQueue := payoutTaskQueue(s.w.stack, s.connectorID)
+	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{TaskQueue: payoutTaskQueue})
+	queues := s.recordActivityTaskQueues()
+
+	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationTransfer, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Twice().Return(nil)
+	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.CreateTransferResponse{Payment: &s.pspPayment},
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunCreateTransfer, CreateTransfer{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	s.assertOnlyPSPActivityThrottled(queues, "PluginCreateTransfer", payoutTaskQueue)
+}
+
+func (s *UnitTestSuite) Test_CreateTransfer_Error_TaskUpdateStaysOffThrottledQueue() {
+	// runCreateTransfer reports the failure through updateTasksError, which sits
+	// outside createTransfer. That storage write must not be charged to the PSP's
+	// budget either.
+	payoutTaskQueue := payoutTaskQueue(s.w.stack, s.connectorID)
+	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{TaskQueue: payoutTaskQueue})
+	queues := s.recordActivityTaskQueues()
+
+	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationTransfer, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Twice().Return(nil)
+	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(
+		nil,
+		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", errors.New("boom")),
+	)
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
+		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunCreateTransfer, CreateTransfer{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.Error(s.env.GetWorkflowError())
+	s.assertOnlyPSPActivityThrottled(queues, "PluginCreateTransfer", payoutTaskQueue)
+}
+
+func (s *UnitTestSuite) Test_CreateTransfer_WithoutThrottle_EverythingOnDefaultQueue() {
+	// Connectors that do not implement models.PluginWithPayoutThrottle start on
+	// the default queue, so the routing must collapse to a no-op.
+	s.env.SetStartWorkflowOptions(client.StartWorkflowOptions{TaskQueue: s.w.getDefaultTaskQueue()})
+	queues := s.recordActivityTaskQueues()
+
+	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationTransfer, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Twice().Return(nil)
+	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.CreateTransferResponse{Payment: &s.pspPayment},
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+
+	s.env.ExecuteWorkflow(RunCreateTransfer, CreateTransfer{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	s.NotEmpty(queues)
+	for name, queue := range queues {
+		s.Equalf(s.w.getDefaultTaskQueue(), queue, "activity %s should run on the default queue", name)
+	}
 }
 
 func (s *UnitTestSuite) Test_CreateTransfer_WithScheduledAt_WithPayment_Success() {

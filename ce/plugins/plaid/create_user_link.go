@@ -41,6 +41,10 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
 	}
 
+	if req.FormanceRedirectURL == nil || *req.FormanceRedirectURL == "" {
+		return fmt.Errorf("missing formance redirect URL: %w", models.ErrInvalidRequest)
+	}
+
 	if req.OpenBankingForwardedUser == nil {
 		return fmt.Errorf("missing open banking connections: %w", models.ErrInvalidRequest)
 	}
@@ -85,14 +89,15 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	resp, err := p.client.CreateLinkToken(ctx, client.CreateLinkTokenRequest{
-		ApplicationName: req.ApplicationName,
-		UserID:          req.PaymentServiceUser.ID.String(),
-		UserToken:       req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey],
-		Language:        language,
-		CountryCode:     *req.PaymentServiceUser.Address.Country,
-		RedirectURI:     *req.ClientRedirectURL,
-		WebhookBaseURL:  req.WebhookBaseURL,
-		AttemptID:       req.AttemptID,
+		ApplicationName:     req.ApplicationName,
+		UserID:              req.PaymentServiceUser.ID.String(),
+		UserToken:           req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey],
+		Language:            language,
+		CountryCode:         *req.PaymentServiceUser.Address.Country,
+		RedirectURI:         *req.ClientRedirectURL,
+		WebhookBaseURL:      req.WebhookBaseURL,
+		AttemptID:           req.AttemptID,
+		FormanceRedirectURL: *req.FormanceRedirectURL,
 	})
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err

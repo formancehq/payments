@@ -125,7 +125,11 @@ var _ = Describe("Worker Tests", func() {
 
 			payoutQueue := engine.GetPayoutTaskQueue("stackname", conns[0].ID)
 			Expect(pool.HasWorker(payoutQueue)).To(BeTrue())
+			// The default worker must exist alongside it: payout workflows route
+			// every activity except the PSP call back to that queue.
+			Expect(pool.HasWorker(engine.GetDefaultTaskQueue("stackname"))).To(BeTrue())
 		})
+
 	})
 
 	Context("createOutboxPublisherSchedule", func() {

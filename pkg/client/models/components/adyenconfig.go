@@ -7,10 +7,15 @@ import (
 )
 
 type AdyenConfig struct {
-	Name               string  `json:"name"`
-	Provider           *string `default:"Adyen" json:"provider"`
-	APIKey             string  `json:"apiKey"`
-	HmacKey            string  `json:"hmacKey"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
+	Provider *string `default:"Adyen" json:"provider"`
+	// API key issued by Adyen, used to authenticate the connector's requests
+	APIKey string `json:"apiKey"`
+	// HMAC key used to verify the signature on webhooks sent by Adyen
+	HmacKey string `json:"hmacKey"`
+	// Prefix of your live Adyen endpoint. Required when the connector runs against production
 	LiveEndpointPrefix *string `json:"liveEndpointPrefix,omitempty"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Adyen API.
 	//

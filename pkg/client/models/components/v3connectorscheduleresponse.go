@@ -3,6 +3,7 @@
 package components
 
 type V3ConnectorScheduleResponse struct {
+	// A recurring job a connector runs to fetch data from its provider
 	Data V3Schedule `json:"data"`
 }
 

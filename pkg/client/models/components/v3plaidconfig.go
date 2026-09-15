@@ -7,10 +7,11 @@ import (
 )
 
 type V3PlaidConfig struct {
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	IsSandbox    *bool  `json:"isSandbox,omitempty"`
-	Name         string `json:"name"`
+	BaseURL      *string `json:"baseURL,omitempty"`
+	ClientID     string  `json:"clientID"`
+	ClientSecret string  `json:"clientSecret"`
+	IsSandbox    *bool   `json:"isSandbox,omitempty"`
+	Name         string  `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
 	PageSize      *int64  `default:"25" json:"pageSize"`
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
@@ -26,6 +27,13 @@ func (v *V3PlaidConfig) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	return nil
+}
+
+func (o *V3PlaidConfig) GetBaseURL() *string {
+	if o == nil {
+		return nil
+	}
+	return o.BaseURL
 }
 
 func (o *V3PlaidConfig) GetClientID() string {

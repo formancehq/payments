@@ -8,13 +8,20 @@ import (
 )
 
 type V3CreateAccountRequest struct {
-	Reference    string            `json:"reference"`
-	ConnectorID  string            `json:"connectorID"`
-	CreatedAt    time.Time         `json:"createdAt"`
-	AccountName  string            `json:"accountName"`
-	Type         V3AccountTypeEnum `json:"type"`
-	DefaultAsset *string           `json:"defaultAsset,omitempty"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	// Identifier the account carries at the provider
+	Reference string `json:"reference"`
+	// Identifier of the connector the account belongs to
+	ConnectorID string `json:"connectorID"`
+	// When the account was created at the provider
+	CreatedAt time.Time `json:"createdAt"`
+	// Human-readable name of the account
+	AccountName string `json:"accountName"`
+	// Whether an account is internal to the provider or belongs to an external party
+	Type V3AccountTypeEnum `json:"type"`
+	// Asset the account is denominated in by default
+	DefaultAsset *string `json:"defaultAsset,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (v V3CreateAccountRequest) MarshalJSON() ([]byte, error) {

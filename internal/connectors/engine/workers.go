@@ -249,6 +249,14 @@ func (w *WorkerPool) AddDefaultWorker() error {
 
 // AddPayoutWorker creates a dedicated Temporal worker for payout and transfer
 // workflows with TaskQueueActivitiesPerSecond set to payoutsPerSecond.
+//
+// The payout workflows themselves still run here, which is why the full
+// workflow and activity sets are registered rather than a payout-only subset.
+//
+// TaskQueueActivitiesPerSecond must stay set rather than being replaced by a
+// client-side limiter: the SDK turns off eager activity dispatch whenever it is
+// non-zero, because the server does not rate limit eagerly dispatched
+// activities. A client-side limiter would silently let them through.
 func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) error {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()

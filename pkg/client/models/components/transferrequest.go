@@ -8,10 +8,14 @@ import (
 )
 
 type TransferRequest struct {
-	Amount      *big.Int `json:"amount"`
-	Asset       string   `json:"asset"`
-	Destination string   `json:"destination"`
-	Source      *string  `json:"source,omitempty"`
+	// Amount to transfer, in the asset's smallest unit
+	Amount *big.Int `json:"amount"`
+	// Asset the transfer is denominated in
+	Asset string `json:"asset"`
+	// Provider-side account receiving the funds
+	Destination string `json:"destination"`
+	// Provider-side account the funds leave. Defaults to the connector's main account
+	Source *string `json:"source,omitempty"`
 }
 
 func (t TransferRequest) MarshalJSON() ([]byte, error) {

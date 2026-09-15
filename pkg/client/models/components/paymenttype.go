@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// PaymentType - Direction of a payment
 type PaymentType string
 
 const (

@@ -9,11 +9,16 @@ import (
 )
 
 type V3Balance struct {
-	AccountID     string    `json:"accountID"`
-	CreatedAt     time.Time `json:"createdAt"`
+	// Identifier of the account this balance belongs to
+	AccountID string `json:"accountID"`
+	// Start of the period this balance covers
+	CreatedAt time.Time `json:"createdAt"`
+	// When the balance was last refreshed from the provider
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
-	Asset         string    `json:"asset"`
-	Balance       *big.Int  `json:"balance"`
+	// Asset the balance is denominated in
+	Asset string `json:"asset"`
+	// Amount held, in the asset's smallest unit
+	Balance *big.Int `json:"balance"`
 }
 
 func (v V3Balance) MarshalJSON() ([]byte, error) {

@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/formancehq/payments/pkg/domain/models"
 	"go.temporal.io/sdk/workflow"
@@ -10,7 +11,7 @@ import (
 func (a Activities) StorageAccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
 	account, err := a.storage.AccountsGet(ctx, id)
 	if err != nil {
-		return nil, temporalStorageError(err)
+		return nil, temporalStorageError(fmt.Errorf("account %q: %w", id.String(), err))
 	}
 	return account, nil
 }

@@ -116,6 +116,21 @@ var _ = Describe("Routable createTransfer", func() {
 		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
 	})
 
+	// Regression: a missing acting_team_member is rejected by the client's
+	// own pre-flight validation (client.ErrValidation), not by initiatePayable
+	// itself. Without translating that into models.ErrInvalidRequest here,
+	// Temporal has nothing to classify as non-retriable and retries the
+	// transfer forever, since PluginCreateTransfer runs under an infinite
+	// retry policy.
+	It("wraps ErrInvalidRequest when the client rejects a missing acting_team_member", func(ctx SpecContext) {
+		mock.EXPECT().CreatePayable(gomock.Any(), gomock.Any()).Return(
+			nil, 0, client.ErrValidation,
+		)
+		_, err := plg.createTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: pi()})
+		Expect(err).To(HaveOccurred())
+		Expect(errors.Is(err, models.ErrInvalidRequest)).To(BeTrue())
+	})
+
 	// Async 202 path: Routable echoes only {id}. The plugin must return
 	// PollingTransferID without trying to map the half-empty payable
 	// (which would error out on the missing currency / amount).

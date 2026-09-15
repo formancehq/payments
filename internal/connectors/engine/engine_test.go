@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	engineutils "github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
@@ -19,6 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -33,6 +35,21 @@ func (throttlePlugin) PayoutsPerSecond() float64 { return 5.0 }
 func TestEngine(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Engine Suite")
+}
+
+// Counterpart to TestTaskQueueFormats in the workflow package: payout workflows
+// re-route their non-PSP activities to a default queue name they build
+// themselves, and it has to be the one this package's workers listen on.
+func TestTaskQueueFormats(t *testing.T) {
+	if got, want := engine.GetDefaultTaskQueue("somestack"), "somestack-default"; got != want {
+		t.Fatalf("GetDefaultTaskQueue() = %q, want %q (must match workflow.getDefaultTaskQueue)", got, want)
+	}
+
+	connID := models.ConnectorID{Reference: uuid.New(), Provider: "someprovider"}
+	want := "somestack-" + connID.String() + "-payout"
+	if got := engine.GetPayoutTaskQueue("somestack", connID); got != want {
+		t.Fatalf("GetPayoutTaskQueue() = %q, want %q (must match the workflow tests' payoutTaskQueue)", got, want)
+	}
 }
 
 func WithWorkflowOptions(idPrefix, taskQueue string) gomock.Matcher {
@@ -1197,6 +1214,24 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(expectedErr))
 		})
 
+		It("should translate a storage not found workflow failure into a not found error", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(temporal.NewNonRetryableApplicationError(
+				`account "test-account": not found`,
+				activities.ErrTypeStorageNotFound,
+				storage.ErrNotFound,
+			))
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, true)
+			Expect(err).To(MatchError(engine.ErrNotFound))
+			Expect(err.Error()).To(Equal(`account "test-account": not found`))
+		})
+
 		It("uses default task queue when connector plugin is not found", func(ctx SpecContext) {
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("not found"))
@@ -1249,6 +1284,54 @@ var _ = Describe("Engine Tests", func() {
 			})
 
 			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("creating a payout", func() {
+		var (
+			connID models.ConnectorID
+			piID   models.PaymentInitiationID
+		)
+		BeforeEach(func() {
+			connID = models.ConnectorID{Reference: uuid.New(), Provider: "dummypay"}
+			piID = models.PaymentInitiationID{Reference: "ref", ConnectorID: connID}
+		})
+
+		It("uses default task queue when connector plugin is not found", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("not found"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", defaultTaskQueue),
+				workflow.RunCreatePayout,
+				gomock.AssignableToTypeOf(workflow.CreatePayout{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreatePayout(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("uses default task queue when plugin does not implement PluginWithPayoutThrottle", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(models.NewMockPlugin(gomock.NewController(GinkgoT())), nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", defaultTaskQueue),
+				workflow.RunCreatePayout,
+				gomock.AssignableToTypeOf(workflow.CreatePayout{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreatePayout(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("uses payout task queue when plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
+			payoutQueue := engine.GetPayoutTaskQueue(stackName, connID)
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(throttlePlugin{}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", payoutQueue),
+				workflow.RunCreatePayout,
+				gomock.AssignableToTypeOf(workflow.CreatePayout{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreatePayout(ctx, piID, 0, false)
 			Expect(err).To(BeNil())
 		})
 	})
@@ -1378,6 +1461,52 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().WebhooksConfigsGetFromConnectorID(gomock.Any(), connectorID).Return(nil, nil)
 			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
 			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should reject a formanceRedirectURL query value that doesn't match this app's public URL, before touching storage", func(ctx SpecContext) {
+			webhook.QueryValues = map[string][]string{
+				engineutils.FormanceRedirectURLQueryParamID: {"https://evil.example.com/steal"},
+			}
+			// stackPublicURL is "" for the shared eng fixture, so any
+			// non-empty value here is necessarily a mismatch - no storage
+			// mock expectations are set, proving the rejection happens
+			// before any lookup.
+			err := eng.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(engineutils.ErrInvalidFormanceRedirectURL))
+		})
+
+		It("should proceed past validation when the formanceRedirectURL query value matches this connector's exact canonical path", func(ctx SpecContext) {
+			stackPublicURL := "https://my-stack.example.com"
+			engWithPublicURL := engine.New(logging.NewDefaultLogger(GinkgoWriter, false, false, false), cl, store, manager, stackName, stackPublicURL)
+
+			canonical, err := engineutils.GetFormanceRedirectURL(stackPublicURL, connectorID)
+			Expect(err).To(BeNil())
+
+			webhook.QueryValues = map[string][]string{
+				engineutils.FormanceRedirectURLQueryParamID: {canonical},
+			}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(nil, storage.ErrNotFound)
+
+			err = engWithPublicURL.HandleWebhook(ctx, "/url", "/path", webhook)
+			// storage.ErrNotFound (not ErrInvalidFormanceRedirectURL) proves
+			// validation passed and processing continued as normal.
+			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should reject a formanceRedirectURL query value that is same-origin but for a different connector", func(ctx SpecContext) {
+			stackPublicURL := "https://my-stack.example.com"
+			engWithPublicURL := engine.New(logging.NewDefaultLogger(GinkgoWriter, false, false, false), cl, store, manager, stackName, stackPublicURL)
+
+			otherConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
+			canonicalForOtherConnector, err := engineutils.GetFormanceRedirectURL(stackPublicURL, otherConnectorID)
+			Expect(err).To(BeNil())
+
+			webhook.QueryValues = map[string][]string{
+				engineutils.FormanceRedirectURLQueryParamID: {canonicalForOtherConnector},
+			}
+
+			err = engWithPublicURL.HandleWebhook(ctx, "/url", "/path", webhook)
+			Expect(err).To(MatchError(engineutils.ErrInvalidFormanceRedirectURL))
 		})
 	})
 })

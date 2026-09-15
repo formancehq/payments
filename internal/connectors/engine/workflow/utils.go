@@ -177,7 +177,15 @@ func isStorageNotFoundError(err error) bool {
 		return true
 	}
 	var appErr *temporal.ApplicationError
-	if errors.As(err, &appErr) && appErr.Type() == activities.ErrTypeStorage {
+	if !errors.As(err, &appErr) {
+		return false
+	}
+	switch appErr.Type() {
+	case activities.ErrTypeStorageNotFound:
+		return true
+	case activities.ErrTypeStorage:
+		// Workflows started before ErrTypeStorageNotFound existed still carry
+		// the generic storage type in their history.
 		return errors.Is(appErr.Unwrap(), storage.ErrNotFound) || appErr.Message() == storage.ErrNotFound.Error()
 	}
 	return false

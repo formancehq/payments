@@ -1,5 +1,7 @@
 # V3ApprovePaymentInitiationResponseData
 
+The task tracking the approval, which completes asynchronously
+
 
 ## Fields
 

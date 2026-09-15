@@ -537,7 +537,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -547,6 +547,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 func (e *engine) getPayoutTaskQueue(connectorID models.ConnectorID) string {
 	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
+		e.logger.Errorf("cannot resolve payout task queue for connector %q, falling back to the default queue (payouts will not be throttled): %v", connectorID.String(), err)
 		return GetDefaultTaskQueue(e.stack)
 	}
 	if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
@@ -671,7 +672,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 		// and not wait for the result
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -795,7 +796,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 		// and not wait for the result
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -1244,6 +1245,13 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 	ctx = context.WithoutCancel(ctx)
 	e.wg.Add(1)
 	defer e.wg.Done()
+
+	// Reject before this webhook is handed to any plugin - see
+	// ValidateFormanceRedirectURLQueryValues.
+	if err := utils.ValidateFormanceRedirectURLQueryValues(e.stackPublicURL, in.ConnectorID, in.QueryValues); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
 
 	webhooks, config, err := e.verifyAndTrimWebhook(ctx, urlPath, in)
 	if err != nil {

@@ -12,18 +12,20 @@ import (
 )
 
 const (
-	AttemptIDQueryParamID = "attemptID"
+	AttemptIDQueryParamID           = "attemptID"
+	FormanceRedirectURLQueryParamID = "formanceRedirectURL"
 )
 
 type CreateLinkTokenRequest struct {
-	ApplicationName string
-	UserID          string
-	UserToken       string
-	Language        string
-	CountryCode     string
-	RedirectURI     string
-	WebhookBaseURL  string
-	AttemptID       string
+	ApplicationName     string
+	UserID              string
+	UserToken           string
+	Language            string
+	CountryCode         string
+	RedirectURI         string
+	WebhookBaseURL      string
+	AttemptID           string
+	FormanceRedirectURL string
 }
 
 type CreateLinkTokenResponse struct {
@@ -58,6 +60,7 @@ func (c *client) CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest
 	url = url.JoinPath("all")
 	query := url.Query()
 	query.Set(AttemptIDQueryParamID, req.AttemptID)
+	query.Set(FormanceRedirectURLQueryParamID, req.FormanceRedirectURL)
 	url.RawQuery = query.Encode()
 
 	webhookURL := url.String()

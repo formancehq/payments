@@ -1,5 +1,7 @@
 # V3ConversionsCursorResponseCursor
 
+Paginated cursor wrapping the list of conversions
+
 
 ## Fields
 

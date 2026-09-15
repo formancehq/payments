@@ -149,6 +149,11 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		return models.PSPPayment{}, err
 	}
 
+	status := models.PAYMENT_STATUS_SUCCEEDED
+	if transaction.Pending {
+		status = models.PAYMENT_STATUS_PENDING
+	}
+
 	payment := models.PSPPayment{
 		Reference:                   transaction.TransactionId,
 		CreatedAt:                   createdAt.UTC(),
@@ -156,7 +161,7 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		Amount:                      amount,
 		Asset:                       assetName,
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
-		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
+		Status:                      status,
 		SourceAccountReference:      sourceAccountReference,
 		DestinationAccountReference: destinationAccountReference,
 		PsuID:                       &psuID,

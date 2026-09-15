@@ -3,6 +3,7 @@
 package components
 
 type V3GetBankAccountResponse struct {
+	// A bank account registered with Formance and forwardable to connectors
 	Data V3BankAccount `json:"data"`
 }
 

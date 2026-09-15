@@ -3,8 +3,8 @@
 
 ## Fields
 
-| Field                                       | Type                                        | Required                                    | Description                                 |
-| ------------------------------------------- | ------------------------------------------- | ------------------------------------------- | ------------------------------------------- |
-| `Asset`                                     | *string*                                    | :heavy_check_mark:                          | N/A                                         |
-| `Amount`                                    | [*big.Int](https://pkg.go.dev/math/big#Int) | :heavy_check_mark:                          | N/A                                         |
-| `RelatedAccounts`                           | []*string*                                  | :heavy_minus_sign:                          | N/A                                         |
+| Field                                                                   | Type                                                                    | Required                                                                | Description                                                             |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `Asset`                                                                 | *string*                                                                | :heavy_check_mark:                                                      | Asset the balance is denominated in                                     |
+| `Amount`                                                                | [*big.Int](https://pkg.go.dev/math/big#Int)                             | :heavy_check_mark:                                                      | Total held across the pool for this asset, in the asset's smallest unit |
+| `RelatedAccounts`                                                       | []*string*                                                              | :heavy_minus_sign:                                                      | Accounts contributing to this balance                                   |

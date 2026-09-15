@@ -1,6 +1,9 @@
 package client
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Domain models for the Routable API. Field names mirror the Routable JSON
 // schema (https://developers.routable.com/reference). We only model the
@@ -93,22 +96,44 @@ type PayableAccount struct {
 	Type   string `json:"type,omitempty"`
 }
 
+// PayablePaymentMethod identifies the payment destination embedded in a
+// Payable response.
+type PayablePaymentMethod struct {
+	ID string `json:"id"`
+}
+
 // Payable is a Routable outgoing payment. API: GET /v1/payables.
 type Payable struct {
-	Object              string          `json:"object"`
-	ID                  string          `json:"id"`
-	Type                string          `json:"type"`
-	DeliveryMethod      string          `json:"delivery_method"`
-	Status              string          `json:"status"`
-	ExternalID          string          `json:"external_id,omitempty"`
-	Amount              string          `json:"amount"`
-	CurrencyCode        string          `json:"currency_code"`
-	PayToCompany        *PayableCompany `json:"pay_to_company,omitempty"`
-	WithdrawFromAccount *PayableAccount `json:"withdraw_from_account,omitempty"`
-	Memo                string          `json:"memo,omitempty"`
-	Reference           string          `json:"reference,omitempty"`
-	StatusChangedAt     *time.Time      `json:"status_changed_at,omitempty"`
-	CreatedAt           time.Time       `json:"created_at"`
+	Object              string                `json:"object"`
+	ID                  string                `json:"id"`
+	Type                string                `json:"type"`
+	DeliveryMethod      string                `json:"delivery_method"`
+	Status              string                `json:"status"`
+	ExternalID          string                `json:"external_id,omitempty"`
+	Amount              string                `json:"amount"`
+	CurrencyCode        string                `json:"currency_code"`
+	PayToCompany        *PayableCompany       `json:"pay_to_company,omitempty"`
+	PayToPaymentMethod  *PayablePaymentMethod `json:"pay_to_payment_method,omitempty"`
+	WithdrawFromAccount *PayableAccount       `json:"withdraw_from_account,omitempty"`
+	Memo                string                `json:"memo,omitempty"`
+	Reference           string                `json:"reference,omitempty"`
+	FailureDetail       json.RawMessage       `json:"failure_detail,omitempty"`
+	StatusChangedAt     *time.Time            `json:"status_changed_at,omitempty"`
+	CreatedAt           time.Time             `json:"created_at"`
+	Raw                 json.RawMessage       `json:"-"`
+}
+
+// UnmarshalJSON retains the complete provider object. The typed fields drive
+// normal mapping; Raw keeps failure details and future Routable fields intact.
+func (p *Payable) UnmarshalJSON(data []byte) error {
+	type payableAlias Payable
+	var decoded payableAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*p = Payable(decoded)
+	p.Raw = append(json.RawMessage(nil), data...)
+	return nil
 }
 
 type ListPayablesResponse struct {
@@ -184,14 +209,15 @@ type CreatePayableRequest struct {
 	Type                string            `json:"type"`
 	DeliveryMethod      string            `json:"delivery_method"`
 	PayToCompany        string            `json:"pay_to_company"`
+	PayToPaymentMethod  string            `json:"pay_to_payment_method,omitempty"`
 	WithdrawFromAccount string            `json:"withdraw_from_account"`
 	Amount              string            `json:"amount"`
 	CurrencyCode        string            `json:"currency_code,omitempty"`
-	LineItems        []PayableLineItem `json:"line_items"`
-	SendOn           *string           `json:"send_on"`
-	ActingTeamMember string            `json:"acting_team_member"`
-	Reference        string            `json:"reference,omitempty"`
-	ExternalID       string            `json:"external_id,omitempty"`
+	LineItems           []PayableLineItem `json:"line_items"`
+	SendOn              *string           `json:"send_on"`
+	ActingTeamMember    string            `json:"acting_team_member"`
+	Reference           string            `json:"reference,omitempty"`
+	ExternalID          string            `json:"external_id,omitempty"`
 
 	// Message is Routable's vendor-facing email body sent to the payee's
 	// contacts when the payable is processed. HTML subset permitted; see
@@ -229,7 +255,24 @@ type ErrorResponse struct {
 	// Per-field details. Routable populates either {field, message} (legacy)
 	// or {where, path, detail} (v1) — we keep both to round-trip whatever
 	// the API returns.
-	Errors []FieldError `json:"errors,omitempty"`
+	Errors []FieldError    `json:"errors,omitempty"`
+	Raw    json.RawMessage `json:"-"`
+}
+
+// UnmarshalJSON keeps the complete provider error for durable payout failure
+// feedback while retaining typed fields for readable diagnostics.
+func (e *ErrorResponse) UnmarshalJSON(data []byte) error {
+	raw := append(json.RawMessage(nil), data...)
+	// Preserve the body even when a known field changes shape and typed decoding fails.
+	e.Raw = raw
+	type errorResponseAlias ErrorResponse
+	var decoded errorResponseAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*e = ErrorResponse(decoded)
+	e.Raw = raw
+	return nil
 }
 
 type FieldError struct {

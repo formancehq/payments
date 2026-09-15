@@ -8,11 +8,16 @@ import (
 )
 
 type ReverseTransferInitiationRequest struct {
-	Reference   string            `json:"reference"`
-	Description string            `json:"description"`
-	Amount      *big.Int          `json:"amount"`
-	Asset       string            `json:"asset"`
-	Metadata    map[string]string `json:"metadata"`
+	// Caller-supplied identifier for the reversal, used to deduplicate retries
+	Reference string `json:"reference"`
+	// Human-readable reason for the reversal
+	Description string `json:"description"`
+	// Amount to reverse, in the asset's smallest unit
+	Amount *big.Int `json:"amount"`
+	// Asset the reversal is denominated in
+	Asset string `json:"asset"`
+	// Arbitrary key/value pairs to attach to the reversal
+	Metadata map[string]string `json:"metadata"`
 }
 
 func (r ReverseTransferInitiationRequest) MarshalJSON() ([]byte, error) {

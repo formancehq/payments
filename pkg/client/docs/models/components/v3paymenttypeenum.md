@@ -1,5 +1,7 @@
 # V3PaymentTypeEnum
 
+Direction of a payment
+
 
 ## Values
 

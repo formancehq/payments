@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// AccountType - Whether an account is internal to the provider or belongs to an external party
 type AccountType string
 
 const (

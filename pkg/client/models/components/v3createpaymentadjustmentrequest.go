@@ -9,12 +9,18 @@ import (
 )
 
 type V3CreatePaymentAdjustmentRequest struct {
-	Reference string              `json:"reference"`
-	CreatedAt time.Time           `json:"createdAt"`
-	Status    V3PaymentStatusEnum `json:"status"`
-	Amount    *big.Int            `json:"amount,omitempty"`
-	Asset     *string             `json:"asset,omitempty"`
-	Metadata  map[string]string   `json:"metadata,omitempty"`
+	// Identifier the adjustment carries at the provider
+	Reference string `json:"reference"`
+	// When the adjustment occurred at the provider
+	CreatedAt time.Time `json:"createdAt"`
+	// Where a payment stands in its lifecycle
+	Status V3PaymentStatusEnum `json:"status"`
+	// Amount carried by this adjustment
+	Amount *big.Int `json:"amount,omitempty"`
+	// Asset the adjustment is denominated in
+	Asset *string `json:"asset,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (v V3CreatePaymentAdjustmentRequest) MarshalJSON() ([]byte, error) {

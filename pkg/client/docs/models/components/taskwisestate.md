@@ -1,5 +1,7 @@
 # TaskWiseState
 
+Internal progress state the task resumes from
+
 
 ## Fields
 

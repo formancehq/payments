@@ -7,6 +7,7 @@
 package client
 
 import (
+	"encoding/json"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -24,6 +25,8 @@ var _ = Describe("ErrorResponse.Error", func() {
 			Expect(in.Error()).To(Equal(expected))
 		},
 		Entry("empty body", ErrorResponse{}, "routable api error: empty body"),
+		Entry("null body", ErrorResponse{Raw: json.RawMessage("null")}, "routable api error: empty body"),
+		Entry("empty JSON object", ErrorResponse{Raw: json.RawMessage("{}")}, "routable api error; raw_response={}"),
 		Entry("message only", ErrorResponse{Message: "boom"}, "routable api error: boom"),
 		Entry("code + message",
 			ErrorResponse{Code: "validation", Message: "invalid"},

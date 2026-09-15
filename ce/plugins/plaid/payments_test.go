@@ -215,6 +215,64 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 			Expect(newState.LastCursor).To(Equal("new-cursor"))
 		})
 
+		It("should map pending and settled transactions to the correct status", func(ctx SpecContext) {
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
+					ConnectorID: models.ConnectorID{
+						Reference: uuid.New(),
+						Provider:  "plaid-test",
+					},
+					AccessToken:  &models.Token{Token: "test-token"},
+					ConnectionID: "test-connection",
+				},
+				FromPayload: json.RawMessage(`{}`),
+			}
+			fromPayloadBytes, _ := json.Marshal(fromPayload)
+
+			req := models.FetchNextPaymentsRequest{
+				FromPayload: fromPayloadBytes,
+				PageSize:    10,
+			}
+
+			pending := plaid.NewTransactionWithDefaults()
+			pending.SetTransactionId("transaction_pending")
+			pending.SetAccountId("account_pending")
+			pending.SetAmount(100.0)
+			pending.SetDate("2023-01-01")
+			pending.SetIsoCurrencyCode("USD")
+			pending.SetPending(true)
+
+			settled := plaid.NewTransactionWithDefaults()
+			settled.SetTransactionId("transaction_settled")
+			settled.SetAccountId("account_settled")
+			settled.SetAmount(100.0)
+			settled.SetDate("2023-01-01")
+			settled.SetIsoCurrencyCode("USD")
+			settled.SetPending(false)
+
+			m.EXPECT().ListTransactions(gomock.Any(), "test-token", "", 10).Return(
+				plaid.TransactionsSyncResponse{
+					Added:      []plaid.Transaction{*pending, *settled},
+					Modified:   []plaid.Transaction{},
+					Removed:    []plaid.RemovedTransaction{},
+					HasMore:    false,
+					NextCursor: "next-cursor",
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(2))
+
+			byReference := make(map[string]models.PSPPayment)
+			for _, p := range resp.Payments {
+				byReference[p.Reference] = p
+			}
+			Expect(byReference["transaction_pending"].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
+			Expect(byReference["transaction_settled"].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
+		})
+
 		It("should handle removed transactions", func(ctx SpecContext) {
 			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				OpenBankingConnection: &models.OpenBankingConnection{

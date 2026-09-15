@@ -1,5 +1,7 @@
 # V3PaymentStatusEnum
 
+Where a payment stands in its lifecycle
+
 
 ## Values
 

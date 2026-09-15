@@ -1,5 +1,7 @@
 # V3ConnectorScheduleInstancesCursorResponseCursor
 
+Paginated cursor wrapping the schedule's runs
+
 
 ## Fields
 

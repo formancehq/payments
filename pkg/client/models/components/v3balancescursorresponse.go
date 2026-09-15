@@ -2,6 +2,7 @@
 
 package components
 
+// V3BalancesCursorResponseCursor - Paginated cursor wrapping the list of balances
 type V3BalancesCursorResponseCursor struct {
 	PageSize int64       `json:"pageSize"`
 	HasMore  bool        `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3BalancesCursorResponseCursor) GetData() []V3Balance {
 }
 
 type V3BalancesCursorResponse struct {
+	// Paginated cursor wrapping the list of balances
 	Cursor V3BalancesCursorResponseCursor `json:"cursor"`
 }
 

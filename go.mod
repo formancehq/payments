@@ -1,6 +1,6 @@
 module github.com/formancehq/payments
 
-go 1.26
+go 1.26.0
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
@@ -65,7 +65,7 @@ require (
 	github.com/formancehq/payments/ce/plugins/tink v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/ce/plugins/wise v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
-	github.com/formancehq/payments/pkg/domain v0.3.3
+	github.com/formancehq/payments/pkg/domain v0.4.2
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/cors v1.2.2
@@ -306,13 +306,13 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/mod v0.40.0
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
-	google.golang.org/grpc v1.82.1 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 )

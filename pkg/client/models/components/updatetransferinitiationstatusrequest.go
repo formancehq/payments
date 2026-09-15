@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// Status - Whether to approve or reject the pending transfer
 type Status string
 
 const (
@@ -34,6 +35,7 @@ func (e *Status) UnmarshalJSON(data []byte) error {
 }
 
 type UpdateTransferInitiationStatusRequest struct {
+	// Whether to approve or reject the pending transfer
 	Status Status `json:"status"`
 }
 

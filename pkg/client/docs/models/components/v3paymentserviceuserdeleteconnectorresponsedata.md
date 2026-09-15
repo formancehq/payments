@@ -1,5 +1,7 @@
 # V3PaymentServiceUserDeleteConnectorResponseData
 
+The task tracking the deletion, which completes asynchronously
+
 
 ## Fields
 

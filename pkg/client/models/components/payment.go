@@ -8,23 +8,40 @@ import (
 	"time"
 )
 
+// Payment - A payment observed at a provider and surfaced through a connector
 type Payment struct {
-	ID                   string              `json:"id"`
-	Reference            string              `json:"reference"`
-	SourceAccountID      string              `json:"sourceAccountID"`
-	DestinationAccountID string              `json:"destinationAccountID"`
-	ConnectorID          string              `json:"connectorID"`
-	Provider             *Connector          `json:"provider,omitempty"`
-	Type                 PaymentType         `json:"type"`
-	Status               PaymentStatus       `json:"status"`
-	InitialAmount        *big.Int            `json:"initialAmount"`
-	Amount               *big.Int            `json:"amount"`
-	Scheme               PaymentScheme       `json:"scheme"`
-	Asset                string              `json:"asset"`
-	CreatedAt            time.Time           `json:"createdAt"`
-	Raw                  map[string]any      `json:"raw"`
-	Adjustments          []PaymentAdjustment `json:"adjustments"`
-	Metadata             map[string]string   `json:"metadata"`
+	// Unique identifier of the payment within Formance
+	ID string `json:"id"`
+	// Identifier the payment carries at the provider
+	Reference string `json:"reference"`
+	// Identifier of the account the funds left
+	SourceAccountID string `json:"sourceAccountID"`
+	// Identifier of the account the funds reached
+	DestinationAccountID string `json:"destinationAccountID"`
+	// Identifier of the connector the payment belongs to
+	ConnectorID string `json:"connectorID"`
+	// The payment provider behind a connector
+	Provider *Connector `json:"provider,omitempty"`
+	// Direction of a payment
+	Type PaymentType `json:"type"`
+	// Where a payment stands in its lifecycle
+	Status PaymentStatus `json:"status"`
+	// Amount the payment was created with, before any adjustment
+	InitialAmount *big.Int `json:"initialAmount"`
+	// Current amount of the payment after applying its adjustments
+	Amount *big.Int `json:"amount"`
+	// Payment scheme or rail a payment travels over
+	Scheme PaymentScheme `json:"scheme"`
+	// Asset the payment is denominated in
+	Asset string `json:"asset"`
+	// When the payment was created at the provider
+	CreatedAt time.Time `json:"createdAt"`
+	// The provider's original payload, passed through untouched
+	Raw map[string]any `json:"raw"`
+	// Successive changes to the payment's amount and status
+	Adjustments []PaymentAdjustment `json:"adjustments"`
+	// Arbitrary key/value pairs attached to the payment
+	Metadata map[string]string `json:"metadata"`
 }
 
 func (p Payment) MarshalJSON() ([]byte, error) {
