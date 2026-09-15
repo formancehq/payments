@@ -7,79 +7,38 @@ readonly lock_reader="$plugin_root/scripts/read-fctl-sdk-lock.go"
 
 [[ "$#" -gt 0 ]] || { printf 'usage: with-fctl-sdk.sh COMMAND [ARG...]\n' >&2; exit 2; }
 
-IFS=$'\t' read -r module_path repository expected_commit sdk_path expected_nar_hash wit_path expected_wit_hash < <(
+IFS=$'\t' read -r module_path repository expected_commit bundle_path expected_bundle_nar_hash sdk_path expected_sdk_nar_hash wit_path expected_wit_hash < <(
   GOWORK=off go run "$lock_reader" "$lock_path"
 )
-readonly module_path repository expected_commit sdk_path expected_nar_hash wit_path expected_wit_hash
+readonly module_path repository expected_commit bundle_path expected_bundle_nar_hash sdk_path expected_sdk_nar_hash wit_path expected_wit_hash
 
 workspace_directory="$(mktemp -d "${TMPDIR:-/tmp}/fctl-sdk-work.XXXXXXXX")"
 readonly workspace_directory
-staging_directory=""
 cleanup() {
   rm -rf -- "$workspace_directory"
-  [[ -z "$staging_directory" ]] || rm -rf -- "$staging_directory"
 }
 trap cleanup EXIT
 
-# Materialise the locked SDK from the locked repository at the locked commit.
-# The commit is used verbatim as the fetch refspec, so no branch, tag or default
-# reference can move this build. Authentication is whatever Git is already
-# configured with: on CI that is the github.com/formancehq credential installed
-# by formancehq/ci's setup-nix from GIT_PRIVATE_TOKEN, so no secret is read,
-# logged or written here.
-readonly materialised_marker=".fctl-sdk-materialised"
-materialised_sdk_root=""
-materialise_locked_sdk() {
-  local cache_root="${FCTL_SDK_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/formancehq/fctl-sdk}"
-  local target="$cache_root/$expected_commit"
-  if [[ -f "$target/$materialised_marker" ]]; then
-    materialised_sdk_root="$target"
-    return 0
-  fi
-
-  command -v git >/dev/null || { printf 'git is required to materialise the locked fctl SDK\n' >&2; exit 1; }
-  mkdir -p "$cache_root" || { printf 'fctl SDK cache is not writable: %s\n' "$cache_root" >&2; exit 1; }
-  staging_directory="$(mktemp -d "$cache_root/.staging.XXXXXXXX")"
-  printf 'materialising fctl SDK %s from %s\n' "$expected_commit" "$repository" >&2
-
-  git -C "$staging_directory" init --quiet
-  git -C "$staging_directory" fetch --quiet --depth 1 --no-tags "$repository" "$expected_commit" || {
-    printf 'could not fetch fctl SDK commit %s from %s; configure Git credentials for the repository or set FCTL_SDK_ROOT to a local checkout\n' \
-      "$expected_commit" "$repository" >&2
-    exit 1
-  }
-  local fetched_commit
-  fetched_commit="$(git -C "$staging_directory" rev-parse FETCH_HEAD)"
-  if [[ "$fetched_commit" != "$expected_commit" ]]; then
-    printf 'materialised fctl SDK revision mismatch: got %s, want %s\n' "$fetched_commit" "$expected_commit" >&2
-    exit 1
-  fi
-  mkdir -p "$staging_directory/tree"
-  git -C "$staging_directory" archive "$expected_commit" "$sdk_path" "$wit_path" | tar -x -C "$staging_directory/tree"
-  : >"$staging_directory/tree/$materialised_marker"
-
-  # Publish by rename inside the cache, which is one filesystem. A concurrent
-  # publisher that already won keeps its tree; this run then falls back to its
-  # own staged copy, which the exit trap removes.
-  if [[ ! -e "$target" ]] && mv "$staging_directory/tree" "$target" 2>/dev/null && [[ -f "$target/$materialised_marker" ]]; then
-    materialised_sdk_root="$target"
-    return 0
-  fi
-  if [[ -f "$target/$materialised_marker" ]]; then
-    materialised_sdk_root="$target"
-    return 0
-  fi
-  materialised_sdk_root="$staging_directory/tree"
-}
-
+# FCTL_SDK_ROOT stays an override for working against a local SDK checkout.
+# Without it, fall back to the minimal SDK snapshot committed with this plugin:
+# the authoritative repository is private and a repository-scoped CI token
+# cannot clone it, so a credential-free gate needs a source in this tree. Both
+# sources are pinned by commit provenance and fail closed on the content hashes
+# verified below; the snapshot carries its own hash because it is a measured
+# subset of the upstream module rather than a copy of it.
 if [[ -n "${FCTL_SDK_ROOT:-}" ]]; then
   [[ -d "$FCTL_SDK_ROOT" ]] || { printf 'FCTL_SDK_ROOT is not a directory: %s\n' "$FCTL_SDK_ROOT" >&2; exit 2; }
   sdk_root="$(cd "$FCTL_SDK_ROOT" && pwd -P)"
+  expected_nar_hash="$expected_sdk_nar_hash"
+  source_description='fctl SDK'
 else
-  materialise_locked_sdk
-  sdk_root="$(cd "$materialised_sdk_root" && pwd -P)"
+  sdk_root="$plugin_root/$bundle_path"
+  [[ -d "$sdk_root" ]] || { printf 'bundled fctl SDK is missing: %s\n' "$sdk_root" >&2; exit 1; }
+  sdk_root="$(cd "$sdk_root" && pwd -P)"
+  expected_nar_hash="$expected_bundle_nar_hash"
+  source_description='bundled fctl SDK'
 fi
-readonly sdk_root
+readonly sdk_root expected_nar_hash source_description
 
 source_root="$sdk_root"
 if [[ -e "$sdk_root/.git" ]]; then
@@ -118,7 +77,7 @@ command -v nix >/dev/null || { printf 'nix is required to validate the fctl SDK 
 actual_nar_hash="$(nix --extra-experimental-features nix-command hash path --type sha256 --sri "$sdk_directory")"
 readonly actual_nar_hash
 if [[ "$actual_nar_hash" != "$expected_nar_hash" ]]; then
-  printf 'fctl SDK content hash mismatch: got %s, want %s\n' "$actual_nar_hash" "$expected_nar_hash" >&2
+  printf '%s content hash mismatch: got %s, want %s\n' "$source_description" "$actual_nar_hash" "$expected_nar_hash" >&2
   exit 1
 fi
 

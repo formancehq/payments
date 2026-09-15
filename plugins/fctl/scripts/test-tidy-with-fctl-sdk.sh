@@ -85,9 +85,9 @@ grep -F 'plugin module metadata is not tidy' "$test_root/check.stderr" >/dev/nul
 assert_no_temporary_files
 
 FCTL_SDK_ROOT="$sdk_root" "$fixture/scripts/tidy-with-fctl-sdk.sh"
-rg -n 'example.test/stale v0.0.0' "$fixture/go.mod" && fail 'mutating tidy retained an unused requirement'
+grep -n --fixed-strings 'example.test/stale v0.0.0' "$fixture/go.mod" && fail 'mutating tidy retained an unused requirement'
 grep -F 'example.test/unused v0.0.0' "$fixture/go.mod" >/dev/null || fail 'mutating tidy lost an imported relative requirement'
-rg -n 'replace github.com/formancehq/fctl-v2-poc/pkg/plugin' "$fixture/go.mod" && fail 'mutating tidy persisted the SDK replacement'
+grep -n --fixed-strings 'replace github.com/formancehq/fctl-v2-poc/pkg/plugin' "$fixture/go.mod" && fail 'mutating tidy persisted the SDK replacement'
 grep -F 'replace example.test/unused => ./dep' "$fixture/go.mod" >/dev/null || fail 'mutating tidy lost an unrelated relative replacement'
 FCTL_SDK_ROOT="$sdk_root" "$fixture/scripts/tidy-with-fctl-sdk.sh" --check
 assert_no_temporary_files
@@ -134,7 +134,7 @@ signalled_modfile="$(cat "$capture_modfile")"
 [[ ! -e "$signalled_modfile" ]] || fail "SIGTERM left temporary modfile behind: $signalled_modfile"
 assert_no_temporary_files
 
-if rg -n '/Users/|/home/|[A-Za-z]:\\' "$plugin_root/go.mod" "$plugin_root/fctl-sdk.lock.json" "$plugin_root/scripts/tidy-with-fctl-sdk.sh"; then
+if grep -nE '/Users/|/home/|[A-Za-z]:\\' "$plugin_root/go.mod" "$plugin_root/fctl-sdk.lock.json" "$plugin_root/scripts/tidy-with-fctl-sdk.sh"; then
   fail 'tracked tidy contract contains a workstation-absolute path'
 fi
 

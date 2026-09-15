@@ -88,23 +88,26 @@ admission blocker.
 
 ## Verification
 
-`fctl-sdk.lock.json` pins the SDK module, source repository, commit, NAR content
-hash and canonical WIT hash without embedding a checkout path. With no
-`FCTL_SDK_ROOT` set, the wrapper materialises the locked commit itself: it
-fetches that exact revision — never a branch, tag or default reference — from
-the locked repository into a content-addressed cache
-(`$FCTL_SDK_CACHE_DIR`, default `${XDG_CACHE_HOME:-~/.cache}/formancehq/fctl-sdk`)
-and reuses it on every later run. No developer checkout is required, so ordinary
-repository CI runs the same gate as a workstation. The SDK repository is
-private; CI obtains the credential from the `GIT_PRIVATE_TOKEN` secret, which
-`formancehq/ci`'s `setup-nix` turns into a `github.com/formancehq` Git
-credential. The wrapper itself reads, logs and writes no token.
+`fctl-sdk.lock.json` pins the SDK module, source repository, commit, the NAR
+content hash of the upstream module, the NAR content hash of the committed
+snapshot and the canonical WIT hash, without embedding a checkout path. With no
+`FCTL_SDK_ROOT` set, the wrapper uses `sdk/fctl-v2-poc`, the minimal SDK
+snapshot committed with this plugin; see `sdk/README.md` for what it contains
+and why. No developer checkout, no clone and no cross-repository credential is
+required, so ordinary repository CI runs the same gate as a workstation. The
+SDK repository is private and Payments CI holds a token scoped to the Payments
+repository, which is exactly why the gate must not depend on one.
 
-For local development, `FCTL_SDK_ROOT` still overrides materialisation and
-points at either the matching Git checkout or an exact content-addressed source
-tree. Every Go test and component build runs through a wrapper that validates
-the lock, creates an ephemeral `go.work`, and removes it on both success and
-failure:
+For local development, `FCTL_SDK_ROOT` still overrides the snapshot and points
+at either the matching Git checkout or an exact content-addressed source tree.
+The wrapper validates the source's NAR content hash against `bundleNarHash` for
+the snapshot and against `sdkNarHash` for an override, since the snapshot is a
+measured subset of the upstream module rather than a copy of it. `go.mod` and
+`go.sum` are tidied against the committed snapshot, which is the source every
+gate uses, so tidying against a full fctl checkout instead can report the extra
+module sums that the snapshot's unused packages would pull in. Every Go test and
+component build runs through a wrapper that validates the lock, creates an
+ephemeral `go.work`, and removes it on both success and failure:
 
 The additive optional-query descriptor requires the SDK's optional
 `InputArtifactSpec` source field. The lock is sealed at fctl revision
@@ -113,7 +116,8 @@ WIT hash is unchanged from the previous pin, so the portable lifecycle
 interface is untouched by this repin.
 
 ```sh
-export FCTL_SDK_ROOT=/path/to/fctl-v2-poc
+# Optional: export FCTL_SDK_ROOT=/path/to/fctl-v2-poc to work against a local
+# fctl checkout instead of the committed snapshot.
 just test
 ```
 

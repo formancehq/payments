@@ -23,8 +23,11 @@ none is transcribed by hand.
 
 `generated-client-provenance.json` records the exact product revision, Git
 object IDs and OpenAPI SHA-256, plus the validated RFC 0011 digest and exact
-fctl SDK source lock used here. `with-fctl-sdk.sh` accepts the checkout location
-through `FCTL_SDK_ROOT`. For a Git source it validates repository/commit and
+fctl SDK source lock used here. `with-fctl-sdk.sh` resolves the SDK from the
+committed `sdk/fctl-v2-poc` snapshot, whose own NAR content hash the lock records
+as `bundleNarHash`, so no clone and no cross-repository credential participate.
+`FCTL_SDK_ROOT` overrides that with a checkout location and is validated against
+`sdkNarHash` instead. For a Git source it validates repository/commit and
 exports the locked SDK and WIT from that commit before checking the NAR content
 and WIT digest; dirty checkout files are excluded by construction. It then
 creates a disposable Go workspace. No workstation path is committed.

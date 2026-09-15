@@ -19,7 +19,7 @@ readonly mode
 [[ -n "${FCTL_SDK_ROOT:-}" ]] || { printf 'FCTL_SDK_ROOT is required\n' >&2; exit 2; }
 [[ -d "$FCTL_SDK_ROOT" ]] || { printf 'FCTL_SDK_ROOT is not a directory: %s\n' "$FCTL_SDK_ROOT" >&2; exit 2; }
 
-IFS=$'\t' read -r module_path _ _ sdk_path _ _ _ < <(
+IFS=$'\t' read -r module_path _ _ _ _ sdk_path _ _ _ < <(
   GOWORK=off go run "$lock_reader" "$lock_path"
 )
 readonly module_path sdk_path

@@ -4,6 +4,8 @@ set -euo pipefail
 readonly plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 readonly wrapper="$plugin_root/scripts/with-fctl-sdk.sh"
 readonly expected_nar_hash='sha256-DnTiEFya3R9KCYmgv5SO/1StKTCPmndObQrrVHf79Xk='
+readonly expected_bundle_nar_hash='sha256-pDXwGgWba9XYBbkZfoYKTYC2D+3mDjDIw1e+gSHzpc8='
+readonly expected_bundle_path='sdk/fctl-v2-poc'
 readonly expected_wit_hash='38fdf377264eeada82b23fef153e6bf106ed0624e8916ff62cabdf210d6255f5'
 readonly expected_commit='e9b1395f46f3100b381dbe00f5213de28e6df0e1'
 readonly expected_repository='https://github.com/formancehq/fctl-v2-poc.git'
@@ -118,6 +120,24 @@ chmod +x "$test_root/signal-wrapper.sh"
 
 [[ -x "$wrapper" ]] || fail "wrapper is missing or not executable: $wrapper"
 
+# An unset FCTL_SDK_ROOT is not a failure: the wrapper falls back to the
+# minimal SDK snapshot committed with this plugin, so a clean checkout with no
+# credential and no fctl clone still gets an exact, hash-verified SDK. This
+# case deliberately runs against the real nix so it proves the committed
+# snapshot, not a fixture.
+env -u FCTL_SDK_ROOT "$wrapper" true
+
+# The snapshot is held to its own content hash. The upstream checkout hash
+# covers the whole SDK module and must not unlock the measured subset.
+expect_failure 'bundled fctl SDK content hash mismatch' env -u FCTL_SDK_ROOT \
+  PATH="$fake_bin:$PATH" FAKE_NAR_HASH="$expected_nar_hash" "$wrapper" true
+
+expect_failure 'bundled fctl SDK content hash mismatch' env -u FCTL_SDK_ROOT \
+  PATH="$fake_bin:$PATH" FAKE_NAR_HASH='sha256-wrong' "$wrapper" true
+
+expect_failure 'FCTL_SDK_ROOT is not a directory' env \
+  PATH="$fake_bin:$PATH" FCTL_SDK_ROOT="$test_root/absent" FAKE_NAR_HASH="$expected_nar_hash" "$wrapper" true
+
 expect_failure 'fctl SDK content hash mismatch' env \
   PATH="$fake_bin:$PATH" FCTL_SDK_ROOT="$sdk_root" FAKE_NAR_HASH='sha256-wrong' "$wrapper" true
 
@@ -187,110 +207,20 @@ unlink "$sdk_root/pkg/plugin/tampered.go"
 env PATH="$fake_bin:$PATH" FCTL_SDK_ROOT="$sdk_root" FAKE_NAR_HASH="$expected_nar_hash" \
   "$wrapper" true
 
-# --- Materialisation: a machine with no fctl checkout must still build. ------
-materialise_bin="$test_root/materialise-bin"
-cache_root="$test_root/sdk-cache"
-mkdir -p "$materialise_bin"
-
-cat >"$materialise_bin/nix" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-[[ "${!#}" == */pkg/plugin ]] || { printf 'nix hashed wrong path: %s\n' "${!#}" >&2; exit 97; }
-printf '%s\n' "${FAKE_NAR_HASH:?}"
-EOF
-chmod +x "$materialise_bin/nix"
-
-cat >"$materialise_bin/git" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-[[ "$1" == '-C' ]] || { printf 'materialisation git ran outside a staging repository: %s\n' "$*" >&2; exit 98; }
-staging="$2"
-shift 2
-case "${1:-}" in
-  init)
-    exit 0
-    ;;
-  fetch)
-    [[ -z "${FAKE_GIT_FETCH_FORBIDDEN:-}" ]] || { printf 'fetched when the cache or override should have been used\n' >&2; exit 96; }
-    url="${@: -2:1}"
-    ref="${@: -1:1}"
-    [[ "$url" == "${FAKE_EXPECTED_REPOSITORY:?}" ]] || { printf 'fetched wrong repository: %s\n' "$url" >&2; exit 98; }
-    [[ "$ref" == "${FAKE_EXPECTED_COMMIT:?}" ]] || { printf 'fetched a non-pinned reference: %s\n' "$ref" >&2; exit 98; }
-    printf '%s\n' "$ref" >"$staging/fetch-head"
-    exit 0
-    ;;
-  rev-parse)
-    [[ "${2:-}" == 'FETCH_HEAD' ]] || { printf 'unexpected rev-parse: %s\n' "${2:-}" >&2; exit 98; }
-    printf '%s\n' "${FAKE_FETCHED_COMMIT:-$(cat "$staging/fetch-head")}"
-    exit 0
-    ;;
-  archive)
-    [[ "${2:-}" == "${FAKE_EXPECTED_COMMIT:?}" ]] || { printf 'archived wrong commit: %s\n' "${2:-}" >&2; exit 98; }
-    [[ "${3:-}" == 'pkg/plugin' && "${4:-}" == 'wit/formance/fctl/plugin/v1/plugin.wit' ]] || {
-      printf 'archived wrong paths: %s %s\n' "${3:-}" "${4:-}" >&2
-      exit 98
-    }
-    tar -C "${FAKE_GIT_ARCHIVE_SOURCE:?}" -cf - "$3" "$4"
-    exit 0
-    ;;
-  *)
-    printf 'unexpected materialisation git subcommand: %s\n' "${1:-}" >&2
-    exit 98
-    ;;
-esac
-EOF
-chmod +x "$materialise_bin/git"
-
-cat >"$test_root/inspect-materialised.sh" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-resolved="$(go list -m -f '{{.Dir}}' github.com/formancehq/fctl-v2-poc/pkg/plugin)"
-[[ "$resolved" == "$FCTL_SDK_ROOT/pkg/plugin" ]] || { printf 'workspace and materialised SDK root disagree\n' >&2; exit 91; }
-[[ "$resolved" == "$EXPECTED_CACHE_ENTRY/pkg/plugin" ]] || { printf 'materialised SDK is not the cache entry: %s\n' "$resolved" >&2; exit 91; }
-go list -m all >/dev/null
-EOF
-chmod +x "$test_root/inspect-materialised.sh"
-
-# 1. No FCTL_SDK_ROOT and no prior checkout: the locked commit is fetched by
-#    exact revision and published into the cache.
-env -u FCTL_SDK_ROOT PATH="$materialise_bin:$PATH" \
-  FCTL_SDK_CACHE_DIR="$cache_root" FAKE_NAR_HASH="$expected_nar_hash" \
-  FAKE_EXPECTED_REPOSITORY="$expected_repository" FAKE_EXPECTED_COMMIT="$expected_commit" \
-  FAKE_GIT_ARCHIVE_SOURCE="$archive_root" EXPECTED_CACHE_ENTRY="$cache_root/$expected_commit" \
-  "$wrapper" "$test_root/inspect-materialised.sh"
-[[ -f "$cache_root/$expected_commit/pkg/plugin/go.mod" ]] || fail 'materialisation did not publish the SDK module into the cache'
-[[ -f "$cache_root/$expected_commit/wit/formance/fctl/plugin/v1/plugin.wit" ]] || fail 'materialisation did not publish the WIT into the cache'
-[[ -z "$(find "$cache_root" -maxdepth 1 -name '.staging.*' -print -quit)" ]] || fail 'materialisation left a staging directory behind'
-
-# 2. Replaying the same intent reuses the cache instead of fetching again.
-env -u FCTL_SDK_ROOT PATH="$materialise_bin:$PATH" \
-  FCTL_SDK_CACHE_DIR="$cache_root" FAKE_NAR_HASH="$expected_nar_hash" \
-  FAKE_EXPECTED_REPOSITORY="$expected_repository" FAKE_EXPECTED_COMMIT="$expected_commit" \
-  FAKE_GIT_ARCHIVE_SOURCE="$archive_root" EXPECTED_CACHE_ENTRY="$cache_root/$expected_commit" \
-  FAKE_GIT_FETCH_FORBIDDEN=1 "$wrapper" "$test_root/inspect-materialised.sh"
-
-# 3. An explicit FCTL_SDK_ROOT still wins and performs no network access.
-env PATH="$materialise_bin:$PATH" FCTL_SDK_ROOT="$sdk_root" \
-  FCTL_SDK_CACHE_DIR="$test_root/unused-cache" FAKE_NAR_HASH="$expected_nar_hash" \
-  FAKE_EXPECTED_REPOSITORY="$expected_repository" FAKE_EXPECTED_COMMIT="$expected_commit" \
-  FAKE_GIT_FETCH_FORBIDDEN=1 "$wrapper" true
-[[ ! -d "$test_root/unused-cache" ]] || fail 'explicit FCTL_SDK_ROOT still populated the materialisation cache'
-
-# 4. A server that answers with a different commit is refused.
-expect_failure 'materialised fctl SDK revision mismatch' env -u FCTL_SDK_ROOT \
-  PATH="$materialise_bin:$PATH" FCTL_SDK_CACHE_DIR="$test_root/mismatch-cache" \
-  FAKE_NAR_HASH="$expected_nar_hash" FAKE_EXPECTED_REPOSITORY="$expected_repository" \
-  FAKE_EXPECTED_COMMIT="$expected_commit" FAKE_GIT_ARCHIVE_SOURCE="$archive_root" \
-  FAKE_FETCHED_COMMIT='0000000000000000000000000000000000000000' "$wrapper" true
-[[ ! -e "$test_root/mismatch-cache/$expected_commit" ]] || fail 'a mismatched revision was published into the cache'
-
 actual_wit_hash="$(shasum -a 256 "$plugin_root/wit/plugin.wit" | awk '{print $1}')"
 [[ "$actual_wit_hash" == "$expected_wit_hash" ]] || fail 'vendored plugin WIT differs from the SDK lock'
 
+# The committed snapshot is the source every credential-free gate consumes, so
+# its exact content is asserted here as well as inside the wrapper.
+actual_bundle_nar_hash="$(nix --extra-experimental-features nix-command hash path --type sha256 --sri "$plugin_root/$expected_bundle_path/pkg/plugin")"
+[[ "$actual_bundle_nar_hash" == "$expected_bundle_nar_hash" ]] || fail 'committed fctl SDK snapshot differs from the SDK lock'
+actual_bundle_wit_hash="$(shasum -a 256 "$plugin_root/$expected_bundle_path/wit/formance/fctl/plugin/v1/plugin.wit" | awk '{print $1}')"
+[[ "$actual_bundle_wit_hash" == "$expected_wit_hash" ]] || fail 'committed fctl SDK snapshot WIT differs from the SDK lock'
+
 absolute_prefix="/$('printf' Users)/$('printf' davidragot)"
-if rg -n --fixed-strings "$absolute_prefix" \
+if grep -rn --fixed-strings "$absolute_prefix" \
   "$plugin_root/go.mod" "$plugin_root/fctl-sdk.lock.json" "$plugin_root/Justfile" \
-  "$plugin_root/README.md" "$plugin_root/docs" "$plugin_root/scripts"; then
+  "$plugin_root/README.md" "$plugin_root/docs" "$plugin_root/scripts" "$plugin_root/sdk"; then
   fail 'tracked plugin contract contains a workstation-absolute path'
 fi
 

@@ -6,7 +6,7 @@ import (
 )
 
 func TestDecodeLockRejectsTrailingJSON(t *testing.T) {
-	input := `{"schemaVersion":1,"modulePath":"m","repository":"r","commit":"c","sdkPath":"pkg/plugin","sdkNarHash":"h","witPath":"wit/plugin.wit","witSha256":"w"} {}`
+	input := `{"schemaVersion":1,"modulePath":"m","repository":"r","commit":"c","bundlePath":"sdk/fctl-v2-poc","bundleNarHash":"b","sdkPath":"pkg/plugin","sdkNarHash":"h","witPath":"wit/plugin.wit","witSha256":"w"} {}`
 	if _, err := decodeLock(strings.NewReader(input)); err == nil {
 		t.Fatal("decodeLock accepted a second JSON value")
 	}

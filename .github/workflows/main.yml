@@ -27,11 +27,6 @@ jobs:
       nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
     secrets:
       SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
-      # `just pre-commit` runs the fctl plugin gate, which materialises the
-      # locked fctl SDK from the private formancehq/fctl-v2-poc repository.
-      # setup-nix turns this token into the github.com/formancehq Git
-      # credential the materialisation needs.
-      GIT_PRIVATE_TOKEN: ${{ secrets.GIT_PRIVATE_TOKEN }}
 
   Tests:
     uses: formancehq/ci/.github/workflows/go-test.yml@v1
@@ -42,8 +37,6 @@ jobs:
       coverage-files: ./coverage.txt
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      # `just tests` runs the fctl plugin gate; see the Dirty job.
-      GIT_PRIVATE_TOKEN: ${{ secrets.GIT_PRIVATE_TOKEN }}
 
   GoReleaser:
     needs: [Dirty]

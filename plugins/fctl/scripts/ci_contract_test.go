@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -15,43 +13,17 @@ const (
 	wrapperPath  = "with-fctl-sdk.sh"
 )
 
-// workflow is the subset of the repository's default pipeline this contract
-// constrains: the delegated jobs that run `just tests` and `just pre-commit`.
-type workflow struct {
-	Jobs map[string]struct {
-		Uses    string            `yaml:"uses"`
-		Secrets map[string]string `yaml:"secrets"`
-	} `yaml:"jobs"`
-}
-
-func readWorkflow(t *testing.T) workflow {
-	t.Helper()
+// TestDefaultPipelineNeedsNoCrossRepositoryCredential pins the property the
+// committed SDK snapshot buys: the jobs that run the plugin gate resolve the
+// fctl SDK from this tree, so no workflow may hand them a Git credential for
+// the private SDK repository. A pull_request-triggered job must not carry one.
+func TestDefaultPipelineNeedsNoCrossRepositoryCredential(t *testing.T) {
 	data, err := os.ReadFile(workflowPath)
 	if err != nil {
 		t.Fatalf("read %s: %v", workflowPath, err)
 	}
-	var parsed workflow
-	if err := yaml.Unmarshal(data, &parsed); err != nil {
-		t.Fatalf("parse %s: %v", workflowPath, err)
-	}
-	return parsed
-}
-
-// TestDefaultPipelineGrantsTheFctlSDKCredentialToEveryJobRunningThePluginGate
-// pins the only mechanism by which ordinary CI can reach the pinned fctl SDK:
-// formancehq/ci's setup-nix installs a github.com/formancehq/ credential from
-// GIT_PRIVATE_TOKEN, and the SDK repository is private.
-func TestDefaultPipelineGrantsTheFctlSDKCredentialToEveryJobRunningThePluginGate(t *testing.T) {
-	parsed := readWorkflow(t)
-	for _, name := range []string{"Tests", "Dirty"} {
-		job, ok := parsed.Jobs[name]
-		if !ok {
-			t.Errorf("workflow declares no %s job", name)
-			continue
-		}
-		if _, ok := job.Secrets["GIT_PRIVATE_TOKEN"]; !ok {
-			t.Errorf("%s job does not receive GIT_PRIVATE_TOKEN, so it cannot materialise the pinned fctl SDK", name)
-		}
+	if strings.Contains(string(data), "GIT_PRIVATE_TOKEN") {
+		t.Error("workflow still passes GIT_PRIVATE_TOKEN; the committed SDK snapshot makes it unnecessary")
 	}
 }
 
@@ -94,27 +66,27 @@ func recipeBody(t *testing.T, justfile, name string) string {
 	return ""
 }
 
-// TestSDKWrapperMaterialisesTheLockedRevisionWithoutAFloatingReference proves
-// the wrapper can obtain the SDK on a machine with no prior checkout, and that
-// it never resolves a moving reference to do so.
-func TestSDKWrapperMaterialisesTheLockedRevisionWithoutAFloatingReference(t *testing.T) {
+// TestSDKWrapperResolvesTheCommittedSnapshotWithoutFetching proves the wrapper
+// can obtain the SDK on a machine with no prior checkout and no credential, and
+// that it reaches no network to do so.
+func TestSDKWrapperResolvesTheCommittedSnapshotWithoutFetching(t *testing.T) {
 	data, err := os.ReadFile(wrapperPath)
 	if err != nil {
 		t.Fatalf("read %s: %v", wrapperPath, err)
 	}
 	wrapper := string(data)
 	for _, required := range []string{
-		"FCTL_SDK_ROOT",                 // the local-development override survives
-		"FCTL_SDK_CACHE_DIR",            // the materialised cache is relocatable
-		"$expected_commit",              // materialisation is pinned to the locked revision
-		"git -C \"$staging_directory\"", // materialisation happens in a throwaway repository
+		"FCTL_SDK_ROOT",             // the local-development override survives
+		"$bundle_path",              // the credential-free source is the committed snapshot
+		"$expected_bundle_nar_hash", // the snapshot is held to its own content hash
+		"$expected_sdk_nar_hash",    // an override is still held to the upstream module hash
 	} {
 		if !strings.Contains(wrapper, required) {
 			t.Errorf("wrapper does not carry %q", required)
 		}
 	}
-	floating := regexp.MustCompile(`(?m)^[^#\n]*\bgit\b[^\n]*\bfetch\b[^\n]*\b(HEAD|main|master|refs/heads/[a-zA-Z0-9_/-]+|--tags)\b`)
-	if match := floating.FindString(wrapper); match != "" {
-		t.Errorf("wrapper fetches a floating reference: %s", strings.TrimSpace(match))
+	fetching := regexp.MustCompile(`(?m)^[^#\n]*\b(git[^\n]*\b(fetch|clone|ls-remote)|curl|wget)\b`)
+	if match := fetching.FindString(wrapper); match != "" {
+		t.Errorf("wrapper reaches the network: %s", strings.TrimSpace(match))
 	}
 }
