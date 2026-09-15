@@ -42,14 +42,16 @@ Services started:
 - Payments worker
 
 ## Testing
-Run all tests:
+Run all tests for the main module:
 ```sh
 go test ./...
 ```
 
-Run tests for a specific public connector:
+Each CE connector under `ce/plugins/` is its own Go module, and there is
+no `go.work`, so the root `./...` pattern does not reach them. Run a
+connector's tests from inside its module:
 ```sh
-go test ./ce/plugins/<connector_name>/...
+(cd ce/plugins/<connector_name> && go test ./...)
 ```
 
 ## Building Connectors
