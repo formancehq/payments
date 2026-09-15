@@ -28,7 +28,7 @@ ee_plugins=$(find "$EE_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 # emit one import line per plugin name
-# $1 = import path prefix (e.g. "github.com/formancehq/payments/internal/connectors/plugins/public")
+# $1 = import path prefix (e.g. "github.com/formancehq/payments/ce/plugins")
 # reads plugin names from stdin (one per line)
 emit_imports() {
     prefix="$1"

@@ -4,7 +4,7 @@
 
 ```sh
     go build ./
-    sh connector-template.sh ../../internal/connectors/plugins/public <your_connector_name>
+    sh connector-template.sh ../../ce/plugins <your_connector_name>
 ```
 
 After generation, regenerate the plugin wiring files so the new connector is picked up at build time:
@@ -13,7 +13,7 @@ After generation, regenerate the plugin wiring files so the new connector is pic
 just compile-plugins
 ```
 
-This script auto-discovers all directories under `internal/connectors/plugins/public` (CE) and `ee/plugins` (EE) and rewrites `generated_ce.go` / `generated_ee.go` accordingly — no manual edits to those files are needed.
+This script auto-discovers all directories under `ce/plugins` (CE) and `ee/plugins` (EE) and rewrites `generated_ce.go` / `generated_ee.go` accordingly — no manual edits to those files are needed.
 
 ## Amount convention
 
