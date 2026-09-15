@@ -84,7 +84,7 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 		It("list error", func(ctx SpecContext) {
 			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, storage.ErrNotFound)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
-			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorage, storage.ErrNotFound)))
+			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))
 		})
 
 		It("upsert error", func(ctx SpecContext) {
@@ -99,7 +99,7 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 				Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
 			}).Return(storage.ErrNotFound)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
-			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorage, storage.ErrNotFound)))
+			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))
 		})
 	})
 })

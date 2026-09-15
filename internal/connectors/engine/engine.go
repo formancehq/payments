@@ -537,7 +537,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -672,7 +672,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 		// and not wait for the result
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -796,7 +796,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 		// and not wait for the result
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
