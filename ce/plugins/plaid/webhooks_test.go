@@ -210,6 +210,47 @@ var _ = Describe("Plaid *Plugin Webhooks", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("older than 5 minutes"))
 		})
+
+		It("should reject a signed JWT with no iat", func(ctx SpecContext) {
+			priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			Expect(err).To(BeNil())
+			body := []byte(`{"webhook_type":"TRANSACTIONS"}`)
+			sum := sha256.Sum256(body)
+			token := signPlaidWebhookJWT(priv, "kid-1", jwt.MapClaims{
+				"request_body_sha256": hex.EncodeToString(sum[:]),
+			})
+			m.EXPECT().GetWebhookVerificationKey(ctx, "kid-1").Return(plaidJWK(priv), nil)
+
+			_, err = plg.VerifyWebhook(ctx, models.VerifyWebhookRequest{
+				Webhook: models.PSPWebhook{
+					Headers: map[string][]string{"Plaid-Verification": {token}},
+					Body:    body,
+				},
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("missing iat"))
+		})
+
+		It("should accept a signed JWT whose iat is within the allowed future skew", func(ctx SpecContext) {
+			priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			Expect(err).To(BeNil())
+			body := []byte(`{"webhook_type":"TRANSACTIONS"}`)
+			sum := sha256.Sum256(body)
+			token := signPlaidWebhookJWT(priv, "kid-1", jwt.MapClaims{
+				"iat":                 time.Now().Add(30 * time.Second).Unix(),
+				"request_body_sha256": hex.EncodeToString(sum[:]),
+			})
+			m.EXPECT().GetWebhookVerificationKey(ctx, "kid-1").Return(plaidJWK(priv), nil)
+
+			resp, err := plg.VerifyWebhook(ctx, models.VerifyWebhookRequest{
+				Webhook: models.PSPWebhook{
+					Headers: map[string][]string{"Plaid-Verification": {token}},
+					Body:    body,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(models.VerifyWebhookResponse{}))
+		})
 	})
 
 	Context("translate webhook", func() {
