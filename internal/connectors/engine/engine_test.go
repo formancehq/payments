@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -1211,6 +1212,24 @@ var _ = Describe("Engine Tests", func() {
 			_, err := eng.CreateTransfer(ctx, piID, 0, true)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should translate a storage not found workflow failure into a not found error", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(temporal.NewNonRetryableApplicationError(
+				`account "test-account": not found`,
+				activities.ErrTypeStorageNotFound,
+				storage.ErrNotFound,
+			))
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, true)
+			Expect(err).To(MatchError(engine.ErrNotFound))
+			Expect(err.Error()).To(Equal(`account "test-account": not found`))
 		})
 
 		It("uses default task queue when connector plugin is not found", func(ctx SpecContext) {
