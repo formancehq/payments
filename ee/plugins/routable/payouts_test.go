@@ -369,14 +369,14 @@ var _ = Describe("Routable createPayout / pollPayableStatus", func() {
 
 	// Terminal failures return Payment (not Error) so the engine links
 	// PI ↔ Payment regardless of outcome.
-	It("returns the Payment (not an Error) for failed/cancelled/expired terminal states", func(ctx SpecContext) {
+	It("returns the Payment (not an Error) for failed/issue/canceled terminal states", func(ctx SpecContext) {
 		for _, tc := range []struct {
 			raw    string
 			mapped models.PaymentStatus
 		}{
 			{"failed", models.PAYMENT_STATUS_FAILED},
+			{"issue", models.PAYMENT_STATUS_FAILED},
 			{"canceled", models.PAYMENT_STATUS_CANCELLED},
-			{"expired", models.PAYMENT_STATUS_EXPIRED},
 		} {
 			mock.EXPECT().GetPayable(gomock.Any(), "pa_"+tc.raw).Return(
 				&client.Payable{ID: "pa_" + tc.raw, Status: tc.raw, Amount: "10.00", CurrencyCode: "USD", CreatedAt: time.Now().UTC()},
