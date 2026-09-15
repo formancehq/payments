@@ -123,8 +123,8 @@ below 80%. The root `just tests` recipe invokes this same gate.
 
 `core.Version` is the plugin's single build-time variable. A release build
 injects the published SemVer by exporting `FCTL_PLUGIN_VERSION` before
-`just build-component`; the value is validated as SemVer 2.0.0 and linked with
-`-ldflags -X`. Unset means a development build, which keeps the compiled
+`just fctl-component-build`; the value is validated as SemVer 2.0.0 and linked
+with `-ldflags -X`. Unset means a development build, which keeps the compiled
 default and produces byte-identical artifacts.
 
 When Git metadata is present, the wrapper requires the locked commit and origin
@@ -141,14 +141,15 @@ just tests
 just pre-commit
 ```
 
-To exercise the portable build, enter the fctl authoring shell as well so
-the pinned `componentize-go 0.4.1`, patched `wasi-virt 0.2.0`, `wasm-tools
-1.239.0`, and `wasm-opt 124` are available. The version guard runs before the
-build:
+The flake pins the fctl-authoritative component toolchain separately from the
+default development shell: `componentize-go 0.4.1`, patched `wasi-virt 0.2.0`,
+`wasm-tools 1.239.0`, and `wasm-opt` from Binaryen 124. Keeping it out of the
+default shell stops every Go CI job from compiling Rust and fetching crates.
+`just fctl-component-build` enters that explicit tool environment, and the
+version guard runs before the build:
 
 ```sh
-cd plugins/fctl
-just build-component
+just fctl-component-build
 ```
 
 The build performs two independent lanes, validates the final component,

@@ -91,6 +91,13 @@ fctl-audit-tidy-check:
 fctl-plugin-test:
   @cd {{justfile_directory()}}/plugins/fctl && just test
 
+# Produce the deterministic portable component. Keep the Rust authoring
+# toolchain out of the default shell: it is a heavier release gate and should
+# not make every Go CI job fetch crates.
+[group('plugins')]
+fctl-component-build:
+  @nix shell .#componentize-go .#wasi-virt .#wasm-tools .#wasm-opt --command bash -c 'cd {{justfile_directory()}}/plugins/fctl && just build-component'
+
 # Contract tests call real connector sandbox APIs to detect upstream API drift.
 # Gated behind the `contract` build tag so they never run as part of `tests`.
 # Requires the connector's contract credentials in the environment, e.g. for
