@@ -148,16 +148,20 @@ Legacy `lastSeenAt` state on disk is migrated to `cycleLowerBound` on first deco
 
 Implemented in [`mappers/status.go`](mappers/status.go) (`PayableStatus`).
 
-| Routable `status` | Formance `models.PaymentStatus` |
-|---|---|
-| `draft`, `ready_to_send`, `pending`, `scheduled`, `initiated`, `processing`, `in_transit`, `awaiting_delivery` | `PAYMENT_STATUS_PENDING` |
-| `completed`, `paid`, `externally_paid`, `delivered` | `PAYMENT_STATUS_SUCCEEDED` |
-| `failed`, `returned`, `nsf` | `PAYMENT_STATUS_FAILED` |
-| `stopped`, `canceled`, `cancelled`, `voided` | `PAYMENT_STATUS_CANCELLED` |
-| `expired` | `PAYMENT_STATUS_EXPIRED` |
-| anything else (or empty) | `PAYMENT_STATUS_UNKNOWN` |
+Payables and receivables share one enum upstream (`items.common.Status` in the [list-payables](https://developers.routable.com/reference/list-payables) and [list-receivables](https://developers.routable.com/reference/list-receivables) OpenAPI definitions), so a single mapper serves both. Semantics per status are documented under [Payment Statuses](https://developers.routable.com/docs/payment-statuses).
+
+| Routable `status` | Formance `models.PaymentStatus` | Why |
+|---|---|---|
+| `created`, `needs_approval`, `ready_to_send`, `scheduled`, `compliance_hold`, `po_discrepancy_hold` | `PAYMENT_STATUS_PENDING` | Pre-send. No funds have moved and the item is still expected to progress — the two hold states resume on their own once review clears. |
+| `pending`, `processing`, `initiated` | `PAYMENT_STATUS_PENDING` | In flight with Routable's banking partners. |
+| `completed`, `externally_paid` | `PAYMENT_STATUS_SUCCEEDED` | |
+| `issue`, `failed` | `PAYMENT_STATUS_FAILED` | `issue` means Routable could not initiate the transfer at all (an invalid bank account, typically); `failed` means it broke after initiation. Money did not move in either case, so neither may sit in `PENDING`. Both need Routable support to restart the item — if they do, the new `status_changed_at` brings the row back through `FETCH_PAYMENTS` and the payment picks up a fresh adjustment. |
+| `canceled` (and the defensive `cancelled` variant) | `PAYMENT_STATUS_CANCELLED` | |
+| anything else (or empty) | `PAYMENT_STATUS_UNKNOWN` | Provider drift. The row still syncs; the raw value stays available on the payment's `com.routable.spec/status` metadata and in `Raw`. |
 
 Comparison is case-insensitive and trims whitespace.
+
+> Keep the table aligned with the published enum. An earlier revision listed statuses Routable does not emit (`draft`, `paid`, `delivered`, `in_transit`, `returned`, `nsf`, `voided`, `expired`, …) while omitting real ones (`issue`, `compliance_hold`, `created`, `needs_approval`, `po_discrepancy_hold`) — which is how a real `issue` payable landed in the ledger as `UNKNOWN`. `mappers/status_test.go` pins the enum so the omission cannot recur silently.
 
 `IsTerminalStatus` (defined in the same file) drives the 201 sync-vs-poll branch in [`createPayout`/`createTransfer`](payouts.go): a terminal 201 response returns the Payment directly; non-terminal returns a polling ID. `PollPayoutStatus`/`PollTransferStatus` always return the Payment once the payable exists upstream — subsequent transitions are picked up by the `FETCH_PAYMENTS` cursor (see §3.6).
 
@@ -223,8 +227,8 @@ Routable's `POST /v1/payables` answers in two distinct shapes; the plugin branch
 | Routable response | Plugin engine response | Behaviour |
 |---|---|---|
 | `202 Accepted` (async) — body is `{id, status: pending}` | `PollingPayoutID` / `PollingTransferID` = Routable payable ID; no `Payment` field | Engine schedules `PollPayoutStatus`/`PollTransferStatus` against `GET /v1/payables/{id}`. The first successful poll returns the Payment, linking PI ↔ Payment and ending the schedule. No mapping is attempted on the half-empty 202 body. |
-| `201 Created` (sync) with terminal status (`completed`, `failed`, `cancelled`, `expired`) | `Payment` populated, no polling ID | Workflow ends immediately with the terminal payment. |
-| `201 Created` (sync) with non-terminal status (`pending`, `processing`, …) | `PollingPayoutID` / `PollingTransferID` = `Payment.Reference` | Engine schedules a polling round; the first poll returns the Payment, links it to the PI, and ends. The initial sync mapping is discarded — its `Reference` carries forward as the polling token. |
+| `201 Created` (sync) with terminal status (`completed`, `externally_paid`, `failed`, `issue`, `canceled`) | `Payment` populated, no polling ID | Workflow ends immediately with the terminal payment. |
+| `201 Created` (sync) with non-terminal status (`pending`, `processing`, `needs_approval`, …) | `PollingPayoutID` / `PollingTransferID` = `Payment.Reference` | Engine schedules a polling round; the first poll returns the Payment, links it to the PI, and ends. The initial sync mapping is discarded — its `Reference` carries forward as the polling token. |
 
 Once a Payment is linked, subsequent status transitions (PENDING → PROCESSING → SUCCEEDED, etc.) are picked up by the `FETCH_PAYMENTS` cursor (§3.6) rather than by re-polling. `PollPayoutStatus` returns an empty response only when `GET /v1/payables/{id}` returns 404 — Routable's eventual-consistency window after a 202; see [`client.go`](client/client.go) (`ErrPayableNotFound`).
 
