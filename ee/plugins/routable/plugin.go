@@ -7,26 +7,24 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
-	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
+	pkgplugins "github.com/formancehq/payments/pkg/domain/plugins"
 )
 
 const ProviderName = "routable"
 
-// DefaultPayoutsPerMinute is the conservative ceiling we derived from
-// Routable's documented limits (MAPPINGS.md §6.1). It is 90/min rather than a
-// round number because 90/min is the 1.5/s this connector ran at before the
-// rate was configurable: connectors that don't set payoutsPerMinute keep
-// exactly the behaviour they have today. Routable negotiates the real ceiling
-// per account, which is what the config field exists to raise.
+// DefaultPayoutsPerMinute is the conservative ceiling derived from Routable's
+// documented limits (MAPPINGS.md §6.1). 90/min is the 1.5/s this connector ran
+// at before the rate was configurable, so connectors that don't set
+// payoutsPerMinute keep the behaviour they have today.
 const DefaultPayoutsPerMinute = 90
 
 // Plugin is the dedicated Routable PSP plugin.
 var Registration = pkgplugins.Registration{
-	PluginType:   models.PluginTypePSP,
+	PluginType: models.PluginTypePSP,
 	CreateFunc: func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-		},
+	},
 	Capabilities: capabilities,
 	RawConf:      Config{},
 	PageSize:     PAGE_SIZE,
@@ -56,17 +54,9 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 }
 
 // PayoutsPerSecond converts the connector's per-minute budget into the
-// per-second rate models.PluginWithPayoutThrottle is defined in, and applies
-// DefaultPayoutsPerMinute when the config leaves it at 0 - which is how a
-// config written before the field existed reads. The result is therefore always
-// > 0, which is what keeps the connector's dedicated payout task queue alive:
-// the engine drops a connector back onto the default queue at 0.
+// per-second rate models.PluginWithPayoutThrottle is defined in.
 func (p *Plugin) PayoutsPerSecond() float64 {
-	perMinute := p.config.PayoutsPerMinute
-	if perMinute == 0 {
-		perMinute = DefaultPayoutsPerMinute
-	}
-	return float64(perMinute) / 60
+	return float64(p.config.resolvedPayoutsPerMinute()) / 60
 }
 
 func (p *Plugin) Name() string {

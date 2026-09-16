@@ -54,9 +54,8 @@ func TestConfigAcceptsCustomPayoutsPerMinute(t *testing.T) {
 }
 
 func TestConfigAcceptsZeroAndNullPayoutsPerMinute(t *testing.T) {
-	// omitempty has to let a zero through: 0 is the unset marker, not a
-	// rejected value. Were it rejected, every connector stored before the
-	// field existed would fail to load.
+	// 0 is the unset marker, not a rejected value. Were it rejected, every
+	// connector stored before the field existed would fail to load.
 	for _, payload := range []string{
 		`{"apiKey":"k","payoutsPerMinute":0}`,
 		`{"apiKey":"k","payoutsPerMinute":null}`,

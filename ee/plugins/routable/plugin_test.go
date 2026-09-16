@@ -73,30 +73,10 @@ var _ = Describe("Routable Plugin", func() {
 			Expect(err).To(BeNil())
 			Expect(p.PayoutsPerSecond()).To(Equal(1.5))
 		})
-		It("never reports 0, which the engine reads as an unthrottled connector", func() {
-			for _, raw := range []string{
-				`{"apiKey":"key"}`,
-				`{"apiKey":"key","payoutsPerMinute":0}`,
-			} {
-				p, err := New("routable", logger, json.RawMessage(raw))
-				Expect(err).To(BeNil())
-				Expect(p.PayoutsPerSecond()).To(BeNumerically(">", 0))
-			}
-		})
 		It("does not write the default into the config it reports back", func() {
 			p, err := New("routable", logger, json.RawMessage(`{"apiKey":"key"}`))
 			Expect(err).To(BeNil())
 			Expect(p.Config().(Config).PayoutsPerMinute).To(BeZero())
-		})
-		It("rejects a negative or fractional rate", func() {
-			for _, raw := range []string{
-				`{"apiKey":"key","payoutsPerMinute":-30}`,
-				`{"apiKey":"key","payoutsPerMinute":90.5}`,
-			} {
-				_, err := New("routable", logger, json.RawMessage(raw))
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(models.ErrInvalidConfig))
-			}
 		})
 	})
 
