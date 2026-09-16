@@ -13,6 +13,14 @@ import (
 
 const ProviderName = "routable"
 
+// DefaultPayoutsPerMinute is the conservative ceiling we derived from
+// Routable's documented limits (MAPPINGS.md §6.1). It is 90/min rather than a
+// round number because 90/min is the 1.5/s this connector ran at before the
+// rate was configurable: connectors that don't set payoutsPerMinute keep
+// exactly the behaviour they have today. Routable negotiates the real ceiling
+// per account, which is what the config field exists to raise.
+const DefaultPayoutsPerMinute = 90
+
 // Plugin is the dedicated Routable PSP plugin.
 var Registration = pkgplugins.Registration{
 	PluginType:   models.PluginTypePSP,
@@ -47,7 +55,19 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}, nil
 }
 
-func (p *Plugin) PayoutsPerSecond() float64 { return 1.5 }
+// PayoutsPerSecond converts the connector's per-minute budget into the
+// per-second rate models.PluginWithPayoutThrottle is defined in, and applies
+// DefaultPayoutsPerMinute when the config leaves it at 0 - which is how a
+// config written before the field existed reads. The result is therefore always
+// > 0, which is what keeps the connector's dedicated payout task queue alive:
+// the engine drops a connector back onto the default queue at 0.
+func (p *Plugin) PayoutsPerSecond() float64 {
+	perMinute := p.config.PayoutsPerMinute
+	if perMinute == 0 {
+		perMinute = DefaultPayoutsPerMinute
+	}
+	return float64(perMinute) / 60
+}
 
 func (p *Plugin) Name() string {
 	return p.name

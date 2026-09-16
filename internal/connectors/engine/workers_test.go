@@ -13,8 +13,8 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,6 +35,15 @@ type basicPlugin struct{ models.Plugin }
 type payoutPlugin struct{ models.Plugin }
 
 func (p *payoutPlugin) PayoutsPerSecond() float64 { return 10.0 }
+
+// ratePlugin is a throttled plugin whose rate can be changed between calls, to
+// stand in for a connector whose payoutsPerSecond config was updated.
+type ratePlugin struct {
+	models.Plugin
+	rate float64
+}
+
+func (p *ratePlugin) PayoutsPerSecond() float64 { return p.rate }
 
 var _ = Describe("Worker Tests", func() {
 	Context("on start", func() {
@@ -130,6 +139,96 @@ var _ = Describe("Worker Tests", func() {
 			Expect(pool.HasWorker(engine.GetDefaultTaskQueue("stackname"))).To(BeTrue())
 		})
 
+	})
+
+	Context("on connector update", func() {
+		var (
+			pool     *engine.WorkerPool
+			store    *storage.MockStorage
+			manager  *connectors.MockManager
+			handlers storage.HandlerConnectorsChanges
+			conn     models.Connector
+			plugin   *ratePlugin
+			queue    string
+		)
+
+		BeforeEach(func(ctx SpecContext) {
+			ctrl := gomock.NewController(GinkgoT())
+			logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
+			cl, err := client.NewLazyClient(client.Options{})
+			Expect(err).To(BeNil())
+			store = storage.NewMockStorage(ctrl)
+			manager = connectors.NewMockManager(ctrl)
+
+			pool = engine.NewWorkerPool(
+				logger, "stackname", cl,
+				[]temporal.DefinitionSet{}, []temporal.DefinitionSet{},
+				store, manager, worker.Options{}, time.Second, time.Hour,
+			)
+			pool.SetSkipScheduleCreation(true)
+
+			connID := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
+			conn = models.Connector{
+				ConnectorBase: models.ConnectorBase{ID: connID, Name: "abc-connector", Provider: connID.Provider, CreatedAt: time.Now()},
+				Config:        json.RawMessage(`{}`),
+			}
+			queue = engine.GetPayoutTaskQueue("stackname", connID)
+			plugin = &ratePlugin{rate: 1.5}
+
+			// Capture the change handlers OnStart registers so the update path
+			// can be driven directly.
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).
+				Do(func(_ context.Context, h storage.HandlerConnectorsChanges) { handlers = h }).Return(nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{
+				Data: []models.Connector{conn},
+			}, nil)
+			manager.EXPECT().Load(conn, false, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Get(conn.ID).Return(plugin, nil)
+
+			Expect(pool.OnStart(ctx)).To(BeNil())
+
+			rate, running := pool.PayoutWorkerRate(queue)
+			Expect(running).To(BeTrue())
+			Expect(rate).To(Equal(1.5))
+		})
+
+		It("rebuilds the payout worker at the new rate", func(ctx SpecContext) {
+			plugin.rate = 6
+			store.EXPECT().ConnectorsGet(gomock.Any(), conn.ID).Return(&conn, nil)
+			manager.EXPECT().Load(conn, true, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Get(conn.ID).Return(plugin, nil)
+
+			Expect(handlers[storage.ConnectorChangesUpdate](ctx, conn.ID)).To(BeNil())
+
+			rate, running := pool.PayoutWorkerRate(queue)
+			Expect(running).To(BeTrue())
+			Expect(rate).To(Equal(6.0))
+		})
+
+		It("leaves the worker alone when the rate is unchanged", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsGet(gomock.Any(), conn.ID).Return(&conn, nil)
+			manager.EXPECT().Load(conn, true, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Get(conn.ID).Return(plugin, nil)
+
+			Expect(handlers[storage.ConnectorChangesUpdate](ctx, conn.ID)).To(BeNil())
+
+			rate, running := pool.PayoutWorkerRate(queue)
+			Expect(running).To(BeTrue())
+			Expect(rate).To(Equal(1.5))
+		})
+
+		It("keeps the existing worker rather than orphaning its queue when the rate drops to 0", func(ctx SpecContext) {
+			plugin.rate = 0
+			store.EXPECT().ConnectorsGet(gomock.Any(), conn.ID).Return(&conn, nil)
+			manager.EXPECT().Load(conn, true, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Get(conn.ID).Return(plugin, nil)
+
+			Expect(handlers[storage.ConnectorChangesUpdate](ctx, conn.ID)).To(BeNil())
+
+			rate, running := pool.PayoutWorkerRate(queue)
+			Expect(running).To(BeTrue())
+			Expect(rate).To(Equal(1.5))
+		})
 	})
 
 	Context("createOutboxPublisherSchedule", func() {
