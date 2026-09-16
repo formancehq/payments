@@ -30,14 +30,10 @@ import (
 // PluginWithPayoutThrottle, so OnStart should not create a payout worker for it.
 type basicPlugin struct{ models.Plugin }
 
-// payoutPlugin satisfies both models.Plugin and models.PluginWithPayoutThrottle.
-// OnStart should create a dedicated payout worker for connectors that return it.
-type payoutPlugin struct{ models.Plugin }
-
-func (p *payoutPlugin) PayoutsPerSecond() float64 { return 10.0 }
-
-// ratePlugin is a throttled plugin whose rate can be changed between calls, to
-// stand in for a connector whose payoutsPerSecond config was updated.
+// ratePlugin satisfies both models.Plugin and models.PluginWithPayoutThrottle,
+// so OnStart should create a dedicated payout worker for connectors that
+// return it. The rate is a field rather than a constant so the same double can
+// stand in for a connector whose payoutsPerMinute config was updated.
 type ratePlugin struct {
 	models.Plugin
 	rate float64
@@ -127,7 +123,7 @@ var _ = Describe("Worker Tests", func() {
 				Data: []models.Connector{conns[0]},
 			}, nil)
 			manager.EXPECT().Load(conns[0], false, false).Return("name", json.RawMessage(`{}`), nil)
-			manager.EXPECT().Get(conns[0].ID).Return(&payoutPlugin{}, nil)
+			manager.EXPECT().Get(conns[0].ID).Return(&ratePlugin{rate: 10}, nil)
 
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
@@ -228,6 +224,82 @@ var _ = Describe("Worker Tests", func() {
 			rate, running := pool.PayoutWorkerRate(queue)
 			Expect(running).To(BeTrue())
 			Expect(rate).To(Equal(1.5))
+		})
+	})
+
+	Context("when a payout worker fails to start", func() {
+		var (
+			pool     *engine.WorkerPool
+			store    *storage.MockStorage
+			manager  *connectors.MockManager
+			handlers storage.HandlerConnectorsChanges
+			conn     models.Connector
+			queue    string
+		)
+
+		BeforeEach(func(ctx SpecContext) {
+			ctrl := gomock.NewController(GinkgoT())
+			logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
+			// Deliberately unreachable, so Start fails here exactly as it does
+			// on a machine with no Temporal running.
+			cl, err := client.NewLazyClient(client.Options{HostPort: "127.0.0.1:1"})
+			Expect(err).To(BeNil())
+			store = storage.NewMockStorage(ctrl)
+			manager = connectors.NewMockManager(ctrl)
+
+			pool = engine.NewWorkerPool(
+				logger, "stackname", cl,
+				[]temporal.DefinitionSet{}, []temporal.DefinitionSet{},
+				store, manager, worker.Options{}, time.Second, time.Hour,
+			)
+			pool.SetSkipScheduleCreation(true)
+
+			connID := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
+			conn = models.Connector{
+				ConnectorBase: models.ConnectorBase{ID: connID, Name: "abc-connector", Provider: connID.Provider, CreatedAt: time.Now()},
+				Config:        json.RawMessage(`{}`),
+			}
+			queue = engine.GetPayoutTaskQueue("stackname", connID)
+
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).
+				Do(func(_ context.Context, h storage.HandlerConnectorsChanges) { handlers = h }).Return(nil)
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{
+				Data: []models.Connector{conn},
+			}, nil)
+			manager.EXPECT().Load(conn, false, false).Return("name", json.RawMessage(`{}`), nil)
+			manager.EXPECT().Get(conn.ID).Return(&ratePlugin{rate: 6}, nil)
+
+			Expect(pool.OnStart(ctx)).To(BeNil())
+		})
+
+		It("keeps the entry so one bad queue cannot abort startup", func() {
+			// OnStart must not fail the pod because a queue could not be served.
+			Expect(pool.HasWorker(queue)).To(BeTrue())
+		})
+
+		It("does not record it as a healthy worker", func() {
+			// The recorded rate must not be readable as a worker that is serving
+			// the queue - that is what would make the next reconcile skip it and
+			// leave payouts queued with no poller until the process restarted.
+			Expect(pool.PayoutWorkerHealthy(queue)).To(BeFalse())
+		})
+
+		It("reconciles it on a connector update even when the rate is unchanged", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsGet(gomock.Any(), conn.ID).Return(&conn, nil)
+			manager.EXPECT().Load(conn, true, false).Return("name", json.RawMessage(`{}`), nil)
+			// Same rate as before: a healthy worker is left alone on this path,
+			// so reaching AddPayoutWorker again is what proves the unstarted one
+			// was torn down and retried rather than skipped.
+			manager.EXPECT().Get(conn.ID).Return(&ratePlugin{rate: 6}, nil)
+
+			Expect(handlers[storage.ConnectorChangesUpdate](ctx, conn.ID)).To(BeNil())
+
+			rate, running := pool.PayoutWorkerRate(queue)
+			Expect(running).To(BeTrue())
+			Expect(rate).To(Equal(6.0))
+			// Still unreachable, so the retry fails again - and must stay marked
+			// unhealthy so the next update retries once more.
+			Expect(pool.PayoutWorkerHealthy(queue)).To(BeFalse())
 		})
 	})
 

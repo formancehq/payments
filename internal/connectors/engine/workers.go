@@ -54,6 +54,12 @@ type Worker struct {
 	// so a connector update can tell whether the queue has to be rebuilt. Zero
 	// on every worker that is not a payout worker.
 	payoutsPerSecond float64
+
+	// started is false when Start returned an error. The entry is still kept so
+	// a failed worker does not abort connector startup, but the recorded rate
+	// must not be trusted: syncPayoutWorker rebuilds an unstarted worker on the
+	// next reconcile instead of skipping it because the rate already matches.
+	started bool
 }
 
 func NewWorkerPool(
@@ -269,13 +275,20 @@ func (w *WorkerPool) syncPayoutWorker(connectorID models.ConnectorID) error {
 	w.rwMutex.RUnlock()
 
 	if running {
-		if existing.payoutsPerSecond == rate {
+		switch {
+		case existing.started && existing.payoutsPerSecond == rate:
 			return nil
+		case !existing.started:
+			w.logger.Infof(
+				"payout worker %s for connector %q never started, rebuilding at %.2f activities/s",
+				name, connectorID.String(), rate,
+			)
+		default:
+			w.logger.Infof(
+				"payout rate for connector %q changed from %.2f to %.2f activities/s, restarting worker %s",
+				connectorID.String(), existing.payoutsPerSecond, rate, name,
+			)
 		}
-		w.logger.Infof(
-			"payout rate for connector %q changed from %.2f to %.2f activities/s, restarting worker %s",
-			connectorID.String(), existing.payoutsPerSecond, rate, name,
-		)
 		w.stopWorker(name)
 	}
 
@@ -347,16 +360,21 @@ func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) erro
 	// pollers and returns, and deferring it leaves a window where a worker that
 	// is stopped again - which syncPayoutWorker does on every rate change - gets
 	// its Start call after its Stop, which the SDK answers with a panic.
-	// The error is logged rather than returned to keep a failing worker from
-	// taking down connector startup, as it did when it was logged from the
-	// goroutine.
+	//
+	// A failure is logged rather than returned, so that one unreachable queue
+	// cannot abort connector startup, and recorded on the entry rather than
+	// dropped: a worker that never started must not be left looking like a
+	// healthy one running at this rate, or the next reconcile would skip it and
+	// the queue would sit with no poller until the process restarted.
+	started := true
 	if err := wkr.Start(); err != nil {
-		w.logger.Errorf("payout worker %s failed to start: %v", name, err)
+		started = false
+		w.logger.Errorf("payout worker %s failed to start, will be rebuilt on the next reconcile: %v", name, err)
 	} else {
 		w.logger.Infof("payout worker %s started (%.2f activities/s)", name, payoutsPerSecond)
 	}
 
-	w.workers[name] = Worker{worker: wkr, payoutsPerSecond: payoutsPerSecond}
+	w.workers[name] = Worker{worker: wkr, payoutsPerSecond: payoutsPerSecond, started: started}
 
 	return nil
 }
@@ -470,6 +488,16 @@ func (w *WorkerPool) HasWorker(name string) bool {
 	defer w.rwMutex.RUnlock()
 	_, ok := w.workers[name]
 	return ok
+}
+
+// PayoutWorkerHealthy reports whether a payout worker is present on the queue
+// and actually started. A present-but-unstarted worker is not serving the
+// queue, so callers must not read it as one that is.
+func (w *WorkerPool) PayoutWorkerHealthy(name string) bool {
+	w.rwMutex.RLock()
+	defer w.rwMutex.RUnlock()
+	wkr, ok := w.workers[name]
+	return ok && wkr.started
 }
 
 // PayoutWorkerRate reports the activities-per-second a running payout worker
