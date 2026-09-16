@@ -90,7 +90,6 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(1))
 			Expect(state.LastCreatedAt.IsZero()).To(BeTrue())
 		})
 
@@ -116,7 +115,6 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(1))
 			Expect(state.LastCreatedAt).To(Equal(sampleAccounts[49].CreatedAt))
 		})
 
@@ -141,13 +139,12 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastPage).To(Equal(1))
 			Expect(state.LastCreatedAt).To(Equal(sampleAccounts[39].CreatedAt))
 		})
 
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 1, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano))),
+				State:    []byte(fmt.Sprintf(`{"lastCreatedAt": "%s", "lastProcessedIDs": ["%s"]}`, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano), sampleAccounts[38].ID)),
 				PageSize: 40,
 			}
 
@@ -173,8 +170,64 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.LastPage).To(Equal(2))
 			Expect(state.LastCreatedAt).To(Equal(sampleAccounts[49].CreatedAt))
+		})
+
+		It("walks a same-second group larger than PageSize across cycles without stalling", func(ctx SpecContext) {
+			// Five accounts all sharing the same CreatedAt second, fetched three per
+			// page so the group spans page 1 (a0,a1,a2) and a SHORT final page 2
+			// (a3,a4). The monotonic LastPage cursor resumes the forward scan (no
+			// full rescan from page 1 once past it) and the processed-ID set dedups
+			// the same-second rows on the re-read page; a single LastProcessedID
+			// would oscillate on the multi-row final page (re-emitting a3/a4 forever).
+			ts := now.Add(-time.Hour).UTC()
+			mk := func(id string) *client.Account {
+				return &client.Account{
+					ID:          id,
+					AccountName: "name-" + id,
+					CreatedAt:   ts,
+					UpdatedAt:   ts,
+				}
+			}
+			all := []*client.Account{mk("a0"), mk("a1"), mk("a2"), mk("a3"), mk("a4")}
+			refs := func(as []models.PSPAccount) []string {
+				out := make([]string, len(as))
+				for i := range as {
+					out[i] = as[i].Reference
+				}
+				return out
+			}
+
+			// Cycle 1: fresh state, page 1 -> a0, a1, a2.
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 3).Return(all[0:3], 2, nil)
+			resp, err := plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: []byte(`{}`), PageSize: 3})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a0", "a1", "a2"}))
+			Expect(resp.HasMore).To(BeTrue())
+
+			// Cycle 2: rescan page 1 (all skipped via the set) then page 2 -> a3, a4.
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 3).Return(all[0:3], 2, nil)
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 3).Return(all[3:5], -1, nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 3})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a3", "a4"}))
+
+			// Cycle 3: LastPage is now 2, so we resume there (NOT page 1) and re-read
+			// only the last page. Every row is in the processed-ID set, so it returns
+			// nothing (anti-oscillation) — and crucially does not rescan history.
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 3).Return(all[3:5], -1, nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 3})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(BeEmpty())
+
+			// Cycle 4: a newer-second account a5 appears on the (formerly short)
+			// page 2. Resuming at page 2, the set skips a3/a4 and reaches a5.
+			ts2 := ts.Add(time.Second)
+			a5 := &client.Account{ID: "a5", AccountName: "name-a5", CreatedAt: ts2, UpdatedAt: ts2}
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 3).Return([]*client.Account{all[3], all[4], a5}, -1, nil)
+			resp, err = plg.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{State: resp.NewState, PageSize: 3})
+			Expect(err).To(BeNil())
+			Expect(refs(resp.Accounts)).To(Equal([]string{"a5"}))
 		})
 	})
 })
