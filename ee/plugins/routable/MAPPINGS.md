@@ -23,6 +23,7 @@ Defined in [`config.go`](config.go), exposed through [`/openapi/v3/v3-connectors
 | `endpoint` | no | `https://api.routable.com` | API root. Use `https://api.sandbox.routable.com` for the sandbox. |
 | `actingTeamMember` | **no** | `""` | Default Routable team member ID for `POST /v1/payables`. Optional at the connector level: callers may override (or supply) it per-request via the metadata key [`com.routable.spec/acting_team_member`](#5-payment-initiation-metadata-keys-payouts--transfers). If neither config nor metadata sets it, payable creation fails with a clear validation error before the request is sent. |
 | `pollingPeriod` | no | `30m` | Polling cadence for sync tasks (accounts, balances, external accounts, payments). Minimum 20 minutes. |
+| `payoutsPerMinute` | no | `90` | Ceiling on payout and transfer initiations sent to Routable, in the same per-minute unit as the budget in [§6.1](#61-routable-rps-budget). Unset (absent or `null`) means 90/min. Must be at least 1: `0`, negative and fractional values are refused at install/update. |
 
 ### 1.1 Concurrency & immutability
 
