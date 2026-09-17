@@ -19,15 +19,18 @@ const PAGE_SIZE = 100
 // via the MetadataKeyActingTeamMember key on the PSPPaymentInitiation.
 //
 // PayoutsPerMinute is per minute because that is the unit Routable rate limits
-// in (MAPPINGS.md §6.1.1). It is left as stored - 0 means unset - so the config
-// stays a record of what was actually sent; resolvedPayoutsPerMinute applies
-// the default. The unsigned, whole type is what rejects a negative or
-// fractional rate, at unmarshal.
+// in (MAPPINGS.md §6.1.1). It is a pointer so that "not configured" and a rate
+// of 0 stay distinct: absent (or null) falls back to DefaultPayoutsPerMinute,
+// and an explicit 0 is refused rather than silently read as "never send a
+// payout". It is left as stored - nil marshals back as null, never as 0 - so
+// the config stays a record of what was actually sent and still reloads;
+// resolvedPayoutsPerMinute applies the default. The unsigned, whole type is
+// what rejects a negative or fractional rate, at unmarshal.
 type Config struct {
-	APIKey           string `json:"apiKey" validate:"required"`
-	Endpoint         string `json:"endpoint" validate:"omitempty,url"`
-	ActingTeamMember string `json:"actingTeamMember"`
-	PayoutsPerMinute uint64 `json:"payoutsPerMinute"`
+	APIKey           string  `json:"apiKey" validate:"required"`
+	Endpoint         string  `json:"endpoint" validate:"omitempty,url"`
+	ActingTeamMember string  `json:"actingTeamMember"`
+	PayoutsPerMinute *uint64 `json:"payoutsPerMinute" validate:"omitempty,gt=0"`
 }
 
 func (c Config) resolvedEndpoint() string {
@@ -42,18 +45,18 @@ func (c Config) resolvedEndpoint() string {
 // existed reads. The result is always > 0: the engine reads a 0 rate as "this
 // connector has no dedicated payout queue".
 func (c Config) resolvedPayoutsPerMinute() uint64 {
-	if c.PayoutsPerMinute == 0 {
+	if c.PayoutsPerMinute == nil {
 		return DefaultPayoutsPerMinute
 	}
-	return c.PayoutsPerMinute
+	return *c.PayoutsPerMinute
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	var raw struct {
-		APIKey           string `json:"apiKey"`
-		Endpoint         string `json:"endpoint"`
-		ActingTeamMember string `json:"actingTeamMember"`
-		PayoutsPerMinute uint64 `json:"payoutsPerMinute"`
+		APIKey           string  `json:"apiKey"`
+		Endpoint         string  `json:"endpoint"`
+		ActingTeamMember string  `json:"actingTeamMember"`
+		PayoutsPerMinute *uint64 `json:"payoutsPerMinute"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())

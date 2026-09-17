@@ -58,6 +58,13 @@ var _ = Describe("Routable Plugin", func() {
 			Expect(err).To(BeNil())
 			Expect(p.PayoutsPerSecond()).To(Equal(1.5))
 		})
+		It("keeps the 1.5/s default for an explicitly null payoutsPerMinute", func() {
+			// null is the other spelling of unset: it is what a caller clearing
+			// the rate sends, and what the stored config marshals back to.
+			p, err := New("routable", logger, json.RawMessage(`{"apiKey":"key","payoutsPerMinute":null}`))
+			Expect(err).To(BeNil())
+			Expect(p.PayoutsPerSecond()).To(Equal(1.5))
+		})
 		It("converts the configured per-minute rate to per second", func() {
 			p, err := New("routable", logger, json.RawMessage(`{"apiKey":"key","payoutsPerMinute":360}`))
 			Expect(err).To(BeNil())
@@ -68,15 +75,15 @@ var _ = Describe("Routable Plugin", func() {
 			Expect(err).To(BeNil())
 			Expect(p.PayoutsPerSecond()).To(BeNumerically("~", 0.3333, 0.0001))
 		})
-		It("treats an explicit 0 as unset and falls back to the default", func() {
-			p, err := New("routable", logger, json.RawMessage(`{"apiKey":"key","payoutsPerMinute":0}`))
-			Expect(err).To(BeNil())
-			Expect(p.PayoutsPerSecond()).To(Equal(1.5))
+		It("refuses an explicit 0 rather than treating it as unset", func() {
+			_, err := New("routable", logger, json.RawMessage(`{"apiKey":"key","payoutsPerMinute":0}`))
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(models.ErrInvalidConfig))
 		})
 		It("does not write the default into the config it reports back", func() {
 			p, err := New("routable", logger, json.RawMessage(`{"apiKey":"key"}`))
 			Expect(err).To(BeNil())
-			Expect(p.Config().(Config).PayoutsPerMinute).To(BeZero())
+			Expect(p.Config().(Config).PayoutsPerMinute).To(BeNil())
 		})
 	})
 
