@@ -77,10 +77,13 @@ type PaymentInitiationAdjustmentMessagePayload struct {
 	Status              string `json:"status"`
 
 	// Optional fields
-	Amount   *big.Int          `json:"amount,omitempty"`
-	Asset    *string           `json:"asset,omitempty"`
-	Error    *string           `json:"error,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Amount *big.Int `json:"amount,omitempty"`
+	Asset  *string  `json:"asset,omitempty"`
+	Error  *string  `json:"error,omitempty"`
+	// PaymentID is set when this adjustment was derived from an actual payment,
+	// and absent when it was not, e.g. a failure returned directly by the PSP.
+	PaymentID *string           `json:"paymentID,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
 func (p *PaymentInitiationAdjustmentMessagePayload) MarshalJSON() ([]byte, error) {

@@ -23,6 +23,10 @@ type PaymentInitiationAdjustment struct {
 	Asset *string `json:"asset"`
 	// Error description if we had one
 	Error error `json:"error"`
+	// Payment this adjustment was derived from, when there is one.
+	// It is nil when the adjustment does not reflect an actual payment, e.g. a
+	// failure returned directly by the PSP before any payment existed.
+	PaymentID *PaymentID `json:"paymentID"`
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
 }
@@ -39,6 +43,7 @@ func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 		Amount    *big.Int                          `json:"amount,omitempty"`
 		Asset     *string                           `json:"asset,omitempty"`
 		Error     *string                           `json:"error,omitempty"`
+		PaymentID *string                           `json:"paymentID,omitempty"`
 		Metadata  map[string]string                 `json:"metadata"`
 	}{
 		ID:        pia.ID.String(),
@@ -53,6 +58,13 @@ func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 
 			return pointer.For(pia.Error.Error())
 		}(),
+		PaymentID: func() *string {
+			if pia.PaymentID == nil {
+				return nil
+			}
+
+			return pointer.For(pia.PaymentID.String())
+		}(),
 		Metadata: pia.Metadata,
 	})
 }
@@ -65,6 +77,7 @@ func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 		Amount    *big.Int                          `json:"amount"`
 		Asset     *string                           `json:"asset"`
 		Error     *string                           `json:"error"`
+		PaymentID *string                           `json:"paymentID"`
 		Metadata  map[string]string                 `json:"metadata"`
 	}
 
@@ -84,6 +97,13 @@ func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 	pia.Asset = aux.Asset
 	if aux.Error != nil {
 		pia.Error = errors.New(*aux.Error)
+	}
+	if aux.PaymentID != nil {
+		paymentID, err := PaymentIDFromString(*aux.PaymentID)
+		if err != nil {
+			return err
+		}
+		pia.PaymentID = &paymentID
 	}
 	pia.Metadata = aux.Metadata
 

@@ -61,9 +61,10 @@ type paymentInitiationAdjustment struct {
 	Status              models.PaymentInitiationAdjustmentStatus `bun:"status,type:text,notnull"`
 
 	// Optional fields
-	Error  *string  `bun:"error,type:text"`
-	Amount *big.Int `bun:"amount,type:numeric"`
-	Asset  *string  `bun:"asset,type:text"`
+	Error     *string           `bun:"error,type:text"`
+	Amount    *big.Int          `bun:"amount,type:numeric"`
+	Asset     *string           `bun:"asset,type:text"`
+	PaymentID *models.PaymentID `bun:"payment_id,type:character varying"`
 
 	// Optional fields with default
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
@@ -549,6 +550,9 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 			Asset:               adj.Asset,
 			Metadata:            adj.Metadata,
 		}
+		if adj.PaymentID != nil {
+			adjPayload.PaymentID = pointer.For(adj.PaymentID.String())
+		}
 		if adj.Error != nil {
 			errorStr := adj.Error.Error()
 			adjPayload.Error = &errorStr
@@ -642,6 +646,9 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 			Amount:              adj.Amount,
 			Asset:               adj.Asset,
 			Metadata:            adj.Metadata,
+		}
+		if adj.PaymentID != nil {
+			adjPayload.PaymentID = pointer.For(adj.PaymentID.String())
 		}
 		if adj.Error != nil {
 			errorStr := adj.Error.Error()
@@ -822,7 +829,8 @@ func fromPaymentInitiationAdjustmentModels(from models.PaymentInitiationAdjustme
 			}
 			return pointer.For(from.Error.Error())
 		}(),
-		Metadata: from.Metadata,
+		PaymentID: from.PaymentID,
+		Metadata:  from.Metadata,
 	}
 }
 
@@ -840,6 +848,7 @@ func toPaymentInitiationAdjustmentModels(from paymentInitiationAdjustment) model
 
 			return errors.New(*from.Error)
 		}(),
-		Metadata: from.Metadata,
+		PaymentID: from.PaymentID,
+		Metadata:  from.Metadata,
 	}
 }

@@ -1074,11 +1074,14 @@ func defaultPaymentInitiationAdjustments() []models.PaymentInitiationAdjustment 
 			},
 		},
 		{
+			// Derived from an ingested payment, so it carries the payment it
+			// reflects. piAdjID2 above is a direct PSP failure and carries none.
 			ID:        piAdjID3,
 			CreatedAt: now.Add(-7 * time.Minute).UTC().Time,
 			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			Amount:    big.NewInt(300),
 			Asset:     pointer.For("DKK/2"),
+			PaymentID: &pID1,
 			Metadata: map[string]string{
 				"foo3": "bar3",
 			},
@@ -1552,6 +1555,7 @@ func comparePaymentInitiationAdjustments(t *testing.T, expected, actual models.P
 	require.Equal(t, expected.ID, actual.ID)
 	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
 	require.Equal(t, expected.Status, actual.Status)
+	require.Equal(t, expected.PaymentID, actual.PaymentID)
 
 	switch {
 	case expected.Error != nil && actual.Error != nil:

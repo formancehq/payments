@@ -19,6 +19,7 @@ func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Contex
 			status,
 			createdAt,
 			piID,
+			paymentID,
 		)
 
 		if adjustment == nil {

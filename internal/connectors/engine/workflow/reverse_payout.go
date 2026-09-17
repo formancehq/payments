@@ -152,6 +152,7 @@ func (w Workflow) reversePayout(
 			&pi.Asset,
 			nil,
 			nil,
+			nil,
 		)
 		if err != nil {
 			return "", err

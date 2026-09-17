@@ -1788,6 +1788,13 @@ components:
           type: string
           nullable: true
           description: Why this step failed, absent when it succeeded
+        paymentID:
+          type: string
+          description: >-
+            Payment this adjustment was derived from. Absent when the adjustment
+            does not reflect an actual payment, for instance a failure the
+            provider returned directly before any payment existed. Always absent
+            on adjustments recorded before this field was introduced.
         metadata:
           $ref: '#/components/schemas/V3Metadata'
 

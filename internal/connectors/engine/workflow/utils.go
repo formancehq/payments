@@ -68,6 +68,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		payment.Amount,
 		&payment.Asset,
 		nil,
+		&payment.ID,
 		nil,
 	)
 	if err != nil {
@@ -82,6 +83,7 @@ func (w Workflow) addPIAdjustment(
 	amount *big.Int,
 	asset *string,
 	err error,
+	paymentID *models.PaymentID,
 	metadata map[string]string,
 ) error {
 	adj := models.PaymentInitiationAdjustment{
@@ -91,6 +93,7 @@ func (w Workflow) addPIAdjustment(
 		Amount:    amount,
 		Asset:     asset,
 		Error:     err,
+		PaymentID: paymentID,
 		Metadata:  metadata,
 	}
 

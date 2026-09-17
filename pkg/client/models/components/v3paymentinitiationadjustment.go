@@ -21,6 +21,8 @@ type V3PaymentInitiationAdjustment struct {
 	Asset *string `json:"asset,omitempty"`
 	// Why this step failed, absent when it succeeded
 	Error *string `json:"error,omitempty"`
+	// Payment this adjustment was derived from. Absent when the adjustment does not reflect an actual payment, for instance a failure the provider returned directly before any payment existed. Always absent on adjustments recorded before this field was introduced.
+	PaymentID *string `json:"paymentID,omitempty"`
 	// Arbitrary key/value pairs attached to the resource
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
@@ -76,6 +78,13 @@ func (o *V3PaymentInitiationAdjustment) GetError() *string {
 		return nil
 	}
 	return o.Error
+}
+
+func (o *V3PaymentInitiationAdjustment) GetPaymentID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.PaymentID
 }
 
 func (o *V3PaymentInitiationAdjustment) GetMetadata() map[string]string {

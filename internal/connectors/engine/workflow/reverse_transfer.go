@@ -152,6 +152,7 @@ func (w Workflow) reverseTransfer(
 			&pi.Asset,
 			nil,
 			nil,
+			nil,
 		)
 		if err != nil {
 			return "", err

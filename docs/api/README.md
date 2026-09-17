@@ -2601,6 +2601,7 @@ Accept: application/json
         "amount": 0,
         "asset": "string",
         "error": "string",
+        "paymentID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -6663,6 +6664,7 @@ Lifecycle of a conversion.
         "amount": 0,
         "asset": "string",
         "error": "string",
+        "paymentID": "string",
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -6819,6 +6821,7 @@ A payment Formance asked a connector to execute
   "amount": 0,
   "asset": "string",
   "error": "string",
+  "paymentID": "string",
   "metadata": {
     "property1": "string",
     "property2": "string"
@@ -6837,6 +6840,7 @@ A payment Formance asked a connector to execute
 |amount|integer(bigint)|false|none|Amount carried by this adjustment|
 |asset|string|false|none|Asset the adjustment is denominated in|
 |error|string¦null|false|none|Why this step failed, absent when it succeeded|
+|paymentID|string|false|none|Payment this adjustment was derived from. Absent when the adjustment does not reflect an actual payment, for instance a failure the provider returned directly before any payment existed. Always absent on adjustments recorded before this field was introduced.|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|Arbitrary key/value pairs attached to the resource|
 
 <h2 id="tocS_V3GetPaymentInitiationResponse">V3GetPaymentInitiationResponse</h2>
