@@ -30,7 +30,7 @@ type Config struct {
 	APIKey           string  `json:"apiKey" validate:"required"`
 	Endpoint         string  `json:"endpoint" validate:"omitempty,url"`
 	ActingTeamMember string  `json:"actingTeamMember"`
-	PayoutsPerMinute *uint64 `json:"payoutsPerMinute" validate:"omitempty,gt=0"`
+	PayoutsPerMinute *uint64 `json:"payoutsPerMinute" validate:"omitempty,gt=0,lte=100000"`
 }
 
 func (c Config) resolvedEndpoint() string {

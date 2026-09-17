@@ -66,6 +66,22 @@ func TestConfigRejectsZeroPayoutsPerMinute(t *testing.T) {
 	}
 }
 
+func TestConfigRejectsUnreasonablePayoutsPerMinute(t *testing.T) {
+	if _, err := unmarshalAndValidateConfig(json.RawMessage(`{"apiKey":"k","payoutsPerMinute":99999999}`)); err == nil {
+		t.Fatal("expected validation error on a payoutsPerMinute > 100000")
+	}
+}
+
+func TestConfigRejectsTimeUnitsForPayoutsPerMinute(t *testing.T) {
+	// Quoted, because the field is a number: an unquoted 2m is malformed JSON
+	// and would fail on the parse alone, whatever the field is called. A caller
+	// reading the name as a duration sends the string, and that is what has to
+	// be refused.
+	if _, err := unmarshalAndValidateConfig(json.RawMessage(`{"apiKey":"k","payoutsPerMinute":"2m"}`)); err == nil {
+		t.Fatal("expected validation error on a payoutsPerMinute with time units")
+	}
+}
+
 func TestConfigRoundTripsUnsetPayoutsPerMinute(t *testing.T) {
 	// The stored config is re-marshalled from this struct (combineConfigs) and
 	// read back on every load. An unset rate must not come back as an explicit
