@@ -25,6 +25,19 @@ func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Contex
 			continue
 		}
 
+		// Amount, asset and metadata are not carried by the payment status
+		// change itself, so we read them back from the payment initiation to
+		// keep the emitted adjustment event consistent with the ones produced
+		// by the create/reverse workflows.
+		pi, err := a.storage.PaymentInitiationsGet(ctx, piID)
+		if err != nil {
+			return temporalStorageError(err)
+		}
+
+		adjustment.Amount = pi.Amount
+		adjustment.Asset = &pi.Asset
+		adjustment.Metadata = pi.Metadata
+
 		if err := a.storage.PaymentInitiationAdjustmentsUpsert(ctx, *adjustment); err != nil {
 			return temporalStorageError(err)
 		}
