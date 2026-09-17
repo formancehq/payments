@@ -97,20 +97,11 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("skips enrichment when the payment initiation is gone", func(ctx SpecContext) {
+		It("payment initiation not found", func(ctx SpecContext) {
 			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
 			s.EXPECT().PaymentInitiationsGet(ctx, listResponse[0]).Return(nil, storage.ErrNotFound)
-			s.EXPECT().PaymentInitiationAdjustmentsUpsert(ctx, models.PaymentInitiationAdjustment{
-				ID: models.PaymentInitiationAdjustmentID{
-					PaymentInitiationID: listResponse[0],
-					CreatedAt:           createdAt,
-					Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
-				},
-				CreatedAt: createdAt,
-				Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
-			}).Return(nil)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
-			Expect(err).To(BeNil())
+			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))
 		})
 
 		It("does not fetch the payment initiation when no adjustment is needed", func(ctx SpecContext) {

@@ -2,10 +2,8 @@ package activities
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"go.temporal.io/sdk/workflow"
 )
@@ -32,17 +30,13 @@ func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Contex
 		// keep the emitted adjustment event consistent with the ones produced
 		// by the create/reverse workflows.
 		pi, err := a.storage.PaymentInitiationsGet(ctx, piID)
-		switch {
-		case err == nil:
-			adjustment.Amount = pi.Amount
-			adjustment.Asset = &pi.Asset
-			adjustment.Metadata = pi.Metadata
-		case errors.Is(err, storage.ErrNotFound):
-			// The payment initiation was deleted in between: still record the
-			// status change rather than failing the whole payment ingestion.
-		default:
+		if err != nil {
 			return temporalStorageError(err)
 		}
+
+		adjustment.Amount = pi.Amount
+		adjustment.Asset = &pi.Asset
+		adjustment.Metadata = pi.Metadata
 
 		if err := a.storage.PaymentInitiationAdjustmentsUpsert(ctx, *adjustment); err != nil {
 			return temporalStorageError(err)
