@@ -125,7 +125,7 @@ func (t *PaymentInitiationAdjustmentStatus) Scan(value interface{}) error {
 	return nil
 }
 
-func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdAt time.Time, piID PaymentInitiationID) *PaymentInitiationAdjustment {
+func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdAt time.Time, piID PaymentInitiationID, paymentID PaymentID) *PaymentInitiationAdjustment {
 	var piStatus PaymentInitiationAdjustmentStatus
 	var err error
 
@@ -167,5 +167,6 @@ func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdA
 		CreatedAt: createdAt,
 		Status:    piStatus,
 		Error:     err,
+		PaymentID: &paymentID,
 	}
 }

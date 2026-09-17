@@ -73,6 +73,7 @@ func (w Workflow) createTransfer(
 			pi.Amount,
 			&pi.Asset,
 			nil,
+			nil,
 			map[string]string{
 				"scheduledAt": pi.ScheduledAt.String(),
 			},
@@ -101,6 +102,7 @@ func (w Workflow) createTransfer(
 		},
 		pi.Amount,
 		&pi.Asset,
+		nil,
 		nil,
 		nil,
 	)
@@ -213,6 +215,7 @@ func (w Workflow) createTransfer(
 			pi.Amount,
 			&pi.Asset,
 			cause,
+			nil,
 			nil,
 		)
 		if err != nil {

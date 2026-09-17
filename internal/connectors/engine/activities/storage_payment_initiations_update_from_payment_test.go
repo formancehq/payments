@@ -76,6 +76,7 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 				},
 				CreatedAt: createdAt,
 				Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+				PaymentID: &paymentID,
 			}).Return(nil)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
 			Expect(err).To(BeNil())
@@ -97,6 +98,7 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 				},
 				CreatedAt: createdAt,
 				Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+				PaymentID: &paymentID,
 			}).Return(storage.ErrNotFound)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
 			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))

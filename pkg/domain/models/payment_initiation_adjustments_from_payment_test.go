@@ -24,6 +24,11 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 		ConnectorID: connectorID,
 	}
 
+	paymentID := models.PaymentID{
+		PaymentReference: models.PaymentReference{Reference: "payment123"},
+		ConnectorID:      connectorID,
+	}
+
 	testCases := []struct {
 		name           string
 		paymentStatus  models.PaymentStatus
@@ -131,11 +136,12 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 			// Given
 
 			payment := &models.Payment{
+				ID:        paymentID,
 				Status:    tc.paymentStatus,
 				CreatedAt: now,
 			}
 
-			result := models.FromPaymentDataToPaymentInitiationAdjustment(payment.Status, payment.CreatedAt, piID)
+			result := models.FromPaymentDataToPaymentInitiationAdjustment(payment.Status, payment.CreatedAt, piID, payment.ID)
 
 			if tc.expectNil {
 
@@ -146,6 +152,7 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.Equal(t, tc.expectedStatus, result.Status)
 			assert.Equal(t, now, result.CreatedAt)
+			assert.Equal(t, &paymentID, result.PaymentID)
 
 			if tc.expectedError != nil {
 				assert.NotNil(t, result.Error)

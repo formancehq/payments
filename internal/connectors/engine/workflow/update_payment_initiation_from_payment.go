@@ -33,6 +33,7 @@ func (w Workflow) runUpdatePaymentInitiationFromPayment(
 			updatePaymentInitiationFromPayment.Payment.Status,
 			updatePaymentInitiationFromPayment.Payment.CreatedAt,
 			piID,
+			updatePaymentInitiationFromPayment.Payment.ID,
 		)
 
 		if adjustment == nil {

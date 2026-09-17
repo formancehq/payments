@@ -67,6 +67,9 @@ var workflowInstancesConnectorScheduleIndex string
 //go:embed 29-orders-and-conversions.sql
 var ordersAndConversions string
 
+//go:embed 31-payment-initiation-adjustment-payment-id.sql
+var paymentInitiationAdjustmentPaymentID string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -444,6 +447,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running encrypt open banking tokens migration...")
 					err := encryptOpenBankingTokens(ctx, tx, encryptionKey)
 					logger.WithField("error", err).Info("finished running encrypt open banking tokens migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "payment initiation adjustment payment id",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running payment initiation adjustment payment id migration...")
+					_, err := tx.ExecContext(ctx, paymentInitiationAdjustmentPaymentID)
+					logger.WithField("error", err).Info("finished running payment initiation adjustment payment id migration")
 					return err
 				})
 			},
