@@ -379,20 +379,15 @@ func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) erro
 
 func (w *WorkerPool) stopWorker(name string) {
 	w.rwMutex.Lock()
-	wkr, ok := w.workers[name]
-	delete(w.workers, name)
-	w.rwMutex.Unlock()
+	defer w.rwMutex.Unlock()
 
+	wkr, ok := w.workers[name]
 	if !ok {
 		return
 	}
 
-	// Stopped outside the lock: Stop issues a ShutdownWorker call and then
-	// drains in-flight tasks up to WorkerStopTimeout, so holding the pool lock
-	// across it would stall every other worker operation for seconds - on a
-	// path syncPayoutWorker now reaches on every payout rate change. The entry
-	// is already gone from the map, so nothing else can reach this worker.
 	wkr.worker.Stop()
+	delete(w.workers, name)
 }
 
 // AddWorker instantiates a temporal worker
