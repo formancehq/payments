@@ -41,9 +41,21 @@ type ratePlugin struct {
 
 func (p *ratePlugin) PayoutsPerSecond() float64 { return p.rate }
 
+// startedWorker is a real, fully registered worker whose Start succeeds
+// without reaching Temporal, so the pool records it as serving its queue on a
+// machine with no Temporal server running.
+type startedWorker struct{ worker.Worker }
+
+func (startedWorker) Start() error { return nil }
+func (startedWorker) Stop()        {}
+
+func newStartedWorker(c client.Client, taskQueue string, options worker.Options) worker.Worker {
+	return startedWorker{Worker: worker.New(c, taskQueue, options)}
+}
+
 // newTestPool builds a WorkerPool over mock storage and a mock connector
-// manager. opts selects the Temporal client: the zero value for a pool whose
-// workers start, an unreachable HostPort for one whose workers cannot.
+// manager. opts selects the Temporal client; pools whose workers must start
+// also need SetWorkerFactory(newStartedWorker), since CI has no Temporal.
 func newTestPool(opts client.Options) (*engine.WorkerPool, *storage.MockStorage, *connectors.MockManager) {
 	ctrl := gomock.NewController(GinkgoT())
 	logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
@@ -120,6 +132,7 @@ var _ = Describe("Worker Tests", func() {
 		)
 		BeforeEach(func() {
 			pool, store, manager = newTestPool(client.Options{})
+			pool.SetWorkerFactory(newStartedWorker)
 
 			connID1 := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
 			connID2 := models.ConnectorID{Reference: uuid.New(), Provider: "provider2"}
@@ -198,6 +211,7 @@ var _ = Describe("Worker Tests", func() {
 
 		BeforeEach(func(ctx SpecContext) {
 			pool, store, manager = newTestPool(client.Options{})
+			pool.SetWorkerFactory(newStartedWorker)
 			conn = testConnector()
 			queue = engine.GetPayoutTaskQueue("stackname", conn.ID)
 			plugin = &ratePlugin{rate: 1.5}
