@@ -6282,6 +6282,7 @@ components:
         - PROCESSING
         - PROCESSED
         - FAILED
+        - NOT_INITIATED
         - REJECTED
         - REVERSE_PROCESSING
         - REVERSE_FAILED

@@ -17,6 +17,7 @@ const (
 	V3PaymentInitiationStatusEnumProcessing             V3PaymentInitiationStatusEnum = "PROCESSING"
 	V3PaymentInitiationStatusEnumProcessed              V3PaymentInitiationStatusEnum = "PROCESSED"
 	V3PaymentInitiationStatusEnumFailed                 V3PaymentInitiationStatusEnum = "FAILED"
+	V3PaymentInitiationStatusEnumNotInitiated           V3PaymentInitiationStatusEnum = "NOT_INITIATED"
 	V3PaymentInitiationStatusEnumRejected               V3PaymentInitiationStatusEnum = "REJECTED"
 	V3PaymentInitiationStatusEnumReverseProcessing      V3PaymentInitiationStatusEnum = "REVERSE_PROCESSING"
 	V3PaymentInitiationStatusEnumReverseFailed          V3PaymentInitiationStatusEnum = "REVERSE_FAILED"
@@ -43,6 +44,8 @@ func (e *V3PaymentInitiationStatusEnum) UnmarshalJSON(data []byte) error {
 	case "PROCESSED":
 		fallthrough
 	case "FAILED":
+		fallthrough
+	case "NOT_INITIATED":
 		fallthrough
 	case "REJECTED":
 		fallthrough

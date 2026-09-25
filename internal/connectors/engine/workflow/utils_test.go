@@ -1,11 +1,14 @@
 package workflow
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
+	"go.temporal.io/sdk/temporal"
 )
 
 // payoutTaskQueue mirrors engine.GetPayoutTaskQueue for tests. The workflow
@@ -32,5 +35,54 @@ func TestTaskQueueFormats(t *testing.T) {
 	want := "somestack-" + connectorID.String() + "-payout"
 	if got := payoutTaskQueue("somestack", connectorID); got != want {
 		t.Fatalf("payoutTaskQueue() = %q, want %q (must match engine.GetPayoutTaskQueue)", got, want)
+	}
+}
+
+// The whole point of the NOT_INITIATED status is that consumers can tell a PSP
+// that never took the payment on from one that took it and then failed. That
+// distinction is carried by the temporal error type, which is all that survives
+// the activity boundary, so pin every classification it can arrive with.
+func TestPIFailureStatus(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		err  error
+		want models.PaymentInitiationAdjustmentStatus
+	}{
+		{
+			name: "nil",
+			err:  nil,
+			want: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+		},
+		{
+			name: "plain error",
+			err:  errors.New("boom"),
+			want: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+		},
+		{
+			name: "retryable default",
+			err:  temporal.NewApplicationErrorWithCause("boom", activities.ErrTypeDefault, errors.New("boom")),
+			want: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+		},
+		{
+			name: "unimplemented",
+			err:  temporal.NewNonRetryableApplicationError("boom", activities.ErrTypeUnimplemented, errors.New("boom")),
+			want: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED,
+		},
+		{
+			name: "invalid argument",
+			err:  temporal.NewNonRetryableApplicationError("boom", activities.ErrTypeInvalidArgument, errors.New("boom")),
+			want: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED,
+		},
+		{
+			name: "wrapped invalid argument",
+			err:  fmt.Errorf("activity error: %w", temporal.NewNonRetryableApplicationError("boom", activities.ErrTypeInvalidArgument, errors.New("boom"))),
+			want: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := piFailureStatus(tc.err); got != tc.want {
+				t.Fatalf("piFailureStatus() = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
