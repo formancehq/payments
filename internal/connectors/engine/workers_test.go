@@ -13,8 +13,8 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,11 +30,97 @@ import (
 // PluginWithPayoutThrottle, so OnStart should not create a payout worker for it.
 type basicPlugin struct{ models.Plugin }
 
-// payoutPlugin satisfies both models.Plugin and models.PluginWithPayoutThrottle.
-// OnStart should create a dedicated payout worker for connectors that return it.
-type payoutPlugin struct{ models.Plugin }
+// ratePlugin satisfies both models.Plugin and models.PluginWithPayoutThrottle,
+// so OnStart should create a dedicated payout worker for connectors that
+// return it. The rate is a field rather than a constant so the same double can
+// stand in for a connector whose payoutsPerMinute config was updated.
+type ratePlugin struct {
+	models.Plugin
+	rate float64
+}
 
-func (p *payoutPlugin) PayoutsPerSecond() float64 { return 10.0 }
+func (p *ratePlugin) PayoutsPerSecond() float64 { return p.rate }
+
+// startedWorker is a real, fully registered worker whose Start succeeds
+// without reaching Temporal, so the pool records it as serving its queue on a
+// machine with no Temporal server running.
+type startedWorker struct{ worker.Worker }
+
+func (startedWorker) Start() error { return nil }
+func (startedWorker) Stop()        {}
+
+func newStartedWorker(c client.Client, taskQueue string, options worker.Options) worker.Worker {
+	return startedWorker{Worker: worker.New(c, taskQueue, options)}
+}
+
+// newTestPool builds a WorkerPool over mock storage and a mock connector
+// manager. opts selects the Temporal client; pools whose workers must start
+// also need SetWorkerFactory(newStartedWorker), since CI has no Temporal.
+func newTestPool(opts client.Options) (*engine.WorkerPool, *storage.MockStorage, *connectors.MockManager) {
+	ctrl := gomock.NewController(GinkgoT())
+	logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
+	// Use NewLazyClient as worker.New() requires a properly created client
+	cl, err := client.NewLazyClient(opts)
+	Expect(err).To(BeNil())
+	store := storage.NewMockStorage(ctrl)
+	manager := connectors.NewMockManager(ctrl)
+
+	pool := engine.NewWorkerPool(
+		logger,
+		"stackname",
+		cl,
+		[]temporal.DefinitionSet{},
+		[]temporal.DefinitionSet{},
+		store,
+		manager,
+		worker.Options{},
+		time.Second,
+		time.Hour,
+	)
+	// Skip schedule creation in tests since we don't have a Temporal server
+	pool.SetSkipScheduleCreation(true)
+	return pool, store, manager
+}
+
+func testConnector() models.Connector {
+	connID := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
+	return models.Connector{
+		ConnectorBase: models.ConnectorBase{ID: connID, Name: "abc-connector", Provider: connID.Provider, CreatedAt: time.Now()},
+		Config:        json.RawMessage(`{}`),
+	}
+}
+
+// startPoolWithConnector runs OnStart over a single connector backed by the
+// given plugin, asserts it succeeded, and returns the change handlers OnStart
+// registered so the insert/update paths can be driven directly.
+func startPoolWithConnector(
+	ctx SpecContext,
+	pool *engine.WorkerPool,
+	store *storage.MockStorage,
+	manager *connectors.MockManager,
+	conn models.Connector,
+	plugin models.Plugin,
+) storage.HandlerConnectorsChanges {
+	var handlers storage.HandlerConnectorsChanges
+	store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, h storage.HandlerConnectorsChanges) { handlers = h }).Return(nil)
+	store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&paginate.Cursor[models.Connector]{
+		Data: []models.Connector{conn},
+	}, nil)
+	manager.EXPECT().Load(conn, false, false).Return("name", json.RawMessage(`{}`), nil)
+	manager.EXPECT().Get(conn.ID).Return(plugin, nil)
+
+	// OnStart must not fail the pod, even when a queue cannot be served.
+	Expect(pool.OnStart(ctx)).To(BeNil())
+	return handlers
+}
+
+// expectUpdate sets the expectations one connector-update notification consumes.
+func expectUpdate(store *storage.MockStorage, manager *connectors.MockManager, conn models.Connector, plugin models.Plugin) {
+	store.EXPECT().ConnectorsGet(gomock.Any(), conn.ID).Return(&conn, nil)
+	manager.EXPECT().Load(conn, true, false).Return("name", json.RawMessage(`{}`), nil)
+	manager.EXPECT().Get(conn.ID).Return(plugin, nil)
+}
 
 var _ = Describe("Worker Tests", func() {
 	Context("on start", func() {
@@ -45,28 +131,8 @@ var _ = Describe("Worker Tests", func() {
 			conns   []models.Connector
 		)
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
-			// Use NewLazyClient as worker.New() requires a properly created client
-			cl, err := client.NewLazyClient(client.Options{})
-			Expect(err).To(BeNil())
-			store = storage.NewMockStorage(ctrl)
-			manager = connectors.NewMockManager(ctrl)
-
-			pool = engine.NewWorkerPool(
-				logger,
-				"stackname",
-				cl,
-				[]temporal.DefinitionSet{},
-				[]temporal.DefinitionSet{},
-				store,
-				manager,
-				worker.Options{},
-				time.Second,
-				time.Hour,
-			)
-			// Skip schedule creation in tests since we don't have a Temporal server
-			pool.SetSkipScheduleCreation(true)
+			pool, store, manager = newTestPool(client.Options{})
+			pool.SetWorkerFactory(newStartedWorker)
 
 			connID1 := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
 			connID2 := models.ConnectorID{Reference: uuid.New(), Provider: "provider2"}
@@ -118,7 +184,7 @@ var _ = Describe("Worker Tests", func() {
 				Data: []models.Connector{conns[0]},
 			}, nil)
 			manager.EXPECT().Load(conns[0], false, false).Return("name", json.RawMessage(`{}`), nil)
-			manager.EXPECT().Get(conns[0].ID).Return(&payoutPlugin{}, nil)
+			manager.EXPECT().Get(conns[0].ID).Return(&ratePlugin{rate: 10}, nil)
 
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
@@ -130,6 +196,90 @@ var _ = Describe("Worker Tests", func() {
 			Expect(pool.HasWorker(engine.GetDefaultTaskQueue("stackname"))).To(BeTrue())
 		})
 
+	})
+
+	Context("on connector update", func() {
+		var (
+			pool     *engine.WorkerPool
+			store    *storage.MockStorage
+			manager  *connectors.MockManager
+			handlers storage.HandlerConnectorsChanges
+			conn     models.Connector
+			plugin   *ratePlugin
+			queue    string
+		)
+
+		BeforeEach(func(ctx SpecContext) {
+			pool, store, manager = newTestPool(client.Options{})
+			pool.SetWorkerFactory(newStartedWorker)
+			conn = testConnector()
+			queue = engine.GetPayoutTaskQueue("stackname", conn.ID)
+			plugin = &ratePlugin{rate: 1.5}
+			handlers = startPoolWithConnector(ctx, pool, store, manager, conn, plugin)
+
+			rate, running := pool.PayoutWorkerRate(queue)
+			Expect(running).To(BeTrue())
+			Expect(rate).To(Equal(1.5))
+		})
+
+		DescribeTable("reconciles the payout worker against the rate the plugin now reports",
+			func(ctx SpecContext, newRate, want float64) {
+				plugin.rate = newRate
+				expectUpdate(store, manager, conn, plugin)
+
+				Expect(handlers[storage.ConnectorChangesUpdate](ctx, conn.ID)).To(BeNil())
+
+				rate, running := pool.PayoutWorkerRate(queue)
+				Expect(running).To(BeTrue())
+				Expect(rate).To(Equal(want))
+			},
+			Entry("rebuilds the worker at the new rate", 6.0, 6.0),
+			Entry("leaves the worker alone when the rate is unchanged", 1.5, 1.5),
+			// 0 means "no dedicated payout queue", but tearing the worker down
+			// would strand whatever is already queued on it, so it is kept.
+			Entry("keeps the worker rather than orphaning its queue at rate 0", 0.0, 1.5),
+		)
+	})
+
+	Context("when a payout worker fails to start", func() {
+		var (
+			pool     *engine.WorkerPool
+			store    *storage.MockStorage
+			manager  *connectors.MockManager
+			handlers storage.HandlerConnectorsChanges
+			conn     models.Connector
+			queue    string
+		)
+
+		BeforeEach(func(ctx SpecContext) {
+			// Deliberately unreachable, so Start fails here exactly as it does on
+			// a machine with no Temporal running.
+			pool, store, manager = newTestPool(client.Options{HostPort: "127.0.0.1:1"})
+			conn = testConnector()
+			queue = engine.GetPayoutTaskQueue("stackname", conn.ID)
+			handlers = startPoolWithConnector(ctx, pool, store, manager, conn, &ratePlugin{rate: 6})
+		})
+
+		It("does not abort startup, and records no worker for the queue", func() {
+			// startPoolWithConnector already asserted OnStart succeeded. A worker
+			// that never started must not be left in the map looking like one that
+			// is serving the queue - that is what would make the next reconcile
+			// skip it and leave payouts queued with no poller until a restart.
+			Expect(pool.HasWorker(queue)).To(BeFalse())
+		})
+
+		It("retries the queue on a connector update even when the rate is unchanged", func(ctx SpecContext) {
+			// Same rate as before: a running worker is left alone on this path, so
+			// this Get being satisfied is what proves the failed queue was retried
+			// rather than skipped.
+			expectUpdate(store, manager, conn, &ratePlugin{rate: 6})
+
+			Expect(handlers[storage.ConnectorChangesUpdate](ctx, conn.ID)).To(BeNil())
+
+			// Still unreachable, so the retry fails again and still records
+			// nothing, leaving the next update free to retry once more.
+			Expect(pool.HasWorker(queue)).To(BeFalse())
+		})
 	})
 
 	Context("createOutboxPublisherSchedule", func() {

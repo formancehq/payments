@@ -7538,6 +7538,8 @@ components:
           default: 25
           deprecated: true
           x-speakeasy-deprecation-message: From v3.1, this parameter will be ignored
+        payoutsPerMinute:
+          type: integer
         pollingPeriod:
           type: string
           default: 30m

@@ -11,8 +11,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/workflow/temporal"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
@@ -45,10 +45,19 @@ type WorkerPool struct {
 	skipScheduleCreation bool
 	outboxPollingPeriod  time.Duration
 	outboxCleanupPeriod  time.Duration
+
+	// newWorker builds the Temporal workers the pool runs.
+	newWorker func(c client.Client, taskQueue string, options worker.Options) worker.Worker
 }
 
 type Worker struct {
 	worker worker.Worker
+
+	// payoutsPerSecond is the rate this worker's task queue was created with,
+	// so a connector update can tell whether the queue has to be rebuilt. Zero
+	// on every worker that is not a payout worker. The SDK does not expose the
+	// TaskQueueActivitiesPerSecond a worker was built with, hence the copy.
+	payoutsPerSecond float64
 }
 
 func NewWorkerPool(
@@ -75,6 +84,7 @@ func NewWorkerPool(
 		options:             options,
 		outboxPollingPeriod: outboxPollingPeriod,
 		outboxCleanupPeriod: outboxCleanupPeriod,
+		newWorker:           worker.New,
 	}
 	return workers
 }
@@ -160,12 +170,8 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 			return err
 		}
 
-		if plugin, getErr := w.connectors.Get(connector.ID); getErr == nil {
-			if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
-				if err := w.AddPayoutWorker(GetPayoutTaskQueue(w.stack, connector.ID), throttle.PayoutsPerSecond()); err != nil {
-					return err
-				}
-			}
+		if err := w.syncPayoutWorker(connector.ID); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -195,12 +201,8 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	if plugin, getErr := w.connectors.Get(connectorID); getErr == nil {
-		if throttle, ok := plugin.(models.PluginWithPayoutThrottle); ok && throttle.PayoutsPerSecond() > 0 {
-			if err := w.AddPayoutWorker(GetPayoutTaskQueue(w.stack, connectorID), throttle.PayoutsPerSecond()); err != nil {
-				return err
-			}
-		}
+	if err := w.syncPayoutWorker(connectorID); err != nil {
+		return err
 	}
 
 	return nil
@@ -222,7 +224,61 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		w.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
 		return err
 	}
+
+	if !connector.ScheduledForDeletion {
+		if err := w.syncPayoutWorker(connector.ID); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// syncPayoutWorker brings the connector's payout task queue in line with the
+// rate its plugin reports, and is the single entry point for all three paths
+// that touch a payout queue: start, insert and update. With no worker yet it
+// simply creates one. TaskQueueActivitiesPerSecond is fixed when the worker is
+// built, so a changed rate means tearing the worker down and starting a new one
+// on the same queue - workflows stay queued across the gap and the new worker
+// picks them up.
+func (w *WorkerPool) syncPayoutWorker(connectorID models.ConnectorID) error {
+	plugin, err := w.connectors.Get(connectorID)
+	if err != nil {
+		// Not fatal: the connector stays on whatever worker it already has.
+		w.logger.Errorf("cannot resolve payout rate for connector %q, leaving its payout worker as is: %v", connectorID.String(), err)
+		return nil
+	}
+
+	throttle, ok := plugin.(models.PluginWithPayoutThrottle)
+	if !ok {
+		return nil
+	}
+
+	// A rate of 0 would orphan whatever is already on the payout queue, so the
+	// existing worker is left running rather than stopped. Plugins are expected
+	// to resolve an unset config back to their own default instead of 0.
+	rate := throttle.PayoutsPerSecond()
+	if rate <= 0 {
+		return nil
+	}
+
+	name := GetPayoutTaskQueue(w.stack, connectorID)
+
+	w.rwMutex.RLock()
+	existing, running := w.workers[name]
+	w.rwMutex.RUnlock()
+
+	if running {
+		if existing.payoutsPerSecond == rate {
+			return nil
+		}
+		w.logger.Infof(
+			"payout rate for connector %q changed from %.2f to %.2f activities/s, restarting worker %s",
+			connectorID.String(), existing.payoutsPerSecond, rate, name,
+		)
+		w.stopWorker(name)
+	}
+
+	return w.AddPayoutWorker(name, rate)
 }
 
 func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
@@ -258,17 +314,17 @@ func (w *WorkerPool) AddDefaultWorker() error {
 // non-zero, because the server does not rate limit eagerly dispatched
 // activities. A client-side limiter would silently let them through.
 func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) error {
-	w.rwMutex.Lock()
-	defer w.rwMutex.Unlock()
-
-	if _, ok := w.workers[name]; ok {
+	w.rwMutex.RLock()
+	_, exists := w.workers[name]
+	w.rwMutex.RUnlock()
+	if exists {
 		return nil
 	}
 
 	opts := w.options
 	opts.TaskQueueActivitiesPerSecond = payoutsPerSecond
 
-	wkr := worker.New(w.temporalClient, name, opts)
+	wkr := w.newWorker(w.temporalClient, name, opts)
 
 	for _, set := range w.workflows {
 		for _, wf := range set {
@@ -286,14 +342,37 @@ func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) erro
 		}
 	}
 
-	go func() {
-		if err := wkr.Start(); err != nil {
-			w.logger.Errorf("payout worker loop stopped: %v", err)
-		}
-	}()
+	// Started inline rather than in a goroutine: deferring it leaves a window
+	// where a worker that is stopped again - which syncPayoutWorker does on
+	// every rate change - gets its Start call after its Stop, which the SDK
+	// answers with a panic. Started outside the lock, though, because Start
+	// makes blocking calls to Temporal, and holding the pool lock across them
+	// would stall every other worker operation - including Close - for as long
+	// as an unreachable server takes to time out. The worker is not in the map
+	// yet, so stopWorker cannot reach it and the panic stays impossible.
+	//
+	// A failure is logged rather than returned, so one unreachable queue cannot
+	// abort connector startup, and the entry is dropped rather than recorded:
+	// absence from the map is already "no worker serving this queue", so the
+	// next reconcile rebuilds it instead of skipping a matching rate.
+	if err := wkr.Start(); err != nil {
+		wkr.Stop()
+		w.logger.Errorf("payout worker %s failed to start, will be rebuilt on the next reconcile: %v", name, err)
+		return nil
+	}
 
-	w.workers[name] = Worker{worker: wkr}
+	w.rwMutex.Lock()
+	defer w.rwMutex.Unlock()
+
+	// Another caller may have raced us onto the same queue while we were
+	// starting; keep the worker that got there first.
+	if _, ok := w.workers[name]; ok {
+		wkr.Stop()
+		return nil
+	}
+
 	w.logger.Infof("payout worker %s started (%.2f activities/s)", name, payoutsPerSecond)
+	w.workers[name] = Worker{worker: wkr, payoutsPerSecond: payoutsPerSecond}
 
 	return nil
 }
@@ -302,10 +381,13 @@ func (w *WorkerPool) stopWorker(name string) {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
-	if wkr, ok := w.workers[name]; ok {
-		wkr.worker.Stop()
-		delete(w.workers, name)
+	wkr, ok := w.workers[name]
+	if !ok {
+		return
 	}
+
+	wkr.worker.Stop()
+	delete(w.workers, name)
 }
 
 // AddWorker instantiates a temporal worker
@@ -317,7 +399,7 @@ func (w *WorkerPool) AddWorker(name string) error {
 		return nil
 	}
 
-	worker := worker.New(w.temporalClient, name, w.options)
+	worker := w.newWorker(w.temporalClient, name, w.options)
 
 	for _, set := range w.workflows {
 		for _, workflow := range set {
@@ -409,6 +491,19 @@ func (w *WorkerPool) HasWorker(name string) bool {
 	return ok
 }
 
+// PayoutWorkerRate reports the activities-per-second a running payout worker
+// was built with. The second return value is false when no worker is running on
+// that queue.
+func (w *WorkerPool) PayoutWorkerRate(name string) (float64, bool) {
+	w.rwMutex.RLock()
+	defer w.rwMutex.RUnlock()
+	wkr, ok := w.workers[name]
+	if !ok {
+		return 0, false
+	}
+	return wkr.payoutsPerSecond, true
+}
+
 func (w *WorkerPool) CreateOutboxPublisherSchedule(ctx context.Context) error {
 	return w.createSchedule(
 		ctx,
@@ -433,4 +528,8 @@ func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
 // Useful for tests that don't have a Temporal server available.
 func (w *WorkerPool) SetSkipScheduleCreation(skip bool) {
 	w.skipScheduleCreation = skip
+}
+
+func (w *WorkerPool) SetWorkerFactory(newWorker func(c client.Client, taskQueue string, options worker.Options) worker.Worker) {
+	w.newWorker = newWorker
 }

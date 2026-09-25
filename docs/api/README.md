@@ -8943,6 +8943,7 @@ xor
   "endpoint": "string",
   "name": "string",
   "pageSize": 25,
+  "payoutsPerMinute": 0,
   "pollingPeriod": "30m",
   "provider": "Routable"
 }
@@ -8958,6 +8959,7 @@ xor
 |endpoint|string|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
+|payoutsPerMinute|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
