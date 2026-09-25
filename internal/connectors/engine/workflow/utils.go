@@ -6,8 +6,8 @@ import (
 	"math/big"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -57,12 +57,11 @@ func (w Workflow) storePIPaymentWithStatus(
 	}
 
 	// Payment events are now sent via outbox pattern in PaymentsUpsert
-
 	err = w.addPIAdjustment(
 		ctx,
 		models.PaymentInitiationAdjustmentID{
 			PaymentInitiationID: paymentInitiationID,
-			CreatedAt:           workflow.Now(ctx),
+			CreatedAt:           payment.CreatedAt,
 			Status:              status,
 		},
 		payment.Amount,
@@ -189,6 +188,31 @@ func isStorageNotFoundError(err error) bool {
 		return errors.Is(appErr.Unwrap(), storage.ErrNotFound) || appErr.Message() == storage.ErrNotFound.Error()
 	}
 	return false
+}
+
+// piFailureStatus tells apart an initiation the PSP never took on from one it
+// accepted and later failed, so consumers can react to exactly one of them.
+// Typed errors are lost when they cross the activity boundary, so the
+// classification is read back off the temporal ApplicationError; see
+// activities.temporalPluginErrorCheck for how each one is produced.
+func piFailureStatus(err error) models.PaymentInitiationAdjustmentStatus {
+	var appErr *temporal.ApplicationError
+	if !errors.As(err, &appErr) {
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+	}
+
+	switch appErr.Type() {
+	case activities.ErrTypeInvalidArgument:
+		// The PSP refused the request outright: a 4xx, an unsupported currency,
+		// or our own pre-flight validation rejecting it before the call.
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED
+	case activities.ErrTypeUnimplemented:
+		// The connector does not implement this capability, so the request
+		// never left us at all.
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED
+	default:
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+	}
 }
 
 func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiationAdjustmentStatus {

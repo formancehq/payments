@@ -6908,6 +6908,7 @@ Where a payment initiation stands in its lifecycle
 |*anonymous*|PROCESSING|
 |*anonymous*|PROCESSED|
 |*anonymous*|FAILED|
+|*anonymous*|NOT_INITIATED|
 |*anonymous*|REJECTED|
 |*anonymous*|REVERSE_PROCESSING|
 |*anonymous*|REVERSE_FAILED|

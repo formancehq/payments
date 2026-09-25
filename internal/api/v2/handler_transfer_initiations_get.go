@@ -89,7 +89,7 @@ func transferInitiationsGet(backend backend.Backend) http.HandlerFunc {
 
 		t := translatePaymentInitiationToResponse(transferInitiation)
 		if len(relatedAdjustments) > 0 {
-			t.Status = relatedAdjustments[0].Status.String()
+			t.Status = translateLastStatus(relatedAdjustments[0].Status)
 			t.Error = func() string {
 				if relatedAdjustments[0].Error == nil {
 					return ""
@@ -138,6 +138,20 @@ func translateAdjustments(from []models.PaymentInitiationAdjustment) []transferI
 	return to
 }
 
+// translateLastStatus renders a payment initiation's current status for v2
+// clients, whose TransferInitiationStatus enum is narrower than v3's: statuses
+// introduced in v3 are reported as their closest v2 equivalent.
+func translateLastStatus(from models.PaymentInitiationAdjustmentStatus) string {
+	switch from {
+	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING:
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String()
+	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED:
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED.String()
+	default:
+		return from.String()
+	}
+}
+
 func translateStatus(from models.PaymentInitiationAdjustmentStatus) (string, bool) {
 	switch from {
 	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING:
@@ -145,6 +159,11 @@ func translateStatus(from models.PaymentInitiationAdjustmentStatus) (string, boo
 		// in v2 as it is introduced in v3. Since we're gonna list all adjustments
 		// we can drop this one
 		return "", false
+	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED:
+		// PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED is not supported in v2
+		// either, but unlike the one above it carries a failure: dropping it would
+		// hide the rejection from v2 clients, which used to see it as FAILED.
+		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED.String(), true
 	default:
 		return from.String(), true
 	}
