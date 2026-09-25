@@ -23,7 +23,8 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 	lastAdjustment := adjustments[0]
 
 	switch lastAdjustment.Status {
-	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED:
+	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+		models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED:
 	default:
 		return models.Task{}, fmt.Errorf("cannot retry an already processed payment initiation: %w", ErrValidation)
 	}
@@ -56,7 +57,9 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 func getAttemps(adjustments []models.PaymentInitiationAdjustment) int {
 	attempts := 0
 	for _, adjustment := range adjustments {
-		if adjustment.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED {
+		switch adjustment.Status {
+		case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED:
 			attempts++
 		}
 	}

@@ -206,7 +206,7 @@ func (w Workflow) createPayout(
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: createPayout.PaymentInitiationID,
 				CreatedAt:           workflow.Now(ctx),
-				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+				Status:              piFailureStatus(errPlugin),
 			},
 			pi.Amount,
 			&pi.Asset,

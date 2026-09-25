@@ -35,6 +35,11 @@ func TestPaymentInitiationsRetry(t *testing.T) {
 	wrongLastAdj := models.PaymentInitiationAdjustment{
 		Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
 	}
+	// A PSP that refused the initiation outright used to land on FAILED and was
+	// retryable; NOT_INITIATED must stay just as retryable.
+	notInitiatedLastAdj := models.PaymentInitiationAdjustment{
+		Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED,
+	}
 	piTransfer := models.PaymentInitiation{
 		Type: models.PAYMENT_INITIATION_TYPE_TRANSFER,
 	}
@@ -62,6 +67,16 @@ func TestPaymentInitiationsRetry(t *testing.T) {
 		{
 			name: "success payout",
 			adj:  &rightLastAdj,
+			pi:   piPayout,
+		},
+		{
+			name: "success transfer not initiated",
+			adj:  &notInitiatedLastAdj,
+			pi:   piTransfer,
+		},
+		{
+			name: "success payout not initiated",
+			adj:  &notInitiatedLastAdj,
 			pi:   piPayout,
 		},
 		{
@@ -170,4 +185,25 @@ func TestPaymentInitiationsRetry(t *testing.T) {
 			}
 		})
 	}
+}
+
+// getAttemps feeds the attempt number into the task and workflow ID, so a status
+// it forgets to count makes a second retry collide with the first one's ID.
+func TestGetAttemps(t *testing.T) {
+	t.Parallel()
+
+	require.Equal(t, 0, getAttemps([]models.PaymentInitiationAdjustment{
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING},
+	}))
+
+	require.Equal(t, 3, getAttemps([]models.PaymentInitiationAdjustment{
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING},
+		{Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED},
+	}))
 }

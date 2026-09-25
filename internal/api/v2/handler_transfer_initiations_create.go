@@ -98,7 +98,7 @@ func transferInitiationsCreate(backend backend.Backend, validator *validation.Va
 		}
 
 		if lastAdjustment != nil {
-			resp.Status = lastAdjustment.Status.String()
+			resp.Status = translateLastStatus(lastAdjustment.Status)
 			resp.Error = func() string {
 				if lastAdjustment.Error == nil {
 					return ""

@@ -404,6 +404,46 @@ func (s *UnitTestSuite) Test_CreateTransfer_PluginCreateTransfer_Error() {
 	s.ErrorContains(err, "error-test")
 }
 
+// A non-retryable INVALID_ARGUMENT means the PSP refused the transfer outright:
+// it never started being processed, so the adjustment says NOT_INITIATED rather
+// than FAILED. The test above pins the other side of that fork.
+func (s *UnitTestSuite) Test_CreateTransfer_PluginCreateTransfer_InvalidArgument_Error() {
+	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationTransfer, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
+		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING, adj.Status)
+		return nil
+	})
+	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(
+		nil,
+		temporal.NewNonRetryableApplicationError("error-test", activities.ErrTypeInvalidArgument, errors.New("destination account not found")),
+	)
+	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
+		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED, adj.Status)
+		s.ErrorContains(adj.Error, "destination account not found")
+		return nil
+	})
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
+		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunCreateTransfer, CreateTransfer{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
 func (s *UnitTestSuite) Test_CreateTransfer_StoragePaymentsStore_Error() {
 	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationTransfer, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
