@@ -61,7 +61,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		ctx,
 		models.PaymentInitiationAdjustmentID{
 			PaymentInitiationID: paymentInitiationID,
-			CreatedAt:           payment.CreatedAt,
+			CreatedAt:           workflow.Now(ctx),
 			Status:              status,
 		},
 		payment.Amount,
