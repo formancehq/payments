@@ -87,6 +87,11 @@ func setupConfig(conf any) Config {
 		}
 
 		vt := field.Type
+		// An optional field may be a pointer so that "unset" stays distinct
+		// from the zero value; it carries the data type it points to.
+		if vt.Kind() == reflect.Ptr {
+			vt = vt.Elem()
+		}
 		var dataType Type
 		switch vt.Kind() {
 		case reflect.String:
@@ -94,7 +99,7 @@ func setupConfig(conf any) Config {
 		case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			dataType = TypeUnsignedInteger
 		case reflect.Int64:
-			if field.Type.Name() == "Duration" {
+			if vt.Name() == "Duration" {
 				dataType = TypeDurationNs
 				break
 			}
