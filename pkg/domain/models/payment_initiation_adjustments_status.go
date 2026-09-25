@@ -125,36 +125,75 @@ func (t *PaymentInitiationAdjustmentStatus) Scan(value interface{}) error {
 	return nil
 }
 
-func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdAt time.Time, piID PaymentInitiationID) *PaymentInitiationAdjustment {
-	var piStatus PaymentInitiationAdjustmentStatus
-	var err error
-
+// paymentStatusToAdjustmentStatus maps a payment status onto the payment
+// initiation adjustment status it implies. The returned error is the one to
+// record on the adjustment, not a failure of the mapping itself, and the
+// boolean reports whether an adjustment should be produced at all.
+func paymentStatusToAdjustmentStatus(status PaymentStatus) (PaymentInitiationAdjustmentStatus, error, bool) {
 	switch status {
 	case PAYMENT_STATUS_AMOUNT_ADJUSTMENT, PAYMENT_STATUS_UNKNOWN:
 		// No need to add an adjustment for this payment initiation
-		return nil
+		return 0, nil, false
 	case PAYMENT_STATUS_PENDING, PAYMENT_STATUS_AUTHORISATION:
-		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING
+		return PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING, nil, true
 	case PAYMENT_STATUS_SUCCEEDED,
 		PAYMENT_STATUS_CAPTURE,
 		PAYMENT_STATUS_REFUND_REVERSED,
 		PAYMENT_STATUS_DISPUTE_WON:
-		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED
+		return PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED, nil, true
 	case PAYMENT_STATUS_CANCELLED,
 		PAYMENT_STATUS_CAPTURE_FAILED,
 		PAYMENT_STATUS_EXPIRED,
 		PAYMENT_STATUS_FAILED,
 		PAYMENT_STATUS_DISPUTE_LOST:
-		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
-		err = errors.New("payment failed")
+		return PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED, errors.New("payment failed"), true
 	case PAYMENT_STATUS_DISPUTE:
-		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
+		return PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN, nil, true
 	case PAYMENT_STATUS_REFUNDED:
-		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED
+		return PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED, nil, true
 	case PAYMENT_STATUS_REFUNDED_FAILURE:
-		piStatus = PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
-		err = errors.New("payment refund failed")
+		return PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED, errors.New("payment refund failed"), true
 	default:
+		return 0, nil, false
+	}
+}
+
+// FromPaymentDataToPaymentInitiationAdjustment builds the adjustment implied by
+// a payment status change. Amount, asset and metadata are not carried by the
+// status change itself, so they are taken from the payment initiation to keep
+// the emitted adjustment event consistent with the ones produced by the
+// create/reverse workflows.
+func FromPaymentDataToPaymentInitiationAdjustment(status PaymentStatus, createdAt time.Time, pi PaymentInitiation) *PaymentInitiationAdjustment {
+	piStatus, err, ok := paymentStatusToAdjustmentStatus(status)
+	if !ok {
+		return nil
+	}
+
+	asset := pi.Asset
+
+	return &PaymentInitiationAdjustment{
+		ID: PaymentInitiationAdjustmentID{
+			PaymentInitiationID: pi.ID,
+			CreatedAt:           createdAt,
+			Status:              piStatus,
+		},
+		CreatedAt: createdAt,
+		Status:    piStatus,
+		Error:     err,
+		Amount:    pi.Amount,
+		Asset:     &asset,
+		Metadata:  pi.Metadata,
+	}
+}
+
+// FromPaymentDataToPaymentInitiationAdjustmentFromID builds the adjustment from
+// a payment initiation ID alone, leaving amount, asset and metadata unset.
+//
+// Deprecated: only kept so in-flight 3.0 workflows keep replaying to the same
+// result; use FromPaymentDataToPaymentInitiationAdjustment instead.
+func FromPaymentDataToPaymentInitiationAdjustmentFromID(status PaymentStatus, createdAt time.Time, piID PaymentInitiationID) *PaymentInitiationAdjustment {
+	piStatus, err, ok := paymentStatusToAdjustmentStatus(status)
+	if !ok {
 		return nil
 	}
 

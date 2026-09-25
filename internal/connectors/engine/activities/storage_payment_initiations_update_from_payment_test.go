@@ -23,20 +23,27 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 		p            *connectors.MockManager
 		s            *storage.MockStorage
 		evts         *events.Events
-		listResponse []models.PaymentInitiationID
+		connectorID  models.ConnectorID
+		listResponse []models.PaymentInitiation
 		logger       = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 		delay        = 50 * time.Millisecond
 	)
 
 	BeforeEach(func() {
 		evts = &events.Events{}
-		listResponse = []models.PaymentInitiationID{
+		connectorID = models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "test",
+		}
+		listResponse = []models.PaymentInitiation{
 			{
-				Reference: "test",
-				ConnectorID: models.ConnectorID{
-					Reference: uuid.New(),
-					Provider:  "test",
+				ID: models.PaymentInitiationID{
+					Reference:   "test",
+					ConnectorID: connectorID,
 				},
+				Amount:   big.NewInt(1000),
+				Asset:    "EUR/2",
+				Metadata: map[string]string{"key": "value"},
 			},
 		}
 	})
@@ -46,7 +53,6 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 			paymentID models.PaymentID
 			status    models.PaymentStatus
 			createdAt time.Time
-			pi        *models.PaymentInitiation
 			asset     string
 			metadata  map[string]string
 		)
@@ -61,29 +67,19 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 					Reference: "test",
 					Type:      models.PAYMENT_TYPE_PAYOUT,
 				},
-				ConnectorID: models.ConnectorID{
-					Reference: uuid.New(),
-					Provider:  "test",
-				},
+				ConnectorID: connectorID,
 			}
 			status = models.PAYMENT_STATUS_SUCCEEDED
 			createdAt = time.Now()
-			asset = "EUR/2"
-			metadata = map[string]string{"key": "value"}
-			pi = &models.PaymentInitiation{
-				ID:       listResponse[0],
-				Amount:   big.NewInt(1000),
-				Asset:    asset,
-				Metadata: metadata,
-			}
+			asset = listResponse[0].Asset
+			metadata = listResponse[0].Metadata
 		})
 
 		It("success", func(ctx SpecContext) {
-			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
-			s.EXPECT().PaymentInitiationsGet(ctx, listResponse[0]).Return(pi, nil)
+			s.EXPECT().PaymentInitiationsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
 			s.EXPECT().PaymentInitiationAdjustmentsUpsert(ctx, models.PaymentInitiationAdjustment{
 				ID: models.PaymentInitiationAdjustmentID{
-					PaymentInitiationID: listResponse[0],
+					PaymentInitiationID: listResponse[0].ID,
 					CreatedAt:           createdAt,
 					Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
 				},
@@ -97,35 +93,50 @@ var _ = Describe("Storage Payment Initiations Update From Payment", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("payment initiation not found", func(ctx SpecContext) {
-			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
-			s.EXPECT().PaymentInitiationsGet(ctx, listResponse[0]).Return(nil, storage.ErrNotFound)
+		It("upserts one adjustment per related payment initiation", func(ctx SpecContext) {
+			second := models.PaymentInitiation{
+				ID: models.PaymentInitiationID{
+					Reference:   "test2",
+					ConnectorID: connectorID,
+				},
+				Amount:   big.NewInt(2000),
+				Asset:    "USD/2",
+				Metadata: map[string]string{"other": "value"},
+			}
+			s.EXPECT().PaymentInitiationsListFromPaymentID(ctx, paymentID).Return(append(listResponse, second), nil)
+
+			upserted := make([]models.PaymentInitiationAdjustment, 0, 2)
+			s.EXPECT().PaymentInitiationAdjustmentsUpsert(ctx, gomock.Any()).Times(2).DoAndReturn(
+				func(_ any, adj models.PaymentInitiationAdjustment) error {
+					upserted = append(upserted, adj)
+					return nil
+				})
+
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
-			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))
+			Expect(err).To(BeNil())
+			Expect(upserted).To(HaveLen(2))
+			Expect(upserted[0].ID.PaymentInitiationID).To(Equal(listResponse[0].ID))
+			Expect(upserted[0].Amount).To(Equal(big.NewInt(1000)))
+			Expect(*upserted[0].Asset).To(Equal("EUR/2"))
+			Expect(upserted[1].ID.PaymentInitiationID).To(Equal(second.ID))
+			Expect(upserted[1].Amount).To(Equal(big.NewInt(2000)))
+			Expect(*upserted[1].Asset).To(Equal("USD/2"))
 		})
 
-		It("does not fetch the payment initiation when no adjustment is needed", func(ctx SpecContext) {
-			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
+		It("does not upsert when no adjustment is needed", func(ctx SpecContext) {
+			s.EXPECT().PaymentInitiationsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT, createdAt, paymentID)
 			Expect(err).To(BeNil())
 		})
 
 		It("list error", func(ctx SpecContext) {
-			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, storage.ErrNotFound)
+			s.EXPECT().PaymentInitiationsListFromPaymentID(ctx, paymentID).Return(nil, storage.ErrNotFound)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
 			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))
 		})
 
-		It("get payment initiation error", func(ctx SpecContext) {
-			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
-			s.EXPECT().PaymentInitiationsGet(ctx, listResponse[0]).Return(nil, storage.ErrValidation)
-			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
-			Expect(err).ToNot(BeNil())
-		})
-
 		It("upsert error", func(ctx SpecContext) {
-			s.EXPECT().PaymentInitiationIDsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
-			s.EXPECT().PaymentInitiationsGet(ctx, listResponse[0]).Return(pi, nil)
+			s.EXPECT().PaymentInitiationsListFromPaymentID(ctx, paymentID).Return(listResponse, nil)
 			s.EXPECT().PaymentInitiationAdjustmentsUpsert(ctx, gomock.Any()).Return(storage.ErrNotFound)
 			err := act.StoragePaymentInitiationUpdateFromPayment(ctx, status, createdAt, paymentID)
 			Expect(err).To(MatchError(temporal.NewNonRetryableApplicationError(storage.ErrNotFound.Error(), activities.ErrTypeStorageNotFound, storage.ErrNotFound)))

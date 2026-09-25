@@ -86,6 +86,7 @@ type Storage interface {
 	PaymentInitiationsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*paginate.Cursor[models.PaymentInitiation], error)
 	PaymentInitiationIDsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiationID, error)
+	PaymentInitiationsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiation, error)
 
 	// Payment Initiation Adjustments
 	PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationAdjustment) error

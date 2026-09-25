@@ -29,7 +29,7 @@ func (w Workflow) runUpdatePaymentInitiationFromPayment(
 	}
 
 	for _, piID := range piIDs {
-		adjustment := models.FromPaymentDataToPaymentInitiationAdjustment(
+		adjustment := models.FromPaymentDataToPaymentInitiationAdjustmentFromID( //nolint:staticcheck // ignore deprecation
 			updatePaymentInitiationFromPayment.Payment.Status,
 			updatePaymentInitiationFromPayment.Payment.CreatedAt,
 			piID,
