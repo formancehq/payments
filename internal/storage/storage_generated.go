@@ -1369,6 +1369,21 @@ func (mr *MockStorageMockRecorder) PaymentInitiationsList(ctx, q any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsList", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationsList), ctx, q)
 }
 
+// PaymentInitiationsListFromPaymentID mocks base method.
+func (m *MockStorage) PaymentInitiationsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsListFromPaymentID", ctx, id)
+	ret0, _ := ret[0].([]models.PaymentInitiation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationsListFromPaymentID indicates an expected call of PaymentInitiationsListFromPaymentID.
+func (mr *MockStorageMockRecorder) PaymentInitiationsListFromPaymentID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsListFromPaymentID", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationsListFromPaymentID), ctx, id)
+}
+
 // PaymentInitiationsUpdateMetadata mocks base method.
 func (m *MockStorage) PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error {
 	m.ctrl.T.Helper()

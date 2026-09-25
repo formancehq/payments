@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"errors"
+	"math/big"
 	"testing"
 	"time"
 
@@ -22,6 +23,13 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 	piID := models.PaymentInitiationID{
 		Reference:   "pi123",
 		ConnectorID: connectorID,
+	}
+
+	pi := models.PaymentInitiation{
+		ID:       piID,
+		Amount:   big.NewInt(1000),
+		Asset:    "EUR/2",
+		Metadata: map[string]string{"key": "value"},
 	}
 
 	testCases := []struct {
@@ -135,23 +143,47 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 				CreatedAt: now,
 			}
 
-			result := models.FromPaymentDataToPaymentInitiationAdjustment(payment.Status, payment.CreatedAt, piID)
+			result := models.FromPaymentDataToPaymentInitiationAdjustment(payment.Status, payment.CreatedAt, pi)
+
+			// The deprecated ID-only variant must keep producing exactly what it
+			// produced before amount/asset/metadata were mapped, so in-flight 3.0
+			// workflows replay to the same result.
+			fromID := models.FromPaymentDataToPaymentInitiationAdjustmentFromID(payment.Status, payment.CreatedAt, piID) //nolint:staticcheck // ignore deprecation
 
 			if tc.expectNil {
 
 				assert.Nil(t, result)
+				assert.Nil(t, fromID)
 				return
 			}
 
 			assert.NotNil(t, result)
 			assert.Equal(t, tc.expectedStatus, result.Status)
 			assert.Equal(t, now, result.CreatedAt)
+			assert.Equal(t, piID, result.ID.PaymentInitiationID)
+
+			assert.Equal(t, pi.Amount, result.Amount)
+			if assert.NotNil(t, result.Asset) {
+				assert.Equal(t, pi.Asset, *result.Asset)
+			}
+			assert.Equal(t, pi.Metadata, result.Metadata)
+
+			assert.NotNil(t, fromID)
+			assert.Equal(t, tc.expectedStatus, fromID.Status)
+			assert.Equal(t, now, fromID.CreatedAt)
+			assert.Equal(t, piID, fromID.ID.PaymentInitiationID)
+			assert.Nil(t, fromID.Amount)
+			assert.Nil(t, fromID.Asset)
+			assert.Nil(t, fromID.Metadata)
 
 			if tc.expectedError != nil {
 				assert.NotNil(t, result.Error)
 				assert.Equal(t, tc.expectedError.Error(), result.Error.Error())
+				assert.NotNil(t, fromID.Error)
+				assert.Equal(t, tc.expectedError.Error(), fromID.Error.Error())
 			} else {
 				assert.Nil(t, result.Error)
+				assert.Nil(t, fromID.Error)
 			}
 		})
 	}
