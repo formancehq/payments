@@ -24,14 +24,6 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// throttlePlugin satisfies both models.Plugin (via embedding) and
-// models.PluginWithPayoutThrottle so tests can exercise the payout-queue path.
-type throttlePlugin struct {
-	models.Plugin
-}
-
-func (throttlePlugin) PayoutsPerSecond() float64 { return 5.0 }
-
 func TestEngine(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Engine Suite")
@@ -1259,7 +1251,7 @@ var _ = Describe("Engine Tests", func() {
 		It("uses payout task queue when plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
 			payoutQueue := engine.GetPayoutTaskQueue(stackName, connID)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
-			manager.EXPECT().Get(connID).Return(throttlePlugin{}, nil)
+			manager.EXPECT().Get(connID).Return(&ratePlugin{rate: 5}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", payoutQueue),
 				workflow.RunCreateTransfer,
 				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
@@ -1325,7 +1317,7 @@ var _ = Describe("Engine Tests", func() {
 		It("uses payout task queue when plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
 			payoutQueue := engine.GetPayoutTaskQueue(stackName, connID)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
-			manager.EXPECT().Get(connID).Return(throttlePlugin{}, nil)
+			manager.EXPECT().Get(connID).Return(&ratePlugin{rate: 5}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", payoutQueue),
 				workflow.RunCreatePayout,
 				gomock.AssignableToTypeOf(workflow.CreatePayout{}),

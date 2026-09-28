@@ -26,6 +26,7 @@ var _ = Describe("Register Plugin", func() {
 		OptionalUint     uint          `json:"optionalUint" validate:""`
 		RequiredDuration time.Duration `json:"requiredDuration" validate:"required"`
 		OptionalDuration time.Duration `json:"optionalDuration" validate:""`
+		OptionalUintPtr  *uint64       `json:"optionalUintPtr" validate:"omitempty,gt=0"`
 		WithJsonMetadata string        `json:"withJsonMetadata,omitempty" validate:""`
 
 		NilJsonTag      UnhandledType `json:"-"`
@@ -117,6 +118,16 @@ var _ = Describe("Register Plugin", func() {
 			Expect(c["withJsonMetadata"].DataType).To(Equal(TypeString))
 			Expect(c["withJsonMetadata"].Required).To(BeFalse())
 			Expect(c["withJsonMetadata"].DefaultValue).To(Equal(""))
+		})
+
+		It("can parse an optional unsigned integer pointer", func(ctx SpecContext) {
+			configs := GetConfigs(false)
+			c, ok := configs[name]
+			Expect(ok).To(BeTrue())
+			Expect(c["optionalUintPtr"]).NotTo(BeNil())
+			Expect(c["optionalUintPtr"].DataType).To(Equal(TypeUnsignedInteger))
+			Expect(c["optionalUintPtr"].Required).To(BeFalse())
+			Expect(c["optionalUintPtr"].DefaultValue).To(Equal(""))
 		})
 
 		It("hides dummypay when not in debug mode", func(ctx SpecContext) {
