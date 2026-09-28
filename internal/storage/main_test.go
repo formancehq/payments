@@ -51,7 +51,14 @@ func newStore(t *testing.T) Storage {
 
 	pgServer := srv.NewDatabase(t)
 
-	db, err := connect.OpenSQLDB(ctx, pgServer.ConnectionOptions())
+	// Tests run in parallel against a single Postgres container (max_connections=100),
+	// so bound each store's pool and keep connections idle for reuse instead of
+	// re-dialing on every query (MaxIdleConns defaults to 0 otherwise).
+	opts := pgServer.ConnectionOptions()
+	opts.MaxOpenConns = 5
+	opts.MaxIdleConns = 5
+
+	db, err := connect.OpenSQLDB(ctx, opts)
 	require.NoError(t, err)
 
 	key := make([]byte, 64)
