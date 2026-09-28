@@ -45,9 +45,6 @@ type WorkerPool struct {
 	skipScheduleCreation bool
 	outboxPollingPeriod  time.Duration
 	outboxCleanupPeriod  time.Duration
-
-	// newWorker builds the Temporal workers the pool runs.
-	newWorker func(c client.Client, taskQueue string, options worker.Options) worker.Worker
 }
 
 type Worker struct {
@@ -84,7 +81,6 @@ func NewWorkerPool(
 		options:             options,
 		outboxPollingPeriod: outboxPollingPeriod,
 		outboxCleanupPeriod: outboxCleanupPeriod,
-		newWorker:           worker.New,
 	}
 	return workers
 }
@@ -324,7 +320,7 @@ func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) erro
 	opts := w.options
 	opts.TaskQueueActivitiesPerSecond = payoutsPerSecond
 
-	wkr := w.newWorker(w.temporalClient, name, opts)
+	wkr := worker.New(w.temporalClient, name, opts)
 
 	for _, set := range w.workflows {
 		for _, wf := range set {
@@ -399,7 +395,7 @@ func (w *WorkerPool) AddWorker(name string) error {
 		return nil
 	}
 
-	worker := w.newWorker(w.temporalClient, name, w.options)
+	worker := worker.New(w.temporalClient, name, w.options)
 
 	for _, set := range w.workflows {
 		for _, workflow := range set {
@@ -528,8 +524,4 @@ func (w *WorkerPool) CreateOutboxCleanupSchedule(ctx context.Context) error {
 // Useful for tests that don't have a Temporal server available.
 func (w *WorkerPool) SetSkipScheduleCreation(skip bool) {
 	w.skipScheduleCreation = skip
-}
-
-func (w *WorkerPool) SetWorkerFactory(newWorker func(c client.Client, taskQueue string, options worker.Options) worker.Worker) {
-	w.newWorker = newWorker
 }
