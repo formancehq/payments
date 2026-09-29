@@ -102,7 +102,7 @@ func (w Workflow) createTransfer(
 		pi.Amount,
 		&pi.Asset,
 		nil,
-		nil,
+		pi.Metadata,
 	)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (w Workflow) createTransfer(
 			pi.Amount,
 			&pi.Asset,
 			cause,
-			nil,
+			pi.Metadata,
 		)
 		if err != nil {
 			return err

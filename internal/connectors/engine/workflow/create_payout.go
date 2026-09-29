@@ -102,7 +102,7 @@ func (w Workflow) createPayout(
 		pi.Amount,
 		&pi.Asset,
 		nil,
-		nil,
+		pi.Metadata,
 	)
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func (w Workflow) createPayout(
 			pi.Amount,
 			&pi.Asset,
 			cause,
-			nil,
+			pi.Metadata,
 		)
 		if err != nil {
 			return err
