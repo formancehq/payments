@@ -419,6 +419,7 @@ func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_InvalidArgument_Err
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING, adj.Status)
+		s.Equal(s.paymentInitiationPayout.Metadata, adj.Metadata)
 		return nil
 	})
 	s.env.OnActivity(activities.PluginCreatePayoutActivity, mock.Anything, mock.Anything).Once().Return(
@@ -427,6 +428,7 @@ func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_InvalidArgument_Err
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_NOT_INITIATED, adj.Status)
+		s.Equal(s.paymentInitiationPayout.Metadata, adj.Metadata)
 		s.ErrorContains(adj.Error, "destination account not found")
 		return nil
 	})
