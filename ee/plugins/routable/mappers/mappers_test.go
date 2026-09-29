@@ -327,17 +327,17 @@ func TestPayablesToPSPPayments_SkipsBadRowsAndTracksWatermark(t *testing.T) {
 func TestReceivableToPSPPayment(t *testing.T) {
 	when := time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC)
 	got, err := ReceivableToPSPPayment(client.Receivable{
-		ID:               "re_1",
-		Type:             "ach",
-		Status:           "pending",
-		Amount:           "5.00",
-		CurrencyCode:     "USD",
-		DeliveryMethod:   "ach_standard",
-		ExternalID:       "pi_inbound",
-		CreatedAt:        when,
-		StatusChangedAt:  &when,
-		PayFromCompany:   &client.ReceivableCompany{ID: "co_from"},
-		DepositToAccount: &client.ReceivableAccount{ID: "acc_to"},
+		ID:                 "re_1",
+		Type:               "ach",
+		Status:             "pending",
+		Amount:             "5.00",
+		CurrencyCode:       "USD",
+		DeliveryMethod:     "ach_standard",
+		ExternalID:         "pi_inbound",
+		CreatedAt:          when,
+		StatusChangedAt:    &when,
+		DueFromCompany:     &client.ReceivableCompany{ID: "co_from"},
+		DepositIntoAccount: &client.ReceivableAccount{ID: "acc_to"},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -353,6 +353,29 @@ func TestReceivableToPSPPayment(t *testing.T) {
 	}
 	if got.Metadata[MetadataKeyPaymentInitiationReference] != "pi_inbound" {
 		t.Errorf("alias missing: %v", got.Metadata)
+	}
+}
+
+func TestReceivableWireAccountsReachPayment(t *testing.T) {
+	const response = `{
+		"object":"Receivable","id":"re_1","type":"invoice","status":"ready_to_send",
+		"amount":"5.00","currency_code":"USD","created_at":"2026-09-01T00:00:00Z",
+		"due_from_company":{"object":"Company","id":"co_from"},
+		"deposit_into_account":{"object":"Account","id":"acc_to","type":"bank"}
+	}`
+	var receivable client.Receivable
+	if err := json.Unmarshal([]byte(response), &receivable); err != nil {
+		t.Fatal(err)
+	}
+	payment, err := ReceivableToPSPPayment(receivable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if payment.SourceAccountReference == nil || *payment.SourceAccountReference != "co_from" {
+		t.Errorf("source account = %v, want co_from", payment.SourceAccountReference)
+	}
+	if payment.DestinationAccountReference == nil || *payment.DestinationAccountReference != "acc_to" {
+		t.Errorf("destination account = %v, want acc_to", payment.DestinationAccountReference)
 	}
 }
 
