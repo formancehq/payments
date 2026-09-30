@@ -215,6 +215,12 @@ var _ = Describe("Routable API contract", func() {
 				assertDecimalAmount(r.Amount, "receivable "+r.ID)
 				assertSupportedCurrency(r.CurrencyCode, "receivable "+r.ID)
 				Expect(r.CreatedAt.IsZero()).To(BeFalse(), "receivable %s created_at is zero/unset", r.ID)
+				if r.Type == "invoice" {
+					Expect(r.DueFromCompany).ToNot(BeNil(), "invoice receivable %s has no due_from_company", r.ID)
+					Expect(r.DepositIntoAccount).ToNot(BeNil(), "invoice receivable %s has no deposit_into_account", r.ID)
+					Expect(r.DueFromCompany.ID).ToNot(BeEmpty())
+					Expect(r.DepositIntoAccount.ID).ToNot(BeEmpty())
+				}
 			}
 		})
 	})

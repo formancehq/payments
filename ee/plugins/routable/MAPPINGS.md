@@ -121,8 +121,8 @@ Implemented in [`payments.go`](payments.go) (`receivableToPSPPayment`). Mirror o
 | F — `models.PSPPayment` | R — `Receivable` | Notes |
 |---|---|---|
 | `Type` | constant `PAYMENT_TYPE_PAYIN` | |
-| `SourceAccountReference` | `pay_from_company.id` | Inbound counterparty (company ID). |
-| `DestinationAccountReference` | `deposit_to_account.id` | Settings account ID. |
+| `SourceAccountReference` | `due_from_company.id` | Inbound counterparty (company ID). |
+| `DestinationAccountReference` | `deposit_into_account.id` | Settings account ID. |
 | All other fields | Same shape as §3.4 (`amount`, `currency_code`, `delivery_method`, `status`, `created_at`, …) | See `receivableMetadata` in [`metadata.go`](metadata.go) for the metadata key set. Receivables also carry the `payment_initiation_reference` and `payable_id` aliases described in [§5.5](#55-correlating-a-transfer-paymentinitiation-with-the-synced-payment). |
 
 ### 3.6 Pagination & state

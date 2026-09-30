@@ -158,20 +158,20 @@ type ReceivableAccount struct {
 
 // Receivable is a Routable incoming payment. API: GET /v1/receivables.
 type Receivable struct {
-	Object           string             `json:"object"`
-	ID               string             `json:"id"`
-	Type             string             `json:"type"`
-	DeliveryMethod   string             `json:"delivery_method"`
-	Status           string             `json:"status"`
-	ExternalID       string             `json:"external_id,omitempty"`
-	Amount           string             `json:"amount"`
-	CurrencyCode     string             `json:"currency_code"`
-	PayFromCompany   *ReceivableCompany `json:"pay_from_company,omitempty"`
-	DepositToAccount *ReceivableAccount `json:"deposit_to_account,omitempty"`
-	Memo             string             `json:"memo,omitempty"`
-	Reference        string             `json:"reference,omitempty"`
-	StatusChangedAt  *time.Time         `json:"status_changed_at,omitempty"`
-	CreatedAt        time.Time          `json:"created_at"`
+	Object             string             `json:"object"`
+	ID                 string             `json:"id"`
+	Type               string             `json:"type"`
+	DeliveryMethod     string             `json:"delivery_method"`
+	Status             string             `json:"status"`
+	ExternalID         string             `json:"external_id,omitempty"`
+	Amount             string             `json:"amount"`
+	CurrencyCode       string             `json:"currency_code"`
+	DueFromCompany     *ReceivableCompany `json:"due_from_company,omitempty"`
+	DepositIntoAccount *ReceivableAccount `json:"deposit_into_account,omitempty"`
+	Memo               string             `json:"memo,omitempty"`
+	Reference          string             `json:"reference,omitempty"`
+	StatusChangedAt    *time.Time         `json:"status_changed_at,omitempty"`
+	CreatedAt          time.Time          `json:"created_at"`
 }
 
 type ListReceivablesResponse struct {

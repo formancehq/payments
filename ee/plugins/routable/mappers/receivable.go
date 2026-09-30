@@ -34,12 +34,12 @@ func ReceivableToPSPPayment(r client.Receivable) (models.PSPPayment, error) {
 		Metadata:  ReceivableMetadata(r),
 		Raw:       raw,
 	}
-	if r.PayFromCompany != nil && r.PayFromCompany.ID != "" {
-		ref := r.PayFromCompany.ID
+	if r.DueFromCompany != nil && r.DueFromCompany.ID != "" {
+		ref := r.DueFromCompany.ID
 		payment.SourceAccountReference = &ref
 	}
-	if r.DepositToAccount != nil && r.DepositToAccount.ID != "" {
-		ref := r.DepositToAccount.ID
+	if r.DepositIntoAccount != nil && r.DepositIntoAccount.ID != "" {
+		ref := r.DepositIntoAccount.ID
 		payment.DestinationAccountReference = &ref
 	}
 	return payment, nil

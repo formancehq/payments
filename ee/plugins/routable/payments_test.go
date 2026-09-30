@@ -6,8 +6,8 @@ import (
 
 	"github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/payments/ee/plugins/routable/client"
-	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -70,14 +70,14 @@ var _ = Describe("Routable fetchNextPayments", func() {
 		now := time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)
 		mock.EXPECT().ListReceivables(gomock.Any(), 1, 50, time.Time{}).Return(&client.ListReceivablesResponse{
 			Results: []client.Receivable{{
-				ID:               "re_1",
-				Status:           "pending",
-				Amount:           "5.00",
-				CurrencyCode:     "USD",
-				DeliveryMethod:   "ach_standard",
-				PayFromCompany:   &client.ReceivableCompany{ID: "co_42"},
-				DepositToAccount: &client.ReceivableAccount{ID: "acc_99"},
-				CreatedAt:        now,
+				ID:                 "re_1",
+				Status:             "pending",
+				Amount:             "5.00",
+				CurrencyCode:       "USD",
+				DeliveryMethod:     "ach_standard",
+				DueFromCompany:     &client.ReceivableCompany{ID: "co_42"},
+				DepositIntoAccount: &client.ReceivableAccount{ID: "acc_99"},
+				CreatedAt:          now,
 			}},
 		}, nil)
 
