@@ -7,9 +7,12 @@ import (
 )
 
 type CurrencyCloudConfig struct {
-	Name     string  `json:"name"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
 	Provider *string `default:"Currencycloud" json:"provider"`
-	APIKey   string  `json:"apiKey"`
+	// API key issued by Currencycloud, used to authenticate the connector's requests
+	APIKey string `json:"apiKey"`
 	// Username of the API Key holder
 	LoginID string `json:"loginID"`
 	// The frequency at which the connector will fetch transactions

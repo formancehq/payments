@@ -12,14 +12,15 @@ const MetadataPrefix = "com.routable.spec/"
 // Metadata keys read from PSPPaymentInitiation.Metadata when initiating
 // a payable. See MAPPINGS.md §5 for the per-key semantics and defaults.
 const (
-	MetadataKeyType             = MetadataPrefix + "type"
-	MetadataKeyDeliveryMethod   = MetadataPrefix + "delivery_method"
-	MetadataKeyExternalID       = MetadataPrefix + "external_id"
-	MetadataKeyMemo             = MetadataPrefix + "memo"
-	MetadataKeyMessage          = MetadataPrefix + "message"
-	MetadataKeyLineDescription  = MetadataPrefix + "line_item_description"
-	MetadataKeyActingTeamMember = MetadataPrefix + "acting_team_member"
-	MetadataKeySendOn           = MetadataPrefix + "send_on"
+	MetadataKeyType               = MetadataPrefix + "type"
+	MetadataKeyDeliveryMethod     = MetadataPrefix + "delivery_method"
+	MetadataKeyExternalID         = MetadataPrefix + "external_id"
+	MetadataKeyMemo               = MetadataPrefix + "memo"
+	MetadataKeyMessage            = MetadataPrefix + "message"
+	MetadataKeyLineDescription    = MetadataPrefix + "line_item_description"
+	MetadataKeyActingTeamMember   = MetadataPrefix + "acting_team_member"
+	MetadataKeySendOn             = MetadataPrefix + "send_on"
+	MetadataKeyPayToPaymentMethod = MetadataPrefix + "pay_to_payment_method"
 )
 
 // SendOnLayout is the only date format Routable's v1 `send_on` accepts.
@@ -62,6 +63,8 @@ const (
 	MetadataKeyPaymentInitiationReference = MetadataPrefix + "payment_initiation_reference"
 	MetadataKeyRoutablePayableID          = MetadataPrefix + "payable_id"
 )
+
+const MetadataKeyFailureDetail = MetadataPrefix + "failure_detail"
 
 const (
 	DefaultPayableType    = "ach"
@@ -115,7 +118,7 @@ func SettingsAccountMetadata(a client.Account) map[string]string {
 }
 
 func PayableMetadata(p client.Payable) map[string]string {
-	return stripEmpty(map[string]string{
+	m := map[string]string{
 		MetadataPrefix + "type":               p.Type,
 		MetadataPrefix + "delivery_method":    p.DeliveryMethod,
 		MetadataPrefix + "status":             p.Status,
@@ -124,7 +127,14 @@ func PayableMetadata(p client.Payable) map[string]string {
 		MetadataKeyRoutablePayableID:          p.ID,
 		MetadataPrefix + "memo":               p.Memo,
 		MetadataPrefix + "reference":          p.Reference,
-	})
+	}
+	if p.PayToPaymentMethod != nil {
+		m[MetadataKeyPayToPaymentMethod] = p.PayToPaymentMethod.ID
+	}
+	if len(p.FailureDetail) > 0 && string(p.FailureDetail) != "null" {
+		m[MetadataKeyFailureDetail] = string(p.FailureDetail)
+	}
+	return stripEmpty(m)
 }
 
 func ReceivableMetadata(r client.Receivable) map[string]string {

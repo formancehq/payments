@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// TaskMoneycorpState - Internal progress state the task resumes from
 type TaskMoneycorpState struct {
 }
 
@@ -38,14 +39,21 @@ func (o *TaskMoneycorpDescriptor) GetAccountID() *string {
 }
 
 type TaskMoneycorp struct {
-	ID          string                  `json:"id"`
-	ConnectorID string                  `json:"connectorID"`
-	CreatedAt   time.Time               `json:"createdAt"`
-	UpdatedAt   time.Time               `json:"updatedAt"`
-	Status      TaskStatus              `json:"status"`
-	State       *TaskMoneycorpState     `json:"state,omitempty"`
-	Error       *string                 `json:"error,omitempty"`
-	Descriptor  TaskMoneycorpDescriptor `json:"descriptor"`
+	// Unique identifier of the task
+	ID string `json:"id"`
+	// Identifier of the connector the task runs against
+	ConnectorID string `json:"connectorID"`
+	// When the task was created
+	CreatedAt time.Time `json:"createdAt"`
+	// When the task was last updated
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Where a task stands, from pending or active through to stopped, terminated or failed
+	Status TaskStatus `json:"status"`
+	// Internal progress state the task resumes from
+	State *TaskMoneycorpState `json:"state,omitempty"`
+	// Why the task failed, absent when it succeeded
+	Error      *string                 `json:"error,omitempty"`
+	Descriptor TaskMoneycorpDescriptor `json:"descriptor"`
 }
 
 func (t TaskMoneycorp) MarshalJSON() ([]byte, error) {

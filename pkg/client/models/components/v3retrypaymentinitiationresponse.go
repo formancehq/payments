@@ -2,6 +2,7 @@
 
 package components
 
+// V3RetryPaymentInitiationResponseData - The task tracking the retry, which completes asynchronously
 type V3RetryPaymentInitiationResponseData struct {
 	// Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID.
 	//
@@ -16,6 +17,7 @@ func (o *V3RetryPaymentInitiationResponseData) GetTaskID() string {
 }
 
 type V3RetryPaymentInitiationResponse struct {
+	// The task tracking the retry, which completes asynchronously
 	Data V3RetryPaymentInitiationResponseData `json:"data"`
 }
 

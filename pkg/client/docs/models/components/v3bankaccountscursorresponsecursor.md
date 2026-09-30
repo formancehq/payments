@@ -1,5 +1,7 @@
 # V3BankAccountsCursorResponseCursor
 
+Paginated cursor wrapping the list of bank accounts
+
 
 ## Fields
 

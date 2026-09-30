@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// TransferInitiationRequestType - Whether the funds move between your accounts or out to a third party
 type TransferInitiationRequestType string
 
 const (
@@ -37,17 +38,28 @@ func (e *TransferInitiationRequestType) UnmarshalJSON(data []byte) error {
 }
 
 type TransferInitiationRequest struct {
-	Reference            string                        `json:"reference"`
-	ScheduledAt          time.Time                     `json:"scheduledAt"`
-	Description          string                        `json:"description"`
-	SourceAccountID      string                        `json:"sourceAccountID"`
-	DestinationAccountID string                        `json:"destinationAccountID"`
-	ConnectorID          *string                       `json:"connectorID,omitempty"`
-	Type                 TransferInitiationRequestType `json:"type"`
-	Amount               *big.Int                      `json:"amount"`
-	Asset                string                        `json:"asset"`
-	Validated            bool                          `json:"validated"`
-	Metadata             map[string]string             `json:"metadata,omitempty"`
+	// Caller-supplied identifier for the initiation, used to deduplicate retries
+	Reference string `json:"reference"`
+	// When the transfer should be executed
+	ScheduledAt time.Time `json:"scheduledAt"`
+	// Human-readable description carried with the transfer
+	Description string `json:"description"`
+	// Identifier of the account the funds leave
+	SourceAccountID string `json:"sourceAccountID"`
+	// Identifier of the account the funds reach
+	DestinationAccountID string `json:"destinationAccountID"`
+	// Identifier of the connector to execute the transfer through
+	ConnectorID *string `json:"connectorID,omitempty"`
+	// Whether the funds move between your accounts or out to a third party
+	Type TransferInitiationRequestType `json:"type"`
+	// Amount to move, in the asset's smallest unit
+	Amount *big.Int `json:"amount"`
+	// Asset the transfer is denominated in
+	Asset string `json:"asset"`
+	// When true, the transfer executes immediately instead of waiting for approval
+	Validated bool `json:"validated"`
+	// Arbitrary key/value pairs to attach to the initiation
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (t TransferInitiationRequest) MarshalJSON() ([]byte, error) {

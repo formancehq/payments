@@ -1,5 +1,7 @@
 # ConnectorResponseData
 
+The connector that was installed
+
 
 ## Fields
 

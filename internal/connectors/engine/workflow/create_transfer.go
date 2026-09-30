@@ -22,6 +22,11 @@ func (w Workflow) runCreateTransfer(
 	ctx workflow.Context,
 	createTransfer CreateTransfer,
 ) error {
+	// Everything but the PSP call runs on the default queue, including the
+	// updateTasksError below: this workflow's own queue may be rate limited
+	// (see models.PluginWithPayoutThrottle).
+	ctx = workflow.WithTaskQueue(ctx, w.getDefaultTaskQueue())
+
 	err := w.createTransfer(ctx, createTransfer)
 	if err != nil {
 		errUpdateTask := w.updateTasksError(
@@ -97,14 +102,14 @@ func (w Workflow) createTransfer(
 		pi.Amount,
 		&pi.Asset,
 		nil,
-		nil,
+		pi.Metadata,
 	)
 	if err != nil {
 		return err
 	}
 
 	createTransferResponse, errPlugin := activities.PluginCreateTransfer(
-		infiniteRetryContext(ctx),
+		pspRetryContext(ctx),
 		createTransfer.ConnectorID,
 		models.CreateTransferRequest{
 			PaymentInitiation: pspPI,
@@ -203,12 +208,12 @@ func (w Workflow) createTransfer(
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: createTransfer.PaymentInitiationID,
 				CreatedAt:           workflow.Now(ctx),
-				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+				Status:              piFailureStatus(errPlugin),
 			},
 			pi.Amount,
 			&pi.Asset,
 			cause,
-			nil,
+			pi.Metadata,
 		)
 		if err != nil {
 			return err

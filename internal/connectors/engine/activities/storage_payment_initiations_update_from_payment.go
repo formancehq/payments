@@ -9,16 +9,16 @@ import (
 )
 
 func (a Activities) StoragePaymentInitiationUpdateFromPayment(ctx context.Context, status models.PaymentStatus, createdAt time.Time, paymentID models.PaymentID) error {
-	piIDs, err := a.storage.PaymentInitiationIDsListFromPaymentID(ctx, paymentID)
+	pis, err := a.storage.PaymentInitiationsListFromPaymentID(ctx, paymentID)
 	if err != nil {
 		return temporalStorageError(err)
 	}
 
-	for _, piID := range piIDs {
+	for _, pi := range pis {
 		adjustment := models.FromPaymentDataToPaymentInitiationAdjustment(
 			status,
 			createdAt,
-			piID,
+			pi,
 		)
 
 		if adjustment == nil {

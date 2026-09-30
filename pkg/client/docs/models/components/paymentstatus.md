@@ -1,5 +1,7 @@
 # PaymentStatus
 
+Where a payment stands in its lifecycle
+
 
 ## Values
 

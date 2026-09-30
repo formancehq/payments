@@ -7,8 +7,8 @@ import (
 
 	"github.com/formancehq/payments/ee/plugins/routable/client"
 	"github.com/formancehq/payments/ee/plugins/routable/mappers"
-	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 // initiatePayable is shared by createPayout and createTransfer. It
@@ -64,6 +64,7 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		Type:                mappers.FieldOr(pi.Metadata, mappers.MetadataKeyType, mappers.DefaultPayableType),
 		DeliveryMethod:      mappers.FieldOr(pi.Metadata, mappers.MetadataKeyDeliveryMethod, mappers.DefaultDeliveryMethod),
 		PayToCompany:        pi.DestinationAccount.Reference,
+		PayToPaymentMethod:  models.ExtractNamespacedMetadata(pi.Metadata, mappers.MetadataKeyPayToPaymentMethod),
 		WithdrawFromAccount: pi.SourceAccount.Reference,
 		Amount:              amount,
 		CurrencyCode:        currencyCode,
@@ -87,6 +88,13 @@ func (p *Plugin) initiatePayable(ctx context.Context, pi models.PSPPaymentInitia
 		req.Type, req.DeliveryMethod, req.Amount, req.CurrencyCode, req.Reference)
 	payable, status, err := p.client.CreatePayable(ctx, req)
 	if err != nil {
+		if errors.Is(err, client.ErrValidation) {
+			// Rejected by client-side validation before any HTTP call was
+			// made (e.g. missing acting_team_member): the request can
+			// never succeed as-is, so mark it non-retriable like the
+			// other validation errors in this function.
+			return nil, status, errorsutils.NewWrappedError(err, models.ErrInvalidRequest)
+		}
 		return nil, status, err
 	}
 	// A 2xx with no ID is a Routable contract violation; surface it

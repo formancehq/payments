@@ -3,6 +3,7 @@
 package components
 
 type V3GetPaymentInitiationResponse struct {
+	// A payment Formance asked a connector to execute
 	Data V3PaymentInitiation `json:"data"`
 }
 

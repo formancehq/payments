@@ -35,7 +35,8 @@ type V3OrderAdjustment struct {
 	// Cumulative fee at this observation, at `feeAsset` precision.
 	Fee *big.Int `json:"fee,omitempty"`
 	// Currency the fee is denominated in, in `SYMBOL/precision` form.
-	FeeAsset *string           `json:"feeAsset,omitempty"`
+	FeeAsset *string `json:"feeAsset,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
 	Metadata map[string]string `json:"metadata,omitempty"`
 	// Untransformed PSP response payload that produced this adjustment. Retained for debugging and replay.
 	Raw map[string]any `json:"raw,omitempty"`

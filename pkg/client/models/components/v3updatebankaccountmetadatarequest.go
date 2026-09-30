@@ -3,6 +3,7 @@
 package components
 
 type V3UpdateBankAccountMetadataRequest struct {
+	// Arbitrary key/value pairs attached to the resource
 	Metadata map[string]string `json:"metadata"`
 }
 

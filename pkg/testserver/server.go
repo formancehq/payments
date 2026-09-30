@@ -29,6 +29,11 @@ import (
 
 var defaultHttpClientTimeout = 3 * time.Second
 
+const (
+	defaultPostgresMaxIdleConns = 10
+	defaultPostgresMaxOpenConns = 10
+)
+
 type T interface {
 	require.TestingT
 	Cleanup(func())
@@ -220,6 +225,7 @@ func New(t T, configuration Configuration) *Server {
 	if configuration.HttpClientTimeout == 0 {
 		configuration.HttpClientTimeout = defaultHttpClientTimeout
 	}
+	configuration.PostgresConfiguration = withDefaultPoolSettings(configuration.PostgresConfiguration)
 
 	serverID := uuid.NewString()[:8]
 	worker := NewWorker(t, configuration, serverID)
@@ -242,4 +248,14 @@ func New(t T, configuration Configuration) *Server {
 	})
 
 	return srv
+}
+
+func withDefaultPoolSettings(opts connect.ConnectionOptions) connect.ConnectionOptions {
+	if opts.MaxOpenConns == 0 {
+		opts.MaxOpenConns = defaultPostgresMaxOpenConns
+	}
+	if opts.MaxIdleConns == 0 {
+		opts.MaxIdleConns = min(defaultPostgresMaxIdleConns, opts.MaxOpenConns)
+	}
+	return opts
 }

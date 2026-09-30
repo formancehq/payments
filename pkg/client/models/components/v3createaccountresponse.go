@@ -3,6 +3,7 @@
 package components
 
 type V3CreateAccountResponse struct {
+	// An account held at a payment provider, surfaced through a connector
 	Data V3Account `json:"data"`
 }
 

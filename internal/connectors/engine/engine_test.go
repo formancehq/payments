@@ -20,20 +20,28 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
 )
-
-// throttlePlugin satisfies both models.Plugin (via embedding) and
-// models.PluginWithPayoutThrottle so tests can exercise the payout-queue path.
-type throttlePlugin struct {
-	models.Plugin
-}
-
-func (throttlePlugin) PayoutsPerSecond() float64 { return 5.0 }
 
 func TestEngine(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Engine Suite")
+}
+
+// Counterpart to TestTaskQueueFormats in the workflow package: payout workflows
+// re-route their non-PSP activities to a default queue name they build
+// themselves, and it has to be the one this package's workers listen on.
+func TestTaskQueueFormats(t *testing.T) {
+	if got, want := engine.GetDefaultTaskQueue("somestack"), "somestack-default"; got != want {
+		t.Fatalf("GetDefaultTaskQueue() = %q, want %q (must match workflow.getDefaultTaskQueue)", got, want)
+	}
+
+	connID := models.ConnectorID{Reference: uuid.New(), Provider: "someprovider"}
+	want := "somestack-" + connID.String() + "-payout"
+	if got := engine.GetPayoutTaskQueue("somestack", connID); got != want {
+		t.Fatalf("GetPayoutTaskQueue() = %q, want %q (must match the workflow tests' payoutTaskQueue)", got, want)
+	}
 }
 
 func WithWorkflowOptions(idPrefix, taskQueue string) gomock.Matcher {
@@ -1198,6 +1206,24 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(expectedErr))
 		})
 
+		It("should translate a storage not found workflow failure into a not found error", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("no plugin"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", defaultTaskQueue),
+				workflow.RunCreateTransfer,
+				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
+			).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(temporal.NewNonRetryableApplicationError(
+				`account "test-account": not found`,
+				activities.ErrTypeStorageNotFound,
+				storage.ErrNotFound,
+			))
+
+			_, err := eng.CreateTransfer(ctx, piID, 0, true)
+			Expect(err).To(MatchError(engine.ErrNotFound))
+			Expect(err.Error()).To(Equal(`account "test-account": not found`))
+		})
+
 		It("uses default task queue when connector plugin is not found", func(ctx SpecContext) {
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("not found"))
@@ -1225,7 +1251,7 @@ var _ = Describe("Engine Tests", func() {
 		It("uses payout task queue when plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
 			payoutQueue := engine.GetPayoutTaskQueue(stackName, connID)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
-			manager.EXPECT().Get(connID).Return(throttlePlugin{}, nil)
+			manager.EXPECT().Get(connID).Return(&ratePlugin{rate: 5}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-transfer", payoutQueue),
 				workflow.RunCreateTransfer,
 				gomock.AssignableToTypeOf(workflow.CreateTransfer{}),
@@ -1250,6 +1276,54 @@ var _ = Describe("Engine Tests", func() {
 			})
 
 			_, err := eng.CreateTransfer(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("creating a payout", func() {
+		var (
+			connID models.ConnectorID
+			piID   models.PaymentInitiationID
+		)
+		BeforeEach(func() {
+			connID = models.ConnectorID{Reference: uuid.New(), Provider: "dummypay"}
+			piID = models.PaymentInitiationID{Reference: "ref", ConnectorID: connID}
+		})
+
+		It("uses default task queue when connector plugin is not found", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(nil, fmt.Errorf("not found"))
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", defaultTaskQueue),
+				workflow.RunCreatePayout,
+				gomock.AssignableToTypeOf(workflow.CreatePayout{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreatePayout(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("uses default task queue when plugin does not implement PluginWithPayoutThrottle", func(ctx SpecContext) {
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(models.NewMockPlugin(gomock.NewController(GinkgoT())), nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", defaultTaskQueue),
+				workflow.RunCreatePayout,
+				gomock.AssignableToTypeOf(workflow.CreatePayout{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreatePayout(ctx, piID, 0, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("uses payout task queue when plugin implements PluginWithPayoutThrottle", func(ctx SpecContext) {
+			payoutQueue := engine.GetPayoutTaskQueue(stackName, connID)
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			manager.EXPECT().Get(connID).Return(&ratePlugin{rate: 5}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("create-payout", payoutQueue),
+				workflow.RunCreatePayout,
+				gomock.AssignableToTypeOf(workflow.CreatePayout{}),
+			).Return(nil, nil)
+
+			_, err := eng.CreatePayout(ctx, piID, 0, false)
 			Expect(err).To(BeNil())
 		})
 	})

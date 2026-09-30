@@ -948,6 +948,66 @@ func TestPaymentInitiationIDsFromPaymentID(t *testing.T) {
 	})
 }
 
+func TestPaymentInitiationsListFromPaymentID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
+	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations())
+	upsertPaymentInitiationRelatedPayments(t, ctx, store)
+
+	byID := func(pis []models.PaymentInitiation) map[models.PaymentInitiationID]models.PaymentInitiation {
+		res := make(map[models.PaymentInitiationID]models.PaymentInitiation, len(pis))
+		for _, pi := range pis {
+			res[pi.ID] = pi
+		}
+		return res
+	}
+
+	t.Run("unknown payment id", func(t *testing.T) {
+		pis, err := store.PaymentInitiationsListFromPaymentID(ctx, models.PaymentID{})
+		require.NoError(t, err)
+		require.Len(t, pis, 0)
+	})
+
+	t.Run("known payment id returns the full payment initiations", func(t *testing.T) {
+		pis, err := store.PaymentInitiationsListFromPaymentID(ctx, defaultPayments()[0].ID)
+		require.NoError(t, err)
+		require.Len(t, pis, 2)
+
+		indexed := byID(pis)
+		require.Contains(t, indexed, piID1)
+		require.Contains(t, indexed, piID2)
+
+		// The amount, asset and metadata are what the caller needs to build a
+		// complete payment initiation adjustment, so assert them explicitly.
+		require.Equal(t, big.NewInt(100), indexed[piID1].Amount)
+		require.Equal(t, "EUR/2", indexed[piID1].Asset)
+		require.Empty(t, indexed[piID1].Metadata)
+
+		require.Equal(t, big.NewInt(150), indexed[piID2].Amount)
+		require.Equal(t, "USD/2", indexed[piID2].Asset)
+		require.Equal(t, map[string]string{"foo": "bar"}, indexed[piID2].Metadata)
+	})
+
+	t.Run("deleted payment initiation drops out of the list", func(t *testing.T) {
+		// The related payments foreign key cascades on delete, so a related row
+		// can never outlive its payment initiation: the join simply returns one
+		// row fewer rather than pointing at something missing.
+		require.NoError(t, store.PaymentInitiationsDelete(ctx, piID2))
+
+		pis, err := store.PaymentInitiationsListFromPaymentID(ctx, defaultPayments()[0].ID)
+		require.NoError(t, err)
+		require.Len(t, pis, 1)
+		require.Equal(t, piID1, pis[0].ID)
+	})
+}
+
 func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 	t.Parallel()
 

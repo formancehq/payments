@@ -3,6 +3,7 @@
 package components
 
 type V3GetPoolResponse struct {
+	// A named group of accounts whose balances are aggregated together
 	Data V3Pool `json:"data"`
 }
 

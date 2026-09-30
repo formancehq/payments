@@ -2,6 +2,7 @@
 
 package components
 
+// V3PaymentServiceUserLinkAttemptsCursorResponseCursor - Paginated cursor wrapping the user's link attempts
 type V3PaymentServiceUserLinkAttemptsCursorResponseCursor struct {
 	PageSize int64                             `json:"pageSize"`
 	HasMore  bool                              `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3PaymentServiceUserLinkAttemptsCursorResponseCursor) GetData() []V3Pay
 }
 
 type V3PaymentServiceUserLinkAttemptsCursorResponse struct {
+	// Paginated cursor wrapping the user's link attempts
 	Cursor V3PaymentServiceUserLinkAttemptsCursorResponseCursor `json:"cursor"`
 }
 

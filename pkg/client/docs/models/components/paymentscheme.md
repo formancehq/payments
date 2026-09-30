@@ -1,5 +1,7 @@
 # PaymentScheme
 
+Payment scheme or rail a payment travels over
+
 
 ## Values
 

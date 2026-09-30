@@ -4,6 +4,7 @@ package components
 
 // PaymentResponse - OK
 type PaymentResponse struct {
+	// A payment observed at a provider and surfaced through a connector
 	Data Payment `json:"data"`
 }
 

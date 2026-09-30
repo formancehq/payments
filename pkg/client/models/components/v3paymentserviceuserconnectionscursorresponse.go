@@ -2,6 +2,7 @@
 
 package components
 
+// V3PaymentServiceUserConnectionsCursorResponseCursor - Paginated cursor wrapping the user's open banking connections
 type V3PaymentServiceUserConnectionsCursorResponseCursor struct {
 	PageSize int64                            `json:"pageSize"`
 	HasMore  bool                             `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3PaymentServiceUserConnectionsCursorResponseCursor) GetData() []V3Paym
 }
 
 type V3PaymentServiceUserConnectionsCursorResponse struct {
+	// Paginated cursor wrapping the user's open banking connections
 	Cursor V3PaymentServiceUserConnectionsCursorResponseCursor `json:"cursor"`
 }
 

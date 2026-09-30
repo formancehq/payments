@@ -7,7 +7,7 @@ on:
       - releases/*
       - release/*
   pull_request:
-    types: [ assigned, opened, synchronize, reopened, labeled ]
+    types: [ assigned, opened, synchronize, reopened, labeled, edited ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -16,61 +16,31 @@ concurrency:
 jobs:
   PR:
     if: github.event_name == 'pull_request'
-    uses: formancehq/ci/.github/workflows/go-pr.yml@main
+    uses: formancehq/ci/.github/workflows/go-pr.yml@v1
     permissions:
       pull-requests: read
       statuses: write
 
   Dirty:
-    runs-on: namespace-profile-linux-amd64-4vcpu
-    steps:
-      - uses: namespacelabs/nscloud-checkout-action@v9
-        with:
-          fetch-depth: 0
-          dissociate: true
-
-      - uses: formancehq/ci/actions/setup-nix@main
-        with:
-          nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
-
-      - run: nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes" develop --impure --command just pre-commit
-        env:
-          SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
-
-      - name: Get changed files
-        shell: bash
-        run: |
-          hasChanged=$(git status --porcelain)
-          if (( $(echo ${#hasChanged}) != 0 )); then
-            git status
-            echo "There are changes in the repository"
-            exit 1
-          fi
+    uses: formancehq/ci/.github/workflows/go-dirty.yml@v1
+    with:
+      nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
+    secrets:
+      SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
 
   Tests:
-    needs: [Dirty]
-    runs-on: namespace-profile-linux-amd64-4vcpu
-    steps:
-      - uses: namespacelabs/nscloud-checkout-action@v9
-        with:
-          fetch-depth: 0
-          dissociate: true
-
-      - uses: formancehq/ci/actions/setup-nix@main
-        with:
-          nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
-
-      - run: nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes" develop --impure --command just tests
-
-      - uses: codecov/codecov-action@v7.0.0
-        with:
-          files: ./coverage.txt
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    uses: formancehq/ci/.github/workflows/go-test.yml@v1
+    with:
+      runner-profile: namespace-profile-linux-amd64-4vcpu
+      nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
+      enable-codecov: true
+      coverage-files: ./coverage.txt
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   GoReleaser:
     needs: [Dirty]
-    uses: formancehq/ci/.github/workflows/go-build.yml@main
+    uses: formancehq/ci/.github/workflows/go-build.yml@v1
     with:
       build-condition: main-and-label
       build-label: build-images
@@ -94,7 +64,7 @@ jobs:
       - GoReleaser
       - Tests
     steps:
-      - uses: formancehq/ci/actions/deploy-staging@main
+      - uses: formancehq/ci/actions/deploy-staging@v1
         with:
           component: payments
           tag: ${{ github.sha }}

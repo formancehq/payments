@@ -8,13 +8,20 @@ import (
 )
 
 type V3PaymentServiceUserLinkAttempt struct {
-	ID                string                                   `json:"id"`
-	PsuID             string                                   `json:"psuID"`
-	ConnectorID       string                                   `json:"connectorID"`
-	CreatedAt         time.Time                                `json:"createdAt"`
-	Status            V3OpenBankingConnectionAttemptStatusEnum `json:"status"`
-	ClientRedirectURL string                                   `json:"clientRedirectURL"`
-	Error             *string                                  `json:"error,omitempty"`
+	// Unique identifier of the link attempt
+	ID string `json:"id"`
+	// Identifier of the payment service user the attempt belongs to
+	PsuID string `json:"psuID"`
+	// Identifier of the connector the user is linking to
+	ConnectorID string `json:"connectorID"`
+	// When the attempt was started
+	CreatedAt time.Time `json:"createdAt"`
+	// Where a link attempt stands, from pending through to completed on success or exited when the user abandoned the flow or the provider reported an error
+	Status V3OpenBankingConnectionAttemptStatusEnum `json:"status"`
+	// URL the user is sent back to once the provider's flow finishes
+	ClientRedirectURL string `json:"clientRedirectURL"`
+	// Why the attempt exited, absent when it completed
+	Error *string `json:"error,omitempty"`
 }
 
 func (v V3PaymentServiceUserLinkAttempt) MarshalJSON() ([]byte, error) {

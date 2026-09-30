@@ -1,5 +1,7 @@
 # V3PaymentServiceUserConnectionsCursorResponseCursor
 
+Paginated cursor wrapping the user's open banking connections
+
 
 ## Fields
 

@@ -51,7 +51,11 @@ func newStore(t *testing.T) Storage {
 
 	pgServer := srv.NewDatabase(t)
 
-	db, err := connect.OpenSQLDB(ctx, pgServer.ConnectionOptions())
+	opts := pgServer.ConnectionOptions()
+	opts.MaxOpenConns = 5
+	opts.MaxIdleConns = 5
+
+	db, err := connect.OpenSQLDB(ctx, opts)
 	require.NoError(t, err)
 
 	key := make([]byte, 64)

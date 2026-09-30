@@ -9,18 +9,30 @@ import (
 )
 
 type V3CreatePaymentRequest struct {
-	Reference            string                             `json:"reference"`
-	ConnectorID          string                             `json:"connectorID"`
-	CreatedAt            time.Time                          `json:"createdAt"`
-	Type                 V3PaymentTypeEnum                  `json:"type"`
-	InitialAmount        *big.Int                           `json:"initialAmount"`
-	Amount               *big.Int                           `json:"amount"`
-	Asset                string                             `json:"asset"`
-	Scheme               string                             `json:"scheme"`
-	SourceAccountID      *string                            `json:"sourceAccountID,omitempty"`
-	DestinationAccountID *string                            `json:"destinationAccountID,omitempty"`
-	Metadata             map[string]string                  `json:"metadata,omitempty"`
-	Adjustments          []V3CreatePaymentAdjustmentRequest `json:"adjustments,omitempty"`
+	// Identifier the payment carries at the provider
+	Reference string `json:"reference"`
+	// Identifier of the connector the payment belongs to
+	ConnectorID string `json:"connectorID"`
+	// When the payment was created at the provider
+	CreatedAt time.Time `json:"createdAt"`
+	// Direction of a payment
+	Type V3PaymentTypeEnum `json:"type"`
+	// Amount the payment was created with, before any adjustment
+	InitialAmount *big.Int `json:"initialAmount"`
+	// Current amount of the payment, in the asset's smallest unit
+	Amount *big.Int `json:"amount"`
+	// Asset the payment is denominated in
+	Asset string `json:"asset"`
+	// Payment scheme or rail the payment travels over
+	Scheme string `json:"scheme"`
+	// Identifier of the account the funds leave
+	SourceAccountID *string `json:"sourceAccountID,omitempty"`
+	// Identifier of the account the funds reach
+	DestinationAccountID *string `json:"destinationAccountID,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
+	// Status and amount changes to record alongside the payment
+	Adjustments []V3CreatePaymentAdjustmentRequest `json:"adjustments,omitempty"`
 }
 
 func (v V3CreatePaymentRequest) MarshalJSON() ([]byte, error) {

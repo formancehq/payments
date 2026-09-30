@@ -4,6 +4,7 @@ package components
 
 // PoolBalancesResponse - OK
 type PoolBalancesResponse struct {
+	// Aggregated balances across a pool's accounts
 	Data PoolBalances `json:"data"`
 }
 

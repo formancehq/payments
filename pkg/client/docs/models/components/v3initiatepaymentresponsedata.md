@@ -1,5 +1,7 @@
 # V3InitiatePaymentResponseData
 
+The task tracking the initiation, which completes asynchronously
+
 
 ## Fields
 

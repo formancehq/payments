@@ -2,6 +2,7 @@
 
 package components
 
+// V3AccountsCursorResponseCursor - Paginated cursor wrapping the list of accounts
 type V3AccountsCursorResponseCursor struct {
 	PageSize int64       `json:"pageSize"`
 	HasMore  bool        `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3AccountsCursorResponseCursor) GetData() []V3Account {
 }
 
 type V3AccountsCursorResponse struct {
+	// Paginated cursor wrapping the list of accounts
 	Cursor V3AccountsCursorResponseCursor `json:"cursor"`
 }
 

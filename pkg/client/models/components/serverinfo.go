@@ -4,8 +4,10 @@ package components
 
 // ServerInfo - Server information
 type ServerInfo struct {
+	// Version of the payments service
 	Version *string `json:"version,omitempty"`
-	Debug   *bool   `json:"debug,omitempty"`
+	// Whether the service is running in debug mode
+	Debug *bool `json:"debug,omitempty"`
 }
 
 func (o *ServerInfo) GetVersion() *string {

@@ -2,6 +2,7 @@
 
 package components
 
+// V3OrdersCursorResponseCursor - Paginated cursor wrapping the list of orders
 type V3OrdersCursorResponseCursor struct {
 	PageSize int64     `json:"pageSize"`
 	HasMore  bool      `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3OrdersCursorResponseCursor) GetData() []V3Order {
 }
 
 type V3OrdersCursorResponse struct {
+	// Paginated cursor wrapping the list of orders
 	Cursor V3OrdersCursorResponseCursor `json:"cursor"`
 }
 

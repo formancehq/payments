@@ -47,10 +47,9 @@ jobs:
       - uses: 'namespacelabs/nscloud-checkout-action@v9'
         with:
           fetch-depth: 0
-      - name: Setup Env
-        uses: ./.github/actions/default
+      - uses: formancehq/ci/actions/setup-nix@v1
         with:
-          token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+          nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
       - name: Run contract tests
         run: >
           nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"

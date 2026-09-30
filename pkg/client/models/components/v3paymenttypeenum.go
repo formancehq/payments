@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// V3PaymentTypeEnum - Direction of a payment
 type V3PaymentTypeEnum string
 
 const (

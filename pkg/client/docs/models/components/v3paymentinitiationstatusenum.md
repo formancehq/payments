@@ -1,5 +1,7 @@
 # V3PaymentInitiationStatusEnum
 
+Where a payment initiation stands in its lifecycle
+
 
 ## Values
 
@@ -11,6 +13,7 @@
 | `V3PaymentInitiationStatusEnumProcessing`             | PROCESSING                                            |
 | `V3PaymentInitiationStatusEnumProcessed`              | PROCESSED                                             |
 | `V3PaymentInitiationStatusEnumFailed`                 | FAILED                                                |
+| `V3PaymentInitiationStatusEnumNotInitiated`           | NOT_INITIATED                                         |
 | `V3PaymentInitiationStatusEnumRejected`               | REJECTED                                              |
 | `V3PaymentInitiationStatusEnumReverseProcessing`      | REVERSE_PROCESSING                                    |
 | `V3PaymentInitiationStatusEnumReverseFailed`          | REVERSE_FAILED                                        |

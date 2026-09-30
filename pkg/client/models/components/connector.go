@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// Connector - The payment provider behind a connector
 type Connector string
 
 const (

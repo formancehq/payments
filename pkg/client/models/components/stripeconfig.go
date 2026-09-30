@@ -7,12 +7,15 @@ import (
 )
 
 type StripeConfig struct {
-	Name     string  `json:"name"`
+	// Human-readable name identifying this connector instance
+	Name string `json:"name"`
+	// Identifies the payment provider this configuration targets
 	Provider *string `default:"Stripe" json:"provider"`
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe API.
 	//
 	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
-	APIKey        string  `json:"apiKey"`
+	// API key issued by Stripe, used to authenticate the connector's requests
+	APIKey string `json:"apiKey"`
 	// Number of BalanceTransaction to fetch at each polling interval.
 	//
 	PageSize *int64 `default:"100" json:"pageSize"`

@@ -10,6 +10,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 )
 
 // newTestServer spins up a Routable-shaped httptest server that asserts the
@@ -25,6 +28,19 @@ func newTestServer(t *testing.T, handler http.HandlerFunc) (Client, *httptest.Se
 		handler(w, r)
 	}))
 	return New("routable-test", "test-key", srv.URL), srv
+}
+
+func validPayPalPayableRequest() CreatePayableRequest {
+	return CreatePayableRequest{
+		Type:                "paypal",
+		DeliveryMethod:      "paypal_direct",
+		PayToCompany:        "co_1",
+		PayToPaymentMethod:  "pm_1",
+		WithdrawFromAccount: "acc_1",
+		Amount:              "10.00",
+		LineItems:           []PayableLineItem{{Amount: "10.00", UnitPrice: "10.00", Description: "test"}},
+		ActingTeamMember:    "tm_1",
+	}
 }
 
 func TestListAccounts(t *testing.T) {
@@ -64,7 +80,7 @@ func TestGetPayableNotFound(t *testing.T) {
 	}
 }
 
-func TestCreatePayableSendsIdempotencyKey(t *testing.T) {
+func TestCreatePayableForwardsRequest(t *testing.T) {
 	var captured struct {
 		Key  string
 		Body CreatePayableRequest
@@ -81,6 +97,7 @@ func TestCreatePayableSendsIdempotencyKey(t *testing.T) {
 		Type:                "ach",
 		DeliveryMethod:      "ach_standard",
 		PayToCompany:        "co_1",
+		PayToPaymentMethod:  "pm_1",
 		WithdrawFromAccount: "acc_1",
 		Amount:              "10.00",
 		CurrencyCode:        "USD",
@@ -103,6 +120,9 @@ func TestCreatePayableSendsIdempotencyKey(t *testing.T) {
 	}
 	if captured.Body.PayToCompany != "co_1" {
 		t.Fatalf("body not forwarded: %+v", captured.Body)
+	}
+	if captured.Body.PayToPaymentMethod != "pm_1" {
+		t.Fatalf("payment method not forwarded: %+v", captured.Body)
 	}
 }
 
@@ -211,6 +231,53 @@ func TestErrorSuffixOnlyWhenAPIBodyPresent(t *testing.T) {
 			t.Fatalf("error should not include placeholder suffix, got %q", err.Error())
 		}
 	})
+}
+
+func TestAPIErrorIsThePersistableCause(t *testing.T) {
+	const body = `{"title":"Invalid request","status":400,"request_id":"req_42","errors":[{"path":"pay_to_payment_method","detail":"is required"}]}`
+	c, srv := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = io.WriteString(w, body)
+	})
+	defer srv.Close()
+
+	_, _, err := c.CreatePayable(context.Background(), validPayPalPayableRequest())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	cause := errorsutils.Cause(err)
+	if !strings.Contains(cause.Error(), "pay_to_payment_method: is required") {
+		t.Fatalf("persisted cause lost field feedback: %q", cause.Error())
+	}
+	if !strings.Contains(cause.Error(), "request_id=req_42") {
+		t.Fatalf("persisted cause lost request ID: %q", cause.Error())
+	}
+	if !strings.Contains(cause.Error(), "raw_response="+body) {
+		t.Fatalf("persisted cause lost raw response: %q", cause.Error())
+	}
+	if !errors.Is(err, httpwrapper.ErrStatusCodeClientError) {
+		t.Fatalf("error lost HTTP classification: %v", err)
+	}
+}
+
+func TestAPIErrorPreservesRawWhenKnownFieldShapeChanges(t *testing.T) {
+	const body = `{"title":"Invalid request","status":"400","request_id":"req_42","provider_extension":{"code":"new_shape"}}`
+	c, srv := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = io.WriteString(w, body)
+	})
+	defer srv.Close()
+
+	_, _, err := c.CreatePayable(context.Background(), validPayPalPayableRequest())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if cause := errorsutils.Cause(err); !strings.Contains(cause.Error(), "raw_response="+body) {
+		t.Fatalf("persisted cause lost raw response: %q", cause.Error())
+	}
+	if !errors.Is(err, httpwrapper.ErrStatusCodeClientError) {
+		t.Fatalf("error lost HTTP classification: %v", err)
+	}
 }
 
 func TestListPayablesPassesStatusChangedAtGte(t *testing.T) {

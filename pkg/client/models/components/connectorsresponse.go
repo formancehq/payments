@@ -3,6 +3,7 @@
 package components
 
 type ConnectorsResponseData struct {
+	// The payment provider behind a connector
 	Provider    Connector `json:"provider"`
 	Name        string    `json:"name"`
 	ConnectorID string    `json:"connectorID"`
@@ -39,6 +40,7 @@ func (o *ConnectorsResponseData) GetEnabled() *bool {
 
 // ConnectorsResponse - OK
 type ConnectorsResponse struct {
+	// The connectors installed on this stack
 	Data []ConnectorsResponseData `json:"data"`
 }
 

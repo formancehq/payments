@@ -7,14 +7,22 @@ import (
 	"time"
 )
 
+// V3PaymentServiceUser - An end user on whose behalf payments and open banking connections are made
 type V3PaymentServiceUser struct {
-	ID             string            `json:"id"`
-	Name           string            `json:"name"`
-	CreatedAt      time.Time         `json:"createdAt"`
+	// Unique identifier of the payment service user
+	ID string `json:"id"`
+	// Full name of the payment service user
+	Name string `json:"name"`
+	// When the user was registered
+	CreatedAt time.Time `json:"createdAt"`
+	// How to reach a payment service user
 	ContactDetails *V3ContactDetails `json:"contactDetails,omitempty"`
-	Address        *V3Address        `json:"address,omitempty"`
-	BankAccountIDs []string          `json:"bankAccountIDs,omitempty"`
-	Metadata       map[string]string `json:"metadata,omitempty"`
+	// A postal address
+	Address *V3Address `json:"address,omitempty"`
+	// Bank accounts associated with the user
+	BankAccountIDs []string `json:"bankAccountIDs,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (v V3PaymentServiceUser) MarshalJSON() ([]byte, error) {

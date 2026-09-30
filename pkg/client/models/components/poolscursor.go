@@ -2,12 +2,17 @@
 
 package components
 
+// PoolsCursorCursor - Paginated cursor wrapping the list of pools
 type PoolsCursorCursor struct {
-	PageSize int64   `json:"pageSize"`
-	HasMore  bool    `json:"hasMore"`
+	// Number of items requested per page
+	PageSize int64 `json:"pageSize"`
+	// Whether further pages are available
+	HasMore bool `json:"hasMore"`
+	// Cursor for the previous page, absent on the first page
 	Previous *string `json:"previous,omitempty"`
-	Next     *string `json:"next,omitempty"`
-	Data     []Pool  `json:"data"`
+	// Cursor for the next page, absent on the last page
+	Next *string `json:"next,omitempty"`
+	Data []Pool  `json:"data"`
 }
 
 func (o *PoolsCursorCursor) GetPageSize() int64 {
@@ -47,6 +52,7 @@ func (o *PoolsCursorCursor) GetData() []Pool {
 
 // PoolsCursor - OK
 type PoolsCursor struct {
+	// Paginated cursor wrapping the list of pools
 	Cursor PoolsCursorCursor `json:"cursor"`
 }
 

@@ -3,6 +3,7 @@
 package components
 
 type V3ConnectorCapabilityResponse struct {
+	// Operations this connector supports
 	Data []V3Capability `json:"data"`
 }
 

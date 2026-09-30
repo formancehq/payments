@@ -30,6 +30,7 @@ func (o *V3ConnectorConfigsResponseData) GetDefaultValue() *string {
 }
 
 type V3ConnectorConfigsResponse struct {
+	// Configuration schema of every available connector, keyed by provider
 	Data map[string]map[string]V3ConnectorConfigsResponseData `json:"data"`
 }
 

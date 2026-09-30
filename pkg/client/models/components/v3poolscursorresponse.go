@@ -2,6 +2,7 @@
 
 package components
 
+// V3PoolsCursorResponseCursor - Paginated cursor wrapping the list of pools
 type V3PoolsCursorResponseCursor struct {
 	PageSize int64    `json:"pageSize"`
 	HasMore  bool     `json:"hasMore"`
@@ -46,6 +47,7 @@ func (o *V3PoolsCursorResponseCursor) GetData() []V3Pool {
 }
 
 type V3PoolsCursorResponse struct {
+	// Paginated cursor wrapping the list of pools
 	Cursor V3PoolsCursorResponseCursor `json:"cursor"`
 }
 

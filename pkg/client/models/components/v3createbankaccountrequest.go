@@ -3,12 +3,18 @@
 package components
 
 type V3CreateBankAccountRequest struct {
-	Name          string            `json:"name"`
-	AccountNumber *string           `json:"accountNumber,omitempty"`
-	Iban          *string           `json:"iban,omitempty"`
-	SwiftBicCode  *string           `json:"swiftBicCode,omitempty"`
-	Country       *string           `json:"country,omitempty"`
-	Metadata      map[string]string `json:"metadata,omitempty"`
+	// Human-readable name for the bank account
+	Name string `json:"name"`
+	// Domestic account number. Supply this or an IBAN
+	AccountNumber *string `json:"accountNumber,omitempty"`
+	// International bank account number. Supply this or an account number
+	Iban *string `json:"iban,omitempty"`
+	// SWIFT/BIC code identifying the bank
+	SwiftBicCode *string `json:"swiftBicCode,omitempty"`
+	// Country the account is held in, as an ISO 3166-1 alpha-2 code
+	Country *string `json:"country,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (o *V3CreateBankAccountRequest) GetName() string {

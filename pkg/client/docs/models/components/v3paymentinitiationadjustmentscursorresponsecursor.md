@@ -1,5 +1,7 @@
 # V3PaymentInitiationAdjustmentsCursorResponseCursor
 
+Paginated cursor wrapping the initiation's adjustments
+
 
 ## Fields
 

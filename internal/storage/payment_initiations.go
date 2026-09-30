@@ -468,6 +468,26 @@ func (s *store) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id mo
 	return ids, nil
 }
 
+func (s *store) PaymentInitiationsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiation, error) {
+	var pis []paymentInitiation
+	err := s.db.NewSelect().
+		Model(&pis).
+		Join(`JOIN payment_initiation_related_payments AS rp
+ON (rp.payment_initiation_id = payment_initiation.id)`).
+		Where("rp.payment_id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get payment initiations from payment id", err)
+	}
+
+	res := make([]models.PaymentInitiation, 0, len(pis))
+	for _, pi := range pis {
+		res = append(res, toPaymentInitiationModels(pi))
+	}
+
+	return res, nil
+}
+
 type PaymentInitiationRelatedPaymentsQuery struct{}
 
 type ListPaymentInitiationRelatedPaymentsQuery paginate.OffsetPaginatedQuery[paginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]]

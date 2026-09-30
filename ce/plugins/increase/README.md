@@ -242,7 +242,7 @@ The connector includes comprehensive tests covering:
 
 To run tests:
 ```bash
-cd internal/connectors/plugins/public/increase
+cd ce/plugins/increase
 ginkgo -cover
 ```
 

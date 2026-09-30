@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// TaskStatus - Where a task stands, from pending or active through to stopped, terminated or failed
 type TaskStatus string
 
 const (

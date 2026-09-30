@@ -14,6 +14,7 @@ import (
 
 const (
 	ErrTypeStorage         = "STORAGE"
+	ErrTypeStorageNotFound = "STORAGE_NOT_FOUND"
 	ErrTypeDefault         = "DEFAULT"
 	ErrTypeInvalidArgument = "INVALID_ARGUMENT"
 	ErrTypeRateLimited     = "RATE_LIMITED"
@@ -82,8 +83,9 @@ func temporalStorageError(err error) error {
 	}
 
 	switch {
-	case errors.Is(err, storage.ErrNotFound),
-		errors.Is(err, storage.ErrDuplicateKeyValue),
+	case errors.Is(err, storage.ErrNotFound):
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeStorageNotFound, err)
+	case errors.Is(err, storage.ErrDuplicateKeyValue),
 		errors.Is(err, storage.ErrValidation),
 		errors.Is(err, storage.ErrForeignKeyViolation):
 		// Do not retry these errors

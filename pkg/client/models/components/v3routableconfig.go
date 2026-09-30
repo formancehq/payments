@@ -12,9 +12,10 @@ type V3RoutableConfig struct {
 	Endpoint         *string `json:"endpoint,omitempty"`
 	Name             string  `json:"name"`
 	// Deprecated: From v3.1, this parameter will be ignored.
-	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `default:"30m" json:"pollingPeriod"`
-	Provider      *string `default:"Routable" json:"provider"`
+	PageSize         *int64  `default:"25" json:"pageSize"`
+	PayoutsPerMinute *int64  `json:"payoutsPerMinute,omitempty"`
+	PollingPeriod    *string `default:"30m" json:"pollingPeriod"`
+	Provider         *string `default:"Routable" json:"provider"`
 }
 
 func (v V3RoutableConfig) MarshalJSON() ([]byte, error) {
@@ -61,6 +62,13 @@ func (o *V3RoutableConfig) GetPageSize() *int64 {
 		return nil
 	}
 	return o.PageSize
+}
+
+func (o *V3RoutableConfig) GetPayoutsPerMinute() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PayoutsPerMinute
 }
 
 func (o *V3RoutableConfig) GetPollingPeriod() *string {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 )
 
+// PaymentStatus - Where a payment stands in its lifecycle
 type PaymentStatus string
 
 const (

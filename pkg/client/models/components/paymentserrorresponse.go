@@ -4,8 +4,10 @@ package components
 
 // PaymentsErrorResponse - Error
 type PaymentsErrorResponse struct {
-	ErrorCode    PaymentsErrorsEnum `json:"errorCode"`
-	ErrorMessage string             `json:"errorMessage"`
+	// Machine-readable error code identifying the failure
+	ErrorCode PaymentsErrorsEnum `json:"errorCode"`
+	// Human-readable description of the error
+	ErrorMessage string `json:"errorMessage"`
 }
 
 func (o *PaymentsErrorResponse) GetErrorCode() PaymentsErrorsEnum {

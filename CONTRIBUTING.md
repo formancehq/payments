@@ -151,7 +151,7 @@ $ just bootstrap-plugin dummypay2
 
 We want the DummyPay connector to be capable of fetching various data types from the DummyPay directory.
 
-Open the `capabilities.go` file in the `internal/connectors/plugins/public/dummypay2` directory to outline the connector capabilities:
+Open the `capabilities.go` file in the `ce/plugins/dummypay2` directory to outline the connector capabilities:
 
 ```go
 package dummypay2
@@ -475,7 +475,7 @@ First, let's define what an account will look like for our example. Suppose Dumm
 
 Let's create a DummyPay client which will read and unmarshal the json file, and convert it to a data structure that the payments service knows how to use.
 
-A `client` package should have been generated: `internal/connectors/plugins/public/dummypay2/client`
+A `client` package should have been generated: `ce/plugins/dummypay2/client`
 
 Within the `client` package, open the file called `account.go` and define the struct that matches the structure of the JSON data:
 
@@ -792,7 +792,7 @@ You'll then have access to all [API endpoints](https://docs.formance.com/api-ref
 
 The [Connector installation endpoint](https://docs.formance.com/api-reference/paymentsv3/install-a-connector) is particularly helpful for testing the `FetchAccounts` and `FetchBalances` methods which are triggered periodically once a connector is installed.
 
-Although the DummyPay connector is not useful outside of our integration test use-case, to demonstrate what installing a DummyPay connector would look like, let's send a POST request with the configuration payload as defined in [config.go](https://github.com/formancehq/payments/blob/main/internal/connectors/plugins/public/dummypay/config.go).
+Although the DummyPay connector is not useful outside of our integration test use-case, to demonstrate what installing a DummyPay connector would look like, let's send a POST request with the configuration payload as defined in [config.go](https://github.com/formancehq/payments/blob/main/ce/plugins/dummypay/config.go).
 
 ```sh
 $ curl -D - \

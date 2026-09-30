@@ -47,8 +47,9 @@ type V3Conversion struct {
 	// Formance account ID of the wallet the source asset was debited from.
 	SourceAccountID *string `json:"sourceAccountID,omitempty"`
 	// Formance account ID of the wallet the destination asset was credited to.
-	DestinationAccountID *string           `json:"destinationAccountID,omitempty"`
-	Metadata             map[string]string `json:"metadata,omitempty"`
+	DestinationAccountID *string `json:"destinationAccountID,omitempty"`
+	// Arbitrary key/value pairs attached to the resource
+	Metadata map[string]string `json:"metadata,omitempty"`
 	// Human-readable error from the PSP when `status` is `FAILED`. Null otherwise.
 	Error *string `json:"error,omitempty"`
 }
