@@ -1,0 +1,7 @@
+/bindings/wit_exports/
+/build/
+/dist/
+/main.go
+!/entrypoints/
+!/entrypoints/payments/
+!/entrypoints/payments/*.go

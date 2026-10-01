@@ -20,3 +20,6 @@ coverage.txt
 .direnv/
 worktrees/
 tmp/
+/.claude-flow/
+/pkg/client/models/components/.claude-flow/
+/plugins/fctl/.claude-flow/
