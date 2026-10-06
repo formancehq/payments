@@ -14,7 +14,15 @@ type Balance struct {
 	AccountReference string    `json:"accountReference"`
 	Asset            string    `json:"asset"`
 	AmountInMinors   int64     `json:"amountInMinors"`
-	ReportedAt       time.Time `json:"reportedAt"`
+	// ReportedAt is only sent by Banking Bridge releases that serve the legacy
+	// payments-shaped balance. Later releases send BalanceType and
+	// BalanceDate instead, and leave it zero - see ToPSPBalance.
+	ReportedAt time.Time `json:"reportedAt"`
+	// BalanceType is the balance type as reported, usually an ISO 20022 code
+	// (OPBD, CLBD, ITBD, ITAV, ...).
+	BalanceType string `json:"balanceType"`
+	// BalanceDate is the date the balance applies to, YYYY-MM-DD.
+	BalanceDate string `json:"balanceDate"`
 
 	ImportedAt time.Time `json:"importedAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
