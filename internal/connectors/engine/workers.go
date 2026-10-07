@@ -310,15 +310,39 @@ func (w *WorkerPool) AddDefaultWorker() error {
 // non-zero, because the server does not rate limit eagerly dispatched
 // activities. A client-side limiter would silently let them through.
 func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) error {
+	opts := w.options
+	opts.TaskQueueActivitiesPerSecond = payoutsPerSecond
+
+	return w.startWorker(name, opts, payoutsPerSecond)
+}
+
+func (w *WorkerPool) stopWorker(name string) {
+	w.rwMutex.Lock()
+	defer w.rwMutex.Unlock()
+
+	wkr, ok := w.workers[name]
+	if !ok {
+		return
+	}
+
+	wkr.worker.Stop()
+	delete(w.workers, name)
+}
+
+// AddWorker instantiates a temporal worker
+func (w *WorkerPool) AddWorker(name string) error {
+	return w.startWorker(name, w.options, 0)
+}
+
+// startWorker builds a worker for the given task queue, starts it and records
+// it in the pool. It is a no-op when the queue already has a worker.
+func (w *WorkerPool) startWorker(name string, opts worker.Options, payoutsPerSecond float64) error {
 	w.rwMutex.RLock()
 	_, exists := w.workers[name]
 	w.rwMutex.RUnlock()
 	if exists {
 		return nil
 	}
-
-	opts := w.options
-	opts.TaskQueueActivitiesPerSecond = payoutsPerSecond
 
 	wkr := worker.New(w.temporalClient, name, opts)
 
@@ -338,22 +362,23 @@ func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) erro
 		}
 	}
 
-	// Started inline rather than in a goroutine: deferring it leaves a window
-	// where a worker that is stopped again - which syncPayoutWorker does on
-	// every rate change - gets its Start call after its Stop, which the SDK
-	// answers with a panic. Started outside the lock, though, because Start
-	// makes blocking calls to Temporal, and holding the pool lock across them
-	// would stall every other worker operation - including Close - for as long
-	// as an unreachable server takes to time out. The worker is not in the map
-	// yet, so stopWorker cannot reach it and the panic stays impossible.
+	// Started inline rather than in a goroutine: the SDK does not synchronise
+	// Start against Stop, so a deferred Start races any Stop from Close or
+	// stopWorker - a data race on the worker's internal state, a worker left
+	// polling after Stop returned, or a panic when Start lands after Stop.
+	// Started outside the lock, though, because Start makes blocking calls to
+	// Temporal, and holding the pool lock across them would stall every other
+	// worker operation - including Close - for as long as an unreachable server
+	// takes to time out. The worker is not in the map yet, so nothing else can
+	// reach it until Start has returned.
 	//
 	// A failure is logged rather than returned, so one unreachable queue cannot
 	// abort connector startup, and the entry is dropped rather than recorded:
 	// absence from the map is already "no worker serving this queue", so the
-	// next reconcile rebuilds it instead of skipping a matching rate.
+	// next reconcile rebuilds it instead of skipping it.
 	if err := wkr.Start(); err != nil {
 		wkr.Stop()
-		w.logger.Errorf("payout worker %s failed to start, will be rebuilt on the next reconcile: %v", name, err)
+		w.logger.Errorf("worker %s failed to start, will be rebuilt on the next reconcile: %v", name, err)
 		return nil
 	}
 
@@ -367,64 +392,12 @@ func (w *WorkerPool) AddPayoutWorker(name string, payoutsPerSecond float64) erro
 		return nil
 	}
 
-	w.logger.Infof("payout worker %s started (%.2f activities/s)", name, payoutsPerSecond)
 	w.workers[name] = Worker{worker: wkr, payoutsPerSecond: payoutsPerSecond}
-
-	return nil
-}
-
-func (w *WorkerPool) stopWorker(name string) {
-	w.rwMutex.Lock()
-	defer w.rwMutex.Unlock()
-
-	wkr, ok := w.workers[name]
-	if !ok {
-		return
+	if payoutsPerSecond > 0 {
+		w.logger.Infof("payout worker %s started (%.2f activities/s)", name, payoutsPerSecond)
+	} else {
+		w.logger.Infof("worker for connector %s started", name)
 	}
-
-	wkr.worker.Stop()
-	delete(w.workers, name)
-}
-
-// AddWorker instantiates a temporal worker
-func (w *WorkerPool) AddWorker(name string) error {
-	w.rwMutex.Lock()
-	defer w.rwMutex.Unlock()
-
-	if _, ok := w.workers[name]; ok {
-		return nil
-	}
-
-	worker := worker.New(w.temporalClient, name, w.options)
-
-	for _, set := range w.workflows {
-		for _, workflow := range set {
-			worker.RegisterWorkflowWithOptions(workflow.Func, temporalworkflow.RegisterOptions{
-				Name: workflow.Name,
-			})
-		}
-	}
-
-	for _, set := range w.activities {
-		for _, act := range set {
-			worker.RegisterActivityWithOptions(act.Func, activity.RegisterOptions{
-				Name: act.Name,
-			})
-		}
-	}
-
-	go func() {
-		err := worker.Start()
-		if err != nil {
-			w.logger.Errorf("worker loop stopped: %v", err)
-		}
-	}()
-
-	w.workers[name] = Worker{
-		worker: worker,
-	}
-
-	w.logger.Infof("worker for connector %s started", name)
 
 	return nil
 }
