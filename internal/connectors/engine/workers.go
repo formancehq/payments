@@ -33,6 +33,9 @@ type WorkerPool struct {
 	workers map[string]Worker
 	storage storage.Storage
 	rwMutex sync.RWMutex
+	// closed is set by Close, under rwMutex, so a worker whose Start was still
+	// in flight when the pool shut down is stopped instead of recorded.
+	closed bool
 
 	workflows  []temporal.DefinitionSet
 	activities []temporal.DefinitionSet
@@ -290,6 +293,11 @@ func (w *WorkerPool) Close() {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
+	if w.closed {
+		return
+	}
+	w.closed = true
+
 	for _, worker := range w.workers {
 		worker.worker.Stop()
 	}
@@ -339,8 +347,9 @@ func (w *WorkerPool) AddWorker(name string) error {
 func (w *WorkerPool) startWorker(name string, opts worker.Options, payoutsPerSecond float64) error {
 	w.rwMutex.RLock()
 	_, exists := w.workers[name]
+	closed := w.closed
 	w.rwMutex.RUnlock()
-	if exists {
+	if exists || closed {
 		return nil
 	}
 
@@ -370,7 +379,8 @@ func (w *WorkerPool) startWorker(name string, opts worker.Options, payoutsPerSec
 	// Temporal, and holding the pool lock across them would stall every other
 	// worker operation - including Close - for as long as an unreachable server
 	// takes to time out. The worker is not in the map yet, so nothing else can
-	// reach it until Start has returned.
+	// reach it until Start has returned - which also means Close cannot, hence
+	// the closed check below.
 	//
 	// A failure is logged rather than returned, so one unreachable queue cannot
 	// abort connector startup, and the entry is dropped rather than recorded:
@@ -384,6 +394,14 @@ func (w *WorkerPool) startWorker(name string, opts worker.Options, payoutsPerSec
 
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
+
+	// The pool may have been closed while we were starting: Close only stops
+	// the workers it finds in the map, so ours has to be stopped here or it
+	// would keep polling after shutdown.
+	if w.closed {
+		wkr.Stop()
+		return nil
+	}
 
 	// Another caller may have raced us onto the same queue while we were
 	// starting; keep the worker that got there first.

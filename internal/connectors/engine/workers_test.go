@@ -269,6 +269,37 @@ var _ = Describe("Worker Tests", func() {
 		})
 	})
 
+	Context("when the pool is closed while a worker is starting", func() {
+		It("stops the new worker instead of recording it", func() {
+			addr, entered, release := startGatedFakeTemporal()
+			pool, _, _ := newTestPool(client.Options{HostPort: addr})
+			queue := engine.GetDefaultTaskQueue("stackname")
+
+			done := make(chan error, 1)
+			go func() { done <- pool.AddWorker(queue) }()
+
+			// Start is now blocked on the server, outside the pool lock, so Close
+			// finds nothing to stop and returns.
+			Eventually(entered).Should(BeClosed())
+			pool.Close()
+
+			release()
+			Eventually(done).Should(Receive(BeNil()))
+
+			// Recorded after Close, the worker would never be stopped and would
+			// keep polling past shutdown.
+			Expect(pool.HasWorker(queue)).To(BeFalse())
+		})
+
+		It("does not start workers once closed", func() {
+			pool, _, _ := newTestPool(client.Options{HostPort: startFakeTemporal()})
+			pool.Close()
+
+			Expect(pool.AddDefaultWorker()).To(BeNil())
+			Expect(pool.HasWorker(engine.GetDefaultTaskQueue("stackname"))).To(BeFalse())
+		})
+	})
+
 	Context("createOutboxPublisherSchedule", func() {
 		var (
 			pool               *engine.WorkerPool

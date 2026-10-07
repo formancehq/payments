@@ -3,6 +3,7 @@ package engine_test
 import (
 	"context"
 	"net"
+	"sync"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,9 +38,37 @@ func (fakeTemporal) ShutdownWorker(context.Context, *workflowservice.ShutdownWor
 // startFakeTemporal serves fakeTemporal on a loopback port for the current
 // spec and returns its address, to be used as client.Options.HostPort.
 func startFakeTemporal() string {
+	return serveFakeTemporal()
+}
+
+// startGatedFakeTemporal is startFakeTemporal with every unary call held until
+// release is called, so a test can act while worker.Start is blocked in its
+// start-up handshake. The returned channel is closed once the first call
+// arrives, i.e. once Start is known to be in flight. release is idempotent and
+// also runs on cleanup, so a failing spec does not leave Start hanging.
+func startGatedFakeTemporal() (addr string, entered <-chan struct{}, release func()) {
+	gate := make(chan struct{})
+	in := make(chan struct{})
+	var enterOnce, releaseOnce sync.Once
+	release = func() { releaseOnce.Do(func() { close(gate) }) }
+	DeferCleanup(release)
+
+	addr = serveFakeTemporal(grpc.UnaryInterceptor(func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		enterOnce.Do(func() { close(in) })
+		select {
+		case <-gate:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		return handler(ctx, req)
+	}))
+	return addr, in, release
+}
+
+func serveFakeTemporal(opts ...grpc.ServerOption) string {
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	Expect(err).To(BeNil())
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(opts...)
 	workflowservice.RegisterWorkflowServiceServer(srv, fakeTemporal{})
 	go func() { _ = srv.Serve(lis) }()
 	DeferCleanup(srv.Stop)
