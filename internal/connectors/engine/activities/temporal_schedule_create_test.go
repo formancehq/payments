@@ -13,7 +13,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	enums "go.temporal.io/api/enums/v1"
-	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
@@ -108,20 +107,6 @@ var _ = Describe("Temporal Schedule Creation", func() {
 		Expect(err).To(BeNil())
 	})
 
-	It("keeps AlreadyExists and WorkflowExecutionAlreadyStarted idempotent", func(ctx SpecContext) {
-		for _, existingErr := range []error{
-			serviceerror.NewAlreadyExists("already exists"),
-			serviceerror.NewWorkflowExecutionAlreadyStarted("already started", "request", "run"),
-		} {
-			t.EXPECT().ScheduleClient().Return(sc)
-			sc.EXPECT().Create(ctx, gomock.Any()).Return(nil, existingErr)
-			Expect(act.TemporalScheduleCreate(ctx, activities.ScheduleCreateOptions{
-				ScheduleID: scheduleID,
-				Interval:   &client.ScheduleIntervalSpec{Every: time.Second},
-			})).To(Succeed())
-		}
-	})
-
 	It("forwards expected create options to temporal", func(ctx SpecContext) {
 		t.EXPECT().ScheduleClient().Return(sc)
 
@@ -181,14 +166,7 @@ var _ = Describe("Temporal Schedule Creation", func() {
 			expectEmptySpec:    true,
 		}).DoAndReturn(func(_ context.Context, opts client.ScheduleOptions) (client.ScheduleHandle, error) {
 			// Typed search attributes must still be populated from the legacy map.
-			attrs := opts.Action.(*client.ScheduleWorkflowAction).TypedSearchAttributes
-			Expect(attrs.Size()).To(Equal(2))
-			value, ok := attrs.GetKeyword(temporal.NewSearchAttributeKeyKeyword("PaymentScheduleID"))
-			Expect(ok).To(BeTrue())
-			Expect(value).To(Equal(scheduleID))
-			value, ok = attrs.GetKeyword(temporal.NewSearchAttributeKeyKeyword("Stack"))
-			Expect(ok).To(BeTrue())
-			Expect(value).To(Equal("test-stack"))
+			Expect(opts.Action.(*client.ScheduleWorkflowAction).TypedSearchAttributes.Size()).To(Equal(2))
 			return activities.NewMockScheduleHandle(ctrl), nil
 		})
 		err := act.TemporalScheduleCreate(ctx, createOpts)

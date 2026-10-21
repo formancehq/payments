@@ -9,7 +9,6 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 	"go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -285,9 +284,9 @@ func (w Workflow) runSendEventAsChildWorkflow(ctx workflow.Context, wg workflow.
 				workflow.ChildWorkflowOptions{
 					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					TypedSearchAttributes: temporal.NewSearchAttributes(
-						temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-					),
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
 				},
 			),
 			RunSendEvents, // nolint: staticcheck // ignore deprecated

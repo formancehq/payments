@@ -23,21 +23,6 @@ func (w Workflow) SearchAttributes(ctx workflow.Context, connectorID *models.Con
 	return m
 }
 
-// TypedSearchAttributes is the SDK boundary for child workflow starts. Keep the
-// legacy helper call here: it evaluates the existing GetVersion exactly once,
-// including when connectorID is nil, at the same point as before migration.
-// Activity DTOs continue to use SearchAttributes and ScheduleSearchAttributes.
-func (w Workflow) TypedSearchAttributes(ctx workflow.Context, connectorID *models.ConnectorID) temporal.SearchAttributes {
-	legacy := w.SearchAttributes(ctx, connectorID)
-	attributes := []temporal.SearchAttributeUpdate{
-		temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-	}
-	if value, ok := legacy[SearchAttributeConnectorID]; ok {
-		attributes = append(attributes, temporal.NewSearchAttributeKeyKeyword(SearchAttributeConnectorID).ValueSet(value.(string)))
-	}
-	return temporal.NewSearchAttributes(attributes...)
-}
-
 func (w Workflow) ScheduleSearchAttributes(ctx workflow.Context, connectorID *models.ConnectorID, scheduleID string) map[string]interface{} {
 	m := w.SearchAttributes(ctx, connectorID)
 	if scheduleID != "" {

@@ -144,7 +144,7 @@ func (w Workflow) handleDataToStoreWebhook(
 				TaskQueue:             w.getDefaultTaskQueue(),
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
-				TypedSearchAttributes: w.TypedSearchAttributes(ctx, &handleWebhooks.ConnectorID),
+				SearchAttributes:      w.SearchAttributes(ctx, &handleWebhooks.ConnectorID),
 			},
 		),
 		RunStoreWebhookTranslation,
@@ -325,7 +325,7 @@ func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 			workflow.ChildWorkflowOptions{
 				TaskQueue:             w.getDefaultTaskQueue(),
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-				TypedSearchAttributes: w.TypedSearchAttributes(ctx, &handleWebhooks.ConnectorID),
+				SearchAttributes:      w.SearchAttributes(ctx, &handleWebhooks.ConnectorID),
 			},
 		),
 		RunFetchOpenBankingData,

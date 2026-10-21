@@ -2,8 +2,6 @@ module github.com/formancehq/payments/ce/plugins/modulr
 
 go 1.26.0
 
-toolchain go1.27.3
-
 require (
 	github.com/formancehq/go-libs/v5 v5.6.1
 	github.com/formancehq/payments/pkg/domain v0.4.2

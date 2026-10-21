@@ -23,13 +23,13 @@ type BootstrapTaskRequest struct {
 // rather than maintaining a parallel implementation.
 //
 // Bootstrap semantics vs. periodic:
-//   - `Periodically: false` so no new schedule is created from within
-//     the loop (RunBootstrapTasks starts the periodic scheduler itself,
-//     post-bootstrap); plugins that read the flag can distinguish the
-//     install-time pass from a scheduled tick.
-//   - `FromPayload: nil` so the state key matches the periodic scheduler's
-//     (`CAPABILITY_FETCH_ACCOUNTS`) and the next periodic tick picks up
-//     from the cursor this run stored.
+// - `Periodically: false` so no new schedule is created from within
+//   the loop (RunBootstrapTasks starts the periodic scheduler itself,
+//   post-bootstrap); plugins that read the flag can distinguish the
+//   install-time pass from a scheduled tick.
+// - `FromPayload: nil` so the state key matches the periodic scheduler's
+//   (`CAPABILITY_FETCH_ACCOUNTS`) and the next periodic tick picks up
+//   from the cursor this run stored.
 func (w Workflow) runBootstrapTask(
 	ctx workflow.Context,
 	req BootstrapTaskRequest,
@@ -40,10 +40,10 @@ func (w Workflow) runBootstrapTask(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					WorkflowID:            fmt.Sprintf("bootstrap-fetch-accounts-%s-%s", w.stack, req.ConnectorID.String()),
-					TaskQueue:             w.getDefaultTaskQueue(),
-					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_TERMINATE,
-					TypedSearchAttributes: w.TypedSearchAttributes(ctx, &req.ConnectorID),
+					WorkflowID:           fmt.Sprintf("bootstrap-fetch-accounts-%s-%s", w.stack, req.ConnectorID.String()),
+					TaskQueue:            w.getDefaultTaskQueue(),
+					ParentClosePolicy:    enums.PARENT_CLOSE_POLICY_TERMINATE,
+					SearchAttributes:     w.SearchAttributes(ctx, &req.ConnectorID),
 				},
 			),
 			RunFetchNextAccounts,

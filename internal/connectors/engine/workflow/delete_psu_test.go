@@ -9,29 +9,10 @@ import (
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
-	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (s *UnitTestSuite) Test_DeletePSU_Success() {
-	versionCalls := 0
-	s.env.OnGetVersion(versionFlagConnectorIDSearchAttributeEnabled, workflow.DefaultVersion, 1).Maybe().Return(func(string, workflow.Version, workflow.Version) workflow.Version {
-		versionCalls++
-		return 1
-	})
-	children := 0
-	s.env.SetOnChildWorkflowStartedListener(func(info *workflow.Info, ctx workflow.Context, _ converter.EncodedValues) {
-		children++
-		s.Equal(RunDeleteOpenBankingConnectionData, info.WorkflowType.Name)
-		s.Equal(s.w.getDefaultTaskQueue(), info.TaskQueueName)
-		attrs := workflow.GetTypedSearchAttributes(ctx)
-		s.Equal(1, attrs.Size())
-		stack, ok := attrs.GetKeyword(temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack))
-		s.True(ok)
-		s.Equal(s.w.stack, stack)
-	})
-
 	taskID := models.TaskID{
 		Reference:   "delete-psu-task",
 		ConnectorID: s.connectorID,
@@ -110,8 +91,6 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.NoError(err)
-	s.Equal(1, children)
-	s.Zero(versionCalls, "Stack-only child must not introduce the connector version marker")
 }
 
 func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersGet_Error() {

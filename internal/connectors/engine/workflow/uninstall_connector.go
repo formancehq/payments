@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
@@ -84,7 +84,7 @@ func (w Workflow) uninstallConnector(
 			workflow.ChildWorkflowOptions{
 				TaskQueue:             uninstallConnector.DefaultWorkerName,
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-				TypedSearchAttributes: w.TypedSearchAttributes(ctx, &uninstallConnector.ConnectorID),
+				SearchAttributes:      w.SearchAttributes(ctx, &uninstallConnector.ConnectorID),
 			},
 		),
 		RunTerminateSchedules,
@@ -104,7 +104,7 @@ func (w Workflow) uninstallConnector(
 			workflow.ChildWorkflowOptions{
 				TaskQueue:             uninstallConnector.DefaultWorkerName,
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-				TypedSearchAttributes: w.TypedSearchAttributes(ctx, &uninstallConnector.ConnectorID),
+				SearchAttributes:      w.SearchAttributes(ctx, &uninstallConnector.ConnectorID),
 			},
 		),
 		RunTerminateWorkflows,

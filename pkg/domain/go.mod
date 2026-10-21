@@ -2,8 +2,6 @@ module github.com/formancehq/payments/pkg/domain
 
 go 1.26.0
 
-toolchain go1.27.3
-
 require (
 	github.com/formancehq/go-libs/v5 v5.5.0
 	github.com/gibson042/canonicaljson-go v1.0.3

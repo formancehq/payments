@@ -4,11 +4,10 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	"go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -96,9 +95,9 @@ func (w Workflow) deletePSU(
 			workflow.ChildWorkflowOptions{
 				TaskQueue:         w.getDefaultTaskQueue(),
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-				TypedSearchAttributes: temporal.NewSearchAttributes(
-					temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-				),
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
 			},
 		),
 		RunDeleteOpenBankingConnectionData,

@@ -142,7 +142,7 @@ func (w Workflow) runNextTasksV3_1(
 				workflow.ChildWorkflowOptions{
 					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					TypedSearchAttributes: w.TypedSearchAttributes(ctx, &connectorID),
+					SearchAttributes:      w.SearchAttributes(ctx, &connectorID),
 				},
 			),
 			nextWorkflow,
@@ -268,7 +268,7 @@ func (w Workflow) runNextTaskAsChildWorkflow(ctx workflow.Context, connectorID m
 				workflow.ChildWorkflowOptions{
 					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					TypedSearchAttributes: w.TypedSearchAttributes(ctx, &connectorID),
+					SearchAttributes:      w.SearchAttributes(ctx, &connectorID),
 				},
 			),
 			RunNextTasks, //nolint:staticcheck // ignore deprecated

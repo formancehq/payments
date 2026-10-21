@@ -1,4 +1,4 @@
-FROM golang:1.27.3
+FROM golang:1.26.10
 ENV GOTOOLCHAIN=local
 WORKDIR /app
 COPY . .

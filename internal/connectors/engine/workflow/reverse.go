@@ -7,8 +7,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/query"
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/storage"
 	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -88,9 +88,9 @@ func (w Workflow) validateOnlyReverse(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:             w.getDefaultTaskQueue(),
-					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					TypedSearchAttributes: w.TypedSearchAttributes(ctx, &validateReverse.ConnectorID),
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes:  w.SearchAttributes(ctx, &validateReverse.ConnectorID),
 				},
 			),
 			RunSendEvents, //nolint:staticcheck // ignore deprecation

@@ -26,7 +26,6 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -247,10 +246,10 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
+			},
 		},
 		workflow.RunUninstallConnector,
 		workflow.UninstallConnector{
@@ -308,10 +307,10 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
+			},
 		},
 		workflow.RunResetConnector,
 		workflow.ResetConnector{
@@ -381,10 +380,10 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: true,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connector.ID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connector.ID.String(),
+			},
 		},
 		workflow.RunUpdateSchedulePollingPeriod,
 		workflow.UpdateSchedulePollingPeriod{
@@ -517,10 +516,10 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
+			},
 		},
 		workflow.RunCreateBankAccount,
 		workflow.CreateBankAccount{
@@ -587,10 +586,10 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 			TaskQueue:                                e.getPayoutTaskQueue(piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(piID.ConnectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: piID.ConnectorID.String(),
+			},
 		},
 		workflow.RunCreateTransfer,
 		workflow.CreateTransfer{
@@ -650,10 +649,10 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(reversal.ConnectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: reversal.ConnectorID.String(),
+			},
 		},
 		workflow.RunReverseTransfer,
 		workflow.ReverseTransfer{
@@ -710,10 +709,10 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 			TaskQueue:                                e.getPayoutTaskQueue(piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(piID.ConnectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: piID.ConnectorID.String(),
+			},
 		},
 		workflow.RunCreatePayout,
 		workflow.CreatePayout{
@@ -774,10 +773,10 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(reversal.ConnectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: reversal.ConnectorID.String(),
+			},
 		},
 		workflow.RunReversePayout,
 		workflow.ReversePayout{
@@ -890,9 +889,9 @@ func (e *engine) DeletePaymentServiceUser(ctx context.Context, psuID uuid.UUID) 
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
 		},
 		workflow.RunDeletePSU,
 		workflow.DeletePSU{
@@ -937,10 +936,10 @@ func (e *engine) DeletePaymentServiceUserConnector(ctx context.Context, psuID uu
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
+			},
 		},
 		workflow.RunDeletePSUConnector,
 		workflow.DeletePSUConnector{
@@ -986,10 +985,10 @@ func (e *engine) DeletePaymentServiceUserConnection(ctx context.Context, connect
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
+			},
 		},
 		workflow.RunDeleteConnection,
 		workflow.DeleteConnection{
@@ -1219,10 +1218,10 @@ func (e *engine) CompletePaymentServiceUserLink(ctx context.Context, connectorID
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connectorID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connectorID.String(),
+			},
 		},
 		workflow.RunCompleteUserLink,
 		workflow.CompleteUserLink{
@@ -1270,10 +1269,10 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 					TaskQueue:                                GetDefaultTaskQueue(e.stack),
 					WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 					WorkflowExecutionErrorWhenAlreadyStarted: false,
-					TypedSearchAttributes: temporal.NewSearchAttributes(
-						temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-						temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(w.ConnectorID.String()),
-					),
+					SearchAttributes: map[string]interface{}{
+						workflow.SearchAttributeStack:       e.stack,
+						workflow.SearchAttributeConnectorID: w.ConnectorID.String(),
+					},
 				},
 				workflow.RunHandleWebhooks,
 				workflow.HandleWebhooks{
@@ -1695,10 +1694,10 @@ func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Con
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			TypedSearchAttributes: temporal.NewSearchAttributes(
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(e.stack),
-				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeConnectorID).ValueSet(connector.ID.String()),
-			),
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack:       e.stack,
+				workflow.SearchAttributeConnectorID: connector.ID.String(),
+			},
 		},
 		workflow.RunInstallConnector,
 		workflow.InstallConnector{

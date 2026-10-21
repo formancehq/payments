@@ -66,7 +66,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	goVersion, toolchain, err := goVersionsFromModule(repoRoot)
+	goVersion, err := goVersionFromFlake(repoRoot)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,7 +80,6 @@ func main() {
 			"Connector": *connectorName,
 			"Module":    modulePath,
 			"GoVersion": goVersion,
-			"Toolchain": toolchain,
 		},
 	); err != nil {
 		log.Fatal(err)
@@ -94,20 +93,16 @@ func isValidPackageName(name string) bool {
 	return packageNameRegex.MatchString(name)
 }
 
-var (
-	goVersionRegex = regexp.MustCompile(`(?m)^go ([^\s]+)$`)
-	toolchainRegex = regexp.MustCompile(`(?m)^toolchain ([^\s]+)$`)
-)
+var goVersionRegex = regexp.MustCompile(`\bgo_1_(\d+)\b`)
 
-func goVersionsFromModule(repoRoot string) (string, string, error) {
-	data, err := os.ReadFile(filepath.Join(repoRoot, "go.mod"))
+func goVersionFromFlake(repoRoot string) (string, error) {
+	data, err := os.ReadFile(filepath.Join(repoRoot, "flake.nix"))
 	if err != nil {
-		return "", "", fmt.Errorf("reading go.mod: %w", err)
+		return "", fmt.Errorf("reading flake.nix: %w", err)
 	}
-	goVersion := goVersionRegex.FindSubmatch(data)
-	toolchain := toolchainRegex.FindSubmatch(data)
-	if goVersion == nil || toolchain == nil {
-		return "", "", fmt.Errorf("go.mod must declare go and toolchain directives")
+	m := goVersionRegex.FindSubmatch(data)
+	if m == nil {
+		return "", fmt.Errorf("no go_1_XX package found in flake.nix")
 	}
-	return string(goVersion[1]), string(toolchain[1]), nil
+	return "1." + string(m[1]), nil
 }

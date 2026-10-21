@@ -68,7 +68,7 @@ func (w Workflow) resetConnector(
 			workflow.ChildWorkflowOptions{
 				TaskQueue:             resetConnector.DefaultWorkerName,
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-				TypedSearchAttributes: w.TypedSearchAttributes(ctx, &resetConnector.ConnectorID),
+				SearchAttributes:      w.SearchAttributes(ctx, &resetConnector.ConnectorID),
 			},
 		),
 		RunUninstallConnector,
@@ -126,7 +126,7 @@ func (w Workflow) resetConnector(
 				TaskQueue:             w.getDefaultTaskQueue(),
 				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-				TypedSearchAttributes: w.TypedSearchAttributes(ctx, &newConnector.ID),
+				SearchAttributes:      w.SearchAttributes(ctx, &newConnector.ID),
 			},
 		),
 		RunInstallConnector,

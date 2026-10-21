@@ -1,5 +1,5 @@
 {
-  description = "A Nix-flake-based Go 1.27.3 development environment";
+  description = "A Nix-flake-based Go 1.26 development environment";
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
@@ -92,13 +92,10 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.27.nix" {
-            buildGo127Module = buildGoModule;
+          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
+            buildGo126Module = buildGoModule;
           };
           buildGoModule = pkgs.buildGoModule.override { inherit go; };
-          golangci-lint = pkgs.callPackage "${go-tooling}/pkgs/by-name/go/golangci-lint/package.nix" {
-            buildGo127Module = buildGoModule;
-          };
           stablePackages = [ go (pkgs.mockgen.override { inherit buildGoModule; }) ] ++ (with pkgs; [
             argocd
             ginkgo
@@ -108,7 +105,7 @@
             nodejs_22
             yq-go
           ]);
-          unstablePackages = [
+          unstablePackages = with pkgs-unstable; [
             golangci-lint
           ];
           otherPackages = [

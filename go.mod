@@ -1,8 +1,6 @@
 module github.com/formancehq/payments
 
-go 1.26.0
-
-toolchain go1.27.3
+go 1.26.10
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
