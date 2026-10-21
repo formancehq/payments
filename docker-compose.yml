@@ -32,7 +32,7 @@ services:
       #- postgres:/var/lib/postgresql/data
 
   payments-migrate:
-    image: golang:1.26-alpine
+    image: golang:1.26.10-alpine
     command: go run ./ migrate up
     depends_on:
       postgres:
@@ -41,6 +41,7 @@ services:
       - .:/app/components/payments
     working_dir: /app/components/payments
     environment:
+      GOTOOLCHAIN: local
       POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
 
   temporal:
@@ -81,7 +82,7 @@ services:
       - 8081:8080
 
   payments:
-    image: golang:1.26-alpine
+    image: golang:1.26.10-alpine
     command: go run ./ server
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
@@ -101,6 +102,7 @@ services:
     working_dir: /app/components/payments
     environment:
       DEBUG: true
+      GOTOOLCHAIN: local
       POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
       CONFIG_ENCRYPTION_KEY: mysuperencryptionkey
       TEMPORAL_ADDRESS: temporal:7233
@@ -110,7 +112,7 @@ services:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
 
   payments-worker:
-    image: golang:1.26-alpine
+    image: golang:1.26.10-alpine
     command: go run ./ worker
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
@@ -129,6 +131,7 @@ services:
     working_dir: /app/components/payments
     environment:
       DEBUG: true
+      GOTOOLCHAIN: local
       POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
       CONFIG_ENCRYPTION_KEY: mysuperencryptionkey
       TEMPORAL_ADDRESS: temporal:7233

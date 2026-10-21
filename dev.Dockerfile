@@ -3,7 +3,8 @@
 # Development Dockerfile for payments service
 # Based on ebics-bridge structure but optimized for development workflow
 
-FROM golang:1.26-alpine as development
+FROM golang:1.26.10-alpine as development
+ENV GOTOOLCHAIN=local
 
 # Install minimal dependencies including build tools
 RUN apk add --no-cache \
