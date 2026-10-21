@@ -13,8 +13,8 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/spf13/cobra"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/serviceerror"
@@ -509,10 +509,10 @@ func (r *RecreateSchedules) createSchedule(
 		},
 		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_BUFFER_ONE,
 		TriggerImmediately: true,
-		SearchAttributes: map[string]any{
-			workflow.SearchAttributeScheduleID: scheduleID,
-			workflow.SearchAttributeStack:      r.stack,
-		},
+		TypedSearchAttributes: temporal.NewSearchAttributes(
+			temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeScheduleID).ValueSet(scheduleID),
+			temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(r.stack),
+		),
 	})
 
 	if err != nil {
