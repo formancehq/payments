@@ -1,5 +1,5 @@
 {
-  description = "A Nix-flake-based Go 1.26 development environment";
+  description = "A Nix-flake-based Go 1.27.3 development environment";
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
@@ -92,17 +92,12 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
-            buildGo126Module = buildGoModule;
+          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.27.nix" {
+            buildGo127Module = buildGoModule;
           };
           buildGoModule = pkgs.buildGoModule.override { inherit go; };
-          # The linter needs a compiler new enough to read Go 1.26 export data.
-          lintGo = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.27.nix" {
-            buildGo127Module = lintBuildGoModule;
-          };
-          lintBuildGoModule = pkgs.buildGoModule.override { go = lintGo; };
           golangci-lint = pkgs.callPackage "${go-tooling}/pkgs/by-name/go/golangci-lint/package.nix" {
-            buildGo127Module = lintBuildGoModule;
+            buildGo127Module = buildGoModule;
           };
           stablePackages = [ go (pkgs.mockgen.override { inherit buildGoModule; }) ] ++ (with pkgs; [
             argocd

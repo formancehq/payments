@@ -2,6 +2,8 @@ module github.com/formancehq/payments/ce/plugins/adyen
 
 go 1.26.0
 
+toolchain go1.27.3
+
 require (
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/formancehq/go-libs/v5 v5.6.1

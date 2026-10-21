@@ -2,4 +2,6 @@ module {{ .Module }}
 
 go {{ .GoVersion }}
 
+toolchain {{ .Toolchain }}
+
 require github.com/formancehq/payments/pkg/domain v0.3.2

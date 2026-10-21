@@ -2,6 +2,8 @@ module github.com/formancehq/payments
 
 go 1.26.0
 
+toolchain go1.27.3
+
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
 // replace => ./pkg/domain means Go will never actually fetch v0.x.x from the proxy but go mod tidy still updates the version number in require to accurately reflect the minimum version. The local directory is what gets compiled — the version is just a bookkeeping number for MVS consistency.
