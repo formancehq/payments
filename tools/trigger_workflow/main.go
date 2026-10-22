@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 )
 
 const (
@@ -98,9 +99,9 @@ func doStripeMigration(
 			TaskQueue:                                engine.GetDefaultTaskQueue(stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: true,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: stack,
-			},
+			TypedSearchAttributes: temporal.NewSearchAttributes(
+				temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(stack),
+			),
 		},
 		workflow.RunListActiveSchedules,
 		workflow.ListActiveSchedules{
@@ -144,9 +145,9 @@ func doStripeMigration(
 				TaskQueue:                                engine.GetDefaultTaskQueue(stack),
 				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				WorkflowExecutionErrorWhenAlreadyStarted: true,
-				SearchAttributes: map[string]interface{}{
-					workflow.SearchAttributeStack: stack,
-				},
+				TypedSearchAttributes: temporal.NewSearchAttributes(
+					temporal.NewSearchAttributeKeyKeyword(workflow.SearchAttributeStack).ValueSet(stack),
+				),
 			},
 			workflow.RunTerminateScheduleByID,
 			workflow.TerminateScheduleByID{
