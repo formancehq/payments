@@ -5,13 +5,19 @@
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
 
+    # Import only Go tool recipes; keep the existing package sets pinned.
+    go-tooling = {
+      url = "github:NixOS/nixpkgs/8cec5ef1131078ea76689e84c362b0ed6a1fb6a1";
+      flake = false;
+    };
+
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, nur }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, go-tooling, nur }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -86,17 +92,19 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          stablePackages = with pkgs; [
+          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
+            buildGo126Module = buildGoModule;
+          };
+          buildGoModule = pkgs.buildGoModule.override { inherit go; };
+          stablePackages = [ go (pkgs.mockgen.override { inherit buildGoModule; }) ] ++ (with pkgs; [
             argocd
             ginkgo
-            go_1_26
             gotools
             jq
             just
-            (mockgen.override { buildGoModule = buildGo126Module; })
             nodejs_22
             yq-go
-          ];
+          ]);
           unstablePackages = with pkgs-unstable; [
             golangci-lint
           ];
@@ -110,7 +118,8 @@
             packages = stablePackages ++ unstablePackages ++ otherPackages;
 
             env = {
-              GOROOT = "${pkgs.go_1_26}/share/go";
+              GOROOT = "${go}/share/go";
+              GOTOOLCHAIN = "local";
             };
           };
         }
