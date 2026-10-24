@@ -67,7 +67,7 @@ require (
 	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/pkg/domain v0.4.2
 	github.com/gibson042/canonicaljson-go v1.0.3
-	github.com/go-chi/chi/v5 v5.3.0
+	github.com/go-chi/chi/v5 v5.4.0
 	github.com/go-chi/cors v1.2.2
 	github.com/go-faster/errors v0.7.1
 	github.com/go-playground/locales v0.14.1
