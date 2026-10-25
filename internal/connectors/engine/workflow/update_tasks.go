@@ -2,8 +2,8 @@ package workflow
 
 import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/pkg/domain/models"
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -58,9 +58,9 @@ func (w Workflow) updateTask(ctx workflow.Context, task models.Task) error {
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes:  w.SearchAttributes(ctx, task.ConnectorID),
+					TaskQueue:             w.getDefaultTaskQueue(),
+					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+					TypedSearchAttributes: w.TypedSearchAttributes(ctx, task.ConnectorID),
 				},
 			),
 			RunSendEvents, //nolint:staticcheck // ignore deprecation

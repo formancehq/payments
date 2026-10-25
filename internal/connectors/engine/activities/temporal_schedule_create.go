@@ -61,7 +61,8 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 		Action:             &options.Action,
 		Overlap:            options.Overlap,
 		TriggerImmediately: options.TriggerImmediately,
-		SearchAttributes:   options.SearchAttributes,
+		// Preserve dynamic values from historical activity payloads; typed keys require a known server type.
+		SearchAttributes: options.SearchAttributes, //nolint:staticcheck // SA1019: retain the legacy schedule payload contract.
 	})
 	if err != nil {
 		// When triggering immediately or if a workflow with the same ID already exists,
