@@ -5,7 +5,10 @@
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
 
-    # Import only Go tool recipes; keep the existing package sets pinned.
+    # Keep the compiler and its builder upstream; preserve all other tool pins.
+    go-stable.url = "github:NixOS/nixpkgs/82357ce01ff800eb847c08107682d506a461959f";
+
+    # Retain golangci-lint 2.15.0 independently from the compiler package set.
     go-tooling = {
       url = "github:NixOS/nixpkgs/8cec5ef1131078ea76689e84c362b0ed6a1fb6a1";
       flake = false;
@@ -17,7 +20,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, go-tooling, nur }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, go-stable, go-tooling, nur }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -92,10 +95,14 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
-            buildGo126Module = buildGoModule;
+          # Use the complete upstream package to preserve binary-cache identity.
+          goPkgs = import go-stable { inherit system; };
+          go = goPkgs.go_1_26;
+          buildGoModule = goPkgs.buildGo126Module;
+          # This recipe supports Go 1.26; build it with the shell compiler.
+          golangci-lint = goPkgs.callPackage "${go-tooling}/pkgs/by-name/go/golangci-lint/package.nix" {
+            buildGo127Module = buildGoModule;
           };
-          buildGoModule = pkgs.buildGoModule.override { inherit go; };
           stablePackages = [ go (pkgs.mockgen.override { inherit buildGoModule; }) ] ++ (with pkgs; [
             argocd
             ginkgo
@@ -105,7 +112,7 @@
             nodejs_22
             yq-go
           ]);
-          unstablePackages = with pkgs-unstable; [
+          lintPackages = [
             golangci-lint
           ];
           otherPackages = [
@@ -115,7 +122,7 @@
         in
         {
           default = pkgs.mkShell {
-            packages = stablePackages ++ unstablePackages ++ otherPackages;
+            packages = stablePackages ++ lintPackages ++ otherPackages;
 
             env = {
               GOROOT = "${go}/share/go";

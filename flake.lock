@@ -21,6 +21,22 @@
         "type": "github"
       }
     },
+    "go-stable": {
+      "locked": {
+        "lastModified": 1793080905,
+        "narHash": "sha256-fjZnuAo+QWOLS5Ejt/Ppx6lxcIk3XTANDynPXjNyxr8=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "82357ce01ff800eb847c08107682d506a461959f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "82357ce01ff800eb847c08107682d506a461959f",
+        "type": "github"
+      }
+    },
     "go-tooling": {
       "flake": false,
       "locked": {
@@ -89,6 +105,7 @@
     },
     "root": {
       "inputs": {
+        "go-stable": "go-stable",
         "go-tooling": "go-tooling",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
