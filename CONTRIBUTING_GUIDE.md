@@ -39,7 +39,7 @@ The Nix shell uses upstream Go 1.26.10 and its matching `buildGo126Module`
 from the locked `go-stable` input (nixpkgs `staging-next-26.05`). Keeping the
 complete upstream compiler package preserves its public binary-cache identity;
 the root package set and unrelated tools remain independently pinned. Mockgen
-and the golangci-lint 2.15.0 recipe use that same Go builder, and
+and the existing golangci-lint 2.11.0 recipe use that same Go builder, and
 `GOTOOLCHAIN=local` keeps Go from downloading another compiler. The linter and
 mockgen may still require builds, and the Intel macOS compiler currently has no
 public cache entry.
