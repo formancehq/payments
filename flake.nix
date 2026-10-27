@@ -5,11 +5,8 @@
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
 
-    # Import only Go tool recipes; keep the existing package sets pinned.
-    go-tooling = {
-      url = "github:NixOS/nixpkgs/8cec5ef1131078ea76689e84c362b0ed6a1fb6a1";
-      flake = false;
-    };
+    # Keep the compiler and its builder upstream; preserve all other tool pins.
+    go-stable.url = "github:NixOS/nixpkgs/82357ce01ff800eb847c08107682d506a461959f";
 
     nur = {
       url = "github:nix-community/NUR";
@@ -17,7 +14,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, go-tooling, nur }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, go-stable, nur }:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -92,10 +89,14 @@
 
       devShells = forEachSupportedSystem ({ pkgs, pkgs-unstable, system }:
         let
-          go = pkgs.callPackage "${go-tooling}/pkgs/development/compilers/go/1.26.nix" {
+          # Use the complete upstream package to preserve binary-cache identity.
+          goPkgs = import go-stable { inherit system; };
+          go = goPkgs.go_1_26;
+          buildGoModule = goPkgs.buildGo126Module;
+          # Preserve the existing linter version, using the shell's compiler.
+          golangci-lint = pkgs-unstable.golangci-lint.override {
             buildGo126Module = buildGoModule;
           };
-          buildGoModule = pkgs.buildGoModule.override { inherit go; };
           stablePackages = [ go (pkgs.mockgen.override { inherit buildGoModule; }) ] ++ (with pkgs; [
             argocd
             ginkgo
@@ -105,7 +106,7 @@
             nodejs_22
             yq-go
           ]);
-          unstablePackages = with pkgs-unstable; [
+          lintPackages = [
             golangci-lint
           ];
           otherPackages = [
@@ -115,7 +116,7 @@
         in
         {
           default = pkgs.mkShell {
-            packages = stablePackages ++ unstablePackages ++ otherPackages;
+            packages = stablePackages ++ lintPackages ++ otherPackages;
 
             env = {
               GOROOT = "${go}/share/go";
