@@ -116,13 +116,13 @@ func transferInitiationsGet(backend backend.Backend) http.HandlerFunc {
 }
 
 func translateAdjustments(from []models.PaymentInitiationAdjustment) []transferInitiationAdjustmentsResponse {
-	to := make([]transferInitiationAdjustmentsResponse, len(from))
-	for i, adjustment := range from {
+	to := make([]transferInitiationAdjustmentsResponse, 0, len(from))
+	for _, adjustment := range from {
 		status, toSend := translateStatus(adjustment.Status)
 		if !toSend {
 			continue
 		}
-		to[i] = transferInitiationAdjustmentsResponse{
+		to = append(to, transferInitiationAdjustmentsResponse{
 			AdjustmentID: adjustment.ID.String(),
 			CreatedAt:    adjustment.CreatedAt,
 			Status:       status,
@@ -133,7 +133,7 @@ func translateAdjustments(from []models.PaymentInitiationAdjustment) []transferI
 				return adjustment.Error.Error()
 			}(),
 			Metadata: adjustment.Metadata,
-		}
+		})
 	}
 	return to
 }
