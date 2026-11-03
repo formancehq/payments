@@ -491,7 +491,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, 
 		return models.Task{}, err
 	}
 
-	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, ba.ID.String())
+	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, models.IdempotencyKey(ba.ID))
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
@@ -560,7 +560,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateTransfer")
 	defer span.End()
 
-	id := models.TaskIDReference(fmt.Sprintf("create-transfer-%s-%d", e.stack, attempt), piID.ConnectorID, piID.String())
+	id := models.TaskIDReference(fmt.Sprintf("create-transfer-%s-%d", e.stack, attempt), piID.ConnectorID, models.IdempotencyKey(piID))
 
 	now := time.Now().UTC()
 	task := models.Task{
@@ -622,10 +622,11 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	// The reversal.ID already uniquely identifies this reversal (reference +
-	// connector); including reversal.CreatedAt.String() here only bloated the
-	// Temporal workflow id past its length limit (EN-1346/EN-1347).
-	id := models.TaskIDReference(fmt.Sprintf("reverse-transfer-%s", e.stack), reversal.ConnectorID, reversal.ID.String())
+	// reversal.ID.String() is a base64 blob that re-embeds the connector's own
+	// provider+UUID (already written verbatim into the id by TaskIDReference),
+	// which bloats the Temporal workflow id past its length limit
+	// (EN-1346/EN-1347). Hash it instead of embedding it whole.
+	id := models.TaskIDReference(fmt.Sprintf("reverse-transfer-%s", e.stack), reversal.ConnectorID, models.IdempotencyKey(reversal.ID))
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
@@ -683,7 +684,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePayout")
 	defer span.End()
 
-	id := models.TaskIDReference(fmt.Sprintf("create-payout-%s-%d", e.stack, attempt), piID.ConnectorID, piID.String())
+	id := models.TaskIDReference(fmt.Sprintf("create-payout-%s-%d", e.stack, attempt), piID.ConnectorID, models.IdempotencyKey(piID))
 
 	now := time.Now().UTC()
 	task := models.Task{
@@ -745,10 +746,11 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	// The reversal.ID already uniquely identifies this reversal (reference +
-	// connector); including reversal.CreatedAt.String() here only bloated the
-	// Temporal workflow id past its length limit (EN-1346/EN-1347).
-	id := models.TaskIDReference(fmt.Sprintf("reverse-payout-%s", e.stack), reversal.ConnectorID, reversal.ID.String())
+	// reversal.ID.String() is a base64 blob that re-embeds the connector's own
+	// provider+UUID (already written verbatim into the id by TaskIDReference),
+	// which bloats the Temporal workflow id past its length limit
+	// (EN-1346/EN-1347). Hash it instead of embedding it whole.
+	id := models.TaskIDReference(fmt.Sprintf("reverse-payout-%s", e.stack), reversal.ConnectorID, models.IdempotencyKey(reversal.ID))
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{

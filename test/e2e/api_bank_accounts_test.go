@@ -139,7 +139,7 @@ var _ = Context("Payments API Bank Accounts", Ordered, Serial, func() {
 			Expect(err).To(BeNil())
 			taskID, err := models.TaskIDFromString(forwardResponse.GetV3ForwardBankAccountResponse().Data.TaskID)
 			Expect(err).To(BeNil())
-			Expect(taskID.Reference).To(ContainSubstring(id.String()))
+			Expect(taskID.Reference).To(ContainSubstring(models.IdempotencyKey(id)))
 			cID := models.MustConnectorIDFromString(connectorID)
 			Expect(taskID.Reference).To(ContainSubstring(cID.Reference.String()))
 
