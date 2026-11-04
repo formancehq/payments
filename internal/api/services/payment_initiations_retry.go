@@ -92,6 +92,7 @@ func (s *Service) getAllPaymentInitiationAdjustments(ctx context.Context, id mod
 		if cursor.Next == "" {
 			break
 		}
+		next = cursor.Next
 	}
 
 	return adjustments, nil

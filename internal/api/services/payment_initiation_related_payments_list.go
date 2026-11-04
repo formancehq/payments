@@ -38,6 +38,7 @@ func (s *Service) PaymentInitiationRelatedPaymentsListAll(ctx context.Context, i
 		if cursor.Next == "" {
 			break
 		}
+		next = cursor.Next
 	}
 
 	return relatedPayment, nil
