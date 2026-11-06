@@ -22,6 +22,8 @@ jobs:
     uses: formancehq/ci/.github/workflows/go-build.yml@v1
     with:
       build-condition: always
+      # RFC-0013: publish dev builds as vX.Y.Z-dev.N.gSHA instead of the bare SHA.
+      dev-version: true
       nix-extra-flags: '--extra-experimental-features "nix-command" --extra-experimental-features "flakes"'
     secrets:
       NUMARY_GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
@@ -44,7 +46,7 @@ jobs:
       - uses: formancehq/ci/actions/deploy-staging@v1
         with:
           component: payments
-          tag: ${{ github.event.pull_request.head.sha }}
+          tag: ${{ needs.GoReleaser.outputs.version }}
           auth-token: ${{ secrets.ARGOCD_REGION_AUTH_TOKEN }}
           ts-oauth-client-id: ${{ secrets.TS_OIDC_OAUTH_CLIENT_ID }}
           ts-audience: ${{ secrets.TS_OIDC_AUDIENCE }}

@@ -3,7 +3,10 @@ version: 2
 project_name: payments
 
 nightly:
-  version_template: '{{ .FullCommit }}'
+  # RFC-0013: CI passes a SemVer development version (formancehq/ci/actions/dev-version)
+  # as DEV_VERSION, e.g. 3.4.10-dev.5.g7007df2. Without it, nightly builds keep the SHA.
+  version_template: >-
+    {{ if index .Env "DEV_VERSION" }}{{ .Env.DEV_VERSION }}{{ else }}{{ .FullCommit }}{{ end }}
   publish_release: false
 
 checksum:
@@ -87,7 +90,7 @@ archives:
 dockers:
   # CE - build.Dockerfile amd64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64'
     ids:
       - payments-ce
     goarch: amd64
@@ -106,7 +109,7 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
   # CE - build.Dockerfile arm64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64'
     ids:
       - payments-ce
     goarch: arm64
@@ -125,7 +128,7 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
   # CE - scratch.Dockerfile amd64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64-scratch'
     ids:
       - payments-ce
     goarch: amd64
@@ -144,7 +147,7 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
   # CE - scratch.Dockerfile arm64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64-scratch'
     ids:
       - payments-ce
     goarch: arm64
@@ -164,7 +167,7 @@ dockers:
 
   # EE - build.Dockerfile amd64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64'
     ids:
       - payments-ee
     goarch: amd64
@@ -183,7 +186,7 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
   # EE - build.Dockerfile arm64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64'
     ids:
       - payments-ee
     goarch: arm64
@@ -202,7 +205,7 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
   # EE - scratch.Dockerfile amd64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64-scratch'
     ids:
       - payments-ee
     goarch: amd64
@@ -221,7 +224,7 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
   # EE - scratch.Dockerfile arm64
   - image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64-scratch'
     ids:
       - payments-ee
     goarch: arm64
@@ -241,36 +244,58 @@ dockers:
 
 docker_manifests:
   # CE - versioned
-  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}"
+  - name_template: 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}'
     image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64'
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64'
   # CE - latest
   - name_template: "{{ if not .IsNightly }}{{ if not .Prerelease }}ghcr.io/formancehq/{{ .ProjectName }}:latest{{ end }}{{ end }}"
     image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64'
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64'
   # CE - scratch
-  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-scratch"
+  - name_template: 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-scratch'
     image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
-      - "ghcr.io/formancehq/{{ .ProjectName }}:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64-scratch'
+      - 'ghcr.io/formancehq/{{ .ProjectName }}:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64-scratch'
+
+  # CE - full-SHA compatibility alias of the SemVer nightly (RFC-0013)
+  - name_template: '{{ if and .IsNightly (index .Env "DEV_VERSION") }}ghcr.io/formancehq/{{ .ProjectName }}:{{ .FullCommit }}{{ end }}'
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:v{{ .Version }}-amd64"
+      - "ghcr.io/formancehq/{{ .ProjectName }}:v{{ .Version }}-arm64"
+  # CE scratch - full-SHA compatibility alias of the SemVer nightly (RFC-0013)
+  - name_template: '{{ if and .IsNightly (index .Env "DEV_VERSION") }}ghcr.io/formancehq/{{ .ProjectName }}:{{ .FullCommit }}-scratch{{ end }}'
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}:v{{ .Version }}-amd64-scratch"
+      - "ghcr.io/formancehq/{{ .ProjectName }}:v{{ .Version }}-arm64-scratch"
 
   # EE - versioned
-  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}"
+  - name_template: 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}'
     image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64'
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64'
   # EE - latest
   - name_template: "{{ if not .IsNightly }}{{ if not .Prerelease }}ghcr.io/formancehq/{{ .ProjectName }}-ee:latest{{ end }}{{ end }}"
     image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64"
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64'
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64'
   # EE - scratch
-  - name_template: "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-scratch"
+  - name_template: 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-scratch'
     image_templates:
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-amd64-scratch"
-      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if not .IsNightly }}v{{ end }}{{ .Version }}-arm64-scratch"
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-amd64-scratch'
+      - 'ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ if or (not .IsNightly) (index .Env "DEV_VERSION") }}v{{ end }}{{ .Version }}-arm64-scratch'
+
+  # EE - full-SHA compatibility alias of the SemVer nightly (RFC-0013)
+  - name_template: '{{ if and .IsNightly (index .Env "DEV_VERSION") }}ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ .FullCommit }}{{ end }}'
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:v{{ .Version }}-amd64"
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:v{{ .Version }}-arm64"
+  # EE scratch - full-SHA compatibility alias of the SemVer nightly (RFC-0013)
+  - name_template: '{{ if and .IsNightly (index .Env "DEV_VERSION") }}ghcr.io/formancehq/{{ .ProjectName }}-ee:{{ .FullCommit }}-scratch{{ end }}'
+    image_templates:
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:v{{ .Version }}-amd64-scratch"
+      - "ghcr.io/formancehq/{{ .ProjectName }}-ee:v{{ .Version }}-arm64-scratch"
 
 release:
   prerelease: auto
