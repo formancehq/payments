@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      # RFC-0013 version-line markers (e.g. v3.6.0-0) are not releases.
+      - '!v*.*.*-0'
 permissions:
   contents: write
   packages: write
