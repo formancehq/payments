@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
@@ -76,7 +77,11 @@ func NewClient(config *Config) Client {
 	}
 	if config.OAuthConfig != nil {
 		// pass a pre-configured http client to oauth lib via the context
-		ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+		// The oauth2 token source keeps this context for every token fetch and
+		// refresh, so it never sees the operation of the request that
+		// triggered it.
+		ctx := metrics.OperationContext(context.Background(), "authenticate")
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
 		httpClient = config.OAuthConfig.Client(ctx)
 	}
 

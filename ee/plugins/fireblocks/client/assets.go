@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type Asset struct {
@@ -54,6 +56,7 @@ type AssetsResponse struct {
 }
 
 func (c *client) ListAssets(ctx context.Context) ([]Asset, error) {
+	ctx = metrics.OperationContext(ctx, "list_assets")
 	var allAssets []Asset
 	var cursor string
 
