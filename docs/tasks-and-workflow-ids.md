@@ -65,7 +65,7 @@ response body instead. The task ID itself keeps the same encoding and keeps work
 | Execution owner | None. No migration runs. New references are produced on new writes only. |
 | Rollback version | v3.4.9 |
 | Rollback window | Closes when the rollout is complete. No later contract release is required. |
-| Operator action | None required. See [Rollout recommendation](#rollout-recommendation). |
+| Operator action | No migration step. Retry restrictions apply, see [Retry restrictions](#retry-restrictions-after-upgrade-or-rollback). |
 
 ### Existing state
 
@@ -74,34 +74,58 @@ response body instead. The task ID itself keeps the same encoding and keeps work
   receive their `TaskID` as workflow input and complete normally. No code rebuilds a workflow
   ID from an object ID. Connector-wide termination looks up workflows by search attributes.
 
-### N / N-1 coexistence
+### Duplicate-execution protection across versions
 
-Both versions read all existing state correctly. The one gap is duplicate-execution protection:
+Both versions read all existing state correctly. The gap is duplicate-execution protection:
 v3.4.9 and this release compute different workflow IDs for the same object and attempt,
-so Temporal's `REJECT_DUPLICATE` no longer deduplicates across versions.
+so Temporal's `REJECT_DUPLICATE` cannot find an execution started by the other version.
+This shows up in two different ways.
 
-- **Create transfer / payout.** The workflow ID is the only guard. The workflows add their
-  `PROCESSING` adjustment unconditionally. If two create, approve or retry calls for the
-  same payment initiation land on different versions before the first workflow has written its
-  adjustment, both pass the API-level status check and both reach the PSP.
-- **Reverse transfer / payout.** `validateOnlyReverse` rejects a second reversal while one is in
-  progress, and `validateReverseAmount` caps the total reversed amount. A partial reversal that
-  already completed on one version and is submitted again on the other version starts a
-  new workflow and can be executed a second time, as long as the cap allows it.
-- **Forward bank account.** A duplicate forward creates the bank account at the PSP a second time.
+**Concurrent execution.** Calls for the same object are served by both versions at the same time,
+during a rolling update.
 
-Within a single version, the guard works as before. Across any version, it holds only for the
-Temporal namespace retention period, because after that the workflow ID can be reused.
+**Sequential replay.** A call for an object that was already accepted by one version is sent again
+after the other version is running. This needs neither overlapping replicas nor in-flight traffic:
+a request accepted before the upgrade and retried after it is enough. The same applies after a rollback.
 
-The same window applies during a rollback from this release to v3.4.9.
+Some operations have a guard that does not depend on the workflow ID:
+
+| Operation | Guard outside the workflow ID | Concurrent execution | Sequential replay |
+| --- | --- | --- | --- |
+| Create payment initiation | `PaymentInitiationsInsert` has no `ON CONFLICT`: a second create with the same ID fails | Protected | Protected |
+| Approve payment initiation | Last adjustment must be `WAITING_FOR_VALIDATION` | **Exposed** until the first workflow writes its adjustment | Protected once the first workflow has run |
+| Retry payment initiation | Last adjustment must be `FAILED` or `NOT_INITIATED`; the attempt number comes from stored adjustments | **Exposed** until the first workflow writes its adjustment | Protected: each retry gets a new attempt number, so the workflow ID was never the guard |
+| Reverse transfer / payout | `validateOnlyReverse` blocks a second reversal while one is in progress; `validateReverseAmount` caps the total reversed | Protected by `validateOnlyReverse` | **Exposed**: a completed partial reversal sent again starts a new workflow and runs again if the cap allows it |
+| Forward bank account | None | **Exposed** | **Exposed**: a forward sent again creates the account at the PSP a second time |
+
+Within a single version, the guard works as before. In every version, including v3.4.9, the
+workflow ID only protects for the Temporal namespace retention period: once the earlier
+execution is deleted, the same ID can start again. Sequential replay of bank account forwards and
+completed partial reversals was therefore already possible after retention expiry. This release
+also makes it possible across the upgrade, regardless of retention.
+
+No durable guard (for example a stored per-object forward record or a reversal idempotency check)
+is added by this change.
 
 ### Rollout recommendation
 
-To remove the coexistence window, make sure the two versions never serve the API at the same time
-(for example a `Recreate` strategy, or `maxSurge: 0` with a single replica), or deploy while no
-payment initiation, reversal or bank account forwarding traffic is in flight.
-If neither is possible, the risk is limited to concurrent or retried calls for the same object
-during the rollout.
+Making sure the two versions never serve the API at the same time (for example a `Recreate`
+strategy, or `maxSurge: 0` with a single replica), or deploying while no payment initiation,
+reversal or bank account forwarding traffic is in flight, prevents **concurrent execution** only.
+It does not prevent sequential replay.
+
+### Retry restrictions after upgrade or rollback
+
+Until a durable guard exists, after upgrading to this release or rolling back to v3.4.9:
+
+- Do not resend a bank account forward (`POST /v3/bank-accounts/{bankAccountID}/forward` or
+  `POST /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward`) that was
+  accepted by the other version. Check the original task's status, or the bank account's
+  related accounts, instead.
+- Do not resend a payment initiation reversal that was accepted by the other version.
+  Check the original task's status, or the payment initiation's adjustments, instead.
+
+Create, approve and retry of payment initiations can be resent: their state checks reject duplicates.
 
 ### Validation
 
@@ -111,4 +135,5 @@ during the rollout.
 | Upgrade from v3.4.9 | No schema change. Existing tasks are read by ID and are not parsed. |
 | Running workflows across the upgrade | Established by code review: workflows use the `TaskID` from their input. Not covered by an automated test. |
 | Rollback to v3.4.9 | v3.4.9 reads tasks by stored ID and does not parse references. Not covered by an automated test. |
-| Duplicate execution | Within one version: unchanged (`REJECT_DUPLICATE`). Across versions: not guarded, see above. |
+| Duplicate execution | Within one version: unchanged (`REJECT_DUPLICATE`). Across versions: see the protection table above. Established by code review, no automated test. |
+| Production exposure | Grafana, `temporal_workflow_completed`, 90 days before this change: no create payout/transfer, reverse payout/transfer or create bank account workflows on any production stack. |
