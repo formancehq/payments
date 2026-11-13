@@ -1,0 +1,35 @@
+name: Mark Version Line
+
+# RFC-0013: when a release branch (release/vX.Y) is created, tag its branch
+# point with the marker of the next version line (vX.(Y+1).0-0), so dev builds
+# of main sort above every release of the new branch.
+# releases.yml ignores markers ('!v*.*.*-0').
+#
+# Run manually (workflow_dispatch) to backfill the marker of an existing
+# release branch; dry-run is on by default.
+
+on:
+  create:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Release branch to mark (release/vX.Y or release/vX)
+        required: true
+      dry-run:
+        description: Compute the marker without tagging or pushing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  Mark:
+    # `create` cannot be filtered by branch in `on:`, so filter here.
+    if: github.event_name == 'workflow_dispatch' || (github.ref_type == 'branch' && startsWith(github.ref_name, 'release/'))
+    uses: formancehq/ci/.github/workflows/mark-version-line.yml@v1
+    permissions:
+      contents: write
+    with:
+      branch: ${{ inputs.branch || github.ref_name }}
+      dry-run: ${{ inputs.dry-run || false }}
