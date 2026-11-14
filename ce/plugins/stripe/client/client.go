@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/go-libs/v5/pkg/observe/log"
+	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
+	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
 	"github.com/formancehq/payments/pkg/domain/httpwrapper"
 	"github.com/formancehq/payments/pkg/domain/metrics"
-	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/formancehq/payments/pkg/domain/models"
-	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/plugins"
 	"github.com/stripe/stripe-go/v80"
 	"github.com/stripe/stripe-go/v80/account"
 	"github.com/stripe/stripe-go/v80/balance"
@@ -67,7 +67,7 @@ func New(
 		backend = backends.API
 	}
 	accountClient := account.Client{B: backend, Key: apiKey}
-	result, err := accountClient.Get()
+	result, err := getRootAccount(accountClient)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", plugins.ErrInvalidClientRequest, err)
 	}

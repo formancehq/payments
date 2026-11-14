@@ -9,6 +9,7 @@ import (
 	"time"
 
 	errorsutils "github.com/formancehq/payments/pkg/domain/errors"
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type WebhookDelivery struct {
@@ -38,6 +39,7 @@ type WebhookSubscriptionResponse struct {
 }
 
 func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*WebhookSubscriptionResponse, error) {
+	ctx = metrics.OperationContext(ctx, "create_webhook")
 	reqBody, err := json.Marshal(webhookSubscription{
 		Name:      name,
 		TriggerOn: triggerOn,
@@ -75,6 +77,7 @@ func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 }
 
 func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]WebhookSubscriptionResponse, error) {
+	ctx = metrics.OperationContext(ctx, "list_webhooks")
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions", profileID)), http.NoBody)
 	if err != nil {
@@ -94,6 +97,7 @@ func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64)
 }
 
 func (c *client) DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error {
+	ctx = metrics.OperationContext(ctx, "delete_webhook")
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodDelete, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions/%s", profileID, subscriptionID)), http.NoBody)
 	if err != nil {

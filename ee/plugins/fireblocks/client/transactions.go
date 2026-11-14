@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type Transaction struct {
@@ -44,6 +46,7 @@ type FeeInfo struct {
 }
 
 func (c *client) ListTransactions(ctx context.Context, createdAfter int64, limit int) ([]Transaction, error) {
+	ctx = metrics.OperationContext(ctx, "list_transactions")
 	// Fireblocks defaults `after` to "last 90 days" when omitted; pin to 1 ms
 	// past epoch on the first call so we fetch the full history.
 	if createdAfter <= 0 {

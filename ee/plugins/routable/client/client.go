@@ -148,6 +148,7 @@ func (c *client) do(ctx context.Context, method, path string, query url.Values, 
 }
 
 func (c *client) ListAccounts(ctx context.Context, page, pageSize int) (*ListAccountsResponse, error) {
+	ctx = metrics.OperationContext(ctx, "list_accounts")
 	var resp ListAccountsResponse
 	if _, err := c.do(ctx, http.MethodGet, "/v1/settings/accounts", paginationQuery(page, pageSize), nil, "", &resp); err != nil {
 		return nil, fmt.Errorf("listing accounts: %w", err)
@@ -156,6 +157,7 @@ func (c *client) ListAccounts(ctx context.Context, page, pageSize int) (*ListAcc
 }
 
 func (c *client) GetAccount(ctx context.Context, id string) (*Account, error) {
+	ctx = metrics.OperationContext(ctx, "get_account")
 	if id == "" {
 		return nil, errors.New("account id is required")
 	}
@@ -167,6 +169,7 @@ func (c *client) GetAccount(ctx context.Context, id string) (*Account, error) {
 }
 
 func (c *client) ListCompanies(ctx context.Context, page, pageSize int) (*ListCompaniesResponse, error) {
+	ctx = metrics.OperationContext(ctx, "list_companies")
 	var resp ListCompaniesResponse
 	if _, err := c.do(ctx, http.MethodGet, "/v1/companies", paginationQuery(page, pageSize), nil, "", &resp); err != nil {
 		return nil, fmt.Errorf("listing companies: %w", err)
@@ -175,6 +178,7 @@ func (c *client) ListCompanies(ctx context.Context, page, pageSize int) (*ListCo
 }
 
 func (c *client) ListPayables(ctx context.Context, page, pageSize int, statusChangedAtGte time.Time) (*ListPayablesResponse, error) {
+	ctx = metrics.OperationContext(ctx, "list_payables")
 	q := paginationQuery(page, pageSize)
 	if !statusChangedAtGte.IsZero() {
 		q.Set("status_changed_at.gte", statusChangedAtGte.UTC().Format(time.RFC3339))
@@ -187,6 +191,7 @@ func (c *client) ListPayables(ctx context.Context, page, pageSize int, statusCha
 }
 
 func (c *client) GetPayable(ctx context.Context, id string) (*Payable, error) {
+	ctx = metrics.OperationContext(ctx, "get_payable")
 	if id == "" {
 		return nil, errors.New("payable id is required")
 	}
@@ -202,6 +207,7 @@ func (c *client) GetPayable(ctx context.Context, id string) (*Payable, error) {
 }
 
 func (c *client) CreatePayable(ctx context.Context, req CreatePayableRequest) (*Payable, int, error) {
+	ctx = metrics.OperationContext(ctx, "create_payable")
 	if err := validateCreatePayable(req); err != nil {
 		return nil, 0, err
 	}
@@ -234,6 +240,7 @@ func validateCreatePayable(req CreatePayableRequest) error {
 }
 
 func (c *client) ListReceivables(ctx context.Context, page, pageSize int, statusChangedAtGte time.Time) (*ListReceivablesResponse, error) {
+	ctx = metrics.OperationContext(ctx, "list_receivables")
 	q := paginationQuery(page, pageSize)
 	if !statusChangedAtGte.IsZero() {
 		q.Set("status_changed_at.gte", statusChangedAtGte.UTC().Format(time.RFC3339))

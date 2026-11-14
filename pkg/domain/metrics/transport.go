@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"net/http"
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -12,6 +13,10 @@ import (
 type MetricOpContextKey string
 
 const MetricOperationContextKey MetricOpContextKey = "_metric_operation_context_key"
+
+// unknownOperation is recorded when the caller did not set an operation with
+// OperationContext.
+const unknownOperation = "unknown"
 
 func OperationContext(ctx context.Context, operation string) context.Context {
 	return context.WithValue(ctx, MetricOperationContextKey, operation)
@@ -49,14 +54,18 @@ func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	res, err := r.parent.RoundTrip(req)
 	registry := GetMetricsRegistry()
 
-	attrs := r.commonMetricAttributes
-	attrs = append(attrs, attribute.String("connector", r.connectorName))
-	attrs = append(attrs, attribute.String("endpoint", req.URL.Path))
-	if val := req.Context().Value(MetricOperationContextKey); val != nil {
-		if name, ok := val.(string); ok {
-			attrs = append(attrs, attribute.String("operation", name))
-		}
+	// Labels must stay bounded: never record the request path, it carries
+	// resource IDs and creates a new series for each one.
+	operation := unknownOperation
+	if name, ok := req.Context().Value(MetricOperationContextKey).(string); ok && name != "" {
+		operation = name
 	}
+
+	attrs := slices.Clone(r.commonMetricAttributes)
+	attrs = append(attrs,
+		attribute.String("connector", r.connectorName),
+		attribute.String("operation", operation),
+	)
 
 	if res != nil {
 		attrs = append(attrs, attribute.Int("status", res.StatusCode))

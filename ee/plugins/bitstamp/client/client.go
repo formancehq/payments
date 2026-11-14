@@ -152,6 +152,7 @@ func (c *client) signedPOST(ctx context.Context, path string, form url.Values, d
 }
 
 func (c *client) GetAccountBalances(ctx context.Context) ([]AccountBalance, error) {
+	ctx = metrics.OperationContext(ctx, "get_account_balances")
 	var out []AccountBalance
 	if err := c.signedPOST(ctx, "/api/v2/account_balances/", nil, &out); err != nil {
 		return nil, fmt.Errorf("get account balances: %w", err)
@@ -160,6 +161,7 @@ func (c *client) GetAccountBalances(ctx context.Context) ([]AccountBalance, erro
 }
 
 func (c *client) GetUserTransactions(ctx context.Context, sinceID *int64, limit int) ([]UserTransaction, error) {
+	ctx = metrics.OperationContext(ctx, "get_user_transactions")
 	form := url.Values{}
 	form.Set("sort", "asc")
 	if limit > 0 {
@@ -179,6 +181,7 @@ func (c *client) GetUserTransactions(ctx context.Context, sinceID *int64, limit 
 // signing. Kept on the same client so the metrics + otel transport
 // instruments it uniformly.
 func (c *client) GetCurrencies(ctx context.Context) ([]Currency, error) {
+	ctx = metrics.OperationContext(ctx, "get_currencies")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v2/currencies/", nil)
 	if err != nil {
 		return nil, fmt.Errorf("get currencies: create request: %w", err)
@@ -196,6 +199,7 @@ func (c *client) GetCurrencies(ctx context.Context) ([]Currency, error) {
 // order_source is always "orderbook". sinceID, when non-nil and positive,
 // restricts the response to events whose order ID is greater than sinceID.
 func (c *client) GetAccountOrderData(ctx context.Context, market string, sinceID *string) ([]AccountOrderDataEvent, error) {
+	ctx = metrics.OperationContext(ctx, "get_account_order_data")
 	form := url.Values{}
 	form.Set("order_source", "orderbook")
 	form.Set("market", strings.TrimSpace(market))
@@ -214,6 +218,7 @@ func (c *client) GetAccountOrderData(ctx context.Context, market string, sinceID
 // variants — the spot-only enrichment filters non-SPOT rows out).
 // Public GET; no signing required.
 func (c *client) GetMarkets(ctx context.Context) ([]Market, error) {
+	ctx = metrics.OperationContext(ctx, "get_markets")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v2/markets/", nil)
 	if err != nil {
 		return nil, fmt.Errorf("get markets: create request: %w", err)
@@ -230,6 +235,7 @@ func (c *client) GetMarkets(ctx context.Context) ([]Market, error) {
 // GetMyMarkets returns the trading-pair allow-list for the
 // authenticated API key. Authenticated GET endpoint.
 func (c *client) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
+	ctx = metrics.OperationContext(ctx, "get_my_markets")
 	var out []MyMarket
 	if err := c.signedGET(ctx, "/api/v2/my_markets/", &out); err != nil {
 		return nil, fmt.Errorf("get my markets: %w", err)
@@ -241,6 +247,7 @@ func (c *client) GetMyMarkets(ctx context.Context) ([]MyMarket, error) {
 // the authenticated key can trade. The fee rate is a string-decimal
 // percentage (e.g. "0.300" = 0.3%).
 func (c *client) GetTradingFees(ctx context.Context) ([]TradingFee, error) {
+	ctx = metrics.OperationContext(ctx, "get_trading_fees")
 	var out []TradingFee
 	if err := c.signedPOST(ctx, "/api/v2/fees/trading/", nil, &out); err != nil {
 		return nil, fmt.Errorf("get trading fees: %w", err)
@@ -253,6 +260,7 @@ func (c *client) GetTradingFees(ctx context.Context) ([]TradingFee, error) {
 // rows per currency are expected on assets that span multiple
 // blockchains (USDC, ETH, …).
 func (c *client) GetWithdrawalFees(ctx context.Context) ([]WithdrawalFee, error) {
+	ctx = metrics.OperationContext(ctx, "get_withdrawal_fees")
 	var out []WithdrawalFee
 	if err := c.signedPOST(ctx, "/api/v2/fees/withdrawal/", nil, &out); err != nil {
 		return nil, fmt.Errorf("get withdrawal fees: %w", err)

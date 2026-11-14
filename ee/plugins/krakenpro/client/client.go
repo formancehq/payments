@@ -215,6 +215,7 @@ func sign(secret []byte, uriPath, nonce string, body []byte) string {
 
 // GetAssets fetches /0/public/Assets.
 func (c *client) GetAssets(ctx context.Context) (map[string]AssetInfo, error) {
+	ctx = metrics.OperationContext(ctx, "get_assets")
 	out := make(map[string]AssetInfo)
 	if err := c.do(ctx, http.MethodGet, "/0/public/Assets", nil, &out); err != nil {
 		return nil, fmt.Errorf("get assets: %w", err)
@@ -224,6 +225,7 @@ func (c *client) GetAssets(ctx context.Context) (map[string]AssetInfo, error) {
 
 // GetAssetPairs fetches /0/public/AssetPairs.
 func (c *client) GetAssetPairs(ctx context.Context) (map[string]AssetPair, error) {
+	ctx = metrics.OperationContext(ctx, "get_asset_pairs")
 	out := make(map[string]AssetPair)
 	if err := c.do(ctx, http.MethodGet, "/0/public/AssetPairs", nil, &out); err != nil {
 		return nil, fmt.Errorf("get asset pairs: %w", err)
@@ -233,6 +235,7 @@ func (c *client) GetAssetPairs(ctx context.Context) (map[string]AssetPair, error
 
 // GetBalanceEx fetches /0/private/BalanceEx.
 func (c *client) GetBalanceEx(ctx context.Context) (map[string]BalanceExEntry, error) {
+	ctx = metrics.OperationContext(ctx, "get_balance_ex")
 	out := make(map[string]BalanceExEntry)
 	if err := c.do(ctx, http.MethodPost, "/0/private/BalanceEx", nil, &out); err != nil {
 		return nil, fmt.Errorf("get balance ex: %w", err)
@@ -242,6 +245,7 @@ func (c *client) GetBalanceEx(ctx context.Context) (map[string]BalanceExEntry, e
 
 // GetLedgers fetches /0/private/Ledgers.
 func (c *client) GetLedgers(ctx context.Context, p LedgersParams) (LedgersResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_ledgers")
 	params := map[string]any{}
 	if p.Start > 0 {
 		params["start"] = p.Start
@@ -269,6 +273,7 @@ func (c *client) GetLedgers(ctx context.Context, p LedgersParams) (LedgersRespon
 // it uses the frozen-window + ofs walk on Closetime="close" — that way a
 // newly-closed order with an ancient opentm still falls in the window.
 func (c *client) GetClosedOrders(ctx context.Context, p ClosedOrdersParams) (ClosedOrdersResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_closed_orders")
 	params := map[string]any{}
 	if p.Trades {
 		params["trades"] = true
