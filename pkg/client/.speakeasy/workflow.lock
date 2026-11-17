@@ -16,9 +16,3 @@ workflow:
         formance:
             target: go
             source: Formance-OAS
-            codeSamples:
-                registry:
-                    location: registry.speakeasyapi.dev/formance/gfyrag/formance-oas-go-code-samples
-                labelOverride:
-                    fixedValue: Go (SDK)
-                blocking: false

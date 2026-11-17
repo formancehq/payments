@@ -9,9 +9,10 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/transport/api"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
-	"github.com/formancehq/payments/pkg/domain/models"
+	"github.com/formancehq/payments/internal/connectors/connectorconfig"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/formancehq/payments/pkg/domain/models"
 )
 
 func connectorsList(backend backend.Backend) http.HandlerFunc {
@@ -81,7 +82,7 @@ func newV3Connector(c models.Connector, provider string, caps []models.Capabilit
 		Name:                 c.Name,
 		CreatedAt:            c.CreatedAt,
 		Provider:             provider,
-		Config:               c.Config,
+		Config:               connectorconfig.Readable(c.Config),
 		ScheduledForDeletion: c.ScheduledForDeletion,
 		Capabilities:         caps,
 		UpdatedAt:            c.UpdatedAt,

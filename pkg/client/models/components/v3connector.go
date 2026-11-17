@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-// Config - The connector's configuration, whose shape depends on the provider
-type Config struct {
-}
-
 type V3Connector struct {
 	// Unique identifier of the connector
 	ID string `json:"id"`
@@ -24,8 +20,8 @@ type V3Connector struct {
 	Provider string `json:"provider"`
 	// Whether the connector is being uninstalled
 	ScheduledForDeletion bool `json:"scheduledForDeletion"`
-	// The connector's configuration, whose shape depends on the provider
-	Config Config `json:"config"`
+	// Safe configuration metadata. Stored provider fields and credentials are never returned.
+	Config V3ConnectorConfigRead `json:"config"`
 	// Plugin capabilities advertised by the connector's provider.
 	Capabilities []V3Capability `json:"capabilities,omitempty"`
 	// When the connector's configuration was last changed
@@ -85,9 +81,9 @@ func (o *V3Connector) GetScheduledForDeletion() bool {
 	return o.ScheduledForDeletion
 }
 
-func (o *V3Connector) GetConfig() Config {
+func (o *V3Connector) GetConfig() V3ConnectorConfigRead {
 	if o == nil {
-		return Config{}
+		return V3ConnectorConfigRead{}
 	}
 	return o.Config
 }

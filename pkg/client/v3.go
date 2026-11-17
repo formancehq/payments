@@ -3382,10 +3382,10 @@ func (s *V3) GetConnectorConfig(ctx context.Context, connectorID string, opts ..
 
 // V3UpdateConnectorConfig - Update the config of a connector
 // Update connector config
-func (s *V3) V3UpdateConnectorConfig(ctx context.Context, connectorID string, v3UpdateConnectorRequest *components.V3UpdateConnectorRequest, opts ...operations.Option) (*operations.V3UpdateConnectorConfigResponse, error) {
+func (s *V3) V3UpdateConnectorConfig(ctx context.Context, connectorID string, requestBody map[string]any, opts ...operations.Option) (*operations.V3UpdateConnectorConfigResponse, error) {
 	request := operations.V3UpdateConnectorConfigRequest{
-		ConnectorID:              connectorID,
-		V3UpdateConnectorRequest: v3UpdateConnectorRequest,
+		ConnectorID: connectorID,
+		RequestBody: requestBody,
 	}
 
 	o := operations.Options{}
@@ -3418,7 +3418,7 @@ func (s *V3) V3UpdateConnectorConfig(ctx context.Context, connectorID string, v3
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3UpdateConnectorRequest", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}

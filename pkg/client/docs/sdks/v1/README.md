@@ -2084,12 +2084,9 @@ func main() {
         client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
     )
 
-    res, err := s.Payments.V1.UpdateConnectorConfigV1(ctx, components.ConnectorAdyen, "XXX", components.CreateConnectorConfigStripe(
-        components.StripeConfig{
-            Name: "My Stripe Account",
-            APIKey: "XXX",
-        },
-    ))
+    res, err := s.Payments.V1.UpdateConnectorConfigV1(ctx, components.ConnectorAdyen, "XXX", map[string]any{
+
+    })
     if err != nil {
         log.Fatal(err)
     }
@@ -2101,13 +2098,13 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                                | Type                                                                     | Required                                                                 | Description                                                              | Example                                                                  |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `ctx`                                                                    | [context.Context](https://pkg.go.dev/context#Context)                    | :heavy_check_mark:                                                       | The context to use for the request.                                      |                                                                          |
-| `connector`                                                              | [components.Connector](../../models/components/connector.md)             | :heavy_check_mark:                                                       | The name of the connector.                                               |                                                                          |
-| `connectorID`                                                            | *string*                                                                 | :heavy_check_mark:                                                       | The connector ID.                                                        | XXX                                                                      |
-| `connectorConfig`                                                        | [components.ConnectorConfig](../../models/components/connectorconfig.md) | :heavy_check_mark:                                                       | N/A                                                                      |                                                                          |
-| `opts`                                                                   | [][operations.Option](../../models/operations/option.md)                 | :heavy_minus_sign:                                                       | The options for this request.                                            |                                                                          |
+| Parameter                                                    | Type                                                         | Required                                                     | Description                                                  | Example                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `ctx`                                                        | [context.Context](https://pkg.go.dev/context#Context)        | :heavy_check_mark:                                           | The context to use for the request.                          |                                                              |
+| `connector`                                                  | [components.Connector](../../models/components/connector.md) | :heavy_check_mark:                                           | The name of the connector.                                   |                                                              |
+| `connectorID`                                                | *string*                                                     | :heavy_check_mark:                                           | The connector ID.                                            | XXX                                                          |
+| `requestBody`                                                | map[string]*any*                                             | :heavy_check_mark:                                           | N/A                                                          |                                                              |
+| `opts`                                                       | [][operations.Option](../../models/operations/option.md)     | :heavy_minus_sign:                                           | The options for this request.                                |                                                              |
 
 ### Response
 

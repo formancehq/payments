@@ -4,57 +4,13 @@ package components
 
 // ConnectorConfigResponse - OK
 type ConnectorConfigResponse struct {
-	// A connector's configuration, whose shape depends on the provider
-	Data ConnectorConfig `json:"data"`
+	// Safe configuration metadata. Stored provider fields and credentials are never returned.
+	Data ConnectorConfigRead `json:"data"`
 }
 
-func (o *ConnectorConfigResponse) GetData() ConnectorConfig {
+func (o *ConnectorConfigResponse) GetData() ConnectorConfigRead {
 	if o == nil {
-		return ConnectorConfig{}
+		return ConnectorConfigRead{}
 	}
 	return o.Data
-}
-
-func (o *ConnectorConfigResponse) GetDataStripe() *StripeConfig {
-	return o.GetData().StripeConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataDummypay() *DummyPayConfig {
-	return o.GetData().DummyPayConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataWise() *WiseConfig {
-	return o.GetData().WiseConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataModulr() *ModulrConfig {
-	return o.GetData().ModulrConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataCurrencycloud() *CurrencyCloudConfig {
-	return o.GetData().CurrencyCloudConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataBankingcircle() *BankingCircleConfig {
-	return o.GetData().BankingCircleConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataMangopay() *MangoPayConfig {
-	return o.GetData().MangoPayConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataMoneycorp() *MoneycorpConfig {
-	return o.GetData().MoneycorpConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataAtlar() *AtlarConfig {
-	return o.GetData().AtlarConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataAdyen() *AdyenConfig {
-	return o.GetData().AdyenConfig
-}
-
-func (o *ConnectorConfigResponse) GetDataGeneric() *GenericConfig {
-	return o.GetData().GenericConfig
 }

@@ -8,8 +8,8 @@ import (
 
 type V3UpdateConnectorConfigRequest struct {
 	// The connector ID
-	ConnectorID              string                               `pathParam:"style=simple,explode=false,name=connectorID"`
-	V3UpdateConnectorRequest *components.V3UpdateConnectorRequest `request:"mediaType=application/json"`
+	ConnectorID string         `pathParam:"style=simple,explode=false,name=connectorID"`
+	RequestBody map[string]any `request:"mediaType=application/json"`
 }
 
 func (o *V3UpdateConnectorConfigRequest) GetConnectorID() string {
@@ -19,172 +19,11 @@ func (o *V3UpdateConnectorConfigRequest) GetConnectorID() string {
 	return o.ConnectorID
 }
 
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequest() *components.V3UpdateConnectorRequest {
+func (o *V3UpdateConnectorConfigRequest) GetRequestBody() map[string]any {
 	if o == nil {
 		return nil
 	}
-	return o.V3UpdateConnectorRequest
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestAdyen() *components.V3AdyenConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3AdyenConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestAtlar() *components.V3AtlarConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3AtlarConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBankingbridge() *components.V3BankingbridgeConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3BankingbridgeConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBankingcircle() *components.V3BankingcircleConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3BankingcircleConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestBitstamp() *components.V3BitstampConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3BitstampConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestCoinbaseprime() *components.V3CoinbaseprimeConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3CoinbaseprimeConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestColumn() *components.V3ColumnConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3ColumnConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestCurrencycloud() *components.V3CurrencycloudConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3CurrencycloudConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestDummypay() *components.V3DummypayConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3DummypayConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestFireblocks() *components.V3FireblocksConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3FireblocksConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestGeneric() *components.V3GenericConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3GenericConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestIncrease() *components.V3IncreaseConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3IncreaseConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestKrakenpro() *components.V3KrakenproConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3KrakenproConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestMangopay() *components.V3MangopayConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3MangopayConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestModulr() *components.V3ModulrConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3ModulrConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestMoneycorp() *components.V3MoneycorpConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3MoneycorpConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestPlaid() *components.V3PlaidConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3PlaidConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestPowens() *components.V3PowensConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3PowensConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestQonto() *components.V3QontoConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3QontoConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestRoutable() *components.V3RoutableConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3RoutableConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestStripe() *components.V3StripeConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3StripeConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestTink() *components.V3TinkConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3TinkConfig
-	}
-	return nil
-}
-
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestWise() *components.V3WiseConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3WiseConfig
-	}
-	return nil
+	return o.RequestBody
 }
 
 type V3UpdateConnectorConfigResponse struct {

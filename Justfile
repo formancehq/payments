@@ -85,7 +85,7 @@ contract-tests connector="adyen":
 
 [group('test')]
 generate-sdk: openapi
-    @export PATH=$PATH:$(go env GOPATH)/bin && cd pkg/client && speakeasy run --skip-versioning
+    @export PATH=$PATH:$(go env GOPATH)/bin && cd pkg/client && speakeasy run --skip-versioning --skip-upload-spec
 
 [group('test')]
 generate: generate-sdk

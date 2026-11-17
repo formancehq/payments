@@ -706,7 +706,11 @@ Accept: application/json
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
         "scheduledForDeletion": true,
-        "config": {},
+        "config": {
+          "name": "string",
+          "pollingPeriod": "string",
+          "provider": "string"
+        },
         "capabilities": [
           "FETCH_ACCOUNTS"
         ],
@@ -988,15 +992,9 @@ Accept: application/json
 ```json
 {
   "data": {
-    "apiKey": "string",
-    "companyID": "string",
-    "liveEndpointPrefix": "string",
     "name": "string",
-    "pageSize": 25,
-    "pollingPeriod": "30m",
-    "provider": "Adyen",
-    "webhookPassword": "string",
-    "webhookUsername": "string"
+    "pollingPeriod": "string",
+    "provider": "string"
   }
 }
 ```
@@ -1033,17 +1031,7 @@ Update connector config
 > Body parameter
 
 ```json
-{
-  "apiKey": "string",
-  "companyID": "string",
-  "liveEndpointPrefix": "string",
-  "name": "string",
-  "pageSize": 25,
-  "pollingPeriod": "30m",
-  "provider": "Adyen",
-  "webhookPassword": "string",
-  "webhookUsername": "string"
-}
+{}
 ```
 
 <h3 id="update-the-config-of-a-connector-parameters">Parameters</h3>
@@ -1051,7 +1039,7 @@ Update connector config
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |connectorID|path|string|true|The connector ID|
-|body|body|[V3ConnectorConfig](#schemav3connectorconfig)|false|none|
+|body|body|[V3UpdateConnectorRequest](#schemav3updateconnectorrequest)|false|none|
 
 <h3 id="update-the-config-of-a-connector-responses">Responses</h3>
 
@@ -4995,6 +4983,32 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 |»»» required|boolean|true|none|none|
 |»»» defaultValue|string|false|none|none|
 
+<h2 id="tocS_V3ConnectorConfigRead">V3ConnectorConfigRead</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorconfigread"></a>
+<a id="schema_V3ConnectorConfigRead"></a>
+<a id="tocSv3connectorconfigread"></a>
+<a id="tocsv3connectorconfigread"></a>
+
+```json
+{
+  "name": "string",
+  "pollingPeriod": "string",
+  "provider": "string"
+}
+
+```
+
+Safe configuration metadata. Stored provider fields and credentials are never returned.
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|name|string|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
 <h2 id="tocS_V3GetConnectorConfigResponse">V3GetConnectorConfigResponse</h2>
 <!-- backwards compatibility -->
 <a id="schemav3getconnectorconfigresponse"></a>
@@ -5005,15 +5019,9 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 ```json
 {
   "data": {
-    "apiKey": "string",
-    "companyID": "string",
-    "liveEndpointPrefix": "string",
     "name": "string",
-    "pageSize": 25,
-    "pollingPeriod": "30m",
-    "provider": "Adyen",
-    "webhookPassword": "string",
-    "webhookUsername": "string"
+    "pollingPeriod": "string",
+    "provider": "string"
   }
 }
 
@@ -5023,7 +5031,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|data|[V3ConnectorConfig](#schemav3connectorconfig)|true|none|none|
+|data|[V3ConnectorConfigRead](#schemav3connectorconfigread)|true|none|Safe configuration metadata. Stored provider fields and credentials are never returned.|
 
 <h2 id="tocS_V3UpdateConnectorRequest">V3UpdateConnectorRequest</h2>
 <!-- backwards compatibility -->
@@ -5033,19 +5041,11 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 <a id="tocsv3updateconnectorrequest"></a>
 
 ```json
-{
-  "apiKey": "string",
-  "companyID": "string",
-  "liveEndpointPrefix": "string",
-  "name": "string",
-  "pageSize": 25,
-  "pollingPeriod": "30m",
-  "provider": "Adyen",
-  "webhookPassword": "string",
-  "webhookUsername": "string"
-}
+{}
 
 ```
+
+Partial connector configuration. Omitted fields preserve stored values, recursively for objects. Supplied values replace stored values; arrays replace as a whole. An empty string explicitly replaces the stored value and must pass provider validation. Null values follow provider validation. Provider fields use the same names and types as the installation configuration.
 
 ### Properties
 
@@ -5073,7 +5073,11 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
         "createdAt": "2019-08-24T14:15:22Z",
         "provider": "string",
         "scheduledForDeletion": true,
-        "config": {},
+        "config": {
+          "name": "string",
+          "pollingPeriod": "string",
+          "provider": "string"
+        },
         "capabilities": [
           "FETCH_ACCOUNTS"
         ],
@@ -5218,7 +5222,11 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
   "createdAt": "2019-08-24T14:15:22Z",
   "provider": "string",
   "scheduledForDeletion": true,
-  "config": {},
+  "config": {
+    "name": "string",
+    "pollingPeriod": "string",
+    "provider": "string"
+  },
   "capabilities": [
     "FETCH_ACCOUNTS"
   ],
@@ -5237,7 +5245,7 @@ Plugin capability advertised by a connector. Distinct from the Formance gateway 
 |createdAt|string(date-time)|true|none|When the connector was installed|
 |provider|string|true|none|Name of the payment provider behind the connector|
 |scheduledForDeletion|boolean|true|none|Whether the connector is being uninstalled|
-|config|object|true|none|The connector's configuration, whose shape depends on the provider|
+|config|[V3ConnectorConfigRead](#schemav3connectorconfigread)|true|none|Safe configuration metadata. Stored provider fields and credentials are never returned.|
 |capabilities|[[V3Capability](#schemav3capability)]|false|none|Plugin capabilities advertised by the connector's provider.|
 |updatedAt|string(date-time)¦null|false|none|When the connector's configuration was last changed|
 

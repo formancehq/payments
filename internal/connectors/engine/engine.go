@@ -14,6 +14,7 @@ import (
 	"github.com/formancehq/go-libs/v5/pkg/storage/bun/paginate"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/connectorconfig"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -343,6 +344,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		if errors.Is(err, storage.ErrNotFound) {
 			return fmt.Errorf("connector %w", ErrNotFound)
 		}
+		return err
 	}
 
 	if connector == nil {
@@ -351,7 +353,11 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	connector.Config = rawConfig
+	mergedConfig, err := connectorconfig.Merge(connector.Config, rawConfig)
+	if err != nil {
+		return errorsutils.NewWrappedError(err, ErrValidation)
+	}
+	connector.Config = mergedConfig
 	connectorName, validatedConfig, err := e.connectors.Load(*connector, true, true)
 	if err != nil {
 		otel.RecordError(span, err)

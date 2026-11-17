@@ -11,8 +11,8 @@ import (
 
 	logging "github.com/formancehq/go-libs/v5/pkg/observe/log"
 	"github.com/formancehq/go-libs/v5/pkg/types/pointer"
-	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	v17 "go.temporal.io/api/workflow/v1"
@@ -77,13 +77,11 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(connectorConf.Name))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(connectorConf.Provider))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(connectorConf.Directory))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.Type).To(Equal(components.V3ConnectorConfigTypeDummypay))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.Name).To(Equal(pointer.For(connectorConf.Name)))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.Provider).To(Equal(connectorConf.Provider))
 
 			getResPollingPeriod, err := time.ParseDuration(
-				*getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod,
+				*getRes.V3GetConnectorConfigResponse.Data.PollingPeriod,
 			)
 			Expect(err).To(BeNil())
 			configPollingPeriod, err := time.ParseDuration(*connectorConf.PollingPeriod)
@@ -115,9 +113,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Name).To(Equal(connectorConf.DummyPayConfig.Name))
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Directory).To(Equal(dir))
-			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
+			Expect(getRes.ConnectorConfigResponse.Data.Name).To(Equal(pointer.For(connectorConf.DummyPayConfig.Name)))
 		})
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
@@ -171,23 +167,14 @@ var _ = Context("Payments API Connectors", Serial, func() {
 				os.RemoveAll(dir)
 			})
 
-			config := components.ConnectorConfig{
-				DummyPayConfig: &components.DummyPayConfig{
-					Name:              "some name",
-					FilePollingPeriod: pointer.For("30m"),
-					Provider:          pointer.For("Dummypay"),
-					Directory:         dir,
-				},
-			}
+			config := map[string]any{"name": "some name", "pollingPeriod": "30m", "directory": dir}
 			_, err = app.GetValue().SDK().Payments.V1.UpdateConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID, config)
 			Expect(err).To(BeNil())
 
 			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Name).To(Equal(config.DummyPayConfig.Name))
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Directory).To(Equal(dir))
-			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
+			Expect(getRes.ConnectorConfigResponse.Data.Name).To(Equal(pointer.For("some name")))
 		})
 
 		It("can update a connector config with v3 API", func() {
@@ -198,23 +185,16 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 			config.PollingPeriod = pointer.For("30m0s")
-			_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, &components.V3UpdateConnectorRequest{
-				V3DummypayConfig: config,
-			})
+			_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, map[string]any{"pollingPeriod": *config.PollingPeriod})
 			Expect(err).To(BeNil())
 
 			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
 
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(config.Directory))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.LinkFlowError).To(Equal(config.LinkFlowError))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(config.Name))
-			//nolint:staticcheck
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PageSize).To(Equal(pointer.For(int64(25)))) // the response sets a default value
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod).To(Equal(config.PollingPeriod))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(config.Provider))
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.UpdateLinkFlowError).To(Equal(config.UpdateLinkFlowError))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.Name).To(Equal(pointer.For(config.Name)))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.PollingPeriod).To(Equal(config.PollingPeriod))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.Provider).To(Equal(config.Provider))
 		})
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
@@ -225,9 +205,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 				blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 				config.Directory = dirValue
-				_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, &components.V3UpdateConnectorRequest{
-					V3DummypayConfig: config,
-				})
+				_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, map[string]any{"directory": config.Directory})
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
 				Expect(err.Error()).To(ContainSubstring(expectedErr))

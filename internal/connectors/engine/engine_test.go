@@ -1,6 +1,7 @@
 package engine_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -437,6 +438,40 @@ var _ = Describe("Engine Tests", func() {
 			err := eng.UpdateConnector(ctx, connectorID, config)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("preserves omitted provider credentials before validation and persistence", func(ctx SpecContext) {
+			stored := json.RawMessage(`{"name":"old","apiKey":"fake","credentials":{"secret":"fake-nested","region":"eu"}}`)
+			expected := json.RawMessage(`{"apiKey":"fake","credentials":{"region":"us","secret":"fake-nested"},"name":"new"}`)
+			connector := &models.Connector{ConnectorBase: models.ConnectorBase{ID: connectorID}, Config: stored}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			manager.EXPECT().Load(gomock.Any(), true, true).DoAndReturn(func(c models.Connector, _, _ bool) (string, json.RawMessage, error) {
+				Expect(string(c.Config) == string(expected)).To(BeTrue(), "credentials must reach provider validation unchanged")
+				return "new", c.Config, nil
+			})
+			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, c models.Connector) error {
+				Expect(string(c.Config) == string(expected)).To(BeTrue(), "credentials must be persisted unchanged")
+				return nil
+			})
+			manager.EXPECT().GetConfig(connectorID).Return(models.Config{Name: "new"}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+			Expect(eng.UpdateConnector(ctx, connectorID, json.RawMessage(`{"name":"new","credentials":{"region":"us"}}`))).To(Succeed())
+		})
+
+		It("lets provider validation reject an explicit null credential before writing", func(ctx SpecContext) {
+			connector := &models.Connector{ConnectorBase: models.ConnectorBase{ID: connectorID}, Config: json.RawMessage(`{"apiKey":"fake"}`)}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			manager.EXPECT().Load(gomock.Any(), true, true).DoAndReturn(func(c models.Connector, _, _ bool) (string, json.RawMessage, error) {
+				Expect(string(c.Config) == `{"apiKey":null}`).To(BeTrue(), "an explicit null must reach provider validation")
+				return "", nil, models.ErrInvalidConfig
+			})
+			Expect(eng.UpdateConnector(ctx, connectorID, json.RawMessage(`{"apiKey":null}`))).To(MatchError(engine.ErrValidation))
+		})
+
+		It("returns the original error when reading stored configuration fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage unavailable")
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(nil, expectedErr)
+			Expect(eng.UpdateConnector(ctx, connectorID, config)).To(MatchError(expectedErr))
 		})
 
 		It("should store the updated config", func(ctx SpecContext) {
