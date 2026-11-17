@@ -23,7 +23,7 @@ var _ = Describe("Stripe Client Reversals", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		b = client.NewMockBackend(ctrl)
 		token = "dummy"
-		b.EXPECT().Call("GET", "/v1/account", token, nil, &stripe.Account{}).DoAndReturn(
+		b.EXPECT().Call("GET", "/v1/account", token, gomock.Any(), &stripe.Account{}).DoAndReturn(
 			func(_, _, _ string, _ any, account *stripe.Account) error {
 				account.ID = "rootID"
 				return nil

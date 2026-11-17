@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 // Blockchain mirrors the subset of /v1/blockchains we need to detect testnet
@@ -36,6 +38,7 @@ type BlockchainsResponse struct {
 }
 
 func (c *client) ListBlockchains(ctx context.Context) ([]Blockchain, error) {
+	ctx = metrics.OperationContext(ctx, "list_blockchains")
 	var all []Blockchain
 	var cursor string
 

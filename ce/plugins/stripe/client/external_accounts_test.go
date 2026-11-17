@@ -27,7 +27,7 @@ var _ = Describe("Stripe Client External Accounts", func() {
 		b = client.NewMockBackend(ctrl)
 		token = "dummy"
 		timeline = client.Timeline{}
-		b.EXPECT().Call("GET", "/v1/account", token, nil, &stripe.Account{}).DoAndReturn(
+		b.EXPECT().Call("GET", "/v1/account", token, gomock.Any(), &stripe.Account{}).DoAndReturn(
 			func(_, _, _ string, _ any, account *stripe.Account) error {
 				account.ID = "rootID"
 				return nil

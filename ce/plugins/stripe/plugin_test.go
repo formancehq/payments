@@ -43,7 +43,7 @@ var _ = Describe("Stripe Plugin", func() {
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test"}`)
 			stripeMock := client.NewMockBackend(ctrl)
-			stripeMock.EXPECT().Call(gomock.Any(), gomock.Any(), gomock.Any(), nil, &stripe.Account{}).DoAndReturn(
+			stripeMock.EXPECT().Call(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), &stripe.Account{}).DoAndReturn(
 				func(_, _, _ string, _ any, account *stripe.Account) error {
 					account.ID = "rootID"
 					return nil

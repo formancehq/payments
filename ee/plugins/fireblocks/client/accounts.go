@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/formancehq/payments/pkg/domain/metrics"
 )
 
 type VaultAccount struct {
@@ -53,6 +55,7 @@ func (e fireblocksError) wrap(prefix string, base error) error {
 }
 
 func (c *client) GetVaultAccountsPaged(ctx context.Context, cursor string, limit int) (*VaultAccountsPagedResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_vault_accounts_paged")
 	endpoint := fmt.Sprintf("%s/v1/vault/accounts_paged?limit=%d", c.baseURL, limit)
 	if cursor != "" {
 		endpoint = fmt.Sprintf("%s&after=%s", endpoint, url.QueryEscape(cursor))
@@ -74,6 +77,7 @@ func (c *client) GetVaultAccountsPaged(ctx context.Context, cursor string, limit
 }
 
 func (c *client) GetVaultAccount(ctx context.Context, vaultAccountID string) (*VaultAccount, error) {
+	ctx = metrics.OperationContext(ctx, "get_vault_account")
 	endpoint := fmt.Sprintf("%s/v1/vault/accounts/%s", c.baseURL, vaultAccountID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
