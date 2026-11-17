@@ -38,6 +38,7 @@ func (s *Service) PaymentInitiationAdjustmentsListAll(ctx context.Context, id mo
 		if cursor.Next == "" {
 			break
 		}
+		next = cursor.Next
 	}
 
 	return adjustments, nil
