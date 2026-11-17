@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
+	"github.com/formancehq/payments/internal/connectors/connectorconfig"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"golang.org/x/text/cases"
@@ -21,20 +21,12 @@ func (s *Service) ConnectorsConfig(ctx context.Context, connectorID models.Conne
 		return nil, newStorageError(err, "get connector")
 	}
 
-	var m map[string]interface{}
-	err = json.Unmarshal(connector.Config, &m)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal connector config: %w", err)
-	}
+	var m map[string]string
+	_ = json.Unmarshal(connectorconfig.Readable(connector.Config), &m)
 
-	// inject provider into config json so SDK can distinguish between config types
+	// Preserve the provider name used by existing configuration readers.
 	caser := cases.Title(language.English)
 	m["provider"] = caser.String(connector.Provider)
-	result, err := json.Marshal(m)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal connector config: %w", err)
-	}
-
-	rawConfig := json.RawMessage(result)
-	return rawConfig, nil
+	result, _ := json.Marshal(m)
+	return json.RawMessage(result), nil
 }

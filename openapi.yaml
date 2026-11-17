@@ -679,7 +679,7 @@ paths:
         - $ref: '#/components/parameters/Connector'
         - $ref: '#/components/parameters/ConnectorID'
       requestBody:
-        $ref: '#/components/requestBodies/ConnectorConfig'
+        $ref: '#/components/requestBodies/ConnectorConfigUpdate'
       responses:
         "204":
           $ref: '#/components/responses/NoContent'
@@ -2779,6 +2779,21 @@ components:
           schema:
             $ref: '#/components/schemas/TransferResponse'
   schemas:
+    ConnectorConfigRead:
+      type: object
+      description: Safe configuration metadata. Stored provider fields and credentials are never returned.
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        pollingPeriod:
+          type: string
+        provider:
+          type: string
+    ConnectorConfigUpdate:
+      type: object
+      description: Partial connector configuration. Omitted fields preserve stored values, recursively for objects. Supplied values replace stored values; arrays replace as a whole. An empty string explicitly replaces the stored value and must pass provider validation. Null values follow provider validation. Provider fields use the same names and types as the installation configuration.
+      additionalProperties: true
     CursorBase:
       type: object
       required:
@@ -2938,7 +2953,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/ConnectorConfig'
+          $ref: '#/components/schemas/ConnectorConfigRead'
     PaymentResponse:
       type: object
       required:
@@ -5004,15 +5019,28 @@ components:
                   type: boolean
                 defaultValue:
                   type: string
+    V3ConnectorConfigRead:
+      type: object
+      description: Safe configuration metadata. Stored provider fields and credentials are never returned.
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        pollingPeriod:
+          type: string
+        provider:
+          type: string
     V3GetConnectorConfigResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3ConnectorConfig'
+          $ref: '#/components/schemas/V3ConnectorConfigRead'
     V3UpdateConnectorRequest:
-      $ref: '#/components/schemas/V3ConnectorConfig'
+      type: object
+      description: Partial connector configuration. Omitted fields preserve stored values, recursively for objects. Supplied values replace stored values; arrays replace as a whole. An empty string explicitly replaces the stored value and must pass provider validation. Null values follow provider validation. Provider fields use the same names and types as the installation configuration.
+      additionalProperties: true
     V3ConnectorsCursorResponse:
       type: object
       required:
@@ -5144,8 +5172,7 @@ components:
           type: boolean
           description: Whether the connector is being uninstalled
         config:
-          type: object
-          description: The connector's configuration, whose shape depends on the provider
+          $ref: '#/components/schemas/V3ConnectorConfigRead'
         capabilities:
           type: array
           description: Plugin capabilities advertised by the connector's provider.
@@ -7883,6 +7910,12 @@ components:
       schema:
         type: string
   requestBodies:
+    ConnectorConfigUpdate:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorConfigUpdate'
     ConnectorConfig:
       required: true
       content:

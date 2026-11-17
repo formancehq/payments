@@ -3,104 +3,13 @@
 package components
 
 type V3GetConnectorConfigResponse struct {
-	Data V3ConnectorConfig `json:"data"`
+	// Safe configuration metadata. Stored provider fields and credentials are never returned.
+	Data V3ConnectorConfigRead `json:"data"`
 }
 
-func (o *V3GetConnectorConfigResponse) GetData() V3ConnectorConfig {
+func (o *V3GetConnectorConfigResponse) GetData() V3ConnectorConfigRead {
 	if o == nil {
-		return V3ConnectorConfig{}
+		return V3ConnectorConfigRead{}
 	}
 	return o.Data
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataAdyen() *V3AdyenConfig {
-	return o.GetData().V3AdyenConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataAtlar() *V3AtlarConfig {
-	return o.GetData().V3AtlarConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataBankingbridge() *V3BankingbridgeConfig {
-	return o.GetData().V3BankingbridgeConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataBankingcircle() *V3BankingcircleConfig {
-	return o.GetData().V3BankingcircleConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataBitstamp() *V3BitstampConfig {
-	return o.GetData().V3BitstampConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataCoinbaseprime() *V3CoinbaseprimeConfig {
-	return o.GetData().V3CoinbaseprimeConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataColumn() *V3ColumnConfig {
-	return o.GetData().V3ColumnConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataCurrencycloud() *V3CurrencycloudConfig {
-	return o.GetData().V3CurrencycloudConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataDummypay() *V3DummypayConfig {
-	return o.GetData().V3DummypayConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataFireblocks() *V3FireblocksConfig {
-	return o.GetData().V3FireblocksConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataGeneric() *V3GenericConfig {
-	return o.GetData().V3GenericConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataIncrease() *V3IncreaseConfig {
-	return o.GetData().V3IncreaseConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataKrakenpro() *V3KrakenproConfig {
-	return o.GetData().V3KrakenproConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataMangopay() *V3MangopayConfig {
-	return o.GetData().V3MangopayConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataModulr() *V3ModulrConfig {
-	return o.GetData().V3ModulrConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataMoneycorp() *V3MoneycorpConfig {
-	return o.GetData().V3MoneycorpConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataPlaid() *V3PlaidConfig {
-	return o.GetData().V3PlaidConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataPowens() *V3PowensConfig {
-	return o.GetData().V3PowensConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataQonto() *V3QontoConfig {
-	return o.GetData().V3QontoConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataRoutable() *V3RoutableConfig {
-	return o.GetData().V3RoutableConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataStripe() *V3StripeConfig {
-	return o.GetData().V3StripeConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataTink() *V3TinkConfig {
-	return o.GetData().V3TinkConfig
-}
-
-func (o *V3GetConnectorConfigResponse) GetDataWise() *V3WiseConfig {
-	return o.GetData().V3WiseConfig
 }

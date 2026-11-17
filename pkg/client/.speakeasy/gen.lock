@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 5c4a1d9b0ef748d23f4cad596cb1ef70
+  docChecksum: 5a7b870a9ccad308f27302414b073eea
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -49,6 +49,7 @@ generatedFiles:
   - /models/components/bankingcircleconfig.go
   - /models/components/connector.go
   - /models/components/connectorconfig.go
+  - /models/components/connectorconfigread.go
   - /models/components/connectorconfigresponse.go
   - /models/components/connectorresponse.go
   - /models/components/connectorsconfigsresponse.go
@@ -132,7 +133,7 @@ generatedFiles:
   - /models/components/v3connectorbase.go
   - /models/components/v3connectorcapabilitiesresponse.go
   - /models/components/v3connectorcapabilityresponse.go
-  - /models/components/v3connectorconfig.go
+  - /models/components/v3connectorconfigread.go
   - /models/components/v3connectorconfigsresponse.go
   - /models/components/v3connectorscheduleinstancescursorresponse.go
   - /models/components/v3connectorscheduleresponse.go
@@ -237,7 +238,6 @@ generatedFiles:
   - /models/components/v3tinkconfig.go
   - /models/components/v3uninstallconnectorresponse.go
   - /models/components/v3updatebankaccountmetadatarequest.go
-  - /models/components/v3updateconnectorrequest.go
   - /models/components/v3updatepaymentmetadatarequest.go
   - /models/components/v3updatepoolqueryrequest.go
   - /models/components/v3wiseconfig.go
@@ -371,9 +371,9 @@ generatedFiles:
   - docs/models/components/bankaccountscursor.md
   - docs/models/components/bankaccountscursorcursor.md
   - docs/models/components/bankingcircleconfig.md
-  - docs/models/components/config.md
   - docs/models/components/connector.md
   - docs/models/components/connectorconfig.md
+  - docs/models/components/connectorconfigread.md
   - docs/models/components/connectorconfigresponse.md
   - docs/models/components/connectorresponse.md
   - docs/models/components/connectorresponsedata.md
@@ -489,7 +489,7 @@ generatedFiles:
   - docs/models/components/v3connectorbase.md
   - docs/models/components/v3connectorcapabilitiesresponse.md
   - docs/models/components/v3connectorcapabilityresponse.md
-  - docs/models/components/v3connectorconfig.md
+  - docs/models/components/v3connectorconfigread.md
   - docs/models/components/v3connectorconfigsresponse.md
   - docs/models/components/v3connectorconfigsresponsedata.md
   - docs/models/components/v3connectorscheduleinstancescursorresponse.md
@@ -617,7 +617,6 @@ generatedFiles:
   - docs/models/components/v3uninstallconnectorresponse.md
   - docs/models/components/v3uninstallconnectorresponsedata.md
   - docs/models/components/v3updatebankaccountmetadatarequest.md
-  - docs/models/components/v3updateconnectorrequest.md
   - docs/models/components/v3updatepaymentmetadatarequest.md
   - docs/models/components/v3updatepoolqueryrequest.md
   - docs/models/components/v3wiseconfig.md
@@ -1200,7 +1199,7 @@ examples:
           connector: "GENERIC"
       responses:
         "200":
-          application/json: {"data": {"name": "My Atlar Account", "provider": "Atlar", "baseUrl": "https://api.example.com", "pollingPeriod": "120m", "transferInitiationStatusPollingPeriod": "60s", "accessKey": "XXX", "secret": "XXX", "pageSize": 50}}
+          application/json: {"data": {"name": "My Atlar Account", "pollingPeriod": "120m", "provider": "Atlar"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   updateConnectorConfigV1:
@@ -1210,7 +1209,7 @@ examples:
           connector: "ADYEN"
           connectorId: "XXX"
       requestBody:
-        application/json: {"name": "My Stripe Account", "provider": "Stripe", "pollingPeriod": "120s", "apiKey": "XXX", "pageSize": 10}
+        application/json: {}
       responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
@@ -1222,7 +1221,7 @@ examples:
           connectorId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"name": "My Modulr Account", "provider": "Modulr", "apiKey": "XXX", "apiSecret": "XXX", "endpoint": "XXX", "pollingPeriod": "120s"}}
+          application/json: {"data": {"name": "My Modulr Account", "pollingPeriod": "120s", "provider": "Modulr"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   resetConnector:
@@ -1436,7 +1435,7 @@ examples:
           connectorID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"clientID": "<id>", "clientSecret": "<value>", "name": "<value>", "pageSize": 25, "pollingPeriod": "2m", "provider": "Plaid"}}
+          application/json: {"data": {"name": "<value>", "pollingPeriod": "2m", "provider": "Plaid"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3UpdateConnectorConfig:

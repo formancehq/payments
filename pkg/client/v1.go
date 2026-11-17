@@ -7840,11 +7840,11 @@ func (s *V1) ReadConnectorConfig(ctx context.Context, connector components.Conne
 
 // UpdateConnectorConfigV1 - Update the config of a connector
 // Update connector config
-func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.Connector, connectorID string, connectorConfig components.ConnectorConfig, opts ...operations.Option) (*operations.UpdateConnectorConfigV1Response, error) {
+func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.Connector, connectorID string, requestBody map[string]any, opts ...operations.Option) (*operations.UpdateConnectorConfigV1Response, error) {
 	request := operations.UpdateConnectorConfigV1Request{
-		Connector:       connector,
-		ConnectorID:     connectorID,
-		ConnectorConfig: connectorConfig,
+		Connector:   connector,
+		ConnectorID: connectorID,
+		RequestBody: requestBody,
 	}
 
 	o := operations.Options{}
@@ -7877,7 +7877,7 @@ func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.C
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
-	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "ConnectorConfig", "json", `request:"mediaType=application/json"`)
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "RequestBody", "json", `request:"mediaType=application/json"`)
 	if err != nil {
 		return nil, err
 	}
