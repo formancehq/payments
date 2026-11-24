@@ -83,6 +83,7 @@ func (c *client) signRequest(req *http.Request, body string) error {
 }
 
 func (c *client) GetPortfolio(ctx context.Context) (*PortfolioResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_portfolio")
 	endpoint := fmt.Sprintf("%s/v1/portfolios/%s", c.baseURL, c.portfolioID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -105,6 +106,7 @@ func (c *client) GetPortfolio(ctx context.Context) (*PortfolioResponse, error) {
 }
 
 func (c *client) GetAssets(ctx context.Context, entityID string) (*AssetsResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_assets")
 	endpoint := fmt.Sprintf("%s/v1/entities/%s/assets", c.baseURL, entityID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -127,6 +129,7 @@ func (c *client) GetAssets(ctx context.Context, entityID string) (*AssetsRespons
 }
 
 func (c *client) GetWallets(ctx context.Context, walletType, cursor string, pageSize int) (*WalletsResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_wallets")
 	extra := url.Values{}
 	if walletType != "" {
 		extra.Set("type", walletType)
@@ -156,6 +159,7 @@ func (c *client) GetWallets(ctx context.Context, walletType, cursor string, page
 }
 
 func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*WalletBalanceResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_balance_for_wallet")
 	if walletID == "" {
 		return nil, fmt.Errorf("missing wallet ID for balance")
 	}
@@ -181,6 +185,7 @@ func (c *client) GetBalanceForWallet(ctx context.Context, walletID string) (*Wal
 }
 
 func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int, types ...string) (*TransactionsResponse, error) {
+	ctx = metrics.OperationContext(ctx, "get_transactions")
 	extra := url.Values{}
 	for _, t := range types {
 		extra.Add("types", t)
@@ -210,6 +215,7 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 }
 
 func (c *client) ListOrders(ctx context.Context, cursor string, pageSize int) (*OrdersResponse, error) {
+	ctx = metrics.OperationContext(ctx, "list_orders")
 	endpoint, err := c.buildPortfolioEndpoint("orders", cursor, pageSize, nil)
 	if err != nil {
 		return nil, err

@@ -50,6 +50,7 @@ func (c *client) CreateWebhookEndpoints(ctx context.Context, webhookBaseURL stri
 
 	for u, conf := range remaining {
 		params := &stripe.WebhookEndpointParams{
+			Params:        stripe.Params{Context: metrics.OperationContext(ctx, "create_webhook_endpoint")},
 			EnabledEvents: conf.eventTypes,
 			URL:           stripe.String(u),
 			APIVersion:    stripe.String(stripe.APIVersion),
@@ -100,6 +101,7 @@ func (c *client) updateExistingWebhookEndpoints(ctx context.Context, webhookBase
 		result, err := c.webhookEndpointClient.Update(
 			data.ID,
 			&stripe.WebhookEndpointParams{
+				Params:        stripe.Params{Context: metrics.OperationContext(ctx, "update_webhook_endpoint")},
 				EnabledEvents: conf.eventTypes,
 				URL:           stripe.String(data.URL),
 			},
@@ -117,7 +119,9 @@ func (c *client) updateExistingWebhookEndpoints(ctx context.Context, webhookBase
 
 func (c *client) DeleteWebhookEndpoints(configs []models.PSPWebhookConfig) error {
 	for _, conf := range configs {
-		_, err := c.webhookEndpointClient.Del(conf.Name, &stripe.WebhookEndpointParams{})
+		_, err := c.webhookEndpointClient.Del(conf.Name, &stripe.WebhookEndpointParams{
+			Params: stripe.Params{Context: metrics.OperationContext(context.Background(), "delete_webhook_endpoint")},
+		})
 		if err != nil {
 			return wrapSDKErr(err)
 		}

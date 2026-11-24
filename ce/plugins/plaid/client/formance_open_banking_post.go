@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/formancehq/payments/pkg/domain/metrics"
 	"github.com/formancehq/payments/pkg/domain/models"
 	"github.com/google/uuid"
 )
@@ -34,6 +35,7 @@ type FormanceOpenBankingRedirectRequest struct {
 }
 
 func (c *client) FormanceOpenBankingRedirect(ctx context.Context, req FormanceOpenBankingRedirectRequest) error {
+	ctx = metrics.OperationContext(ctx, "formance_open_banking_redirect")
 	redirectURL := req.RedirectURL
 	if redirectURL == "" {
 		var err error

@@ -2,14 +2,28 @@ package client
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/formancehq/payments/pkg/domain/metrics"
 	"github.com/stripe/stripe-go/v80"
+	"github.com/stripe/stripe-go/v80/account"
 )
 
 func (c *client) GetRootAccount() (result *stripe.Account, err error) {
-	result, err = c.accountClient.Get()
+	result, err = getRootAccount(c.accountClient)
 	return result, wrapSDKErr(err)
+}
+
+// getRootAccount does what account.Client.Get does, but passes params so the
+// request carries a metrics operation. Get sends nil params, which leaves no
+// way to set a context.
+func getRootAccount(c account.Client) (*stripe.Account, error) {
+	params := &stripe.AccountParams{
+		Params: stripe.Params{Context: metrics.OperationContext(context.Background(), "get_root_account")},
+	}
+	result := &stripe.Account{}
+	err := c.B.Call(http.MethodGet, "/v1/account", c.Key, params, result)
+	return result, err
 }
 
 func (c *client) GetAccounts(
